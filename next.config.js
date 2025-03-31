@@ -4,7 +4,6 @@ const nextConfig = {
     styledComponents: true,
   },
   reactStrictMode: true,
-  swcMinify: true,
   output: 'standalone'
 }
 

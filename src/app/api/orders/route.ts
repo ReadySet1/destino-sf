@@ -1,40 +1,38 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
-
-// Helper function moved outside the GET handler
-async function getSupabaseClient() {
-  const cookieStore = await cookies();
-  
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          const cookieList = Array.from(cookieStore.getAll());
-          return cookieList.map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-          }));
-        },
-        setAll(_cookies) {
-          // Route handlers can't set cookies directly
-          // This is just a stub to satisfy the type requirements
-        }
-      }
-    }
-  );
-}
+// Do not use edge runtime with Prisma
 
 export async function GET(request: Request) {
   try {
+    // Create a new Prisma client instance for this request
+    const prisma = new PrismaClient();
+    
     // Get the Supabase client
-    const supabase = await getSupabaseClient();
+    const cookieStore = await cookies();
+    
+    const supabase =createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            const cookieList = Array.from(cookieStore.getAll());
+            return cookieList.map((cookie) => ({
+              name: cookie.name,
+              value: cookie.value,
+            }));
+          },
+          setAll(_cookies) {
+            // Route handlers can't set cookies directly
+            // This is just a stub to satisfy the type requirements
+          }
+        }
+      }
+    );
     
     // Get user session
     const { data: { session } } = await supabase.auth.getSession();
@@ -68,6 +66,9 @@ export async function GET(request: Request) {
         createdAt: 'desc'
       }
     });
+
+    // Close the Prisma connection
+    await prisma.$disconnect();
     
     return NextResponse.json({ orders });
   } catch (error) {

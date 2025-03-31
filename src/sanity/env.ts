@@ -11,6 +11,9 @@ export const projectId = assertValue(
   'Missing environment variable: NEXT_PUBLIC_SANITY_PROJECT_ID'
 )
 
+// Token is optional - only needed for content creation operations
+export const token = process.env.NEXT_PUBLIC_SANITY_API_TOKEN
+
 function assertValue<T>(v: T | undefined, errorMessage: string): T {
   if (v === undefined) {
     throw new Error(errorMessage)

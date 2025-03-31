@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
 import { AccountProfile } from "@/components/store/AccountProfile";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 export default function AccountPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -61,7 +62,7 @@ export default function AccountPage() {
         <p className="mb-6 text-gray-600">
           Please sign in to access your account.
         </p>
-        <Button onClick={() => redirect("/sign-in")}>Sign In</Button>
+        <Button onClick={() => router.push("/sign-in")}>Sign In</Button>
       </div>
     );
   }
@@ -85,7 +86,7 @@ export default function AccountPage() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <OrderHistory userId={user.id} />
+          <OrderHistory _userId={user.id} />
         </TabsContent>
       </Tabs>
     </main>
