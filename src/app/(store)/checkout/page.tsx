@@ -6,12 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, addDays } from 'date-fns';
-import { useCart } from '@/store/cart';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CheckoutSummary } from '@/components/store/CheckoutSummary';
+
 import { toast } from 'sonner';
+import { useCartStore } from '@/store/cart';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { CheckoutSummary } from '@/components/store/CheckoutSummary';
 
 // Form validation schema
 const checkoutSchema = z.object({
@@ -31,11 +32,14 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [square, setSquare] = useState<any>(null);
-  const [card, setCard] = useState<any>(null);
+  const [card, setCard] = useState<{
+    attach: (selector: string) => Promise<void>;
+    tokenize: () => Promise<{ status: string; token?: string; errors?: { message: string; }[] }>;
+    destroy: () => void;
+  } | null>(null);
   
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -70,7 +74,6 @@ export default function CheckoutPage() {
         
         try {
           const squareInstance = window.Square;
-          setSquare(squareInstance);
           
           const payments = squareInstance.payments(
             process.env.NEXT_PUBLIC_SQUARE_APP_ID!,
@@ -96,7 +99,7 @@ export default function CheckoutPage() {
     };
     
     loadSquare();
-  }, []);
+  }, [card]);
   
   const onSubmit = async (formData: CheckoutFormData) => {
     setIsSubmitting(true);
@@ -158,12 +161,12 @@ export default function CheckoutPage() {
         clearCart();
         router.push(`/order-confirmation/${orderId}`);
       } else {
-        throw new Error(tokenResult.errors[0]?.message || 'Card tokenization failed');
+        throw new Error(tokenResult.errors?.[0]?.message || 'Card tokenization failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Checkout error:', error);
-      setPaymentError(error.message || 'An unexpected error occurred');
-      toast.error("Payment processing failed. Please try again.")
+      setPaymentError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      toast.error("Payment processing failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

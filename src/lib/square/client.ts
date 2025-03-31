@@ -1,12 +1,20 @@
-import { Client, Environment } from 'square';
-import { randomUUID } from 'crypto';
+// src/lib/square/client.ts
+import { SquareClient, SquareEnvironment } from 'square';
+import dotenv from 'dotenv';
 
-// Initialize Square client
-const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN!,
+// Load environment variables
+dotenv.config();
+
+// Square client config
+const config = {
   environment: process.env.NODE_ENV === 'production' 
-    ? Environment.Production 
-    : Environment.Sandbox
-});
+    ? SquareEnvironment.Production 
+    : SquareEnvironment.Sandbox,
+  accessToken: process.env.SQUARE_ACCESS_TOKEN!,
+  userAgentDetail: "destino-sf" 
+};
+
+// Configure instance of Square client
+const squareClient = new SquareClient(config);
 
 export default squareClient;

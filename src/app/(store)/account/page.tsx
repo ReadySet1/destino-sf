@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { redirect } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/src/utils/supabase/client";
-import { AccountProfile } from "@/src/components/store/AccountProfile";
-import { OrderHistory } from "@/src/components/store/OrderHistory";
+import { createClient } from "@/utils/supabase/client";
+import { AccountProfile } from "@/components/store/AccountProfile";
+import { OrderHistory } from "@/components/store/OrderHistory";
 import { Button } from "@/components/ui/button";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 export default function AccountPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
   const supabase = createClient();

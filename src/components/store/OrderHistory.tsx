@@ -46,8 +46,8 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
         
         const data = await response.json();
         setOrders(data.orders);
-      } catch (err: any) {
-        setError(err.message || 'An error occurred while fetching your orders');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching your orders');
         setOrders([]);
       } finally {
         setIsLoading(false);
@@ -116,7 +116,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
         </CardHeader>
         <CardContent>
           <div className="py-6 text-center">
-            <p className="mb-4 text-gray-500">You haven't placed any orders yet.</p>
+            <p className="mb-4 text-gray-500">You haven&apos;t placed any orders yet.</p>
             <Link href="/menu">
               <Button>Browse Menu</Button>
             </Link>

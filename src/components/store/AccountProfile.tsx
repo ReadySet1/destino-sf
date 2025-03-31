@@ -4,15 +4,22 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { createBrowserClient } from '@supabase/ssr';
 import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Button } from '../ui/button';
+
+interface User {
+  id: string;
+  email?: string;
+  name?: string;
+  phone?: string;
+}
 
 interface AccountProfileProps {
-  user: any;
+  user: User;
   onSignOut: () => Promise<void>;
 }
 
@@ -26,7 +33,10 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   
   // Initialize the form
   const {
@@ -66,7 +76,7 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
       if (error) throw error;
       
       toast.success('Profile updated successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Failed to update profile');
       console.error('Error updating profile:', error);
     } finally {

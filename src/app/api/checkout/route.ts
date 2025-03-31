@@ -1,8 +1,33 @@
 import { NextResponse } from 'next/server';
 import { createOrder } from '@/lib/square/orders';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+
+// Helper function moved outside the POST handler
+async function getSupabaseClient() {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          const cookieList = Array.from(cookieStore.getAll());
+          return cookieList.map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value,
+          }));
+        },
+        setAll(_cookies) {
+          // Route handlers can't set cookies directly
+          // This is just a stub to satisfy the type requirements
+        }
+      }
+    }
+  );
+}
 
 interface CheckoutRequestBody {
   items: Array<{
@@ -20,7 +45,10 @@ interface CheckoutRequestBody {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    // Get the Supabase client
+    const supabase = await getSupabaseClient();
+    
+    // Get the session
     const { data: { session } } = await supabase.auth.getSession();
     
     const { items, customerInfo }: CheckoutRequestBody = await request.json();

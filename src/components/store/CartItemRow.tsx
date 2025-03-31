@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { QuantityStepper } from './QuantityStepper';
 import { CartItem } from '@/store/cart';
 

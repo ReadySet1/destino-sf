@@ -48,13 +48,13 @@ export async function POST(request: Request) {
       success: true,
       paymentId: payment.id
     });
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Payment processing error:', error);
     
     return NextResponse.json(
       { 
         error: 'Payment processing failed',
-        details: error.message || 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

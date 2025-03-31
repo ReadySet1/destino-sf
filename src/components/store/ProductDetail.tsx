@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/store/cart';
+import { useCartStore } from '@/store/cart';
 import { toast } from 'sonner';
 
 interface Variant {
@@ -14,7 +14,7 @@ interface Variant {
   squareVariantId: string;
 }
 
-interface Product {
+export interface Product {
   _id: string;
   name: string;
   description: string | null;
@@ -38,10 +38,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
     product.variants && product.variants.length > 0 ? product.variants[0] : null
   );
   const [quantity, setQuantity] = useState(1);
-  const { addItem } = useCart();
+  const { addItem } = useCartStore();
   
   // Calculate the current price based on selected variant
-  const currentPrice = selectedVariant?.price !== null ? selectedVariant.price : product.price;
+  const currentPrice = selectedVariant ? selectedVariant.price : product.price;
   
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -51,6 +51,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
         price: currentPrice,
         image: product.images?.[0],
         variantId: selectedVariant?.squareVariantId,
+        quantity: 1
       });
     }
     

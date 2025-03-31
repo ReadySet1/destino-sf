@@ -3,47 +3,94 @@ import { notFound } from 'next/navigation';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/store/ProductGrid';
 import { CategoryTabs } from '@/components/store/CategoryTabs';
+import { type JSX } from 'react'; // Import JSX type
+
+interface Category {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  description?: string;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  images: string[];
+  slug: { current: string };
+}
+
+// Define the shape of the resolved search params
+type ResolvedSearchParams = { [key: string]: string | string[] | undefined };
 
 export default async function MenuPage({
-  searchParams
+  searchParams, // The prop is the Promise
 }: {
-  searchParams: { category?: string }
-}) {
+  searchParams: Promise<ResolvedSearchParams>; // Type as Promise
+}): Promise<JSX.Element> { // Explicit return type
+
+  // Await the promise
+  const resolvedSearchParams = await searchParams;
+
   // Fetch all product categories
   const categories = await getAllCategories();
-  
+
   if (categories.length === 0) {
-    return notFound();
+    console.log("No categories found.");
+    notFound();
   }
-  
-  // Determine selected category (use first category if none specified)
-  const selectedCategoryId = searchParams.category || categories[0]._id;
-  const selectedCategory = categories.find(c => c._id === selectedCategoryId);
-  
+
+  // Determine selected category using the RESOLVED params
+  const categoryParam = resolvedSearchParams.category;
+  const categoryValue = Array.isArray(categoryParam) ? categoryParam[0] : categoryParam;
+  const selectedCategoryId = categoryValue || categories[0]?._id;
+
+  if (!selectedCategoryId) {
+     console.error("Could not determine a selected category ID.");
+     return (
+        <main className="bg-white py-8">
+            <div className="container mx-auto px-4">
+                <h1 className="mb-8 text-center text-4xl font-bold">Our Menu</h1>
+                <p className="text-center text-red-500">Could not determine the category to display.</p>
+            </div>
+        </main>
+     );
+  }
+
+  const selectedCategory = categories.find((c: Category) => c._id === selectedCategoryId);
+
   if (!selectedCategory) {
-    return notFound();
+    console.warn(`Category with ID "${selectedCategoryId}" not found.`);
+    notFound();
   }
-  
-  // Fetch products for the selected category
-  const products = await getProductsByCategory(selectedCategoryId);
-  
+
+  let products: Product[] = [];
+  try {
+      const sanityProducts = await getProductsByCategory(selectedCategoryId);
+      products = sanityProducts.map(p => ({
+        ...p,
+        images: p.images || []
+      }));
+  } catch (error) {
+      console.error(`Failed to fetch products for category ${selectedCategoryId}:`, error);
+  }
+
   return (
     <main className="bg-white py-8">
       <div className="container mx-auto px-4">
         <h1 className="mb-8 text-center text-4xl font-bold">Our Menu</h1>
-        
-        {/* Category Tabs */}
-        <CategoryTabs 
-          categories={categories} 
-          selectedCategoryId={selectedCategoryId} 
+        <CategoryTabs
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
         />
-        
-        {/* Products Grid */}
         <div className="mt-8">
           <h2 className="mb-6 text-2xl font-semibold">{selectedCategory.name}</h2>
-          <Suspense fallback={<div className="text-center">Loading products...</div>}>
+          <Suspense key={selectedCategoryId} fallback={<div className="text-center">Loading products...</div>}>
             {products.length > 0 ? (
-              <ProductGrid products={products} />
+              <ProductGrid 
+                products={products} 
+              />
             ) : (
               <p className="py-8 text-center text-gray-500">
                 No products available in this category.

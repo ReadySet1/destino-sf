@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { getFeaturedProducts } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/store/ProductGrid';
 
+export const revalidate = 3600; // Revalidate every hour
+
 export default async function HomePage() {
   // Fetch featured products for homepage
   const featuredProducts = await getFeaturedProducts();

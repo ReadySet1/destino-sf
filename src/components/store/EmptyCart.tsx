@@ -11,7 +11,7 @@ export function EmptyCart() {
       
       <h1 className="mb-2 text-2xl font-bold">Your cart is empty</h1>
       <p className="mb-8 text-gray-500">
-        Looks like you haven't added any items to your cart yet.
+        Looks like you haven&apos;t added any items to your cart yet.
       </p>
       
       <Link href="/menu">

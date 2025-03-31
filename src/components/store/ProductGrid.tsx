@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductCard } from './ProductCard';
-import { useCart } from '@/store/cart';
+import { useCartStore } from '@/store/cart';
 
 interface Product {
   _id: string;
@@ -17,14 +17,15 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products }: ProductGridProps) {
-  const { addItem } = useCart();
+  const { addItem } = useCartStore();
   
   const handleAddToCart = (product: Product) => {
     addItem({
       id: product._id,
       name: product.name,
       price: product.price,
-      image: product.images?.[0]
+      image: product.images?.[0],
+      quantity: 1
     });
   };
   

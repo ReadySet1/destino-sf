@@ -1,5 +1,5 @@
 import { signUpAction } from "@/app/actions";
-import { FormMessage, Message } from "@/components/form-message";
+import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,20 +7,20 @@ import Link from "next/link";
 import { SmtpMessage } from "../smtp-message";
 
 export default async function Signup(props: {
-  searchParams: Promise<Message>;
+  searchParams: Promise<{ message?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  if ("message" in searchParams) {
+  if (searchParams.message) {
     return (
       <div className="w-full flex-1 flex items-center h-screen sm:max-w-md justify-center gap-2 p-4">
-        <FormMessage message={searchParams} />
+        <FormMessage message={searchParams.message} />
       </div>
     );
   }
 
   return (
     <>
-      <form className="flex flex-col min-w-64 max-w-64 mx-auto">
+      <form action={signUpAction} className="flex flex-col min-w-64 max-w-64 mx-auto">
         <h1 className="text-2xl font-medium">Sign up</h1>
         <p className="text-sm text text-foreground">
           Already have an account?{" "}
@@ -39,10 +39,10 @@ export default async function Signup(props: {
             minLength={6}
             required
           />
-          <SubmitButton formAction={signUpAction} pendingText="Signing up...">
+          <SubmitButton>
             Sign up
           </SubmitButton>
-          <FormMessage message={searchParams} />
+          <FormMessage message={searchParams.message} />
         </div>
       </form>
       <SmtpMessage />

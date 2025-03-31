@@ -1,19 +1,46 @@
 import { NextResponse } from 'next/server';
 import { syncSquareToSanity } from '@/lib/square/sync-with-sanity';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function POST(request: Request) {
+// Helper function moved outside the POST handler
+async function getSupabaseClient() {
+  const _cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          const cookieList = Array.from(_cookieStore.getAll());
+          return cookieList.map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value,
+          }));
+        },
+        setAll(_cookies) {
+          // Route handlers can't set cookies directly
+          // This is just a stub to satisfy the type requirements
+        }
+      }
+    }
+  );
+}
+
+export async function POST(_request: Request) {
   try {
-    // Get the current user and check if they're an admin
-    const supabase = createRouteHandlerClient({ cookies });
+    // Get the Supabase client
+    const supabase = await getSupabaseClient();
+    
+    // Get the session
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Verify if user is an admin (you'll need to implement this logic)
+    // Verify if user is an admin
     const { data: userRole } = await supabase
       .from('profiles')
       .select('role')

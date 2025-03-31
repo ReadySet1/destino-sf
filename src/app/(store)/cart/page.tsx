@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/store/cart';
+import { useCartStore } from '@/store/cart';
 import { CartItemList } from '@/components/store/CartItemList';
 import { CartSummary } from '@/components/store/CartSummary';
 import { EmptyCart } from '@/components/store/EmptyCart';
 
 export default function CartPage() {
-  const { items, totalPrice, totalItems, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, totalPrice, totalItems, removeItem, updateQuantity, clearCart } = useCartStore();
   
   if (items.length === 0) {
     return <EmptyCart />;
