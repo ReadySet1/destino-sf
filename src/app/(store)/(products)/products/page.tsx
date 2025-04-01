@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
-import ProductCard from "@/components/products/ProductCard";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import ProductCard from "@/components/Products/ProductCard";
 import { Category, Product } from '@/types/product';
 
 export default async function ProductsPage() {

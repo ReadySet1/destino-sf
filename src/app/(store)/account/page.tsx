@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { redirect, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
-import { AccountProfile } from "@/components/store/AccountProfile";
-import { OrderHistory } from "@/components/store/OrderHistory";
+import { AccountProfile } from "@/components/Store/AccountProfile";
+import { OrderHistory } from "@/components/Store/OrderHistory";
 import { Button } from "@/components/ui/button";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
@@ -86,7 +86,7 @@ export default function AccountPage() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <OrderHistory _userId={user.id} />
+          <OrderHistory userId={user.id} />
         </TabsContent>
       </Tabs>
     </main>

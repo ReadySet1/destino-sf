@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { client } from "@/sanity/lib/client";
+import type { Category, Prisma } from "@prisma/client";
 
 export default async function CategoriesPage() {
   // Fetch categories for the list
@@ -181,7 +182,7 @@ export default async function CategoriesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {categories.map((category) => (
+                {categories.map((category: Category & { _count: Prisma.CategoryCountOutputType }) => (
                   <tr key={category.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getFeaturedProducts } from '@/lib/sanity-products';
-import { ProductGrid } from '@/components/store/ProductGrid';
+import { ProductGrid } from '@/components/Store/ProductGrid';
 
 export const revalidate = 3600; // Revalidate every hour
 

@@ -6,6 +6,15 @@ import { redirect } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import { DeleteButton } from "./components/DeleteButton";
 
+export const revalidate = 0; // Disable static generation
+export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: 'Product Management',
+  description: 'Manage your products',
+  tags: ['products']
+};
+
 type ProductWithCategory = {
   id: string;
   name: string;

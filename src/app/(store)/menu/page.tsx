@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
-import { ProductGrid } from '@/components/store/ProductGrid';
-import { CategoryTabs } from '@/components/store/CategoryTabs';
+import { ProductGrid } from '@/components/Store/ProductGrid';
+import { CategoryTabs } from '@/components/Store/CategoryTabs';
 import { type JSX } from 'react'; // Import JSX type
 
 interface Category {

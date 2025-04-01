@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { client } from "@/sanity/lib/client";
+import { SanityImageInput, SanityImage } from "@/components/admin/SanityImageInput";
+
+// Disable page caching to always fetch fresh data
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{
@@ -9,12 +13,55 @@ interface PageProps {
   }>;
 }
 
+interface SanityImageResponse {
+  _key?: string;
+  _type?: string;
+  asset: {
+    _ref: string;
+    _type: string;
+  };
+}
+
+interface SanityProductResponse {
+  _id: string;
+  images: SanityImageResponse[];
+}
+
+interface SanityPatchData {
+  name: string;
+  description: string;
+  price: number;
+  featured: boolean;
+  squareId: string | null;
+  images: Array<{
+    _type: 'image';
+    _key?: string;
+    asset: {
+      _type: 'reference';
+      _ref: string;
+    };
+  }>;
+  category?: {
+    _type: 'reference';
+    _ref: string;
+  };
+}
+
+// Function to get Sanity image URL
+function getImageUrlFromRef(ref: string): string | null {
+    const parts = ref.split('-');
+    if (parts.length < 3 || parts[0] !== 'image') return null;
+    const dataset = client.config().dataset!;
+    const projectId = client.config().projectId!;
+    const filename = parts.slice(1).join('-');
+    return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename.replace('-webp', '.webp').replace('-jpg', '.jpg').replace('-png', '.png')}`;
+}
+
 export default async function EditProductPage({ params }: PageProps) {
-  // Explicitly await the params object to ensure id is resolved
   const resolvedParams = await params;
   const productId = resolvedParams.id;
   
-  // Fetch the product to edit
+  // Fetch the product from Prisma
   const product = await prisma.product.findUnique({
     where: { id: productId },
   });
@@ -25,10 +72,71 @@ export default async function EditProductPage({ params }: PageProps) {
 
   // Fetch categories for the dropdown
   const categories = await prisma.category.findMany({
-    orderBy: {
-      name: "asc",
-    },
+    orderBy: { name: "asc" },
   });
+
+  // Fetch corresponding product data from Sanity to get initial images
+  let initialSanityImages: SanityImage[] = [];
+  let sanityProductId: string | null = null;
+  try {
+    // Prioritize squareId if available, otherwise use name
+    const query = product.squareId 
+      ? `*[_type == "product" && squareId == $identifier][0]{ 
+          _id, 
+          "images": images[]{
+            _key,
+            _type,
+            asset
+          }
+        }`
+      : `*[_type == "product" && name == $identifier][0]{ 
+          _id, 
+          "images": images[]{
+            _key,
+            _type,
+            asset
+          }
+        }`;
+    const identifier = product.squareId || product.name;
+    
+    const sanityProductData = await client.fetch<SanityProductResponse | null>(
+      query,
+      { identifier }
+    );
+
+    if (sanityProductData) {
+      sanityProductId = sanityProductData._id;
+      initialSanityImages = (sanityProductData.images || [])
+        .map((img: SanityImageResponse) => {
+          // Skip if asset is null or doesn't have _ref
+          if (!img?.asset?._ref) {
+            console.warn('Image asset missing _ref:', img);
+            return null;
+          }
+          
+          const sanityImage: SanityImage = {
+            _type: 'image',
+            asset: {
+              _type: 'reference',
+              _ref: img.asset._ref
+            }
+          };
+
+          // Add _key if it exists, or generate a new one
+          sanityImage._key = img._key || `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+          console.log('Processed Sanity image:', JSON.stringify(sanityImage, null, 2));
+          return sanityImage;
+        })
+        .filter((img): img is SanityImage => img !== null);
+
+      console.log('Loaded initial Sanity images:', JSON.stringify(initialSanityImages, null, 2));
+    } else {
+       console.log(`Product with identifier "${identifier}" not found in Sanity. Images will start empty.`);
+    }
+  } catch (error) {
+    console.error("Error fetching Sanity product data:", error);
+  }
 
   async function updateProduct(formData: FormData) {
     "use server";
@@ -37,21 +145,43 @@ export default async function EditProductPage({ params }: PageProps) {
     const description = formData.get("description") as string;
     const price = parseFloat(formData.get("price") as string);
     const categoryId = formData.get("categoryId") as string;
-    const images = (formData.get("images") as string).split(",").map(img => img.trim());
+    const sanityImagesDataString = formData.get("sanityImagesData") as string;
     const featured = formData.has("featured");
     const active = formData.has("active");
     let squareId = formData.get("squareId") as string;
-    // Get productId from the form data
     const productId = formData.get("productId") as string;
 
-    // Simple validation
     if (!name || !price || isNaN(price) || !productId) {
       console.error("Invalid product data");
       return;
     }
 
+    let sanityImages: SanityImage[] = [];
+    try {
+      sanityImages = sanityImagesDataString ? JSON.parse(sanityImagesDataString) : [];
+    } catch (e) {
+      console.error("Error parsing Sanity images data:", e);
+      return;
+    }
+    
+    // Generate image URLs from Sanity references
+    const prismaImageUrls = sanityImages
+      .map(img => {
+        const url = getImageUrlFromRef(img.asset._ref);
+        console.log('Generated image URL:', url, 'from ref:', img.asset._ref);
+        return url;
+      })
+      .filter((url): url is string => {
+        if (!url) {
+          console.warn('Failed to generate URL for image');
+          return false;
+        }
+        return true;
+      });
+
     try {
       // Update the product in the database
+      console.log('Updating product in database with images:', prismaImageUrls);
       const _updatedProduct = await prisma.product.update({
         where: { id: productId },
         data: {
@@ -59,83 +189,94 @@ export default async function EditProductPage({ params }: PageProps) {
           description,
           price,
           categoryId,
-          images,
+          images: prismaImageUrls,
           featured,
           active,
           squareId,
         },
       });
+      console.log('Database update successful');
 
-      // Try to update in Sanity if it exists
-      try {
-        // Find the product in Sanity by name or squareId
-        const sanityProductId = await client.fetch(
+      // Try to update in Sanity if we found an ID earlier or can find it now
+      let currentSanityProductId = sanityProductId;
+      if (!currentSanityProductId) {
+        console.log('Fetching Sanity product ID...');
+        currentSanityProductId = await client.fetch(
           `*[_type == "product" && (name == $name || squareId == $squareId)][0]._id`,
           { name, squareId }
         );
-        
-        if (sanityProductId) {
-          // First get the category name from the database for the Sanity reference
-          const dbCategory = await prisma.category.findUnique({
-            where: { id: categoryId }
-          });
-          
-          // Find the Sanity category document by name
-          let categorySanityId = null;
-          if (dbCategory) {
-            categorySanityId = await client.fetch(
-              `*[_type == "productCategory" && name == $categoryName][0]._id`,
-              { categoryName: dbCategory.name }
-            );
-          }
-          
-          // Update the product in Sanity
-          await client
-            .patch(sanityProductId)
-            .set({
-              name,
-              description: description || '',
-              price,
-              featured,
-              squareId,
-              images: images.map(url => ({
-                _type: 'image',
-                url
-              })),
-              ...(categorySanityId && {
-                category: {
-                  _type: 'reference',
-                  _ref: categorySanityId
-                }
-              })
-            })
-            .commit();
-            
-          console.log(`Product updated in Sanity: ${sanityProductId}`);
-        } else {
-          console.log("Product not found in Sanity. Consider creating it.");
-        }
-      } catch (sanityError) {
-        // Log the error but continue - the product is already updated in our database
-        console.error("Error updating product in Sanity (continuing anyway):", sanityError);
       }
 
-      // In a real application, you would also update in Square
-      // This would typically use the squareId to make an API call to Square Catalog API
-      
+      if (currentSanityProductId) {
+        console.log('Found Sanity product ID:', currentSanityProductId);
+        const dbCategory = await prisma.category.findUnique({ where: { id: categoryId } });
+        let categorySanityRef = null;
+        if (dbCategory) {
+          console.log('Looking up category in Sanity:', dbCategory.name);
+          const categorySanityId = await client.fetch(
+            `*[_type == "productCategory" && name == $categoryName][0]._id`,
+            { categoryName: dbCategory.name }
+          );
+          if (categorySanityId) {
+            categorySanityRef = { _type: 'reference', _ref: categorySanityId };
+          }
+        }
+        
+        const sanityPatchData: SanityPatchData = {
+          name,
+          description: description || '',
+          price,
+          featured,
+          squareId: squareId || null,
+          images: sanityImages.map(img => ({ 
+            _type: 'image' as const,
+            _key: img._key || undefined,
+            asset: { _type: 'reference' as const, _ref: img.asset._ref }
+          })),
+        };
+        
+        if (categorySanityRef) {
+          sanityPatchData.category = {
+            _type: 'reference' as const,
+            _ref: categorySanityRef._ref
+          };
+        }
+
+        console.log('Updating Sanity with patch data:', JSON.stringify(sanityPatchData, null, 2));
+        await client
+          .patch(currentSanityProductId)
+          .set(sanityPatchData)
+          .unset(sanityPatchData.category ? [] : ['category'])
+          .commit();
+          
+        console.log(`Product updated in Sanity: ${currentSanityProductId}`);
+      } else {
+        console.log("Product not found in Sanity. Consider creating it.");
+      }
+
+      // Revalidate both pages
+      await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products`),
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`)
+      ]);
+
       console.log(`Product "${name}" updated successfully in database`);
-      
-      // Redirect to product list after update
       return redirect("/admin/products");
     } catch (error) {
-      // Check if this is a redirect "error" - if so, don't treat it as an error
       if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-        // This is actually a redirect, not an error - let it proceed
         throw error;
       }
-      
-      console.error("Error updating product:", error);
-      // In a real app, you'd handle this error properly and show it to the user
+      console.error("Detailed error updating product:", {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        productId,
+        name,
+        categoryId,
+        sanityProductId,
+        hasImages: sanityImages.length > 0,
+        imageUrls: prismaImageUrls
+      });
       throw new Error("Failed to update product. Please try again.");
     }
   }
@@ -155,8 +296,9 @@ export default async function EditProductPage({ params }: PageProps) {
       <div className="bg-white shadow-md rounded-lg p-6">
         <form action={updateProduct}>
           <input type="hidden" name="productId" value={productId} />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="col-span-2">
+          
+          <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            <div className="sm:col-span-6">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Product Name
               </label>
@@ -170,7 +312,7 @@ export default async function EditProductPage({ params }: PageProps) {
               />
             </div>
 
-            <div className="col-span-2">
+            <div className="sm:col-span-6">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 Description
               </label>
@@ -183,7 +325,7 @@ export default async function EditProductPage({ params }: PageProps) {
               ></textarea>
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label htmlFor="price" className="block text-sm font-medium text-gray-700">
                 Price ($)
               </label>
@@ -199,7 +341,7 @@ export default async function EditProductPage({ params }: PageProps) {
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label htmlFor="squareId" className="block text-sm font-medium text-gray-700">
                 Square ID
               </label>
@@ -213,7 +355,7 @@ export default async function EditProductPage({ params }: PageProps) {
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
                 Category
               </label>
@@ -233,50 +375,43 @@ export default async function EditProductPage({ params }: PageProps) {
               </select>
             </div>
 
-            <div className="col-span-2">
-              <label htmlFor="images" className="block text-sm font-medium text-gray-700">
-                Images URLs (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="images"
-                id="images"
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                defaultValue={product.images.join(", ")}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+            <div className="sm:col-span-3"></div>
+
+            {/* Sanity Image Input Component */}
+            <div className="sm:col-span-6">
+              <SanityImageInput 
+                name="sanityImagesData"
+                initialImages={initialSanityImages}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Enter image URLs separated by commas
-              </p>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="sm:col-span-3 flex items-center">
               <input
                 type="checkbox"
                 name="featured"
                 id="featured"
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
                 defaultChecked={product.featured}
               />
-              <label htmlFor="featured" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="featured" className="text-sm font-medium text-gray-700">
                 Featured Product
               </label>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="sm:col-span-3 flex items-center">
               <input
                 type="checkbox"
                 name="active"
                 id="active"
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
                 defaultChecked={product.active}
               />
-              <label htmlFor="active" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="active" className="text-sm font-medium text-gray-700">
                 Active Product
               </label>
             </div>
 
-            <div className="col-span-2 flex justify-end space-x-4 mt-6">
+            <div className="sm:col-span-6 flex justify-end space-x-4 mt-6">
               <Link
                 href="/admin/products"
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"

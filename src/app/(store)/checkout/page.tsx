@@ -12,7 +12,7 @@ import { useCartStore } from '@/store/cart';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckoutSummary } from '@/components/store/CheckoutSummary';
+import { CheckoutSummary } from '@/components/Store/CheckoutSummary';
 
 // Form validation schema
 const checkoutSchema = z.object({

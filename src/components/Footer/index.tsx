@@ -6,21 +6,16 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">About Us</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">About</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/about" className="text-base text-gray-500 hover:text-gray-900">
-                  Our Story
+                <Link href="/contact-about/chef-story" className="text-base text-gray-500 hover:text-gray-900">
+                  Chef&apos;s Story
                 </Link>
               </li>
               <li>
-                <Link href="/careers" className="text-base text-gray-500 hover:text-gray-900">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/press" className="text-base text-gray-500 hover:text-gray-900">
-                  Press
+                <Link href="/contact-about/location-hours" className="text-base text-gray-500 hover:text-gray-900">
+                  Location & Hours
                 </Link>
               </li>
             </ul>
@@ -29,8 +24,8 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/contact" className="text-base text-gray-500 hover:text-gray-900">
-                  Contact Us
+                <Link href="/contact-about/contact-form" className="text-base text-gray-500 hover:text-gray-900">
+                  Contact Form
                 </Link>
               </li>
               <li>
@@ -66,21 +61,21 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Connect</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Offerings</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/newsletter" className="text-base text-gray-500 hover:text-gray-900">
-                  Newsletter
+                <Link href="/alfajores" className="text-base text-gray-500 hover:text-gray-900">
+                  Our Alfajores
                 </Link>
               </li>
               <li>
-                <Link href="/social" className="text-base text-gray-500 hover:text-gray-900">
-                  Social Media
+                <Link href="/catering" className="text-base text-gray-500 hover:text-gray-900">
+                  Our Catering
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-base text-gray-500 hover:text-gray-900">
-                  Blog
+                <Link href="/empanadas" className="text-base text-gray-500 hover:text-gray-900">
+                  Our Empanadas
                 </Link>
               </li>
             </ul>

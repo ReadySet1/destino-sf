@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { getProductBySlug } from '@/lib/sanity-products';
-import { ProductDetail, type Product } from '@/components/store/ProductDetail';
+import { ProductDetail, type Product } from '@/components/Store/ProductDetail';
 import { type JSX } from 'react'; // Import JSX type
 
 // Define the shape of the *resolved* params
