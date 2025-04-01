@@ -40,7 +40,7 @@ export default function Hero() {
         <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full">
           <div className="relative h-full w-full bg-gradient-to-r from-indigo-500 to-purple-600">
             <Image 
-              src="/images/hero/hero-empanada.png" 
+              src="/images/hero/hero-empanada.jpg" 
               alt="Hero Image" 
               fill 
               className="object-cover"
