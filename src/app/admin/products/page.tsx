@@ -142,114 +142,118 @@ export default async function ProductsPage() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-4 mb-6">
         <h1 className="text-2xl font-bold">Product Management</h1>
-        <div className="flex gap-2">
-          <select className="border rounded p-2">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr,2fr,1fr] gap-3 w-full items-start">
+          <select className="border rounded p-2 w-full min-w-0">
             <option value="all">All Categories</option>
             {/* Categories would be populated from DB */}
           </select>
           <input
             type="text"
             placeholder="Search products..."
-            className="border rounded p-2"
+            className="border rounded p-2 w-full min-w-0"
           />
-          <Link
-            href="/admin/categories"
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-          >
-            Manage Categories
-          </Link>
-          <Link
-            href="/admin/products/new"
-            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-          >
-            Add Product
-          </Link>
+          <div className="flex flex-col md:flex-row gap-2 w-full">
+            <Link
+              href="/admin/categories"
+              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
+            >
+              Manage Categories
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
+            >
+              Add Product
+            </Link>
+          </div>
         </div>
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Image
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Featured
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {product.images && product.images.length > 0 && product.images[0] ? (
-                    <div className="h-12 w-12 relative">
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover rounded"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
-                      <span className="text-xs text-gray-500">No image</span>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {product.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.category.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  ${Number(product.price).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {product.active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.featured ? 'Yes' : 'No'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <form action={editProduct} className="inline">
-                    <input type="hidden" name="id" value={product.id} />
-                    <button type="submit" className="text-indigo-600 hover:text-indigo-900 mr-2">
-                      Edit
-                    </button>
-                  </form>
-                  <form action={deleteProduct} className="inline">
-                    <input type="hidden" name="id" value={product.id} />
-                    <input type="hidden" name="productName" value={product.name} />
-                    <DeleteButton productName={product.name} />
-                  </form>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full divide-y divide-gray-200 table-fixed">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="w-20 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Image
+                </th>
+                <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="hidden sm:table-cell w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
+                <th className="hidden sm:table-cell w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="hidden sm:table-cell w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Featured
+                </th>
+                <th className="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {product.images && product.images.length > 0 && product.images[0] ? (
+                      <div className="h-12 w-12 relative">
+                        <Image
+                          src={product.images[0]}
+                          alt={product.name}
+                          fill
+                          className="object-cover rounded"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
+                        <span className="text-xs text-gray-500">No image</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-[150px]">
+                    {product.name}
+                  </td>
+                  <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
+                    {product.category.name}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    ${Number(product.price).toFixed(2)}
+                  </td>
+                  <td className="hidden sm:table-cell px-4 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {product.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
+                    {product.featured ? 'Yes' : 'No'}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <form action={editProduct} className="inline">
+                      <input type="hidden" name="id" value={product.id} />
+                      <button type="submit" className="text-indigo-600 hover:text-indigo-900 mr-2">
+                        Edit
+                      </button>
+                    </form>
+                    <form action={deleteProduct} className="inline">
+                      <input type="hidden" name="id" value={product.id} />
+                      <input type="hidden" name="productName" value={product.name} />
+                      <DeleteButton productName={product.name} />
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

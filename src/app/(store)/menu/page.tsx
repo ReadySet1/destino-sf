@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/Store/ProductGrid';
 import { CategoryTabs } from '@/components/Store/CategoryTabs';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { type JSX } from 'react'; // Import JSX type
 
 interface Category {
@@ -77,28 +79,32 @@ export default async function MenuPage({
   }
 
   return (
-    <main className="bg-white py-8">
-      <div className="container mx-auto px-4">
-        <h1 className="mb-8 text-center text-4xl font-bold">Our Menu</h1>
-        <CategoryTabs
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-        />
-        <div className="mt-8">
-          <h2 className="mb-6 text-2xl font-semibold">{selectedCategory.name}</h2>
-          <Suspense key={selectedCategoryId} fallback={<div className="text-center">Loading products...</div>}>
-            {products.length > 0 ? (
-              <ProductGrid 
-                products={products} 
-              />
-            ) : (
-              <p className="py-8 text-center text-gray-500">
-                No products available in this category.
-              </p>
-            )}
-          </Suspense>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 bg-white py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="mb-8 text-center text-4xl font-bold">Our Menu</h1>
+          <CategoryTabs
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+          />
+          <div className="mt-8">
+            <h2 className="mb-6 text-2xl font-semibold">{selectedCategory.name}</h2>
+            <Suspense key={selectedCategoryId} fallback={<div className="text-center">Loading products...</div>}>
+              {products.length > 0 ? (
+                <ProductGrid 
+                  products={products} 
+                />
+              ) : (
+                <p className="py-8 text-center text-gray-500">
+                  No products available in this category.
+                </p>
+              )}
+            </Suspense>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }

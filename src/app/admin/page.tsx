@@ -68,10 +68,10 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="container mx-auto py-4 md:py-10">
+      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Admin Dashboard</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <DashboardCard 
           title="Orders" 
           href="/admin/orders" 
@@ -104,11 +104,11 @@ export default async function AdminDashboard() {
         />
       </div>
       
-      <div className="mt-10 p-4 bg-gray-100 rounded-lg">
-        <p className="text-sm text-gray-600 mb-2">Debug Info:</p>
-        <p className="text-sm">User: {user.email} (ID: {user.id})</p>
-        <p className="text-sm">Role Value: {profileRole}</p>
-        <p className="text-sm">Is Admin: {isUserAdmin ? "Yes" : "No"}</p>
+      <div className="mt-6 md:mt-10 p-3 md:p-4 bg-gray-100 rounded-lg">
+        <p className="text-xs md:text-sm text-gray-600 mb-2">Debug Info:</p>
+        <p className="text-xs md:text-sm">User: {user.email} (ID: {user.id})</p>
+        <p className="text-xs md:text-sm">Role Value: {profileRole}</p>
+        <p className="text-xs md:text-sm">Is Admin: {isUserAdmin ? "Yes" : "No"}</p>
       </div>
     </div>
   );
@@ -126,10 +126,10 @@ function DashboardCard({
   return (
     <Link 
       href={href} 
-      className="block p-6 bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-50"
+      className="block p-4 md:p-6 bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-50 transition-colors duration-200"
     >
-      <h5 className="mb-2 text-xl font-bold tracking-tight">{title}</h5>
-      <p className="text-gray-600">{description}</p>
+      <h5 className="mb-2 text-lg md:text-xl font-bold tracking-tight">{title}</h5>
+      <p className="text-sm md:text-base text-gray-600">{description}</p>
     </Link>
   );
 } 

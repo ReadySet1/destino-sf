@@ -3,20 +3,56 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/Products/ProductCard";
 import { Category, Product } from '@/types/product';
+import { getAllProducts } from '@/lib/sanity-products';
 
 export default async function ProductsPage() {
-  // Fetch products with their variants and categories
-  const products = await prisma.product.findMany({
-    where: {
-      active: true,
-    },
-    include: {
-      variants: true,
-      category: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+  // Fetch products from both Sanity and database
+  const [sanityProducts, dbProducts] = await Promise.all([
+    getAllProducts(),
+    prisma.product.findMany({
+      where: {
+        active: true,
+      },
+      include: {
+        variants: true,
+        category: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+  ]);
+
+  // Create a map of database products by squareId for easy lookup
+  const dbProductsMap = new Map(
+    dbProducts.map(product => [product.squareId, product])
+  );
+
+  // Combine products from both sources
+  const combinedProducts = sanityProducts.map(sanityProduct => {
+    const dbProduct = dbProductsMap.get(sanityProduct.slug?.current || sanityProduct.slug);
+    
+    // Determine the ID, handling potential slug object from Sanity
+    let rawId = sanityProduct.slug;
+    if (typeof rawId === 'object' && rawId !== null && 'current' in rawId) {
+      rawId = rawId.current;
+    }
+    const productId = String(rawId || dbProduct?.id || '');
+
+    return {
+      ...sanityProduct,
+      id: productId,
+      slug: productId, // Use the same string ID for slug consistency here
+      // Override or add database-specific fields
+      price: dbProduct?.price ? Number(dbProduct.price) : sanityProduct.price,
+      variants: dbProduct?.variants?.map(variant => ({
+        ...variant,
+        id: String(variant.id),
+        price: variant.price ? Number(variant.price) : null,
+      })) || [],
+      stock: dbProduct?.stock,
+      active: dbProduct?.active ?? true,
+    };
   });
 
   // Fetch categories for filter
@@ -60,12 +96,12 @@ export default async function ProductsPage() {
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product: Product) => (
+            {combinedProducts.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
-          {products.length === 0 && (
+          {combinedProducts.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No products found.</p>
             </div>

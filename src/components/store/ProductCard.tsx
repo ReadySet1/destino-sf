@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useCartStore } from '@/store/cart';
+import { toast } from 'sonner';
 
 interface Product {
   _id: string;
@@ -15,13 +17,26 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: () => void;
 }
 
-export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCartStore();
+
+  const handleAddToCart = () => {
+    addItem({
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.images?.[0] || '',
+    });
+    
+    toast.success(`${product.name} added to cart!`);
+  };
+
   return (
     <div className="group relative overflow-hidden rounded-lg border bg-white shadow-md transition hover:shadow-lg">
-      <Link href={`/product/${product.slug.current}`} className="block">
+      <Link href={`/products/${product.slug.current}`} className="block">
         <div className="aspect-square overflow-hidden">
           {product.images && product.images[0] ? (
             <Image
@@ -51,7 +66,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <Button 
           onClick={(e) => {
             e.preventDefault();
-            onAddToCart();
+            handleAddToCart();
           }}
           className="w-full"
         >

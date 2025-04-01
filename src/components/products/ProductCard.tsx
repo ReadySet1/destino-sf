@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Decimal } from "@prisma/client/runtime/library";
+import { useCartStore } from "@/store/cart";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
@@ -28,10 +30,36 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const displayPrice = selectedVariant?.price || product.price;
   const mainImage = product.images[0] || '/placeholder-product.png';
+  
+  // Explicitly ensure productId is a string before creating the URL
+  const productId = String(product.id ?? ''); // Use nullish coalescing for safety
+  const productUrl = `/products/${productId}`;
+
+  // Debug log to inspect values
+  console.log('ProductCard - product.id:', product.id, 'productId:', productId, 'productUrl:', productUrl);
+
+  const { addItem } = useCartStore();
+
+  // Function to handle adding to cart
+  const handleAddToCart = () => {
+    const priceToAdd = typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice 
+                         ? displayPrice.toNumber() 
+                         : Number(displayPrice);
+
+    addItem({
+      id: product.id, // Use product.id directly if it's the main identifier
+      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
+      price: priceToAdd, // Ensure price is a number
+      quantity: 1, // Add one item at a time from the card
+      image: mainImage,
+      variantId: selectedVariant?.id,
+    });
+    toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} added to cart!`);
+  };
 
   return (
     <div className="group relative border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-      <Link href={`/products/${product.id}`}>
+      <Link href={productUrl}>
         <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200">
           <Image
             src={mainImage}
@@ -52,7 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <div className="p-4">
         <h3 className="text-lg font-semibold">
-          <Link href={`/products/${product.id}`}>{product.name}</Link>
+          <Link href={productUrl}>{product.name}</Link>
         </h3>
         
         <p className="text-gray-600 mt-1">${formatPrice(displayPrice)}</p>
@@ -84,10 +112,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <button 
           className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
-          onClick={() => {
-            // TODO: Implement add to cart functionality
-            console.log('Add to cart:', product.id, selectedVariant?.id);
-          }}
+          onClick={handleAddToCart}
         >
           Add to Cart
         </button>
