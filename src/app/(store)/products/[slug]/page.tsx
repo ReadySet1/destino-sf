@@ -1,10 +1,10 @@
-// src/app/(store)/products/[slug]/page.tsx
-
 import { getProductBySlug } from '@/lib/sanity-products';
 import { prisma } from '@/lib/prisma';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductDetails from '@/components/Products/ProductDetails';
+import { Decimal } from '@prisma/client/runtime/library';
+import { Product, Variant } from '@/types/product';
 
 // Define a type for Sanity variants
 interface SanityVariant {
@@ -13,6 +13,17 @@ interface SanityVariant {
   name: string;
   price?: number | null;
   squareVariantId?: string;
+}
+
+// Define a type for DB variants that matches the Prisma model
+interface PrismaVariant {
+  id: string;
+  name: string;
+  price: Decimal | null;
+  squareVariantId: string | null;
+  productId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // PageProps interface that aligns with your project's constraints
@@ -57,22 +68,26 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   // Combine product data (prioritize Sanity, supplement with DB)
-  // Adapt this logic based on how you want to merge data
-  const product = {
+  // Transform to match the Product interface
+  const product: Product = {
     ...(sanityProduct || {}),
     id: dbProduct?.id || String(slug),
     squareId: dbProduct?.squareId || String(slug),
     // Add/override fields from dbProduct if available
     price: dbProduct?.price ? Number(dbProduct.price) : (sanityProduct?.price || 0),
-    variants: dbProduct?.variants?.map(variant => ({
-      ...variant,
-      id: String(variant.id),
-      price: variant.price ? Number(variant.price) : null,
-    })) || (sanityProduct?.variants as SanityVariant[] || []).map(variant => ({
-      id: String(variant._id || variant.id),
+    variants: dbProduct?.variants?.map((variant: PrismaVariant): Variant => ({
+      id: variant.id,
       name: variant.name,
       price: variant.price ? Number(variant.price) : null,
       squareVariantId: variant.squareVariantId,
+      productId: variant.productId,
+      createdAt: variant.createdAt,
+      updatedAt: variant.updatedAt,
+    })) || (sanityProduct?.variants as SanityVariant[] || []).map((variant: SanityVariant): Variant => ({
+      id: String(variant._id || variant.id || ''),
+      name: variant.name,
+      price: variant.price || null,
+      squareVariantId: variant.squareVariantId || null,
       productId: dbProduct?.id || String(slug),
       createdAt: new Date(),
       updatedAt: new Date(),
