@@ -27,7 +27,7 @@ export default async function ProductsPage() {
 
   // Create a map of database products by squareId for easy lookup
   const dbProductsMap = new Map(
-    dbProducts.map(product => [product.squareId, product])
+    dbProducts.map((product: Product) => [product.squareId, product])
   );
 
   // Combine products from both sources
