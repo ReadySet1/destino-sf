@@ -75,13 +75,13 @@ export default function Navbar() {
                     Menu
                   </SheetTitle>
                   <nav className="flex flex-col space-y-4">
-                    <Link href="/alfajores" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
+                    <Link href="/products/category/alfajores" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
                       Our Alfajores
                     </Link>
                     <Link href="/catering" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
                       Our Catering
                     </Link>
-                    <Link href="/empanadas" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
+                    <Link href="/products/category/empanadas" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
                       Our Empanadas
                     </Link>
                     <Link href="/contact-about" className="text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100">
