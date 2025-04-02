@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { client } from "@/sanity/lib/client";
-import { SanityImageInput, SanityImage } from "@/components/admin/SanityImageInput";
+import { SanityImageInput, SanityImage } from "@/components/Admin/SanityImageInput";
 
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;

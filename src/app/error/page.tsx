@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function ErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -11,14 +13,14 @@ export default function ErrorPage() {
           </p>
         </div>
         <div className="mt-8">
-          <a
+          <Link
             href="/login"
             className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Return to login
-          </a>
+          </Link>
         </div>
       </div>
     </div>
   )
-} 
+}

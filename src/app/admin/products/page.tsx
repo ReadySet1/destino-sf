@@ -1,3 +1,5 @@
+// src/app/admin/products/page.tsx
+
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";

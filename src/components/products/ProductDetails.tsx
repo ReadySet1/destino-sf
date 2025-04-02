@@ -1,3 +1,5 @@
+// src/components/Products/ProductDetails.tsx
+
 'use client';
 
 import { useState } from 'react';
@@ -36,7 +38,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active;
-  const stock = 999; // Default to 999 if not specified
+  const stock: number = 999; // Explicitly type as number
 
 
   const handleAddToCart = () => {

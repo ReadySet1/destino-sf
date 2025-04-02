@@ -1,3 +1,5 @@
+// src/app/(store)/products/page.tsx
+
 import { prisma } from '@/lib/prisma';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -30,15 +32,14 @@ export default async function ProductsPage() {
 
   // Combine products from both sources
   const combinedProducts = sanityProducts.map(sanityProduct => {
-    const dbProduct = dbProductsMap.get(sanityProduct.slug?.current || sanityProduct.slug);
-    
     // Determine the ID, handling potential slug object from Sanity
-    let rawId = sanityProduct.slug;
+    let rawId = sanityProduct.slug as string | { current: string };
     if (typeof rawId === 'object' && rawId !== null && 'current' in rawId) {
       rawId = rawId.current;
     }
-    const productId = String(rawId || dbProduct?.id || '');
-
+    const productId = String(rawId || '');
+    const dbProduct = dbProductsMap.get(productId);
+    
     return {
       ...sanityProduct,
       id: productId,
@@ -50,8 +51,12 @@ export default async function ProductsPage() {
         id: String(variant.id),
         price: variant.price ? Number(variant.price) : null,
       })) || [],
-      stock: dbProduct?.stock,
       active: dbProduct?.active ?? true,
+      createdAt: dbProduct?.createdAt || new Date(),
+      updatedAt: dbProduct?.updatedAt || new Date(),
+      categoryId: dbProduct?.categoryId || sanityProduct.categoryId || '',
+      category: dbProduct?.category,
+      featured: dbProduct?.featured ?? sanityProduct.featured ?? false,
     };
   });
 

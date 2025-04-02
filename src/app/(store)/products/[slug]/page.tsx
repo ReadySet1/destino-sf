@@ -1,14 +1,27 @@
+// src/app/(store)/products/[slug]/page.tsx
+
 import { getProductBySlug } from '@/lib/sanity-products';
 import { prisma } from '@/lib/prisma';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ProductDetails from '@/components/Products/ProductDetails'; // Assuming you have or will create this
+import ProductDetails from '@/components/Products/ProductDetails';
 
-export default async function ProductPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+// Define a type for Sanity variants
+interface SanityVariant {
+  _id?: string;
+  id?: string;
+  name: string;
+  price?: number | null;
+  squareVariantId?: string;
+}
+
+// PageProps interface that aligns with your project's constraints
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function ProductPage({ params }: PageProps) {
+  // Await the params to get the slug
   const { slug } = await params;
 
   // Fetch product from Sanity
@@ -55,7 +68,7 @@ export default async function ProductPage({
       ...variant,
       id: String(variant.id),
       price: variant.price ? Number(variant.price) : null,
-    })) || (sanityProduct?.variants || []).map(variant => ({
+    })) || (sanityProduct?.variants as SanityVariant[] || []).map(variant => ({
       id: String(variant._id || variant.id),
       name: variant.name,
       price: variant.price ? Number(variant.price) : null,
@@ -64,8 +77,7 @@ export default async function ProductPage({
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
-    stock: dbProduct?.stock ?? sanityProduct?.stock ?? 999,
-    active: dbProduct?.active ?? sanityProduct?.active ?? true,
+    active: dbProduct?.active ?? true,
     // Ensure essential fields like name, images are present
     name: sanityProduct?.name || dbProduct?.name || 'Unnamed Product',
     images: sanityProduct?.images || dbProduct?.images || [],
@@ -73,7 +85,7 @@ export default async function ProductPage({
     featured: sanityProduct?.featured || dbProduct?.featured || false,
     categoryId: sanityProduct?.categoryId || dbProduct?.categoryId || '',
     category: dbProduct?.category || {
-      id: sanityProduct?.category?._id || '',
+      id: typeof sanityProduct?.category === 'object' && sanityProduct.category?._id ? sanityProduct.category._id : '',
       name: typeof sanityProduct?.category === 'string' ? sanityProduct.category : sanityProduct?.category?.name || '',
       description: null,
       order: 0,
@@ -96,4 +108,4 @@ export default async function ProductPage({
       <Footer />
     </div>
   );
-} 
+}
