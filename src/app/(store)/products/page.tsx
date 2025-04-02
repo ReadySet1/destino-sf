@@ -19,6 +19,9 @@ type CombinedProduct = Omit<Product, 'category' | 'featured'> & {
   slug: string;
 };
 
+// Type for the accumulator in the reduce function
+type ProductCategoryMap = Record<string, CombinedProduct[]>;
+
 export default async function ProductsPage() {
   // Fetch products from both Sanity and database
   const [sanityProducts, dbProducts] = await Promise.all([
@@ -74,7 +77,7 @@ export default async function ProductsPage() {
   });
 
   // Group products by category
-  const productsByCategory = combinedProducts.reduce((acc, product) => {
+  const productsByCategory = combinedProducts.reduce((acc: ProductCategoryMap, product: CombinedProduct) => {
     const categoryName = typeof product.category === 'string' 
       ? product.category 
       : product.category?.name || 'Uncategorized';
@@ -84,7 +87,7 @@ export default async function ProductsPage() {
     }
     acc[categoryName].push(product);
     return acc;
-  }, {} as Record<string, CombinedProduct[]>);
+  }, {} as ProductCategoryMap);
 
   return (
     <div className="min-h-screen bg-background">
