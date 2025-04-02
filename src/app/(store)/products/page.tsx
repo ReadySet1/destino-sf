@@ -5,7 +5,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/Products/ProductCard";
 import { Category, Product } from '@/types/product';
-import { getAllProducts } from '@/lib/sanity-products';
+import { getAllProducts, SanityProduct } from '@/lib/sanity-products';
+
+// Type for the transformed Sanity product
+type TransformedSanityProduct = Omit<SanityProduct, 'images'> & {
+  images: string[];
+};
 
 export default async function ProductsPage() {
   // Fetch products from both Sanity and database
@@ -31,7 +36,7 @@ export default async function ProductsPage() {
   );
 
   // Combine products from both sources
-  const combinedProducts = sanityProducts.map(sanityProduct => {
+  const combinedProducts = sanityProducts.map((sanityProduct: TransformedSanityProduct) => {
     // Determine the ID, handling potential slug object from Sanity
     let rawId = sanityProduct.slug as string | { current: string };
     if (typeof rawId === 'object' && rawId !== null && 'current' in rawId) {
