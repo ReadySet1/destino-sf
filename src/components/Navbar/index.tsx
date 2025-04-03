@@ -1,33 +1,43 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
-import { useCartStore } from '@/store/cart';
-import { useEffect, useState } from 'react';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import Image from "next/image";
+import { ShoppingCart, User, Search, Menu } from "lucide-react";
+import { useCartStore } from "@/store/cart";
+import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const { items, totalItems } = useCartStore();
 
-  // Wait until after hydration to show the cart count
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    console.log('Cart items:', items);
-    console.log('Total items:', totalItems);
+    console.log("Cart items:", items);
+    console.log("Total items:", totalItems);
   }, [items, totalItems]);
 
   return (
     <nav className="border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
-          <div className="flex">
-            <div className="flex flex-shrink-0 items-center">
+        <div className="relative flex h-16 items-center justify-between">
+          {/* Sección izquierda - Logo (Siempre visible) y Enlaces de navegación (Desktop) */}
+          <div className="flex items-center w-full sm:w-auto">
+            {" "}
+            {/* Removed justify-between */}
+            {/* Logo - Izquierda en desktop, centrado en móvil */}
+            <div className="flex justify-center sm:justify-start sm:mr-8 w-full sm:w-auto">
+              {" "}
+              {/* Added justify-center and w-full on mobile */}
               <Link href="/" className="flex items-center">
                 <Image
                   src="/images/logo/logo-destino.png"
@@ -38,7 +48,7 @@ export default function Navbar() {
                 />
               </Link>
             </div>
-            {/* Desktop Navigation */}
+            {/* Enlaces de navegación (Desktop) */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
                 href="/products/category/alfajores"
@@ -66,11 +76,16 @@ export default function Navbar() {
               </Link>
             </div>
           </div>
+
+          {/* Sección derecha - Iconos (Siempre visible) */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-400 hover:text-gray-500">
+            <button className="hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex">
               <Search className="h-6 w-6" />
             </button>
-            <Link href="/cart" className="relative p-2 text-gray-400 hover:text-gray-500">
+            <Link
+              href="/cart"
+              className="relative hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex"
+            >
               <ShoppingCart className="h-6 w-6" />
               {mounted && items.length > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-bold text-white">
@@ -78,19 +93,33 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-            <Link href="/account" className="p-2 text-gray-400 hover:text-gray-500">
+            <Link
+              href="/account"
+              className="hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex"
+            >
               <User className="h-6 w-6" />
             </Link>
-            {/* Mobile Menu Button */}
+
+            {/* Menú móvil */}
             <div className="sm:hidden">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="Open menu" className="text-black">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Open menu"
+                    className="text-black"
+                  >
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] bg-black sm:w-[400px]">
-                  <SheetTitle className="mb-4 text-lg font-bold text-white">Menu</SheetTitle>
+                <SheetContent
+                  side="right"
+                  className="w-[300px] bg-black sm:w-[400px]"
+                >
+                  <SheetTitle className="mb-4 text-lg font-bold text-white">
+                    Menu
+                  </SheetTitle>
                   <nav className="flex flex-col space-y-4">
                     <Link
                       href="/products/category/alfajores"
@@ -116,6 +145,34 @@ export default function Navbar() {
                     >
                       Contact / About
                     </Link>
+                    <div className="mt-4 flex justify-around border-t border-gray-700 pt-4">
+                      <Link
+                        href="/search"
+                        className="p-2 text-white hover:text-gray-300"
+                      >
+                        <Search className="h-6 w-6" />
+                      </Link>
+                      <Link
+                        href="/cart"
+                        className="relative p-2 text-white hover:text-gray-300"
+                      >
+                        <ShoppingCart className="h-6 w-6" />
+                        {mounted && items.length > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-bold text-white">
+                            {items.reduce(
+                              (total, item) => total + item.quantity,
+                              0
+                            )}
+                          </span>
+                        )}
+                      </Link>
+                      <Link
+                        href="/account"
+                        className="p-2 text-white hover:text-gray-300"
+                      >
+                        <User className="h-6 w-6" />
+                      </Link>
+                    </div>
                   </nav>
                 </SheetContent>
               </Sheet>
