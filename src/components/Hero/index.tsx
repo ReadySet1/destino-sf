@@ -1,51 +1,148 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from "next/link";
+import Image from "next/image";
+import { Dancing_Script } from "next/font/google";
+
+const dancingScript = Dancing_Script({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+interface MenuItemType {
+  id: string;
+  name: string;
+  imageUrl: string;
+  slug: string;
+}
+
 export default function Hero() {
+  // Menu item data - replace with actual data from your API or CMS
+  const menuItems: MenuItemType[] = [
+    {
+      id: "1",
+      name: "Our Empanadas ",
+      imageUrl: "/images/homepage/empanadas.png",
+      slug: "empanadas",
+    },
+    {
+      id: "2",
+      name: "Our Alfajores",
+      imageUrl: "/images/homepage/alfajor.png",
+      slug: "alfajores",
+    },
+    {
+      id: "3",
+      name: "Catering",
+      imageUrl: "/images/homepage/catering.png",
+      slug: "catering",
+    },
+  ];
+
+  // Popular empanadas data
+  const popularEmpanadas: MenuItemType[] = [
+    {
+      id: "4",
+      name: "Beef Empanada",
+      imageUrl: "/images/homepage/empanadas 3.png",
+      slug: "beef-empanada",
+    },
+  ];
+
   return (
-    <div className="relative bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-          <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-            <div className="sm:text-center lg:text-left">
-              <h1 className="text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl md:text-5xl lg:text-6xl">
-                <span className="block">Welcome to</span>
-                <span className="block text-indigo-600">Destino SF</span>
+    <div className="flex min-h-screen flex-col">
+      {/* Hero Section with Empanada Image and CTA */}
+      <div className="relative w-full overflow-hidden">
+        {/* Image container with proper sizing */}
+        <div className="relative h-[500px] w-full">
+          <Image
+            src="/images/homepage/empanadas 2.png"
+            alt="Delicious Empanadas"
+            fill
+            className="object-cover"
+            priority
+          />
+
+          {/* Content overlay */}
+          <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
+            <div className="max-w-xl text-white">
+              <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl">
+                Flakey, golden empanadas
+                <br />
+                filled with rich flavors
               </h1>
-              <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                Discover our curated collection of unique products. Shop the latest trends and find exactly what you&apos;re looking for.
-              </p>
-              <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start space-y-3 sm:space-y-0 sm:space-x-3">
-                <div className="rounded-md shadow">
-                  <Link
-                    href="/products"
-                    className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-8"
-                  >
-                    Shop Now
-                  </Link>
-                </div>
-                <div className="mt-3 sm:mt-0">
-                  <Link
-                    href="/categories"
-                    className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-8"
-                  >
-                    Browse Categories
-                  </Link>
-                </div>
-              </div>
+              <Link
+                href="/order"
+                className="mt-6 inline-block rounded-full bg-yellow-400 px-8 py-4 text-lg font-semibold text-gray-800 transition-all hover:bg-yellow-500"
+              >
+                Order Now
+              </Link>
             </div>
-          </main>
+          </div>
         </div>
       </div>
-      <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-        <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full">
-          <div className="relative h-full w-full bg-gradient-to-r from-indigo-500 to-purple-600">
-            <Image 
-              src="/images/hero/hero-empanada.jpg" 
-              alt="Hero Image" 
-              fill 
-              className="object-cover"
-              priority
-            />
+
+      {/* Popular Empanadas Section */}
+      <div className="bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2
+            className={`mb-6 text-center text-4xl text-black md:mb-12 md:text-5xl ${dancingScript.className}`}
+          >
+            Popular Empanadas
+          </h2>
+        </div>
+
+        {/* Contenedor de imagen responsivo */}
+        <div className="w-full px-0 sm:px-4">
+          {popularEmpanadas.map((empanada) => (
+            <Link
+              href={`/products/${empanada.slug}`}
+              key={empanada.id}
+              className="block transition-transform duration-300 hover:scale-[1.02]"
+            >
+              <div className="relative h-[60vw] w-full overflow-hidden md:h-[35vw] lg:h-[500px]">
+                <Image
+                  src={empanada.imageUrl}
+                  alt={empanada.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1000px"
+                  priority
+                />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Menu Section with Yellow Background */}
+      <div className="bg-yellow-400 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-16 text-center text-5xl font-bold text-gray-800">
+            Menu
+          </h2>
+
+          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+            {menuItems.map((item) => (
+              <Link
+                href={`/menu/${item.slug}`}
+                key={item.id}
+                className="flex flex-col items-center"
+              >
+                <div className="relative h-48 w-48 overflow-hidden rounded-full border-4 border-white shadow-lg">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <h3
+                  className={`mt-6 text-2xl text-gray-800 ${dancingScript.className}`}
+                >
+                  {item.name}
+                </h3>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
