@@ -1,18 +1,13 @@
-// import HeaderAuth from "@/components/header-auth";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { Inter } from "next/font/google";
+import { Inter, Quicksand } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Destino SF - Your Premium Shopping Destination",
-  description: "Discover our curated collection of unique products at Destino SF",
-};
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  weight: ["400", "700"], // Regular and Bold
+  variable: "--font-quicksand",
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,7 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.className} ${quicksand.variable}`}
+      suppressHydrationWarning
+    >
       <body className="bg-background text-foreground">
         <ThemeProvider
           attribute="class"

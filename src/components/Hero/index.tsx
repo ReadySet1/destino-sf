@@ -121,14 +121,16 @@ export default function Hero() {
             Menu
           </h2>
 
-          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-row justify-around items-center">
             {menuItems.map((item) => (
               <Link
                 href={`/menu/${item.slug}`}
                 key={item.id}
                 className="flex flex-col items-center"
               >
-                <div className="relative h-48 w-48 overflow-hidden rounded-full border-4 border-white shadow-lg">
+                <div
+                  className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-48 sm:w-48" // Reducimos el tamaño para móviles
+                >
                   <Image
                     src={item.imageUrl}
                     alt={item.name}
@@ -137,7 +139,7 @@ export default function Hero() {
                   />
                 </div>
                 <h3
-                  className={`mt-6 text-2xl text-gray-800 ${dancingScript.className}`}
+                  className={`mt-3 text-lg text-gray-800 ${dancingScript.className} sm:mt-6 sm:text-2xl`} // Reducimos el tamaño del texto para móviles
                 >
                   {item.name}
                 </h3>

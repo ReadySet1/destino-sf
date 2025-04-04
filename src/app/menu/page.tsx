@@ -1,7 +1,8 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import MenuBanner from "@/components/Menu";
-// import Footer from "@/components/Footer";
+import ProductList from "@/components/Products/ProductList";
+import Footer from "@/components/Footer";
 
 const MenuPage = () => {
   return (
@@ -9,8 +10,9 @@ const MenuPage = () => {
       {/* Content for Catering page will go here */}
       <Navbar />
       <MenuBanner />
+      <ProductList />
 
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 };
