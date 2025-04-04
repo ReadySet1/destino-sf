@@ -51,6 +51,13 @@ export default function Navbar() {
             {/* Enlaces de navegación (Desktop) */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
+                href="/menu"
+                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+              >
+                Menu
+              </Link>
+
+              <Link
                 href="/products/category/alfajores"
                 className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
               >
