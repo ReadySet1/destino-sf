@@ -18,14 +18,14 @@ const HomePage = jest.fn().mockImplementation(() => (
 // Mock the actual page implementation
 jest.mock('@/app/page', () => ({
   __esModule: true,
-  default: HomePage
+  default: HomePage,
 }));
 
 describe('HomePage', () => {
   it('renders correctly', () => {
     render(<HomePage />);
-    
-    // Test basic rendering 
+
+    // Test basic rendering
     expect(screen.getByTestId('hero-component')).toBeInTheDocument();
   });
 });

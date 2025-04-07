@@ -1,10 +1,10 @@
 // src/app/page.tsx
 
-import Hero from "@/components/Landing";
-import { CustomerTestimonials } from "@/components/Marketing/CustomerTestimonials";
-import { FeaturedProducts } from "@/components/Marketing/FeaturedProducts";
-import { PromotionBanner } from "@/components/Marketing/PromotionBanner";
-import { ShopByCategory } from "@/components/Marketing/ShopByCategory";
+import Hero from '@/components/Landing';
+import { CustomerTestimonials } from '@/components/Marketing/CustomerTestimonials';
+import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
+import { PromotionBanner } from '@/components/Marketing/PromotionBanner';
+import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
 // Removed Navbar and Footer imports since they're now in the layout
 
 export default async function Home() {

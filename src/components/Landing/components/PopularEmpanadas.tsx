@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import { Dancing_Script } from "next/font/google";
+import Link from 'next/link';
+import Image from 'next/image';
+import { Dancing_Script } from 'next/font/google';
 import useEmblaCarousel from 'embla-carousel-react';
 
 const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
 interface MenuItemType {
@@ -20,22 +20,22 @@ interface MenuItemType {
 
 const popularEmpanadas: MenuItemType[] = [
   {
-    id: "5",
-    name: "Oxtail Empanada",
-    imageUrl: "/images/hero/oxtail-empanada.JPG",
-    slug: "oxtail-empanada",
+    id: '5',
+    name: 'Oxtail Empanada',
+    imageUrl: '/images/hero/oxtail-empanada.JPG',
+    slug: 'oxtail-empanada',
   },
   {
-    id: "6",
-    name: "Lomo Saltado Empanada",
-    imageUrl: "/images/hero/lomo-saltado-empanada.jpeg",
-    slug: "lomo-saltado-empanada",
+    id: '6',
+    name: 'Lomo Saltado Empanada',
+    imageUrl: '/images/hero/lomo-saltado-empanada.jpeg',
+    slug: 'lomo-saltado-empanada',
   },
   {
-    id: "4",
-    name: "Huacatay Empanada",
-    imageUrl: "/images/hero/huacatay-empanada.jpg",
-    slug: "huacatay-empanada",
+    id: '4',
+    name: 'Huacatay Empanada',
+    imageUrl: '/images/hero/huacatay-empanada.jpg',
+    slug: 'huacatay-empanada',
   },
 ];
 
@@ -43,7 +43,7 @@ export function PopularEmpanadas() {
   const [emblaRef] = useEmblaCarousel({
     align: 'start',
     containScroll: 'trimSnaps',
-    dragFree: true
+    dragFree: true,
   });
 
   return (
@@ -61,13 +61,16 @@ export function PopularEmpanadas() {
           {/* Mobile Carousel */}
           <div className="md:hidden overflow-hidden" ref={emblaRef}>
             <div className="flex gap-4">
-              {popularEmpanadas.map((empanada) => (
+              {popularEmpanadas.map(empanada => (
                 <Link
                   key={empanada.id}
                   href={`/products/${empanada.slug}`}
                   className="block min-w-[85%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
                 >
-                  <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: "75%" }}>
+                  <div
+                    className="relative w-full rounded-2xl overflow-hidden"
+                    style={{ paddingBottom: '75%' }}
+                  >
                     <Image
                       src={empanada.imageUrl}
                       alt={empanada.name}
@@ -84,13 +87,16 @@ export function PopularEmpanadas() {
 
           {/* Desktop/Tablet Grid */}
           <div className="hidden md:flex md:gap-8 md:px-4 lg:gap-12">
-            {popularEmpanadas.map((empanada) => (
+            {popularEmpanadas.map(empanada => (
               <Link
                 key={empanada.id}
                 href={`/products/${empanada.slug}`}
                 className="block w-[300px] lg:w-[350px] transition-transform duration-300 hover:scale-[1.02]"
               >
-                <div className="relative rounded-2xl overflow-hidden" style={{ paddingBottom: "75%" }}>
+                <div
+                  className="relative rounded-2xl overflow-hidden"
+                  style={{ paddingBottom: '75%' }}
+                >
                   <Image
                     src={empanada.imageUrl}
                     alt={empanada.name}
@@ -107,4 +113,4 @@ export function PopularEmpanadas() {
       </div>
     </div>
   );
-} 
+}

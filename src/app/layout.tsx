@@ -1,21 +1,21 @@
-import { Inter, Quicksand } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { CartAlert } from "@/components/ui/cart-alert";
-import "./styles/globals.css";
+import { Inter, Quicksand } from 'next/font/google';
+import { ThemeProvider } from 'next-themes';
+import { ThemeSwitcher } from '@/components/theme-switcher';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { CartAlert } from '@/components/ui/cart-alert';
+import './styles/globals.css';
 
 const quicksand = Quicksand({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700"], // Light, Regular, Medium and Bold
-  variable: "--font-quicksand",
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'], // Light, Regular, Medium and Bold
+  variable: '--font-quicksand',
 });
 
 const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
 });
 
 export default function RootLayout({
@@ -50,4 +50,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-} 
+}

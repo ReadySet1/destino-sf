@@ -2,19 +2,24 @@
 
 import { prisma } from '@/lib/prisma';
 import ProductCard from "@/components/Products/ProductCard";
-import { Category, Product } from '@/types/product';
+import { Category, Product, Variant } from '@/types/product';
 import { getAllProducts, SanityProduct } from '@/lib/sanity-products';
 
 // Type for the transformed Sanity product
-type TransformedSanityProduct = Omit<SanityProduct, 'images'> & {
+type TransformedSanityProduct = Omit<SanityProduct, 'images' | 'variants'> & {
   images: string[];
+  variants: Variant[];
+  id: string;
+  squareId: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  categoryId: string;
 };
 
 // Type for the combined product from both sources
-type CombinedProduct = Omit<Product, 'category' | 'featured'> & {
+type CombinedProduct = Omit<Product, 'category'> & {
   category?: Category | string | { _id: string; name: string; slug: { current: string } };
-  featured: boolean;
-  slug: string;
 };
 
 // Type for the accumulator in the reduce function
@@ -29,53 +34,49 @@ export default async function ProductsPage() {
         active: true,
       },
       include: {
-        variants: true,
         category: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
+        variants: true,
       },
     }),
   ]);
 
-  // Create a map of database products by squareId for easy lookup
-  const dbProductsMap = new Map<string, Product>(
-    dbProducts.map((product: Product) => [product.squareId, product])
-  );
+  // Transform Sanity products to match our database schema
+  const transformedSanityProducts: TransformedSanityProduct[] = sanityProducts.map((product: SanityProduct) => ({
+    ...product,
+    id: product._id,
+    squareId: product.squareId || '',
+    images: product.images.map(img => img.url),
+    variants: product.variants?.map((variant: any) => ({
+      id: variant._id || '',
+      name: variant.name || '',
+      price: variant.price || null,
+      squareVariantId: variant.squareVariantId || null,
+      productId: product._id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })) || [],
+    active: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    categoryId: product.categoryId || '',
+  }));
 
   // Combine products from both sources
-  const combinedProducts = sanityProducts.map((sanityProduct: TransformedSanityProduct): CombinedProduct => {
-    // Determine the ID, handling potential slug object from Sanity
-    let rawId = sanityProduct.slug as string | { current: string };
-    if (typeof rawId === 'object' && rawId !== null && 'current' in rawId) {
-      rawId = rawId.current;
-    }
-    const productId = String(rawId || '');
-    const dbProduct = dbProductsMap.get(productId);
-    
-    return {
-      ...sanityProduct,
-      id: productId,
-      slug: productId, // Use the same string ID for slug consistency here
-      // Override or add database-specific fields
-      price: dbProduct?.price ? Number(dbProduct.price) : sanityProduct.price,
-      variants: dbProduct?.variants?.map(variant => ({
-        ...variant,
-        id: String(variant.id),
-        price: variant.price ? Number(variant.price) : null,
-      })) || [],
-      // Add database-specific fields
-      active: dbProduct?.active ?? true,
-      createdAt: dbProduct?.createdAt ?? new Date(),
-      updatedAt: dbProduct?.updatedAt ?? new Date(),
-      categoryId: dbProduct?.categoryId ?? sanityProduct.categoryId ?? '',
-      category: dbProduct?.category ?? sanityProduct.category,
-      featured: dbProduct?.featured ?? sanityProduct.featured ?? false,
-    };
-  });
+  const allProducts: CombinedProduct[] = [
+    ...transformedSanityProducts.map((product) => ({
+      ...product,
+      category: product.category,
+      featured: product.featured || false,
+    })),
+    ...dbProducts.map((product) => ({
+      ...product,
+      category: product.category,
+      featured: product.featured || false,
+    })),
+  ];
 
   // Group products by category
-  const productsByCategory = combinedProducts.reduce((acc: ProductCategoryMap, product: CombinedProduct) => {
+  const productsByCategory: ProductCategoryMap = allProducts.reduce((acc, product) => {
     const categoryName = typeof product.category === 'string' 
       ? product.category 
       : product.category?.name || 'Uncategorized';

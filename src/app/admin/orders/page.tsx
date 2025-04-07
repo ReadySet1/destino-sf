@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { formatDistance } from "date-fns";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import { formatDistance } from 'date-fns';
+import { Decimal } from '@prisma/client/runtime/library';
 
 type OrderWithItems = {
   id: string;
@@ -31,18 +31,14 @@ type ResolvedParams = {
   [key: string]: string | string[] | undefined;
 };
 
-export default async function OrdersPage({ 
-  params 
-}: { 
-  params: Promise<ResolvedParams>
-}) {
+export default async function OrdersPage({ params }: { params: Promise<ResolvedParams> }) {
   await params; // We're not using the params, but we need to await the promise
-  
+
   // Fetch the most recent orders
   const ordersFromDb = await prisma.order.findMany({
     take: 10,
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
     include: {
       items: {
@@ -53,30 +49,52 @@ export default async function OrdersPage({
       },
     },
   });
-  
+
   // Transform the orders to match our expected type
-  const orders = ordersFromDb.map((order) => ({
-    id: order.id,
-    status: order.status,
-    total: order.total,
-    customerName: order.customerName,
-    pickupTime: order.pickupTime,
-    createdAt: order.createdAt,
-    items: order.items.map((item) => ({
-      id: item.id,
-      product: {
-        id: item.product.id,
-        name: item.product.name,
-      },
-      variant: item.variant ? {
-        id: item.variant.id,
-        name: item.variant.name,
-      } : {
-        id: '',
-        name: '',
-      },
-    })),
-  })) as OrderWithItems[];
+  const orders = ordersFromDb.map(
+    (order: {
+      id: string;
+      status: string;
+      total: Decimal | number | string;
+      customerName: string;
+      pickupTime: Date | string;
+      createdAt: Date | string;
+      items: Array<{
+        id: string;
+        product: {
+          id: string;
+          name: string;
+        };
+        variant: {
+          id: string;
+          name: string;
+        } | null;
+      }>;
+    }) => ({
+      id: order.id,
+      status: order.status,
+      total: order.total,
+      customerName: order.customerName,
+      pickupTime: order.pickupTime,
+      createdAt: order.createdAt,
+      items: order.items.map(item => ({
+        id: item.id,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+        },
+        variant: item.variant
+          ? {
+              id: item.variant.id,
+              name: item.variant.name,
+            }
+          : {
+              id: '',
+              name: '',
+            },
+      })),
+    })
+  ) as OrderWithItems[];
 
   return (
     <div>
@@ -91,18 +109,12 @@ export default async function OrdersPage({
             <option value="COMPLETED">Completed</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
-          <input
-            type="text"
-            placeholder="Search orders..."
-            className="border rounded p-2"
-          />
+          <input type="text" placeholder="Search orders..." className="border rounded p-2" />
         </div>
       </div>
 
       {orders.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          No orders found.
-        </div>
+        <div className="text-center py-10 text-gray-500">No orders found.</div>
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -135,7 +147,7 @@ export default async function OrdersPage({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
+              {orders.map(order => (
                 <tr key={order.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {order.id.substring(0, 8)}...
@@ -144,7 +156,9 @@ export default async function OrdersPage({
                     {order.customerName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}
+                    >
                       {order.status}
                     </span>
                   </td>
@@ -161,7 +175,7 @@ export default async function OrdersPage({
                     {formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <Link 
+                    <Link
                       href={`/admin/orders/${order.id}`}
                       className="text-indigo-600 hover:text-indigo-900 mr-2"
                     >
@@ -180,17 +194,17 @@ export default async function OrdersPage({
 
 function getStatusColor(status: string) {
   switch (status) {
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-800";
-    case "PROCESSING":
-      return "bg-blue-100 text-blue-800";
-    case "READY":
-      return "bg-green-100 text-green-800";
-    case "COMPLETED":
-      return "bg-gray-100 text-gray-800";
-    case "CANCELLED":
-      return "bg-red-100 text-red-800";
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'PROCESSING':
+      return 'bg-blue-100 text-blue-800';
+    case 'READY':
+      return 'bg-green-100 text-green-800';
+    case 'COMPLETED':
+      return 'bg-gray-100 text-gray-800';
+    case 'CANCELLED':
+      return 'bg-red-100 text-red-800';
     default:
-      return "bg-gray-100 text-gray-800";
+      return 'bg-gray-100 text-gray-800';
   }
-} 
+}

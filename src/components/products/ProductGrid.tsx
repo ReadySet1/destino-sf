@@ -1,9 +1,9 @@
 // src/components/Products/ProductGrid.tsx
 
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { ProductCard } from "../Store/ProductCard";
+import { useState, useEffect } from 'react';
+import { ProductCard } from '../Store/ProductCard';
 
 interface Product {
   _id: string;
@@ -26,13 +26,9 @@ interface ProductGridProps {
   showFilters?: boolean;
 }
 
-export function ProductGrid({
-  products,
-  title,
-  showFilters = false,
-}: ProductGridProps) {
+export function ProductGrid({ products, title, showFilters = false }: ProductGridProps) {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
-  const [sortOption, setSortOption] = useState<string>("");
+  const [sortOption, setSortOption] = useState<string>('');
 
   // Re-initialize filtered products when the products prop changes
   useEffect(() => {
@@ -47,16 +43,16 @@ export function ProductGrid({
     let sorted = [...products];
 
     switch (option) {
-      case "price-low":
+      case 'price-low':
         sorted.sort((a, b) => a.price - b.price);
         break;
-      case "price-high":
+      case 'price-high':
         sorted.sort((a, b) => b.price - a.price);
         break;
-      case "name-asc":
+      case 'name-asc':
         sorted.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case "newest":
+      case 'newest':
         // Assuming you have a createdAt field or similar
         // If not, this will just use the original order
         sorted = [...products];
@@ -96,7 +92,7 @@ export function ProductGrid({
 
       {/* Product grid with consistent spacing */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredProducts.map((product) => (
+        {filteredProducts.map(product => (
           <ProductCard key={product._id} product={product} />
         ))}
       </div>

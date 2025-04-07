@@ -8,24 +8,19 @@ interface QuantityStepperProps {
   onChange: (value: number) => void;
 }
 
-export function QuantityStepper({
-  value,
-  min = 1,
-  max = 99,
-  onChange
-}: QuantityStepperProps) {
+export function QuantityStepper({ value, min = 1, max = 99, onChange }: QuantityStepperProps) {
   const handleDecrement = () => {
     if (value > min) {
       onChange(value - 1);
     }
   };
-  
+
   const handleIncrement = () => {
     if (value < max) {
       onChange(value + 1);
     }
   };
-  
+
   return (
     <div className="inline-flex items-center rounded-md border">
       <Button
@@ -38,11 +33,11 @@ export function QuantityStepper({
       >
         <Minus className="h-3 w-3" />
       </Button>
-      
+
       <div className="w-10 text-center text-sm">
         <span>{value}</span>
       </div>
-      
+
       <Button
         variant="ghost"
         size="icon"

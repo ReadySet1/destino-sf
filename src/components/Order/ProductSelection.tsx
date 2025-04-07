@@ -15,4 +15,4 @@ const ProductSelection: React.FC<ProductSelectionProps> = ({ productType }) => {
   );
 };
 
-export default ProductSelection; 
+export default ProductSelection;

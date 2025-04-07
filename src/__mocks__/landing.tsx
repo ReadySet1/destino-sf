@@ -4,4 +4,4 @@ const Landing = () => {
   return <div data-testid="hero-component">Mocked Hero Component</div>;
 };
 
-export default Landing; 
+export default Landing;

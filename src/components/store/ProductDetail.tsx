@@ -39,10 +39,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCartStore();
-  
+
   // Calculate the current price based on selected variant
   const currentPrice = selectedVariant ? selectedVariant.price : product.price;
-  
+
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
       addItem({
@@ -51,21 +51,21 @@ export function ProductDetail({ product }: ProductDetailProps) {
         price: currentPrice,
         image: product.images?.[0],
         variantId: selectedVariant?.squareVariantId,
-        quantity: 1
+        quantity: 1,
       });
     }
-    
+
     toast.success(`Added ${quantity} ${product.name} to cart`);
   };
-  
+
   const incrementQuantity = () => {
-    setQuantity((prev) => Math.min(prev + 1, 20)); // Set a maximum quantity
+    setQuantity(prev => Math.min(prev + 1, 20)); // Set a maximum quantity
   };
-  
+
   const decrementQuantity = () => {
-    setQuantity((prev) => Math.max(prev - 1, 1)); // Minimum quantity is 1
+    setQuantity(prev => Math.max(prev - 1, 1)); // Minimum quantity is 1
   };
-  
+
   return (
     <div>
       {/* Breadcrumbs */}
@@ -95,7 +95,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <li className="text-gray-700">{product.name}</li>
         </ol>
       </nav>
-      
+
       <div className="grid gap-8 md:grid-cols-2">
         {/* Product Images */}
         <div className="overflow-hidden rounded-lg bg-gray-100">
@@ -115,7 +115,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
           )}
         </div>
-        
+
         {/* Product Info */}
         <div>
           <Link
@@ -124,30 +124,34 @@ export function ProductDetail({ product }: ProductDetailProps) {
           >
             {product.category.name}
           </Link>
-          
+
           <h1 className="mb-4 text-3xl font-bold">{product.name}</h1>
-          
+
           <div className="mb-6">
             <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
           </div>
-          
+
           {product.description && (
             <div className="mb-6">
               <h2 className="mb-2 text-lg font-medium">Description</h2>
               <p className="text-gray-700">{product.description}</p>
             </div>
           )}
-          
+
           {/* Variants Selection */}
           {product.variants && product.variants.length > 0 && (
             <div className="mb-6">
               <h2 className="mb-2 text-lg font-medium">Options</h2>
               <div className="flex flex-wrap gap-2">
-                {product.variants.map((variant) => (
+                {product.variants.map(variant => (
                   <Button
                     key={variant.squareVariantId}
                     type="button"
-                    variant={selectedVariant?.squareVariantId === variant.squareVariantId ? 'default' : 'outline'}
+                    variant={
+                      selectedVariant?.squareVariantId === variant.squareVariantId
+                        ? 'default'
+                        : 'outline'
+                    }
                     onClick={() => setSelectedVariant(variant)}
                     className="h-auto py-2"
                   >
@@ -158,7 +162,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </div>
             </div>
           )}
-          
+
           {/* Quantity Selector */}
           <div className="mb-6">
             <h2 className="mb-2 text-lg font-medium">Quantity</h2>
@@ -172,11 +176,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              
-              <span className="w-12 text-center text-lg font-medium">
-                {quantity}
-              </span>
-              
+
+              <span className="w-12 text-center text-lg font-medium">{quantity}</span>
+
               <Button
                 type="button"
                 variant="outline"
@@ -188,17 +190,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </Button>
             </div>
           </div>
-          
+
           {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            size="lg"
-            className="mb-4 w-full"
-          >
+          <Button onClick={handleAddToCart} size="lg" className="mb-4 w-full">
             <ShoppingBag className="mr-2 h-5 w-5" />
             Add to Cart
           </Button>
-          
+
           {/* Back to Menu Button */}
           <Link href="/menu">
             <Button variant="outline" className="w-full">

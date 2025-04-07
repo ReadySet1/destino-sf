@@ -1,6 +1,6 @@
 // src/types/product.ts
 
-import { Decimal } from "@prisma/client/runtime/library";
+import { Decimal } from '@prisma/client/runtime/library';
 
 export interface Product {
   id: string;
@@ -62,4 +62,4 @@ export interface CreateCategoryInput {
   name: string;
   description?: string;
   order?: number;
-} 
+}

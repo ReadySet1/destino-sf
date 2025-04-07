@@ -30,7 +30,7 @@ export function ProductCard({ product }: ProductCardProps) {
       quantity: 1,
       image: product.images?.[0] || '',
     });
-    
+
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -54,17 +54,15 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         <div className="p-4">
           <h3 className="text-lg font-medium">{product.name}</h3>
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-            {product.description}
-          </p>
+          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
           <div className="mt-2 flex items-center justify-between">
             <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
           </div>
         </div>
       </Link>
       <div className="p-4 pt-0">
-        <Button 
-          onClick={(e) => {
+        <Button
+          onClick={e => {
             e.preventDefault();
             handleAddToCart();
           }}

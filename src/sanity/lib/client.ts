@@ -1,6 +1,6 @@
-import { createClient } from 'next-sanity'
+import { createClient } from 'next-sanity';
 
-import { apiVersion, dataset, projectId, token } from '../env'
+import { apiVersion, dataset, projectId, token } from '../env';
 
 export const client = createClient({
   projectId,
@@ -8,4 +8,4 @@ export const client = createClient({
   apiVersion,
   useCdn: false, // Disabled CDN to prevent stale data in admin section
   token, // Add token for write access
-})
+});

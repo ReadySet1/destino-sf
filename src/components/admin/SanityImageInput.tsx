@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useCallback, ChangeEvent } from 'react';
 import Image from 'next/image';
@@ -55,11 +55,10 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
           _type: 'reference',
           _ref: assetDocument._id,
         },
-        _key: Math.random().toString(36).substring(2, 15)
+        _key: Math.random().toString(36).substring(2, 15),
       };
 
       setImages(prevImages => [...prevImages, newImage]);
-
     } catch (err) {
       console.error('Error uploading image:', err);
       setError('Failed to upload image. Please try again.');
@@ -80,11 +79,11 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
     try {
       // Extract the asset ID from the reference
       const assetId = imageToDelete.asset._ref;
-      
+
       // First, find all product documents that reference this image
       const query = `*[_type == "product" && references($assetId)]`;
       const productsWithImage = await client.fetch(query, { assetId });
-      
+
       console.log('Products referencing this image:', productsWithImage);
 
       // Remove the image reference from all product documents that use it
@@ -116,7 +115,7 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
         console.log('Updating Prisma with new image URLs:', {
           productId: product._id,
           squareId: updatedProduct.squareId,
-          imageUrls: updatedImageUrls
+          imageUrls: updatedImageUrls,
         });
 
         // Update Prisma database with the new image URLs
@@ -150,15 +149,17 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
         console.error('Error deleting asset:', deleteError);
         // Even if asset deletion fails, we continue since the image reference is removed
       }
-      
+
       // Update local state to remove the image
-      setImages(prevImages => prevImages.filter(img => 
-        img._key ? img._key !== imageToDelete._key : img.asset._ref !== imageToDelete.asset._ref
-      ));
+      setImages(prevImages =>
+        prevImages.filter(img =>
+          img._key ? img._key !== imageToDelete._key : img.asset._ref !== imageToDelete.asset._ref
+        )
+      );
 
       // Force a hard refresh to ensure all caches are cleared
       window.location.reload();
-      
+
       // Clear the image to delete
       setImageToDelete(null);
     } catch (err) {
@@ -178,21 +179,17 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
     const projectId = client.config().projectId!;
     const filename = parts.slice(1).join('-');
     return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename.replace('-webp', '.webp').replace('-jpg', '.jpg').replace('-png', '.png')}`;
-  }
+  };
 
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">Product Images</label>
-      
+
       {/* Hidden input to store image data for form submission */}
-      <input
-        type="hidden"
-        name={name}
-        value={JSON.stringify(images)}
-      />
+      <input type="hidden" name={name} value={JSON.stringify(images)} />
 
       <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-        {images.map((image) => {
+        {images.map(image => {
           const imageUrl = getImageUrl(image.asset._ref);
           return imageUrl ? (
             <div key={image._key || image.asset._ref} className="relative group aspect-square">
@@ -205,7 +202,7 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
               />
               <button
                 type="button"
-                onClick={() => handleRemoveImage(image)}
+                onClick={() => void handleRemoveImage(image)}
                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Remove image"
               >
@@ -213,12 +210,15 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
               </button>
             </div>
           ) : (
-            <div key={image._key || image.asset._ref} className="aspect-square bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500">
+            <div
+              key={image._key || image.asset._ref}
+              className="aspect-square bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500"
+            >
               Invalid Image Ref
             </div>
           );
         })}
-        
+
         {/* Upload Button/Area */}
         <div className="aspect-square border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-400 hover:border-indigo-500 hover:text-indigo-500 transition-colors">
           <label htmlFor="image-upload" className="cursor-pointer p-4 text-center">
@@ -227,7 +227,7 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
               id="image-upload"
               type="file"
               accept="image/*"
-              onChange={handleFileChange}
+              onChange={void handleFileChange}
               className="sr-only"
               disabled={isLoading}
             />
@@ -240,10 +240,10 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <h3 className="text-lg font-medium mb-4">Delete Image</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this image? This action cannot be undone.</p>
-            {error && (
-              <p className="text-red-500 mb-4">{error}</p>
-            )}
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this image? This action cannot be undone.
+            </p>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
@@ -255,15 +255,31 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
               </button>
               <button
                 type="button"
-                onClick={confirmDelete}
+                onClick={void confirmDelete}
                 className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 disabled:opacity-50 flex items-center space-x-2"
                 disabled={isDeletingImage}
               >
                 {isDeletingImage ? (
                   <>
-                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     <span>Deleting...</span>
                   </>
@@ -283,4 +299,4 @@ export function SanityImageInput({ initialImages = [], name }: SanityImageInputP
   );
 }
 
-export type { SanityImage, SanityImageAsset }; 
+export type { SanityImage, SanityImageAsset };

@@ -10,25 +10,25 @@ const createJestConfig = nextJest({
 const config: Config = {
   // Use js-dom for component testing
   testEnvironment: 'jsdom',
-  
+
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  
+
   // Path mapping for TypeScript imports
   moduleNameMapper: {
     // Handle module aliases
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  
+
   // Specify test match pattern
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
-  
+
   // Ignore these directories
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
-  
+
   // Modules to mock
   moduleDirectories: ['node_modules', '<rootDir>'],
-  
+
   // Add resolver
   resolver: '<rootDir>/jest.resolver.js',
 };

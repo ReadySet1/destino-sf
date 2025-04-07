@@ -9,22 +9,33 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">About</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/contact-about/chef-story" className="text-base text-gray-500 hover:text-gray-900">
+                <Link
+                  href="/contact-about/chef-story"
+                  className="text-base text-gray-500 hover:text-gray-900"
+                >
                   Chef&apos;s Story
                 </Link>
               </li>
               <li>
-                <Link href="/contact-about/location-hours" className="text-base text-gray-500 hover:text-gray-900">
+                <Link
+                  href="/contact-about/location-hours"
+                  className="text-base text-gray-500 hover:text-gray-900"
+                >
                   Location & Hours
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+              Support
+            </h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/contact-about/contact-form" className="text-base text-gray-500 hover:text-gray-900">
+                <Link
+                  href="/contact-about/contact-form"
+                  className="text-base text-gray-500 hover:text-gray-900"
+                >
                   Contact Form
                 </Link>
               </li>
@@ -61,7 +72,9 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Offerings</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+              Offerings
+            </h3>
             <ul className="mt-4 space-y-4">
               <li>
                 <Link href="/alfajores" className="text-base text-gray-500 hover:text-gray-900">
@@ -89,4 +102,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-} 
+}

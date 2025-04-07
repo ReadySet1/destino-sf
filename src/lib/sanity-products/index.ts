@@ -7,6 +7,19 @@ interface SanityImage {
   url: string;
 }
 
+interface SanityCategory {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  description?: string;
+  image?: {
+    asset: {
+      _ref: string;
+      _type: 'reference';
+    };
+  };
+}
+
 export interface SanityProduct {
   _id: string;
   name: string;
@@ -16,13 +29,13 @@ export interface SanityProduct {
   squareId: string;
   featured?: boolean;
   categoryId?: string;
-  category?: string | { _id: string; name: string; slug: { current: string } };
+  category?: string | SanityCategory;
   images: SanityImage[];
   variants?: unknown[];
 }
 
 // Fetch all products with their categories
-export const getAllProducts = cache(async () => {
+export const getAllProducts = cache(async (): Promise<SanityProduct[]> => {
   const products = await client.fetch<SanityProduct[]>(`
     *[_type == "product"] {
       _id,
@@ -40,16 +53,17 @@ export const getAllProducts = cache(async () => {
       variants
     }
   `);
-  
-  return products.map((product) => ({
+
+  return products.map(product => ({
     ...product,
-    images: product.images?.map((img) => img.url) || [],
+    images: product.images?.map(img => ({ url: img.url })) || [],
   }));
 });
 
 // Fetch product by slug
-export const getProductBySlug = cache(async (slug: string) => {
-  const product = await client.fetch<SanityProduct | null>(`
+export const getProductBySlug = cache(async (slug: string): Promise<SanityProduct | null> => {
+  const product = await client.fetch<SanityProduct | null>(
+    `
     *[_type == "product" && slug.current == $slug][0] {
       _id,
       name,
@@ -68,33 +82,37 @@ export const getProductBySlug = cache(async (slug: string) => {
       },
       variants
     }
-  `, { slug });
-  
+  `,
+    { slug }
+  );
+
   if (!product) return null;
-  
+
   return {
     ...product,
-    images: product.images?.map((img) => img.url) || [],
+    images: product.images?.map(img => ({ url: img.url })) || [],
   };
 });
 
 // Fetch all categories
-export const getAllCategories = cache(async () => {
-  const categories = await client.fetch(`
+export const getAllCategories = cache(async (): Promise<SanityCategory[]> => {
+  const categories = await client.fetch<SanityCategory[]>(`
     *[_type == "productCategory"] | order(order asc) {
       _id,
       name,
       slug,
-      description
+      description,
+      image
     }
   `);
-  
+
   return categories;
 });
 
 // Fetch products by category
-export const getProductsByCategory = cache(async (categoryId: string) => {
-  const products = await client.fetch<SanityProduct[]>(`
+export const getProductsByCategory = cache(async (categoryId: string): Promise<SanityProduct[]> => {
+  const products = await client.fetch<SanityProduct[]>(
+    `
     *[_type == "product" && category._ref == $categoryId] {
       _id,
       name,
@@ -109,17 +127,20 @@ export const getProductsByCategory = cache(async (categoryId: string) => {
       },
       variants
     }
-  `, { categoryId });
-  
-  return products.map((product) => ({
+  `,
+    { categoryId }
+  );
+
+  return products.map(product => ({
     ...product,
-    images: product.images?.map((img) => img.url) || [],
+    images: product.images?.map(img => ({ url: img.url })) || [],
   }));
 });
 
 // Fetch featured products for homepage
 export const getFeaturedProducts = cache(async (limit = 8) => {
-  const products = await client.fetch<SanityProduct[]>(`
+  const products = await client.fetch<SanityProduct[]>(
+    `
     *[_type == "product" && featured == true] | order(_createdAt desc)[0...$limit] {
       _id,
       name,
@@ -133,10 +154,12 @@ export const getFeaturedProducts = cache(async (limit = 8) => {
       },
       "slug": slug
     }
-  `, { limit: limit - 1 });
-  
-  return products.map((product) => ({
+  `,
+    { limit: limit - 1 }
+  );
+
+  return products.map(product => ({
     ...product,
-    images: product.images?.map((img) => img.url) || [],
+    images: product.images?.map(img => img.url) || [],
   }));
 });

@@ -17,12 +17,7 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
       <div className="mr-4 flex-shrink-0">
         <div className="relative h-16 w-16 overflow-hidden rounded-md bg-gray-200">
           {item.image ? (
-            <Image
-              src={item.image}
-              alt={item.name}
-              fill
-              className="object-cover"
-            />
+            <Image src={item.image} alt={item.name} fill className="object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span className="text-xs text-gray-500">No image</span>
@@ -30,38 +25,24 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
           )}
         </div>
       </div>
-      
+
       {/* Product Info */}
       <div className="flex-1">
         <h3 className="font-medium">{item.name}</h3>
-        <p className="text-sm text-gray-500">
-          ${item.price.toFixed(2)} / each
-        </p>
+        <p className="text-sm text-gray-500">${item.price.toFixed(2)} / each</p>
       </div>
-      
+
       {/* Quantity Stepper */}
       <div className="mx-4">
-        <QuantityStepper
-          value={item.quantity}
-          min={1}
-          max={20}
-          onChange={onUpdateQuantity}
-        />
+        <QuantityStepper value={item.quantity} min={1} max={20} onChange={onUpdateQuantity} />
       </div>
-      
+
       {/* Total Price */}
-      <div className="mx-4 text-right font-medium">
-        ${(item.price * item.quantity).toFixed(2)}
-      </div>
-      
+      <div className="mx-4 text-right font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+
       {/* Remove Button */}
       <div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onRemove}
-          title="Remove item"
-        >
+        <Button variant="ghost" size="icon" onClick={onRemove} title="Remove item">
           <Trash2 className="h-4 w-4 text-gray-500" />
         </Button>
       </div>

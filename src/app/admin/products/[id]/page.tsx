@@ -1,8 +1,10 @@
-import { prisma } from "@/lib/prisma";
-import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { client } from "@/sanity/lib/client";
-import { SanityImageInput, SanityImage } from "@/components/Admin/SanityImageInput";
+import { prisma } from '@/lib/prisma';
+import { redirect, notFound } from 'next/navigation';
+import Link from 'next/link';
+import { client } from '@/sanity/lib/client';
+import { SanityImageInput, SanityImage } from '@/components/Admin/SanityImageInput';
+import { Category } from '@/types/product';
+import { logger } from '@/utils/logger';
 
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
@@ -49,18 +51,26 @@ interface SanityPatchData {
 
 // Function to get Sanity image URL
 function getImageUrlFromRef(ref: string): string | null {
-    const parts = ref.split('-');
-    if (parts.length < 3 || parts[0] !== 'image') return null;
-    const dataset = client.config().dataset!;
-    const projectId = client.config().projectId!;
-    const filename = parts.slice(1).join('-');
-    return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename.replace('-webp', '.webp').replace('-jpg', '.jpg').replace('-png', '.png')}`;
+  const parts = ref.split('-');
+  if (parts.length < 3 || parts[0] !== 'image') return null;
+
+  const config = client.config();
+  const dataset = config.dataset;
+  const projectId = config.projectId;
+
+  if (!dataset || !projectId) {
+    logger.error('Sanity dataset or projectId is not configured.');
+    return null;
+  }
+
+  const filename = parts.slice(1).join('-');
+  return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename.replace('-webp', '.webp').replace('-jpg', '.jpg').replace('-png', '.png')}`;
 }
 
 export default async function EditProductPage({ params }: PageProps) {
   const resolvedParams = await params;
   const productId = resolvedParams.id;
-  
+
   // Fetch the product from Prisma
   const product = await prisma.product.findUnique({
     where: { id: productId },
@@ -72,7 +82,7 @@ export default async function EditProductPage({ params }: PageProps) {
 
   // Fetch categories for the dropdown
   const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
+    orderBy: { name: 'asc' },
   });
 
   // Fetch corresponding product data from Sanity to get initial images
@@ -80,7 +90,7 @@ export default async function EditProductPage({ params }: PageProps) {
   let sanityProductId: string | null = null;
   try {
     // Prioritize squareId if available, otherwise use name
-    const query = product.squareId 
+    const query = product.squareId
       ? `*[_type == "product" && squareId == $identifier][0]{ 
           _id, 
           "images": images[]{
@@ -98,11 +108,10 @@ export default async function EditProductPage({ params }: PageProps) {
           }
         }`;
     const identifier = product.squareId || product.name;
-    
-    const sanityProductData = await client.fetch<SanityProductResponse | null>(
-      query,
-      { identifier }
-    );
+
+    const sanityProductData = await client.fetch<SanityProductResponse | null>(query, {
+      identifier,
+    });
 
     if (sanityProductData) {
       sanityProductId = sanityProductData._id;
@@ -110,49 +119,52 @@ export default async function EditProductPage({ params }: PageProps) {
         .map((img: SanityImageResponse) => {
           // Skip if asset is null or doesn't have _ref
           if (!img?.asset?._ref) {
-            console.warn('Image asset missing _ref:', img);
+            logger.warn('Image asset missing _ref:', img);
             return null;
           }
-          
+
           const sanityImage: SanityImage = {
             _type: 'image',
             asset: {
               _type: 'reference',
-              _ref: img.asset._ref
-            }
+              _ref: img.asset._ref,
+            },
           };
 
           // Add _key if it exists, or generate a new one
-          sanityImage._key = img._key || `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          sanityImage._key =
+            img._key || `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-          console.log('Processed Sanity image:', JSON.stringify(sanityImage, null, 2));
+          logger.debug('Processed Sanity image:', JSON.stringify(sanityImage, null, 2));
           return sanityImage;
         })
         .filter((img): img is SanityImage => img !== null);
 
-      console.log('Loaded initial Sanity images:', JSON.stringify(initialSanityImages, null, 2));
+      logger.debug('Loaded initial Sanity images:', JSON.stringify(initialSanityImages, null, 2));
     } else {
-       console.log(`Product with identifier "${identifier}" not found in Sanity. Images will start empty.`);
+      logger.info(
+        `Product with identifier "${identifier}" not found in Sanity. Images will start empty.`
+      );
     }
   } catch (error) {
-    console.error("Error fetching Sanity product data:", error);
+    logger.error('Error fetching Sanity product data:', error);
   }
 
   async function updateProduct(formData: FormData) {
-    "use server";
-    
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const price = parseFloat(formData.get("price") as string);
-    const categoryId = formData.get("categoryId") as string;
-    const sanityImagesDataString = formData.get("sanityImagesData") as string;
-    const featured = formData.has("featured");
-    const active = formData.has("active");
-    let squareId = formData.get("squareId") as string;
-    const productId = formData.get("productId") as string;
+    'use server';
+
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const price = parseFloat(formData.get('price') as string);
+    const categoryId = formData.get('categoryId') as string;
+    const sanityImagesDataString = formData.get('sanityImagesData') as string;
+    const featured = formData.has('featured');
+    const active = formData.has('active');
+    const squareId = formData.get('squareId') as string;
+    const productId = formData.get('productId') as string;
 
     if (!name || !price || isNaN(price) || !productId) {
-      console.error("Invalid product data");
+      logger.error('Invalid product data');
       return;
     }
 
@@ -160,20 +172,20 @@ export default async function EditProductPage({ params }: PageProps) {
     try {
       sanityImages = sanityImagesDataString ? JSON.parse(sanityImagesDataString) : [];
     } catch (e) {
-      console.error("Error parsing Sanity images data:", e);
+      logger.error('Error parsing Sanity images data:', e);
       return;
     }
-    
+
     // Generate image URLs from Sanity references
     const prismaImageUrls = sanityImages
       .map(img => {
         const url = getImageUrlFromRef(img.asset._ref);
-        console.log('Generated image URL:', url, 'from ref:', img.asset._ref);
+        logger.debug('Generated image URL:', url, 'from ref:', img.asset._ref);
         return url;
       })
       .filter((url): url is string => {
         if (!url) {
-          console.warn('Failed to generate URL for image');
+          logger.warn('Failed to generate URL for image');
           return false;
         }
         return true;
@@ -181,7 +193,7 @@ export default async function EditProductPage({ params }: PageProps) {
 
     try {
       // Update the product in the database
-      console.log('Updating product in database with images:', prismaImageUrls);
+      logger.debug('Updating product in database with images:', prismaImageUrls);
       const _updatedProduct = await prisma.product.update({
         where: { id: productId },
         data: {
@@ -195,12 +207,12 @@ export default async function EditProductPage({ params }: PageProps) {
           squareId,
         },
       });
-      console.log('Database update successful');
+      logger.info('Database update successful');
 
       // Try to update in Sanity if we found an ID earlier or can find it now
       let currentSanityProductId = sanityProductId;
       if (!currentSanityProductId) {
-        console.log('Fetching Sanity product ID...');
+        logger.debug('Fetching Sanity product ID...');
         currentSanityProductId = await client.fetch(
           `*[_type == "product" && (name == $name || squareId == $squareId)][0]._id`,
           { name, squareId }
@@ -208,11 +220,11 @@ export default async function EditProductPage({ params }: PageProps) {
       }
 
       if (currentSanityProductId) {
-        console.log('Found Sanity product ID:', currentSanityProductId);
+        logger.debug('Found Sanity product ID:', currentSanityProductId);
         const dbCategory = await prisma.category.findUnique({ where: { id: categoryId } });
         let categorySanityRef = null;
         if (dbCategory) {
-          console.log('Looking up category in Sanity:', dbCategory.name);
+          logger.debug('Looking up category in Sanity:', dbCategory.name);
           const categorySanityId = await client.fetch(
             `*[_type == "productCategory" && name == $categoryName][0]._id`,
             { categoryName: dbCategory.name }
@@ -221,52 +233,54 @@ export default async function EditProductPage({ params }: PageProps) {
             categorySanityRef = { _type: 'reference', _ref: categorySanityId };
           }
         }
-        
+
         const sanityPatchData: SanityPatchData = {
           name,
           description: description || '',
           price,
           featured,
           squareId: squareId || null,
-          images: sanityImages.map(img => ({ 
+          images: sanityImages.map(img => ({
             _type: 'image' as const,
             _key: img._key || undefined,
-            asset: { _type: 'reference' as const, _ref: img.asset._ref }
+            asset: { _type: 'reference' as const, _ref: img.asset._ref },
           })),
         };
-        
+
         if (categorySanityRef) {
           sanityPatchData.category = {
             _type: 'reference' as const,
-            _ref: categorySanityRef._ref
+            _ref: categorySanityRef._ref,
           };
         }
 
-        console.log('Updating Sanity with patch data:', JSON.stringify(sanityPatchData, null, 2));
+        logger.debug('Updating Sanity with patch data:', JSON.stringify(sanityPatchData, null, 2));
         await client
           .patch(currentSanityProductId)
           .set(sanityPatchData)
           .unset(sanityPatchData.category ? [] : ['category'])
           .commit();
-          
-        console.log(`Product updated in Sanity: ${currentSanityProductId}`);
+
+        logger.info(`Product updated in Sanity: ${currentSanityProductId}`);
       } else {
-        console.log("Product not found in Sanity. Consider creating it.");
+        logger.info('Product not found in Sanity. Consider creating it.');
       }
 
       // Revalidate both pages
       await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products`),
-        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`)
+        fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`
+        ),
       ]);
 
-      console.log(`Product "${name}" updated successfully in database`);
-      return redirect("/admin/products");
+      logger.info(`Product "${name}" updated successfully in database`);
+      return redirect('/admin/products');
     } catch (error) {
       if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
         throw error;
       }
-      console.error("Detailed error updating product:", {
+      logger.error('Detailed error updating product:', {
         error,
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
@@ -275,9 +289,9 @@ export default async function EditProductPage({ params }: PageProps) {
         categoryId,
         sanityProductId,
         hasImages: sanityImages.length > 0,
-        imageUrls: prismaImageUrls
+        imageUrls: prismaImageUrls,
       });
-      throw new Error("Failed to update product. Please try again.");
+      throw new Error('Failed to update product. Please try again.');
     }
   }
 
@@ -296,7 +310,7 @@ export default async function EditProductPage({ params }: PageProps) {
       <div className="bg-white shadow-md rounded-lg p-6">
         <form action={updateProduct}>
           <input type="hidden" name="productId" value={productId} />
-          
+
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-6">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -320,7 +334,7 @@ export default async function EditProductPage({ params }: PageProps) {
                 name="description"
                 id="description"
                 rows={4}
-                defaultValue={product.description || ""}
+                defaultValue={product.description || ''}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               ></textarea>
             </div>
@@ -350,7 +364,7 @@ export default async function EditProductPage({ params }: PageProps) {
                 name="squareId"
                 id="squareId"
                 placeholder="Square catalog item ID"
-                defaultValue={product.squareId || ""}
+                defaultValue={product.squareId || ''}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               />
             </div>
@@ -367,7 +381,7 @@ export default async function EditProductPage({ params }: PageProps) {
                 defaultValue={product.categoryId}
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
+                {categories.map((category: Category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -379,10 +393,7 @@ export default async function EditProductPage({ params }: PageProps) {
 
             {/* Sanity Image Input Component */}
             <div className="sm:col-span-6">
-              <SanityImageInput 
-                name="sanityImagesData"
-                initialImages={initialSanityImages}
-              />
+              <SanityImageInput name="sanityImagesData" initialImages={initialSanityImages} />
             </div>
 
             <div className="sm:col-span-3 flex items-center">
@@ -430,4 +441,4 @@ export default async function EditProductPage({ params }: PageProps) {
       </div>
     </div>
   );
-} 
+}

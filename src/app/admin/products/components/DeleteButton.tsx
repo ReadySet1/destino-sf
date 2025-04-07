@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React from "react";
+import React from 'react';
 
 export function DeleteButton({ productName }: { productName: string }) {
   const handleClick = (e: React.MouseEvent) => {
@@ -10,12 +10,8 @@ export function DeleteButton({ productName }: { productName: string }) {
   };
 
   return (
-    <button 
-      type="submit"
-      className="text-red-600 hover:text-red-900"
-      onClick={handleClick}
-    >
+    <button type="submit" className="text-red-600 hover:text-red-900" onClick={handleClick}>
       Delete
     </button>
   );
-} 
+}

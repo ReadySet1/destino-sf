@@ -6,14 +6,20 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/Products/ProductGrid';
+import { urlFor } from '@/sanity/lib/image';
 
-// Define a basic type for Category from Sanity
+// Define the minimal type we need for categories
 interface SanityCategory {
   _id: string;
   name: string;
   slug: { current: string };
   description?: string;
-  image?: string; // Optional category image
+  image?: {
+    asset: {
+      _ref: string;
+      _type: 'reference';
+    };
+  };
 }
 
 // Define product type expected by ProductGrid
@@ -22,7 +28,7 @@ interface Product {
   name: string;
   description?: string;
   price: number;
-  images?: string[];
+  images?: string[]; // Expects an array of strings (URLs)
   slug: { current: string };
   featured?: boolean;
   variants?: Array<{
@@ -57,7 +63,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
   const categories = await getAllCategories();
 
   if (!categories || categories.length === 0) {
-    console.log("No categories found.");
     notFound(); // Or display a message indicating no categories exist
   }
 
@@ -77,8 +82,7 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
         name: p.name,
         description: p.description,
         price: p.price,
-        images: p.images || [],
-        // Ensure slug is never undefined to match the Product interface
+        images: (p.images || []).map(img => img.url),
         slug: p.slug || { current: p._id },
         featured: p.featured || false,
         // Transform variants to match the expected format
@@ -93,9 +97,18 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
         }),
       }));
     } catch (error) {
-      console.error(`Failed to fetch products for category ${selectedCategory.name} (ID: ${selectedCategory._id}):`, error);
+      console.error(
+        `Failed to fetch products for category ${selectedCategory.name} (ID: ${selectedCategory._id}):`,
+        error
+      );
       // Optionally display an error message on the page
     }
+  }
+
+  const categoryId = selectedCategory?._id;
+
+  if (!categoryId) {
+    notFound();
   }
 
   return (
@@ -114,13 +127,13 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
                     </p>
                   )}
                 </div>
-                
+
                 {/* Optional: Category image banner */}
                 {selectedCategory.image && (
                   <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden mb-8">
-                    <Image 
-                      src={selectedCategory.image} 
-                      alt={selectedCategory.name} 
+                    <Image
+                      src={urlFor(selectedCategory.image).url()}
+                      alt={selectedCategory.name}
                       className="w-full h-full object-cover"
                       width={1200}
                       height={400}
@@ -128,23 +141,25 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
                   </div>
                 )}
               </div>
-              
+
               <div>
-                <Suspense fallback={
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-pulse text-center">
-                      <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {[...Array(4)].map((_, i) => (
-                          <div key={i} className="h-64 bg-gray-200 rounded"></div>
-                        ))}
+                <Suspense
+                  fallback={
+                    <div className="flex justify-center items-center h-64">
+                      <div className="animate-pulse text-center">
+                        <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="h-64 bg-gray-200 rounded"></div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                }>
+                  }
+                >
                   {products.length > 0 ? (
-                    <ProductGrid 
-                      products={products} 
+                    <ProductGrid
+                      products={products}
                       title={`${selectedCategory.name} Products`}
                       showFilters={true}
                     />
@@ -154,7 +169,10 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
                       <p className="text-gray-500 mb-6">
                         We don&apos;t have any products in the {selectedCategory.name} category yet.
                       </p>
-                      <Link href="/products" className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring">
+                      <Link
+                        href="/products"
+                        className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring"
+                      >
                         View All Products
                       </Link>
                     </div>
@@ -169,7 +187,10 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
               <p className="text-lg text-gray-600 mb-6">
                 Sorry, we couldn&apos;t find the category you were looking for.
               </p>
-              <Link href="/products" className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring">
+              <Link
+                href="/products"
+                className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring"
+              >
                 View All Products
               </Link>
             </div>
@@ -188,7 +209,7 @@ export async function generateStaticParams() {
       slug: category.slug.current,
     }));
   } catch (error) {
-    console.error("Error generating static params for categories:", error);
+    console.error('Error generating static params for categories:', error);
     return [];
   }
 }

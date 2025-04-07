@@ -1,5 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
+import Link from 'next/link';
+import Image from 'next/image';
 
 export function PromotionBanner() {
   return (
@@ -11,8 +11,8 @@ export function PromotionBanner() {
               Summer Special Offer
             </h2>
             <p className="mt-3 text-lg text-gray-800">
-              Get 15% off when you order any catering package for your summer events. 
-              Use code <span className="font-semibold">SUMMER15</span> at checkout.
+              Get 15% off when you order any catering package for your summer events. Use code{' '}
+              <span className="font-semibold">SUMMER15</span> at checkout.
             </p>
             <div className="mt-8">
               <div className="inline-flex rounded-md shadow">
@@ -49,4 +49,4 @@ export function PromotionBanner() {
       </div>
     </div>
   );
-} 
+}

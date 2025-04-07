@@ -29,7 +29,6 @@ type ServerDebugData = {
 export default function AdminDebugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [_authData, setAuthData] = useState<Record<string, unknown> | null>(null);
   const [serverDebugData, setServerDebugData] = useState<ServerDebugData | null>(null);
   const [clientUser, setClientUser] = useState<UserData | null | undefined>(null);
   const supabase = createClient();
@@ -39,13 +38,12 @@ export default function AdminDebugPage() {
     async function getClientAuth() {
       try {
         setLoading(true);
-        
+
         // Get client-side user
-        const _authData = await supabase.auth.getUser();
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user as unknown as UserData | undefined;
         setClientUser(user);
-        
+
         // Fetch server-side debug data
         if (user) {
           const response = await fetch('/api/debug/admin-check');
@@ -65,24 +63,19 @@ export default function AdminDebugPage() {
       }
     }
 
-    getClientAuth();
+    void getClientAuth();
   }, [supabase.auth]);
 
   const refreshData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Get updated auth data
-      const { data: authData, error: authError } = await supabase.auth.getSession();
-      if (authError) throw authError;
-      setAuthData(authData);
 
       // Get updated client-side user
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user as unknown as UserData | undefined;
       setClientUser(user);
-      
+
       // Fetch updated server-side debug data
       if (user) {
         const response = await fetch('/api/debug/admin-check');
@@ -109,8 +102,10 @@ export default function AdminDebugPage() {
           'Content-Type': 'application/json',
         },
       });
-      
-      alert(`Admin page request status: ${response.status} ${response.statusText}\nRedirected to: ${response.url}`);
+
+      alert(
+        `Admin page request status: ${response.status} ${response.statusText}\nRedirected to: ${response.url}`
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       alert(`Error accessing admin page: ${message}`);
@@ -132,16 +127,16 @@ export default function AdminDebugPage() {
   return (
     <div className="container mx-auto py-10 space-y-6">
       <h1 className="text-3xl font-bold">Admin Access Debug</h1>
-      
+
       <div className="flex gap-4">
-        <Button onClick={refreshData} disabled={loading}>
+        <Button onClick={() => void refreshData()} disabled={loading}>
           {loading ? 'Loading...' : 'Refresh Data'}
         </Button>
-        <Button onClick={makeAdminRequest} variant="outline">
+        <Button onClick={() => void makeAdminRequest()} variant="outline">
           Test Admin Page Access
         </Button>
       </div>
-      
+
       {error && (
         <Card className="bg-red-50">
           <CardHeader>
@@ -152,7 +147,7 @@ export default function AdminDebugPage() {
           </CardContent>
         </Card>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -163,9 +158,15 @@ export default function AdminDebugPage() {
               <p>Loading...</p>
             ) : clientUser ? (
               <div>
-                <p><strong>User ID:</strong> {clientUser.id}</p>
-                <p><strong>Email:</strong> {clientUser.email}</p>
-                <p><strong>Created:</strong> {new Date(clientUser.created_at).toLocaleString()}</p>
+                <p>
+                  <strong>User ID:</strong> {clientUser.id}
+                </p>
+                <p>
+                  <strong>Email:</strong> {clientUser.email}
+                </p>
+                <p>
+                  <strong>Created:</strong> {new Date(clientUser.created_at).toLocaleString()}
+                </p>
                 <pre className="bg-gray-100 p-3 rounded-md mt-3 overflow-auto max-h-60 text-xs">
                   {JSON.stringify(clientUser, null, 2)}
                 </pre>
@@ -175,7 +176,7 @@ export default function AdminDebugPage() {
             )}
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Server Debug Data</CardTitle>
@@ -195,24 +196,34 @@ export default function AdminDebugPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       {serverDebugData?.profile?.found && (
-        <Card className={serverDebugData?.profile?.profile?.isAdmin ? "bg-green-50" : "bg-yellow-50"}>
+        <Card
+          className={serverDebugData?.profile?.profile?.isAdmin ? 'bg-green-50' : 'bg-yellow-50'}
+        >
           <CardHeader>
             <CardTitle>
-              {serverDebugData?.profile?.profile?.isAdmin 
-                ? "✅ Admin Access Should Work" 
-                : "❌ Not an Admin"}
+              {serverDebugData?.profile?.profile?.isAdmin
+                ? '✅ Admin Access Should Work'
+                : '❌ Not an Admin'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p><strong>Role:</strong> {serverDebugData?.profile?.profile?.roleStringValue}</p>
-            <p><strong>Role Type:</strong> {serverDebugData?.profile?.profile?.roleType}</p>
-            <p><strong>Role Uppercase:</strong> {serverDebugData?.profile?.profile?.roleUppercase}</p>
-            <p><strong>Is Admin:</strong> {serverDebugData?.profile?.profile?.isAdmin ? "Yes" : "No"}</p>
+            <p>
+              <strong>Role:</strong> {serverDebugData?.profile?.profile?.roleStringValue}
+            </p>
+            <p>
+              <strong>Role Type:</strong> {serverDebugData?.profile?.profile?.roleType}
+            </p>
+            <p>
+              <strong>Role Uppercase:</strong> {serverDebugData?.profile?.profile?.roleUppercase}
+            </p>
+            <p>
+              <strong>Is Admin:</strong> {serverDebugData?.profile?.profile?.isAdmin ? 'Yes' : 'No'}
+            </p>
           </CardContent>
         </Card>
       )}
     </div>
   );
-} 
+}

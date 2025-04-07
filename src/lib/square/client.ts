@@ -7,11 +7,12 @@ dotenv.config();
 
 // Square client config
 const config = {
-  environment: process.env.NODE_ENV === 'production' 
-    ? SquareEnvironment.Production 
-    : SquareEnvironment.Sandbox,
+  environment:
+    process.env.NODE_ENV === 'production'
+      ? SquareEnvironment.Production
+      : SquareEnvironment.Sandbox,
   accessToken: process.env.SQUARE_ACCESS_TOKEN!,
-  userAgentDetail: "destino-sf" 
+  userAgentDetail: 'destino-sf',
 };
 
 // Configure instance of Square client

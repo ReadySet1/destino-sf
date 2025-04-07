@@ -1,11 +1,11 @@
-import Link from "next/link";
-import Image from "next/image";
-import { Dancing_Script } from "next/font/google";
+import Link from 'next/link';
+import Image from 'next/image';
+import { Dancing_Script } from 'next/font/google';
 
 const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
 interface CategoryType {
@@ -18,25 +18,25 @@ interface CategoryType {
 
 const categories: CategoryType[] = [
   {
-    id: "1",
-    name: "Empanadas",
-    description: "Our signature savory pastries with various fillings",
-    imageUrl: "/images/assets/2Recurso 3.png",
-    slug: "empanadas",
+    id: '1',
+    name: 'Empanadas',
+    description: 'Our signature savory pastries with various fillings',
+    imageUrl: '/images/assets/2Recurso 3.png',
+    slug: 'empanadas',
   },
   {
-    id: "2",
-    name: "Desserts",
-    description: "Sweet treats including our famous alfajores",
-    imageUrl: "/images/assets/2Recurso 13.png",
-    slug: "desserts",
+    id: '2',
+    name: 'Desserts',
+    description: 'Sweet treats including our famous alfajores',
+    imageUrl: '/images/assets/2Recurso 13.png',
+    slug: 'desserts',
   },
   {
-    id: "3",
-    name: "Gift Sets",
-    description: "Curated collections perfect for gifting",
-    imageUrl: "/images/assets/2Recurso 17.png",
-    slug: "gift-sets",
+    id: '3',
+    name: 'Gift Sets',
+    description: 'Curated collections perfect for gifting',
+    imageUrl: '/images/assets/2Recurso 17.png',
+    slug: 'gift-sets',
   },
 ];
 
@@ -54,9 +54,9 @@ export function ShopByCategory() {
         </div>
 
         <div className="mt-12 grid gap-8 md:grid-cols-3">
-          {categories.map((category) => (
-            <Link 
-              key={category.id} 
+          {categories.map(category => (
+            <Link
+              key={category.id}
               href={`/categories/${category.slug}`}
               className="group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl"
             >
@@ -100,12 +100,7 @@ export function ShopByCategory() {
             className="inline-flex items-center rounded-md border border-transparent bg-gray-100 px-6 py-3 text-base font-medium text-gray-900 hover:bg-gray-200"
           >
             View All Categories
-            <svg
-              className="ml-2 h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -118,4 +113,4 @@ export function ShopByCategory() {
       </div>
     </div>
   );
-} 
+}

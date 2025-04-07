@@ -1,5 +1,5 @@
-import AlfajoresMenuBanner from "@/components/Alfajores Menu";
-import React from "react";
+import AlfajoresMenuBanner from '@/components/Alfajores Menu';
+import React from 'react';
 
 const CateringPage = () => {
   return (

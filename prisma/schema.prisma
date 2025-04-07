@@ -44,6 +44,10 @@ model Category {
   name        String    @unique
   description String?
   order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  slug        String?   @unique
+  imageUrl    String?
+  metadata    Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   products    Product[]

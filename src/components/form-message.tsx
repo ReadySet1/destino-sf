@@ -1,17 +1,13 @@
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 interface FormMessageProps {
-  message?: string
-  type?: 'error' | 'success'
-  className?: string
+  message?: string;
+  type?: 'error' | 'success';
+  className?: string;
 }
 
-export function FormMessage({
-  message,
-  type = 'error',
-  className,
-}: FormMessageProps) {
-  if (!message) return null
+export function FormMessage({ message, type = 'error', className }: FormMessageProps) {
+  if (!message) return null;
 
   return (
     <div
@@ -24,5 +20,5 @@ export function FormMessage({
     >
       {message}
     </div>
-  )
+  );
 }

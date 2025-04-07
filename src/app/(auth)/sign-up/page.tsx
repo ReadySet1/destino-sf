@@ -1,14 +1,12 @@
-import { signUpAction } from "@/app/actions";
-import { FormMessage } from "@/components/form-message";
-import { SubmitButton } from "@/components/submit-button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { SmtpMessage } from "../smtp-message";
+import { signUpAction } from '@/app/actions';
+import { FormMessage } from '@/components/form-message';
+import { SubmitButton } from '@/components/submit-button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Link from 'next/link';
+import { SmtpMessage } from '../smtp-message';
 
-export default async function Signup(props: {
-  searchParams: Promise<{ message?: string }>;
-}) {
+export default async function Signup(props: { searchParams: Promise<{ message?: string }> }) {
   const searchParams = await props.searchParams;
   if (searchParams.message) {
     return (
@@ -23,7 +21,7 @@ export default async function Signup(props: {
       <form action={signUpAction} className="flex flex-col min-w-64 max-w-64 mx-auto">
         <h1 className="text-2xl font-medium">Sign up</h1>
         <p className="text-sm text text-foreground">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link className="text-primary font-medium underline" href="/sign-in">
             Sign in
           </Link>
@@ -39,9 +37,7 @@ export default async function Signup(props: {
             minLength={6}
             required
           />
-          <SubmitButton>
-            Sign up
-          </SubmitButton>
+          <SubmitButton>Sign up</SubmitButton>
           <FormMessage message={searchParams.message} />
         </div>
       </form>

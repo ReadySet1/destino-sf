@@ -36,14 +36,14 @@ interface CatalogResponse {
  * Uses the SDK structure client.catalog.list based on previous findings.
  */
 export async function fetchCatalogItems() {
-  console.log("Fetching catalog items and categories from Square...");
+  console.log('Fetching catalog items and categories from Square...');
   try {
     const initialResponse = (await squareClient.catalog.list({
-      types: 'ITEM,CATEGORY'
+      types: 'ITEM,CATEGORY',
     })) as unknown as CatalogResponse;
 
     if (!initialResponse?.result?.objects || !Array.isArray(initialResponse.result.objects)) {
-      console.error("Initial Square API response is not in the expected format:", initialResponse);
+      console.error('Initial Square API response is not in the expected format:', initialResponse);
       throw new Error('Received invalid response structure from Square catalog API.');
     }
 
@@ -52,10 +52,10 @@ export async function fetchCatalogItems() {
 
     let cursor = initialResponse.result.cursor;
     while (cursor) {
-      console.log("Fetching next page of catalog objects...");
+      console.log('Fetching next page of catalog objects...');
       const nextResponse = (await squareClient.catalog.list({
         types: 'ITEM,CATEGORY',
-        cursor
+        cursor,
       })) as unknown as CatalogResponse;
 
       if (!nextResponse?.result?.objects) {
@@ -64,12 +64,13 @@ export async function fetchCatalogItems() {
 
       allObjects = [...allObjects, ...nextResponse.result.objects];
       cursor = nextResponse.result.cursor;
-      console.log(`Workspaceed page with ${nextResponse.result.objects.length} objects. Total fetched: ${allObjects.length}`);
+      console.log(
+        `Workspaceed page with ${nextResponse.result.objects.length} objects. Total fetched: ${allObjects.length}`
+      );
     }
 
     console.log(`Finished fetching. Total objects retrieved: ${allObjects.length}`);
     return allObjects;
-
   } catch (error) {
     console.error('Error fetching Square catalog:', error);
     if (error instanceof Error && 'body' in error) {
@@ -93,26 +94,26 @@ export async function createSquareProduct({
   description: _description,
   price: _price,
   categoryId: _categoryId,
-  variations: _variations = []
+  variations: _variations = [],
 }: {
   name: string;
   description?: string;
   price: number;
   categoryId?: string;
-  variations?: Array<{name: string, price?: number}>;
+  variations?: Array<{ name: string; price?: number }>;
 }) {
   // In development mode, just return a temporary ID
   if (process.env.NODE_ENV !== 'production') {
-    console.log("Development mode: Skipping actual Square API call, returning temporary Square ID");
+    console.log('Development mode: Skipping actual Square API call, returning temporary Square ID');
     return `temp_square_${Date.now()}`;
   }
-  
-  console.log("Creating product in Square:", name);
-  
+
+  console.log('Creating product in Square:', name);
+
   try {
     // TODO: Implement proper Square product creation once API issues are resolved
     // For now, this is a placeholder that returns a temporary ID
-    
+
     // This would be the proper implementation:
     /*
     const response = await squareClient.catalogApi.createCatalogObject({
@@ -130,12 +131,11 @@ export async function createSquareProduct({
     });
     return response.result.catalogObject.id;
     */
-    
+
     // For now, return a temporary ID prefixed with "temp_"
     const tempId = `temp_square_${Date.now()}`;
     console.log(`Returning temporary Square ID: ${tempId}`);
     return tempId;
-    
   } catch (error) {
     console.error('Error creating product in Square:', error);
     if (error instanceof Error && 'body' in error) {

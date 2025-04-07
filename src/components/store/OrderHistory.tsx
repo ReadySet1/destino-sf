@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistance } from 'date-fns';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface OrderHistoryProps {
   userId: string;
@@ -31,32 +38,34 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const response = await fetch(`/api/orders?userId=${userId}`);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch orders');
         }
-        
+
         const data = await response.json();
         setOrders(data.orders || []);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'An error occurred while fetching your orders');
+        setError(
+          err instanceof Error ? err.message : 'An error occurred while fetching your orders'
+        );
         setOrders([]);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchOrders();
+
+    void fetchOrders();
   }, [userId]);
-  
+
   const getStatusBadge = (status: Order['status']) => {
     switch (status) {
       case 'PENDING':
@@ -64,7 +73,9 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
       case 'PROCESSING':
         return <Badge variant="secondary">Processing</Badge>;
       case 'READY':
-        return <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">Ready for Pickup</Badge>;
+        return (
+          <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">Ready for Pickup</Badge>
+        );
       case 'COMPLETED':
         return <Badge className="bg-green-500 text-white hover:bg-green-600">Completed</Badge>;
       case 'CANCELLED':
@@ -73,7 +84,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-  
+
   if (isLoading) {
     return (
       <Card>
@@ -89,7 +100,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
       </Card>
     );
   }
-  
+
   if (error) {
     return (
       <Card>
@@ -98,14 +109,12 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
           <CardDescription>View your past orders and their status.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-            {error}
-          </div>
+          <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">{error}</div>
         </CardContent>
       </Card>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader>
@@ -134,10 +143,12 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {orders.map(order => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
-                  <TableCell>{formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}</TableCell>
+                  <TableCell>
+                    {formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
+                  </TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
                   <TableCell>${order.total.toFixed(2)}</TableCell>
                   <TableCell>{order.items.length}</TableCell>

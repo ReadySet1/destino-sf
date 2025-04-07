@@ -1,6 +1,6 @@
-import React from "react";
-import MenuBanner from "@/components/Menu";
-import ProductList from "@/components/Products/ProductList";
+import React from 'react';
+import MenuBanner from '@/components/Menu';
+import ProductList from '@/components/Products/ProductList';
 
 const MenuPage = () => {
   return (

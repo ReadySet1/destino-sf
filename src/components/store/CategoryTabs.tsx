@@ -16,13 +16,13 @@ interface CategoryTabsProps {
 
 export function CategoryTabs({ categories, selectedCategoryId }: CategoryTabsProps) {
   const pathname = usePathname();
-  
+
   return (
     <div className="mb-8 overflow-x-auto">
       <div className="flex min-w-max border-b">
-        {categories.map((category) => {
+        {categories.map(category => {
           const isActive = category._id === selectedCategoryId;
-          
+
           return (
             <Link
               key={category._id}

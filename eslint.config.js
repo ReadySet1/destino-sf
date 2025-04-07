@@ -1,40 +1,36 @@
 // eslint.config.js
 import { FlatCompat } from '@eslint/eslintrc';
-import _eslint from '@eslint/js';
-import _tseslint from '@typescript-eslint/eslint-plugin'; // Keep for explicit plugin ref if needed
-import _tseslintParser from '@typescript-eslint/parser';
+import js from '@eslint/js';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tseslintParser from '@typescript-eslint/parser';
+import reactHooks from 'eslint-plugin-react-hooks';
+import react from 'eslint-plugin-react';
 import globals from 'globals';
-import path from 'path'; // Needed for FlatCompat baseDirectory
-import { fileURLToPath } from 'url'; // Needed for FlatCompat baseDirectory
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// --- Setup for FlatCompat ---
-// Mimic __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize FlatCompat
 const compat = new FlatCompat({
-  baseDirectory: __dirname, // Helps resolve plugins/configs relative to this file
-  // Optional: If you used eslint:recommended before, you might want this
-  // recommendedConfig: eslint.configs.recommended,
+  baseDirectory: __dirname,
 });
-// ----------------------------
 
-const config = [
-  // 1. Global Ignores
+export default [
+  // Global ignores
   {
     ignores: [
       '**/dist/**',
       '**/build/**',
-      '**/.next/**', // Important for Next.js
+      '**/.next/**',
       '**/node_modules/**',
       '**/.cache/**',
       '**/coverage/**',
-      '**/.*', // Careful: This ignores .github, .vscode etc. Consider specific dotfiles if needed.
-      '!/.env*', // Example: Don't ignore .env files if you want to lint them (unlikely)
-      '!/.prettierrc*', // Don't ignore prettier config
+      '**/.*',
+      '!/.env*',
+      '!/.prettierrc*',
       'jest.config.js',
-      'next.config.js', // or next.config.mjs
+      'next.config.js',
       'postcss.config.js',
       'tailwind.config.js',
       'sanity.config.ts',
@@ -47,65 +43,104 @@ const config = [
     ],
   },
 
-  // 2. Core Configuration using FlatCompat for extends
-  // This combines Next.js presets, TypeScript support, and Prettier compatibility
-  ...compat.config({
-    extends: [
-      // Base Next.js rules (includes React, React Hooks, Next.js plugin)
-      'next/core-web-vitals',
-      // Recommended TypeScript rules specifically for Next.js
-      // This often implicitly configures the parser and TS plugin
-      // 'plugin:@typescript-eslint/recommended', // Often included/configured by 'next/typescript' or similar, check if needed
-      // Disables ESLint formatting rules that conflict with Prettier
-      'prettier',
-    ],
-    parser: '@typescript-eslint/parser', // Explicitly set the parser
-    parserOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      // Link your tsconfig for type-aware rules (recommended for stricter checks)
-      // project: './tsconfig.json',
-    },
-    plugins: [
-       '@typescript-eslint', // Ensure the TS plugin is explicitly available
-    ],
-    rules: {
-      // --- Your Custom Rule Overrides ---
-      // Apply your specific preferences here
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }], // Allow unused prefixed with _
-      '@typescript-eslint/no-explicit-any': 'warn', // Downgrade 'any' to a warning during development/refactoring
-      '@typescript-eslint/explicit-function-return-type': 'off', // Keep off if you prefer inferred types
-
-      // Example: If you still want to use <img> tags sometimes (not recommended by Next.js rules)
-      // '@next/next/no-img-element': 'warn', // or 'off'
-
-      // --- Other Recommended Rules (Optional) ---
-      // You might want basic JS recommendations if not fully covered by Next.js presets
-      // ...eslint.configs.recommended.rules, // Uncomment if needed, but check for overlap with Next.js
-    },
-  }),
-
-  // 3. Language Options (Globals, Parser for specific file types)
-  // Applied broadly, but the compat.config above might override some specifics
+  // JavaScript configuration
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['**/*.{js,cjs,mjs}'],
     languageOptions: {
-      // parser: tseslintParser, // Parser is often set within compat.config or by presets like next/typescript
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
       },
-      globals: {
-        ...globals.browser, // For browser APIs like window, document, fetch
-        ...globals.node,    // For Node.js APIs like process, require
-        React: 'readonly', // If using JSX without importing React explicitly
-      },
     },
-    // You *could* put plugins and rules here too, but keeping them central
-    // in the compat.config block is often cleaner for overrides.
+    rules: {
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
   },
 
-  // 4. Configuration SPECIFICALLY for Jest/test files
+  // TypeScript configuration
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tseslintParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.json',
+        ecmaFeatures: {
+          jsx: true
+        }
+      },
+    },
+    settings: {
+      react: {
+        version: '18.2.0'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+      'react-hooks': reactHooks,
+      'react': react,
+    },
+    rules: {
+      // TypeScript specific rules
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+
+      // React specific rules
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/no-unescaped-entities': 'error',
+      'react/no-children-prop': 'error',
+      'react/no-danger': 'error',
+      'react/no-deprecated': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-find-dom-node': 'error',
+      'react/no-is-mounted': 'error',
+      'react/no-render-return-value': 'error',
+      'react/no-string-refs': 'error',
+      'react/no-unknown-property': 'error',
+      'react/require-render-return': 'error',
+
+      // General best practices
+      'no-console': ['warn', {
+        allow: ['warn', 'error', 'info', 'debug', 'log']
+      }],
+      'no-debugger': 'warn',
+      'no-duplicate-imports': 'error',
+      'no-unused-expressions': 'error',
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'prefer-template': 'error',
+    },
+  },
+
+  // Configuration for debug/dev files
+  {
+    files: ['**/*debug*.*', '**/*dev*.*'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
+  // Jest/test configuration
   {
     files: [
       '**/jest.setup.js',
@@ -115,17 +150,13 @@ const config = [
     ],
     languageOptions: {
       globals: {
-        ...globals.jest, // Defines describe, it, expect, jest, etc.
+        ...globals.jest,
       },
     },
-    // Optional: Relax certain rules within tests if necessary
     rules: {
-      // Example: Allow 'any' type more freely in tests
-      // '@typescript-eslint/no-explicit-any': 'off',
-      // Example: Allow potential side effects in test descriptions
-      // '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      'no-console': 'off',
     },
   },
 ];
-
-export default config;

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Category } from "@prisma/client";
-import { createProductAction } from "../actions";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Category } from '@/types/product';
+import { createProductAction } from '../actions';
+import { useRouter } from 'next/navigation';
 
 interface ProductFormProps {
   categories: Category[];
@@ -24,11 +24,11 @@ export default function ProductForm({ categories }: ProductFormProps) {
     try {
       const result = await createProductAction(formData);
       if (result?.success) {
-        router.push("/admin/products");
+        router.push('/admin/products');
       }
     } catch (error) {
-      console.error("Submission error:", error);
-      setError(error instanceof Error ? error.message : "Failed to create product");
+      console.error('Submission error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create product');
     } finally {
       setIsSubmitting(false);
     }
@@ -46,14 +46,10 @@ export default function ProductForm({ categories }: ProductFormProps) {
         </Link>
       </div>
 
-      {error && (
-        <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-md">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-md">{error}</div>}
 
       <div className="bg-white shadow-md rounded-lg p-6">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={void handleSubmit}>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="col-span-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -106,9 +102,7 @@ export default function ProductForm({ categories }: ProductFormProps) {
                 placeholder="Square catalog item ID"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Leave blank for automatic ID generation
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Leave blank for automatic ID generation</p>
             </div>
 
             <div>
@@ -122,7 +116,7 @@ export default function ProductForm({ categories }: ProductFormProps) {
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
+                {categories.map(category => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -141,9 +135,7 @@ export default function ProductForm({ categories }: ProductFormProps) {
                 placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Enter image URLs separated by commas
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Enter image URLs separated by commas</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -176,7 +168,7 @@ export default function ProductForm({ categories }: ProductFormProps) {
                 href="/admin/products"
                 className={`px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 aria-disabled={isSubmitting}
-                onClick={(e) => isSubmitting && e.preventDefault()}
+                onClick={e => isSubmitting && e.preventDefault()}
               >
                 Cancel
               </Link>
@@ -187,9 +179,25 @@ export default function ProductForm({ categories }: ProductFormProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Creating...
                   </>
@@ -203,4 +211,4 @@ export default function ProductForm({ categories }: ProductFormProps) {
       </div>
     </div>
   );
-} 
+}

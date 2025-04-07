@@ -29,7 +29,10 @@ interface OrderConfirmationPageProps {
   // searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; // Add if searchParams were also needed
 }
 
-export default async function OrderConfirmationPage({ params }: OrderConfirmationPageProps): Promise<JSX.Element> { // <-- Added explicit return type
+export default async function OrderConfirmationPage({
+  params,
+}: OrderConfirmationPageProps): Promise<JSX.Element> {
+  // <-- Added explicit return type
 
   // Await the params promise to get the resolved object
   const resolvedParams = await params; // <-- Added: Await the promise
@@ -38,8 +41,8 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
   const order = await prisma.order.findUnique({
     where: { id: resolvedParams.id }, // <-- Changed: Use resolvedParams.id
     include: {
-      items: true
-    }
+      items: true,
+    },
   });
 
   if (!order) {
@@ -59,11 +62,11 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
           </div>
 
           <h1 className="mb-2 text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-gray-600">
-            Thank you for your order. Your confirmation number is:
-          </p>
+          <p className="text-gray-600">Thank you for your order. Your confirmation number is:</p>
           {/* Use order details fetched using resolvedParams.id */}
-          <p className="mt-2 text-xl font-bold text-yellow-600">#{order.id.slice(-8).toUpperCase()}</p>
+          <p className="mt-2 text-xl font-bold text-yellow-600">
+            #{order.id.slice(-8).toUpperCase()}
+          </p>
         </div>
 
         <div className="mb-8 rounded-lg bg-gray-50 p-6">
@@ -142,9 +145,8 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
 
         <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
           <p>
-            A confirmation email has been sent to {order.email}. If you have any
-            questions about your order, please contact us at james@destinosf.com or
-            call (415) 757-0177.
+            A confirmation email has been sent to {order.email}. If you have any questions about
+            your order, please contact us at james@destinosf.com or call (415) 757-0177.
           </p>
         </div>
 
@@ -156,9 +158,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
           </Link>
 
           <Link href="/menu" className="flex-1">
-            <Button className="w-full">
-              Order More
-            </Button>
+            <Button className="w-full">Order More</Button>
           </Link>
         </div>
       </div>

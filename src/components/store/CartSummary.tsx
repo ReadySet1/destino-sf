@@ -8,7 +8,7 @@ interface CartSummaryProps {
 export function CartSummary({ subtotal, totalItems }: CartSummaryProps) {
   const tax = subtotal * 0.0825; // 8.25% tax
   const total = subtotal + tax;
-  
+
   return (
     <Card>
       <CardHeader>
