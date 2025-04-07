@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Dancing_Script } from "next/font/google";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const dancingScript = Dancing_Script({
   subsets: ["latin"],
@@ -42,9 +43,21 @@ export default function Hero() {
   const popularEmpanadas: MenuItemType[] = [
     {
       id: "4",
-      name: "Beef Empanada",
-      imageUrl: "/images/homepage/empanadas 3.png",
-      slug: "beef-empanada",
+      name: "Huacatay Empanada",
+      imageUrl: "/images/hero/huacatay-empanada.jpg",
+      slug: "huacatay-empanada",
+    },
+    {
+      id: "5",
+      name: "Oxtail Empanada",
+      imageUrl: "/images/hero/oxtail-empanada.JPG",
+      slug: "oxtail-empanada",
+    },
+    {
+      id: "6",
+      name: "Lomo Saltado Empanada",
+      imageUrl: "/images/hero/lomo-saltado-empanada.jpeg",
+      slug: "lomo-saltado-empanada",
     },
   ];
 
@@ -53,9 +66,9 @@ export default function Hero() {
       {/* Hero Section with Empanada Image and CTA */}
       <div className="relative w-full overflow-hidden">
         {/* Image container with proper sizing */}
-        <div className="relative h-[500px] w-full">
+        <div className="relative h-[320px] w-full">
           <Image
-            src="/images/homepage/empanadas 2.png"
+            src="/images/hero/hero-empanada.png"
             alt="Delicious Empanadas"
             fill
             className="object-cover"
@@ -65,7 +78,7 @@ export default function Hero() {
           {/* Content overlay */}
           <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
             <div className="max-w-xl text-white">
-              <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl">
+              <h1 className="mb-4 text-2xl font-bold leading-tight md:text-5xl">
                 Flakey, golden empanadas
                 <br />
                 filled with rich flavors
@@ -82,7 +95,7 @@ export default function Hero() {
       </div>
 
       {/* Popular Empanadas Section */}
-      <div className="bg-white py-16">
+      <div className="bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2
             className={`mb-6 text-center text-4xl text-black md:mb-12 md:text-5xl ${dancingScript.className}`}
@@ -91,26 +104,37 @@ export default function Hero() {
           </h2>
         </div>
 
-        {/* Contenedor de imagen responsivo */}
-        <div className="w-full px-0 sm:px-4">
-          {popularEmpanadas.map((empanada) => (
-            <Link
-              href={`/products/${empanada.slug}`}
-              key={empanada.id}
-              className="block transition-transform duration-300 hover:scale-[1.02]"
-            >
-              <div className="relative h-[60vw] w-full overflow-hidden md:h-[35vw] lg:h-[500px]">
-                <Image
-                  src={empanada.imageUrl}
-                  alt={empanada.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1000px"
-                  priority
-                />
+        {/* Carousel container */}
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="relative">
+            <Carousel className="w-full">
+              <CarouselContent className="flex">
+                {popularEmpanadas.map((empanada) => (
+                  <CarouselItem key={empanada.id} className="flex-[0_0_33.333%] pl-4">
+                    <Link
+                      href={`/products/${empanada.slug}`}
+                      className="block transition-transform duration-300 hover:scale-[1.02]"
+                    >
+                      <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
+                        <Image
+                          src={empanada.imageUrl}
+                          alt={empanada.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          priority
+                        />
+                      </div>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="absolute inset-y-0 -left-4 -right-4 flex items-center justify-between">
+                <CarouselPrevious className="relative h-9 w-9 rounded-full border border-gray-300 bg-white/90 opacity-70 shadow-sm transition-opacity hover:opacity-100" />
+                <CarouselNext className="relative h-9 w-9 rounded-full border border-gray-300 bg-white/90 opacity-70 shadow-sm transition-opacity hover:opacity-100" />
               </div>
-            </Link>
-          ))}
+            </Carousel>
+          </div>
         </div>
       </div>
 
@@ -129,7 +153,7 @@ export default function Hero() {
                 className="flex flex-col items-center"
               >
                 <div
-                  className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-48 sm:w-48" // Reducimos el tamaño para móviles
+                  className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-48 sm:w-48"
                 >
                   <Image
                     src={item.imageUrl}
@@ -139,7 +163,7 @@ export default function Hero() {
                   />
                 </div>
                 <h3
-                  className={`mt-3 text-lg text-gray-800 ${dancingScript.className} sm:mt-6 sm:text-2xl`} // Reducimos el tamaño del texto para móviles
+                  className={`mt-3 text-lg text-gray-800 ${dancingScript.className} sm:mt-6 sm:text-2xl`}
                 >
                   {item.name}
                 </h3>

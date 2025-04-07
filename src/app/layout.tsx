@@ -1,7 +1,9 @@
 import { Inter, Quicksand } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import "./styles/globals.css";
 
 const quicksand = Quicksand({
   subsets: ["latin"],
@@ -32,7 +34,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
           <div className="fixed bottom-4 right-4">
             <ThemeSwitcher />
           </div>
@@ -40,4 +46,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+} 

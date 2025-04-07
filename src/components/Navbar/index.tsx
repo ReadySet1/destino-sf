@@ -29,7 +29,7 @@ export default function Navbar() {
   return (
     <nav className="border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative flex h-16 items-center justify-between">
+        <div className="relative flex h-20 items-center justify-between">
           {/* Sección izquierda - Logo (Siempre visible) y Enlaces de navegación (Desktop) */}
           <div className="flex items-center w-full sm:w-auto">
             {" "}
