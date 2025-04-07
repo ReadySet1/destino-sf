@@ -3,17 +3,19 @@ import { ThemeProvider } from "next-themes";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CartAlert } from "@/components/ui/cart-alert";
 import "./styles/globals.css";
 
 const quicksand = Quicksand({
   subsets: ["latin"],
-  weight: ["400", "700"], // Regular and Bold
+  weight: ["300", "400", "500", "700"], // Light, Regular, Medium and Bold
   variable: "--font-quicksand",
 });
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
+  variable: "--font-inter",
 });
 
 export default function RootLayout({
@@ -24,22 +26,24 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.className} ${quicksand.variable}`}
+      className={`${inter.variable} ${quicksand.variable} font-sans`}
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground">
+      <body className="bg-background text-foreground antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pt-2">{children}</main>
             <Footer />
           </div>
-          <div className="fixed bottom-4 right-4">
+          <CartAlert />
+          {/* Theme switcher positioned in top-right corner of footer */}
+          <div className="fixed sm:bottom-4 sm:right-4 bottom-20 right-4 z-50">
             <ThemeSwitcher />
           </div>
         </ThemeProvider>

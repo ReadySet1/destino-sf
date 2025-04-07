@@ -1,12 +1,10 @@
 import AlfajoresMenuBanner from "@/components/Alfajores Menu";
-import Navbar from "@/components/Navbar";
 import React from "react";
 
 const CateringPage = () => {
   return (
     <div>
       {/* Content for Catering page will go here */}
-      <Navbar />
       <AlfajoresMenuBanner />
       <h1>Our Catering</h1>
       <h2>Extra Services</h2>

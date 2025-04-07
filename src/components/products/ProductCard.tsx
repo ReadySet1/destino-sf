@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Decimal } from "@prisma/client/runtime/library";
 import { useCartStore } from "@/store/cart";
-import { toast } from "sonner";
+import { useCartAlertStore } from "@/components/ui/cart-alert";
 
 interface ProductCardProps {
   product: Product;
@@ -33,13 +33,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayPrice = selectedVariant?.price || product.price;
   const mainImage = product.images?.[0] || '/placeholder-product.png';
   
-  // Explicitly ensure productId is a string before creating the URL
-  const productId = String(product.id ?? ''); // Use nullish coalescing for safety
+  const productId = String(product.id ?? '');
   const productUrl = `/products/${productId}`;
 
   const { addItem } = useCartStore();
+  const { showAlert } = useCartAlertStore();
 
-  // Function to handle adding to cart
   const handleAddToCart = () => {
     const priceToAdd = typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice 
                          ? displayPrice.toNumber() 
@@ -53,7 +52,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       image: mainImage,
       variantId: selectedVariant?.id,
     });
-    toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} added to cart!`);
+    
+    showAlert(`1 ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""} has been added to your cart.`);
   };
 
   return (

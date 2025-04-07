@@ -1,7 +1,7 @@
 import React from 'react';
 
-const Hero = () => {
+const Landing = () => {
   return <div data-testid="hero-component">Mocked Hero Component</div>;
 };
 
-export default Hero;
+export default Landing; 

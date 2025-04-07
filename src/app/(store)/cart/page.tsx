@@ -15,10 +15,10 @@ export default function CartPage() {
   }
   
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">Your Cart</h1>
+    <main className="container mx-auto px-4 py-4 sm:py-8">
+      <h1 className="mb-4 sm:mb-8 text-2xl sm:text-3xl font-bold">Your Cart</h1>
       
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="flex flex-col gap-4 sm:gap-8 lg:grid lg:grid-cols-3">
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="rounded-lg border bg-white shadow-sm">
@@ -41,26 +41,24 @@ export default function CartPage() {
         </div>
         
         {/* Order Summary */}
-        <div>
+        <div className="sticky top-4">
           <CartSummary 
             subtotal={totalPrice} 
             totalItems={totalItems} 
           />
           
-          <div className="mt-4">
-            <Link href="/checkout">
+          <div className="mt-4 space-y-4">
+            <Link href="/checkout" className="block">
               <Button className="w-full">
                 Proceed to Checkout
               </Button>
             </Link>
             
-            <div className="mt-4">
-              <Link href="/menu">
-                <Button variant="link" className="w-full">
-                  Continue Shopping
-                </Button>
-              </Link>
-            </div>
+            <Link href="/menu" className="block">
+              <Button variant="link" className="w-full">
+                Continue Shopping
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

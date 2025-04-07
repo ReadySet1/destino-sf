@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-// Mock the hero component before importing the page
-jest.mock('../../components/hero', () => ({
+// Mock the Landing component before importing the page
+jest.mock('../../components/Landing', () => ({
   __esModule: true,
   default: () => <div data-testid="hero-component">Mocked Hero Component</div>,
-}), { virtual: true });
+}));
 
 // Import the page after setting up the mocks
 const HomePage = jest.fn().mockImplementation(() => (

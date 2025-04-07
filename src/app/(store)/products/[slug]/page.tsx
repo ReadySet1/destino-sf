@@ -1,7 +1,5 @@
 import { getProductBySlug } from '@/lib/sanity-products';
 import { prisma } from '@/lib/prisma';
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import ProductDetails from '@/components/Products/ProductDetails';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Product, Variant } from '@/types/product';
@@ -55,14 +53,12 @@ export default async function ProductPage({ params }: PageProps) {
     // For now, let's just return a simple message
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl font-bold">Product not found</h1>
             <p>Could not find product with slug: {slug}</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -113,14 +109,12 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Render Product Details */}
            <ProductDetails product={product} />
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

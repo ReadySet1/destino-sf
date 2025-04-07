@@ -5,8 +5,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 
 // Define a basic type for Category from Sanity
@@ -102,7 +100,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 bg-white py-8">
         <div className="container mx-auto px-4">
           {selectedCategory ? (
@@ -179,7 +176,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
           )}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

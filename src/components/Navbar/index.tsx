@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { items, totalItems } = useCartStore();
 
   useEffect(() => {
@@ -26,161 +27,186 @@ export default function Navbar() {
     console.log("Total items:", totalItems);
   }, [items, totalItems]);
 
+  const closeSheet = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <nav className="border-b">
+    <nav className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-20 items-center justify-between">
-          {/* Sección izquierda - Logo (Siempre visible) y Enlaces de navegación (Desktop) */}
+          {/* Left section - Logo and navigation links (Desktop) */}
           <div className="flex items-center w-full sm:w-auto">
-            {" "}
-            {/* Removed justify-between */}
-            {/* Logo - Izquierda en desktop, centrado en móvil */}
+            {/* Logo */}
             <div className="flex justify-center sm:justify-start sm:mr-8 w-full sm:w-auto">
-              {" "}
-              {/* Added justify-center and w-full on mobile */}
-              <Link href="/" className="flex items-center">
+              <Link href="/" className="flex items-center transition-transform hover:scale-105">
                 <Image
                   src="/images/logo/logo-destino.png"
                   alt="Destino SF Logo"
                   width={120}
                   height={40}
                   priority
+                  className="h-auto w-auto"
                 />
               </Link>
             </div>
-            {/* Enlaces de navegación (Desktop) */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            {/* Desktop Navigation Links */}
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
               <Link
                 href="/menu"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
               >
                 Menu
               </Link>
 
               <Link
                 href="/products/category/alfajores"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
               >
                 Our Alfajores
               </Link>
               <Link
                 href="/catering"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
               >
                 Our Catering
               </Link>
               <Link
                 href="/products/category/empanadas"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
               >
                 Our Empanadas
               </Link>
               <Link
                 href="/contact-about"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-gray-900 hover:border-gray-300"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
               >
                 Contact / About
               </Link>
             </div>
           </div>
 
-          {/* Sección derecha - Iconos (Siempre visible) */}
-          <div className="flex items-center space-x-4">
-            <button className="hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex">
-              <Search className="h-6 w-6" />
+          {/* Right section - Utility Icons */}
+          <div className="flex items-center space-x-6">
+            <button className="hidden p-2 text-muted-foreground transition-colors duration-200 hover:text-primary sm:inline-flex group">
+              <Search className="h-5 w-5 transition-transform group-hover:scale-110" />
             </button>
             <Link
               href="/cart"
-              className="relative hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex"
+              className="relative hidden p-2 text-muted-foreground transition-colors duration-200 hover:text-primary sm:inline-flex group"
             >
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-110" />
               {mounted && items.length > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground transition-transform duration-200 group-hover:scale-110">
                   {items.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
             </Link>
             <Link
               href="/account"
-              className="hidden p-2 text-gray-400 hover:text-gray-500 sm:inline-flex"
+              className="hidden p-2 text-muted-foreground transition-colors duration-200 hover:text-primary sm:inline-flex group"
             >
-              <User className="h-6 w-6" />
+              <User className="h-5 w-5 transition-transform group-hover:scale-110" />
             </Link>
 
-            {/* Menú móvil */}
+            {/* Mobile menu */}
             <div className="sm:hidden">
-              <Sheet>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Open menu"
-                    className="text-black"
+                    className="text-foreground hover:bg-primary/10 transition-colors"
                   >
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent
                   side="right"
-                  className="w-[300px] bg-black sm:w-[400px]"
+                  className="w-[320px] p-0 border-l border-border/50 bg-card"
                 >
-                  <SheetTitle className="mb-4 text-lg font-bold text-white">
-                    Menu
-                  </SheetTitle>
-                  <nav className="flex flex-col space-y-4">
-                    <Link
-                      href="/products/category/alfajores"
-                      className="rounded-md px-3 py-2 text-white hover:bg-gray-800"
-                    >
-                      Our Alfajores
-                    </Link>
-                    <Link
-                      href="/catering"
-                      className="rounded-md px-3 py-2 text-white hover:bg-gray-800"
-                    >
-                      Our Catering
-                    </Link>
-                    <Link
-                      href="/products/category/empanadas"
-                      className="rounded-md px-3 py-2 text-white hover:bg-gray-800"
-                    >
-                      Our Empanadas
-                    </Link>
-                    <Link
-                      href="/contact-about"
-                      className="rounded-md px-3 py-2 text-white hover:bg-gray-800"
-                    >
-                      Contact / About
-                    </Link>
-                    <div className="mt-4 flex justify-around border-t border-gray-700 pt-4">
-                      <Link
-                        href="/search"
-                        className="p-2 text-white hover:text-gray-300"
-                      >
-                        <Search className="h-6 w-6" />
-                      </Link>
-                      <Link
-                        href="/cart"
-                        className="relative p-2 text-white hover:text-gray-300"
-                      >
-                        <ShoppingCart className="h-6 w-6" />
-                        {mounted && items.length > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-bold text-white">
-                            {items.reduce(
-                              (total, item) => total + item.quantity,
-                              0
+                  <div className="flex items-center justify-between p-4 border-b border-border/50">
+                    <SheetTitle className="text-xl font-bold text-foreground">
+                      <Image
+                        src="/images/logo/logo-destino.png"
+                        alt="Destino SF Logo"
+                        width={100}
+                        height={33}
+                        className="h-auto w-auto"
+                      />
+                    </SheetTitle>
+                  </div>
+                  
+                  <div className="px-6 py-8 flex flex-col h-[calc(100%-80px)]">
+                    <nav className="flex-1">
+                      <div className="space-y-1">
+                        <Link
+                          href="/menu"
+                          onClick={closeSheet}
+                          className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                        >
+                          <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Menu</span>
+                        </Link>
+                        <Link
+                          href="/products/category/alfajores"
+                          onClick={closeSheet}
+                          className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                        >
+                          <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Alfajores</span>
+                        </Link>
+                        <Link
+                          href="/catering"
+                          onClick={closeSheet}
+                          className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                        >
+                          <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Catering</span>
+                        </Link>
+                        <Link
+                          href="/products/category/empanadas"
+                          onClick={closeSheet}
+                          className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                        >
+                          <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Empanadas</span>
+                        </Link>
+                        <Link
+                          href="/contact-about"
+                          onClick={closeSheet}
+                          className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                        >
+                          <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Contact / About</span>
+                        </Link>
+                      </div>
+                    </nav>
+                    
+                    <div className="mt-auto pt-6 w-full">
+                      <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-around items-center w-[320px]">
+                        <Link
+                          href="/cart"
+                          onClick={closeSheet}
+                          className="relative flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                        >
+                          <div className="relative">
+                            <ShoppingCart className="h-6 w-6 mb-1" />
+                            {mounted && items.length > 0 && (
+                              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                                {items.reduce((total, item) => total + item.quantity, 0)}
+                              </span>
                             )}
-                          </span>
-                        )}
-                      </Link>
-                      <Link
-                        href="/account"
-                        className="p-2 text-white hover:text-gray-300"
-                      >
-                        <User className="h-6 w-6" />
-                      </Link>
+                          </div>
+                          <span className="text-xs">Cart</span>
+                        </Link>
+                        <Link
+                          href="/account"
+                          onClick={closeSheet}
+                          className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                        >
+                          <User className="h-6 w-6 mb-1" />
+                          <span className="text-xs">Account</span>
+                        </Link>
+                      </div>
                     </div>
-                  </nav>
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>
