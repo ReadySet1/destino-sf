@@ -21,6 +21,7 @@ const config = {
     extend: {
       fontFamily: {
         quicksand: ['Quicksand', 'sans-serif'],
+        script: ['Great Vibes', 'cursive'],
       },
       colors: {
         border: 'hsl(var(--border))',

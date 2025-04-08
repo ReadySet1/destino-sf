@@ -1,6 +1,7 @@
 import { getProductBySlug } from '@/lib/sanity-products';
 import { prisma } from '@/lib/prisma';
 import ProductDetails from '@/components/Products/ProductDetails';
+import CategoryHeader from '@/components/Products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Product, Variant } from '@/types/product';
 
@@ -101,14 +102,10 @@ export default async function ProductPage({ params }: PageProps) {
     // Ensure essential fields like name, images are present
     name: sanityProduct?.name || dbProduct?.name || 'Unnamed Product',
     images: ((): string[] => {
-      const images = sanityProduct?.images || dbProduct?.images || [];
-      return images.map((image: any) => {
-        if (typeof image === 'string') return image;
-        if (typeof image === 'object' && image?.asset?._ref) {
-          return `https://cdn.sanity.io/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${image.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp')}`;
-        }
-        return '';
-      }).filter(Boolean);
+      if (sanityProduct?.images) {
+        return sanityProduct.images.map((image: any) => image.url);
+      }
+      return dbProduct?.images || [];
     })(),
     description: sanityProduct?.description || dbProduct?.description,
     featured: sanityProduct?.featured || dbProduct?.featured || false,
@@ -133,12 +130,16 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Render Product Details */}
-          <ProductDetails product={product} />
+      <CategoryHeader 
+        title="Details"
+        type="products"
+      >
+        <div className="py-8">
+          <div className="max-w-4xl mx-auto">
+            <ProductDetails product={product} />
+          </div>
         </div>
-      </main>
+      </CategoryHeader>
     </div>
   );
 }

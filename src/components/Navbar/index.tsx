@@ -32,7 +32,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+    <nav className="bg-background/95 backdrop-blur-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-20 items-center justify-between">
           {/* Left section - Logo and navigation links (Desktop) */}
@@ -117,7 +117,7 @@ export default function Navbar() {
                     variant="ghost"
                     size="icon"
                     aria-label="Open menu"
-                    className="text-foreground hover:bg-primary/10 transition-colors"
+                    className="text-foreground hover:text-primary transition-colors"
                   >
                     <Menu className="h-6 w-6" />
                   </Button>

@@ -1,4 +1,4 @@
-import { Inter, Quicksand } from 'next/font/google';
+import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import Navbar from '@/components/Navbar';
@@ -18,6 +18,12 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+const greatVibes = Great_Vibes({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-great-vibes',
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${quicksand.variable} font-sans`}
+      className={`${inter.variable} ${quicksand.variable} ${greatVibes.variable} font-sans`}
       suppressHydrationWarning
     >
       <body className="bg-background text-foreground antialiased">

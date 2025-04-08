@@ -34,7 +34,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
   // Handle both Sanity and DB product structures
   const displayPrice = selectedVariant?.price || product.price;
-  const mainImage = product.images?.[0] || "/placeholder-product.png";
+  const mainImage = product.images?.[0] || "/images/products/placeholder-product.png";
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active;
@@ -76,92 +76,101 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Image Gallery */}
         <div className="w-full">
-          <div className="aspect-square overflow-hidden rounded-lg border bg-gray-100">
+          <div className="aspect-square overflow-hidden rounded-3xl bg-white/10">
             <Image
               src={mainImage}
               alt={productName}
               width={800}
               height={800}
-              className="h-full w-full object-cover object-center transition-transform duration-300 hover:scale-105"
+              className="h-full w-full object-cover object-center"
               priority
             />
+          </div>
+          <div className="absolute top-4 right-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full">
+            <span className="text-yellow-400">★</span>
+            <span className="text-white font-medium">4.5</span>
+            <span className="text-white/80">(30)</span>
           </div>
         </div>
 
         {/* Product Info */}
-        <div className="flex flex-col justify-between">
+        <div className="flex flex-col justify-between text-white">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-3">{productName}</h1>
+            <h1 className="text-4xl lg:text-5xl font-bold">{productName}</h1>
+          </div>
+        </div>
+      </div>
 
-            {product.description && (
-              <p className="text-gray-600 mb-6">{product.description}</p>
-            )}
+      {/* Product Details in White Background */}
+      <div className="mt-8 bg-white rounded-3xl p-8">
+        {product.description && (
+          <p className="text-gray-600 mb-8 text-lg">{product.description}</p>
+        )}
 
-            <p className="text-2xl font-semibold mb-6">
-              ${formatPrice(displayPrice)}
-            </p>
+        <p className="text-3xl font-semibold mb-8 text-gray-900">
+          ${formatPrice(displayPrice)}
+        </p>
 
-            {/* Variant Selector */}
-            {product.variants && product.variants.length > 0 && (
-              <div className="mb-6">
-                <label
-                  htmlFor="variant-select"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Options:
-                </label>
-                <select
-                  id="variant-select"
-                  className="w-full border rounded-md py-2 px-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  value={selectedVariant?.id || ""}
-                  onChange={(e) => {
-                    const variant = product.variants?.find(
-                      (v) => v.id === e.target.value
-                    );
-                    setSelectedVariant(variant || null);
-                  }}
-                >
-                  {product.variants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.name} - $
-                      {formatPrice(variant.price) || formatPrice(product.price)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+        {/* Variant Selector */}
+        {product.variants && product.variants.length > 0 && (
+          <div className="mb-8">
+            <label
+              htmlFor="variant-select"
+              className="block text-lg font-medium text-gray-900 mb-2"
+            >
+              Options:
+            </label>
+            <select
+              id="variant-select"
+              className="w-full border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              value={selectedVariant?.id || ""}
+              onChange={(e) => {
+                const variant = product.variants?.find(
+                  (v) => v.id === e.target.value
+                );
+                setSelectedVariant(variant || null);
+              }}
+            >
+              {product.variants.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-            {/* Quantity Selector */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quantity:
-              </label>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={decrementQuantity}
-                  disabled={quantity <= 1}
-                  className="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  -
-                </button>
-                <span className="text-lg font-medium w-8 text-center">
-                  {quantity}
-                </span>
-                <button
-                  onClick={incrementQuantity}
-                  disabled={quantity >= 20}
-                  className="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  +
-                </button>
-              </div>
+        {/* Quantity and Add to Cart Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex-shrink-0">
+            <label className="block text-base text-gray-900 mb-2">
+              Quantity:
+            </label>
+            <div className="flex items-center">
+              <button
+                onClick={decrementQuantity}
+                disabled={quantity <= 1}
+                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+              >
+                -
+              </button>
+              <span className="text-base font-medium w-8 text-center text-gray-900">
+                {quantity}
+              </span>
+              <button
+                onClick={incrementQuantity}
+                disabled={quantity >= 20}
+                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+              >
+                +
+              </button>
             </div>
           </div>
 
           {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
-            className="w-full bg-indigo-600 text-white py-3 px-6 rounded-md text-lg font-semibold hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 px-6 bg-[#F7B614] text-white rounded-full text-sm font-semibold hover:bg-[#E5A912] transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isActive || stock === 0}
           >
             Add to Cart
