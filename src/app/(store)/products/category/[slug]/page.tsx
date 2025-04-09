@@ -125,15 +125,15 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
               description={CATEGORY_DESCRIPTIONS[selectedCategory.slug.current]}
             />
 
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
               <Suspense
                 fallback={
                   <div className="flex justify-center items-center h-64">
-                    <div className="animate-pulse text-center">
+                    <div className="animate-pulse text-center w-full">
                       <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                          <div key={i} className="h-64 bg-gray-200 rounded"></div>
+                      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <div key={i} className="h-64 bg-gray-200 rounded-2xl"></div>
                         ))}
                       </div>
                     </div>
@@ -141,20 +141,22 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
                 }
               >
                 {products.length > 0 ? (
-                  <ProductGrid
-                    products={products}
-                    title={`${selectedCategory.name} Products`}
-                    showFilters={true}
-                  />
+                  <div className="py-8 lg:py-12">
+                    <ProductGrid
+                      products={products}
+                      title={`${selectedCategory.name} Products`}
+                      showFilters={true}
+                    />
+                  </div>
                 ) : (
-                  <div className="text-center py-16 bg-gray-50 rounded-lg">
-                    <h2 className="text-2xl font-medium mb-2">No Products Available</h2>
-                    <p className="text-gray-500 mb-6">
+                  <div className="text-center py-16 my-12 bg-gray-50 rounded-2xl">
+                    <h2 className="text-2xl font-medium mb-3">No Products Available</h2>
+                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
                       We don&apos;t have any products in the {selectedCategory.name} category yet.
                     </p>
                     <Link
                       href="/products"
-                      className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring"
+                      className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
                       View All Products
                     </Link>
@@ -165,17 +167,19 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
           </>
         ) : (
           // Fallback content when category is not found
-          <div className="text-center py-16 bg-gray-50 rounded-lg">
-            <h1 className="text-3xl font-bold mb-4">Category Not Found</h1>
-            <p className="text-lg text-gray-600 mb-6">
-              Sorry, we couldn&apos;t find the category you were looking for.
-            </p>
-            <Link
-              href="/products"
-              className="inline-block px-6 py-3 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 focus:outline-none focus:ring"
-            >
-              View All Products
-            </Link>
+          <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
+            <div className="text-center py-20 my-12 bg-gray-50 rounded-2xl">
+              <h1 className="text-3xl font-bold mb-4">Category Not Found</h1>
+              <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+                Sorry, we couldn&apos;t find the category you were looking for.
+              </p>
+              <Link
+                href="/products"
+                className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                View All Products
+              </Link>
+            </div>
           </div>
         )}
       </main>
