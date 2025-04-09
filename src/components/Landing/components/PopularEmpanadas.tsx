@@ -65,19 +65,18 @@ export function PopularEmpanadas() {
                 <Link
                   key={empanada.id}
                   href={`/products/${empanada.slug}`}
-                  className="block min-w-[85%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
+                  className="block min-w-[45%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
                 >
-                  <div
-                    className="relative w-full rounded-2xl overflow-hidden"
-                    style={{ paddingBottom: '75%' }}
-                  >
+                  <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden">
                     <Image
                       src={empanada.imageUrl}
                       alt={empanada.name}
-                      fill
-                      className="object-cover absolute inset-0"
-                      sizes="(max-width: 480px) 85vw, (max-width: 768px) 40vw, 33vw"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 45vw"
+                      quality={35}
                       priority
+                      width={200}
+                      height={150}
                     />
                   </div>
                 </Link>
@@ -86,26 +85,26 @@ export function PopularEmpanadas() {
           </div>
 
           {/* Desktop/Tablet Grid */}
-          <div className="hidden md:flex md:gap-8 md:px-4 lg:gap-12">
+          <div className="hidden md:flex md:gap-8 lg:gap-12 justify-center items-start">
             {popularEmpanadas.map(empanada => (
               <Link
                 key={empanada.id}
                 href={`/products/${empanada.slug}`}
-                className="block w-[300px] lg:w-[350px] transition-transform duration-300 hover:scale-[1.02]"
+                className="block w-[280px] lg:w-[320px] transition-transform duration-300 hover:scale-[1.02]"
               >
-                <div
-                  className="relative rounded-2xl overflow-hidden"
-                  style={{ paddingBottom: '75%' }}
-                >
+                <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden">
                   <Image
                     src={empanada.imageUrl}
                     alt={empanada.name}
-                    fill
-                    className="object-cover absolute inset-0"
-                    sizes="(min-width: 1024px) 350px, 300px"
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 320px, 280px"
+                    quality={40}
                     priority
+                    width={600}
+                    height={450}
                   />
                 </div>
+                <p className="mt-4 text-center text-lg font-medium text-gray-900">{empanada.name}</p>
               </Link>
             ))}
           </div>

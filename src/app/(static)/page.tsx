@@ -5,6 +5,7 @@ import { CustomerTestimonials } from '@/components/Marketing/CustomerTestimonial
 import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { PromotionBanner } from '@/components/Marketing/PromotionBanner';
 import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
+import { CateringSection } from '@/components/Marketing/CateringSection';
 // Removed Navbar and Footer imports since they're now in the layout
 
 export default async function Home() {
@@ -14,6 +15,7 @@ export default async function Home() {
       <FeaturedProducts />
       <PromotionBanner />
       <ShopByCategory />
+      <CateringSection />
       <CustomerTestimonials />
       {/* Links to main sections based on site map */}
       {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"> */}
@@ -24,6 +26,7 @@ export default async function Home() {
       {/* </div> */}
       {/* Original comment about adding more sections can be kept or removed */}
       {/* <Add more sections here as needed /> */}
+      
     </>
   );
 }
