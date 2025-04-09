@@ -5,6 +5,31 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
 import './styles/globals.css';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  title: 'Destino SF',
+  description: 'Your favorite San Francisco restaurant',
+  openGraph: {
+    title: 'Destino SF',
+    description: 'Your favorite San Francisco restaurant',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Destino SF',
+    description: 'Your favorite San Francisco restaurant',
+    images: ['/twitter-image.png'],
+  },
+};
 
 const quicksand = Quicksand({
   subsets: ['latin'],
