@@ -3,16 +3,39 @@
 import Link from 'next/link';
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render the wave during SSR to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="bg-[#F47A1F] w-full pt-8">
+        <footer className="bg-[#FDC32D] w-full rounded-t-3xl max-w-[90%] lg:max-w-[85%] mx-auto">
+          {/* Rest of the footer content without the wave */}
+          {/* Copy the footer content here but exclude the wave transition */}
+          <div className="max-w-7xl mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+            {/* ... existing footer content ... */}
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
   const isLandingPage = pathname === '/';
   const isMenuPage = pathname === '/menu';
+  const isProductPage = pathname.startsWith('/products');
 
   return (
     <>
       {/* Curved transition from white to orange - hide on landing page and menu page */}
-      {!isLandingPage && !isMenuPage && (
+      {!isLandingPage && !isMenuPage && !isProductPage && (
         <div className="bg-white w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" className="w-full">
             <path

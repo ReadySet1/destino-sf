@@ -6,7 +6,6 @@ import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { PromotionBanner } from '@/components/Marketing/PromotionBanner';
 import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
 import { CateringSection } from '@/components/Marketing/CateringSection';
-import { About } from '@/components/About';
 
 export default async function Home() {
   return (
@@ -16,9 +15,9 @@ export default async function Home() {
       <PromotionBanner />
       <ShopByCategory />
       <CateringSection />
-      <section>
+      {/* <section>
         <About variant="large" />
-      </section>
+      </section> */}
       <CustomerTestimonials />
       {/* Links to main sections based on site map */}
       {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"> */}
