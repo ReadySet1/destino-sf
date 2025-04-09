@@ -1,8 +1,7 @@
 import React from 'react';
 import { ContactForm, ContactInfo } from '@/components/ContactForm';
-import { About } from '@/components/About';
 
-const ContactAboutPage = () => {
+const ContactPage = () => {
   return (
     <div className="max-w-[1200px] mx-auto pt-12">
       {/* Main contact card */}
@@ -22,13 +21,8 @@ const ContactAboutPage = () => {
           </div>
         </div>
       </div>
-
-      {/* About section */}
-      <section className="px-8 mb-16">
-        <About />
-      </section>
     </div>
   );
 };
 
-export default ContactAboutPage;
+export default ContactPage;

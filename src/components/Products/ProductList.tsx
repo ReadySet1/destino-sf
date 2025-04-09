@@ -38,36 +38,34 @@ const products: Product[] = [
 const ProductList: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 sm:p-6">
-          {products.map((product) => (
-            <Link
-              key={product.name}
-              href={product.slug}
-              className="group relative flex flex-col sm:flex-row items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-            >
-              <div className="relative w-full sm:w-32 h-32 mb-4 sm:mb-0 sm:mr-4">
-                <Image
-                  src={product.imageSrc}
-                  alt={product.altText}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-lg font-bold text-gray-900 font-quicksand group-hover:text-yellow-600 transition-colors duration-200">
-                  {product.name}
-                </h3>
-                {product.description && (
-                  <p className="mt-1 text-sm text-gray-600">
-                    {product.description}
-                  </p>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-6 p-4 lg:grid-cols-3 lg:gap-8 lg:p-12">
+        {products.map((product) => (
+          <Link
+            key={product.name}
+            href={product.slug}
+            className="group relative flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200 sm:flex-row lg:flex-col lg:p-6 lg:hover:bg-white lg:hover:shadow-lg lg:border lg:border-gray-100 overflow-hidden"
+          >
+            <div className="relative w-full h-32 mb-4 overflow-hidden rounded-lg sm:w-32 sm:h-32 sm:mb-0 sm:mr-4 lg:w-full lg:h-80 lg:mb-6 lg:mr-0">
+              <Image
+                src={product.imageSrc}
+                alt={product.altText}
+                fill
+                className="object-cover lg:group-hover:scale-110 lg:transition-transform lg:duration-500 ease-in-out"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
+            </div>
+            <div className="flex-1 text-center sm:text-left lg:text-center lg:w-full">
+              <h3 className="text-lg font-bold text-gray-900 font-quicksand group-hover:text-yellow-600 transition-colors duration-200 lg:text-2xl lg:mb-3">
+                {product.name}
+              </h3>
+              {product.description && (
+                <p className="mt-1 text-sm text-gray-600 lg:text-base lg:leading-relaxed">
+                  {product.description}
+                </p>
+              )}
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

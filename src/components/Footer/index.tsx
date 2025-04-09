@@ -7,11 +7,12 @@ import { usePathname } from 'next/navigation';
 export default function Footer() {
   const pathname = usePathname();
   const isLandingPage = pathname === '/';
+  const isMenuPage = pathname === '/menu';
 
   return (
     <>
-      {/* Curved transition from white to orange - only on non-landing pages */}
-      {!isLandingPage && (
+      {/* Curved transition from white to orange - hide on landing page and menu page */}
+      {!isLandingPage && !isMenuPage && (
         <div className="bg-white w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" className="w-full">
             <path

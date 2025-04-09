@@ -68,6 +68,13 @@ export default function Navbar() {
                   <nav className="flex-1">
                     <div className="space-y-1">
                       <Link
+                        href="/"
+                        onClick={closeSheet}
+                        className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                      >
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Home</span>
+                      </Link>
+                      <Link
                         href="/menu"
                         onClick={closeSheet}
                         className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
@@ -75,32 +82,25 @@ export default function Navbar() {
                         <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Menu</span>
                       </Link>
                       <Link
-                        href="/products/category/alfajores"
-                        onClick={closeSheet}
-                        className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
-                      >
-                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Alfajores</span>
-                      </Link>
-                      <Link
                         href="/catering"
                         onClick={closeSheet}
                         className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
                       >
-                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Catering</span>
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Catering</span>
                       </Link>
                       <Link
-                        href="/products/category/empanadas"
+                        href="/about"
                         onClick={closeSheet}
                         className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
                       >
-                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Our Empanadas</span>
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">About Us</span>
                       </Link>
                       <Link
-                        href="/contact-about"
+                        href="/contact"
                         onClick={closeSheet}
                         className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
                       >
-                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Contact / About</span>
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">Contact Us</span>
                       </Link>
                     </div>
                   </nav>
@@ -154,35 +154,34 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
             <Link
+              href="/"
+              className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
+            >
+              Home
+            </Link>
+            <Link
               href="/menu"
               className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
             >
               Menu
             </Link>
-
-            <Link
-              href="/products/category/alfajores"
-              className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
-            >
-              Our Alfajores
-            </Link>
             <Link
               href="/catering"
               className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
             >
-              Our Catering
+              Catering
             </Link>
             <Link
-              href="/products/category/empanadas"
+              href="/about"
               className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
             >
-              Our Empanadas
+              About Us
             </Link>
             <Link
-              href="/contact-about"
+              href="/contact"
               className="inline-flex items-center px-1 pt-1 text-sm font-medium text-foreground transition-all duration-200 border-b-2 border-transparent hover:border-primary hover:text-primary"
             >
-              Contact / About
+              Contact Us
             </Link>
           </div>
 
