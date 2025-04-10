@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     description: 'Your favorite San Francisco restaurant',
     images: [
       {
-        url: '/opengraph-image.png',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/og`,
         width: 1200,
         height: 630,
         alt: 'Destino SF',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Your favorite San Francisco restaurant',
-    images: ['/twitter-image.png'],
+    images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/og`],
   },
   other: {
     'og:site_name': 'Destino SF',
