@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: 'Destino SF',
   description: 'Your favorite San Francisco restaurant',
   openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'Destino SF',
     title: 'Destino SF',
     description: 'Your favorite San Francisco restaurant',
     images: [
@@ -28,6 +32,11 @@ export const metadata: Metadata = {
     title: 'Destino SF',
     description: 'Your favorite San Francisco restaurant',
     images: ['/twitter-image.png'],
+  },
+  other: {
+    'og:site_name': 'Destino SF',
+    'og:locale': 'en_US',
+    'og:type': 'website',
   },
 };
 
