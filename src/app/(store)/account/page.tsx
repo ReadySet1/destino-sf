@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createClient } from '@/utils/supabase/client';
-import { AccountProfile } from '@/components/Store/AccountProfile';
-import { OrderHistory } from '@/components/Store/OrderHistory';
+import { AccountProfile } from '@/components/store/AccountProfile';
+import { OrderHistory } from '@/components/store/OrderHistory';
 import { Button } from '@/components/ui/button';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 

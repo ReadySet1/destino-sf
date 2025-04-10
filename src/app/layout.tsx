@@ -1,10 +1,13 @@
+'use client';
 import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
+import { Toaster } from 'sonner';
 import './styles/globals.css';
+import { usePathname } from 'next/navigation';
 
 const quicksand = Quicksand({
   subsets: ['latin'],
@@ -29,6 +32,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   return (
     <html
       lang="en"
@@ -43,15 +49,18 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1 pt-2">{children}</main>
-            <Footer />
+            {!isAdminRoute && <Navbar />}
+            <main className={`flex-1 ${!isAdminRoute ? 'pt-2' : ''}`}>{children}</main>
+            {!isAdminRoute && <Footer />}
           </div>
-          <CartAlert />
+          {!isAdminRoute && <CartAlert />}
           {/* Theme switcher positioned in top-right corner of footer */}
           <div className="fixed sm:bottom-4 sm:right-4 bottom-20 right-4 z-50">
             <ThemeSwitcher />
           </div>
+          
+          {/* Global Toaster for all pages */}
+          <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
     </html>

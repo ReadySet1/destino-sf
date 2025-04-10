@@ -16,6 +16,7 @@ model Profile {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   orders     Order[]
+  addresses  Address[]
 
   @@map("profiles")
 }
@@ -76,6 +77,7 @@ model Order {
   customerName  String
   email         String
   phone         String
+  addressId     String?
   pickupTime    DateTime
   notes         String?
   cancelReason  String?
@@ -83,11 +85,13 @@ model Order {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   profile       Profile?      @relation(fields: [userId], references: [id])
+  address       Address?      @relation(fields: [addressId], references: [id])
   items         OrderItem[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([addressId])
 }
 
 model OrderItem {
@@ -160,6 +164,26 @@ model PromoCode {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model Address {
+  id               String    @id @default(uuid())
+  userId           String
+  name             String?
+  street           String
+  street2          String?
+  city             String
+  state            String
+  postalCode       String
+  country          String    @default("US")
+  isDefaultShipping Boolean  @default(false)
+  isDefaultBilling  Boolean  @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders           Order[]
+
+  @@index([userId])
 }
 
 enum UserRole {

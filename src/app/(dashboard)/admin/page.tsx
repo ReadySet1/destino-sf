@@ -13,9 +13,6 @@ export default async function AdminDashboard() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  logger.debug('Admin Dashboard Access Attempt');
-  logger.debug('Supabase user:', user ? { id: user.id, email: user.email } : 'null');
-
   if (!user) {
     logger.warn('No user found, redirecting to sign-in');
     return redirect('/sign-in');

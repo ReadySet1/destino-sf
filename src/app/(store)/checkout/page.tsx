@@ -11,7 +11,7 @@ import { useCartStore } from '@/store/cart';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckoutSummary } from '@/components/Store/CheckoutSummary';
+import { CheckoutSummary } from '@/components/store/CheckoutSummary';
 
 interface SquareCard {
   attach: (selector: string) => Promise<void>;
