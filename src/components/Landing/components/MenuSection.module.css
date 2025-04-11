@@ -4,12 +4,13 @@
   padding: 2rem 0;
   overflow: hidden; /* Keep overflow hidden on main section */
   /* opacity: 0.5; */ /* Removed test opacity from main element */
+  padding-top: 5rem;
 }
 
 /* Eliminar el padding superior en pantallas pequeñas */
 @media (max-width: 767px) {
   .menuSection {
-    padding-top: 0;
+    padding-top: 2;
   }
 }
 
