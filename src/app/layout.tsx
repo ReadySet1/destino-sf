@@ -78,12 +78,12 @@ export default function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1 pt-2">{children}</main>
+            <main className="flex-1 pt-0 sm:pt-2 mb-0 sm:mb-2">{children}</main>
             <Footer />
           </div>
           <CartAlert />
           {/* Theme switcher positioned in top-right corner of footer */}
-          <div className="fixed sm:bottom-4 sm:right-4 bottom-20 right-4 z-50">
+          <div className="fixed sm:bottom-4 sm:right-4 bottom-8 right-4 z-50">
             <ThemeSwitcher />
           </div>
         </ThemeProvider>
