@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     // Send notification email to owner
     const notificationEmail = await resend.emails.send({
-      from: 'Destino SF Contact Form <onboarding@resend.dev>',
+      from: 'Destino SF Contact Form <solutions@updates.readysetllc.com>',
       to: [RESEND_OWNER_EMAIL],
       subject: 'New Contact Form Submission - Destino SF',
       replyTo: email,
@@ -29,10 +29,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: notificationEmail.error }, { status: 400 });
     }
 
-    // In test mode, send confirmation email to owner email instead of user's email
     const confirmationEmail = await resend.emails.send({
-      from: 'Destino SF <onboarding@resend.dev>',
-      to: [IS_TESTING ? RESEND_OWNER_EMAIL : email],
+      from: 'Destino SF <solutions@updates.readysetllc.com>',
+      to: [email],
       subject: 'Thank you for contacting Destino SF',
       react: ConfirmationEmailTemplate({ name }) as ReactElement,
     });
