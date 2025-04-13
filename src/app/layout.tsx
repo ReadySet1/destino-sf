@@ -10,33 +10,37 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Destino SF',
-  description: 'Your favorite San Francisco restaurant',
+  description: 'Handcrafted Empanadas & Alfajores',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: '/',
     siteName: 'Destino SF',
     title: 'Destino SF',
-    description: 'Your favorite San Francisco restaurant',
+    description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
         url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Destino SF - Your favorite San Francisco restaurant',
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF',
-    description: 'Your favorite San Francisco restaurant',
+    description: 'Handcrafted Empanadas & Alfajores',
     images: ['/images/og-image.jpg'],
+    creator: '@destinosf',
   },
   other: {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'og:image:type': 'image/jpeg',
   },
 };
 
