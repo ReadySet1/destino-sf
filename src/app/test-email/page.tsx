@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import EmailTemplate from '../../components/email-template';
+import { ConfirmationEmailTemplate } from '../../components/email-template';
 
 export default function TestEmailPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -83,7 +83,7 @@ export default function TestEmailPage() {
       <div className="mt-8 p-4 border border-gray-200 rounded-md">
         <h2 className="text-lg font-semibold mb-2">Email Preview:</h2>
         <div className="p-4 bg-gray-50 rounded-md">
-          <EmailTemplate firstName={firstName} />
+          <ConfirmationEmailTemplate name={firstName} />
         </div>
       </div>
     </div>
