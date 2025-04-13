@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: '/api/og',
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
-    images: ['/images/og-image.jpg'],
+    images: ['/api/og'],
     creator: '@destinosf',
   },
   other: {
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     'og:type': 'website',
     'og:image:width': '1200',
     'og:image:height': '630',
-    'og:image:type': 'image/jpeg',
+    'og:image:type': 'image/png',
   },
 };
 

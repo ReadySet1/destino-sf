@@ -3,13 +3,18 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+// Set response headers for better caching and content type specification
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const title = searchParams.get('title') || 'Destino SF';
     const description = searchParams.get('description') || 'Handcrafted Empanadas & Alfajores';
 
-    return new ImageResponse(
+    const fontData = await fetch(
+      'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2'
+    ).then(res => res.arrayBuffer());
+
+    const response = new ImageResponse(
       (
         <div
           style={{
@@ -20,8 +25,7 @@ export async function GET(req: NextRequest) {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#fff',
-            backgroundImage: 'linear-gradient(to bottom right, #4F46E5, #7C3AED)',
-            padding: '40px 60px',
+            background: 'linear-gradient(to bottom right, #4F46E5, #7C3AED)',
           }}
         >
           <div
@@ -32,33 +36,33 @@ export async function GET(req: NextRequest) {
               justifyContent: 'center',
               backgroundColor: 'white',
               padding: '40px 60px',
+              margin: '40px',
               borderRadius: '20px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              maxWidth: '90%',
+              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+              width: '80%',
             }}
           >
             <h1
               style={{
-                fontSize: 60,
+                fontSize: 72,
                 fontWeight: 'bold',
-                background: 'linear-gradient(to right, #4F46E5, #7C3AED)',
-                backgroundClip: 'text',
-                color: 'transparent',
-                margin: 0,
-                marginBottom: 20,
+                color: '#4F46E5',
+                margin: '0 0 20px 0',
                 textAlign: 'center',
                 lineHeight: 1.2,
+                fontFamily: 'Inter',
               }}
             >
               {title}
             </h1>
             <p
               style={{
-                fontSize: 30,
+                fontSize: 32,
                 color: '#4B5563',
                 margin: 0,
                 textAlign: 'center',
                 lineHeight: 1.4,
+                fontFamily: 'Inter',
               }}
             >
               {description}
@@ -72,13 +76,23 @@ export async function GET(req: NextRequest) {
         fonts: [
           {
             name: 'Inter',
-            data: await fetch(
-              'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2'
-            ).then(res => res.arrayBuffer()),
+            data: fontData,
+            style: 'normal',
+            weight: 400,
           },
         ],
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
       }
     );
+
+    // Add explicit content type and cache control headers
+    response.headers.set('Content-Type', 'image/png');
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+
+    return response;
   } catch (e: any) {
     console.log(`${e.message}`);
     return new Response(`Failed to generate the image`, {
