@@ -8,7 +8,9 @@ import './styles/globals.css';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://destino-sf-ready-set.vercel.app'
+  ),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
   openGraph: {
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: 'public/images/og-image.jpg',
+        url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/og-image.jpg', // Asegúrate de que esta ruta sea correcta
+        url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
