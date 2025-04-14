@@ -1,26 +1,27 @@
 // src/lib/square/catalog.ts
 
-import squareClient from './client';
+import { logger } from '@/utils/logger';
+import { squareClient } from './client';
 
 interface CatalogResponse {
   result: {
     objects: Array<{
       id: string;
       type: string;
-      categoryData?: {
+      category_data?: {
         name: string;
         description?: string;
       };
-      itemData?: {
+      item_data?: {
         name: string;
         description?: string;
-        categoryId?: string;
+        category_id?: string;
         variations?: Array<{
           id: string;
           type: string;
-          itemVariationData?: {
+          item_variation_data?: {
             name?: string;
-            priceMoney?: {
+            price_money?: {
               amount: bigint;
             };
           };
@@ -32,50 +33,22 @@ interface CatalogResponse {
 }
 
 /**
- * Fetches catalog objects (both Items and Categories) from Square, handling pagination.
- * Uses the SDK structure client.catalog.list based on previous findings.
+ * Fetches all catalog items from Square
+ * @returns Array of catalog objects
  */
 export async function fetchCatalogItems() {
-  console.log('Fetching catalog items and categories from Square...');
   try {
-    const initialResponse = (await squareClient.catalog.list({
-      types: 'ITEM,CATEGORY',
-    })) as unknown as CatalogResponse;
-
-    if (!initialResponse?.result?.objects || !Array.isArray(initialResponse.result.objects)) {
-      console.error('Initial Square API response is not in the expected format:', initialResponse);
-      throw new Error('Received invalid response structure from Square catalog API.');
-    }
-
-    let allObjects = [...initialResponse.result.objects];
-    console.log(`Workspaceed initial page with ${initialResponse.result.objects.length} objects.`);
-
-    let cursor = initialResponse.result.cursor;
-    while (cursor) {
-      console.log('Fetching next page of catalog objects...');
-      const nextResponse = (await squareClient.catalog.list({
-        types: 'ITEM,CATEGORY',
-        cursor,
-      })) as unknown as CatalogResponse;
-
-      if (!nextResponse?.result?.objects) {
-        break;
-      }
-
-      allObjects = [...allObjects, ...nextResponse.result.objects];
-      cursor = nextResponse.result.cursor;
-      console.log(
-        `Workspaceed page with ${nextResponse.result.objects.length} objects. Total fetched: ${allObjects.length}`
-      );
-    }
-
-    console.log(`Finished fetching. Total objects retrieved: ${allObjects.length}`);
-    return allObjects;
+    // Debug log the client to help diagnose issues
+    logger.info('Square client in catalog.ts:', {
+      hasClient: !!squareClient,
+      hasCatalogApi: !!squareClient.catalogApi,
+      clientKeys: Object.keys(squareClient)
+    });
+    
+    const { result } = await squareClient.catalogApi.listCatalog(undefined, 'ITEM');
+    return result.objects || [];
   } catch (error) {
-    console.error('Error fetching Square catalog:', error);
-    if (error instanceof Error && 'body' in error) {
-      console.error('Square API Error Body:', (error as { body: unknown }).body);
-    }
+    logger.error('Error fetching catalog items from Square:', error);
     throw error;
   }
 }
@@ -87,61 +60,88 @@ export async function fetchCatalogItems() {
  * @param price Base price in dollars
  * @param categoryId Square category ID, can be undefined
  * @param variations Array of product variants
- * @returns The created Square catalog item ID or a temporary ID if in development
+ * @returns The created Square catalog item ID
  */
 export async function createSquareProduct({
   name,
-  description: _description,
-  price: _price,
-  categoryId: _categoryId,
-  variations: _variations = [],
+  description,
+  price,
+  categoryId,
+  variations = [],
 }: {
   name: string;
   description?: string;
   price: number;
   categoryId?: string;
   variations?: Array<{ name: string; price?: number }>;
-}) {
+}): Promise<string> {
   // In development mode, just return a temporary ID
   if (process.env.NODE_ENV !== 'production') {
-    console.log('Development mode: Skipping actual Square API call, returning temporary Square ID');
+    logger.info('Development mode: Skipping actual Square API call, returning temporary Square ID');
     return `temp_square_${Date.now()}`;
   }
 
-  console.log('Creating product in Square:', name);
+  logger.info('Creating product in Square:', name);
 
   try {
-    // TODO: Implement proper Square product creation once API issues are resolved
-    // For now, this is a placeholder that returns a temporary ID
+    // Convert dollar amount to cents for Square
+    const priceInCents = Math.round(price * 100);
 
-    // This would be the proper implementation:
-    /*
-    const response = await squareClient.catalogApi.createCatalogObject({
-      idempotencyKey: `product_${Date.now()}`,
+    // Create the base variation if no variations are provided
+    const catalogVariations = variations.length > 0 
+      ? variations.map((variation, index) => ({
+          type: 'ITEM_VARIATION',
+          id: `#variation${index + 1}`,
+          item_variation_data: {
+            name: variation.name,
+            price_money: {
+              amount: Math.round((variation.price || price) * 100),
+              currency: 'USD'
+            },
+            pricing_type: 'FIXED_PRICING'
+          }
+        }))
+      : [{
+          type: 'ITEM_VARIATION',
+          id: '#variation1',
+          item_variation_data: {
+            name: 'Standard',
+            price_money: {
+              amount: priceInCents,
+              currency: 'USD'
+            },
+            pricing_type: 'FIXED_PRICING'
+          }
+        }];
+
+    // Create the catalog object with proper snake_case keys
+    const response = await squareClient.catalogApi.upsertCatalogObject({
+      idempotency_key: `product_${Date.now()}`,
       object: {
-        type: "ITEM",
-        id: "#1",
-        itemData: {
+        type: 'ITEM',
+        id: '#1',
+        item_data: {
           name,
-          description: description || "",
-          categoryId,
-          variations: [...]
+          description: description || '',
+          category_id: categoryId,
+          variations: catalogVariations,
+          tax_ids: [], // Add tax IDs if needed
+          is_archived: false,
         }
       }
     });
-    return response.result.catalogObject.id;
-    */
 
-    // For now, return a temporary ID prefixed with "temp_"
-    const tempId = `temp_square_${Date.now()}`;
-    console.log(`Returning temporary Square ID: ${tempId}`);
-    return tempId;
-  } catch (error) {
-    console.error('Error creating product in Square:', error);
-    if (error instanceof Error && 'body' in error) {
-      console.error('Square API Error Body:', (error as { body: unknown }).body);
+    if (!response.result?.catalog_object?.id) {
+      throw new Error('Failed to get catalog object ID from Square response');
     }
-    // Return a temporary ID in case of error
-    return `temp_error_${Date.now()}`;
+
+    logger.info(`Successfully created product in Square with ID: ${response.result.catalog_object.id}`);
+    return response.result.catalog_object.id;
+  } catch (error) {
+    logger.error('Error creating product in Square:', error);
+    if (error instanceof Error && 'body' in error) {
+      logger.error('Square API Error Body:', (error as { body: unknown }).body);
+    }
+    throw new Error('Failed to create product in Square');
   }
 }

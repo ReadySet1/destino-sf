@@ -8,15 +8,15 @@ datasource db {
 }
 
 model Profile {
-  id         String   @id
-  email      String   @unique
+  id         String    @id
+  email      String    @unique
   name       String?
   phone      String?
-  role       UserRole @default(CUSTOMER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orders     Order[]
+  role       UserRole  @default(CUSTOMER)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
   addresses  Address[]
+  orders     Order[]
 
   @@map("profiles")
 }
@@ -42,15 +42,16 @@ model Product {
 
 model Category {
   id          String    @id @default(uuid())
+  squareId    String?   @unique
   name        String    @unique
   description String?
   order       Int       @default(0)
-  isActive    Boolean   @default(true)
-  slug        String?   @unique
-  imageUrl    String?
-  metadata    Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  imageUrl    String?
+  isActive    Boolean   @default(true)
+  metadata    Json?
+  slug        String?   @unique
   products    Product[]
 }
 
@@ -77,15 +78,15 @@ model Order {
   customerName  String
   email         String
   phone         String
-  addressId     String?
   pickupTime    DateTime
   notes         String?
   cancelReason  String?
   paymentStatus PaymentStatus @default(PENDING)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  profile       Profile?      @relation(fields: [userId], references: [id])
+  addressId     String?
   address       Address?      @relation(fields: [addressId], references: [id])
+  profile       Profile?      @relation(fields: [userId], references: [id])
   items         OrderItem[]
 
   @@index([userId])
@@ -167,21 +168,21 @@ model PromoCode {
 }
 
 model Address {
-  id               String    @id @default(uuid())
-  userId           String
-  name             String?
-  street           String
-  street2          String?
-  city             String
-  state            String
-  postalCode       String
-  country          String    @default("US")
+  id                String   @id @default(uuid())
+  userId            String
+  name              String?
+  street            String
+  street2           String?
+  city              String
+  state             String
+  postalCode        String
+  country           String   @default("US")
   isDefaultShipping Boolean  @default(false)
   isDefaultBilling  Boolean  @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  user             Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders           Order[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders            Order[]
 
   @@index([userId])
 }

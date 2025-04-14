@@ -12,6 +12,12 @@ const nextConfig = {
         port: '',
         pathname: '/images/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'items-images-production.s3.us-west-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   eslint: {

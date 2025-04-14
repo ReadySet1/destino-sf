@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
 import { DeleteButton } from './components/DeleteButton';
 import ProductsClientWrapper from './client-wrapper';
+import { SyncSquareButton } from './sync-square';
 
 export const revalidate = 0; // Disable static generation
 export const dynamic = 'force-dynamic';
@@ -150,32 +151,22 @@ export default async function ProductsPage() {
   return (
     <ProductsClientWrapper>
       <div className="p-4 max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Product Management</h1>
-          <div className="grid grid-cols-1 md:grid-cols-[2fr,2fr,1fr] gap-3 w-full items-start">
-            <select className="border rounded p-2 w-full min-w-0">
-              <option value="all">All Categories</option>
-              {/* Categories would be populated from DB */}
-            </select>
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="border rounded p-2 w-full min-w-0"
-            />
-            <div className="flex flex-col md:flex-row gap-2 w-full">
-              <Link
-                href="/admin/categories"
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
-              >
-                Manage Categories
-              </Link>
-              <Link
-                href="/admin/products/new"
-                className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
-              >
-                Add Product
-              </Link>
-            </div>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Products</h1>
+          <div className="flex gap-4">
+            <SyncSquareButton />
+            <Link
+              href="/admin/categories"
+              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
+            >
+              Manage Categories
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
+            >
+              Add Product
+            </Link>
           </div>
         </div>
 

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock } from 'lucide-react'; // Added missing icons
 import { MobileMenu } from './components/MobileMenu'; // Ensure path is correct
 
@@ -66,10 +67,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {/* Sidebar Content */}
         <div className="p-6 border-b">
-          {' '}
-          {/* Added border-b */}
-          <Link href="/" className="text-xl font-bold text-gray-800 hover:text-gray-900">
-            Destino SF
+          <Link 
+            href="/" 
+            aria-label="Destino SF Home"
+            className="block relative"
+          >
+            <Image
+              src="/images/logo/logo-destino.png"
+              alt="Destino SF Logo"
+              width={150}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
+            <span className="sr-only">Destino SF</span>
           </Link>
         </div>
         <nav className="flex-1 px-4 py-4 overflow-y-auto">
