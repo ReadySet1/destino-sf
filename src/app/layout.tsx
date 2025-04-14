@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/og-image.jpg', // Replace with your actual OG image path
+        url: '/images/og-image.jpg', // Asegúrate de que esta ruta sea correcta
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
