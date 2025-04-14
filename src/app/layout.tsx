@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: 'public/images/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
