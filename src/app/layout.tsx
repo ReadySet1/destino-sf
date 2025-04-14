@@ -18,32 +18,32 @@ export const metadata: Metadata = {
     siteName: 'Destino SF',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
-    images: [
-      {
-        url: '/api/og',
-        width: 1200,
-        height: 630,
-        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
-        type: 'image/png',
-      },
-    ],
+    // images: [ // Comenta o elimina esta sección completa
+    //   {
+    //     url: '/api/og',
+    //     width: 1200,
+    //     height: 630,
+    // alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+    //     type: 'image/png',
+    //   },
+    // ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
-    images: ['/api/og'],
+    // images: ['/api/og'], // Comenta o elimina esta línea
     creator: '@destinosf',
   },
   other: {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
-    'og:image:width': '1200',
-    'og:image:height': '630',
-    'og:image:type': 'image/png',
-    'og:image:secure_url': '/api/og',
-    'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
+    // 'og:image:width': '1200', // Comenta o elimina estas líneas
+    // 'og:image:height': '630',
+    // 'og:image:type': 'image/png',
+    // 'og:image:secure_url': '/api/og',
+    // 'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
   },
 };
 
