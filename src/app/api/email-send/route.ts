@@ -1,4 +1,4 @@
-import { NotificationEmailTemplate, ConfirmationEmailTemplate } from '@/components/email-template';
+import { NotificationEmailTemplate } from '@/components/email-template';
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 import { ReactElement } from 'react';
@@ -29,23 +29,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: notificationEmail.error }, { status: 400 });
     }
 
-    const confirmationEmail = await resend.emails.send({
-      from: 'Destino SF <solutions@updates.readysetllc.com>',
-      to: [email],
-      subject: 'Thank you for contacting Destino SF',
-      react: ConfirmationEmailTemplate({ name }) as ReactElement,
-    });
-
-    if (confirmationEmail.error) {
-      console.error('Error sending confirmation email:', confirmationEmail.error);
-      return NextResponse.json({ error: confirmationEmail.error }, { status: 400 });
-    }
-
     return NextResponse.json({ 
       success: true, 
       data: {
         notificationEmail: notificationEmail.data,
-        confirmationEmail: confirmationEmail.data,
         testMode: IS_TESTING
       }
     });
