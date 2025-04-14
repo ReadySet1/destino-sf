@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
         headers: {
           'Content-Type': 'image/png',
           'Cache-Control': 'public, max-age=31536000, immutable',
+          'Access-Control-Allow-Origin': '*',
         },
       }
     );
@@ -91,6 +92,7 @@ export async function GET(req: NextRequest) {
     // Add explicit content type and cache control headers
     response.headers.set('Content-Type', 'image/png');
     response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    response.headers.set('Access-Control-Allow-Origin', '*');
 
     return response;
   } catch (e: any) {

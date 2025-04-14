@@ -24,6 +24,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+        type: 'image/png',
       },
     ],
   },
@@ -41,6 +42,8 @@ export const metadata: Metadata = {
     'og:image:width': '1200',
     'og:image:height': '630',
     'og:image:type': 'image/png',
+    'og:image:secure_url': '/api/og',
+    'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
   },
 };
 
