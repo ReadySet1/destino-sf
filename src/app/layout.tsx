@@ -9,7 +9,9 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || 'http://destino-sf-ready-set.vercel.app'
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : 'https://destino-sf-ready-set.vercel.app'
   ),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/opengraph-image.jpg',
+        url: `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://destino-sf-ready-set.vercel.app'}/images/opengraph-image.jpg`,
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
@@ -35,7 +37,7 @@ export const metadata: Metadata = {
     description: 'Handcrafted Empanadas & Alfajores',
     images: [
       {
-        url: '/images/opengraph-image.jpg',
+        url: `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://destino-sf-ready-set.vercel.app'}/images/opengraph-image.jpg`,
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
