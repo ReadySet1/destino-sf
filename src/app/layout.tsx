@@ -22,12 +22,24 @@ export const metadata: Metadata = {
     siteName: 'Destino SF',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
+    images: [{
+      url: '/opengraph-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
+    }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
     creator: '@destinosf',
+    images: [{
+      url: '/twitter-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
+    }],
   },
   other: {
     'og:site_name': 'Destino SF',
@@ -35,10 +47,16 @@ export const metadata: Metadata = {
     'og:type': 'website',
     // Discord specific meta tags
     'theme-color': '#004225', // Your brand color
-    // WhatsApp specific meta tags
+    // Explicit image meta tags for better compatibility
+    'og:image': `${baseUrl}/opengraph-image.jpg`,
+    'og:image:secure_url': `${baseUrl}/opengraph-image.jpg`,
     'og:image:width': '1200',
     'og:image:height': '630',
     'og:image:type': 'image/jpeg',
+    'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
+    // WhatsApp specific meta tags
+    'og:title': 'Destino SF',
+    'og:description': 'Handcrafted Empanadas & Alfajores',
   },
   // Ensure verification for various platforms
   verification: {
