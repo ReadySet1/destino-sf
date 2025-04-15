@@ -7,7 +7,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 
 // Import types from Prisma
-import type { Variant, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 // Define Square types to match the snake_case from the API
 interface SquareCatalogObject {
@@ -44,6 +44,50 @@ interface SyncResult {
 // Define a helper type for variant creation
 type VariantCreate = Prisma.VariantCreateWithoutProductInput;
 
+async function getOrCreateDefaultCategory() {
+  try {
+    // Try to get the default category from the database
+    const defaultCategory = await prisma.category.findFirst({
+      where: { name: 'Default' }
+    });
+    
+    if (defaultCategory) {
+      return defaultCategory;
+    }
+
+    // Create a default category if it doesn't exist
+    const newCategory = await prisma.category.create({
+      data: {
+        name: 'Default',
+        description: 'Default category for imported products',
+        slug: 'default',
+        order: 0,
+        isActive: true,
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      }
+    });
+
+    // Create in Sanity as well
+    await createSanityProduct({
+      name: newCategory.name,
+      description: newCategory.description ?? undefined,
+      categoryId: newCategory.id,
+      images: [],
+      featured: false,
+      price: 0,
+      squareId: 'default-category'
+    });
+
+    return newCategory;
+  } catch (error) {
+    logger.error('Error getting/creating default category:', error);
+    throw error;
+  }
+}
+
 export async function syncSquareProducts(): Promise<SyncResult> {
   const errors: string[] = [];
   let syncedCount = 0;
@@ -52,6 +96,12 @@ export async function syncSquareProducts(): Promise<SyncResult> {
   try {
     logger.info('Starting Square product sync...');
     
+    // Get the default category first
+    const defaultCategory = await getOrCreateDefaultCategory();
+    if (!defaultCategory) {
+      throw new Error('Failed to get or create default category');
+    }
+
     // Check available methods
     const clientProperties = Object.keys(squareClient);
     logger.info('Square client properties:', clientProperties);
@@ -85,40 +135,6 @@ export async function syncSquareProducts(): Promise<SyncResult> {
     } catch (locationError) {
       logger.error('Error fetching locations:', locationError);
       debugInfo.locationError = locationError instanceof Error ? locationError.message : 'Unknown error';
-    }
-
-    // First, make sure we have a default category
-    let defaultCategoryId: string;
-    try {
-      // Try to get the default category from the database
-      const defaultCategory = await prisma.category.findFirst({
-        where: { name: 'Default' }
-      });
-      
-      if (defaultCategory) {
-        defaultCategoryId = defaultCategory.id;
-      } else {
-        // Create a default category if it doesn't exist
-        const newCategory = await prisma.category.create({
-          data: {
-            name: 'Default',
-            description: 'Default category for imported products',
-            slug: 'default'
-          }
-        });
-        defaultCategoryId = newCategory.id;
-      }
-      
-      logger.info(`Using default category ID: ${defaultCategoryId}`);
-    } catch (categoryError) {
-      logger.error('Error getting/creating default category:', categoryError);
-      return {
-        success: false,
-        message: 'Failed to get/create default category',
-        syncedProducts: 0,
-        errors: [(categoryError instanceof Error) ? categoryError.message : 'Unknown category error'],
-        debugInfo
-      };
     }
 
     // Search catalog items using our direct implementation
@@ -246,6 +262,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 deleteMany: {},
                 create: variants
               },
+              categoryId: defaultCategory.id, // Always use default category
               updatedAt: new Date()
             },
             create: {
@@ -254,7 +271,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
               description: createDescription,
               price: basePrice,
               images: imageUrls, // Use image URLs
-              categoryId: defaultCategoryId, // Use our verified default category
+              categoryId: defaultCategory.id, // Always use default category
               featured: false,
               active: true,
               variants: {

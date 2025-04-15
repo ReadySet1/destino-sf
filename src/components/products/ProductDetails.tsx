@@ -25,6 +25,11 @@ const formatPrice = (price: number | Decimal | null | undefined): string => {
 };
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  // Ensure product and variants exist before using hooks
+  if (!product) {
+    return <div>Loading product...</div>;
+  }
+
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     product.variants && product.variants.length > 0 ? product.variants[0] : null
   );
@@ -34,7 +39,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
   // Handle both Sanity and DB product structures
   const displayPrice = selectedVariant?.price || product.price;
-  const mainImage = product.images?.[0] || "/images/products/placeholder-product.png";
+  const mainImage = product.images?.[0] || "/images/menu/empanadas.png";
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active;

@@ -20,12 +20,12 @@ interface OrderItem {
 
 // Define the shape of the *resolved* params
 type ResolvedParams = {
-  id: string;
+  orderId: string;
 };
 
 // Define the component's props, expecting params as a Promise
 interface OrderConfirmationPageProps {
-  params: Promise<ResolvedParams>; // <-- Changed: Expect a Promise
+  params: Promise<ResolvedParams>;
   // searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; // Add if searchParams were also needed
 }
 
@@ -35,11 +35,11 @@ export default async function OrderConfirmationPage({
   // <-- Added explicit return type
 
   // Await the params promise to get the resolved object
-  const resolvedParams = await params; // <-- Added: Await the promise
+  const resolvedParams = await params;
 
   // Get order from database using the resolved ID
   const order = await prisma.order.findUnique({
-    where: { id: resolvedParams.id }, // <-- Changed: Use resolvedParams.id
+    where: { id: resolvedParams.orderId },
     include: {
       items: true,
     },

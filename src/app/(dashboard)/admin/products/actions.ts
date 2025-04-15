@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { createSanityProduct } from '@/lib/sanity/createProduct';
 import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
+import { client } from '@/sanity/lib/client';
+import { revalidatePath } from 'next/cache';
 
 export async function createProductAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -69,5 +71,45 @@ export async function createProductAction(formData: FormData) {
   } catch (error) {
     logger.error('Error creating product:', error);
     throw new Error('Failed to create product. Please try again.');
+  }
+}
+
+export async function updateProductCategory(formData: FormData) {
+  const productId = formData.get('productId') as string;
+  const categoryId = formData.get('categoryId') as string;
+
+  if (!productId || !categoryId) {
+    throw new Error('Missing required fields');
+  }
+
+  try {
+    // Update in PostgreSQL
+    const product = await prisma.product.update({
+      where: { id: productId },
+      data: { categoryId },
+      include: { category: true }
+    });
+
+    // Update in Sanity
+    const sanityProduct = await client.fetch(
+      `*[_type == "product" && squareId == $squareId][0]`,
+      { squareId: product.squareId }
+    );
+
+    if (sanityProduct?._id) {
+      await client.patch(sanityProduct._id)
+        .set({
+          category: {
+            _type: 'reference',
+            _ref: product.category.id
+          }
+        })
+        .commit();
+    }
+
+    revalidatePath('/admin/products');
+  } catch (error) {
+    console.error('Error updating product category:', error);
+    throw error;
   }
 }

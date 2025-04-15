@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { Decimal } from '@prisma/client/runtime/library';
 import { redirect } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
-import { DeleteButton } from './components/DeleteButton';
 import ProductsClientWrapper from './client-wrapper';
 import { SyncSquareButton } from './sync-square';
+import { updateProductCategory } from './actions';
+import CategorySelect from './components/CategorySelect';
 
 export const revalidate = 0; // Disable static generation
 export const dynamic = 'force-dynamic';
@@ -25,7 +26,10 @@ type ProductWithCategory = {
   price: number | string | Decimal;
   description: string | null;
   images: string[];
-  category: { name: string };
+  category: {
+    id: string;
+    name: string;
+  };
   featured: boolean;
   active: boolean;
 };
@@ -41,6 +45,13 @@ export default async function ProductsPage() {
     },
   });
 
+  // Fetch all categories for the dropdown
+  const categories = await prisma.category.findMany({
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
   // Transform the products to match our expected type
   const products = productsFromDb.map((product: ProductWithCategory) => ({
     id: product.id,
@@ -49,6 +60,7 @@ export default async function ProductsPage() {
     description: product.description,
     images: product.images,
     category: {
+      id: product.category?.id || '',
       name: product.category?.name || 'Uncategorized',
     },
     featured: product.featured,
@@ -161,12 +173,29 @@ export default async function ProductsPage() {
             >
               Manage Categories
             </Link>
-            <Link
-              href="/admin/products/new"
+            <a
+              href="https://squareup.com/dashboard/items/library"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center w-full md:w-1/2 break-words whitespace-nowrap"
             >
-              Add Product
-            </Link>
+              Edit in Square
+            </a>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Products can only be edited in Square Dashboard. Changes will sync automatically.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -181,7 +210,7 @@ export default async function ProductsPage() {
                   <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="hidden sm:table-cell w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
                   <th className="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -192,9 +221,6 @@ export default async function ProductsPage() {
                   </th>
                   <th className="hidden sm:table-cell w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Featured
-                  </th>
-                  <th className="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
                   </th>
                 </tr>
               </thead>
@@ -220,8 +246,12 @@ export default async function ProductsPage() {
                     <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-[150px]">
                       {product.name}
                     </td>
-                    <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
-                      {product.category.name}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <CategorySelect
+                        categories={categories}
+                        productId={product.id}
+                        currentCategoryId={product.category.id}
+                      />
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
                       ${Number(product.price).toFixed(2)}
@@ -235,19 +265,6 @@ export default async function ProductsPage() {
                     </td>
                     <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
                       {product.featured ? 'Yes' : 'No'}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                      <form action={editProduct} className="inline">
-                        <input type="hidden" name="id" value={product.id} />
-                        <button type="submit" className="text-indigo-600 hover:text-indigo-900 mr-2">
-                          Edit
-                        </button>
-                      </form>
-                      <form action={deleteProduct} className="inline">
-                        <input type="hidden" name="id" value={product.id} />
-                        <input type="hidden" name="productName" value={product.name} />
-                        <DeleteButton productName={product.name} />
-                      </form>
                     </td>
                   </tr>
                 ))}
