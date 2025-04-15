@@ -66,16 +66,16 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header with title and filters */}
       {(title || showFilters) && (
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          {title && <h2 className="text-2xl font-bold">{title}</h2>}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          {title && <h2 className="text-2xl font-bold tracking-tight">{title}</h2>}
 
           {showFilters && (
             <div className="flex items-center gap-4">
               <select
-                className="border rounded-md px-3 py-2 bg-white text-gray-800"
+                className="border rounded-full px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={sortOption}
                 onChange={handleSortChange}
               >
@@ -91,7 +91,7 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
       )}
 
       {/* Product grid with consistent spacing */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
         {filteredProducts.map(product => (
           <ProductCard key={product._id} product={product} />
         ))}
@@ -99,8 +99,8 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
 
       {/* Empty state */}
       {filteredProducts.length === 0 && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500 text-lg">No products found</p>
+        <div className="py-12 text-center bg-gray-50 rounded-2xl">
+          <p className="text-gray-600 text-lg">No products found matching your criteria</p>
         </div>
       )}
     </div>

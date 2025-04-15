@@ -15,6 +15,7 @@ interface Product {
   slug: { current: string };
   rating?: number;
   reviewCount?: number;
+  featured?: boolean;
 }
 
 interface ProductCardProps {
@@ -37,17 +38,20 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <Link href={`/products/${product.slug.current}`} className="flex flex-row items-stretch">
-        {/* Image Container */}
-        <div className="w-[120px] h-[120px] relative overflow-hidden rounded-2xl m-2">
+    <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full">
+      <Link 
+        href={`/products/${product.slug.current}`} 
+        className="flex flex-row md:flex-col h-full"
+      >
+        {/* Image Container - left side on mobile, top on desktop */}
+        <div className="w-[120px] h-[120px] md:w-full md:h-auto relative overflow-hidden rounded-xl m-2 md:mb-4 md:aspect-square md:m-4 md:mt-4 flex-shrink-0">
           {product.images && product.images[0] ? (
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
-              className="object-cover"
-              sizes="120px"
+              className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+              sizes="(min-width: 768px) 33vw, 120px"
               priority
             />
           ) : (
@@ -55,18 +59,35 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-gray-400">No image</span>
             </div>
           )}
+          
+          {/* Sale badge - only visible on desktop */}
+          {product.featured && (
+            <div className="absolute top-2 left-2 hidden md:block bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+              Featured
+            </div>
+          )}
         </div>
         
         {/* Content Container */}
-        <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{product.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate md:mb-2 group-hover:text-indigo-600 transition-colors">
+              {product.name}
+            </h3>
+            
             {product.description && (
-              <p className="text-gray-600 text-sm line-clamp-2">{product.description}</p>
+              <p className="text-gray-600 text-sm line-clamp-2 md:mb-2">{product.description}</p>
             )}
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-yellow-400 text-sm">★</span>
-              <span className="text-sm font-medium text-gray-900">
+            
+            <div className="flex items-center gap-1 mt-1 md:mb-3">
+              {/* Star rating - full stars on desktop, simple on mobile */}
+              <span className="text-yellow-400 text-sm md:hidden">★</span>
+              <div className="hidden md:flex text-yellow-400">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className={i < (product.rating || 4.5) ? "text-yellow-400" : "text-gray-200"}>★</span>
+                ))}
+              </div>
+              <span className="text-sm font-medium text-gray-900 md:ml-1">
                 {product.rating || 4.5}
               </span>
               <span className="text-sm text-gray-500">
@@ -75,7 +96,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
           
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between mt-2 md:mt-auto md:pt-4 md:border-t md:border-gray-100">
             <span className="text-lg font-bold text-gray-900">
               ${product.price.toFixed(2)}
             </span>
@@ -84,10 +105,11 @@ export function ProductCard({ product }: ProductCardProps) {
                 e.preventDefault();
                 handleAddToCart();
               }}
-              className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-6 py-2 rounded-full"
+              className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-3 py-1 md:px-6 md:py-2 rounded-full transition-colors duration-300"
               variant="ghost"
             >
-              +Add
+              <span className="md:hidden">+Add</span>
+              <span className="hidden md:inline">Add to Cart</span>
             </Button>
           </div>
         </div>
