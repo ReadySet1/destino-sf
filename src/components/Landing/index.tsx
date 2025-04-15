@@ -4,7 +4,7 @@ import { MenuSection } from './components/MenuSection';
 
 export default function Hero() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex flex-col">
       <HeroBanner />
       {/* <PopularEmpanadas /> */}
       <MenuSection />
