@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import ToasterClient from '@/app/components/Toaster';
-import CategoryForm from '@/app/components/CategoryForm';
 import { createCategoryAction, deleteCategoryAction, getCategories } from './actions';
+import ToasterClient from '@/components/Toaster';
+import CategoryForm from '@/components/CategoryForm';
 
 export default async function CategoriesPage() {
   const categories = await getCategories();

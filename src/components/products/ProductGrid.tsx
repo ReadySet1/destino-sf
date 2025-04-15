@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ProductCard } from '../store/ProductCard';
+import { ProductCard } from '../Store/ProductCard';
 
 interface Product {
   _id: string;

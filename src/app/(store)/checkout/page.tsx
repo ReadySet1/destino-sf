@@ -13,11 +13,11 @@ import { useCartStore } from '@/store/cart';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckoutSummary } from '@/components/store/CheckoutSummary';
+import { CheckoutSummary } from '@/components/Store/CheckoutSummary';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
-import { FulfillmentSelector, FulfillmentMethod } from '@/components/store/FulfillmentSelector';
-import { AddressForm } from '@/components/store/AddressForm';
+import { FulfillmentSelector, FulfillmentMethod } from '@/components/Store/FulfillmentSelector';
+import { AddressForm } from '@/components/Store/AddressForm';
 
 // Form validation schema with conditional fields based on fulfillment method
 const addressSchema = z.object({

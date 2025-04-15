@@ -128,7 +128,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
     try {
       // Try database first if we have a mapping
       if (dbCategoryName) {
-        console.log(`Fetching products from database for category: ${dbCategoryName}`);
         
         // Get the category ID from the database
         const dbCategory = await prisma.category.findFirst({
@@ -138,7 +137,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
         });
         
         if (dbCategory) {
-          console.log('Found category in database:', dbCategory);
           
           // Fetch products in this category from the database
           const dbProducts = await prisma.product.findMany({
@@ -157,9 +155,7 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
             let parsedImages: string[] = [];
             try {
               parsedImages = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-              console.log('Parsed images for', p.name, ':', parsedImages);
             } catch (e) {
-              console.error('Error parsing images for product', p.name, ':', e);
               parsedImages = [];
             }
 
@@ -183,7 +179,6 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
 
       // Only fallback to Sanity if we didn't get products from the database
       if (products.length === 0) {
-        console.log('No products found in database, falling back to Sanity');
         const fetchedProducts = await getProductsByCategory(selectedCategory._id);
 
         // Map fetched data directly to the structure ProductGrid expects
