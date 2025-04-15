@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
+import { prisma } from '@/lib/prisma'; // Import Prisma client
 
 // Define the minimal type we need for categories
 interface SanityCategory {
@@ -37,6 +38,43 @@ interface Product {
   }>;
 }
 
+// Utility function to normalize image data from different sources
+function normalizeImages(images: any): string[] {
+  if (!images) return [];
+  
+  // Case 1: Already an array of strings
+  if (Array.isArray(images) && 
+      images.length > 0 && 
+      typeof images[0] === 'string') {
+    return images.filter(url => url && url.trim() !== '');
+  }
+  
+  // Case 2: Array of objects with url property (Sanity format)
+  if (Array.isArray(images) && 
+      images.length > 0 && 
+      typeof images[0] === 'object' &&
+      images[0] !== null &&
+      'url' in images[0]) {
+    return images.map(img => img.url).filter(url => url && typeof url === 'string');
+  }
+  
+  // Case 3: String that might be a JSON array
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(url => url && typeof url === 'string');
+      }
+      return [images]; // If not a JSON array, use the string as a single URL
+    } catch (e) {
+      // If not valid JSON, assume it's a single URL
+      return [images];
+    }
+  }
+  
+  return [];
+}
+
 // Type for variant coming from Sanity
 interface SanityVariant {
   _id?: string;
@@ -52,6 +90,14 @@ interface CategoryPageProps {
     slug: string;
   }>;
 }
+
+// Map frontend slugs to the corresponding database category names
+const SLUG_TO_CATEGORY_MAP: Record<string, string> = {
+  'alfajores': 'Desserts',
+  'desserts': 'Desserts',
+  'empanadas': 'Appetizers',
+  'catering': 'Catering',
+};
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   alfajores: "Indulge in the delicate delight of our signature Alfajores. These classic South American butter cookies boast a tender, crumbly texture, lovingly filled with creamy dulce de leche. Explore a variety of tempting flavors, from traditional favorites to unique seasonal creations – the perfect sweet treat for yourself or a thoughtful gift.",
@@ -73,36 +119,95 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
   // Find the category matching the slug
   const selectedCategory = categories.find((c: SanityCategory) => c.slug?.current === slug);
 
+  // Get the corresponding database category name from the slug
+  const dbCategoryName = SLUG_TO_CATEGORY_MAP[slug];
+
   // Fetch products ONLY if a category was found
   let products: Product[] = [];
   if (selectedCategory) {
     try {
-      // Fetch products for the found category using its ID
-      const fetchedProducts = await getProductsByCategory(selectedCategory._id);
+      // Try database first if we have a mapping
+      if (dbCategoryName) {
+        console.log(`Fetching products from database for category: ${dbCategoryName}`);
+        
+        // Get the category ID from the database
+        const dbCategory = await prisma.category.findFirst({
+          where: {
+            name: dbCategoryName
+          }
+        });
+        
+        if (dbCategory) {
+          console.log('Found category in database:', dbCategory);
+          
+          // Fetch products in this category from the database
+          const dbProducts = await prisma.product.findMany({
+            where: {
+              categoryId: dbCategory.id,
+              active: true
+            },
+            include: {
+              variants: true
+            }
+          });
+          
+          // Map database products to the format expected by ProductGrid
+          products = dbProducts.map(p => {
+            // Parse the images JSON string
+            let parsedImages: string[] = [];
+            try {
+              parsedImages = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+              console.log('Parsed images for', p.name, ':', parsedImages);
+            } catch (e) {
+              console.error('Error parsing images for product', p.name, ':', e);
+              parsedImages = [];
+            }
 
-      // Map fetched data directly to the structure ProductGrid expects
-      products = fetchedProducts.map(p => ({
-        _id: p._id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        images: (p.images || []).map(img => img.url),
-        slug: p.slug || { current: p._id },
-        featured: p.featured || false,
-        // Transform variants to match the expected format
-        variants: (p.variants || []).map(variant => {
-          // Cast the unknown variant to our SanityVariant interface
-          const v = variant as SanityVariant;
-          return {
-            id: v.id || v._id || String(Math.random()),
-            name: v.name || 'Variant',
-            price: v.price,
-          };
-        }),
-      }));
+            return {
+              _id: p.id,
+              name: p.name,
+              description: p.description || undefined,
+              price: Number(p.price),
+              images: parsedImages,
+              slug: { current: p.id },
+              featured: p.featured,
+              variants: p.variants.map(v => ({
+                id: v.id,
+                name: v.name,
+                price: v.price ? Number(v.price) : undefined
+              }))
+            };
+          });
+        }
+      }
+
+      // Only fallback to Sanity if we didn't get products from the database
+      if (products.length === 0) {
+        console.log('No products found in database, falling back to Sanity');
+        const fetchedProducts = await getProductsByCategory(selectedCategory._id);
+
+        // Map fetched data directly to the structure ProductGrid expects
+        products = fetchedProducts.map(p => ({
+          _id: p._id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          images: (p.images || []).map(img => img.url).filter(Boolean),
+          slug: p.slug || { current: p._id },
+          featured: p.featured || false,
+          variants: (p.variants || []).map(variant => {
+            const v = variant as SanityVariant;
+            return {
+              id: v.id || v._id || String(Math.random()),
+              name: v.name || 'Variant',
+              price: v.price,
+            };
+          }),
+        }));
+      }
     } catch (error) {
       console.error(
-        `Failed to fetch products for category ${selectedCategory.name} (ID: ${selectedCategory._id}):`,
+        `Failed to fetch products for category ${selectedCategory.name}:`,
         error
       );
       // Optionally display an error message on the page

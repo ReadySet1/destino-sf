@@ -15,8 +15,8 @@ export async function POST(request: Request) {
       price,
       variations: [
         { name: 'Small', price: price - 5 },
-        { name: 'Medium', price },
-        { name: 'Large', price + 5 },
+        { name: 'Medium', price: price },
+        { name: 'Large', price: price + 5 },
       ]
     });
     
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         price,
         variations: [
           { name: 'Small', price: price - 5 },
-          { name: 'Medium', price },
+          { name: 'Medium', price: price },
           { name: 'Large', price: price + 5 },
         ]
       }

@@ -14,7 +14,7 @@ export async function GET() {
     const squareKeys = Object.keys(Square);
     
     // Get client properties if available
-    let clientProperties = [];
+    let clientProperties: string[] = [];
     try {
       // For v42.0.1 we need to use Square.Client 
       if (Square.Client) {
@@ -29,9 +29,9 @@ export async function GET() {
     }
     
     // Explore specific APIs
-    let catalogApiMethods = [];
-    let locationsApiMethods = [];
-    let ordersApiMethods = [];
+    let catalogApiMethods: string[] = [];
+    let locationsApiMethods: string[] = [];
+    let ordersApiMethods: string[] = [];
     
     try {
       if (Square.Client) {

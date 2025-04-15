@@ -28,7 +28,7 @@ export async function GET() {
         variants: product.variants.map(variant => ({
           id: variant.id,
           name: variant.name,
-          price: variant.price.toString(),
+          price: variant.price?.toString() ?? '0',
           squareVariantId: variant.squareVariantId
         })),
         images: product.images,

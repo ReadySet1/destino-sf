@@ -24,6 +24,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  
+  console.log('ProductCard received product:', {
+    name: product.name,
+    hasImages: Array.isArray(product.images) && product.images.length > 0,
+    firstImage: product.images?.[0]
+  });
 
   const handleAddToCart = () => {
     addItem({

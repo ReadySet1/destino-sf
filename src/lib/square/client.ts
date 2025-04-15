@@ -108,7 +108,13 @@ const squareClient = {
     listAllCatalogItems: async () => {
       logger.info('Fetching all Square catalog items with pagination');
       
-      let allItems = [];
+      interface CatalogObject {
+        type: string;
+        id: string;
+        [key: string]: any;
+      }
+      
+      let allItems: CatalogObject[] = [];
       let cursor = undefined;
       let pageNum = 1;
       
@@ -277,6 +283,48 @@ const squareClient = {
         throw error;
       }
     }
+  },
+
+  // Orders API
+  ordersApi: {
+    createOrder: async (request: any) => {
+      logger.info('Calling Square orders API via HTTPS');
+      
+      const options = {
+        hostname: apiHost,
+        path: '/v2/orders',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Square-Version': '2023-12-13',
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      const data = await httpsRequest(options, request);
+      return { result: data };
+    }
+  },
+
+  // Payments API
+  paymentsApi: {
+    createPayment: async (request: any) => {
+      logger.info('Calling Square payments API via HTTPS');
+      
+      const options = {
+        hostname: apiHost,
+        path: '/v2/payments',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Square-Version': '2023-12-13',
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      const data = await httpsRequest(options, request);
+      return { result: data };
+    }
   }
 };
 
@@ -287,3 +335,5 @@ logger.info('Square client properties:', Object.keys(squareClient));
 
 // Export the Square client
 export { squareClient };
+export const client = squareClient;
+export const { locationsApi, catalogApi, ordersApi, paymentsApi } = squareClient;

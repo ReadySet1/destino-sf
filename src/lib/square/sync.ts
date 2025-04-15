@@ -156,19 +156,26 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         const imageIds = item.item_data?.image_ids || [];
         
         if (imageIds.length === 0) {
+          logger.info(`No image IDs found for item ${item.id}`);
           return imageUrls;
         }
         
-        logger.info(`Found ${imageIds.length} image IDs for item ${item.id}`);
+        logger.info(`Found ${imageIds.length} image IDs for item ${item.id}: ${JSON.stringify(imageIds)}`);
         
         // Look for image objects in related_objects
         for (const imageId of imageIds) {
-          const imageObject = relatedObjects.find(obj => obj.id === imageId && obj.type === 'IMAGE');
+          const imageObject = relatedObjects.find((obj: SquareCatalogObject) => obj.id === imageId && obj.type === 'IMAGE');
           
           if (imageObject && imageObject.image_data && imageObject.image_data.url) {
-            imageUrls.push(imageObject.image_data.url);
-            logger.info(`Found image URL: ${imageObject.image_data.url}`);
+            const imageUrl = imageObject.image_data.url;
+            logger.info(`Found image URL in related objects: ${imageUrl}`);
+            if (imageUrl) {
+              imageUrls.push(imageUrl);
+            } else {
+              logger.warn(`Found image object but URL is null/empty for image ID: ${imageId}`);
+            }
           } else {
+            logger.info(`Image not found in related objects, trying direct API call for image ID: ${imageId}`);
             // If not in related_objects, try to get it directly
             try {
               if (squareClient.catalogApi.retrieveCatalogObject) {
@@ -176,8 +183,15 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 const imageData = imageResponse.result?.object;
                 
                 if (imageData && imageData.image_data && imageData.image_data.url) {
-                  imageUrls.push(imageData.image_data.url);
-                  logger.info(`Retrieved image URL from API: ${imageData.image_data.url}`);
+                  const imageUrl = imageData.image_data.url;
+                  logger.info(`Retrieved image URL from API: ${imageUrl}`);
+                  if (imageUrl) {
+                    imageUrls.push(imageUrl);
+                  } else {
+                    logger.warn(`Retrieved image data but URL is null/empty for image ID: ${imageId}`);
+                  }
+                } else {
+                  logger.warn(`No valid image data found for image ID: ${imageId}`);
                 }
               }
             } catch (imageError) {
@@ -186,6 +200,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           }
         }
         
+        logger.info(`Final image URLs for item ${item.id}: ${JSON.stringify(imageUrls)}`);
         return imageUrls;
       };
       
