@@ -7,12 +7,12 @@ import { CartAlert } from '@/components/ui/cart-alert';
 import './styles/globals.css';
 import { Metadata } from 'next';
 
+const baseUrl = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:3000'
+  : 'https://destino-sf-ready-set.vercel.app';
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : 'https://destino-sf-ready-set.vercel.app'
-  ),
+  metadataBase: new URL(baseUrl),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
   openGraph: {
@@ -33,6 +33,19 @@ export const metadata: Metadata = {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
+    // Discord specific meta tags
+    'theme-color': '#004225', // Your brand color
+    // WhatsApp specific meta tags
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'og:image:type': 'image/jpeg',
+  },
+  // Ensure verification for various platforms
+  verification: {
+    other: {
+      'msvalidate.01': '', // Bing verification (if needed)
+      'yandex-verification': '', // Yandex verification (if needed)
+    }
   },
 };
 
