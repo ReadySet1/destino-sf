@@ -26,17 +26,17 @@ const categories: CategoryType[] = [
   },
   {
     id: '2',
-    name: 'Desserts',
-    description: 'Sweet treats including our famous alfajores',
-    imageUrl: '/images/assets/2Recurso 13.png',
-    slug: 'desserts',
+    name: 'Alfajores',
+    description: 'Delicious alfajores filled with creamy dulce de leche',
+    imageUrl: '/images/menu/alfajores.png',
+    slug: 'alfajores',
   },
   {
     id: '3',
-    name: 'Gift Sets',
-    description: 'Curated collections perfect for gifting',
-    imageUrl: '/images/assets/2Recurso 17.png',
-    slug: 'gift-sets',
+    name: 'Catering',
+    description: 'Professional catering services for all occasions',
+    imageUrl: '/images/menu/catering.png',
+    slug: 'catering',
   },
 ];
 

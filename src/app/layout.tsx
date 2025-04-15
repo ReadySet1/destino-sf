@@ -5,6 +5,53 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
 import './styles/globals.css';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : 'https://destino-sf-ready-set.vercel.app'
+  ),
+  title: 'Destino SF',
+  description: 'Handcrafted Empanadas & Alfajores',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'Destino SF',
+    title: 'Destino SF',
+    description: 'Handcrafted Empanadas & Alfajores',
+    images: [
+      {
+        url: `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://destino-sf-ready-set.vercel.app'}/images/opengraph-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Destino SF',
+    description: 'Handcrafted Empanadas & Alfajores',
+    images: [
+      {
+        url: `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://destino-sf-ready-set.vercel.app'}/images/opengraph-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
+    creator: '@destinosf',
+  },
+  other: {
+    'og:site_name': 'Destino SF',
+    'og:locale': 'en_US',
+    'og:type': 'website',
+    'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
+  },
+};
 
 const quicksand = Quicksand({
   subsets: ['latin'],
@@ -44,12 +91,12 @@ export default function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1 pt-2">{children}</main>
+            <main className="flex-1">{children}</main>
             <Footer />
           </div>
           <CartAlert />
           {/* Theme switcher positioned in top-right corner of footer */}
-          <div className="fixed sm:bottom-4 sm:right-4 bottom-20 right-4 z-50">
+          <div className="fixed sm:bottom-4 sm:right-4 bottom-8 right-4 z-50">
             <ThemeSwitcher />
           </div>
         </ThemeProvider>

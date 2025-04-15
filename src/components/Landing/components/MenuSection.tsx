@@ -37,9 +37,7 @@ const menuItems: MenuItemType[] = [
   },
 ];
 
-// Componente para el patrón de fondo con grid de imágenes
 const BackgroundPattern = () => {
-  // Ajusta este número según cuántos isotipos quieras mostrar
   const numberOfIsotipos = 48; // e.g., 6x8 grid
 
   return (
@@ -48,13 +46,13 @@ const BackgroundPattern = () => {
         {Array.from({ length: numberOfIsotipos }).map((_, i) => (
           <div key={i} className={styles.patternImageContainer}>
             <Image
-              src="/images/assets/isotipo.png" // Sin cache bust aquí, Next/Image maneja eso
+              src="/images/assets/isotipo.png"
               alt=""
               fill
-              sizes="(max-width: 768px) 10vw, 80px" // Ajusta sizes según necesidad
+              sizes="(max-width: 768px) 10vw, 80px"
               className="object-contain"
-              priority={i < 12} // Prioriza la carga de los primeros
-              unoptimized // Si el isotipo es simple y no necesita optimización
+              priority={i < 12}
+              unoptimized
             />
           </div>
         ))}
@@ -69,11 +67,17 @@ export function MenuSection() {
       <BackgroundPattern /> {/* Añadir el componente de patrón */}
       <div className={styles.content}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-center text-3xl font-bold text-gray-800">Menu</h2>
+          <h2 className="mt-4 mb-8 text-center text-3xl lg:text-5xl font-bold text-gray-800">
+            Menu
+          </h2>
 
           <div className="flex flex-row justify-around items-center">
             {menuItems.map(item => (
-              <Link href={`/menu/${item.slug}`} key={item.id} className="flex flex-col items-center">
+              <Link
+                href={`/menu/${item.slug}`}
+                key={item.id}
+                className="flex flex-col items-center"
+              >
                 <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-56 md:w-56 overflow-hidden rounded-full">
                   <Image
                     src={item.imageUrl}

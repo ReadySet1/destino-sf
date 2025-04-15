@@ -4,17 +4,24 @@
   padding: 2rem 0;
   overflow: hidden; /* Keep overflow hidden on main section */
   /* opacity: 0.5; */ /* Removed test opacity from main element */
+  padding-top: 5rem;
 }
 
-/* Estilos para el contenedor del patrón */
+/* Eliminar el padding superior en pantallas pequeñas */
+@media (max-width: 767px) {
+  .menuSection {
+    padding-top: 2;
+  }
+}
+
 .patternWrapper {
   position: absolute;
-  inset: 0; /* Cubre toda la sección */
+  inset: 0;
   width: 100%;
   height: 100%;
   /* overflow: hidden; */ /* Temporarily remove overflow from wrapper - Keep removed for now */
-  z-index: 1; /* Detrás del contenido */
-  pointer-events: none; /* No interfiere con clics */
+  z-index: 1; 
+  pointer-events: none; 
 }
 
 /* Estilos para el grid de imágenes */
