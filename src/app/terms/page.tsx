@@ -447,10 +447,6 @@ const TermsOfServicesPage: React.FC = () => {
             </p>
           </div>
         </div>
-
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>Last updated: April 15, 2025</p>
-        </div>
       </main>
     </div>
   );

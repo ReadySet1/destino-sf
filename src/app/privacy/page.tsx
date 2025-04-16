@@ -409,7 +409,6 @@ const PrivacyPolicyPage: React.FC = () => {
           <p className={twMerge('mt-2 font-medium')}>
             Destino, 377 Corbett Avenue, San Francisco CA 94114, United States
           </p>
-          <p>Last updated: [DATE]</p>
           <p>
             If you are not satisfied with our response to your complaint, you have the right to
             lodge your complaint with the relevant data protection authority. You can contact your
