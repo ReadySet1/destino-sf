@@ -1,4 +1,5 @@
 import https from 'https';
+import http from 'http';
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -21,10 +22,33 @@ const logger = {
   warn: (...args) => console.warn(new Date().toISOString(), 'WARN:', ...args)
 };
 
-// Función para hacer peticiones HTTPS
-function httpsRequest(options, data) {
+// Función para generar slugs
+function generateSlug(name) {
+  if (!name) return `product-${Date.now()}`; // Fallback for unnamed products
+  // Convert to lowercase, remove special chars, replace spaces with hyphens
+  const slug = name
+    .toLowerCase()
+    .replace(/[áäâà]/g, 'a') // Handle accents
+    .replace(/[éëêè]/g, 'e')
+    .replace(/[íïîì]/g, 'i')
+    .replace(/[óöôò]/g, 'o')
+    .replace(/[úüûù]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[^a-z0-9\s-]/g, '') // Remove non-alphanumeric, non-space, non-hyphen
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/-+/g, '-')          // Replace multiple hyphens with single
+    .replace(/^-+|-+$/g, '');     // Trim leading/trailing hyphens
+  // Add a unique suffix in case of collisions, although @unique should handle DB level
+  return slug || `product-${Date.now()}`; // Ensure slug is not empty
+}
+
+// Rename the request function slightly for clarity
+function makeRequest(options, data) {
+  // Determine which module to use based on hostname or a potential protocol option
+  const requester = options.hostname === 'localhost' ? http : https;
+  
   return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
+    const req = requester.request(options, (res) => {
       let body = '';
       res.on('data', (chunk) => body += chunk.toString());
       res.on('end', () => {
@@ -32,16 +56,24 @@ function httpsRequest(options, data) {
           try {
             resolve(body ? JSON.parse(body) : {});
           } catch (error) {
-            reject(new Error(`Error al analizar respuesta: ${error}`));
+            reject(new Error(`Error al analizar respuesta JSON (${res.statusCode}): ${error.message}. Body: ${body.substring(0, 500)}`));
           }
         } else {
-          reject(new Error(`Error HTTP: ${res.statusCode} - ${body}`));
+          // Include response body in error for non-2xx status codes
+          reject(new Error(`Error HTTP: ${res.statusCode} - ${body.substring(0, 500)}`)); 
         }
       });
     });
     
     req.on('error', (error) => {
-      reject(error);
+      // More specific network errors
+       if ('code' in error && error.code === 'ECONNREFUSED') {
+           reject(new Error(`Connection refused for ${options.hostname}:${options.port}. Is the server running? Details: ${error.message}`));
+       } else if ('code' in error && error.code === 'EPROTO') {
+            reject(new Error(`Protocol error (likely HTTP/HTTPS mismatch) for ${options.hostname}:${options.port}. Details: ${error.message}`));
+       } else {
+           reject(error); // General error
+       }
     });
     
     if (data) {
@@ -68,7 +100,7 @@ async function getSquareCategories() {
   };
   
   try {
-    const response = await httpsRequest(options);
+    const response = await makeRequest(options);
     const categories = response.objects || [];
     logger.info(`Se encontraron ${categories.length} categorías en Square Sandbox`);
     return categories;
@@ -98,7 +130,7 @@ async function getSquareProducts() {
   };
   
   try {
-    const response = await httpsRequest(options, requestBody);
+    const response = await makeRequest(options, requestBody);
     const items = response.objects || [];
     logger.info(`Se encontraron ${items.length} productos en Square Sandbox`);
     return items;
@@ -210,8 +242,9 @@ async function syncProduct(product, categoryMap) {
     const itemData = product.item_data;
     const itemName = itemData.name || 'Producto sin nombre';
     const squareId = product.id;
+    const productSlug = generateSlug(itemName); // Generate slug
     
-    logger.info(`Sincronizando producto: ${itemName} (${squareId})`);
+    logger.info(`Sincronizando producto: ${itemName} (${squareId}), Slug: ${productSlug}`);
     
     // Obtener la categoría correcta o usar la predeterminada
     let categoryId = categoryMap['default'];
@@ -225,18 +258,14 @@ async function syncProduct(product, categoryMap) {
     let basePrice = 0;
     
     if (variations.length > 0) {
-      // Usar el precio de la primera variación como base
       const firstVariation = variations[0];
       const priceAmount = firstVariation.item_variation_data?.price_money?.amount || 0;
-      basePrice = priceAmount / 100; // Convertir centavos a unidades
+      basePrice = priceAmount / 100;
       
-      // Procesar todas las variaciones
       for (const variation of variations) {
         if (!variation.item_variation_data) continue;
-        
         const variationData = variation.item_variation_data;
         const variationPrice = (variationData.price_money?.amount || 0) / 100;
-        
         variants.push({
           name: variationData.name || 'Estándar',
           price: variationPrice,
@@ -245,9 +274,9 @@ async function syncProduct(product, categoryMap) {
       }
     }
     
-    // Crear o actualizar el producto en la base de datos
     const description = itemData.description || '';
     
+    // Crear o actualizar el producto en la base de datos
     const dbProduct = await prisma.product.upsert({
       where: { squareId },
       update: {
@@ -255,10 +284,13 @@ async function syncProduct(product, categoryMap) {
         description,
         price: basePrice,
         categoryId,
+        slug: productSlug, // Update slug
+        images: [], // <<<--- Clear images on update
         variants: {
           deleteMany: {},
           create: variants
         },
+        active: true, // Ensure it's active on update
         updatedAt: new Date()
       },
       create: {
@@ -266,7 +298,8 @@ async function syncProduct(product, categoryMap) {
         name: itemName,
         description,
         price: basePrice,
-        images: [],
+        slug: productSlug, // Add slug on create
+        images: [], // Start with empty images
         categoryId,
         featured: false,
         active: true,
@@ -286,8 +319,10 @@ async function syncProduct(product, categoryMap) {
         price: Number(dbProduct.price),
         categoryId: dbProduct.categoryId,
         squareId: dbProduct.squareId,
-        images: dbProduct.images,
-        featured: dbProduct.featured
+        images: dbProduct.images, // Send the (now empty) images array
+        slug: dbProduct.slug, // Send the slug
+        featured: dbProduct.featured,
+        active: dbProduct.active // Send active status
       };
       
       // Usar HTTP para llamar a nuestro endpoint local
@@ -301,10 +336,15 @@ async function syncProduct(product, categoryMap) {
         }
       };
       
-      await httpsRequest(options, sanityData);
+      await makeRequest(options, sanityData);
       logger.info(`Producto sincronizado con Sanity: ${dbProduct.name}`);
     } catch (sanityError) {
-      logger.error(`Error al sincronizar con Sanity: ${sanityError.message}`);
+      // Log the full error object for better diagnostics
+      logger.error('Error al sincronizar con Sanity API endpoint:', sanityError);
+      // Optionally log message if it exists
+      if (sanityError instanceof Error && sanityError.message) {
+          logger.error('(Sanity API Error Message): ', sanityError.message);
+      }
       // Continuar a pesar del error de Sanity
     }
     

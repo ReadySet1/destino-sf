@@ -33,13 +33,13 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     return false;
   }
 
-  const { data: userRole } = await supabase
-    .from('profiles')
-    .select('role')
+  const { data: adminProfile } = await supabase
+    .from('Profiles')
+    .select('*')
     .eq('id', session.user.id)
     .single();
 
-  return userRole?.role === 'ADMIN';
+  return adminProfile?.role === 'ADMIN';
 }
 
 export async function POST(request: NextRequest) {

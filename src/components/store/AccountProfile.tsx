@@ -46,7 +46,7 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
       try {
         // Fetch current profile data
         const { data, error } = await supabase
-          .from('profiles')
+          .from('Profiles')
           .select('name, phone')
           .eq('id', user.id)
           .single();
@@ -69,10 +69,11 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
 
   const onSubmit = async (data: ProfileFormValues) => {
     setIsSaving(true);
+    console.log('Attempting to update profile with data:', data);
 
     try {
       // Create or update profile record
-      const { error } = await supabase.from('profiles').upsert(
+      const { error } = await supabase.from('Profiles').upsert(
         {
           id: user.id,
           email: user.email || '', // Include email field from user object
@@ -91,11 +92,9 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
         throw new Error(`Failed to update profile: ${error.message}`);
       }
 
-      toast.success('Profile updated successfully');
-
       // Verify the update succeeded
       const { data: updatedProfile, error: fetchError } = await supabase
-        .from('profiles')
+        .from('Profiles')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -103,8 +102,10 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
       if (fetchError) {
         console.warn('Failed to fetch updated profile:', fetchError);
       } else {
-        console.log('Profile updated:', updatedProfile);
+        console.log('Profile updated successfully:', updatedProfile);
       }
+
+      toast.success('Profile updated successfully');
     } catch (error: unknown) {
       let errorMessage = 'Failed to update profile';
 
@@ -126,7 +127,13 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
         <CardDescription>Update your account details and preferences.</CardDescription>
       </CardHeader>
 
-      <form onSubmit={void handleSubmit(onSubmit)}>
+      <form
+        method="POST"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSubmit(onSubmit)(e);
+        }}
+      >
         <CardContent className="space-y-4">
           {/* Email field (read-only) */}
           <div className="space-y-2">
@@ -167,7 +174,7 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
         </CardContent>
 
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={void onSignOut}>
+          <Button type="button" variant="outline" onClick={onSignOut}>
             Sign Out
           </Button>
 

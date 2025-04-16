@@ -43,13 +43,13 @@ export async function POST(_request: Request) {
     }
 
     // Verify if user is an admin
-    const { data: userRole } = await supabase
-      .from('profiles')
-      .select('role')
+    const { data: adminProfiles } = await supabase
+      .from('Profiles')
+      .select('*')
       .eq('id', session.user.id)
       .single();
 
-    if (!userRole || userRole.role !== 'ADMIN') {
+    if (!adminProfiles || adminProfiles.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

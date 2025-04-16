@@ -1,321 +1,281 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { logger } from '@/utils/logger';
-import { createOrder } from '@/app/actions';
+// Add this patch at the top of the file
+(BigInt.prototype as any).toJSON = function() {
+  return this.toString();
+};
 
-// Environment variables for Square
-const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
-const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
-const SQUARE_API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://connect.squareup.com' 
-  : 'https://connect.sandbox.squareup.com';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { SquareClient } from 'square';
+import { randomUUID } from 'crypto';
+import { NextResponse } from 'next/server';
+import { formatISO } from 'date-fns';
 
-// Define address schema
-const addressSchema = z.object({
-  street: z.string(),
-  street2: z.string().optional(),
-  city: z.string(),
-  state: z.string(),
-  postalCode: z.string(),
-  country: z.string(),
+// Initialize Square client with appropriate environment
+const square = new SquareClient({
+  token: process.env.SQUARE_ACCESS_TOKEN,
+  environment: process.env.NODE_ENV === 'development' ? 'sandbox' : 'production',
 });
 
-// Define fulfillment schemas for different methods
-const pickupFulfillmentSchema = z.object({
-  method: z.literal('pickup'),
-  pickupTime: z.string(),
-});
-
-const deliveryFulfillmentSchema = z.object({
-  method: z.literal('delivery'),
-  deliveryAddress: addressSchema,
-  deliveryTime: z.string(),
-  deliveryInstructions: z.string().optional(),
-});
-
-const shippingFulfillmentSchema = z.object({
-  method: z.literal('shipping'),
-  shippingAddress: addressSchema,
-  shippingMethod: z.string(),
-});
-
-// Combine fulfillment schemas
-const fulfillmentSchema = z.discriminatedUnion('method', [
-  pickupFulfillmentSchema,
-  deliveryFulfillmentSchema,
-  shippingFulfillmentSchema,
-]);
-
-// Validation schema for the request body
-const checkoutRequestSchema = z.object({
-  items: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      price: z.number(),
-      quantity: z.number(),
-      variantId: z.string().optional(),
-    })
-  ),
-  customerInfo: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    phone: z.string(),
-    pickupTime: z.string(),
-  }),
-  fulfillment: fulfillmentSchema,
-});
-
-// Type for Square Checkout API request
-interface SquareCheckoutRequest {
-  idempotencyKey: string;
-  order: {
-    lineItems: Array<{
-      quantity: string;
-      catalogObjectId: string;
-      name: string;
-      basePriceMoney: {
-        amount: number;
-        currency: string;
-      };
-    }>;
-    locationId: string | undefined;
-    fulfillments?: Array<{
-      type: string;
-      state: string;
-      pickupDetails?: {
-        pickupAt: string;
-        note?: string;
-        recipient?: {
-          customerId?: string;
-          displayName: string;
-          emailAddress?: string;
-          phoneNumber?: string;
-        };
-      };
-      deliveryDetails?: {
-        deliveryAt: string;
-        note?: string;
-        recipient?: {
-          customerId?: string;
-          displayName: string;
-          emailAddress?: string;
-          phoneNumber?: string;
-          address?: {
-            addressLine1: string;
-            addressLine2?: string;
-            locality: string;
-            administrativeDistrictLevel1: string;
-            postalCode: string;
-            country: string;
-          };
-        };
-      };
-      shipmentDetails?: {
-        recipient?: {
-          customerId?: string;
-          displayName: string;
-          emailAddress?: string;
-          phoneNumber?: string;
-          address?: {
-            addressLine1: string;
-            addressLine2?: string;
-            locality: string;
-            administrativeDistrictLevel1: string;
-            postalCode: string;
-            country: string;
-          };
-        };
-        carrier?: string;
-        shippingNote?: string;
-      };
-    }>;
-  };
-  checkoutOptions: {
-    allowTipping: boolean;
-    redirectUrl: string;
-    merchantSupportEmail: string;
-  };
-  prePopulateBuyerEmail?: string;
-  prePopulateShippingAddress?: {
-    fullName?: string;
-  };
+// Define expected request body structure
+interface Item {
+  id: string;
+  name: string;
+  price: number; // Assuming price is a number
+  quantity: number;
+  variantId?: string;
 }
 
-export async function POST(request: NextRequest) {
+interface Address {
+  street: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+interface CustomerInfo {
+  name: string;
+  email: string;
+  phone: string;
+  pickupTime?: string; // Included but might not be needed directly here
+}
+
+interface Fulfillment {
+  method: 'pickup' | 'delivery' | 'shipping';
+  pickupTime?: string; // Format: YYYY-MM-DDTHH:mm:00 from frontend
+  deliveryTime?: string; // Format: YYYY-MM-DDTHH:mm:00 from frontend
+  deliveryAddress?: Address;
+  deliveryInstructions?: string;
+  shippingAddress?: Address;
+  shippingMethod?: string;
+}
+
+interface RequestBody {
+  items: Item[];
+  customerInfo: CustomerInfo;
+  fulfillment: Fulfillment;
+}
+
+// Updated type guard for structural check
+interface PotentialSquareError {
+    errors?: Array<{ category?: string; code?: string; detail?: string; field?: string }>;
+    statusCode?: number;
+    [key: string]: any; // Allow other properties
+}
+function isPotentialSquareError(error: unknown): error is PotentialSquareError {
+  return typeof error === 'object' && error !== null && ('errors' in error || 'statusCode' in error);
+}
+
+// Map back to string country codes based on migration guide examples
+const mapCountryCode = (code: string | undefined): string | undefined => {
+    if (!code) return undefined;
+    const upperCaseCode = code.toUpperCase();
+    // Return standard codes directly as strings
+    if (upperCaseCode === 'US') return 'US';
+    if (upperCaseCode === 'CA') return 'CA';
+    // Add other supported countries as needed, returning their string codes
+    console.warn(`Unsupported country code: ${code}. Returning original.`);
+    return upperCaseCode; // Return the original code or undefined if strict validation is needed
+}
+
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    
-    // Validate request body
-    const validationResult = checkoutRequestSchema.safeParse(body);
-    if (!validationResult.success) {
-      logger.error('Invalid checkout request:', validationResult.error);
+    const body: RequestBody = await request.json();
+    const { items, customerInfo, fulfillment } = body;
+
+    // Validate required environment variables
+    const locationId = process.env.SQUARE_LOCATION_ID;
+    if (!process.env.SQUARE_ACCESS_TOKEN) {
+        console.error('Server Configuration Error: SQUARE_ACCESS_TOKEN is not set.');
+        return NextResponse.json({ success: false, error: 'Server configuration error.' }, { status: 500 });
+    }
+     if (!locationId) {
+        console.error('Server Configuration Error: SQUARE_LOCATION_ID is not set.');
+        return NextResponse.json({ success: false, error: 'Server configuration error.' }, { status: 500 });
+    }
+
+    if (!items?.length) {
       return NextResponse.json(
-        { 
-          error: 'Invalid request data',
-          details: validationResult.error.errors
-        },
+        { success: false, error: 'No items provided' },
         { status: 400 }
       );
     }
-    
-    const { items, customerInfo, fulfillment } = validationResult.data;
-    
-    // First, save the order to our database
-    const orderResult = await createOrder({
-      items,
-      customerInfo,
-      fulfillmentData: fulfillment,
+
+    // Create line items for Square checkout
+    const lineItems = items.map((item) => {
+        // Validate price is a number before converting
+        const priceInCents = typeof item.price === 'number' ? Math.round(item.price * 100) : 0;
+        if (priceInCents <= 0) {
+            console.warn(`Invalid price for item ${item.name}: ${item.price}. Setting to 0.`);
+            // Optionally throw an error or handle differently
+        }
+        return {
+          quantity: item.quantity.toString(),
+          basePriceMoney: {
+            amount: BigInt(Math.round(item.price * 100)),
+            currency: "USD" as any,
+          },
+          name: item.name,
+          // You might need item.variation_name or item.variantId depending on your Square setup
+          // catalogObjectId: item.variantId, // If using catalog items
+        };
     });
-    
-    if (!orderResult.success) {
-      return NextResponse.json(
-        { error: 'Failed to create order', details: orderResult.error },
-        { status: 500 }
-      );
-    }
-    
-    // Create line items for Square
-    const lineItems = items.map(item => ({
-      quantity: item.quantity.toString(),
-      catalogObjectId: item.id,
-      name: item.name,
-      basePriceMoney: {
-        amount: Math.round(item.price * 100), // Convert to cents
-        currency: 'USD'
-      }
-    }));
-    
-    // Create order for checkout
-    const order: any = {
-      lineItems,
-      locationId: SQUARE_LOCATION_ID,
+
+    // Prepare fulfillment data with corrected time format
+    let fulfillmentData: any = { // Use 'any' for simplicity or define a stricter Square type
+      type: fulfillment.method.toUpperCase(),
     };
-    
-    // Add fulfillment details based on the selected method
-    if (fulfillment) {
-      const squareFulfillments = [];
-      
-      if (fulfillment.method === 'pickup') {
-        squareFulfillments.push({
-          type: 'PICKUP',
-          state: 'PROPOSED',
-          pickupDetails: {
-            pickupAt: fulfillment.pickupTime,
+
+    if (fulfillment.method === 'pickup' && fulfillment.pickupTime) {
+      try {
+          // Ensure pickupTime is a valid date string before parsing
+          const pickupDate = new Date(fulfillment.pickupTime);
+          if (isNaN(pickupDate.getTime())) {
+            throw new Error('Invalid pickup date/time format');
+          }
+          fulfillmentData.pickupDetails = {
+            pickupAt: formatISO(pickupDate), // Convert to RFC 3339 using date-fns
+            note: 'Please bring your ID for pickup',
+            // Add recipient details if needed by Square for pickup
             recipient: {
-              displayName: customerInfo.name,
-              emailAddress: customerInfo.email,
-              phoneNumber: customerInfo.phone,
-            },
-          },
-        });
-      } else if (fulfillment.method === 'delivery') {
-        squareFulfillments.push({
-          type: 'DELIVERY',
-          state: 'PROPOSED',
-          deliveryDetails: {
-            deliveryAt: fulfillment.deliveryTime,
-            recipient: {
-              displayName: customerInfo.name,
-              emailAddress: customerInfo.email,
-              phoneNumber: customerInfo.phone,
-              address: {
-                addressLine1: fulfillment.deliveryAddress.street,
-                addressLine2: fulfillment.deliveryAddress.street2,
-                locality: fulfillment.deliveryAddress.city,
-                administrativeDistrictLevel1: fulfillment.deliveryAddress.state,
-                postalCode: fulfillment.deliveryAddress.postalCode,
-                country: fulfillment.deliveryAddress.country,
-              },
-            },
-            note: fulfillment.deliveryInstructions,
-          },
-        });
-      } else if (fulfillment.method === 'shipping') {
-        squareFulfillments.push({
-          type: 'SHIPMENT',
-          state: 'PROPOSED',
-          shipmentDetails: {
-            recipient: {
-              displayName: customerInfo.name,
-              emailAddress: customerInfo.email,
-              phoneNumber: customerInfo.phone,
-              address: {
-                addressLine1: fulfillment.shippingAddress.street,
-                addressLine2: fulfillment.shippingAddress.street2,
-                locality: fulfillment.shippingAddress.city,
-                administrativeDistrictLevel1: fulfillment.shippingAddress.state,
-                postalCode: fulfillment.shippingAddress.postalCode,
-                country: fulfillment.shippingAddress.country,
-              },
-            },
-            carrier: fulfillment.shippingMethod,
-          },
-        });
+                displayName: customerInfo.name,
+                emailAddress: customerInfo.email,
+                phoneNumber: customerInfo.phone,
+            }
+          };
+      } catch (dateError) {
+          console.error('Error parsing pickup time:', dateError);
+          return NextResponse.json({ success: false, error: 'Invalid pickup time format provided.' }, { status: 400 });
       }
-      
-      if (squareFulfillments.length > 0) {
-        order.fulfillments = squareFulfillments;
-      }
+    } else if (fulfillment.method === 'delivery' && fulfillment.deliveryTime && fulfillment.deliveryAddress) {
+       try {
+           const deliveryDate = new Date(fulfillment.deliveryTime);
+            if (isNaN(deliveryDate.getTime())) {
+               throw new Error('Invalid delivery date/time format');
+           }
+           const deliveryCountry = mapCountryCode(fulfillment.deliveryAddress.country);
+           if (!deliveryCountry) {
+               console.error(`Unsupported country code for delivery: ${fulfillment.deliveryAddress.country}`);
+               return NextResponse.json({ success: false, error: `Unsupported country code for delivery: ${fulfillment.deliveryAddress.country}` }, { status: 400 });
+           }
+           fulfillmentData.deliveryDetails = {
+             deliverAt: formatISO(deliveryDate),
+             recipient: {
+               displayName: customerInfo.name,
+               emailAddress: customerInfo.email,
+               phoneNumber: customerInfo.phone,
+               address: {
+                 addressLine1: fulfillment.deliveryAddress.street,
+                 addressLine2: fulfillment.deliveryAddress.street2 || undefined, // Use undefined for optional fields
+                 locality: fulfillment.deliveryAddress.city,
+                 administrativeDistrictLevel1: fulfillment.deliveryAddress.state,
+                 postalCode: fulfillment.deliveryAddress.postalCode,
+                 country: deliveryCountry as any, // Use string code + type assertion
+               },
+             },
+             note: fulfillment.deliveryInstructions || undefined, // Use undefined for optional fields
+           };
+       } catch (dateError) {
+           console.error('Error parsing delivery time:', dateError);
+           return NextResponse.json({ success: false, error: 'Invalid delivery time format provided.' }, { status: 400 });
+       }
+    } else if (fulfillment.method === 'shipping' && fulfillment.shippingAddress) {
+        const shippingCountry = mapCountryCode(fulfillment.shippingAddress.country);
+         if (!shippingCountry) {
+             console.error(`Unsupported country code for shipping: ${fulfillment.shippingAddress.country}`);
+             return NextResponse.json({ success: false, error: `Unsupported country code for shipping: ${fulfillment.shippingAddress.country}` }, { status: 400 });
+         }
+      fulfillmentData.shippingDetails = {
+        recipient: {
+          displayName: customerInfo.name,
+          emailAddress: customerInfo.email,
+          phoneNumber: customerInfo.phone,
+          address: {
+            addressLine1: fulfillment.shippingAddress.street,
+            addressLine2: fulfillment.shippingAddress.street2 || undefined, // Use undefined
+            locality: fulfillment.shippingAddress.city,
+            administrativeDistrictLevel1: fulfillment.shippingAddress.state,
+            postalCode: fulfillment.shippingAddress.postalCode,
+            country: shippingCountry as any, // Use string code + type assertion
+          },
+        },
+        // You might need shipping options here depending on your setup
+      };
     }
-    
-    // Create payment link request
-    const checkoutRequest: SquareCheckoutRequest = {
-      idempotencyKey: crypto.randomUUID(),
-      order,
+
+    console.log("Sending to Square:", JSON.stringify({ fulfillmentData, lineItems }, null, 2)); // Log what's being sent
+
+    // Create a payment link using Square's Checkout API
+    const response = await square.checkout.paymentLinks.create({
+      idempotencyKey: randomUUID(),
+      order: {
+        locationId: locationId, // Use validated locationId
+        lineItems,
+        fulfillments: [fulfillmentData],
+      },
       checkoutOptions: {
         allowTipping: true,
-        redirectUrl: `${APP_URL}/order-confirmation/${orderResult.orderId}?status=success`,
-        merchantSupportEmail: process.env.MERCHANT_SUPPORT_EMAIL || 'support@destino-sf.com',
-      },
-    };
-    
-    // Add pre-populated buyer information
-    checkoutRequest.prePopulateBuyerEmail = customerInfo.email;
-    checkoutRequest.prePopulateShippingAddress = {
-      fullName: customerInfo.name
-    };
-    
-    // Call Square Checkout API to create payment link
-    const response = await fetch(`${SQUARE_API_URL}/v2/online-checkout/payment-links`, {
-      method: 'POST',
-      headers: {
-        'Square-Version': '2023-12-13',
-        'Authorization': `Bearer ${SQUARE_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(checkoutRequest)
-    });
-    
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      logger.error('Square Checkout API error:', responseData);
-      return NextResponse.json(
-        { 
-          error: 'Failed to create checkout session',
-          details: responseData.errors || 'Unknown error'
+        // Only ask for shipping address if fulfillment is shipping AND we haven't provided it
+        askForShippingAddress: fulfillment.method === 'shipping',
+        merchantSupportEmail: process.env.SUPPORT_EMAIL || customerInfo.email, // Fallback email
+        acceptedPaymentMethods: {
+          applePay: true,
+          googlePay: true,
+          cashAppPay: false, // Adjust based on your needs
+          afterpayClearpay: false, // Adjust based on your needs
         },
-        { status: 500 }
-      );
-    }
-    
-    // Return the checkout URL to the client
-    return NextResponse.json({
-      success: true,
-      orderId: orderResult.orderId,
-      checkoutUrl: responseData.paymentLink.url,
-      paymentLinkId: responseData.paymentLink.id,
-      longUrl: responseData.paymentLink.longUrl,
-    });
-  } catch (error) {
-    logger.error('Error creating Square checkout:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to create checkout session',
-        details: error instanceof Error ? error.message : 'Unknown error'
       },
+      prePopulatedData: {
+        buyerEmail: customerInfo.email,
+        buyerPhoneNumber: customerInfo.phone,
+        // Pre-populate address only if it's delivery or shipping
+        ...( (fulfillment.method === 'delivery' && fulfillment.deliveryAddress) ||
+             (fulfillment.method === 'shipping' && fulfillment.shippingAddress) ) && {
+               buyerAddress: {
+                   addressLine1: fulfillment.deliveryAddress?.street || fulfillment.shippingAddress?.street,
+                   addressLine2: fulfillment.deliveryAddress?.street2 || fulfillment.shippingAddress?.street2 || undefined,
+                   locality: fulfillment.deliveryAddress?.city || fulfillment.shippingAddress?.city,
+                   administrativeDistrictLevel1: fulfillment.deliveryAddress?.state || fulfillment.shippingAddress?.state,
+                   postalCode: fulfillment.deliveryAddress?.postalCode || fulfillment.shippingAddress?.postalCode,
+                   country: mapCountryCode(fulfillment.deliveryAddress?.country || fulfillment.shippingAddress?.country) as any,
+               }
+           }
+      },
+      // Consider removing paymentNote or simplifying it if not strictly needed
+      // paymentNote: JSON.stringify({ customerInfo, fulfillmentMethod: fulfillment.method }),
+    });
+
+    if (response.paymentLink?.url) {
+      console.log("Square Payment Link URL:", response.paymentLink.url);
+      return NextResponse.json({
+        success: true,
+        checkoutUrl: response.paymentLink.url,
+      });
+    } else {
+      console.error('Square API did not return a payment link URL.', response);
+      throw new Error('Failed to get checkout URL from Square');
+    }
+  } catch (error: unknown) { // Catch error as unknown
+     console.error('Checkout API Error:', error);
+
+     // Use updated structural type guard
+     if (isPotentialSquareError(error)) {
+         console.error('Square API Error Details:', JSON.stringify(error.errors || error, null, 2)); // Log errors or whole object
+         const specificError = error.errors?.[0]?.detail || 'Failed to communicate with payment provider.';
+          return NextResponse.json(
+              { success: false, error: specificError },
+              { status: error.statusCode || 500 }
+          );
+     } else if (error instanceof Error) {
+        // Handle generic JavaScript errors
+         return NextResponse.json(
+              { success: false, error: error.message || 'An unexpected error occurred.' },
+              { status: 500 }
+          );
+     }
+
+    // Fallback for non-Error objects
+    return NextResponse.json(
+      { success: false, error: 'Failed to create checkout session due to an internal server error.' },
       { status: 500 }
     );
   }

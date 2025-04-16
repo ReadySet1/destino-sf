@@ -1,6 +1,5 @@
 
 import './styles/globals.css';
-import { usePathname } from 'next/navigation';
 import ClientLayout from './client-layout';
 import { Metadata } from 'next';
 

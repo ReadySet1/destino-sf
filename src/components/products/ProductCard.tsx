@@ -103,11 +103,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                   setSelectedVariant(variant || null);
                 }}
               >
-                {product.variants.map((variant) => (
-                  <option key={variant.id} value={variant.id}>
-                    {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
-                  </option>
-                ))}
+                {product.variants
+                  .filter(variant => variant.id)
+                  .map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                      {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
+                    </option>
+                  ))}
               </select>
             </div>
           )}

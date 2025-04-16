@@ -102,6 +102,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.3.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
     "typescript": "5.7.2"
   },
   "pnpm": {

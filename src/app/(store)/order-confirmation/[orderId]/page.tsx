@@ -1,165 +1,288 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { format } from 'date-fns';
-import { Check, Calendar, Clock, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { prisma } from '@/lib/prisma';
-import { Decimal } from '@prisma/client/runtime/library';
-import { type JSX } from 'react'; // Import JSX type
+import { CheckCircle2Icon, TruckIcon, MapPinIcon, CalendarIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getOrderDetails } from '@/utils/square';
 
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: Decimal;
-  productId: string;
-  variantId: string | null;
-  orderId: string;
-  createdAt: Date;
-  updatedAt: Date;
+// Define our own Order interface based on what we're using
+interface Order {
+  id?: string;
+  totalMoney?: {
+    amount?: number;
+  };
+  fulfillments?: Array<{
+    type?: string;
+    pickupDetails?: {
+      pickupAt?: string;
+      note?: string;
+    };
+    deliveryDetails?: {
+      deliverAt?: string;
+      recipient?: {
+        displayName?: string;
+        address?: {
+          addressLine1?: string;
+          addressLine2?: string;
+          locality?: string;
+          administrativeDistrictLevel1?: string;
+          postalCode?: string;
+        };
+      };
+    };
+    shipmentDetails?: {
+      carrier?: string;
+      recipient?: {
+        displayName?: string;
+        address?: {
+          addressLine1?: string;
+          addressLine2?: string;
+          locality?: string;
+          administrativeDistrictLevel1?: string;
+          postalCode?: string;
+        };
+      };
+    };
+  }>;
 }
 
-// Define the shape of the *resolved* params
-type ResolvedParams = {
-  orderId: string;
+type ExtendedOrder = Order & {
+  payment_note?: string;
+  status?: string;
+  createdAt?: string;
 };
 
-// Define the component's props, expecting params as a Promise
 interface OrderConfirmationPageProps {
-  params: Promise<ResolvedParams>;
-  // searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; // Add if searchParams were also needed
+  params: {
+    orderId: string;
+  };
+  searchParams: {
+    status?: string;
+  };
+}
+
+// Type for payment note JSON structure
+interface PaymentNote {
+  // Define specific fields if needed
 }
 
 export default async function OrderConfirmationPage({
   params,
-}: OrderConfirmationPageProps): Promise<JSX.Element> {
-  // <-- Added explicit return type
-
-  // Await the params promise to get the resolved object
-  const resolvedParams = await params;
-
-  // Get order from database using the resolved ID
-  const order = await prisma.order.findUnique({
-    where: { id: resolvedParams.orderId },
-    include: {
-      items: true,
-    },
-  });
+  searchParams,
+}: OrderConfirmationPageProps) {
+  const order = await getOrderDetails(params.orderId) as ExtendedOrder | null;
 
   if (!order) {
-    return notFound();
+    notFound();
   }
 
-  // Format pickup date and time
-  const pickupDate = format(new Date(order.pickupTime), 'EEEE, MMMM d,VSFAULT');
-  const pickupTime = format(new Date(order.pickupTime), 'h:mm a');
+  // Extract fulfillment details from the order with explicit typing
+  const fulfillment = order.fulfillments?.[0];
+  const fulfillmentType = fulfillment?.type?.toLowerCase() || '';
+  
+  // Safely parse the payment note
+  let paymentNote: PaymentNote | null = null;
+  if (order.payment_note) {
+    try {
+      paymentNote = JSON.parse(order.payment_note) as PaymentNote;
+    } catch (error) {
+      console.error("Failed to parse payment note:", error);
+    }
+  }
+
+  // Use searchParams status as fallback or primary source if needed
+  const displayStatus = searchParams.status || order.status || 'Processing';
+  
+  // Parse order date safely
+  const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
+
+  // Function to safely format dates with fallbacks
+  const safeFormat = (dateString: string | null | undefined, formatString: string): string => {
+    if (!dateString) return 'Not specified';
+    try {
+      return format(new Date(dateString), formatString);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return 'Invalid date';
+    }
+  };
+
+  // Calculate total amount safely
+  const totalAmount = order.totalMoney?.amount !== undefined
+    ? (Number(order.totalMoney.amount) / 100).toFixed(2)
+    : '0.00';
+
+  // Helper function to determine fulfillment title
+  const getFulfillmentTitle = (): string => {
+    if (!fulfillment) return 'Order Details';
+    
+    switch (fulfillment.type?.toLowerCase()) {
+      case 'pickup': return 'Pickup Details';
+      case 'delivery': return 'Delivery Details';
+      case 'shipment': return 'Shipping Details';
+      default: return 'Order Details';
+    }
+  };
 
   return (
-    <main className="container mx-auto py-12">
-      <div className="mx-auto max-w-2xl rounded-lg border bg-white p-8 shadow-sm">
+    <main className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-3xl">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <Check className="h-10 w-10 text-green-600" />
-          </div>
-
+          <CheckCircle2Icon className="mx-auto mb-4 h-12 w-12 text-green-500" />
           <h1 className="mb-2 text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-gray-600">Thank you for your order. Your confirmation number is:</p>
-          {/* Use order details fetched using resolvedParams.id */}
-          <p className="mt-2 text-xl font-bold text-yellow-600">
-            #{order.id.slice(-8).toUpperCase()}
+          <p className="text-lg text-gray-600">
+            Thank you for your order. We'll send you updates about your order status.
           </p>
         </div>
 
-        <div className="mb-8 rounded-lg bg-gray-50 p-6">
-          <h2 className="mb-4 text-xl font-semibold">Pickup Details</h2>
-
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <Calendar className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500" />
-              <div>
-                <p className="font-medium">Date</p>
-                <p className="text-gray-600">{pickupDate}</p>
+        <div className="space-y-6">
+          {/* Order Summary */}
+          <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between border-b pb-4">
+                <span className="font-medium">Order ID</span>
+                <span className="font-mono">{order.id || 'N/A'}</span>
               </div>
-            </div>
-
-            <div className="flex items-start">
-              <Clock className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500" />
-              <div>
-                <p className="font-medium">Time</p>
-                <p className="text-gray-600">{pickupTime}</p>
+              <div className="flex justify-between border-b pb-4">
+                <span className="font-medium">Order Date</span>
+                <span>{order.createdAt ? format(orderDate, 'PPP') : 'N/A'}</span>
               </div>
-            </div>
-
-            <div className="flex items-start">
-              <MapPin className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500" />
-              <div>
-                <p className="font-medium">Location</p>
-                <p className="text-gray-600">DESTINO SF</p>
-                <p className="text-gray-600">377 Cortland Ave</p>
-                <p className="text-gray-600">San Francisco, CA 94110</p>
+              <div className="flex justify-between border-b pb-4">
+                <span className="font-medium">Order Status</span>
+                <span className="capitalize">{displayStatus.toLowerCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Total Amount</span>
+                <span className="font-medium">${totalAmount}</span>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+          {/* Fulfillment Details - Only render if fulfillment exists */}
+          {fulfillment && (
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold">{getFulfillmentTitle()}</h2>
 
-          <div className="mb-4 space-y-2 divide-y rounded-lg border">
-            {order.items.map((item: OrderItem) => (
-              <div key={item.id} className="flex justify-between p-4">
-                <div>
-                  <p className="font-medium">
-                    {/* TODO: Fetch actual product name based on item.productId/variantId */}
-                    {item.quantity} x Product Name Placeholder
-                  </p>
-                  {item.variantId && (
-                    <p className="text-sm text-gray-500">
-                      {/* Display variant name if available */}
-                    </p>
-                  )}
-                </div>
-                <p className="font-medium">${Number(item.price).toFixed(2)}</p>
+              <div className="space-y-4">
+                {/* Pickup Details */}
+                {fulfillment.type?.toLowerCase() === 'pickup' && fulfillment.pickupDetails && (
+                  <div className="flex items-start gap-3">
+                    <CalendarIcon className="mt-1 h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Pickup Time</p>
+                      <p className="text-gray-600">
+                        {safeFormat(fulfillment.pickupDetails.pickupAt, 'PPP p')}
+                      </p>
+                      {fulfillment.pickupDetails.note && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          {fulfillment.pickupDetails.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery/Shipment Details */}
+                {fulfillment && ['delivery', 'shipment'].includes(fulfillment.type?.toLowerCase() || '') && (
+                  <>
+                    {/* Shipping Address */}
+                    <div className="flex items-start gap-3">
+                      <MapPinIcon className="mt-1 h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Shipping Address</p>
+                        {(fulfillment.deliveryDetails?.recipient || fulfillment.shipmentDetails?.recipient) ? (
+                          <>
+                            <p className="text-gray-600">
+                              {fulfillment.deliveryDetails?.recipient?.displayName ||
+                               fulfillment.shipmentDetails?.recipient?.displayName || 'N/A'}
+                            </p>
+                            <p className="text-gray-600">
+                              {fulfillment.deliveryDetails?.recipient?.address?.addressLine1 ||
+                               fulfillment.shipmentDetails?.recipient?.address?.addressLine1 || 'N/A'}
+                            </p>
+                            {(fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
+                              fulfillment.shipmentDetails?.recipient?.address?.addressLine2) && (
+                              <p className="text-gray-600">
+                                {fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
+                                 fulfillment.shipmentDetails?.recipient?.address?.addressLine2}
+                              </p>
+                            )}
+                            <p className="text-gray-600">
+                              {[
+                                fulfillment.deliveryDetails?.recipient?.address?.locality ||
+                                fulfillment.shipmentDetails?.recipient?.address?.locality || '',
+                                fulfillment.deliveryDetails?.recipient?.address?.administrativeDistrictLevel1 ||
+                                fulfillment.shipmentDetails?.recipient?.address?.administrativeDistrictLevel1 || '',
+                                fulfillment.deliveryDetails?.recipient?.address?.postalCode ||
+                                fulfillment.shipmentDetails?.recipient?.address?.postalCode || ''
+                              ].filter(Boolean).join(', ') || 'N/A'}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-gray-600">Address not available</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Delivery Time */}
+                    {fulfillment.type?.toLowerCase() === 'delivery' && fulfillment.deliveryDetails?.deliverAt && (
+                      <div className="flex items-start gap-3">
+                        <CalendarIcon className="mt-1 h-5 w-5 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Delivery Time</p>
+                          <p className="text-gray-600">
+                            {safeFormat(fulfillment.deliveryDetails.deliverAt, 'PPP p')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Shipping Method */}
+                    {fulfillment.type?.toLowerCase() === 'shipment' && (
+                      <div className="flex items-start gap-3">
+                        <TruckIcon className="mt-1 h-5 w-5 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Shipping Method</p>
+                          <p className="text-gray-600">
+                            {fulfillment.shipmentDetails?.carrier || 'Standard Shipping'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-
-          <div className="space-y-2 rounded-lg border p-4">
-            <div className="flex justify-between">
-              <p>Subtotal</p>
-              <p>${Number(order.total).toFixed(2)}</p>
             </div>
+          )}
 
-            <div className="flex justify-between">
-              <p>Tax</p>
-              {/* TODO: Store actual tax amount in order instead of recalculating */}
-              <p>${(Number(order.total) * 0.0825).toFixed(2)}</p>
-            </div>
-
-            <div className="flex justify-between border-t pt-2 font-bold">
-              <p>Total</p>
-              {/* TODO: Store actual final total in order instead of recalculating */}
-              <p>${(Number(order.total) * 1.0825).toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-          <p>
-            A confirmation email has been sent to {order.email}. If you have any questions about
-            your order, please contact us at james@destinosf.com or call (415) 757-0177.
-          </p>
-        </div>
-
-        <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-          <Link href="/" className="flex-1">
-            <Button variant="outline" className="w-full">
-              Return to Home
-            </Button>
-          </Link>
-
-          <Link href="/menu" className="flex-1">
-            <Button className="w-full">Order More</Button>
-          </Link>
+          {/* Next Steps */}
+          <Alert>
+            <AlertDescription>
+              {fulfillment?.type?.toLowerCase() === 'pickup' && (
+                <>
+                  Please bring your ID and order confirmation when picking up your order.
+                  We'll notify you when your order is ready for pickup.
+                </>
+              )}
+              {fulfillment?.type?.toLowerCase() === 'delivery' && (
+                <>
+                  We'll notify you when your order is out for delivery.
+                  Make sure someone is available at the delivery address during the selected time slot.
+                </>
+              )}
+              {fulfillment?.type?.toLowerCase() === 'shipment' && (
+                <>
+                  We'll send you tracking information once your order ships.
+                  You can track your order status using the order ID above.
+                </>
+              )}
+              {(!fulfillment || !fulfillment.type) && (
+                <>
+                  Your order details are being processed. We'll update you soon.
+                </>
+              )}
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     </main>

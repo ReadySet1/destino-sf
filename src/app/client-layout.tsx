@@ -1,4 +1,5 @@
 'use client';
+
 import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { ThemeSwitcher } from '@/components/theme-switcher';
