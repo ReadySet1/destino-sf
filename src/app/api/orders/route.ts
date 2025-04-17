@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Use the utility to create the Supabase client
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Use getUser() to securely get the authenticated user
     const {

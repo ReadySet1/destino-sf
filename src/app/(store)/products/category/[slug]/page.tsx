@@ -104,6 +104,18 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   empanadas: "Discover our authentic, hand-folded empanadas, flash-frozen to preserve their freshness and flavor. Each 4-pack features golden, flaky pastry enveloping savory fillings inspired by Latin American culinary traditions. From the aromatic Huacatay Chicken to hearty Argentine Beef, these easy-to-prepare delights bring restaurant-quality taste to your home in minutes."
 };
 
+// Rename to avoid conflict with the interface Product
+type PrismaProduct = Parameters<typeof prisma.product.create>[0]['data'] & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  variants: Array<{
+    id: string;
+    name: string;
+    price?: number | null;
+  }>;
+};
+
 export default async function CategoryPage({ params: paramsPromise }: CategoryPageProps) {
   // Await the params promise to get the actual params object
   const params = await paramsPromise;
@@ -150,7 +162,7 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
           });
           
           // Map database products to the format expected by ProductGrid
-          products = dbProducts.map(p => {
+          products = dbProducts.map((p) => {
             // Parse the images JSON string
             let parsedImages: string[] = [];
             try {
@@ -167,7 +179,7 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
               images: parsedImages,
               slug: { current: p.id },
               featured: p.featured,
-              variants: p.variants.map(v => ({
+              variants: p.variants.map((v) => ({
                 id: v.id,
                 name: v.name,
                 price: v.price ? Number(v.price) : undefined

@@ -1,8 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole } from '@prisma/client';
 import { logger } from '@/utils/logger';
+
+type UserRole = Parameters<typeof prisma.profile.create>[0]['data']['role'];
 
 export async function createUserAction(formData: FormData) {
   const id = formData.get('id') as string;

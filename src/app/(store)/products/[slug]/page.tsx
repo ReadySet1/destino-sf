@@ -81,15 +81,17 @@ interface PrismaVariant {
   updatedAt: Date;
 }
 
-
-// PageProps interface that aligns with your project's constraints
-interface PageProps {
+// Updated PageProps type for Next.js 15.3+
+type PageProps = {
   params: Promise<{ slug: string }>;
-}
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export default async function ProductPage({ params }: PageProps) {
-  const { slug } = await params;
-
+  // Await the params Promise to get the actual values
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+  
   // First try to fetch from database using ID (UUID)
   let dbProduct = await prisma.product.findFirst({
     where: {
@@ -104,13 +106,13 @@ export default async function ProductPage({ params }: PageProps) {
       category: true,
     },
   });
-
+  
   // If found by ID, redirect to the SEO-friendly URL
   if (dbProduct && slug === dbProduct.id) {
     const seoFriendlySlug = slugify(dbProduct.name);
     redirect(`/products/${seoFriendlySlug}`);
   }
-
+  
   // If found in DB, fetch corresponding Sanity product by name
   let sanityProduct = null;
   if (dbProduct) {
@@ -132,7 +134,7 @@ export default async function ProductPage({ params }: PageProps) {
       });
     }
   }
-
+  
   if (!sanityProduct && !dbProduct) {
     // Handle product not found, maybe return a 404 component or redirect
     // For now, let's just return a simple message
@@ -147,7 +149,7 @@ export default async function ProductPage({ params }: PageProps) {
       </div>
     );
   }
-
+  
   // Combine product data (prioritize Sanity, supplement with DB)
   // Transform to match the Product interface
   const product: Product = {
@@ -203,7 +205,7 @@ export default async function ProductPage({ params }: PageProps) {
     createdAt: dbProduct?.createdAt || new Date(),
     updatedAt: dbProduct?.updatedAt || new Date(),
   };
-
+  
   // Ensure we have a valid Product object that matches the expected interface
   const validProduct: Product = {
     id: product.id || '',
@@ -222,7 +224,7 @@ export default async function ProductPage({ params }: PageProps) {
     createdAt: product.createdAt || new Date(),
     updatedAt: product.updatedAt || new Date(),
   };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <CategoryHeader 

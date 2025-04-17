@@ -25,6 +25,12 @@ type UserWithOrders = {
   }[];
 };
 
+type Profile = Parameters<typeof prisma.profile.create>[0]['data'] & {
+  id: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
 export default async function UsersPage() {
   // Fetch users with their orders
   const usersFromDb = await prisma.profile.findMany({
@@ -50,6 +56,17 @@ export default async function UsersPage() {
     created_at: user.created_at,
     orderCount: user.orders.length,
   }));
+
+  // Define the type for the user data used in the table
+  type UserTableData = { 
+    id: string; 
+    email: string; 
+    name: string; 
+    phone: string; 
+    role: 'CUSTOMER' | 'ADMIN'; 
+    created_at: Date; 
+    orderCount: number; 
+  };
 
   async function deleteUser(formData: FormData) {
     'use server';
@@ -165,7 +182,7 @@ export default async function UsersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {users.map((user: UserTableData) => (
                 <tr key={user.id}>
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-[150px]">
                     {user.email}

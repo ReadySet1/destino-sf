@@ -51,25 +51,26 @@ type ExtendedOrder = Order & {
   createdAt?: string;
 };
 
-interface OrderConfirmationPageProps {
-  params: {
-    orderId: string;
-  };
-  searchParams: {
-    status?: string;
-  };
-}
-
 // Type for payment note JSON structure
 interface PaymentNote {
-  // Define specific fields if needed
+  // Define specific fields if the structure is known, otherwise leave empty or use Record<string, any>
 }
+
+// Updated type for Next.js 15.3.1 which expects params to be a Promise
+type ConfirmationPageProps = {
+  params: Promise<{ orderId: string }>;
+  searchParams: Promise<{ status?: string }>;
+};
 
 export default async function OrderConfirmationPage({
   params,
   searchParams,
-}: OrderConfirmationPageProps) {
-  const order = await getOrderDetails(params.orderId) as ExtendedOrder | null;
+}: ConfirmationPageProps) {
+  // Await the promises to get the actual values
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  
+  const order = await getOrderDetails(resolvedParams.orderId) as ExtendedOrder | null;
 
   if (!order) {
     notFound();
@@ -90,7 +91,7 @@ export default async function OrderConfirmationPage({
   }
 
   // Use searchParams status as fallback or primary source if needed
-  const displayStatus = searchParams.status || order.status || 'Processing';
+  const displayStatus = resolvedSearchParams.status || order.status || 'Processing';
   
   // Parse order date safely
   const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
@@ -130,7 +131,7 @@ export default async function OrderConfirmationPage({
           <CheckCircle2Icon className="mx-auto mb-4 h-12 w-12 text-green-500" />
           <h1 className="mb-2 text-3xl font-bold">Order Confirmed!</h1>
           <p className="text-lg text-gray-600">
-            Thank you for your order. We'll send you updates about your order status.
+            Thank you for your order. We&apos;ll send you updates about your order status.
           </p>
         </div>
 
@@ -261,24 +262,24 @@ export default async function OrderConfirmationPage({
               {fulfillment?.type?.toLowerCase() === 'pickup' && (
                 <>
                   Please bring your ID and order confirmation when picking up your order.
-                  We'll notify you when your order is ready for pickup.
+                  We&apos;ll notify you when your order is ready for pickup.
                 </>
               )}
               {fulfillment?.type?.toLowerCase() === 'delivery' && (
                 <>
-                  We'll notify you when your order is out for delivery.
+                  We&apos;ll notify you when your order is out for delivery.
                   Make sure someone is available at the delivery address during the selected time slot.
                 </>
               )}
               {fulfillment?.type?.toLowerCase() === 'shipment' && (
                 <>
-                  We'll send you tracking information once your order ships.
+                  We&apos;ll send you tracking information once your order ships.
                   You can track your order status using the order ID above.
                 </>
               )}
               {(!fulfillment || !fulfillment.type) && (
                 <>
-                  Your order details are being processed. We'll update you soon.
+                  Your order details are being processed. We&apos;ll update you soon.
                 </>
               )}
             </AlertDescription>

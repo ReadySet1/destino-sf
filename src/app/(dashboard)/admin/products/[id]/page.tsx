@@ -9,12 +9,6 @@ import { logger } from '@/utils/logger';
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
 interface SanityImageResponse {
   _key?: string;
   _type?: string;
@@ -67,7 +61,14 @@ function getImageUrlFromRef(ref: string): string | null {
   return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename.replace('-webp', '.webp').replace('-jpg', '.jpg').replace('-png', '.png')}`;
 }
 
+// Change the props type to match Next.js App Router expectations
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
 export default async function EditProductPage({ params }: PageProps) {
+  // Wait for params to resolve since it's now a Promise in Next.js 15.3.1
   const resolvedParams = await params;
   const productId = resolvedParams.id;
 

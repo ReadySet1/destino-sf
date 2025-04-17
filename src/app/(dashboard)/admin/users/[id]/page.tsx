@@ -11,15 +11,16 @@ export const metadata = {
   description: 'Edit user details',
 };
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
+// Update the type definition to use Promise for params
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function EditUserPage({ params }: PageProps) {
-  // Await params to access its properties
-  const { id } = await params;
+  // Wait for params to resolve since it's now a Promise in Next.js 15.3.1
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   // Fetch the user from Prisma
   const user = await prisma.profile.findUnique({
@@ -44,4 +45,4 @@ export default async function EditUserPage({ params }: PageProps) {
       <UserForm user={userData} isEditing={true} />
     </div>
   );
-} 
+}

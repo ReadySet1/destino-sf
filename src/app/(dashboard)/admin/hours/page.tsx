@@ -2,6 +2,16 @@ import { prisma } from '@/lib/prisma';
 import BusinessHoursForm from '../settings/components/BusinessHoursForm';
 import { Separator } from '@/components/ui/separator';
 
+interface BusinessHour {
+  id: string;
+  day: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const metadata = {
   title: 'Business Hours | Admin',
   description: 'Manage store business hours',
@@ -26,7 +36,7 @@ export default async function BusinessHoursPage() {
 
   // Merge existing hours with defaults
   const mergedBusinessHours = defaultBusinessHours.map(defaultHour => {
-    const existingHour = businessHours.find(hour => hour.day === defaultHour.day);
+    const existingHour = businessHours.find((hour: BusinessHour) => hour.day === defaultHour.day);
     return existingHour || defaultHour;
   });
 
@@ -38,8 +48,8 @@ export default async function BusinessHoursPage() {
 
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Store Hours</h2>
-        <p className="text-gray-600 mb-6">
-          Set your store's operating hours. Customers will only be able to place orders for pickup during these hours.
+        <p className="text-gray-500">
+          Set your store&apos;s operating hours. Customers will only be able to place orders for pickup during these hours.
         </p>
         <Separator className="mb-6" />
         <BusinessHoursForm businessHours={mergedBusinessHours} />

@@ -22,7 +22,7 @@ const nextConfig = {
   },
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 };
 

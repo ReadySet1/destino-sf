@@ -34,8 +34,8 @@ export default async function SettingsPage() {
         <h1 className="text-2xl font-bold">Store Settings</h1>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-600 mb-6">
-          Configure your store's basic information.
+        <p className="text-gray-500">
+          Configure your store&apos;s basic information.
         </p>
         <Separator className="mb-6" />
         <SettingsForm settings={storeSettings} />
