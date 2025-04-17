@@ -25,6 +25,7 @@ model Product {
   description String?
   price       Decimal     @db.Decimal(10, 2)
   images      String[]
+  slug        String?     @unique
   categoryId  String      @db.Uuid
   featured    Boolean     @default(false)
   active      Boolean     @default(true)
@@ -39,6 +40,7 @@ model Product {
 
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
+  squareId    String?   @unique
   name        String    @unique
   description String?
   order       Int       @default(0)

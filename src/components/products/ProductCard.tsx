@@ -15,22 +15,31 @@ interface ProductCardProps {
 }
 
 // Helper function to safely format prices
-const formatPrice = (price: number | Decimal | null | undefined): string => {
-  if (price === null || price === undefined) return "0.00";
-  // If it's a Decimal object from Prisma
-  if (typeof price === 'object' && price !== null && 'toFixed' in price) {
-    return price.toFixed(2);
+const formatPrice = (price: number | null | undefined): string => {
+  // Price should arrive as a number (or null/undefined) after parent transformation
+  if (price === null || price === undefined || isNaN(Number(price))) {
+     return "0.00";
   }
-  // If it's a regular number
+  // Price is a valid number
   return Number(price).toFixed(2);
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Log the received product prop
+  console.log('[ProductCard] Received product:', JSON.stringify(product, null, 2));
+  console.log('[ProductCard] product.price type:', typeof product.price, 'value:', product.price);
+  if (product.variants && product.variants.length > 0) {
+    console.log('[ProductCard] product.variants[0].price type:', typeof product.variants[0].price, 'value:', product.variants[0].price);
+  }
+
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     product.variants && product.variants.length > 0 ? product.variants[0] : null
   );
 
   const displayPrice = selectedVariant?.price || product.price;
+  // Log the calculated displayPrice
+  console.log(`[ProductCard] ${product.name} - Selected Variant Price:`, selectedVariant?.price, 'Product Price:', product.price, 'Resulting displayPrice:', displayPrice);
+  
   const mainImage = product.images?.[0] || '/placeholder-product.png';
   
   const productId = String(product.id ?? '');
@@ -84,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Link href={productUrl}>{product.name}</Link>
         </h3>
         
-        <p className="text-gray-600 mt-1 font-medium">${formatPrice(displayPrice)}</p>
+        <p className="text-gray-600 mt-1 font-medium">${formatPrice(Number(displayPrice))}</p>
         
         {product.description && (
           <p className="text-sm text-gray-500 mt-2 line-clamp-2 flex-grow">
@@ -107,7 +116,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   .filter(variant => variant.id)
                   .map((variant) => (
                     <option key={variant.id} value={variant.id}>
-                      {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
+                      {variant.name} - ${formatPrice(variant.price ? Number(variant.price) : null) || formatPrice(Number(product.price))}
                     </option>
                   ))}
               </select>

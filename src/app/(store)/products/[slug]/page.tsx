@@ -1,10 +1,9 @@
-import { getProductBySlug } from '@/lib/sanity-products';
 import { prisma } from '@/lib/prisma';
 import ProductDetails from '@/components/Products/ProductDetails';
 import CategoryHeader from '@/components/Products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Product, Variant } from '@/types/product';
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import FoodLoader from '@/components/ui/FoodLoader';
 
@@ -18,56 +17,43 @@ function slugify(text: string): string {
     .trim();
 }
 
-// Utility function to normalize image data from different sources
+// Utility function to normalize image data from database
+// Adjusted to primarily handle string arrays or JSON strings
 function normalizeImages(images: any): string[] {
   if (!images) return [];
-  
+
   // Case 1: Already an array of strings
-  if (Array.isArray(images) && 
-      images.length > 0 && 
+  if (Array.isArray(images) &&
+      images.length > 0 &&
       typeof images[0] === 'string') {
     return images.filter(url => url && url.trim() !== '');
   }
-  
-  // Case 2: Array of objects with url property (Sanity format)
-  if (Array.isArray(images) && 
-      images.length > 0 && 
-      typeof images[0] === 'object' &&
-      images[0] !== null &&
-      'url' in images[0]) {
-    return images.map(img => img.url).filter(url => url && typeof url === 'string');
-  }
-  
-  // Case 3: String that might be a JSON array
+
+  // Case 2: String that might be a JSON array
   if (typeof images === 'string') {
     try {
       // First check if it's a direct URL
       if (images.startsWith('http')) {
         return [images];
       }
-      
+
       // Try parsing as JSON
       const parsed = JSON.parse(images);
       if (Array.isArray(parsed)) {
         return parsed.filter(url => url && typeof url === 'string');
       }
-      return [images]; // If not a JSON array, use the string as a single URL
+      // If not a JSON array, and not a URL, maybe it's a malformed single entry?
+      // Or just return empty if parsing fails and it's not a URL.
+      return []; 
     } catch (e) {
-      // If not valid JSON, assume it's a single URL
-      return [images];
+      // If not valid JSON and not a direct URL, return empty
+       return [];
     }
   }
-  
-  return [];
-}
 
-// Define a type for Sanity variants
-interface SanityVariant {
-  _id?: string;
-  id?: string;
-  name: string;
-  price?: number | null;
-  squareVariantId?: string;
+  // Add handling for other potential DB formats if necessary
+  // For now, return empty array if format is unrecognized
+  return [];
 }
 
 // Define a type for DB variants that matches the Prisma model
@@ -91,140 +77,85 @@ export default async function ProductPage({ params }: PageProps) {
   // Await the params Promise to get the actual values
   const resolvedParams = await params;
   const { slug } = resolvedParams;
-  
-  // First try to fetch from database using ID (UUID)
-  let dbProduct = await prisma.product.findFirst({
+
+  // Basic UUID check (adjust regex if using different UUID format)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+
+  // Fetch from database using slug (as name) or id (if it's a UUID)
+  const dbProduct = await prisma.product.findFirst({
     where: {
       OR: [
-        { id: slug },  // Try matching by ID first
-        { name: slug } // Then try by name
+        { name: slug }, // Try matching by name (slugified version)
+        ...(isUUID ? [{ id: slug }] : []) // Conditionally add ID match if slug is a UUID
       ],
-      active: true,
+      active: true, // Only fetch active products
     },
     include: {
       variants: true,
       category: true,
     },
   });
-  
-  // If found by ID, redirect to the SEO-friendly URL
-  if (dbProduct && slug === dbProduct.id) {
+
+  // If found by ID but the slug doesn't match the slugified name, redirect
+  if (dbProduct && isUUID && slug === dbProduct.id) {
     const seoFriendlySlug = slugify(dbProduct.name);
-    redirect(`/products/${seoFriendlySlug}`);
-  }
-  
-  // If found in DB, fetch corresponding Sanity product by name
-  let sanityProduct = null;
-  if (dbProduct) {
-    sanityProduct = await getProductBySlug(dbProduct.name);
-  } else {
-    // If not found by ID, try Sanity directly with the slug
-    sanityProduct = await getProductBySlug(slug);
-    if (sanityProduct) {
-      // If found in Sanity, try to find corresponding DB product
-      dbProduct = await prisma.product.findFirst({
-        where: {
-          name: sanityProduct.name,
-          active: true,
-        },
-        include: {
-          variants: true,
-          category: true,
-        },
-      });
+    // Check if redirection is actually needed
+    if (seoFriendlySlug !== slug) {
+      console.log(`Redirecting from ID-based slug "${slug}" to SEO slug "${seoFriendlySlug}"`);
+      redirect(`/products/${seoFriendlySlug}`);
     }
   }
-  
-  if (!sanityProduct && !dbProduct) {
-    // Handle product not found, maybe return a 404 component or redirect
-    // For now, let's just return a simple message
-    return (
-      <div className="min-h-screen flex flex-col">
-        <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-2xl font-bold">Product not found</h1>
-            <p>Could not find product with slug: {slug}</p>
-          </div>
-        </main>
-      </div>
-    );
+
+  // If product is not found in the database by either name or ID
+  if (!dbProduct) {
+    console.log(`Product not found for slug: "${slug}"`);
+    notFound(); // Use Next.js notFound function
   }
-  
-  // Combine product data (prioritize Sanity, supplement with DB)
-  // Transform to match the Product interface
+
+  // Transform dbProduct to match the Product interface
   const product: Product = {
-    ...(sanityProduct || {}),
-    id: dbProduct?.id || String(slug),
-    squareId: dbProduct?.squareId || String(slug),
-    // Add/override fields from dbProduct if available
-    price: dbProduct?.price ? Number(dbProduct.price) : sanityProduct?.price || 0,
-    variants:
-      dbProduct?.variants?.map(
-        (variant: PrismaVariant): Variant => ({
-          id: variant.id,
-          name: variant.name,
-          price: variant.price ? Number(variant.price) : null,
-          squareVariantId: variant.squareVariantId,
-          productId: variant.productId,
-          createdAt: variant.createdAt,
-          updatedAt: variant.updatedAt,
-        })
-      ) ||
-      ((sanityProduct?.variants as SanityVariant[]) || []).map(
-        (variant: SanityVariant): Variant => ({
-          id: String(variant._id || variant.id || ''),
-          name: variant.name,
-          price: variant.price || null,
-          squareVariantId: variant.squareVariantId || null,
-          productId: dbProduct?.id || String(slug),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-      ),
-    active: dbProduct?.active ?? true,
-    // Ensure essential fields like name, images are present
-    name: sanityProduct?.name || dbProduct?.name || 'Unnamed Product',
-    images: normalizeImages(dbProduct?.images || (sanityProduct?.images || [])),
-    description: sanityProduct?.description || dbProduct?.description,
-    featured: sanityProduct?.featured || dbProduct?.featured || false,
-    categoryId: sanityProduct?.categoryId || dbProduct?.categoryId || '',
-    category: dbProduct?.category || {
-      id:
-        typeof sanityProduct?.category === 'object' && sanityProduct.category?._id
-          ? sanityProduct.category._id
-          : '',
-      name:
-        typeof sanityProduct?.category === 'string'
-          ? sanityProduct.category
-          : sanityProduct?.category?.name || '',
-      description: null,
-      order: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    createdAt: dbProduct?.createdAt || new Date(),
-    updatedAt: dbProduct?.updatedAt || new Date(),
+    id: dbProduct.id,
+    squareId: dbProduct.squareId || '', // Provide default empty string if null
+    name: dbProduct.name,
+    description: dbProduct.description,
+    price: dbProduct.price ? Number(dbProduct.price) : 0, // Convert Decimal to number
+    images: normalizeImages(dbProduct.images), // Use the updated normalizeImages
+    slug: dbProduct.slug || dbProduct.id, // Add the missing slug field
+    categoryId: dbProduct.categoryId || '', // Provide default empty string if null
+    category: dbProduct.category ? { // Map Prisma category to Product category type
+      id: dbProduct.category.id,
+      name: dbProduct.category.name,
+      description: dbProduct.category.description,
+      order: dbProduct.category.order ?? 0, // Handle potential null order
+      createdAt: dbProduct.category.createdAt,
+      updatedAt: dbProduct.category.updatedAt,
+    } : undefined, // Set to undefined if no category linked
+    variants: dbProduct.variants.map(
+      (variant: PrismaVariant): Variant => ({
+        id: variant.id,
+        name: variant.name,
+        price: variant.price ? Number(variant.price) : null, // Convert Decimal to number or keep null
+        squareVariantId: variant.squareVariantId,
+        productId: variant.productId,
+        createdAt: variant.createdAt,
+        updatedAt: variant.updatedAt,
+      })
+    ),
+    featured: dbProduct.featured || false, // Default to false if null/undefined
+    active: dbProduct.active, // Should always be true based on query, but include it
+    createdAt: dbProduct.createdAt,
+    updatedAt: dbProduct.updatedAt,
   };
-  
-  // Ensure we have a valid Product object that matches the expected interface
+
+  // Use the transformed product directly
   const validProduct: Product = {
-    id: product.id || '',
-    squareId: product.squareId || '',
-    name: product.name || 'Unnamed Product',
-    description: product.description || '',
-    price: product.price || 0,
-    images: product.images && product.images.length > 0 
+    ...product,
+    // Provide a default image if images array is empty after normalization
+    images: product.images.length > 0 
       ? product.images 
-      : ['/images/menu/empanadas.png'],
-    categoryId: product.categoryId || '',
-    category: product.category || undefined,
-    variants: Array.isArray(product.variants) ? product.variants : [],
-    featured: product.featured || false,
-    active: product.active || false,
-    createdAt: product.createdAt || new Date(),
-    updatedAt: product.updatedAt || new Date(),
+      : ['/images/menu/empanadas.png'], 
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <CategoryHeader 

@@ -126,14 +126,16 @@ async function getSquareProducts() {
   };
   
   const requestBody = {
-    object_types: ['ITEM']
+    object_types: ['ITEM'],
+    include_related_objects: true // Request related objects (images)
   };
   
   try {
     const response = await makeRequest(options, requestBody);
     const items = response.objects || [];
-    logger.info(`Se encontraron ${items.length} productos en Square Sandbox`);
-    return items;
+    const relatedObjects = response.related_objects || []; // Get related objects
+    logger.info(`Se encontraron ${items.length} productos y ${relatedObjects.length} objetos relacionados en Square Sandbox`);
+    return { items, relatedObjects }; // Return both items and related objects
   } catch (error) {
     logger.error('Error al obtener productos de Square Sandbox:', error);
     throw error;
@@ -233,7 +235,7 @@ async function syncCategories(squareCategories) {
 }
 
 // Sincronizar un producto de Square con la base de datos
-async function syncProduct(product, categoryMap) {
+async function syncProduct(product, categoryMap, relatedObjects) {
   try {
     if (product.type !== 'ITEM' || !product.item_data) {
       return { success: false, error: 'Producto no válido' };
@@ -245,6 +247,18 @@ async function syncProduct(product, categoryMap) {
     const productSlug = generateSlug(itemName); // Generate slug
     
     logger.info(`Sincronizando producto: ${itemName} (${squareId}), Slug: ${productSlug}`);
+    
+    // Create a map of image IDs to URLs from relatedObjects
+    const imageIdToUrlMap = relatedObjects.reduce((map, obj) => {
+      if (obj.type === 'IMAGE' && obj.image_data?.url) {
+        map[obj.id] = obj.image_data.url;
+      }
+      return map;
+    }, {});
+
+    // Get image URLs for the product
+    const imageIds = itemData.image_ids || [];
+    const fetchedImageUrls = imageIds.map(id => imageIdToUrlMap[id]).filter(url => !!url); // Get URLs from map, filter out undefined if ID not found
     
     // Obtener la categoría correcta o usar la predeterminada
     let categoryId = categoryMap['default'];
@@ -285,7 +299,7 @@ async function syncProduct(product, categoryMap) {
         price: basePrice,
         categoryId,
         slug: productSlug, // Update slug
-        images: [], // <<<--- Clear images on update
+        images: fetchedImageUrls, // <<<--- Use fetched image URLs
         variants: {
           deleteMany: {},
           create: variants
@@ -299,7 +313,7 @@ async function syncProduct(product, categoryMap) {
         description,
         price: basePrice,
         slug: productSlug, // Add slug on create
-        images: [], // Start with empty images
+        images: fetchedImageUrls, // <<<--- Use fetched image URLs
         categoryId,
         featured: false,
         active: true,
@@ -372,8 +386,8 @@ async function main() {
     // PASO 2: Sincronizar categorías con la base de datos
     const categoryMap = await syncCategories(squareCategories);
     
-    // PASO 3: Obtener productos de Square Sandbox
-    const squareProducts = await getSquareProducts();
+    // PASO 3: Obtener productos y objetos relacionados de Square Sandbox
+    const { items: squareProducts, relatedObjects: squareRelatedObjects } = await getSquareProducts();
     
     if (squareProducts.length === 0) {
       logger.warn('No se encontraron productos en Square Sandbox. Por favor, crea algunos productos en el sandbox de Square Dashboard.');
@@ -386,7 +400,8 @@ async function main() {
     const results = [];
     
     for (const product of squareProducts) {
-      const result = await syncProduct(product, categoryMap);
+      // Pass related objects to syncProduct
+      const result = await syncProduct(product, categoryMap, squareRelatedObjects);
       results.push({
         name: product.item_data?.name || 'Desconocido',
         ...result

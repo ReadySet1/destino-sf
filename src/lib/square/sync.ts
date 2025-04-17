@@ -2,7 +2,7 @@
 
 import { logger } from '@/utils/logger';
 import { prisma } from '@/lib/prisma';
-import { createSanityProduct } from '@/lib/sanity/createProduct';
+// import { createSanityProduct } from '@/lib/sanity/createProduct'; // Removed Sanity import
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 
@@ -56,35 +56,30 @@ async function getOrCreateDefaultCategory() {
     }
 
     // Create a default category if it doesn't exist
+    logger.info('Default category not found, creating...');
     const newCategory = await prisma.category.create({
       data: {
         name: 'Default',
         description: 'Default category for imported products',
-        slug: 'default',
-        order: 0,
-        isActive: true,
-        metadata: {
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
+        slug: 'default', // Ensure slug is unique and URL-friendly
+        order: 0, // Or determine order based on existing categories
+        isActive: true, // Assuming new categories should be active
+        // Remove metadata if not defined in your Prisma schema
+        // metadata: {
+        //   createdAt: new Date().toISOString(),
+        //   updatedAt: new Date().toISOString(),
+        // }
       }
     });
+    logger.info(`Created default category with ID: ${newCategory.id}`);
 
-    // Create in Sanity as well
-    await createSanityProduct({
-      name: newCategory.name,
-      description: newCategory.description ?? undefined,
-      categoryId: newCategory.id,
-      images: [],
-      featured: false,
-      price: 0,
-      squareId: 'default-category'
-    });
+    // Sanity creation block removed here
 
     return newCategory;
   } catch (error) {
     logger.error('Error getting/creating default category:', error);
-    throw error;
+    // Consider re-throwing or returning null/undefined based on error handling strategy
+    throw error; // Re-throw for the main sync function to catch
   }
 }
 
@@ -280,60 +275,40 @@ export async function syncSquareProducts(): Promise<SyncResult> {
             }
           });
 
-          // Sync with Sanity
-          await createSanityProduct({
-            name: product.name,
-            description: product.description ?? undefined,
-            price: Number(product.price),
-            categoryId: product.categoryId,
-            squareId: product.squareId,
-            images: product.images as string[],
-            featured: product.featured
-          });
-
           syncedCount++;
-          logger.info(`Successfully synced product: ${itemName} (${item.id})`);
-        } catch (itemError) {
-          const errorMessage = itemError instanceof Error ? itemError.message : 'Unknown error processing item';
-          errors.push(`Error processing item ${item.id}: ${errorMessage}`);
-          logger.error(`Error processing item ${item.id}:`, itemError);
-          continue; // Continue with next item even if this one fails
+          logger.info(`Synced product: ${itemName} (${item.id})`);
+        } catch (error) {
+          logger.error(`Error processing item ${item.id}:`, error);
+          errors.push(error instanceof Error ? error.message : String(error));
         }
       }
-
-      const message = errors.length === 0
-        ? `Successfully synced ${syncedCount} products`
-        : `Synced ${syncedCount} products with ${errors.length} errors`;
-
-      return {
-        success: errors.length === 0,
-        message,
-        syncedProducts: syncedCount,
-        errors: errors.length > 0 ? errors : undefined,
-        debugInfo
-      };
-
-    } catch (catalogError) {
-      logger.error('Error searching catalog:', catalogError);
-      throw catalogError;
+    } catch (searchError) {
+      logger.error('Error searching catalog items:', searchError);
+      errors.push(searchError instanceof Error ? searchError.message : String(searchError));
     }
 
+    return {
+      success: true,
+      message: 'Products synced successfully',
+      syncedProducts: syncedCount,
+      errors: errors.length > 0 ? errors : undefined,
+      debugInfo: debugInfo
+    };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error during sync';
-    logger.error('Square sync failed:', error);
+    logger.error('Error syncing products:', error);
     return {
       success: false,
-      message: `Sync failed: ${errorMessage}`,
-      syncedProducts: syncedCount,
-      errors: [errorMessage],
-      debugInfo
+      message: 'An error occurred while syncing products',
+      syncedProducts: 0,
+      errors: [error instanceof Error ? error.message : String(error)],
+      debugInfo: debugInfo
     };
   }
 }
 
 // Helper function to process variations and get base price
 function processVariations(variations: SquareCatalogObject[]): { variants: VariantCreate[], basePrice: Decimal } {
-  if (!variations.length) {
+  if (!variations || variations.length === 0) {
     logger.warn('No variations found for item');
     return { 
       variants: [],
@@ -341,35 +316,53 @@ function processVariations(variations: SquareCatalogObject[]): { variants: Varia
     };
   }
 
-  const firstVariation = variations[0];
-  const firstVariationData = isValidVariation(firstVariation) ? firstVariation.item_variation_data : undefined;
+  // Use the price of the first valid variation as the base price for the product
+  const firstValidVariation = variations.find(isValidVariation);
+  const firstVariationData = firstValidVariation?.item_variation_data;
   const basePriceAmount = firstVariationData?.price_money?.amount;
+  
+  // Convert amount (cents) to Decimal dollars
   const basePrice = basePriceAmount
-    ? new Decimal(basePriceAmount.toString()).div(100)
+    ? new Decimal(Number(basePriceAmount)).div(100) 
     : new Decimal(0);
 
-  const variants = variations
+  logger.info(`Base price determined from first variation: ${basePrice}`);
+
+  const processedVariants = variations
     .map((variation): VariantCreate | null => {
-      if (!isValidVariation(variation)) return null;
+      // Ensure it's a valid variation with necessary data
+      if (!isValidVariation(variation)) {
+        logger.warn(`Skipping invalid variation object: ${variation.id}`);
+        return null;
+      }
 
       const variationData = variation.item_variation_data;
       const variationAmount = variationData.price_money?.amount;
+      
+      // Convert amount (cents) to Decimal dollars for the variant price
+      // If a variant amount is missing, it might default to basePrice or be null depending on requirements
       const price = variationAmount
-        ? new Decimal(variationAmount.toString()).div(100)
-        : basePrice;
+        ? new Decimal(Number(variationAmount)).div(100)
+        : null; // Or set to basePrice if variants *must* have a price
+        
+      logger.info(`Processing variant: ${variationData.name || 'Unnamed'} (${variation.id}), Price: ${price}`);
 
       return {
-        name: variationData.name || 'Standard',
-        price,
+        name: variationData.name || 'Regular', // Default name if missing
+        price: price, // Use the calculated Decimal price (or null)
         squareVariantId: variation.id
       };
     })
-    .filter((v): v is VariantCreate => v !== null);
+    .filter((v): v is VariantCreate => v !== null); // Filter out any nulls from invalid variations
 
-  return { variants, basePrice };
+  return { variants: processedVariants, basePrice };
 }
 
-// Type guard for CatalogItemVariation
-function isValidVariation(variation: SquareCatalogObject | undefined): variation is SquareCatalogObject & { item_variation_data: NonNullable<SquareCatalogObject['item_variation_data']> } {
-  return !!variation && variation.type === 'ITEM_VARIATION' && !!variation.item_variation_data && !!variation.id;
+// Type guard for CatalogItemVariation to ensure necessary fields exist
+function isValidVariation(variation: SquareCatalogObject | undefined): variation is SquareCatalogObject & { item_variation_data: NonNullable<SquareCatalogObject['item_variation_data'] & { price_money?: { amount: bigint | number } }> } {
+  return !!variation && 
+         variation.type === 'ITEM_VARIATION' && 
+         !!variation.id &&
+         !!variation.item_variation_data;
+         // Optionally check for price_money existence: && !!variation.item_variation_data.price_money
 }

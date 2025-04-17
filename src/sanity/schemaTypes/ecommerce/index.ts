@@ -1,4 +1,5 @@
-import productType from './productType';
+// import productType from './productType'; // Removed missing import
 import productCategoryType from './productCategoryType';
 
-export const ecommerceSchemaTypes = [productType, productCategoryType];
+// Removed productType from the export array
+export const ecommerceSchemaTypes = [productCategoryType];

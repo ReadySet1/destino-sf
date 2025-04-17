@@ -1,10 +1,10 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { createSanityProduct } from '@/lib/sanity/createProduct';
+// import { createSanityProduct } from '@/lib/sanity/createProduct'; // Removed Sanity import
 import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
-import { client } from '@/sanity/lib/client';
+// import { client } from '@/sanity/lib/client'; // Removed Sanity client import
 import { revalidatePath } from 'next/cache';
 
 export async function createProductAction(formData: FormData) {
@@ -48,7 +48,8 @@ export async function createProductAction(formData: FormData) {
       },
     });
 
-    // Step 3: Try to create the product in Sanity, but don't fail if it doesn't work
+    // Step 3: Try to create the product in Sanity - REMOVED
+    /*
     try {
       await createSanityProduct({
         name,
@@ -65,6 +66,12 @@ export async function createProductAction(formData: FormData) {
       logger.error('Error creating product in Sanity (continuing anyway):', sanityError);
       logger.info(`Product "${name}" created in database and Square, but not in Sanity`);
     }
+    */
+    logger.info(`Product "${name}" created successfully in database and Square`);
+
+    // Revalidate the products path after creation
+    revalidatePath('/admin/products');
+    revalidatePath('/products'); // Revalidate public products path as well
 
     // Return success instead of redirecting
     return { success: true };
@@ -90,7 +97,8 @@ export async function updateProductCategory(formData: FormData) {
       include: { category: true }
     });
 
-    // Update in Sanity
+    // Update in Sanity - REMOVED
+    /*
     const sanityProduct = await client.fetch(
       `*[_type == "product" && squareId == $squareId][0]`,
       { squareId: product.squareId }
@@ -106,6 +114,8 @@ export async function updateProductCategory(formData: FormData) {
         })
         .commit();
     }
+    */
+    logger.info(`Updated category for product "${product.name}" (ID: ${productId}) to "${product.category.name}" in database.`);
 
     revalidatePath('/admin/products');
   } catch (error) {

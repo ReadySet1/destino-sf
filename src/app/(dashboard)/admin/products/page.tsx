@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Decimal } from '@prisma/client/runtime/library';
 import { redirect } from 'next/navigation';
-import { client } from '@/sanity/lib/client';
 import ProductsClientWrapper from './client-wrapper';
 import { SyncSquareButton } from './sync-square';
 import { updateProductCategory } from './actions';
@@ -78,7 +77,7 @@ export default async function ProductsPage() {
     }
 
     try {
-      // Find the product first to get its details for Sanity deletion
+      // Find the product first to get its details
       const product = await prisma.product.findUnique({
         where: { id },
       });
@@ -92,24 +91,7 @@ export default async function ProductsPage() {
         where: { id },
       });
 
-      // Try to delete from Sanity if it exists
-      try {
-        // Find the product in Sanity by name or squareId
-        const sanityProductId = await client.fetch(
-          `*[_type == "product" && (name == $name || squareId == $squareId)][0]._id`,
-          { name: product.name, squareId: product.squareId }
-        );
-
-        if (sanityProductId) {
-          await client.delete(sanityProductId);
-          console.log(`Product deleted from Sanity: ${sanityProductId}`);
-        }
-      } catch (sanityError) {
-        // Log the error but continue - the product is already deleted from our database
-        console.error('Error deleting product from Sanity (continuing anyway):', sanityError);
-      }
-
-      console.log(`Product "${product.name}" deleted successfully`);
+      console.log(`Product "${product.name}" deleted successfully from database`);
 
       // Redirect with success status
       return redirect(`/admin/products?status=success&action=delete&productName=${encodeURIComponent(product.name)}`);
