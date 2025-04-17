@@ -46,7 +46,7 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
       try {
         // Fetch current profile data
         const { data, error } = await supabase
-          .from('Profiles')
+          .from('Profile')
           .select('name, phone')
           .eq('id', user.id)
           .single();
@@ -73,10 +73,10 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
 
     try {
       // Create or update profile record
-      const { error } = await supabase.from('Profiles').upsert(
+      const { error } = await supabase.from('Profile').upsert(
         {
           id: user.id,
-          email: user.email || '', // Include email field from user object
+          email: user.email || '',
           name: data.name,
           phone: data.phone,
           updated_at: new Date().toISOString(),
@@ -94,7 +94,7 @@ export function AccountProfile({ user, onSignOut }: AccountProfileProps) {
 
       // Verify the update succeeded
       const { data: updatedProfile, error: fetchError } = await supabase
-        .from('Profiles')
+        .from('Profile')
         .select('*')
         .eq('id', user.id)
         .single();

@@ -68,29 +68,41 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect('error', '/sign-in', 'Could not retrieve user after sign in.');
   }
 
-  try {
-    const profile = await prisma.profile.findUnique({
+  let profile: { role: UserRole } | null = null;
+  let profileFetchError: any = null; // Use 'any' or a more specific error type if known
+
+  try { // Try block ONLY for prisma query
+    profile = await prisma.profile.findUnique({
       where: { id: user.id },
       select: { role: true }, // Only select the role field
     });
+  } catch (dbError) { // Catch ONLY potential database errors
+    profileFetchError = dbError; // Store the error
+    console.error('Prisma profile fetch error:', JSON.stringify(dbError, null, 2));
+    // Redirect immediately if the database query itself fails
+    return encodedRedirect('error', '/sign-in', 'Database error retrieving user profile.');
+  }
 
-    if (!profile) {
-      // Handle case where profile might not exist yet (though handle_new_user should prevent this)
-      console.warn(`Profile not found for user ${user.id} after sign in.`);
-      return encodedRedirect('error', '/sign-in', 'User profile not found.');
-    }
+  // Handle potential DB error caught earlier (though we already redirected, belt-and-suspenders)
+  if (profileFetchError) {
+     // This path might be redundant if the catch block always returns/redirects,
+     // but kept for robustness in case return logic changes.
+     return encodedRedirect('error', '/sign-in', 'Failed to retrieve user profile due to a database error.');
+  }
 
-    // Redirect based on role
-    if (profile.role === UserRole.ADMIN) { // Use Prisma enum for role comparison
-      return redirect('/admin');
-    } else {
-      // Redirect non-admins to the homepage or a customer dashboard
-      return redirect('/'); // Or change to e.g., '/dashboard'
-    }
+  // Handle profile not found case (outside the try...catch)
+  if (!profile) {
+    // Handle case where profile might not exist yet (though handle_new_user should prevent this)
+    console.warn(`Profile not found for user ${user.id} after sign in.`);
+    return encodedRedirect('error', '/sign-in', 'User profile not found.');
+  }
 
-  } catch (profileError) {
-    console.error('Error fetching profile after sign in:', profileError);
-    return encodedRedirect('error', '/sign-in', 'Failed to retrieve user profile after sign in.');
+  // Profile fetched successfully, perform redirect based on role (outside the try...catch)
+  if (profile.role === UserRole.ADMIN) { // Use Prisma enum for role comparison
+    return redirect('/admin');
+  } else {
+    // Redirect non-admins to the homepage or a customer dashboard
+    return redirect('/'); // Or change to e.g., '/dashboard'
   }
 };
 

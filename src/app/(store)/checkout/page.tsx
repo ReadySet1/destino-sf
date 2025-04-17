@@ -191,7 +191,7 @@ export default function CheckoutPage() {
           
           // Try to get profile data to pre-fill form
           const { data: profile, error: profileError } = await supabase
-            .from('Profiles')
+            .from('Profile')
             .select('*')
             .eq('id', session.user.id)
             .single();

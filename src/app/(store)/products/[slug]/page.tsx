@@ -81,11 +81,11 @@ export default async function ProductPage({ params }: PageProps) {
   // Basic UUID check (adjust regex if using different UUID format)
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
-  // Fetch from database using slug (as name) or id (if it's a UUID)
+  // Fetch from database using slug or id (if it's a UUID)
   const dbProduct = await prisma.product.findFirst({
     where: {
       OR: [
-        { name: slug }, // Try matching by name (slugified version)
+        { slug: slug }, // Try matching by slug field
         ...(isUUID ? [{ id: slug }] : []) // Conditionally add ID match if slug is a UUID
       ],
       active: true, // Only fetch active products
@@ -96,9 +96,9 @@ export default async function ProductPage({ params }: PageProps) {
     },
   });
 
-  // If found by ID but the slug doesn't match the slugified name, redirect
+  // If found by ID but the slug doesn't match the product's actual slug, redirect
   if (dbProduct && isUUID && slug === dbProduct.id) {
-    const seoFriendlySlug = slugify(dbProduct.name);
+    const seoFriendlySlug = dbProduct.slug || slugify(dbProduct.name); // Use existing slug or generate one
     // Check if redirection is actually needed
     if (seoFriendlySlug !== slug) {
       console.log(`Redirecting from ID-based slug "${slug}" to SEO slug "${seoFriendlySlug}"`);

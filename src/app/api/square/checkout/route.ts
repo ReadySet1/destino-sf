@@ -8,10 +8,25 @@ import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { formatISO } from 'date-fns';
 
-// Initialize Square client with appropriate environment
+// Add console log to check environment variable
+console.log('API Route - SQUARE_ENVIRONMENT:', process.env.SQUARE_ENVIRONMENT);
+// Add console log to check the access token (partially)
+console.log(
+  'API Route - SQUARE_ACCESS_TOKEN Loaded:', 
+  `${process.env.SQUARE_ACCESS_TOKEN?.substring(0, 5)}...${process.env.SQUARE_ACCESS_TOKEN?.slice(-5)}`
+);
+
+// Always use https://connect.squareupsandbox.com for sandbox
+const BASE_URL = process.env.SQUARE_ENVIRONMENT === 'sandbox'
+  ? 'https://connect.squareupsandbox.com'
+  : 'https://connect.squareup.com';
+
+// Initialize Square client
 const square = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN,
-  environment: process.env.NODE_ENV === 'development' ? 'sandbox' : 'production',
+  environment: process.env.SQUARE_ENVIRONMENT === 'sandbox' 
+    ? 'sandbox' 
+    : 'production'
 });
 
 // Define expected request body structure
@@ -204,74 +219,137 @@ export async function POST(request: Request) {
 
     console.log("Sending to Square:", JSON.stringify({ fulfillmentData, lineItems }, null, 2)); // Log what's being sent
 
-    // Create a payment link using Square's Checkout API
-    const response = await square.checkout.paymentLinks.create({
-      idempotencyKey: randomUUID(),
-      order: {
-        locationId: locationId, // Use validated locationId
-        lineItems,
-        fulfillments: [fulfillmentData],
-      },
-      checkoutOptions: {
-        allowTipping: true,
-        // Only ask for shipping address if fulfillment is shipping AND we haven't provided it
-        askForShippingAddress: fulfillment.method === 'shipping',
-        merchantSupportEmail: process.env.SUPPORT_EMAIL || customerInfo.email, // Fallback email
-        acceptedPaymentMethods: {
-          applePay: true,
-          googlePay: true,
-          cashAppPay: false, // Adjust based on your needs
-          afterpayClearpay: false, // Adjust based on your needs
+    // Create a payment link using Square's Checkout API, specifying the API version
+    console.log("About to call Square Checkout API to create payment link");
+    
+    try {
+      // Instead of using the SDK, we'll directly call the Square API with fetch
+      const paymentLinkUrl = `${BASE_URL}/v2/online-checkout/payment-links`;
+      console.log("Calling Square API directly at:", paymentLinkUrl);
+      
+      const hasFulfillment = !!(fulfillmentData.pickupDetails || fulfillmentData.deliveryDetails || fulfillmentData.shippingDetails);
+      const requestBody = {
+        idempotency_key: randomUUID(),
+        order: {
+          location_id: locationId,
+          line_items: lineItems.map(item => ({
+            quantity: item.quantity.toString(),
+            base_price_money: {
+              amount: parseInt(item.basePriceMoney.amount.toString(), 10),
+              currency: item.basePriceMoney.currency
+            },
+            name: item.name
+          })),
+          fulfillments: [
+            {
+              type: fulfillmentData.type,
+              pickup_details: fulfillmentData.pickupDetails ? {
+                pickup_at: fulfillmentData.pickupDetails.pickupAt,
+                note: fulfillmentData.pickupDetails.note,
+                recipient: fulfillmentData.pickupDetails.recipient
+              } : undefined,
+              delivery_details: fulfillmentData.deliveryDetails,
+              shipping_details: fulfillmentData.shippingDetails
+            }
+          ]
         },
-      },
-      prePopulatedData: {
-        buyerEmail: customerInfo.email,
-        buyerPhoneNumber: customerInfo.phone,
-        // Pre-populate address only if it's delivery or shipping
-        ...( (fulfillment.method === 'delivery' && fulfillment.deliveryAddress) ||
-             (fulfillment.method === 'shipping' && fulfillment.shippingAddress) ) && {
-               buyerAddress: {
-                   addressLine1: fulfillment.deliveryAddress?.street || fulfillment.shippingAddress?.street,
-                   addressLine2: fulfillment.deliveryAddress?.street2 || fulfillment.shippingAddress?.street2 || undefined,
-                   locality: fulfillment.deliveryAddress?.city || fulfillment.shippingAddress?.city,
-                   administrativeDistrictLevel1: fulfillment.deliveryAddress?.state || fulfillment.shippingAddress?.state,
-                   postalCode: fulfillment.deliveryAddress?.postalCode || fulfillment.shippingAddress?.postalCode,
-                   country: mapCountryCode(fulfillment.deliveryAddress?.country || fulfillment.shippingAddress?.country) as any,
-               }
-           }
-      },
-      // Consider removing paymentNote or simplifying it if not strictly needed
-      // paymentNote: JSON.stringify({ customerInfo, fulfillmentMethod: fulfillment.method }),
-    });
-
-    if (response.paymentLink?.url) {
-      console.log("Square Payment Link URL:", response.paymentLink.url);
-      return NextResponse.json({
-        success: true,
-        checkoutUrl: response.paymentLink.url,
+        checkout_options: {
+          allow_tipping: true,
+          ask_for_shipping_address: fulfillment.method === 'shipping',
+          merchant_support_email: process.env.SUPPORT_EMAIL || customerInfo.email,
+          accepted_payment_methods: {
+            apple_pay: true,
+            google_pay: true,
+            cash_app_pay: false,
+            afterpay_clearpay: false
+          }
+        },
+        ...( !hasFulfillment && {
+          pre_populated_data: {
+            buyer_email: customerInfo.email,
+            buyer_phone_number: customerInfo.phone,
+            ...( (fulfillment.method === 'delivery' && fulfillment.deliveryAddress) ||
+                 (fulfillment.method === 'shipping' && fulfillment.shippingAddress) ) && {
+              buyer_address: {
+                address_line_1: fulfillment.deliveryAddress?.street || fulfillment.shippingAddress?.street,
+                address_line_2: fulfillment.deliveryAddress?.street2 || fulfillment.shippingAddress?.street2 || undefined,
+                locality: fulfillment.deliveryAddress?.city || fulfillment.shippingAddress?.city,
+                administrative_district_level_1: fulfillment.deliveryAddress?.state || fulfillment.shippingAddress?.state,
+                postal_code: fulfillment.deliveryAddress?.postalCode || fulfillment.shippingAddress?.postalCode,
+                country: mapCountryCode(fulfillment.deliveryAddress?.country || fulfillment.shippingAddress?.country)
+              }
+            }
+          }
+        })
+      };
+      
+      console.log("Direct Square API request body:", JSON.stringify(requestBody, null, 2).substring(0, 500) + "...");
+      
+      const fetchResponse = await fetch(paymentLinkUrl, {
+        method: 'POST',
+        headers: {
+          'Square-Version': '2024-04-17',
+          'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
       });
-    } else {
-      console.error('Square API did not return a payment link URL.', response);
-      throw new Error('Failed to get checkout URL from Square');
+      
+      const responseData = await fetchResponse.json();
+      console.log("Direct Square API response:", JSON.stringify(responseData, null, 2).substring(0, 500) + "...");
+      
+      if (!fetchResponse.ok) {
+        console.error('Square API error response:', responseData);
+        throw new Error(responseData.errors?.[0]?.detail || 'Failed to create payment link');
+      }
+      
+      if (responseData.payment_link?.url) {
+        console.log("Square Payment Link URL:", responseData.payment_link.url);
+        return NextResponse.json({
+          success: true,
+          checkoutUrl: responseData.payment_link.url
+        });
+      } else {
+        console.error('Square API did not return a payment link URL.', responseData);
+        throw new Error('Failed to get checkout URL from Square');
+      }
+    } catch (error: unknown) {
+      console.error('Direct Square API Error:', error);
+      
+      // Handle the error response
+      let errorMessage = 'Failed to create checkout session.';
+      let statusCode = 500;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      if (typeof error === 'object' && error !== null) {
+        const squareError = error as any;
+        if (squareError.status) statusCode = squareError.status;
+        if (squareError.errors?.[0]?.detail) errorMessage = squareError.errors[0].detail;
+      }
+      
+      return NextResponse.json({ success: false, error: errorMessage }, { status: statusCode });
     }
-  } catch (error: unknown) { // Catch error as unknown
-     console.error('Checkout API Error:', error);
+  } catch (error: unknown) {
+    console.error('Checkout API Error:', error);
 
-     // Use updated structural type guard
-     if (isPotentialSquareError(error)) {
-         console.error('Square API Error Details:', JSON.stringify(error.errors || error, null, 2)); // Log errors or whole object
-         const specificError = error.errors?.[0]?.detail || 'Failed to communicate with payment provider.';
-          return NextResponse.json(
-              { success: false, error: specificError },
-              { status: error.statusCode || 500 }
-          );
-     } else if (error instanceof Error) {
-        // Handle generic JavaScript errors
+    // Use updated structural type guard
+    if (isPotentialSquareError(error)) {
+        console.error('Square API Error Details:', JSON.stringify(error.errors || error, null, 2)); // Log errors or whole object
+        const specificError = error.errors?.[0]?.detail || 'Failed to communicate with payment provider.';
          return NextResponse.json(
-              { success: false, error: error.message || 'An unexpected error occurred.' },
-              { status: 500 }
-          );
-     }
+             { success: false, error: specificError },
+             { status: error.statusCode || 500 }
+         );
+    } else if (error instanceof Error) {
+       // Handle generic JavaScript errors
+        return NextResponse.json(
+             { success: false, error: error.message || 'An unexpected error occurred.' },
+             { status: 500 }
+         );
+    }
 
     // Fallback for non-Error objects
     return NextResponse.json(

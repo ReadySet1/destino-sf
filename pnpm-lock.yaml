@@ -148,7 +148,7 @@ importers:
         specifier: ^2.0.2
         version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       square:
-        specifier: ^42.0.1
+        specifier: ^42.1.0
         version: 42.1.0
       styled-components:
         specifier: '6'

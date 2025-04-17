@@ -67,7 +67,7 @@
     "resend": "^4.2.0",
     "sanity": "3",
     "sonner": "^2.0.2",
-    "square": "^42.0.1",
+    "square": "^42.1.0",
     "styled-components": "6",
     "uuid": "^11.1.0",
     "zod": "^3.24.2",
