@@ -1,6 +1,6 @@
 // src/lib/square/orders.ts
 
-import squareClient from './client';
+import { client, ordersApi, paymentsApi } from './client';
 import { randomUUID } from 'crypto';
 
 export async function createOrder(orderData: {
@@ -12,9 +12,7 @@ export async function createOrder(orderData: {
   }>;
 }) {
   try {
-    // MODIFIED based on TS error: Use squareClient.orders
-    const response = await squareClient.orders.create({
-      // <--- Changed based on error
+    const response = await ordersApi.createOrder({
       order: {
         locationId: orderData.locationId,
         lineItems: orderData.lineItems,
@@ -22,10 +20,10 @@ export async function createOrder(orderData: {
       idempotencyKey: randomUUID(),
     });
 
-    if (!response.order) {
+    if (!response.result?.order) {
       throw new Error('Failed to create order or order data is missing in the response.');
     }
-    return response.order;
+    return response.result.order;
   } catch (error) {
     console.error('Error creating Square order:', error);
     if (error instanceof Error && 'body' in error) {
@@ -37,9 +35,7 @@ export async function createOrder(orderData: {
 
 export async function createPayment(sourceId: string, orderId: string, amountCents: number) {
   try {
-    // MODIFIED based on TS error: Use squareClient.payments
-    const response = await squareClient.payments.create({
-      // <--- Changed based on error
+    const response = await paymentsApi.createPayment({
       sourceId: sourceId,
       orderId: orderId,
       idempotencyKey: randomUUID(),
@@ -49,10 +45,10 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       },
     });
 
-    if (!response.payment) {
+    if (!response.result?.payment) {
       throw new Error('Failed to create payment or payment data is missing in the response.');
     }
-    return response.payment;
+    return response.result.payment;
   } catch (error) {
     console.error('Error processing payment:', error);
     if (error instanceof Error && 'body' in error) {

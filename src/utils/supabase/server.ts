@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function createClient() {
@@ -9,24 +9,25 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          const cookieList = Array.from(cookieStore.getAll());
-          return cookieList.map(cookie => ({
-            name: cookie.name,
-            value: cookie.value,
-          }));
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
-        setAll(cookies) {
+        set(name: string, value: string, options: CookieOptions) {
           try {
-            cookies.forEach(cookie => {
-              cookieStore.set({
-                name: cookie.name,
-                value: cookie.value,
-                ...cookie.options,
-              });
-            });
-          } catch {
-            // Handle cookie errors
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },

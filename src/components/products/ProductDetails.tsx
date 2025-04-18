@@ -25,16 +25,22 @@ const formatPrice = (price: number | Decimal | null | undefined): string => {
 };
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  // Call hooks unconditionally at the top level
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
-    product.variants && product.variants.length > 0 ? product.variants[0] : null
+    product?.variants && product.variants.length > 0 ? product.variants[0] : null
   );
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCartStore();
   const { showAlert } = useCartAlertStore();
 
+  // Ensure product exists before rendering the rest
+  if (!product) {
+    return <div>Loading product...</div>;
+  }
+
   // Handle both Sanity and DB product structures
   const displayPrice = selectedVariant?.price || product.price;
-  const mainImage = product.images?.[0] || "/images/products/placeholder-product.png";
+  const mainImage = product.images?.[0] || "/images/menu/empanadas.png";
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active;

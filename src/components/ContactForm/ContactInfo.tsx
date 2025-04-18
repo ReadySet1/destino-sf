@@ -10,9 +10,12 @@ export function ContactInfo() {
         <h2 className="text-4xl font-bold text-white mb-4">
           Curious about our menu or catering options?
         </h2>
-        <p className="text-white/90 text-lg">
-          Feel free to get in touch—we&apos;re here to make your experience deliciously simple.
-        </p>
+        <div className="mb-10">
+          <h3 className="text-3xl font-extrabold text-white mb-3">Contact Information</h3>
+          <p className="text-gray-100 text-lg">
+            Feel free to get in touch—we&apos;re here to make your experience deliciously simple.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-5">

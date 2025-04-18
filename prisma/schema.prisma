@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Profile {
-  id         String   @id
+  id         String   @id @db.Uuid
   email      String   @unique
   name       String?
   phone      String?
@@ -16,18 +16,17 @@ model Profile {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   orders     Order[]
-
-  @@map("profiles")
 }
 
 model Product {
-  id          String      @id @default(uuid())
+  id          String      @id @default(uuid()) @db.Uuid
   squareId    String      @unique
   name        String
   description String?
   price       Decimal     @db.Decimal(10, 2)
   images      String[]
-  categoryId  String
+  slug        String?     @unique
+  categoryId  String      @db.Uuid
   featured    Boolean     @default(false)
   active      Boolean     @default(true)
   createdAt   DateTime    @default(now())
@@ -40,7 +39,8 @@ model Product {
 }
 
 model Category {
-  id          String    @id @default(uuid())
+  id          String    @id @default(uuid()) @db.Uuid
+  squareId    String?   @unique
   name        String    @unique
   description String?
   order       Int       @default(0)
@@ -54,11 +54,11 @@ model Category {
 }
 
 model Variant {
-  id              String      @id @default(uuid())
+  id              String      @id @default(uuid()) @db.Uuid
   name            String
   price           Decimal?    @db.Decimal(10, 2)
   squareVariantId String?     @unique
-  productId       String
+  productId       String      @db.Uuid
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   orderItems      OrderItem[]
@@ -68,11 +68,11 @@ model Variant {
 }
 
 model Order {
-  id            String        @id @default(uuid())
+  id            String        @id @default(uuid()) @db.Uuid
   squareOrderId String?       @unique
   status        OrderStatus   @default(PENDING)
   total         Decimal       @db.Decimal(10, 2)
-  userId        String?
+  userId        String? @db.Uuid
   customerName  String
   email         String
   phone         String
@@ -91,12 +91,12 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   quantity  Int
   price     Decimal  @db.Decimal(10, 2)
-  productId String
-  variantId String?
-  orderId   String
+  productId String   @db.Uuid
+  variantId String?  @db.Uuid
+  orderId   String   @db.Uuid
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -109,7 +109,7 @@ model OrderItem {
 }
 
 model BusinessHours {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   day       Int      @unique
   openTime  String?
   closeTime String?
@@ -119,7 +119,7 @@ model BusinessHours {
 }
 
 model StoreSettings {
-  id                  String   @id @default(uuid())
+  id                  String   @id @default(uuid()) @db.Uuid
   name                String   @default("Destino SF")
   address             String?
   city                String?
@@ -135,12 +135,10 @@ model StoreSettings {
   temporaryClosureMsg String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-
-  @@map("store_settings")
 }
 
 model Subscriber {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -148,7 +146,7 @@ model Subscriber {
 }
 
 model PromoCode {
-  id             String       @id @default(uuid())
+  id             String       @id @default(uuid()) @db.Uuid
   code           String       @unique
   discountType   DiscountType
   discountAmount Decimal      @db.Decimal(10, 2)

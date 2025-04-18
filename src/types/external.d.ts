@@ -15,6 +15,7 @@ export interface SanityImage {
   };
 }
 
+/* SanityProduct removed
 export interface SanityProduct extends SanityDocument {
   name: string;
   description?: string;
@@ -26,6 +27,7 @@ export interface SanityProduct extends SanityDocument {
     _type: 'reference';
   };
 }
+*/
 
 export interface SanityCategory extends SanityDocument {
   name: string;

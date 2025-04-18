@@ -9,6 +9,7 @@ export interface Product {
   description?: string | null;
   price: number | Decimal;
   images: string[];
+  slug: string;
   categoryId: string;
   category?: Category;
   variants?: Variant[];

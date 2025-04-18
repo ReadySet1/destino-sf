@@ -5,18 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { toast } from 'sonner';
-
-interface Product {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  images?: string[];
-  slug: { current: string };
-  rating?: number;
-  reviewCount?: number;
-  featured?: boolean;
-}
+import { Product } from '@/types/product';
 
 interface ProductCardProps {
   product: Product;
@@ -24,12 +13,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
-
+  
   const handleAddToCart = () => {
     addItem({
-      id: product._id,
+      id: product.id,
       name: product.name,
-      price: product.price,
+      price: Number(product.price),
       quantity: 1,
       image: product.images?.[0] || '',
     });
@@ -40,7 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full">
       <Link 
-        href={`/products/${product.slug.current}`} 
+        href={`/products/${product.slug}`} 
         className="flex flex-row md:flex-col h-full"
       >
         {/* Image Container - left side on mobile, top on desktop */}
@@ -78,27 +67,11 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.description && (
               <p className="text-gray-600 text-sm line-clamp-2 md:mb-2">{product.description}</p>
             )}
-            
-            <div className="flex items-center gap-1 mt-1 md:mb-3">
-              {/* Star rating - full stars on desktop, simple on mobile */}
-              <span className="text-yellow-400 text-sm md:hidden">★</span>
-              <div className="hidden md:flex text-yellow-400">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={i < (product.rating || 4.5) ? "text-yellow-400" : "text-gray-200"}>★</span>
-                ))}
-              </div>
-              <span className="text-sm font-medium text-gray-900 md:ml-1">
-                {product.rating || 4.5}
-              </span>
-              <span className="text-sm text-gray-500">
-                ({product.reviewCount || 30})
-              </span>
-            </div>
           </div>
           
           <div className="flex items-center justify-between mt-2 md:mt-auto md:pt-4 md:border-t md:border-gray-100">
             <span className="text-lg font-bold text-gray-900">
-              ${product.price.toFixed(2)}
+              ${Number(product.price).toFixed(2)}
             </span>
             <Button
               onClick={e => {

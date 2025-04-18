@@ -4,21 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { ProductCard } from '../Store/ProductCard';
-
-interface Product {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  images?: string[];
-  slug: { current: string };
-  featured?: boolean;
-  variants?: Array<{
-    id: string;
-    name: string;
-    price?: number;
-  }>;
-}
+import { Product } from '@/types/product';
 
 interface ProductGridProps {
   products: Product[];
@@ -44,10 +30,10 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
 
     switch (option) {
       case 'price-low':
-        sorted.sort((a, b) => a.price - b.price);
+        sorted.sort((a, b) => Number(a.price) - Number(b.price));
         break;
       case 'price-high':
-        sorted.sort((a, b) => b.price - a.price);
+        sorted.sort((a, b) => Number(b.price) - Number(a.price));
         break;
       case 'name-asc':
         sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -93,7 +79,7 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
       {/* Product grid with consistent spacing */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
         {filteredProducts.map(product => (
-          <ProductCard key={product._id} product={product} />
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
 

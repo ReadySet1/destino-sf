@@ -3,32 +3,22 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAllCategories, getProductsByCategory } from '@/lib/sanity-products';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
+import { prisma } from '@/lib/prisma'; // Import Prisma client
+import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
+import { Decimal } from '@prisma/client/runtime/library';
 
-// Define the minimal type we need for categories
-interface SanityCategory {
-  _id: string;
-  name: string;
-  slug: { current: string };
-  description?: string;
-  image?: {
-    asset: {
-      _ref: string;
-      _type: 'reference';
-    };
-  };
-}
-
-// Define product type expected by ProductGrid
+// Define product type expected by ProductGrid (Consider consolidating with a global type)
+// Using GridProduct imported from @/types/product instead
+/*
 interface Product {
-  _id: string;
+  id: string; // Changed from _id
   name: string;
   description?: string;
   price: number;
   images?: string[]; // Expects an array of strings (URLs)
-  slug: { current: string };
+  slug: string; // Changed from { current: string }
   featured?: boolean;
   variants?: Array<{
     id: string;
@@ -36,14 +26,43 @@ interface Product {
     price?: number;
   }>;
 }
+*/
 
-// Type for variant coming from Sanity
-interface SanityVariant {
-  _id?: string;
-  id?: string;
-  name?: string;
-  price?: number;
-  [key: string]: unknown;
+// Utility function to normalize image data from database
+function normalizeImages(images: any): string[] {
+  if (!images) return [];
+  
+  // Case 1: Already an array of strings
+  if (Array.isArray(images) && 
+      images.length > 0 && 
+      typeof images[0] === 'string') {
+    return images.filter(url => url && url.trim() !== '');
+  }
+  
+  // Case 2: Array of objects with url property (Sanity format)
+  if (Array.isArray(images) && 
+      images.length > 0 && 
+      typeof images[0] === 'object' &&
+      images[0] !== null &&
+      'url' in images[0]) {
+    return images.map(img => img.url).filter(url => url && typeof url === 'string');
+  }
+  
+  // Case 3: String that might be a JSON array
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(url => url && typeof url === 'string');
+      }
+      return [images]; // If not a JSON array, use the string as a single URL
+    } catch (e) {
+      // If not valid JSON, assume it's a single URL
+      return [images];
+    }
+  }
+  
+  return [];
 }
 
 // Define the expected props structure, noting params is a Promise
@@ -52,6 +71,17 @@ interface CategoryPageProps {
     slug: string;
   }>;
 }
+
+// Map frontend slugs to the corresponding database category names
+// This might not be necessary if slugs are stored directly in the Category table
+/*
+const SLUG_TO_CATEGORY_MAP: Record<string, string> = {
+  'alfajores': 'Desserts',
+  'desserts': 'Desserts',
+  'empanadas': 'Appetizers',
+  'catering': 'Catering',
+};
+*/
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   alfajores: "Indulge in the delicate delight of our signature Alfajores. These classic South American butter cookies boast a tender, crumbly texture, lovingly filled with creamy dulce de leche. Explore a variety of tempting flavors, from traditional favorites to unique seasonal creations – the perfect sweet treat for yourself or a thoughtful gift.",
@@ -63,139 +93,161 @@ export default async function CategoryPage({ params: paramsPromise }: CategoryPa
   const params = await paramsPromise;
   const slug = params.slug;
 
-  // Fetch all product categories from Sanity
-  const categories = await getAllCategories();
+  // Fetch the category from the database using the slug
+  const category = await prisma.category.findUnique({
+    where: {
+      // Assuming the category table has a unique 'slug' field
+      // If not, adjust the query (e.g., findFirst where name matches slug mapping)
+      slug: slug, 
+    },
+  });
 
-  if (!categories || categories.length === 0) {
-    notFound(); // Or display a message indicating no categories exist
+  // If the category doesn't exist in the database, return 404
+  if (!category) {
+    console.log(`Category not found for slug: "${slug}"`);
+    notFound();
   }
 
-  // Find the category matching the slug
-  const selectedCategory = categories.find((c: SanityCategory) => c.slug?.current === slug);
+  // Fetch products associated with this category from the database
+  let products: GridProduct[] = [];
+  try {
+    const dbProducts = await prisma.product.findMany({
+      where: {
+        categoryId: category.id,
+        active: true // Only fetch active products
+      },
+      include: {
+        variants: true // Include variants if needed by ProductGrid
+      },
+      orderBy: {
+        // Optional: Add sorting, e.g., by name or a custom order field
+        name: 'asc' 
+      }
+    });
 
-  // Fetch products ONLY if a category was found
-  let products: Product[] = [];
-  if (selectedCategory) {
-    try {
-      // Fetch products for the found category using its ID
-      const fetchedProducts = await getProductsByCategory(selectedCategory._id);
-
-      // Map fetched data directly to the structure ProductGrid expects
-      products = fetchedProducts.map(p => ({
-        _id: p._id,
+    // Map database products to the GridProduct interface
+    products = dbProducts.map((p): GridProduct => {
+      // Parse the images JSON string or handle array
+      const imageArray = normalizeImages(p.images);
+      
+      return {
+        id: p.id,
+        squareId: p.squareId || '',
         name: p.name,
         description: p.description,
-        price: p.price,
-        images: (p.images || []).map(img => img.url),
-        slug: p.slug || { current: p._id },
+        price: p.price ? Number(p.price) : 0, // Convert Decimal to number
+        images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
+        categoryId: p.categoryId || '',
+        category: category, // Attach the fetched category object
+        slug: p.slug || p.id, // Use product slug or ID if slug is missing
         featured: p.featured || false,
-        // Transform variants to match the expected format
-        variants: (p.variants || []).map(variant => {
-          // Cast the unknown variant to our SanityVariant interface
-          const v = variant as SanityVariant;
-          return {
-            id: v.id || v._id || String(Math.random()),
-            name: v.name || 'Variant',
-            price: v.price,
-          };
-        }),
-      }));
-    } catch (error) {
-      console.error(
-        `Failed to fetch products for category ${selectedCategory.name} (ID: ${selectedCategory._id}):`,
-        error
-      );
-      // Optionally display an error message on the page
-    }
-  }
+        active: p.active,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        variants: p.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: v.price ? Number(v.price) : null, // Convert Decimal or keep null
+          squareVariantId: v.squareVariantId,
+          productId: p.id,
+          createdAt: v.createdAt,
+          updatedAt: v.updatedAt,
+        }))
+      };
+    });
 
-  const categoryId = selectedCategory?._id;
-
-  if (!categoryId) {
-    notFound();
+  } catch (error) {
+    console.error(
+      `Failed to fetch products for category ${category.name} (ID: ${category.id}):`,
+      error
+    );
+    // Optionally display an error message on the page or return 500
+    // For now, we'll proceed with an empty products array
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 bg-white">
-        {selectedCategory ? (
-          <>
-            <CategoryHeader 
-              title={selectedCategory.name}
-              description={CATEGORY_DESCRIPTIONS[selectedCategory.slug.current]}
-            />
+        {/* Use the fetched category data */}
+        <CategoryHeader 
+          title={category.name}
+          description={category.description || CATEGORY_DESCRIPTIONS[slug] || ''} // Use DB description or fallback
+        />
 
-            <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
-              <Suspense
-                fallback={
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-pulse text-center w-full">
-                      <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
-                      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} className="h-64 bg-gray-200 rounded-2xl"></div>
-                        ))}
-                      </div>
-                    </div>
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
+          <Suspense
+            fallback={
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-pulse text-center w-full">
+                  <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="h-64 bg-gray-200 rounded-2xl"></div>
+                    ))}
                   </div>
-                }
-              >
-                {products.length > 0 ? (
-                  <div className="py-8 lg:py-12">
-                    <ProductGrid
-                      products={products}
-                      title={`${selectedCategory.name} Products`}
-                      showFilters={true}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center py-16 my-12 bg-gray-50 rounded-2xl">
-                    <h2 className="text-2xl font-medium mb-3">No Products Available</h2>
-                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                      We don&apos;t have any products in the {selectedCategory.name} category yet.
-                    </p>
-                    <Link
-                      href="/products"
-                      className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                      View All Products
-                    </Link>
-                  </div>
-                )}
-              </Suspense>
-            </div>
-          </>
-        ) : (
-          // Fallback content when category is not found
-          <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
-            <div className="text-center py-20 my-12 bg-gray-50 rounded-2xl">
-              <h1 className="text-3xl font-bold mb-4">Category Not Found</h1>
-              <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
-                Sorry, we couldn&apos;t find the category you were looking for.
-              </p>
-              <Link
-                href="/products"
-                className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                View All Products
-              </Link>
-            </div>
-          </div>
-        )}
+                </div>
+              </div>
+            }
+          >
+            {products.length > 0 ? (
+              <div className="py-8 lg:py-12">
+                <ProductGrid
+                  products={products}
+                  title={`${category.name} Products`}
+                  showFilters={true}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-16 my-12 bg-gray-50 rounded-2xl">
+                <h2 className="text-2xl font-medium mb-3">No Products Available</h2>
+                <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                  We don&apos;t have any products in the {category.name} category yet.
+                </p>
+                <Link
+                  href="/products"
+                  className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  View All Products
+                </Link>
+              </div>
+            )}
+          </Suspense>
+        </div>
       </main>
     </div>
   );
 }
 
-// Generate static paths for all categories at build time for better performance
+/**
+ * Generates static paths for category pages based on database entries.
+ * Assumes the Category model has a unique 'slug' field.
+ */
 export async function generateStaticParams() {
   try {
-    const categories = await getAllCategories();
-    return categories.map((category: SanityCategory) => ({
-      slug: category.slug.current,
-    }));
+    const categories = await prisma.category.findMany({
+      select: {
+        slug: true, // Select only the slug field
+      },
+      where: {
+        // Optional: Only generate pages for categories that have active products
+        // products: {
+        //   some: { active: true }
+        // }
+        slug: { not: null } // Ensure slug is not null
+      }
+    });
+
+    // Filter out any null slugs just in case and map to the expected format
+    return categories
+      .filter(category => category.slug)
+      .map(category => ({
+        slug: category.slug!,
+      }));
+      
   } catch (error) {
-    console.error('Error generating static params for categories:', error);
+    console.error("Failed to generate static params for category pages:", error);
+    // Return an empty array in case of error to prevent build failure
+    // Or handle the error more gracefully depending on requirements
     return [];
   }
 }

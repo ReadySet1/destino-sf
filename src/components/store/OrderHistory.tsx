@@ -15,10 +15,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-interface OrderHistoryProps {
-  userId: string;
-}
-
 interface OrderItem {
   id: string;
   quantity: number;
@@ -34,7 +30,7 @@ interface Order {
   items: OrderItem[];
 }
 
-export function OrderHistory({ userId }: OrderHistoryProps) {
+export function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +41,15 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/orders?userId=${userId}`);
+        const response = await fetch('/api/orders');
 
         if (!response.ok) {
-          throw new Error('Failed to fetch orders');
+          if (response.status === 401) {
+            throw new Error('Please sign in to view your orders.');
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData?.error || 'Failed to fetch orders');
+          }
         }
 
         const data = await response.json();
@@ -64,7 +65,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
     };
 
     void fetchOrders();
-  }, [userId]);
+  }, []);
 
   const getStatusBadge = (status: Order['status']) => {
     switch (status) {

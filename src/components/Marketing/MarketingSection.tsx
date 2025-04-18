@@ -68,7 +68,7 @@ const MarketingSection: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-lg p-8 lg:p-12">
             <div className="max-w-3xl mx-auto text-center">
               <blockquote className="text-xl italic text-[#2d3538]">
-                "The alfajores are absolutely divine! The perfect balance of sweetness and texture. I can't get enough!"
+                &quot;The alfajores are absolutely divine! The perfect balance of sweetness and texture. I can&apos;t get enough!&quot;
               </blockquote>
               <div className="mt-4">
                 <p className="font-semibold text-[#2d3538]">- Maria G.</p>

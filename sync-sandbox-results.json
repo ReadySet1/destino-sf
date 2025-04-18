@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Croissant",
+    "success": true,
+    "productId": "d24964c9-952a-4cda-97e2-488f63bd43b1"
+  },
+  {
+    "name": "Tabla de Quesos",
+    "success": true,
+    "productId": "e3c024c1-7696-4822-bab1-f95b6231435f"
+  },
+  {
+    "name": "Café Artesanal",
+    "success": true,
+    "productId": "4ccf8465-06d2-49f4-9534-2d7e19a30b3e"
+  },
+  {
+    "name": "Empanada",
+    "success": true,
+    "productId": "83fd5c7f-7534-4ca1-9914-02c435926e63"
+  },
+  {
+    "name": "Vino Tinto",
+    "success": true,
+    "productId": "4a8b979c-62d9-4651-84e6-a4059bfcfd8d"
+  },
+  {
+    "name": "Ceviche",
+    "success": true,
+    "productId": "883c7020-cbcb-4daf-80e2-6ba878295144"
+  },
+  {
+    "name": "Combo Empanadas",
+    "success": true,
+    "productId": "a02e71bb-cf39-4279-845c-69bb6870ecc7"
+  },
+  {
+    "name": "Chips de Plátano",
+    "success": true,
+    "productId": "339fcb8b-ce01-4023-bb9f-4e43a1b9bffb"
+  },
+  {
+    "name": "Plato del Día",
+    "success": true,
+    "productId": "19e89bc3-3990-44aa-bef5-91df664540fd"
+  }
+]

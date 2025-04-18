@@ -84,7 +84,7 @@ export default function AccountPage() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <OrderHistory userId={user.id} />
+          <OrderHistory />
         </TabsContent>
       </Tabs>
     </main>

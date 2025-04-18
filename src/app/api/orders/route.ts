@@ -1,59 +1,44 @@
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { NextResponse, NextRequest } from 'next/server';
+// Remove unused imports
+// import { type CookieOptions, createServerClient } from '@supabase/ssr'; 
+// import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+// Import the server client utility
+import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
 // Do not use edge runtime with Prisma
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Get the Supabase client
-    const cookieStore = await cookies();
+    // Use the utility to create the Supabase client
+    const supabase = await createClient();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            const cookieList = Array.from(cookieStore.getAll());
-            return cookieList.map(cookie => ({
-              name: cookie.name,
-              value: cookie.value,
-            }));
-          },
-          setAll(_cookies) {
-            // Route handlers can't set cookies directly
-            // This is just a stub to satisfy the type requirements
+    // Use getUser() to securely get the authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.error('Auth Error in /api/orders:', authError);
+      return NextResponse.json({ error: 'Unauthorized - Authentication failed' }, { status: 401 });
+    }
+
+    // Fetch orders using the authenticated user's ID
+    const orders = await prisma.order.findMany({
+      where: { userId: user.id }, // Use user.id directly
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { name: true, images: true },
+            },
+            variant: {
+              select: { name: true },
+            },
           },
         },
-      }
-    );
-
-    // Get user session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get URL parameters
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    // Ensure the requested userId matches the authenticated user
-    if (userId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // Fetch orders for the user
-    const orders = await prisma.order.findMany({
-      where: { userId },
-      include: {
-        items: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -62,8 +47,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ orders });
   } catch (error) {
-    console.error('Error fetching orders:', error);
-
-    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching orders:', errorMessage, error);
+    return NextResponse.json(
+      { error: 'Failed to fetch orders', details: errorMessage },
+      { status: 500 }
+    );
   }
 }
