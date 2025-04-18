@@ -67,7 +67,7 @@ export function MenuSection() {
       <BackgroundPattern /> {/* Añadir el componente de patrón */}
       <div className={styles.content}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mt-4 mb-8 text-center text-3xl lg:text-5xl font-bold text-gray-800">
+          <h2 className="relative -translate-y-16 sm:-translate-y-16 mb-8 text-center text-3xl lg:text-5xl font-bold text-gray-800 mt-20 sm:mt-4">
             Menu
           </h2>
 
