@@ -28,9 +28,9 @@ export default function Navbar() {
   return (
     <nav className="bg-background/95 backdrop-blur-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative flex h-20 items-center justify-between">
-          {/* Desktop Logo - Left aligned on desktop */}
-          <div className="hidden md:block">
+        <div className="relative flex h-20 items-center">
+          {/* Desktop Logo - Centered on desktop */}
+          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex items-center transition-transform hover:scale-105">
               <Image
                 src="/images/logo/logo-destino.png"
@@ -43,8 +43,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Logo - Slightly left of center on mobile */}
-          <div className="absolute left-[50%] transform -translate-x-1/2 md:hidden">
+          {/* Mobile Logo - Centered on mobile */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 md:hidden">
             <Link href="/" className="flex items-center transition-transform hover:scale-105">
               <Image
                 src="/images/logo/logo-destino.png"
@@ -63,7 +63,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Right Side Icons */}
-          <div className="flex items-center gap-3 md:hidden">
+          <div className="flex items-center gap-1 md:hidden ml-auto">
             <Link
               href="/cart"
               className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
@@ -79,7 +79,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/account"
-              className="flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
+              className="hidden md:flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
               <User className="h-6 w-6" />
             </Link>
@@ -88,7 +88,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   aria-label="Open menu"
-                  className="flex items-center bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg py-2 px-2"
+                  className="flex items-center bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg p-2"
                 >
                   <Menu className="h-7 w-7" strokeWidth={2.5} />
                 </button>
@@ -190,8 +190,8 @@ export default function Navbar() {
             </Sheet>
           </div>
 
-          {/* Desktop Cart and Account Icons */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop Cart, Account and Menu Icons */}
+          <div className="hidden md:flex items-center gap-4 ml-auto">
             <Link
               href="/cart"
               className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
@@ -207,19 +207,18 @@ export default function Navbar() {
             </Link>
             <Link
               href="/account"
-              className="flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
+              className="hidden md:flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
               <User className="h-6 w-6" />
             </Link>
-            <div className="h-8 w-px bg-gray-200 mx-2"></div>
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
                   aria-label="Open menu"
-                  className="flex items-center space-x-2 bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg py-2 px-3"
+                  className="flex items-center bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg p-2"
                 >
-                  <Menu className="h-7 w-7" strokeWidth={2} />
+                  <Menu className="h-10 w-10" strokeWidth={2.5} />
                 </button>
               </SheetTrigger>
               <SheetContent
@@ -287,6 +286,33 @@ export default function Navbar() {
                       </Link>
                     </div>
                   </nav>
+                  <div className="mt-auto pt-6 w-full">
+                    <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-around items-center w-[320px] md:hidden">
+                      <Link
+                        href="/cart"
+                        onClick={closeSheet}
+                        className="relative flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                      >
+                        <div className="relative">
+                          <ShoppingCart className="h-6 w-6 mb-1" />
+                          {mounted && items.length > 0 && (
+                            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                              {items.reduce((total, item) => total + item.quantity, 0)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs">Cart</span>
+                      </Link>
+                      <Link
+                        href="/account"
+                        onClick={closeSheet}
+                        className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                      >
+                        <User className="h-6 w-6 mb-1" />
+                        <span className="text-xs">Account</span>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
