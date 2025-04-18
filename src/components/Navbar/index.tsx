@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
+import { ShoppingCart, User, Menu } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
   const [mounted, setMounted] = useState(false);
@@ -29,9 +28,9 @@ export default function Navbar() {
   return (
     <nav className="bg-background/95 backdrop-blur-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative flex h-20 items-center justify-center">
-          {/* Logo section - Centered for both mobile and desktop */}
-          <div className="flex justify-center">
+        <div className="relative flex h-20 items-center justify-between">
+          {/* Desktop Logo - Left aligned on desktop */}
+          <div className="hidden md:block">
             <Link href="/" className="flex items-center transition-transform hover:scale-105">
               <Image
                 src="/images/logo/logo-destino.png"
@@ -44,14 +43,52 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 md:hidden">
+          {/* Mobile Logo - Slightly left of center on mobile */}
+          <div className="absolute left-[50%] transform -translate-x-1/2 md:hidden">
+            <Link href="/" className="flex items-center transition-transform hover:scale-105">
+              <Image
+                src="/images/logo/logo-destino.png"
+                alt="Destino SF Logo"
+                width={600}
+                height={300}
+                priority
+                className="h-14 w-auto"
+              />
+            </Link>
+          </div>
+
+          {/* Mobile navigation icons */}
+          <div className="flex items-center gap-3 md:hidden">
+            {/* Placeholder for left side on mobile */}
+          </div>
+
+          {/* Mobile Right Side Icons */}
+          <div className="flex items-center gap-3 md:hidden">
+            <Link
+              href="/cart"
+              className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
+            >
+              <div className="relative">
+                <ShoppingCart className="h-6 w-6" />
+                {mounted && items.length > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {items.reduce((total, item) => total + item.quantity, 0)}
+                  </span>
+                )}
+              </div>
+            </Link>
+            <Link
+              href="/account"
+              className="flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
+            >
+              <User className="h-6 w-6" />
+            </Link>
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
                   aria-label="Open menu"
-                  className="flex items-center space-x-2 bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg py-2 px-3"
+                  className="flex items-center bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg py-2 px-2"
                 >
                   <Menu className="h-7 w-7" strokeWidth={2.5} />
                 </button>
@@ -154,7 +191,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Cart and Account Icons */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             <Link
               href="/cart"
               className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
@@ -182,7 +219,7 @@ export default function Navbar() {
                   aria-label="Open menu"
                   className="flex items-center space-x-2 bg-transparent hover:bg-slate-100 text-foreground hover:text-primary transition-all duration-200 rounded-lg py-2 px-3"
                 >
-                  <Menu className="h-7 w-7 md:h-10 md:w-10" strokeWidth={2} />
+                  <Menu className="h-7 w-7" strokeWidth={2} />
                 </button>
               </SheetTrigger>
               <SheetContent

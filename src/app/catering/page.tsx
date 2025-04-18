@@ -10,7 +10,7 @@ const CateringPage = () => {
 
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Catering content */}
-        <div>
+        <div className="mt-20">
           <h1 className="text-3xl font-bold text-gray-900 mb-12">
             Offering a diverse selection of savory Latin American dishes, we would be delighted to
             provide our catering services for your next event!
@@ -42,7 +42,7 @@ const CateringPage = () => {
 
         {/* Dietary Options section */}
         <div className="mt-16 mb-16">
-          <div className="bg-amber-100 p-8 rounded-lg">
+          <div className="bg-[#fdc32d] p-8 rounded-lg">
             <h3 className="text-2xl font-semibold text-gray-800 mb-4">Dietary Options</h3>
             <p className="text-lg text-gray-600">
               Customizable menus with a great selection of Gluten-free, Vegetarian & Vegan options!
