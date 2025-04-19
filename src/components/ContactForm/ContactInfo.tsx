@@ -19,7 +19,7 @@ export function ContactInfo() {
       </div>
 
       <div className="space-y-5">
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           <Phone className="h-6 w-6 text-white" />
           <Link
             href="tel:+14155771677"
@@ -27,7 +27,7 @@ export function ContactInfo() {
           >
             +14155771677
           </Link>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-4">
           <Mail className="h-6 w-6 text-white" />
