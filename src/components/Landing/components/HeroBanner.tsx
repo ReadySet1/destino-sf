@@ -4,12 +4,12 @@ import Image from 'next/image';
 export function HeroBanner() {
   return (
     <div className="relative w-full overflow-hidden">
-      <div className="relative h-[280px] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
+      <div className="relative h-[200px] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
         <Image
           src="/images/hero/hero-empanada.png"
           alt="Delicious Empanadas"
           fill
-          className="object-cover"
+          className="object-cover object-[50%_35%]"
           priority
         />
 
@@ -21,7 +21,8 @@ export function HeroBanner() {
               filled with rich flavors
             </h1>
             <p className="hidden md:block mb-6 md:text-base lg:text-lg xl:text-xl text-gray-100">
-              Inspired by traditions from Argentina, Spain, Peru, Chile, and beyond. Each bite is a celebration of global culinary heritage!
+              Inspired by traditions from Argentina, Spain, Peru, Chile, and beyond. Each bite is a
+              celebration of global culinary heritage!
             </p>
             <Link
               href="/order"
