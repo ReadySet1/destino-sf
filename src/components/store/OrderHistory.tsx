@@ -1,37 +1,57 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { UserOrder } from '@/app/api/user/orders/route'; // Import the type from the API route
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDistance } from 'date-fns';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: number;
+// Helper function to format currency
+const formatCurrency = (amount: number | string | null | undefined) => {
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount ?? 0;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(numericAmount);
+};
+
+// Helper function to format date
+const formatDate = (date: Date | string | null | undefined) => {
+  if (!date) return 'N/A';
+  try {
+    return format(new Date(date), 'PPpp'); // Example format: Sep 14, 2023, 1:42:00 PM
+  } catch {
+    return 'Invalid Date';
+  }
+};
+
+// Helper to map status to badge variant
+const getStatusVariant = (status: string | null | undefined): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status?.toLowerCase()) {
+    case 'completed':
+    case 'ready':
+      return 'default'; // Greenish/Default
+    case 'pending':
+    case 'processing':
+      return 'secondary'; // Yellowish/Secondary
+    case 'cancelled':
+    case 'failed':
+      return 'destructive'; // Red/Destructive
+    default:
+      return 'outline'; // Gray/Outline
+  }
+};
+
+// Define props for the component
+interface OrderHistoryProps {
+  isActive: boolean;
 }
 
-interface Order {
-  id: string;
-  status: 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'CANCELLED';
-  total: number;
-  pickupTime: string;
-  createdAt: string;
-  items: OrderItem[];
-}
-
-export function OrderHistory() {
-  const [orders, setOrders] = useState<Order[]>([]);
+export function OrderHistory({ isActive }: OrderHistoryProps) {
+  const [orders, setOrders] = useState<UserOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,78 +59,64 @@ export function OrderHistory() {
     const fetchOrders = async () => {
       setIsLoading(true);
       setError(null);
-
       try {
-        const response = await fetch('/api/orders');
-
+        const response = await fetch('/api/user/orders');
         if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Please sign in to view your orders.');
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData?.error || 'Failed to fetch orders');
-          }
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
-
-        const data = await response.json();
-        setOrders(data.orders || []);
-      } catch (err: unknown) {
-        setError(
-          err instanceof Error ? err.message : 'An error occurred while fetching your orders'
-        );
-        setOrders([]);
+        const data: UserOrder[] = await response.json();
+        setOrders(data);
+      } catch (err) {
+        console.error('Failed to fetch orders:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    void fetchOrders();
-  }, []);
-
-  const getStatusBadge = (status: Order['status']) => {
-    switch (status) {
-      case 'PENDING':
-        return <Badge variant="outline">Pending</Badge>;
-      case 'PROCESSING':
-        return <Badge variant="secondary">Processing</Badge>;
-      case 'READY':
-        return (
-          <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">Ready for Pickup</Badge>
-        );
-      case 'COMPLETED':
-        return <Badge className="bg-green-500 text-white hover:bg-green-600">Completed</Badge>;
-      case 'CANCELLED':
-        return <Badge variant="destructive">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+    // Only fetch if the tab is active
+    if (isActive) {
+       console.log('OrderHistory: Tab active, fetching orders...')
+       void fetchOrders();
     }
-  };
+    // Optional: You might want to clear orders or show a specific state 
+    // when the tab is not active, depending on desired UX.
+    // else {
+    //    setOrders([]); // Example: Clear orders when tab is inactive
+    // }
+
+  }, [isActive]); // Re-run effect when isActive changes
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Order History</CardTitle>
-          <CardDescription>View your past orders and their status.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-yellow-500"></div>
-          </div>
-        </CardContent>
-      </Card>
+       <div className="flex items-center justify-center space-x-2 py-8">
+         <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-yellow-500"></div>
+         <span>Loading order history...</span>
+       </div>
     );
   }
 
   if (error) {
+     return (
+        <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Error Fetching Orders</AlertTitle>
+            <AlertDescription>
+              There was a problem retrieving your order history: {error}. Please try refreshing the page or contact support if the issue persists.
+            </AlertDescription>
+        </Alert>
+     );
+  }
+
+  if (orders.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Order History</CardTitle>
-          <CardDescription>View your past orders and their status.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">{error}</div>
+          <p className="text-center text-gray-500">You haven&apos;t placed any orders yet.</p>
         </CardContent>
       </Card>
     );
@@ -120,51 +126,43 @@ export function OrderHistory() {
     <Card>
       <CardHeader>
         <CardTitle>Order History</CardTitle>
-        <CardDescription>View your past orders and their status.</CardDescription>
       </CardHeader>
       <CardContent>
-        {orders.length === 0 ? (
-          <div className="py-6 text-center text-gray-500">
-            You haven&apos;t placed any orders yet.
-            <Link href="/menu" className="mt-4 block">
-              <Button>Browse Menu</Button>
-            </Link>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Pickup Time</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              {/* Add more columns if needed */}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
+                <TableCell>{formatDate(order.createdAt)}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(order.status)}>
+                    {order.status?.toUpperCase() === 'READY' ? 'READY TO PICKUP' : (order.status || 'N/A')}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={order.paymentStatus?.toLowerCase() === 'paid' ? 'default' : 'secondary'}>
+                    {order.paymentStatus || 'N/A'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">{formatCurrency(order.total?.toString())}</TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map(order => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
-                  <TableCell>
-                    {formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
-                  <TableCell>{order.items.length}</TableCell>
-                  <TableCell>{new Date(order.pickupTime).toLocaleString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/account/orders/${order.id}`}>View</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
 }
+
+// Export the component as default if it's the main export of the file
+// export default OrderHistory; - Uncomment if needed based on your file structure/imports

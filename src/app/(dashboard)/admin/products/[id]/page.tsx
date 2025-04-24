@@ -1,3 +1,5 @@
+// src/app/(dashboard)/admin/products/[id]/page.tsx
+
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -7,16 +9,17 @@ import { logger } from '@/utils/logger';
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
 
-// Change the props type to match Next.js App Router expectations
+// Updated the props type definition to match Next.js 15 expectations
 type PageProps = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<{ id: string }>; // params is now a Promise
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // searchParams is also a Promise
 }
 
-export default async function EditProductPage({ params }: PageProps) {
-  // Wait for params to resolve since it's now a Promise in Next.js 15.3.1
-  const resolvedParams = await params;
-  const productId = resolvedParams.id;
+export default async function EditProductPage({ params, searchParams }: PageProps) {
+  // Need to await params and searchParams since they're Promises
+  const { id: productId } = await params;
+  // We're not using searchParams in this component, but we'll await it to satisfy TypeScript
+  await searchParams;
 
   // Fetch the product from Prisma
   const product = await prisma.product.findUnique({

@@ -72,7 +72,7 @@ model Order {
   squareOrderId String?       @unique
   status        OrderStatus   @default(PENDING)
   total         Decimal       @db.Decimal(10, 2)
-  userId        String? @db.Uuid
+  userId        String?       @db.Uuid
   customerName  String
   email         String
   phone         String
@@ -80,14 +80,47 @@ model Order {
   notes         String?
   cancelReason  String?
   paymentStatus PaymentStatus @default(PENDING)
+  rawData       Json?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   profile       Profile?      @relation(fields: [userId], references: [id])
   items         OrderItem[]
+  payments      Payment[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  squarePaymentId String        @unique
+  orderId         String        @db.Uuid
+  amount          Decimal       @db.Decimal(10, 2)
+  status          PaymentStatus @default(PENDING)
+  rawData         Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  order           Order         @relation(fields: [orderId], references: [id])
+  refunds         Refund[]
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model Refund {
+  id             String    @id @default(uuid()) @db.Uuid
+  squareRefundId String    @unique
+  paymentId      String    @db.Uuid
+  amount         Decimal   @db.Decimal(10, 2)
+  reason         String?
+  status         String
+  rawData        Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  payment        Payment   @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
 }
 
 model OrderItem {
@@ -171,6 +204,7 @@ enum OrderStatus {
   READY
   COMPLETED
   CANCELLED
+  FULFILLMENT_UPDATED
 }
 
 enum PaymentStatus {
@@ -178,6 +212,7 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  COMPLETED
 }
 
 enum DiscountType {

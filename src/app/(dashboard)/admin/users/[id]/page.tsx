@@ -11,16 +11,17 @@ export const metadata = {
   description: 'Edit user details',
 };
 
-// Update the type definition to use Promise for params
+// Updated the type definition for Next.js 15: params and searchParams are Promises
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function EditUserPage({ params }: PageProps) {
-  // Wait for params to resolve since it's now a Promise in Next.js 15.3.1
-  const resolvedParams = await params;
-  const id = resolvedParams.id;
+export default async function EditUserPage({ params, searchParams }: PageProps) {
+  // params is now a Promise, need to await it
+  const { id } = await params;
+  // Await searchParams if it's provided
+  if (searchParams) await searchParams;
 
   // Fetch the user from Prisma
   const user = await prisma.profile.findUnique({

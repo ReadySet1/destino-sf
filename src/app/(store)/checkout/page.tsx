@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, addDays } from 'date-fns';
@@ -18,6 +18,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 import { FulfillmentSelector, FulfillmentMethod } from '@/components/Store/FulfillmentSelector';
 import { AddressForm } from '@/components/Store/AddressForm';
+import { createOrderAndGenerateCheckoutUrl } from '@/app/actions';
+import type { FulfillmentData } from '@/app/actions';
 
 // Form validation schema
 const addressSchema = z.object({
@@ -88,7 +90,7 @@ type ShippingFormData = z.infer<typeof shippingSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalPrice } = useCartStore();
+  const { items, totalPrice, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -98,16 +100,15 @@ export default function CheckoutPage() {
   const supabase = createClient();
 
   const form = useForm<CheckoutFormData>({
-    resolver: zodResolver(checkoutSchema), // <-- Restore original schema
+    resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      // Restore original defaults
       fulfillmentMethod: 'pickup',
       pickupDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
       pickupTime: '12:00',
-    } as PickupFormData, // Restore type assertion
+    } as PickupFormData,
   });
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors }, control } = form;
   
   // Watch for changes in fulfillment method
   const currentMethod = watch('fulfillmentMethod');
@@ -118,51 +119,6 @@ export default function CheckoutPage() {
   // Update form when fulfillment method changes
   useEffect(() => {
     setValue('fulfillmentMethod', fulfillmentMethod);
-
-    /* // Temporarily comment out reset logic that uses complex types
-    // Reset form when method changes to remove irrelevant fields
-    if (fulfillmentMethod === 'pickup') {
-      reset({
-        fulfillmentMethod: 'pickup',
-        // pickupDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-        // pickupTime: '12:00',
-        name: form.getValues('name'),
-        email: form.getValues('email'),
-        phone: form.getValues('phone'),
-      }); // Removed 'as PickupFormData'
-    } else if (fulfillmentMethod === 'delivery') {
-      reset({
-        fulfillmentMethod: 'delivery',
-        // deliveryDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-        // deliveryTime: '12:00',
-        name: form.getValues('name'),
-        email: form.getValues('email'),
-        phone: form.getValues('phone'),
-        // deliveryAddress: {
-        //   street: '',
-        //   city: '',
-        //   state: '',
-        //   postalCode: '',
-        //   country: 'US',
-        // },
-      }); // Removed 'as DeliveryFormData'
-    } else if (fulfillmentMethod === 'shipping') {
-      reset({
-        fulfillmentMethod: 'shipping',
-        name: form.getValues('name'),
-        email: form.getValues('email'),
-        phone: form.getValues('phone'),
-        // shippingAddress: {
-        //   street: '',
-        //   city: '',
-        //   state: '',
-        //   postalCode: '',
-        //   country: 'US',
-        // },
-        // shippingMethod: '',
-      }); // Removed 'as ShippingFormData'
-    }
-    */
   }, [fulfillmentMethod, setValue, reset, form]);
 
   // Redirect if cart is empty *after* component has mounted
@@ -216,125 +172,119 @@ export default function CheckoutPage() {
     void getUser();
   }, [supabase, setValue]);
 
-  // Restore prepareFulfillmentData
-  const prepareFulfillmentData = (formData: CheckoutFormData) => {
-    const { fulfillmentMethod } = formData;
-    
-    if (fulfillmentMethod === 'pickup') {
+  // Helper function to prepare fulfillment data
+  const prepareFulfillmentData = (formData: CheckoutFormData): FulfillmentData => {
+    const baseData = {
+      method: formData.fulfillmentMethod
+    };
+
+    if (formData.fulfillmentMethod === 'pickup') {
       const pickupData = formData as PickupFormData;
-      return {
-        method: 'pickup',
-        pickupTime: `${pickupData.pickupDate}T${pickupData.pickupTime}:00`,
+      return { 
+        ...baseData, 
+        method: 'pickup', 
+        pickupTime: `${pickupData.pickupDate}T${pickupData.pickupTime}:00` 
       };
-    } else if (fulfillmentMethod === 'delivery') {
+    } else if (formData.fulfillmentMethod === 'delivery') {
       const deliveryData = formData as DeliveryFormData;
-      return {
-        method: 'delivery',
+      return { 
+        ...baseData, 
+        method: 'delivery', 
+        deliveryTime: `${deliveryData.deliveryDate}T${deliveryData.deliveryTime}:00`, 
         deliveryAddress: deliveryData.deliveryAddress,
-        deliveryTime: `${deliveryData.deliveryDate}T${deliveryData.deliveryTime}:00`,
-        deliveryInstructions: deliveryData.deliveryInstructions,
+        deliveryInstructions: deliveryData.deliveryInstructions
       };
     } else {
       const shippingData = formData as ShippingFormData;
-      return {
-        method: 'shipping',
+      return { 
+        ...baseData, 
+        method: 'shipping', 
         shippingAddress: shippingData.shippingAddress,
-        shippingMethod: shippingData.shippingMethod,
+        shippingMethod: shippingData.shippingMethod || 'Standard' // Default if needed
       };
     }
   };
 
-  // Restore original onSubmit logic
+  // Restore original onSubmit logic, but call Server Action
   const onSubmit = async (formData: CheckoutFormData) => {
-    console.log('onSubmit triggered'); // Keep initial log
+    console.log('CheckoutPage onSubmit triggered');
     setIsSubmitting(true);
     setError(null);
 
+    if (!items || items.length === 0) {
+      setError('Your cart is empty.');
+      setIsSubmitting(false);
+      toast.error('Cannot checkout with an empty cart.');
+      return;
+    }
+
     try {
-      console.log('Form data:', formData); // Keep log
+      console.log('Form data:', formData);
       const fulfillmentData = prepareFulfillmentData(formData);
-      console.log('Prepared fulfillment data:', fulfillmentData); // Keep log
+      console.log('Prepared fulfillment data:', fulfillmentData);
 
-      let pickupTimeValue = format(new Date(), 'yyyy-MM-dd') + 'T12:00:00'; // Default time
-      
+      // Pickup time string for customerInfo (only if pickup)
+      let customerPickupTimeString : string | undefined = undefined;
       if (formData.fulfillmentMethod === 'pickup') {
-        const pickupData = formData as PickupFormData;
-        pickupTimeValue = `${pickupData.pickupDate}T${pickupData.pickupTime}:00`;
-        console.log('Calculated pickup time:', pickupTimeValue); // Keep log
+        const pickupData = formData as PickupFormData; 
+        customerPickupTimeString = `${pickupData.pickupDate}T${pickupData.pickupTime}:00`; 
+        console.log('Calculated customer pickup time string:', customerPickupTimeString);
       }
       
-      console.log('Calling /api/square/checkout...'); // Keep log
-      // Create a Square Checkout session via our API
-      const response = await fetch('/api/square/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            variantId: item.variantId,
-          })),
-          customerInfo: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            pickupTime: pickupTimeValue,
-          },
-          fulfillment: fulfillmentData,
-        }),
-      });
+      console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
 
-      console.log('API response status:', response.status); // Keep log
-      const responseData = await response.json();
-      console.log('API response data:', responseData); // Keep log
+      // Prepare payload for the server action
+      const actionPayload = {
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price, // Ensure this is in DOLLARS
+          quantity: item.quantity,
+          variantId: item.variantId,
+        })),
+        customerInfo: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          pickupTime: customerPickupTimeString, // Pass the string or undefined
+        },
+        fulfillment: fulfillmentData, // Pass the prepared fulfillment object
+      };
 
-      if (!response.ok || !responseData.success) {
-        console.error('API error:', responseData.error || 'Response not OK'); // Keep log
-        throw new Error(responseData.error || 'Failed to create checkout session');
+      // Create an order and get Square Checkout URL via Server Action
+      const result = await createOrderAndGenerateCheckoutUrl(actionPayload);
+      console.log('Server action result:', result);
+
+      if (!result.success || !result.checkoutUrl) {
+        console.error('Server action error:', result.error);
+        throw new Error(result.error || 'Failed to create checkout session');
       }
 
-      console.log('Attempting redirect to:', responseData.checkoutUrl); // Keep log
-      // Redirect to Square's hosted checkout page
-      window.location.href = responseData.checkoutUrl;
-      console.log('Redirect command issued.'); // Keep log
+      // Clear cart on successful redirect initiation? (Consider moving to confirmation page)
+      // clearCart();
+
+      console.log('Attempting redirect to Square Checkout:', result.checkoutUrl);
+      window.location.href = result.checkoutUrl;
+      // Don't set isSubmitting to false here, page navigates away
 
     } catch (error) {
-      console.error('Checkout error caught in onSubmit:', error); // Keep modified log
+      console.error('Checkout error caught in onSubmit:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       toast.error('Failed to initialize checkout. Please try again.');
-    } finally {
-      console.log('onSubmit finished, setting isSubmitting to false.'); // Keep log
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only set false on error
     }
   };
 
   // Revert to original getErrorMessage logic
-  const getErrorMessage = (field: string): string | undefined => {
-    // Original logic relying on type casting
-    if (fulfillmentMethod === 'pickup') {
-      return errors[field as keyof typeof errors]?.message;
-    } else if (fulfillmentMethod === 'delivery') {
-      if (field.startsWith('deliveryAddress.')) {
-        // Access nested field - requires careful typing or casting
-        const addressField = field.split('.')[1];
-        // This casting might be unsafe, but reflects original approach
-        return (errors as any)?.deliveryAddress?.[addressField]?.message;
-      } else if (field === 'deliveryDate' || field === 'deliveryTime') {
-        return errors[field as keyof typeof errors]?.message;
-      }
-    } else if (fulfillmentMethod === 'shipping') {
-       if (field.startsWith('shippingAddress.')) {
-        const addressField = field.split('.')[1];
-         // This casting might be unsafe, but reflects original approach
-        return (errors as any)?.shippingAddress?.[addressField]?.message;
-      } else if (field === 'shippingMethod') {
-        return errors[field as keyof typeof errors]?.message;
-      }
+  const getErrorMessage = (field: keyof CheckoutFormData | string): string | undefined => {
+    // Access nested errors correctly
+    const fieldParts = field.split('.');
+    let currentError: any = errors;
+    for (const part of fieldParts) {
+      if (!currentError?.[part]) return undefined;
+      currentError = currentError[part];
     }
-    // Check base fields
-    return errors[field as keyof typeof errors]?.message;
+    return currentError?.message;
   };
 
   if (items.length === 0) {
@@ -420,7 +370,6 @@ export default function CheckoutPage() {
           />
 
           <form
-            // Remove void from handleSubmit
             onSubmit={handleSubmit(onSubmit, (errors) => {
               console.error("Form validation failed:", errors);
               toast.error("Please fix the errors in the form before submitting.");
@@ -483,7 +432,6 @@ export default function CheckoutPage() {
                         id="pickupDate"
                         type="date"
                         min={minDate}
-                        // {...register('pickupDate')} // Comment out register for non-simple field
                         className={errors.name ? 'border-red-500' : ''}
                       />
                     </div>
@@ -493,7 +441,6 @@ export default function CheckoutPage() {
                       <Input
                         id="pickupTime"
                         type="time"
-                        // {...register('pickupTime')} // Comment out register for non-simple field
                         className={errors.name ? 'border-red-500' : ''}
                       />
                     </div>
@@ -511,12 +458,6 @@ export default function CheckoutPage() {
                 <>
                   <h2 className="mb-4 text-xl font-semibold">Delivery Details</h2>
                   <div className="space-y-6">
-                    {/* <AddressForm
-                      form={form}
-                      prefix="deliveryAddress"
-                      title="Delivery Address"
-                    /> */}{/* Comment out AddressForm */}
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="deliveryDate">Delivery Date</Label>
@@ -524,7 +465,6 @@ export default function CheckoutPage() {
                           id="deliveryDate"
                           type="date"
                           min={minDate}
-                          // {...register('deliveryDate')} // Comment out register for non-simple field
                           className={errors.name ? 'border-red-500' : ''}
                         />
                       </div>
@@ -534,7 +474,6 @@ export default function CheckoutPage() {
                         <Input
                           id="deliveryTime"
                           type="time"
-                          // {...register('deliveryTime')} // Comment out register for non-simple field
                           className={errors.name ? 'border-red-500' : ''}
                         />
                       </div>
@@ -544,7 +483,6 @@ export default function CheckoutPage() {
                       <Label htmlFor="deliveryInstructions">Delivery Instructions (optional)</Label>
                       <Input
                         id="deliveryInstructions"
-                        // {...register('deliveryInstructions')} // Comment out register for non-simple field
                       />
                     </div>
                   </div>
@@ -555,23 +493,23 @@ export default function CheckoutPage() {
                 <>
                   <h2 className="mb-4 text-xl font-semibold">Shipping Details</h2>
                   <div className="space-y-6">
-                    {/* <AddressForm
-                      form={form}
-                      prefix="shippingAddress"
-                      title="Shipping Address"
-                    /> */}{/* Comment out AddressForm */}
-
                     <div>
                       <Label htmlFor="shippingMethod">Shipping Method</Label>
-                      <select
-                        id="shippingMethod"
-                        // {...register('shippingMethod')} // Comment out register for non-simple field
-                        className={`w-full rounded-md border px-3 py-2 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-                      >
-                        <option value="">Select a shipping method</option>
-                        <option value="standard">Standard Shipping (3-5 business days)</option>
-                        <option value="express">Express Shipping (1-2 business days)</option>
-                      </select>
+                      <Controller
+                        name="shippingMethod"
+                        control={control}
+                        render={({ field }) => (
+                          <select
+                            id="shippingMethod"
+                            {...field}
+                            className={`w-full rounded-md border px-3 py-2 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                          >
+                            <option value="">Select a shipping method</option>
+                            <option value="standard">Standard Shipping (3-5 business days)</option>
+                            <option value="express">Express Shipping (1-2 business days)</option>
+                          </select>
+                        )}
+                      />
                     </div>
                   </div>
                 </>
@@ -588,7 +526,6 @@ export default function CheckoutPage() {
               type="submit"
               className="w-full"
               disabled={isSubmitting}
-              // Remove temporary onClick
             >
               {isSubmitting ? "Processing..." : "Continue to Payment"}
             </Button>

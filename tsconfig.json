@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,9 +31,22 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "jest.setup.js"],
-  "exclude": ["node_modules", "react-app/vite.config.ts", "**/vite.config.ts", "react-app/dist"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "jest.setup.js",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "react-app/vite.config.ts",
+    "**/vite.config.ts",
+    "react-app/dist"
+  ]
 }

@@ -73,18 +73,22 @@ export default function AccountPage() {
     <main className="container mx-auto py-8">
       <h1 className="mb-6 text-3xl font-bold">My Account</h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="grid w-full grid-cols-2 md:w-auto">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full space-y-8 md:w-auto"
+      >
+        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-4">
+        <TabsContent value="profile">
           <AccountProfile user={user} onSignOut={handleSignOut} />
         </TabsContent>
 
         <TabsContent value="orders">
-          <OrderHistory />
+          <OrderHistory isActive={activeTab === 'orders'} />
         </TabsContent>
       </Tabs>
     </main>

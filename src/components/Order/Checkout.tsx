@@ -1,56 +1,91 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { createOrderAndGenerateCheckoutUrl } from '@/app/actions'; // Import the server action
 
-interface CheckoutProps {
-  productType: string;
-  items: Array<{
+// Define types more precisely if possible, aligning with server action schemas
+interface CartItem {
     id: string;
     name: string;
-    price: number;
+    price: number; // Assuming dollars
     quantity: number;
     variantId?: string;
-  }>;
-  customerInfo?: {
+}
+
+interface CustomerInfo {
     name: string;
     email: string;
     phone: string;
-  };
 }
+
+interface CheckoutProps {
+  productType: string;
+  items: CartItem[];
+  customerInfo: CustomerInfo; // Make customerInfo mandatory if always needed here
+}
+
+// Define the expected return type from the server action
+type ServerActionResult = {
+    success: boolean;
+    error: string | null;
+    checkoutUrl: string | null;
+    orderId: string | null;
+  };
 
 const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
-      // Call our backend API to create a Square Checkout link
-      const response = await fetch('/api/square/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items,
-          customerInfo,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+        // Ensure items and customerInfo are present
+      if (!items || items.length === 0) {
+        toast.error('Cart is empty.');
+        setIsLoading(false);
+        return;
       }
-      
+      if (!customerInfo) {
+          toast.error('Customer information is missing.');
+          setIsLoading(false);
+          return;
+      }
+
+      // --- Call Server Action instead of fetch --- 
+      console.log('Calling createOrderAndGenerateCheckoutUrl server action from Checkout component...');
+
+      // !!! IMPORTANT: Create a default fulfillment object. !!!
+      // This component doesn't receive fulfillment details, so we assume a default.
+      // This might need adjustment based on how this component is used.
+      const defaultFulfillment = {
+          method: 'pickup' as const, // Defaulting to pickup
+          // Add default address/time properties if required by the action's validation,
+          // otherwise, keep it minimal based on what the action handles.
+      };
+
+      const actionPayload = {
+          items: items, // Pass items directly
+          customerInfo: customerInfo, // Pass customerInfo
+          fulfillment: defaultFulfillment // Use the default fulfillment
+      };
+
+      // Explicitly type the result
+      const result: ServerActionResult = await createOrderAndGenerateCheckoutUrl(actionPayload);
+      console.log('Server action result from Checkout component:', result);
+
+      if (!result.success || !result.checkoutUrl) {
+        throw new Error(result.error || 'Failed to create checkout session via server action.');
+      }
+
       // Redirect to the Square-hosted checkout page
-      window.location.href = data.checkoutUrl;
+      console.log('Redirecting to Square Checkout:', result.checkoutUrl);
+      window.location.href = result.checkoutUrl;
+
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error('Checkout error in Checkout component:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to initiate checkout');
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(false); // Ensure loading state is turned off on error
+    } 
+    // No finally block needed as success redirects away
   };
 
   return (
@@ -75,8 +110,8 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo })
       </div>
       
       <Button 
-        onClick={handleCheckout} 
-        disabled={isLoading} 
+        onClick={handleCheckout}
+        disabled={isLoading || !customerInfo || items.length === 0} // Add disabled checks
         className="w-full mt-6"
       >
         {isLoading ? 'Processing...' : 'Proceed to Checkout'}

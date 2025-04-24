@@ -17,16 +17,15 @@ export function FulfillmentSelector({
   className = '',
 }: FulfillmentSelectorProps) {
   return (
-    <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-medium">How would you like to receive your order?</h3>
-      
+    <div className={`mb-8 flex flex-col gap-2 ${className}`}>
+      <h3 className="text-lg font-medium mb-1">How would you like to receive your order?</h3>
       <RadioGroup
         value={selectedMethod}
         onValueChange={(value) => onChange(value as FulfillmentMethod)}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+        className="fulfillment-options grid grid-cols-1 gap-4 sm:grid-cols-3"
       >
-        <div className={`relative flex items-center space-x-2 rounded-lg border p-4 ${
-          selectedMethod === 'pickup' ? 'border-primary bg-primary/5' : 'border-border'
+        <div className={`fulfillment-option relative flex flex-col justify-between items-start min-h-[120px] h-full w-full space-y-2 rounded-xl border p-5 transition-colors duration-150 cursor-pointer shadow-sm focus-within:ring-2 focus-within:ring-primary/60 hover:border-primary/60 ${
+          selectedMethod === 'pickup' ? 'border-primary bg-primary/5 ring-2 ring-primary/40' : 'border-border bg-white'
         }`}>
           <RadioGroupItem value="pickup" id="pickup" className="absolute right-4 top-4" />
           <Store className="h-5 w-5 text-primary" />
@@ -38,8 +37,8 @@ export function FulfillmentSelector({
           </Label>
         </div>
 
-        <div className={`relative flex items-center space-x-2 rounded-lg border p-4 ${
-          selectedMethod === 'delivery' ? 'border-primary bg-primary/5' : 'border-border'
+        <div className={`fulfillment-option relative flex flex-col justify-between items-start min-h-[120px] h-full w-full space-y-2 rounded-xl border p-5 transition-colors duration-150 cursor-pointer shadow-sm focus-within:ring-2 focus-within:ring-primary/60 hover:border-primary/60 ${
+          selectedMethod === 'delivery' ? 'border-primary bg-primary/5 ring-2 ring-primary/40' : 'border-border bg-white'
         }`}>
           <RadioGroupItem value="delivery" id="delivery" className="absolute right-4 top-4" />
           <HomeIcon className="h-5 w-5 text-primary" />
@@ -51,8 +50,8 @@ export function FulfillmentSelector({
           </Label>
         </div>
 
-        <div className={`relative flex items-center space-x-2 rounded-lg border p-4 ${
-          selectedMethod === 'shipping' ? 'border-primary bg-primary/5' : 'border-border'
+        <div className={`fulfillment-option relative flex flex-col justify-between items-start min-h-[120px] h-full w-full space-y-2 rounded-xl border p-5 transition-colors duration-150 cursor-pointer shadow-sm focus-within:ring-2 focus-within:ring-primary/60 hover:border-primary/60 ${
+          selectedMethod === 'shipping' ? 'border-primary bg-primary/5 ring-2 ring-primary/40' : 'border-border bg-white'
         }`}>
           <RadioGroupItem value="shipping" id="shipping" className="absolute right-4 top-4" />
           <Truck className="h-5 w-5 text-primary" />

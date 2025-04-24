@@ -9,25 +9,6 @@ import { prisma } from '@/lib/prisma'; // Import Prisma client
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { Decimal } from '@prisma/client/runtime/library';
 
-// Define product type expected by ProductGrid (Consider consolidating with a global type)
-// Using GridProduct imported from @/types/product instead
-/*
-interface Product {
-  id: string; // Changed from _id
-  name: string;
-  description?: string;
-  price: number;
-  images?: string[]; // Expects an array of strings (URLs)
-  slug: string; // Changed from { current: string }
-  featured?: boolean;
-  variants?: Array<{
-    id: string;
-    name: string;
-    price?: number;
-  }>;
-}
-*/
-
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
   if (!images) return [];
@@ -65,39 +46,27 @@ function normalizeImages(images: any): string[] {
   return [];
 }
 
-// Define the expected props structure, noting params is a Promise
+// Updated interface to match Next.js 15.3.1 expectations
 interface CategoryPageProps {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
-
-// Map frontend slugs to the corresponding database category names
-// This might not be necessary if slugs are stored directly in the Category table
-/*
-const SLUG_TO_CATEGORY_MAP: Record<string, string> = {
-  'alfajores': 'Desserts',
-  'desserts': 'Desserts',
-  'empanadas': 'Appetizers',
-  'catering': 'Catering',
-};
-*/
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   alfajores: "Indulge in the delicate delight of our signature Alfajores. These classic South American butter cookies boast a tender, crumbly texture, lovingly filled with creamy dulce de leche. Explore a variety of tempting flavors, from traditional favorites to unique seasonal creations – the perfect sweet treat for yourself or a thoughtful gift.",
   empanadas: "Discover our authentic, hand-folded empanadas, flash-frozen to preserve their freshness and flavor. Each 4-pack features golden, flaky pastry enveloping savory fillings inspired by Latin American culinary traditions. From the aromatic Huacatay Chicken to hearty Argentine Beef, these easy-to-prepare delights bring restaurant-quality taste to your home in minutes."
 };
 
-export default async function CategoryPage({ params: paramsPromise }: CategoryPageProps) {
-  // Await the params promise to get the actual params object
-  const params = await paramsPromise;
-  const slug = params.slug;
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
+  // Need to await params now since it's a Promise
+  const { slug } = await params;
+  // Await searchParams if provided
+  if (searchParams) await searchParams;
 
   // Fetch the category from the database using the slug
   const category = await prisma.category.findUnique({
     where: {
       // Assuming the category table has a unique 'slug' field
-      // If not, adjust the query (e.g., findFirst where name matches slug mapping)
       slug: slug, 
     },
   });

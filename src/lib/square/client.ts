@@ -303,6 +303,27 @@ const squareClient = {
       
       const data = await httpsRequest(options, request);
       return { result: data };
+    },
+
+    /**
+     * Retrieves a Square order by ID.
+     * @param orderId - The Square order ID.
+     * @returns The order result from Square.
+     */
+    retrieveOrder: async (orderId: string): Promise<{ result: any }> => {
+      logger.info(`Retrieving Square order with ID: ${orderId}`);
+      const options = {
+        hostname: apiHost,
+        path: `/v2/orders/${orderId}`,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Square-Version': '2023-12-13',
+          'Content-Type': 'application/json'
+        }
+      };
+      const data = await httpsRequest(options);
+      return { result: data };
     }
   },
 
@@ -310,7 +331,6 @@ const squareClient = {
   paymentsApi: {
     createPayment: async (request: any) => {
       logger.info('Calling Square payments API via HTTPS');
-      
       const options = {
         hostname: apiHost,
         path: '/v2/payments',
@@ -321,8 +341,27 @@ const squareClient = {
           'Content-Type': 'application/json'
         }
       };
-      
       const data = await httpsRequest(options, request);
+      return { result: data };
+    },
+    /**
+     * Retrieves a Square payment by ID.
+     * @param paymentId - The Square payment ID.
+     * @returns The payment result from Square.
+     */
+    getPayment: async (paymentId: string): Promise<{ result: any }> => {
+      logger.info(`Retrieving Square payment with ID: ${paymentId}`);
+      const options = {
+        hostname: apiHost,
+        path: `/v2/payments/${paymentId}`,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Square-Version': '2023-12-13',
+          'Content-Type': 'application/json'
+        }
+      };
+      const data = await httpsRequest(options);
       return { result: data };
     }
   }
