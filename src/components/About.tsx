@@ -54,12 +54,10 @@ export const About: React.FC<AboutProps> = ({
           </div>
         </div>
 
-        {/* Nueva sección de información sobre James Schenk con texto a la izquierda e imagen a la derecha */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           <div className="flex flex-col justify-center space-y-6 max-w-xl">
             {' '}
             {/* Texto a la izquierda por defecto */}
-            <h3 className="font-bold text-3xl">JAMES SCHENK</h3>
             <p className="leading-relaxed">
               For over 20 years, native San Franciscan James Schenk has applied his personal vision
               of “Modern Latino” cuisine to become a mentor of gastronomical trends. James became a
