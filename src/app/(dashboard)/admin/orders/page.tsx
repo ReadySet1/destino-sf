@@ -24,6 +24,9 @@ type OrderWithItems = {
     };
     [key: string]: string | number | boolean | null | undefined | object;
   }>;
+  trackingNumber?: string | null;
+  shippingCarrier?: string | null;
+  fulfillmentType?: string | null;
 };
 
 // Define the shape of the resolved params
@@ -40,11 +43,31 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
     orderBy: {
       createdAt: 'desc',
     },
-    include: {
+    select: {
+      id: true,
+      status: true,
+      total: true,
+      customerName: true,
+      pickupTime: true,
+      createdAt: true,
+      trackingNumber: true,
+      shippingCarrier: true,
+      fulfillmentType: true,
       items: {
-        include: {
-          product: true,
-          variant: true,
+        select: {
+          id: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          variant: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -59,6 +82,9 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
       customerName: string;
       pickupTime: Date | string;
       createdAt: Date | string;
+      trackingNumber?: string | null;
+      shippingCarrier?: string | null;
+      fulfillmentType?: string | null;
       items: Array<{
         id: string;
         product: {
@@ -93,6 +119,9 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
               name: '',
             },
       })),
+      trackingNumber: order.trackingNumber,
+      shippingCarrier: order.shippingCarrier,
+      fulfillmentType: order.fulfillmentType,
     })
   ) as OrderWithItems[];
 
@@ -142,6 +171,9 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                   Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tracking
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -173,6 +205,37 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {/* Tracking info: only show if trackingNumber exists */}
+                    {order.trackingNumber ? (
+                      <span>
+                        <span className="font-mono" aria-label="Tracking Number">{order.trackingNumber}</span>
+                        {order.shippingCarrier && (
+                          <>
+                            {' '}<span>({order.shippingCarrier})</span>
+                            {/* Tracking link for major carriers */}
+                            {(() => {
+                              const carrier = order.shippingCarrier?.toLowerCase();
+                              let url: string | null = null;
+                              if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${order.trackingNumber}`;
+                              else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${order.trackingNumber}`;
+                              else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.trackingNumber}`;
+                              if (url) {
+                                return (
+                                  <>
+                                    {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${order.shippingCarrier}`}>Track</a>
+                                  </>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <Link

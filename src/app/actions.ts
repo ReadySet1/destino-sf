@@ -191,8 +191,8 @@ export const signInAction = async (formData: FormData) => {
   if (profile.role === UserRole.ADMIN) { // Use Prisma enum for role comparison
     return redirect('/admin');
   } else {
-    // Redirect non-admins to the homepage or a customer dashboard
-    return redirect('/'); // Or change to e.g., '/dashboard'
+    // Redirect non-admins to the products page
+    return redirect('/products'); // Changed from '/'
   }
 };
 
@@ -583,6 +583,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 email: customerInfo.email,
                 phone: customerInfo.phone,
                 pickupTime: pickupDateValue,
+                // @ts-ignore - Type might not be updated yet after migration
+                fulfillmentType: fulfillment.method, // Save the fulfillment method
                 items: {
                     create: orderItemsData,
                 },

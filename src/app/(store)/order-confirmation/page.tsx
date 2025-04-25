@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'; // Import Prisma client
 import type { Order, Prisma } from '@prisma/client'; // Import Order type and Prisma namespace
 
 // Type fetched directly from Prisma (might include Decimal)
-type FetchedOrderData = Pick<Order, 'id' | 'status' | 'total' | 'customerName' | 'pickupTime' | 'paymentStatus'> & {
+type FetchedOrderData = Pick<Order, 'id' | 'status' | 'total' | 'customerName' | 'pickupTime' | 'paymentStatus' | 'trackingNumber' | 'shippingCarrier'> & {
   items: Array<{
     id: string;
     quantity: number;
@@ -16,7 +16,7 @@ type FetchedOrderData = Pick<Order, 'id' | 'status' | 'total' | 'customerName' |
 } | null;
 
 // Type safe to pass to client components (Decimals converted to number)
-export type SerializableFetchedOrderData = Pick<Order, 'id' | 'status' | 'customerName' | 'pickupTime' | 'paymentStatus'> & {
+export type SerializableFetchedOrderData = Pick<Order, 'id' | 'status' | 'customerName' | 'pickupTime' | 'paymentStatus' | 'trackingNumber' | 'shippingCarrier'> & {
   total: number | null;
   items: Array<{
     id: string;
@@ -52,6 +52,8 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
           customerName: true,
           pickupTime: true,
           paymentStatus: true,
+          trackingNumber: true,
+          shippingCarrier: true,
           items: {
             select: {
               id: true,

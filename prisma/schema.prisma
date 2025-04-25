@@ -69,24 +69,27 @@ model Variant {
 }
 
 model Order {
-  id            String        @id @default(uuid()) @db.Uuid
-  squareOrderId String?       @unique
-  status        OrderStatus   @default(PENDING)
-  total         Decimal       @db.Decimal(10, 2)
-  userId        String?       @db.Uuid
-  customerName  String
-  email         String
-  phone         String
-  pickupTime    DateTime
-  notes         String?
-  cancelReason  String?
-  paymentStatus PaymentStatus @default(PENDING)
-  rawData       Json?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  profile       Profile?      @relation(fields: [userId], references: [id])
-  items         OrderItem[]
-  payments      Payment[]
+  id              String        @id @default(uuid()) @db.Uuid
+  squareOrderId   String?       @unique
+  status          OrderStatus   @default(PENDING)
+  total           Decimal       @db.Decimal(10, 2)
+  userId          String?       @db.Uuid
+  customerName    String
+  email           String
+  phone           String
+  pickupTime      DateTime
+  notes           String?
+  cancelReason    String?
+  fulfillmentType String? // Type of fulfillment (e.g., 'pickup', 'shipping', 'delivery')
+  trackingNumber  String? // Tracking number for shipped orders
+  shippingCarrier String? // Carrier for shipped orders (e.g., 'UPS', 'FedEx')
+  paymentStatus   PaymentStatus @default(PENDING)
+  rawData         Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  profile         Profile?      @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  payments        Payment[]
 
   @@index([userId])
   @@index([status])
@@ -110,16 +113,16 @@ model Payment {
 }
 
 model Refund {
-  id             String    @id @default(uuid()) @db.Uuid
-  squareRefundId String    @unique
-  paymentId      String    @db.Uuid
-  amount         Decimal   @db.Decimal(10, 2)
+  id             String   @id @default(uuid()) @db.Uuid
+  squareRefundId String   @unique
+  paymentId      String   @db.Uuid
+  amount         Decimal  @db.Decimal(10, 2)
   reason         String?
   status         String
   rawData        Json?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  payment        Payment   @relation(fields: [paymentId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  payment        Payment  @relation(fields: [paymentId], references: [id])
 
   @@index([paymentId])
 }
@@ -206,6 +209,8 @@ enum OrderStatus {
   COMPLETED
   CANCELLED
   FULFILLMENT_UPDATED
+  SHIPPING // Order has been shipped
+  DELIVERED // Order has been delivered
 }
 
 enum PaymentStatus {

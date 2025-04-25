@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { OrderStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import { SquareClient } from 'square';
+import type { Square } from 'square'; // Import the Square namespace for types
 
 type SquareEventType =
   | 'order.created'
@@ -27,7 +29,6 @@ interface SquareWebhookPayload {
   };
 }
 
-
 // Helper function to map Square state strings to your OrderStatus enum
 function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStatus {
   switch (squareState?.toUpperCase()) {
@@ -39,17 +40,10 @@ function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStat
       return OrderStatus.CANCELLED;
     case 'DRAFT':
        return OrderStatus.PENDING;
-    // Map fulfillment states if needed, or handle in specific handlers
-    case 'PROPOSED': // From fulfillment update
-    case 'PREPARED': // From fulfillment update
-        return OrderStatus.READY;
-    case 'READY': // Explicitly add READY state from fulfillment if Square uses it
-        return OrderStatus.READY;
-    // Add case for PREPARED specifically if needed
-    // case 'PREPARED': // From fulfillment update
-    //    return OrderStatus.READY;
+    // REMOVED: Fulfillment states like PROPOSED, PREPARED, READY are handled separately below
     default:
-      console.warn(`Unhandled Square order state: ${squareState}. Defaulting to PENDING.`);
+      // Log unhandled *order* states. Fulfillment states are handled elsewhere.
+      console.warn(`Unhandled Square *order* state: ${squareState}. Defaulting to PENDING.`);
       return OrderStatus.PENDING;
   }
 }
@@ -83,28 +77,157 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 
 async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
-  const fulfillmentUpdateData = data.object.order_fulfillment_updated as any;
+  // TODO: Define a more specific type for fulfillment update data if possible
+  const fulfillmentUpdateData = data.object.order_fulfillment_updated as any; 
   console.log('Processing order.fulfillment.updated event:', data.id);
 
-  const newFulfillmentState = fulfillmentUpdateData?.fulfillment_update?.[0]?.new_state;
-  const orderStatus = mapSquareStateToOrderStatus(newFulfillmentState);
+  const squareOrderId = data.id;
+  const fulfillmentUpdate = fulfillmentUpdateData?.fulfillment_update?.[0];
+  const newFulfillmentState = fulfillmentUpdate?.new_state?.toUpperCase();
+  const fulfillmentUid = fulfillmentUpdate?.fulfillment_uid;
 
+  if (!newFulfillmentState || !fulfillmentUid) {
+    console.warn(`No new_state or fulfillment_uid found in fulfillment update for order ${squareOrderId}. Skipping.`);
+    return;
+  }
+
+  let newStatus: OrderStatus | undefined;
+  let trackingData: { trackingNumber?: string | null; shippingCarrier?: string | null } = {}; // Use null for Prisma fields
+
+  // --- Fetch fulfillment type and potentially existing tracking info --- 
+  let fulfillmentType: 'pickup' | 'shipping' | 'delivery' | 'unknown' = 'unknown';
   try {
-      await prisma.order.update({
-          where: { squareOrderId: data.id },
-          data: {
-              status: orderStatus,
-              rawData: data.object as unknown as Prisma.InputJsonValue,
-          },
+      const order = await prisma.order.findUnique({
+          where: { squareOrderId },
+          select: { fulfillmentType: true, trackingNumber: true, shippingCarrier: true }
       });
-  } catch (error: any) {
-      if (error.code === 'P2025') {
-          console.warn(`Order with squareOrderId ${data.id} not found for fulfillment update. It might be created later.`);
-          // Optionally, create the order here as a fallback, similar to handleOrderCreated
+
+      if (order && order.fulfillmentType) {
+          const type = order.fulfillmentType.toLowerCase();
+          if (type === 'pickup' || type === 'shipping' || type === 'delivery') {
+             fulfillmentType = type as 'pickup' | 'shipping' | 'delivery';
+          } else {
+             console.warn(`Order ${squareOrderId} has unexpected fulfillmentType: ${order.fulfillmentType}`);
+          }
+          trackingData.trackingNumber = order.trackingNumber;
+          trackingData.shippingCarrier = order.shippingCarrier;
       } else {
-          console.error(`Error updating order ${data.id} for fulfillment:`, error);
-          throw error; // Re-throw other errors
+           console.warn(`Fulfillment type not found or null for order ${squareOrderId}. Status mapping might be inaccurate.`);
       }
+  } catch (dbError: any) {
+       console.error(`Error fetching order ${squareOrderId} to determine fulfillment type:`, dbError);
+  }
+  // --- End Fetch fulfillment type ---
+
+  // --- Extract Tracking Info if applicable ---
+  const shipmentDetails = fulfillmentUpdateData?.shipment_details;
+  if (shipmentDetails && fulfillmentType === 'shipping') {
+      if (shipmentDetails.tracking_number) {
+          trackingData.trackingNumber = shipmentDetails.tracking_number;
+          console.log(`Extracted tracking number ${trackingData.trackingNumber} for order ${squareOrderId}`);
+      }
+      if (shipmentDetails.carrier) {
+          trackingData.shippingCarrier = shipmentDetails.carrier;
+           console.log(`Extracted shipping carrier ${trackingData.shippingCarrier} for order ${squareOrderId}`);
+      }
+  }
+  // --- End Extract Tracking Info ---
+
+  // Map status based on fulfillment type and state
+  switch (fulfillmentType) {
+    case 'pickup':
+      if (newFulfillmentState === 'PROPOSED' || newFulfillmentState === 'RESERVED') {
+        newStatus = OrderStatus.PROCESSING;
+      } else if (newFulfillmentState === 'PREPARED') {
+        newStatus = OrderStatus.READY;
+      } else if (newFulfillmentState === 'COMPLETED') {
+        newStatus = OrderStatus.COMPLETED;
+      } else if (newFulfillmentState === 'CANCELED') {
+        newStatus = OrderStatus.CANCELLED;
+      }
+      break;
+    case 'shipping':
+       if (newFulfillmentState === 'PROPOSED' || newFulfillmentState === 'RESERVED') {
+         newStatus = OrderStatus.PROCESSING;
+       } else if (newFulfillmentState === 'PREPARED') { 
+         newStatus = OrderStatus.SHIPPING;
+       } else if (newFulfillmentState === 'COMPLETED') {
+         newStatus = OrderStatus.DELIVERED;
+       } else if (newFulfillmentState === 'CANCELED') {
+         newStatus = OrderStatus.CANCELLED;
+       } else {
+         console.log(`Unhandled shipping state '${newFulfillmentState}' for order ${squareOrderId}. Check Square docs.`);
+         if(trackingData.trackingNumber) {
+            newStatus = OrderStatus.SHIPPING;
+         }
+       }
+       break;
+    default:
+      console.warn(`Unhandled fulfillment type '${fulfillmentType}' or state '${newFulfillmentState}' for order ${squareOrderId}. No status update determined.`);
+      break;
+  }
+
+  // Determine data to update
+  const updatePayload: Prisma.OrderUpdateInput = {
+      rawData: data.object as unknown as Prisma.InputJsonValue,
+      updatedAt: new Date(),
+  };
+
+  if (newStatus) {
+      updatePayload.status = newStatus;
+  }
+  // Only update tracking info if it has a new value (could be null if removed in Square)
+  if (trackingData.trackingNumber !== undefined) {
+      updatePayload.trackingNumber = trackingData.trackingNumber;
+  }
+  if (trackingData.shippingCarrier !== undefined) {
+      updatePayload.shippingCarrier = trackingData.shippingCarrier;
+  }
+
+  // Only update if there's something new (status or tracking info)
+  if (newStatus || updatePayload.trackingNumber !== undefined || updatePayload.shippingCarrier !== undefined) {
+      console.log(`Attempting to update order ${squareOrderId} with status: ${newStatus ?? 'unchanged'}, tracking: ${trackingData.trackingNumber ?? 'N/A'}, carrier: ${trackingData.shippingCarrier ?? 'N/A'}`);
+      try {
+          let applyUpdate = true;
+          if (newStatus) {
+              const currentOrder = await prisma.order.findUnique({
+                  where: { squareOrderId },
+                  select: { status: true }
+              });
+              const isDowngrade =
+                  (currentOrder?.status === OrderStatus.READY && newStatus === OrderStatus.PROCESSING) ||
+                  (currentOrder?.status === OrderStatus.SHIPPING && newStatus === OrderStatus.PROCESSING) ||
+                  (currentOrder?.status === OrderStatus.COMPLETED && newStatus !== OrderStatus.COMPLETED && newStatus !== OrderStatus.DELIVERED) ||
+                  (currentOrder?.status === OrderStatus.DELIVERED && newStatus !== OrderStatus.DELIVERED) ||
+                  (currentOrder?.status === OrderStatus.CANCELLED && newStatus !== OrderStatus.CANCELLED);
+
+              if (currentOrder && isDowngrade) {
+                  console.log(`Preventing status downgrade for order ${squareOrderId}. Current: ${currentOrder.status}, Proposed Update: ${newStatus}. Status update skipped.`);
+                  delete updatePayload.status; 
+                  if (updatePayload.trackingNumber === undefined && updatePayload.shippingCarrier === undefined) {
+                      applyUpdate = false;
+                  }
+              }
+          }
+          
+          if (applyUpdate && Object.keys(updatePayload).length > 2) {
+              await prisma.order.update({
+                  where: { squareOrderId: squareOrderId },
+                  data: updatePayload,
+              });
+              console.log(`Successfully updated order ${squareOrderId}.`);
+          } else {
+              console.log(`No applicable updates found for order ${squareOrderId} in this webhook.`);
+          }
+      } catch (error: any) {
+          if (error.code === 'P2025') {
+              console.warn(`Order with squareOrderId ${squareOrderId} not found for fulfillment update.`);
+          } else {
+              console.error(`Error updating order ${squareOrderId}:`, error);
+          }
+      }
+  } else {
+      console.log(`No status or tracking update needed for order ${squareOrderId} based on this webhook.`);
   }
 }
 
@@ -346,6 +469,27 @@ async function handleRefundUpdated(payload: SquareWebhookPayload): Promise<void>
             throw error;
         }
     }
+}
+
+const client = new SquareClient({
+  token: process.env.SQUARE_ACCESS_TOKEN,
+  environment: 'production', // or 'sandbox'
+});
+
+async function getOrderTracking(orderId: string) {
+  const response = await client.orders.get({ orderId }); // Get the full response
+  const order = response.order;
+  if (!order || !order.fulfillments) return null;
+
+  // Find the SHIPMENT fulfillment using the SDK's Fulfillment type
+  const shipment = order.fulfillments.find((f: Square.Fulfillment) => f.type === 'SHIPMENT');
+  if (shipment && shipment.shipmentDetails) {
+    return {
+      trackingNumber: shipment.shipmentDetails.trackingNumber,
+      carrier: shipment.shipmentDetails.carrier,
+    };
+  }
+  return null;
 }
 
 /**

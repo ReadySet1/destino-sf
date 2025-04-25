@@ -4,7 +4,6 @@ import { signUpAction } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { SmtpMessage } from '../smtp-message';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -88,10 +87,6 @@ export default function Signup() {
           {isLoading ? 'Creating account...' : 'Sign up'}
         </button>
       </form>
-
-      <div className="mt-6">
-        <SmtpMessage />
-      </div>
     </>
   );
 }

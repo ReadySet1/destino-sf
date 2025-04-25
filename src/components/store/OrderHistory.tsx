@@ -122,6 +122,9 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
     );
   }
 
+  // Determine if any order has tracking data
+  const hasTrackingData = orders.some(order => !!order.trackingNumber);
+
   return (
     <Card>
       <CardHeader>
@@ -135,6 +138,7 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              {hasTrackingData && <TableHead>Tracking</TableHead>}
               <TableHead className="text-right">Total</TableHead>
               {/* Add more columns if needed */}
             </TableRow>
@@ -154,6 +158,38 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
                     {order.paymentStatus || 'N/A'}
                   </Badge>
                 </TableCell>
+                {hasTrackingData && (
+                  <TableCell>
+                    {order.trackingNumber ? (
+                      <span>
+                        <span className="font-mono" aria-label="Tracking Number">{order.trackingNumber}</span>
+                        {order.shippingCarrier && (
+                          <>
+                            {' '}<span>({order.shippingCarrier})</span>
+                            {/* Tracking link for major carriers */}
+                            {(() => {
+                              const carrier = order.shippingCarrier?.toLowerCase();
+                              let url: string | null = null;
+                              if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${order.trackingNumber}`;
+                              else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${order.trackingNumber}`;
+                              else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.trackingNumber}`;
+                              if (url) {
+                                return (
+                                  <>
+                                    {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${order.shippingCarrier}`}>Track</a>
+                                  </>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell className="text-right">{formatCurrency(order.total?.toString())}</TableCell>
               </TableRow>
             ))}

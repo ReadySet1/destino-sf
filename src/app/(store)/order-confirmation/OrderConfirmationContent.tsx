@@ -89,7 +89,35 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
             <p><strong>Customer:</strong> {orderData.customerName || 'N/A'}</p>
             <p><strong>Pickup Time:</strong> {formatDateTime(orderData.pickupTime)}</p>
             <p><strong>Total Paid:</strong> {formatCurrency(orderData.total)}</p>
-            
+
+            {/* Tracking Number Section */}
+            {orderData.trackingNumber && (
+              <div aria-live="polite" className="bg-blue-50 border border-blue-200 rounded p-3 mt-2" role="region" aria-label="Shipping Tracking Information">
+                <strong>Tracking Number:</strong> {orderData.trackingNumber}
+                {orderData.shippingCarrier && (
+                  <>
+                    {' '}<span>({orderData.shippingCarrier})</span>
+                    {/* Optionally, add a tracking link for common carriers */}
+                    {(() => {
+                      const carrier = orderData.shippingCarrier?.toLowerCase();
+                      let url: string | null = null;
+                      if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${orderData.trackingNumber}`;
+                      else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${orderData.trackingNumber}`;
+                      else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${orderData.trackingNumber}`;
+                      if (url) {
+                        return (
+                          <>
+                            {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${orderData.shippingCarrier}`}>Track Package</a>
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
+                )}
+              </div>
+            )}
+
             <h3 className="font-semibold pt-2">Items:</h3>
             {orderData.items.length > 0 ? (
               <ul className="list-disc pl-5 space-y-1">
