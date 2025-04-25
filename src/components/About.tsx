@@ -94,14 +94,9 @@ export const About: React.FC<AboutProps> = ({
               partner with many Bay Area clients via his <strong>catering services</strong>.
             </p>
           </div>
-          <div className="relative w-full max-w-md mx-auto aspect-square">
+          <div className="relative w-full max-w-md mx-auto mt-16 h-[600px] pb-8">
             {/* Image to the right by default */}
-            <Image
-              src={jamesImage}
-              alt="Portrait of James Schenk"
-              fill
-              className="object-contain"
-            />
+            <Image src={jamesImage} alt="Portrait of James Schenk" fill className="object-cover" />
           </div>
         </div>
       </div>
