@@ -1,3 +1,26 @@
+import { TextEncoder, TextDecoder } from 'util';
+const fetch = require('node-fetch');
+
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = TextEncoder;
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = TextDecoder;
+}
+
+if (!global.fetch) {
+  global.fetch = fetch;
+}
+if (!global.Request) {
+  global.Request = fetch.Request;
+}
+if (!global.Response) {
+  global.Response = fetch.Response;
+}
+if (!global.Headers) {
+  global.Headers = fetch.Headers;
+}
+
 // Import jest-dom for DOM testing extensions
 import '@testing-library/jest-dom';
 

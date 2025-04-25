@@ -226,6 +226,9 @@ importers:
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
+      node-fetch:
+        specifier: ^2.7.0
+        version: 2.7.0
       postcss:
         specifier: 8.4.49
         version: 8.4.49
@@ -253,6 +256,9 @@ importers:
       typescript:
         specifier: 5.7.2
         version: 5.7.2
+      whatwg-url:
+        specifier: ^14.2.0
+        version: 14.2.0
 
 packages:
 

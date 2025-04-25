@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto'; // <-- Import randomUUID
 
 // --- Validation Schemas (Define or import as needed) ---
 const AddressSchema = z.object({
+  recipientName: z.string().optional(),
   street: z.string().min(1),
   street2: z.string().optional(),
   city: z.string().min(1),
@@ -34,15 +35,38 @@ const CustomerInfoSchema = z.object({
   pickupTime: z.string().optional(), // Validate format if always present for pickup
 });
 
-const FulfillmentSchema = z.object({
-  method: z.enum(['pickup', 'delivery', 'shipping']),
-  pickupTime: z.string().optional(), // Format: YYYY-MM-DDTHH:mm:00
-  deliveryTime: z.string().optional(),
-  deliveryAddress: AddressSchema.optional(),
-  deliveryInstructions: z.string().optional(),
-  shippingAddress: AddressSchema.optional(),
-  shippingMethod: z.string().optional(),
-});
+// --- EXTEND FulfillmentSchema ---
+const FulfillmentSchema = z.discriminatedUnion('method', [
+  z.object({
+    method: z.literal('pickup'),
+    pickupTime: z.string(),
+  }),
+  z.object({
+    method: z.literal('delivery'),
+    deliveryAddress: AddressSchema,
+    deliveryTime: z.string(),
+    deliveryInstructions: z.string().optional(),
+  }),
+  z.object({
+    method: z.literal('shipping'),
+    shippingAddress: AddressSchema,
+    shippingMethod: z.string(),
+  }),
+  // --- NEW: Local Delivery ---
+  z.object({
+    method: z.literal('local_delivery'),
+    deliveryAddress: AddressSchema,
+    deliveryDate: z.string(),
+    deliveryTime: z.string(),
+    deliveryInstructions: z.string().optional(),
+  }),
+  // --- NEW: Nationwide Shipping ---
+  z.object({
+    method: z.literal('nationwide_shipping'),
+    shippingAddress: AddressSchema,
+    shippingMethod: z.string(),
+  }),
+]);
 
 const CartItemSchema = z.object({
   id: z.string(), // Your internal Product ID
@@ -72,6 +96,8 @@ const mapCountryCode = (code: string | undefined): string | undefined => {
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get('email')?.toString();
   const password = formData.get('password')?.toString();
+  const name = formData.get('name')?.toString();
+  const phone = formData.get('phone')?.toString();
   const supabase = await createClient();
   const origin = (await headers()).get('origin');
 
@@ -85,6 +111,10 @@ export const signUpAction = async (formData: FormData) => {
       password,
       options: {
         emailRedirectTo: `${origin}/auth/callback`,
+        data: {
+          name: name || null,
+          phone: phone || null,
+        }
       },
     });
 
@@ -239,6 +269,7 @@ interface Address {
   state: string;
   postalCode: string;
   country: string;
+  recipientName?: string;
 }
 
 interface PickupFulfillment {
@@ -259,8 +290,29 @@ interface ShippingFulfillment {
   shippingMethod: string;
 }
 
+// --- NEW: Local Delivery Fulfillment ---
+interface LocalDeliveryFulfillment {
+  method: 'local_delivery';
+  deliveryAddress: Address;
+  deliveryDate: string;
+  deliveryTime: string;
+  deliveryInstructions?: string;
+}
+
+// --- NEW: Nationwide Shipping Fulfillment ---
+interface NationwideShippingFulfillment {
+  method: 'nationwide_shipping';
+  shippingAddress: Address;
+  shippingMethod: string;
+}
+
 // Export this type
-export type FulfillmentData = PickupFulfillment | DeliveryFulfillment | ShippingFulfillment;
+export type FulfillmentData =
+  | PickupFulfillment
+  | DeliveryFulfillment
+  | ShippingFulfillment
+  | LocalDeliveryFulfillment
+  | NationwideShippingFulfillment;
 
 type OrderItem = {
   id: string;
@@ -563,26 +615,82 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
             name: item.name,
         }));
 
-        let squareFulfillmentData: any = { type: fulfillment.method.toUpperCase() };
-        if (fulfillment.method === 'pickup' && fulfillment.pickupTime) {
-            try {
-                const pickupDate = new Date(fulfillment.pickupTime);
-                if (isNaN(pickupDate.getTime())) throw new Error('Invalid pickup date/time format');
+        let squareFulfillmentData: any = { type: undefined };
+        if (fulfillment.method === 'pickup') {
+            squareFulfillmentData.type = 'PICKUP';
+            // Check if pickupTime is provided before using it
+            if (fulfillment.pickupTime) { 
+              try {
+                  const pickupDate = new Date(fulfillment.pickupTime); // Now safe
+                  if (isNaN(pickupDate.getTime())) throw new Error('Invalid pickup date/time format');
+                  squareFulfillmentData.pickup_details = {
+                      pickup_at: formatISO(pickupDate),
+                      note: 'Please bring your ID for pickup', 
+                      recipient: {
+                          display_name: customerInfo.name,
+                          email_address: customerInfo.email,
+                          phone_number: customerInfo.phone,
+                      }
+                  };
+              } catch (dateError: any) {
+                   console.error('Error parsing pickup time for Square:', dateError.message);
+                   return { success: false, error: 'Invalid pickup time format.', checkoutUrl: null, orderId: dbOrder.id };
+              }
+            } else {
+                // Handle case where pickup method is chosen but no time is given (optional)
+                // You might want Square to just use ASAP logic or set a default recipient
                 squareFulfillmentData.pickup_details = {
-                    pickup_at: formatISO(pickupDate),
-                    note: 'Please bring your ID for pickup', 
                     recipient: {
-                        display_name: customerInfo.name,
-                        email_address: customerInfo.email,
-                        phone_number: customerInfo.phone,
-                    }
+                         display_name: customerInfo.name,
+                         email_address: customerInfo.email,
+                         phone_number: customerInfo.phone,
+                     }
+                    // Square might default schedule_type to ASAP if pickup_at is missing
                 };
-            } catch (dateError: any) {
-                 console.error('Error parsing pickup time for Square:', dateError.message);
-                 return { success: false, error: 'Invalid pickup time format.', checkoutUrl: null, orderId: dbOrder.id };
             }
+        } else if (fulfillment.method === 'delivery' || fulfillment.method === 'local_delivery') {
+            // Map both 'delivery' and 'local_delivery' to Square DELIVERY
+            squareFulfillmentData.type = 'DELIVERY';
+            const address = fulfillment.method === 'delivery' ? fulfillment.deliveryAddress : fulfillment.deliveryAddress;
+            squareFulfillmentData.delivery_details = {
+                recipient: {
+                    display_name: address.recipientName || customerInfo.name,
+                    phone_number: customerInfo.phone,
+                    email_address: customerInfo.email,
+                    address: {
+                        address_line_1: address.street,
+                        address_line_2: address.street2,
+                        locality: address.city,
+                        administrative_district_level_1: address.state,
+                        postal_code: address.postalCode,
+                        country: address.country,
+                    },
+                },
+                // Optionally add delivery date/time/instructions
+                deliver_at: fulfillment.method === 'local_delivery' ? `${fulfillment.deliveryDate}T${fulfillment.deliveryTime}:00` : fulfillment.deliveryTime,
+                note: fulfillment.deliveryInstructions,
+            };
+        } else if (fulfillment.method === 'shipping' || fulfillment.method === 'nationwide_shipping') {
+            // Map both 'shipping' and 'nationwide_shipping' to Square SHIPMENT
+            squareFulfillmentData.type = 'SHIPMENT';
+            const address = fulfillment.method === 'shipping' ? fulfillment.shippingAddress : fulfillment.shippingAddress;
+            squareFulfillmentData.shipment_details = {
+                recipient: {
+                    display_name: address.recipientName || customerInfo.name,
+                    phone_number: customerInfo.phone,
+                    email_address: customerInfo.email,
+                    address: {
+                        address_line_1: address.street,
+                        address_line_2: address.street2,
+                        locality: address.city,
+                        administrative_district_level_1: address.state,
+                        postal_code: address.postalCode,
+                        country: address.country,
+                    },
+                },
+                shipping_type: fulfillment.shippingMethod,
+            };
         }
-        // ... Add else if for delivery and shipping logic here ...
 
         const origin = process.env.NEXT_PUBLIC_APP_URL;
         if (!origin) {
@@ -605,7 +713,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 redirect_url: redirectUrl,
                 cancel_url: cancelUrl,
                 allow_tipping: true,
-                ask_for_shipping_address: fulfillment.method === 'shipping',
+                // Set to false as we provide the address in shipment_details for shipping orders
+                ask_for_shipping_address: false, 
                 merchant_support_email: supportEmail || customerInfo.email,
                  accepted_payment_methods: {
                     apple_pay: true, google_pay: true, cash_app_pay: false, afterpay_clearpay: false

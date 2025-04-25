@@ -30,7 +30,7 @@ const config: Config = {
   moduleDirectories: ['node_modules', '<rootDir>'],
 
   // Add resolver
-  resolver: '<rootDir>/jest.resolver.js',
+  resolver: '<rootDir>/jest.resolver.cjs',
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

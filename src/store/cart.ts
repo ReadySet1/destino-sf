@@ -13,8 +13,8 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (itemId: string, variantId?: string) => void;
+  updateQuantity: (itemId: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
   totalPrice: number;
   totalItems: number;
@@ -26,45 +26,66 @@ export const useCartStore = create<CartStore>()(
       items: [],
       addItem: item =>
         set(state => {
-          const existingItem = state.items.find(i => i.id === item.id);
+          const existingItem = state.items.find(
+            i => i.id === item.id && i.variantId === item.variantId
+          );
+
+          let updatedItems;
           if (existingItem) {
-            const updatedItems = state.items.map(i =>
-              i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+            updatedItems = state.items.map(i =>
+              i.id === item.id && i.variantId === item.variantId
+                ? { ...i, quantity: i.quantity + item.quantity }
+                : i
             );
-            return {
-              items: updatedItems,
-              totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-              totalPrice: updatedItems.reduce(
-                (total, item) => total + item.price * item.quantity,
-                0
-              ),
-            };
+          } else {
+            updatedItems = [...state.items, item];
           }
-          const newItems = [...state.items, item];
-          return {
-            items: newItems,
-            totalItems: newItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: newItems.reduce((total, item) => total + item.price * item.quantity, 0),
-          };
-        }),
-      removeItem: id =>
-        set(state => {
-          const updatedItems = state.items.filter(item => item.id !== id);
+          
+          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
+          const totalPrice = updatedItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+          );
+
           return {
             items: updatedItems,
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce((total, item) => total + item.price * item.quantity, 0),
+            totalItems,
+            totalPrice,
           };
         }),
-      updateQuantity: (id, quantity) =>
+      removeItem: (itemId, variantId) =>
         set(state => {
-          const updatedItems = state.items.map(item =>
-            item.id === id ? { ...item, quantity } : item
+          const updatedItems = state.items.filter(
+            item => !(item.id === itemId && item.variantId === variantId)
+          );
+          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
+          const totalPrice = updatedItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
           );
           return {
             items: updatedItems,
-            totalItems: updatedItems.reduce((total, item) => total + item.quantity, 0),
-            totalPrice: updatedItems.reduce((total, item) => total + item.price * item.quantity, 0),
+            totalItems,
+            totalPrice,
+          };
+        }),
+      updateQuantity: (itemId, quantity, variantId) =>
+        set(state => {
+          const updatedItems = state.items.map(item =>
+            item.id === itemId && item.variantId === variantId
+              ? { ...item, quantity: Math.max(0, quantity) }
+              : item
+          ).filter(item => item.quantity > 0);
+          
+          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
+          const totalPrice = updatedItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+          );
+          return {
+            items: updatedItems,
+            totalItems,
+            totalPrice,
           };
         }),
       clearCart: () => set({ items: [], totalItems: 0, totalPrice: 0 }),

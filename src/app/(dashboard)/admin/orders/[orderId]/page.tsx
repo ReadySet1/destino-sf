@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { formatDistance } from 'date-fns';
+import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge'; // Assuming you have a Badge component
 
 // Helper function to format currency
@@ -14,11 +14,10 @@ const formatCurrency = (amount: number | null | undefined) => {
 const formatDateTime = (date: Date | string | null | undefined) => {
   if (!date) return 'N/A';
   try {
-    return new Date(date).toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    // Use date-fns format for consistent output
+    return format(new Date(date), 'PP, p'); // e.g., May 1, 2025, 2:00 PM
   } catch (error) {
+    console.error("Error formatting date:", error);
     return 'Invalid Date';
   }
 };
@@ -59,17 +58,26 @@ function getPaymentStatusColor(status: string | null | undefined): string {
     }
   }
 
-// Define props using a dedicated type
-type PageProps = {
-  params: { orderId: string };
-  // Optional: Include searchParams if needed, though not used currently
-  // searchParams?: { [key: string]: string | string[] | undefined };
-};
+// Define props using a dedicated type for async params
+interface PageProps {
+  params: Promise<{ orderId: string }>;
+}
 
-// Cast the entire component function to 'any' to bypass the build error
-const OrderDetailsPage = (async ({ params }: PageProps) => {
-  // The params object is directly available, no need to await
-  const { orderId } = params; // Type is safe inside
+/**
+ * OrderDetailsPage - Server Component for displaying order details.
+ *
+ * Next.js 15 App Router: The `params` prop is a Promise and must be awaited.
+ * This ensures compatibility with dynamic route segments and avoids build/runtime errors.
+ *
+ * Edge Cases Handled:
+ * - If orderId is missing or invalid, triggers 404.
+ * - If order is not found, triggers 404.
+ * - Handles null/undefined values for all order fields.
+ * - Ensures accessibility and security best practices.
+ */
+const OrderDetailsPage = async ({ params }: PageProps) => {
+  // Await the params Promise to access orderId
+  const { orderId } = await params;
 
   if (!orderId) {
     notFound();
@@ -235,6 +243,6 @@ const OrderDetailsPage = (async ({ params }: PageProps) => {
 
     </div>
   );
-}) as any; // Cast applied here
+};
 
 export default OrderDetailsPage; 

@@ -16,7 +16,7 @@ const HomePage = jest.fn().mockImplementation(() => (
 ));
 
 // Mock the actual page implementation
-jest.mock('@/app/page', () => ({
+jest.mock('@/app/(static)/page', () => ({
   __esModule: true,
   default: HomePage,
 }));

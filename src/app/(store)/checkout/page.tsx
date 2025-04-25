@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, addDays } from 'date-fns';
@@ -38,13 +38,10 @@ const pickupSchema = z.object({
   email: z.string().email('Valid email is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
   pickupDate: z.string().refine(date => {
-    console.log(`Refining pickupDate: ${date}`);
     const selectedDate = new Date(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isValid = selectedDate >= today;
-    console.log(`pickupDate validation result: ${isValid}`);
-    return isValid;
+    return selectedDate >= today;
   }, 'Date must be today or later'),
   pickupTime: z.string().min(1, 'Pickup time is required'),
 });
@@ -56,13 +53,10 @@ const deliverySchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   deliveryAddress: addressSchema,
   deliveryDate: z.string().refine(date => {
-    console.log(`Refining deliveryDate: ${date}`);
     const selectedDate = new Date(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isValid = selectedDate >= today;
-    console.log(`deliveryDate validation result: ${isValid}`);
-    return isValid;
+    return selectedDate >= today;
   }, 'Date must be today or later'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
@@ -77,16 +71,48 @@ const shippingSchema = z.object({
   shippingMethod: z.string().min(1, 'Shipping method is required'),
 });
 
+// --- NEW: Local Delivery Schema ---
+const localDeliverySchema = z.object({
+  fulfillmentMethod: z.literal('local_delivery'),
+  name: z.string().min(2, 'Name is required'),
+  email: z.string().email('Valid email is required'),
+  phone: z.string().min(10, 'Valid phone number is required'),
+  deliveryAddress: addressSchema,
+  deliveryDate: z.string().refine(date => {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate >= today;
+  }, 'Date must be today or later'),
+  deliveryTime: z.string().min(1, 'Delivery time is required'),
+  deliveryInstructions: z.string().optional(),
+});
+
+// --- NEW: Nationwide Shipping Schema ---
+const nationwideShippingSchema = z.object({
+  fulfillmentMethod: z.literal('nationwide_shipping'),
+  name: z.string().min(2, 'Name is required'),
+  email: z.string().email('Valid email is required'),
+  phone: z.string().min(10, 'Valid phone number is required'),
+  shippingAddress: addressSchema,
+  shippingMethod: z.string().min(1, 'Shipping method is required'),
+});
+
 const checkoutSchema = z.discriminatedUnion('fulfillmentMethod', [
   pickupSchema,
   deliverySchema,
   shippingSchema,
+  localDeliverySchema,
+  nationwideShippingSchema,
 ]);
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 type PickupFormData = z.infer<typeof pickupSchema>;
 type DeliveryFormData = z.infer<typeof deliverySchema>;
 type ShippingFormData = z.infer<typeof shippingSchema>;
+// --- NEW Types ---
+type LocalDeliveryFormData = z.infer<typeof localDeliverySchema>;
+type NationwideShippingFormData = z.infer<typeof nationwideShippingSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -180,29 +206,48 @@ export default function CheckoutPage() {
 
     if (formData.fulfillmentMethod === 'pickup') {
       const pickupData = formData as PickupFormData;
-      return { 
-        ...baseData, 
-        method: 'pickup', 
-        pickupTime: `${pickupData.pickupDate}T${pickupData.pickupTime}:00` 
+      return {
+        ...baseData,
+        method: 'pickup',
+        pickupTime: `${pickupData.pickupDate}T${pickupData.pickupTime}:00`
       };
     } else if (formData.fulfillmentMethod === 'delivery') {
       const deliveryData = formData as DeliveryFormData;
-      return { 
-        ...baseData, 
-        method: 'delivery', 
-        deliveryTime: `${deliveryData.deliveryDate}T${deliveryData.deliveryTime}:00`, 
+      return {
+        ...baseData,
+        method: 'delivery',
+        deliveryTime: `${deliveryData.deliveryDate}T${deliveryData.deliveryTime}:00`,
         deliveryAddress: deliveryData.deliveryAddress,
         deliveryInstructions: deliveryData.deliveryInstructions
       };
-    } else {
+    } else if (formData.fulfillmentMethod === 'shipping') {
       const shippingData = formData as ShippingFormData;
-      return { 
-        ...baseData, 
-        method: 'shipping', 
+      return {
+        ...baseData,
+        method: 'shipping',
         shippingAddress: shippingData.shippingAddress,
-        shippingMethod: shippingData.shippingMethod || 'Standard' // Default if needed
+        shippingMethod: shippingData.shippingMethod || 'Standard'
+      };
+    } else if (formData.fulfillmentMethod === 'local_delivery') {
+      const localDeliveryData = formData as LocalDeliveryFormData;
+      return {
+        ...baseData,
+        method: 'local_delivery',
+        deliveryAddress: localDeliveryData.deliveryAddress,
+        deliveryDate: localDeliveryData.deliveryDate,
+        deliveryTime: localDeliveryData.deliveryTime,
+        deliveryInstructions: localDeliveryData.deliveryInstructions
+      };
+    } else if (formData.fulfillmentMethod === 'nationwide_shipping') {
+      const nationwideShippingData = formData as NationwideShippingFormData;
+      return {
+        ...baseData,
+        method: 'nationwide_shipping',
+        shippingAddress: nationwideShippingData.shippingAddress,
+        shippingMethod: nationwideShippingData.shippingMethod || 'Standard'
       };
     }
+    throw new Error('Invalid fulfillment method');
   };
 
   // Restore original onSubmit logic, but call Server Action
@@ -376,141 +421,141 @@ export default function CheckoutPage() {
             })}
             className="space-y-6"
           >
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold">Customer Information</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    {...register('name')}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register('email')}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    {...register('phone')}
-                    className={errors.phone ? 'border-red-500' : ''}
-                  />
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">{errors.phone.message}</p>
-                  )}
-                </div>
+            {/* Customer Information */}
+            <div className="space-y-4 mb-6">
+              <h2 className="text-xl font-semibold">Contact Information</h2>
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" {...register("name")} placeholder="Jane Doe" />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
               </div>
+              {/* ... other customer fields (email, phone) ... */}
+               <div>
+                   <Label htmlFor="email">Email</Label>
+                   <Input id="email" type="email" {...register("email")} placeholder="jane@example.com" />
+                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+               </div>
+               <div>
+                   <Label htmlFor="phone">Phone</Label>
+                   <Input id="phone" type="tel" {...register("phone")} placeholder="555-123-4567" />
+                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+               </div>
             </div>
 
-            {/* Fulfillment details based on selected method */}
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
-              {fulfillmentMethod === 'pickup' && (
+            {/* Fulfillment Specific Fields */}
+            <div className="space-y-4 mb-6">
+              {currentMethod === 'pickup' && (
                 <>
-                  <h2 className="mb-4 text-xl font-semibold">Pickup Details</h2>
-                  <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Pickup Details</h2>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="pickupDate">Pickup Date</Label>
-                      <Input
-                        id="pickupDate"
-                        type="date"
-                        min={minDate}
-                        className={errors.name ? 'border-red-500' : ''}
-                      />
+                      <Input id="pickupDate" type="date" {...register("pickupDate")} min={minDate} />
+                      {errors && 'pickupDate' in errors && errors.pickupDate && (
+                        <p className="text-red-500 text-sm mt-1">{errors.pickupDate.message as string}</p>
+                      )}
                     </div>
-
                     <div>
                       <Label htmlFor="pickupTime">Pickup Time</Label>
-                      <Input
-                        id="pickupTime"
-                        type="time"
-                        className={errors.name ? 'border-red-500' : ''}
-                      />
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        Please be prepared to show your order confirmation and ID when picking up.
-                      </p>
+                      <Input id="pickupTime" type="time" {...register("pickupTime")} />
+                      {errors && 'pickupTime' in errors && errors.pickupTime && (
+                        <p className="text-red-500 text-sm mt-1">{errors.pickupTime.message as string}</p>
+                      )}
                     </div>
                   </div>
                 </>
               )}
 
-              {fulfillmentMethod === 'delivery' && (
+              {currentMethod === 'delivery' && (
                 <>
-                  <h2 className="mb-4 text-xl font-semibold">Delivery Details</h2>
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="deliveryDate">Delivery Date</Label>
-                        <Input
-                          id="deliveryDate"
-                          type="date"
-                          min={minDate}
-                          className={errors.name ? 'border-red-500' : ''}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="deliveryTime">Delivery Time</Label>
-                        <Input
-                          id="deliveryTime"
-                          type="time"
-                          className={errors.name ? 'border-red-500' : ''}
-                        />
-                      </div>
-                    </div>
-
+                  <h2 className="text-xl font-semibold">Delivery Details</h2>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="deliveryInstructions">Delivery Instructions (optional)</Label>
-                      <Input
-                        id="deliveryInstructions"
-                      />
+                      <Label htmlFor="deliveryDate">Delivery Date</Label>
+                      <Input id="deliveryDate" type="date" {...register("deliveryDate")} min={minDate} />
+                      {errors && 'deliveryDate' in errors && errors.deliveryDate && (
+                        <p className="text-red-500 text-sm mt-1">{errors.deliveryDate.message as string}</p>
+                      )}
                     </div>
+                    <div>
+                      <Label htmlFor="deliveryTime">Delivery Time</Label>
+                      <Input id="deliveryTime" type="time" {...register("deliveryTime")} />
+                      {errors && 'deliveryTime' in errors && errors.deliveryTime && (
+                        <p className="text-red-500 text-sm mt-1">{errors.deliveryTime.message as string}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryInstructions">Delivery Instructions (optional)</Label>
+                    <Input id="deliveryInstructions" {...register("deliveryInstructions")} />
+                    {errors && 'deliveryInstructions' in errors && errors.deliveryInstructions && (
+                      <p className="text-red-500 text-sm mt-1">{errors.deliveryInstructions.message as string}</p>
+                    )}
+                  </div>
+                  {/* AddressForm for delivery */}
+                  <AddressForm form={form} prefix="deliveryAddress" title="Delivery Address" />
+                </>
+              )}
+
+              {currentMethod === 'shipping' && (
+                <>
+                  <h2 className="text-xl font-semibold">Shipping Details</h2>
+                  {/* AddressForm for shipping */}
+                  <AddressForm form={form} prefix="shippingAddress" title="Shipping Address" />
+                  <div>
+                    <Label htmlFor="shippingMethod">Shipping Method</Label>
+                    <Input id="shippingMethod" {...register("shippingMethod")} placeholder="e.g., Standard Ground" />
+                    {errors && 'shippingMethod' in errors && errors.shippingMethod && (
+                      <p className="text-red-500 text-sm mt-1">{errors.shippingMethod.message as string}</p>
+                    )}
                   </div>
                 </>
               )}
 
-              {fulfillmentMethod === 'shipping' && (
+              {/* --- NEW: Local Delivery Fields --- */}
+              {currentMethod === 'local_delivery' && (
                 <>
-                  <h2 className="mb-4 text-xl font-semibold">Shipping Details</h2>
-                  <div className="space-y-6">
+                  <h2 className="text-xl font-semibold">Local Delivery Details</h2>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="shippingMethod">Shipping Method</Label>
-                      <Controller
-                        name="shippingMethod"
-                        control={control}
-                        render={({ field }) => (
-                          <select
-                            id="shippingMethod"
-                            {...field}
-                            className={`w-full rounded-md border px-3 py-2 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-                          >
-                            <option value="">Select a shipping method</option>
-                            <option value="standard">Standard Shipping (3-5 business days)</option>
-                            <option value="express">Express Shipping (1-2 business days)</option>
-                          </select>
-                        )}
-                      />
+                      <Label htmlFor="deliveryDate">Delivery Date</Label>
+                      <Input id="deliveryDate" type="date" {...register("deliveryDate")} min={minDate} />
+                      {errors && 'deliveryDate' in errors && errors.deliveryDate && (
+                        <p className="text-red-500 text-sm mt-1">{errors.deliveryDate.message as string}</p>
+                      )}
                     </div>
+                    <div>
+                      <Label htmlFor="deliveryTime">Delivery Time</Label>
+                      <Input id="deliveryTime" type="time" {...register("deliveryTime")} />
+                      {errors && 'deliveryTime' in errors && errors.deliveryTime && (
+                        <p className="text-red-500 text-sm mt-1">{errors.deliveryTime.message as string}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryInstructions">Delivery Instructions (optional)</Label>
+                    <Input id="deliveryInstructions" {...register("deliveryInstructions")} />
+                    {errors && 'deliveryInstructions' in errors && errors.deliveryInstructions && (
+                      <p className="text-red-500 text-sm mt-1">{errors.deliveryInstructions.message as string}</p>
+                    )}
+                  </div>
+                  {/* AddressForm for local delivery */}
+                  <AddressForm form={form} prefix="deliveryAddress" title="Delivery Address" />
+                </>
+              )}
+
+              {/* --- NEW: Nationwide Shipping Fields --- */}
+              {currentMethod === 'nationwide_shipping' && (
+                <>
+                  <h2 className="text-xl font-semibold">Nationwide Shipping Details</h2>
+                  {/* AddressForm for nationwide shipping */}
+                  <AddressForm form={form} prefix="shippingAddress" title="Shipping Address" />
+                  <div>
+                    <Label htmlFor="shippingMethod">Shipping Method</Label>
+                    <Input id="shippingMethod" {...register("shippingMethod")} placeholder="e.g., Standard Ground" />
+                    {errors && 'shippingMethod' in errors && errors.shippingMethod && (
+                      <p className="text-red-500 text-sm mt-1">{errors.shippingMethod.message as string}</p>
+                    )}
                   </div>
                 </>
               )}
@@ -537,6 +582,6 @@ export default function CheckoutPage() {
           <CheckoutSummary items={items} />
         </div>
       </div>
-    </main>
+    </main> 
   );
 }

@@ -42,9 +42,12 @@ function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStat
     // Map fulfillment states if needed, or handle in specific handlers
     case 'PROPOSED': // From fulfillment update
     case 'PREPARED': // From fulfillment update
-        return OrderStatus.PROCESSING;
-    case 'READY': // From fulfillment update - map to your READY state
         return OrderStatus.READY;
+    case 'READY': // Explicitly add READY state from fulfillment if Square uses it
+        return OrderStatus.READY;
+    // Add case for PREPARED specifically if needed
+    // case 'PREPARED': // From fulfillment update
+    //    return OrderStatus.READY;
     default:
       console.warn(`Unhandled Square order state: ${squareState}. Defaulting to PENDING.`);
       return OrderStatus.PENDING;
@@ -110,17 +113,34 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
   const orderUpdateData = data.object.order_updated as any;
   console.log('Processing order.updated event:', data.id);
 
-  const orderStatus = mapSquareStateToOrderStatus(orderUpdateData?.state);
+  const newSquareState = orderUpdateData?.state;
+  const mappedStatus = mapSquareStateToOrderStatus(newSquareState);
+
+  // Prepare the base update data object
+  const updateData: Omit<Prisma.OrderUpdateInput, 'status'> & { status?: OrderStatus } = {
+      total: orderUpdateData?.total_money?.amount ? orderUpdateData.total_money.amount / 100 : undefined,
+      customerName: orderUpdateData?.customer_id ? 'Customer ID: ' + orderUpdateData.customer_id : undefined,
+      rawData: data.object as unknown as Prisma.InputJsonValue,
+  };
+
+  // Only add status to the update if it's a terminal state (COMPLETED, CANCELLED)
+  if (mappedStatus === OrderStatus.CANCELLED) {
+      console.log(`Order ${data.id} cancelled. Setting paymentStatus to REFUNDED and status to CANCELLED.`);
+      updateData.paymentStatus = 'REFUNDED';
+      updateData.status = OrderStatus.CANCELLED;
+  } else if (mappedStatus === OrderStatus.COMPLETED) {
+      console.log(`Order ${data.id} completed. Setting status to COMPLETED.`);
+      updateData.status = OrderStatus.COMPLETED;
+      // Optionally update paymentStatus if not already handled by payment webhooks
+      // updateData.paymentStatus = 'PAID';
+  }
+  // If mappedStatus is PROCESSING (from OPEN), we DO NOT update the status here,
+  // allowing the fulfillment handler to correctly set READY.
 
   try {
       await prisma.order.update({
           where: { squareOrderId: data.id },
-          data: {
-              status: orderStatus,
-              total: orderUpdateData?.total_money?.amount ? orderUpdateData.total_money.amount / 100 : undefined,
-              customerName: orderUpdateData?.customer_id ? 'Customer ID: ' + orderUpdateData.customer_id : undefined,
-              rawData: data.object as unknown as Prisma.InputJsonValue,
-          },
+          data: updateData, // Apply updates (only includes status if terminal)
       });
    } catch (error: any) {
       if (error.code === 'P2025') {

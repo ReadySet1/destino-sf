@@ -20,11 +20,10 @@ const formatCurrency = (amount: number | null | undefined) => {
 const formatDateTime = (date: Date | string | null | undefined) => {
   if (!date) return 'N/A';
   try {
-    return new Date(date).toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    // Use date-fns format for consistent output
+    return format(new Date(date), 'PP, p'); // e.g., May 1, 2025, 2:00 PM
   } catch (error) {
+    console.error("Error formatting date:", error);
     return 'Invalid Date';
   }
 };

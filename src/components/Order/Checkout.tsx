@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { createOrderAndGenerateCheckoutUrl } from '@/app/actions'; // Import the server action
+import type { FulfillmentData } from '@/app/actions';
 
 // Define types more precisely if possible, aligning with server action schemas
 interface CartItem {
@@ -18,10 +19,15 @@ interface CustomerInfo {
     phone: string;
 }
 
+// --- Define Fulfillment Details Type ---
+// Adjust this based on the actual structure needed by the server action
+// interface FulfillmentDetails { ... } // <-- REMOVE THIS IF PRESENT
+
 interface CheckoutProps {
   productType: string;
   items: CartItem[];
   customerInfo: CustomerInfo; // Make customerInfo mandatory if always needed here
+  fulfillment: FulfillmentData; // Use the imported type
 }
 
 // Define the expected return type from the server action
@@ -32,7 +38,8 @@ type ServerActionResult = {
     orderId: string | null;
   };
 
-const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo }) => {
+// --- Update Component Signature ---
+const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, fulfillment }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -49,23 +56,23 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo })
           setIsLoading(false);
           return;
       }
+      // --- Ensure fulfillment info is present ---
+      if (!fulfillment) {
+          toast.error('Fulfillment details are missing.');
+          setIsLoading(false);
+          return;
+      }
 
-      // --- Call Server Action instead of fetch --- 
+
+      // --- Call Server Action instead of fetch ---
       console.log('Calling createOrderAndGenerateCheckoutUrl server action from Checkout component...');
 
-      // !!! IMPORTANT: Create a default fulfillment object. !!!
-      // This component doesn't receive fulfillment details, so we assume a default.
-      // This might need adjustment based on how this component is used.
-      const defaultFulfillment = {
-          method: 'pickup' as const, // Defaulting to pickup
-          // Add default address/time properties if required by the action's validation,
-          // otherwise, keep it minimal based on what the action handles.
-      };
 
+      // --- Use the fulfillment prop directly ---
       const actionPayload = {
           items: items, // Pass items directly
           customerInfo: customerInfo, // Pass customerInfo
-          fulfillment: defaultFulfillment // Use the default fulfillment
+          fulfillment: fulfillment // Use the passed fulfillment details
       };
 
       // Explicitly type the result
@@ -84,14 +91,14 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo })
       console.error('Checkout error in Checkout component:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to initiate checkout');
       setIsLoading(false); // Ensure loading state is turned off on error
-    } 
+    }
     // No finally block needed as success redirects away
   };
 
   return (
     <div className="w-full">
       <h1 className="text-2xl font-bold mb-4">{productType} Checkout</h1>
-      
+
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-2">Order Summary</h2>
         <ul className="space-y-2 mb-4">
@@ -102,16 +109,17 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo })
             </li>
           ))}
         </ul>
-        
+
         <div className="border-t pt-2 font-bold flex justify-between">
           <span>Total:</span>
           <span>${items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
         </div>
       </div>
-      
-      <Button 
+
+      <Button
         onClick={handleCheckout}
-        disabled={isLoading || !customerInfo || items.length === 0} // Add disabled checks
+        // --- Update disabled check ---
+        disabled={isLoading || !customerInfo || items.length === 0 || !fulfillment}
         className="w-full mt-6"
       >
         {isLoading ? 'Processing...' : 'Proceed to Checkout'}
