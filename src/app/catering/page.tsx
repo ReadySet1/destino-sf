@@ -45,19 +45,20 @@ const CateringPage = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Dietary Options section */}
-        <div className="mt-16 mb-16">
-          <div className="bg-[#fdc32d] p-8 rounded-lg">
-            <h3 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">
-              Dietary Options
-            </h3>
-            <p className="text-xl text-gray-600">
-              Customizable menus with a great selection of Gluten-free, Vegetarian & Vegan options!
-            </p>
-          </div>
+      {/* Dietary Options section - Full width */}
+      <div className="bg-[#fdc32d] py-16 my-16">
+        <div className="max-w-[1200px] mx-auto px-4">
+          <h3 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">Dietary Options</h3>
+          <p className="text-xl text-gray-600">
+            Customizable menus with a great selection of Gluten-free, Vegetarian & Vegan options!
+          </p>
         </div>
+      </div>
 
+      {/* Start of second max-w-[1200px] container for remaining content */}
+      <div className="max-w-[1200px] mx-auto px-4">
         {/* Contact form at the bottom */}
         <div className="mb-16">
           <ContactCateringPage />

@@ -14,7 +14,7 @@ const CateringBanner: React.FC = () => {
         }
       `}</style>
       <div
-        className="menu-banner w-full bg-[#2d3538] md:py-12 text-center"
+        className="menu-banner w-full bg-[#2d3538] md:py-8 text-center"
         role="banner"
         aria-label="Menu section"
       >
@@ -22,7 +22,7 @@ const CateringBanner: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white font-quicksand tracking-tight">
             Catering
           </h1>
-          <p className="mt-2 text-lg md:text-xl text-gray-300">Let us cater your next event!</p>
+          <p className="mt-12 text-lg md:text-xl text-gray-300">Let us cater your next event!</p>
         </div>
       </div>
     </div>
