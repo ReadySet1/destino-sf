@@ -7,27 +7,26 @@ export function ContactInfo() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-4xl font-bold text-white mb-4">
-          Curious about our menu or catering options?
-        </h2>
         <div className="mb-10">
-          <h3 className="text-3xl font-extrabold text-white mb-3">Contact Information</h3>
+          <h2 className="text-4xl font-bold text-white mb-4">Contact Information</h2>
           <p className="text-gray-100 text-lg">
-            Feel free to get in touch—we&apos;re here to make your experience deliciously simple.
+            Curious about our menu or catering options? Send us a message — we&apos;d love to hear
+            from you! Whether you&apos;re planning a special event or just craving something
+            delicious, we&apos;re here to help
           </p>
         </div>
       </div>
 
       <div className="space-y-5">
-        {/* <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <Phone className="h-6 w-6 text-white" />
           <Link
             href="tel:+14155771677"
             className="text-white hover:underline transition-colors text-lg"
           >
-            +14155771677
+            415.577.1677
           </Link>
-        </div> */}
+        </div>
 
         <div className="flex items-center gap-4">
           <Mail className="h-6 w-6 text-white" />

@@ -1,420 +1,358 @@
 import React from 'react';
 import Head from 'next/head';
 import { twMerge } from 'tailwind-merge';
-
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-const Section: React.FC<SectionProps> = ({ title, children }) => (
-  <section className={twMerge('mb-8')}>
-    <h2 className={twMerge('text-2xl font-bold mb-4 border-b border-gray-200 pb-2')}>{title}</h2>
-    {children}
-  </section>
-);
+import Link from 'next/link';
 
 const PrivacyPolicyPage: React.FC = () => {
+  const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+    <section className="mb-8">
+      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+      <div className="space-y-4 text-gray-700">{children}</div>
+    </section>
+  );
+
   return (
-    <div className={twMerge('w-full max-w-full px-4 py-8 bg-white text-gray-900')}>
+    <div className={twMerge('w-full px-4 py-12 bg-white text-gray-900 font-quicksand')}>
       <Head>
         <title>Privacy Policy | Destino</title>
-        <meta name="description" content="Privacy Policy for Destino San Francisco" />
+        <meta name="description" content="Privacy Policy for CHASQUI LLC (dba DESTINO)" />
       </Head>
 
       <main className={twMerge('flex flex-col gap-8')}>
-        <h1 className={twMerge('text-4xl font-extrabold mb-6 text-center')}>Privacy Policy</h1>
+        <h1 className={twMerge('text-4xl font-bold mb-6 text-center')}>Privacy Policy</h1>
 
-        <p className={twMerge('mb-6 text-lg')}>
-          This Privacy Policy describes how destino-san-francisco.myshopify.com (the
-          &quot;Site&quot; or &quot;we&quot;) collects, uses, and discloses your Personal
-          Information when you visit or make a purchase from the Site.
+        <p className="text-base leading-relaxed">
+          This Privacy Policy describes how&nbsp;
+          <strong>CHASQUI LLC (dba DESTINO)</strong>&nbsp;(&quot;we,&quot; &quot;our,&quot; or
+          &quot;the Site&quot;) collects, uses, and shares your Personal Information when you visit,
+          interact with, or make a purchase from our online store, powered by Square.
+        </p>
+        <p className="text-base leading-relaxed">
+          We respect your privacy and are committed to protecting your personal information. This
+          Policy explains what we collect, how we use it, and the choices you have regarding your
+          information. Thank you for trusting DESTINO to bring a little more Latin flavor to your
+          table!
         </p>
 
         <Section title="Collecting Personal Information">
           <p>
-            When you visit the Site, we collect certain information about your device, your
-            interaction with the Site, and information necessary to process your purchases. We may
-            also collect additional information if you contact us for customer support. In this
-            Privacy Policy, we refer to any information that can uniquely identify an individual
-            (including the information below) as &quot;Personal Information&quot;. See the list
-            below for more information about what Personal Information we collect and why.
+            When you visit our Site, we collect certain information about your device, your
+            interaction with the Site, and details necessary to process your purchases. We may also
+            collect information when you contact us for customer support. In this Privacy Policy, we
+            refer to any information that can uniquely identify an individual (as described below)
+            as &quot;Personal Information.&quot;
           </p>
+          <p>Here&apos;s what we collect and why:</p>
 
-          <h3 className={twMerge('text-xl font-semibold mt-6 mb-2 underline')}>
-            Device information
-          </h3>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <h3 className="text-xl font-semibold mt-6 mb-2">Device Information</h3>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              <strong>Examples of Personal Information collected:</strong> version of web browser,
-              IP address, time zone, cookie information, what sites or products you view, search
-              terms, and how you interact with the Site.
+              <strong>Examples collected:</strong> Web browser version, IP address, time zone,
+              cookie information, pages or products you view, search terms, and how you interact
+              with the Site.
             </li>
             <li>
-              <strong>Purpose of collection:</strong> to load the Site accurately for you, and to
-              perform analytics on Site usage to optimize our Site.
+              <strong>Purpose of collection:</strong> To ensure the Site loads properly for you and
+              to help us better understand and improve how visitors use our Site.
             </li>
             <li>
-              <strong>Source of collection:</strong> Collected automatically when you access our
-              Site using cookies, log files, web beacons, tags, or pixels.
+              <strong>Source of collection:</strong> Collected automatically using cookies, log
+              files, web beacons, tags, or pixels.
             </li>
             <li>
-              <strong>Disclosure for a business purpose:</strong> shared with our processor Shopify.
+              <strong>Disclosure for a business purpose:</strong> Shared with Square, our online
+              shopping cart and payment processor.
             </li>
           </ul>
 
-          <h3 className={twMerge('text-xl font-semibold mt-6 mb-2 underline')}>
-            Order information
-          </h3>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <h3 className="text-xl font-semibold mt-6 mb-2">Order Information</h3>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              <strong>Examples of Personal Information collected:</strong> name, billing address,
-              shipping address, payment information (including credit card numbers), email address,
-              and phone number.
+              <strong>Examples collected:</strong> Name, billing address, shipping address, payment
+              details (including credit card numbers), email address, and phone number.
             </li>
             <li>
-              <strong>Purpose of collection:</strong> to provide products or services to you to
-              fulfill our contract, to process your payment information, arrange for shipping, and
-              provide you with invoices and/or order confirmations, communicate with you, screen our
-              orders for potential risk or fraud, and when in line with the preferences you have
-              shared with us, provide you with information or advertising relating to our products
-              or services.
+              <strong>Purpose of collection:</strong> To fulfill your order — including processing
+              payments, arranging shipping, providing invoices and order confirmations,
+              communicating with you, and screening for potential fraud.
             </li>
             <li>
-              <strong>Source of collection:</strong> collected from you.
+              <strong>Source of collection:</strong> Collected directly from you.
             </li>
             <li>
-              <strong>Disclosure for a business purpose:</strong> shared with our processor Shopify.
+              <strong>Disclosure for a business purpose:</strong> Shared with Square for payment
+              processing.
             </li>
           </ul>
 
-          <h3 className={twMerge('text-xl font-semibold mt-6 mb-2 underline')}>
-            Customer support information
-          </h3>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <h3 className="text-xl font-semibold mt-6 mb-2">Customer Support Information</h3>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              <strong>Purpose of collection:</strong> to provide customer support.
+              <strong>Examples collected:</strong> Information you provide when you contact us for
+              help.
             </li>
             <li>
-              <strong>Source of collection:</strong> collected from you.
+              <strong>Purpose of collection:</strong> To respond to your inquiries and provide
+              customer support.
+            </li>
+            <li>
+              <strong>Source of collection:</strong> Collected directly from you.
             </li>
           </ul>
         </Section>
 
         <Section title="Minors">
           <p>
-            The Site is not intended for individuals under the age of 18. We do not intentionally
-            collect Personal Information from children. If you are the parent or guardian and
-            believe your child has provided us with Personal Information, please contact us at the
-            address below to request deletion.
+            Our Site is not intended for individuals under the age of 18. We do not knowingly
+            collect Personal Information from children. If you are a parent or guardian and believe
+            that your child has provided us with Personal Information, please contact us at&nbsp;
+            <a
+              href="mailto:james@destinosf.com"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              james@destinosf.com
+            </a>
+            . We will promptly delete any information we have if we learn that it was collected
+            without appropriate consent.
           </p>
         </Section>
 
         <Section title="Sharing Personal Information">
           <p>
-            We share your Personal Information with service providers to help us provide our
-            services and fulfill our contracts with you, as described above. For example:
+            We share your Personal Information with trusted service providers to help us deliver our
+            products and services to you, as described above. For example:
           </p>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              We use Shopify to power our online store. You can read more about how Shopify uses
-              your Personal Information here:{' '}
+              We use <strong>Square</strong> to power our online store and securely process your
+              payments. You can learn more about how Square handles your information here:&nbsp;
               <a
-                href="https://www.shopify.com/legal/privacy"
+                href="https://squareup.com/us/en/legal/general/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 underline"
+                className="text-blue-600 underline hover:text-blue-800"
               >
-                https://www.shopify.com/legal/privacy
+                https://squareup.com/us/en/legal/general/privacy
               </a>
               .
             </li>
             <li>
-              We may share your Personal Information to comply with applicable laws and regulations,
-              to respond to a subpoena, search warrant or other lawful request for information we
-              receive, or to otherwise protect our rights.
+              We may also share your Personal Information if required to comply with applicable laws
+              and regulations, respond to a subpoena, search warrant, or other lawful request for
+              information, or to otherwise protect our rights.
             </li>
           </ul>
+          <p>We value your trust and will always work to keep your information secure.</p>
         </Section>
 
-        <Section title="Behavioural Advertising">
+        <Section title="Behavioral Advertising">
           <p>
-            As described above, we use your Personal Information to provide you with targeted
-            advertisements or marketing communications we believe may be of interest to you. For
-            example:
+            We may use your Personal Information to provide you with marketing communications or
+            advertisements we believe you&apos;ll enjoy. For example:
           </p>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              We share information about your use of the Site, your purchases, and your interaction
-              with our ads on other websites with our advertising partners. We collect and share
-              some of this information directly with our advertising partners, and in some cases
-              through the use of cookies or other similar technologies (which you may consent to,
-              depending on your location).
+              We share information about how you use our Site, what you purchase, and how you
+              interact with our ads on other websites (like Instagram and Facebook).
             </li>
-            <li>Instagram and Facebook</li>
+            <li>
+              Some of this information is collected directly with the help of cookies and similar
+              technologies, depending on your preferences and location.
+            </li>
           </ul>
           <p>
-            For more information about how targeted advertising works, you can visit the Network
-            Advertising Initiative&apos;s (&quot;NAI&quot;) educational page at{' '}
+            You can learn more about how targeted advertising works by visiting the Network
+            Advertising Initiative&apos;s educational page here:&nbsp;
             <a
               href="http://www.networkadvertising.org/understanding-online-advertising/how-does-it-work"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 underline"
+              className="text-blue-600 underline hover:text-blue-800"
             >
               http://www.networkadvertising.org/understanding-online-advertising/how-does-it-work
             </a>
             .
           </p>
-          <p>You can opt out of targeted advertising by:</p>
-          <ul className={twMerge('list-disc pl-6 mb-4')}>
+          <p>Opting Out of Targeted Advertising:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4">
             <li>
-              FACEBOOK -{' '}
+              <strong>Facebook:</strong>&nbsp;
               <a
                 href="https://www.facebook.com/settings/?tab=ads"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 underline"
+                className="text-blue-600 underline hover:text-blue-800"
               >
                 https://www.facebook.com/settings/?tab=ads
               </a>
             </li>
+            <li>
+              You can also opt out of some advertising services by visiting the Digital Advertising
+              Alliance&apos;s portal here:&nbsp;
+              <a
+                href="http://optout.aboutads.info/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                http://optout.aboutads.info/
+              </a>
+              .
+            </li>
           </ul>
           <p>
-            Additionally, you can opt out of some of these services by visiting the Digital
-            Advertising Alliance&apos;s opt-out portal at:{' '}
-            <a
-              href="http://optout.aboutads.info/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              http://optout.aboutads.info/
-            </a>
-            .
+            We believe in offering you transparency and control over your experience with DESTINO.
           </p>
         </Section>
 
         <Section title="Using Personal Information">
+          <p>We use your Personal Information to help us provide our services to you, including:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4">
+            <li>Offering and delivering our products</li>
+            <li>Processing your payments securely</li>
+            <li>Fulfilling and shipping your orders</li>
+            <li>Communicating with you about your order status</li>
+            <li>Keeping you updated about new products, services, and special offers</li>
+          </ul>
           <p>
-            We use your personal Information to provide our services to you, which includes:
-            offering products for sale, processing payments, shipping and fulfillment of your order,
-            and keeping you up to date on new products, services, and offers.
+            Everything we do with your information is aimed at making your DESTINO experience
+            smooth, enjoyable, and secure.
           </p>
         </Section>
 
-        <Section title="CCPA">
+        <Section title="Your Rights (CCPA)">
           <p>
-            If you are a resident of California, you have the right to access the Personal
-            Information we hold about you (also known as the &apos;Right to Know&apos;), to port it
-            to a new service, and to ask that your Personal Information be corrected, updated, or
-            erased. If you would like to exercise these rights, please contact us through our
-            shopify address/e-mail.
+            If you are a resident of California, you have special rights under the California
+            Consumer Privacy Act (CCPA), including the right to:
           </p>
+          <ul className="list-disc list-inside space-y-1 ml-4">
+            <li>
+              Request access to the Personal Information we hold about you (the &quot;Right to
+              Know&quot;)
+            </li>
+            <li>Request that we correct, update, or delete your Personal Information</li>
+            <li>Request a copy of your information (the &quot;Right to Portability&quot;)</li>
+          </ul>
           <p>
-            If you would like to designate an authorized agent to submit these requests on your
-            behalf, please contact us at the address below.
+            To exercise any of these rights, you can contact us anytime at&nbsp;
+            <a
+              href="mailto:james@destinosf.com"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              james@destinosf.com
+            </a>
+            . If you would like to authorize someone else to make a request on your behalf, please
+            contact us directly at the same email address.
           </p>
+          <p>We respect your privacy rights and are happy to assist you.</p>
         </Section>
 
         <Section title="Cookies">
           <p>
-            A cookie is a small amount of information that&apos;s downloaded to your computer or
-            device when you visit our Site. We use a number of different cookies, including
-            functional, performance, advertising, and social media or content cookies. Cookies make
-            your browsing experience better by allowing the website to remember your actions and
-            preferences (such as login and region selection). This means you don&apos;t have to
-            re-enter this information each time you return to the site or browse from one page to
-            another. Cookies also provide information on how people use the website, for instance
-            whether it&apos;s their first time visiting or if they are a frequent visitor.
+            A cookie is a small piece of data that gets stored on your computer or device when you
+            visit our Site. We use cookies to make your browsing experience better — for example, by
+            remembering your preferences and helping the website load faster for you.
           </p>
+          <p>We use cookies for a few key reasons:</p>
+          <ul className="list-disc list-inside space-y-1 ml-4">
+            <li>To help you navigate our store and complete your purchases</li>
+            <li>To remember your login or region settings</li>
+            <li>
+              To analyze how our visitors use the Site, so we can continue improving your experience
+            </li>
+            <li>To support marketing and advertising efforts (when you consent)</li>
+          </ul>
+          <h3 className="text-xl font-semibold mt-6 mb-2">Types of Cookies We Use:</h3>
+          <ul className="list-disc list-inside space-y-1 ml-4">
+            <li>
+              <strong>Necessary Cookies:</strong> These are essential for the site to function
+              properly (for example, allowing you to log in, add items to your cart, or complete a
+              checkout).
+            </li>
+            <li>
+              <strong>Performance and Analytics Cookies:</strong> These help us understand how
+              people are using our Site so we can improve things like navigation and speed.
+            </li>
+            <li>
+              <strong>Advertising Cookies:</strong> These allow us (and our partners) to deliver
+              personalized ads based on your interests.
+            </li>
+          </ul>
           <p>
-            We use the following cookies to optimize your experience on our Site and to provide our
-            services.
-          </p>
-
-          <h3 className={twMerge('text-xl font-semibold mt-6 mb-2 underline')}>
-            Cookies Necessary for the Functioning of the Store
-          </h3>
-          <div className={twMerge('overflow-x-auto mb-6')}>
-            <table className={twMerge('min-w-full border border-gray-200 text-sm')}>
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b">Name</th>
-                  <th className="px-4 py-2 border-b">Function</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-4 py-2 border-b">_ab</td>
-                  <td className="px-4 py-2 border-b">Used in connection with access to admin.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_secure_session_id</td>
-                  <td className="px-4 py-2 border-b">
-                    Used in connection with navigation through a storefront.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">cart</td>
-                  <td className="px-4 py-2 border-b">Used in connection with shopping cart.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">cart_sig</td>
-                  <td className="px-4 py-2 border-b">Used in connection with checkout.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">cart_ts</td>
-                  <td className="px-4 py-2 border-b">Used in connection with checkout.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">checkout_token</td>
-                  <td className="px-4 py-2 border-b">Used in connection with checkout.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">secret</td>
-                  <td className="px-4 py-2 border-b">Used in connection with checkout.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">secure_customer_sig</td>
-                  <td className="px-4 py-2 border-b">Used in connection with customer login.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">storefront_digest</td>
-                  <td className="px-4 py-2 border-b">Used in connection with customer login.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_shopify_u</td>
-                  <td className="px-4 py-2 border-b">
-                    Used to facilitate updating customer account information.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <h3 className={twMerge('text-xl font-semibold mt-6 mb-2 underline')}>
-            Reporting and Analytics
-          </h3>
-          <div className={twMerge('overflow-x-auto mb-6')}>
-            <table className={twMerge('min-w-full border border-gray-200 text-sm')}>
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b">Name</th>
-                  <th className="px-4 py-2 border-b">Function</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-4 py-2 border-b">_tracking_consent</td>
-                  <td className="px-4 py-2 border-b">Tracking preferences.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_landing_page</td>
-                  <td className="px-4 py-2 border-b">Track landing pages</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_orig_referrer</td>
-                  <td className="px-4 py-2 border-b">Track landing pages</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_s</td>
-                  <td className="px-4 py-2 border-b">Shopify analytics.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_shopify_s</td>
-                  <td className="px-4 py-2 border-b">Shopify analytics.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_shopify_sa_p</td>
-                  <td className="px-4 py-2 border-b">
-                    Shopify analytics relating to marketing & referrals.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_shopify_sa_t</td>
-                  <td className="px-4 py-2 border-b">
-                    Shopify analytics relating to marketing & referrals.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_shopify_y</td>
-                  <td className="px-4 py-2 border-b">Shopify analytics.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 border-b">_y</td>
-                  <td className="px-4 py-2 border-b">Shopify analytics.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p>
-            The length of time that a cookie remains on your computer or mobile device depends on
-            whether it is a &quot;persistent&quot; or &quot;session&quot; cookie. Session cookies
-            last until you stop browsing and persistent cookies last until they expire or are
-            deleted. Most of the cookies we use are persistent and will expire between 30 minutes
-            and two years from the date they are downloaded to your device.
-          </p>
-          <p>
-            You can control and manage cookies in various ways. Please keep in mind that removing or
-            blocking cookies can negatively impact your user experience and parts of our website may
-            no longer be fully accessible.
-          </p>
-          <p>
-            Most browsers automatically accept cookies, but you can choose whether or not to accept
-            cookies through your browser controls, often found in your browser&apos;s
-            &quot;Tools&quot; or &quot;Preferences&quot; menu. For more information on how to modify
-            your browser settings or how to block, manage or filter cookies can be found in your
-            browser&apos;s help file or through such sites as{' '}
+            <strong>Managing Your Cookies:</strong> Most browsers automatically accept cookies, but
+            you can adjust your settings to decline or delete cookies if you prefer. To learn more
+            about how to manage cookies, visit&nbsp;
             <a
               href="http://www.allaboutcookies.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 underline"
+              className="text-blue-600 underline hover:text-blue-800"
             >
               www.allaboutcookies.org
             </a>
             .
           </p>
           <p>
-            Additionally, please note that blocking cookies may not completely prevent how we share
-            information with third parties such as our advertising partners. To exercise your rights
-            or opt-out of certain uses of your information by these parties, please follow the
-            instructions in the &quot;Behavioural Advertising&quot; section above.
+            <strong>Please note:</strong> If you block cookies, some parts of our website may not
+            work correctly.
           </p>
         </Section>
 
         <Section title="Do Not Track">
           <p>
-            Please note that because there is no consistent industry understanding of how to respond
-            to &quot;Do Not Track&quot; signals, we do not alter our data collection and usage
-            practices when we detect such a signal from your browser.
+            Some web browsers offer a &quot;Do Not Track&quot; feature that lets you tell websites
+            that you prefer not to have your online activity tracked. Currently, there is no
+            consistent industry standard for responding to these signals, so we do not alter our
+            data practices when we detect a &quot;Do Not Track&quot; request.
+          </p>
+          <p>
+            We are committed to being transparent about how we collect and use your information, and
+            we encourage you to manage your privacy settings through your browser if you wish.
           </p>
         </Section>
 
-        <Section title="Changes">
+        <Section title="Changes to This Privacy Policy">
           <p>
-            We may update this Privacy Policy from time to time in order to reflect, for example,
-            changes to our practices or for other operational, legal, or regulatory reasons.
+            We may update this Privacy Policy from time to time to reflect changes to our practices,
+            or for operational, legal, or regulatory reasons. When we make changes, we will update
+            the &quot;Last Updated&quot; date at the top of this page so you can easily stay
+            informed.
+          </p>
+          <p>
+            We encourage you to review this Privacy Policy regularly to stay up to date on how we
+            are protecting your information.
           </p>
         </Section>
 
-        <Section title="Contact">
+        <Section title="Contact Information">
           <p>
-            For more information about our privacy practices, if you have questions, or if you would
-            like to make a complaint, please contact us by e-mail at [email address] or by mail
-            using the details provided below:
+            If you have any questions, concerns, or would like to make a complaint about how we
+            handle your Personal Information, you can contact us at:
           </p>
-          <p className={twMerge('mt-2 font-medium')}>
-            Destino, 377 Corbett Avenue, San Francisco CA 94114, United States
-          </p>
-          <p>
-            If you are not satisfied with our response to your complaint, you have the right to
-            lodge your complaint with the relevant data protection authority. You can contact your
-            local data protection authority, or our supervisory authority here: [ADD CONTACT
-            INFORMATION OR WEBSITE FOR THE DATA PROTECTION AUTHORITY IN YOUR JURISDICTION. FOR
-            EXAMPLE: https://ico.org.uk/make-a-complaint/]
+          <ul className="list-none space-y-1 mt-2">
+            <li>
+              <strong>Email:</strong>&nbsp;
+              <a
+                href="mailto:james@destinosf.com"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                james@destinosf.com
+              </a>
+            </li>
+            <li>
+              <strong>Mailing Address:</strong>
+              <br />
+              CHASQUI LLC (dba DESTINO)
+              <br />
+              377 Corbett Avenue
+              <br />
+              San Francisco, CA 94114
+              <br />
+              United States
+            </li>
+          </ul>
+          <p className="mt-4">
+            We take privacy seriously and will do our best to address your concerns promptly.
           </p>
         </Section>
       </main>

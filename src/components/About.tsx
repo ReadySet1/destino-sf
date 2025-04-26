@@ -54,45 +54,67 @@ export const About: React.FC<AboutProps> = ({
           </div>
         </div>
 
+        {/* Added "Our History" title here */}
+        <h2 className="font-bold text-5xl mb-8">Our History</h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           <div className="flex flex-col justify-center space-y-6 max-w-xl">
-            {/* Text to the left by default */}
+            {/* Text to the left by default - REPLACED */}
             <p className="leading-relaxed font-quicksand font-medium">
-              For over 20 years, native San Franciscan James Schenk has applied his personal vision
-              of &quot;Modern Latino&quot; cuisine to become a mentor of gastronomical trends. James
-              became a food and beverage staple after opening the Bay Area&apos;s first upscale
-              Latin restaurant <strong>DESTINO</strong> in 2000.
+              For over two decades, <strong>Chef and San Francisco native James Schenk</strong> has
+              brought his passion for Latin American cuisine to the Bay Area and the international
+              stage.
             </p>
             <p className="leading-relaxed font-quicksand font-medium">
-              In 2008, he then created <strong>PISCO LATIN LOUNGE</strong> - the first modern day
-              pisco bar in the United States. His winning combination of flavors, presentation and
-              ambiance has gained him much acclaim and support from the Local, Hispanic & LGBTQ
-              communities. His expertise has been solidified through numerous media appearances,
-              national & international publications and several industry awards. DESTINO Restaurant
-              closed its doors June, 2020.
+              In 2000, James opened <strong>DESTINO</strong> — the Bay Area&apos;s first upscale
+              modern Latin restaurant — and later created <strong>PISCO LATIN LOUNGE</strong>, the
+              country&apos;s first modern-day pisco bar. Over the next 20 years, DESTINO became a
+              beloved institution, earning widespread acclaim from national media outlets and
+              winning numerous prestigious culinary awards.
             </p>
             <p className="leading-relaxed font-quicksand font-medium">
-              With deep roots in Peru and Europe, James&apos; family traditions are the springboard
-              for his culinary inspirations. Fluent in Spanish, he has conducted several{' '}
-              <strong>culinary tours</strong> in Peru, Argentina & Uruguay - focusing on traditional
-              applications of regional cuisine. Since 1998, James has been on the{' '}
-              <strong>chef&apos;s council for CCD Innovation</strong>; consulting on strategic
-              vision & trend insight for major international food companies including: Nestle,
-              Kashi, Frito-Lay, Bush Brothers & Co, Kellogg&apos;s, Heinz, Seeds of Change, American
-              Seafood Company, General Mills, and Nabisco. His own &quot;Alfajor&quot; retail line
-              of dulce de leche cookies has also been featured nationally in the prestigious{' '}
-              <strong>Saveur Magazine.</strong>
+              Rooted in family traditions from Peru and Europe, James draws inspiration from
+              authentic regional flavors, blending classic techniques with a modern sensibility. His
+              passion for Latin American cuisine has taken him on{' '}
+              <strong>extensive culinary tours</strong> throughout the region, deepening his
+              knowledge of traditional methods, local ingredients, and regional specialties. Along
+              the way, his expertise has led to collaborations with major international food brands
+              and national recognition for his signature alfajores, featured in publications such as{' '}
+              <strong>Saveur magazine</strong>.
             </p>
             <p className="leading-relaxed font-quicksand font-medium">
-              James continues to inspire his culinary passions with{' '}
-              <strong>virtual cooking classes</strong>. From individual to corporate clients, James
-              has led a wide range of educational seminars to hands on cooking experiences.
+              Today, DESTINO has evolved into a vibrant brand specializing in{' '}
+              <strong>authentic, protein-packed empanadas, alfajores</strong> —{' '}
+              <strong>dulce de leche shortbread cookies</strong>, and{' '}
+              <strong>traditional Latin sauces</strong>. Our products are available through select{' '}
+              <strong>retail and wholesale</strong> partners, allowing us to share the authentic
+              flavors of Latin America with a wider audience. We also continue to offer{' '}
+              <strong>full-service catering</strong> — including private events, corporate lunches,
+              and community celebrations — delivering fresh, flavorful experiences throughout the
+              Bay Area.
             </p>
             <p className="leading-relaxed font-quicksand font-medium">
-              Additionally, he is continuously promoting his product development of{' '}
-              <strong>DESTINO branded alfajores, empanadas and sauces</strong>. He continues to
-              partner with many Bay Area clients via his <strong>catering services</strong>.
+              <strong>
+                At DESTINO, our mission is simple: to share delicious food, crafted with love and
+                tradition, and to inspire people to fall in love with the vibrant flavors of Latin
+                America — just as James did.
+              </strong>
             </p>
+            <p className="leading-relaxed font-quicksand font-medium">
+              Gracias for being part of our journey!
+            </p>
+
+            {/* Added signature image below text */}
+            <div className="relative mt-8 h-20 w-64">
+              {' '}
+              {/* Container for sizing */}
+              <Image
+                src="/images/about/signature.png" /* Path relative to public directory */
+                alt="Signature"
+                fill
+                className="object-contain"
+              />
+            </div>
           </div>
           <div className="relative w-full max-w-md mx-auto mt-16 h-[600px] pb-8">
             {/* Image to the right by default */}
