@@ -4,7 +4,7 @@ import Image from 'next/image';
 export function HeroBanner() {
   return (
     <div className="relative w-full overflow-hidden">
-      <div className="relative h-[25vh] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
+      <div className="relative h-[50vh] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
         <Image
           src="/images/hero/hero-empanada.png"
           alt="Delicious Empanadas"
@@ -14,9 +14,9 @@ export function HeroBanner() {
         />
       </div>
 
-      <div className="absolute inset-0 flex flex-col justify-end md:items-start pb-8 md:pb-32 lg:pb-40 xl:pb-64 px-8 md:px-16 lg:px-32 xl:px-40">
+      <div className="absolute inset-0 flex flex-col justify-center md:items-start px-8 md:px-16 lg:px-32 xl:px-40">
         <div className="max-w-2xl w-full text-white flex flex-col items-start md:block md:w-auto md:text-left">
-          <h1 className="mb-4 text-xl font-bold leading-tight text-left md:text-3xl lg:text-5xl xl:text-6xl [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
+          <h1 className="mb-4 text-3xl font-bold leading-tight text-left md:text-3xl lg:text-5xl xl:text-6xl [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
             Flakey, golden empanadas
             <br />
             filled with rich flavors
