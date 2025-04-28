@@ -94,6 +94,7 @@ export function ShopByCategory() {
           ))}
         </div>
 
+        {/* Commenting out View All Categories button
         <div className="mt-12 text-center">
           <Link
             href="/categories"
@@ -110,6 +111,7 @@ export function ShopByCategory() {
             </svg>
           </Link>
         </div>
+        */}
       </div>
     </div>
   );
