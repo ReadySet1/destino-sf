@@ -3,18 +3,15 @@
 import Link from 'next/link';
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react';
 
-export function ContactInfo() {
+export function ContactInfoCatering() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="mb-10">
-          <h2 className="text-4xl font-bold text-white mb-4">Contact Information</h2>
-          <p className="text-gray-100 text-lg">
-            Curious about our menu or catering options? Send us a message — we&apos;d love to hear
-            from you! Whether you&apos;re planning a special event or just craving something
-            delicious, we&apos;re here to help
-          </p>
-        </div>
+        <h2 className="text-4xl font-bold text-white mb-4">Ready to plan your event?</h2>
+        <p className="text-white/90 text-lg">
+          Let us help you create an unforgettable experience with our Latin American catering
+          services.
+        </p>
       </div>
 
       <div className="space-y-5">
@@ -59,7 +56,7 @@ export function ContactInfo() {
           aria-label="Facebook"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Facebook className="h-5 w-5 text-[#f77c22]" />
+          <Facebook className="h-5 w-5 text-[#722F37]" />
         </Link>
         <Link
           href="https://instagram.com"
@@ -68,7 +65,7 @@ export function ContactInfo() {
           aria-label="Instagram"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Instagram className="h-5 w-5 text-[#f77c22]" />
+          <Instagram className="h-5 w-5 text-[#722F37]" />
         </Link>
         <Link
           href="https://linkedin.com"
@@ -77,7 +74,7 @@ export function ContactInfo() {
           aria-label="LinkedIn"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Linkedin className="h-5 w-5 text-[#f77c22]" />
+          <Linkedin className="h-5 w-5 text-[#722F37]" />
         </Link>
       </div>
     </div>
