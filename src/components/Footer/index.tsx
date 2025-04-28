@@ -57,10 +57,7 @@ export default function Footer() {
                   <h3 className="text-lg font-bold text-gray-800 uppercase">About Us</h3>
                   <ul className="mt-4 space-y-3 md:space-y-4">
                     <li>
-                      <Link
-                        href="/our-story"
-                        className="text-base text-gray-700 hover:text-gray-900"
-                      >
+                      <Link href="/about" className="text-base text-gray-700 hover:text-gray-900">
                         Our Story
                       </Link>
                     </li>
@@ -82,11 +79,6 @@ export default function Footer() {
                     <li>
                       <Link href="/contact" className="text-base text-gray-700 hover:text-gray-900">
                         Contact Us
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/faq" className="text-base text-gray-700 hover:text-gray-900">
-                        FAQ
                       </Link>
                     </li>
                     <li>

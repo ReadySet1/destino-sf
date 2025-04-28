@@ -23,19 +23,21 @@ export const CateringSection = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 max-w-xl">
             <h2 className="text-4xl md:text-5xl font-bold">
-              Let Us Carter<br />
+              Let Us Carter
+              <br />
               Your Next Event
             </h2>
-            
+
             <p className="text-lg opacity-90">
-              Offering a diverse selection of savory Latin American dishes, we would be delighted to provide our catering services for your next event!
+              Offering a diverse selection of savory Latin American dishes, we would be delighted to
+              provide our catering services for your next event!
             </p>
 
             <p className="text-lg opacity-90">
               Customizable menus with a great selection of Gluten-free, Vegetarian & Vegan options!
             </p>
 
-            <Link 
+            <Link
               href="/contact"
               className="inline-block px-8 py-3 bg-amber-400 text-slate-900 font-semibold rounded-full hover:bg-amber-300 transition-colors"
             >
@@ -56,4 +58,4 @@ export const CateringSection = () => {
       </div>
     </section>
   );
-}; 
+};

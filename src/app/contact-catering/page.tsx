@@ -1,15 +1,15 @@
 import React from 'react';
-import { ContactForm, ContactInfo } from '@/components/ContactForm';
+import { ContactForm, ContactInfoCatering } from '@/components/ContactForm';
 
-const ContactPage = () => {
+const ContactCateringPage = () => {
   return (
     <div className="max-w-[1200px] mx-auto pt-12">
       {/* Main contact card */}
-      <div className="bg-[#f77c22] rounded-lg overflow-hidden mb-16">
+      <div className="bg-[#2d3538] rounded-lg overflow-hidden mb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
           {/* Left side - Contact info */}
           <div className="p-12">
-            <ContactInfo />
+            <ContactInfoCatering />
           </div>
 
           {/* Right side - Contact form */}
@@ -25,4 +25,4 @@ const ContactPage = () => {
   );
 };
 
-export default ContactPage;
+export default ContactCateringPage;

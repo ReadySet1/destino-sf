@@ -3,45 +3,36 @@ import Head from 'next/head';
 import { twMerge } from 'tailwind-merge';
 
 const RefundPolicyPage: React.FC = () => {
+  // Helper component for sections for structure
+  const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+    <section className="mb-8">
+      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+      <div className="space-y-4 text-gray-700">{children}</div>
+    </section>
+  );
+
   return (
-    <div className={twMerge('w-full max-w-full px-4 py-8 bg-white text-gray-900')}>
+    <div className={twMerge('w-full px-4 py-12 bg-white text-gray-900 font-quicksand')}>
       <Head>
         <title>Refund Policy | Destino</title>
-        <meta name="description" content="Refund Policy for Destino San Francisco" />
+        <meta name="description" content="Refund Policy for CHASQUI LLC (dba DESTINO)" />
       </Head>
 
       <main className={twMerge('flex flex-col gap-8')}>
-        <h1 className={twMerge('text-4xl font-extrabold mb-6 text-center')}>Refund Policy</h1>
+        <h1 className={twMerge('text-4xl font-bold mb-6 text-center')}>Refund Policy</h1>
 
-        <section className="mb-8">
-          <p className="mb-4">
-            We have a <span className="font-semibold">14-day return policy</span>, which means you
-            have
-            <span className="font-semibold"> 14 </span>
-            days after receiving your item to request a return.
-          </p>
+        <p className="text-base leading-relaxed">
+          At DESTINO, we take great pride in the quality of our food and customer service. Due to
+          the perishable nature of our products, we have a specialized refund and replacement policy
+          as outlined below.
+        </p>
 
-          <p className="mb-4">
-            To be eligible for a return, your item must be in the same condition that you received
-            it, unworn or unused, with tags, and in its original packaging. You&apos;ll also need
-            the receipt or proof of purchase.
-          </p>
-
-          <p className="mb-4">
-            To start a return, you can contact us at{' '}
-            <a
-              href="mailto:james@destinosf.com"
-              className="text-blue-600 underline hover:text-blue-800"
-            >
-              james@destinosf.com
-            </a>
-            . If your return is accepted, we&apos;ll send you a return shipping label, as well as
-            instructions on how and where to send your package. Items sent back to us without first
-            requesting a return will not be accepted.
-          </p>
-
-          <p className="mb-4">
-            You can always contact us for any return question at{' '}
+        <Section title="Shipped Products (Alfajores, Empanadas, Sauces, and Other Food Items)">
+          <p>All sales of food products are final.</p>
+          <p>We do not accept returns or offer refunds once products have been shipped.</p>
+          <p>
+            However, if your order arrives damaged, is incorrect, or has any quality issues, please
+            contact us within 24 hours of delivery at&nbsp;
             <a
               href="mailto:james@destinosf.com"
               className="text-blue-600 underline hover:text-blue-800"
@@ -50,49 +41,65 @@ const RefundPolicyPage: React.FC = () => {
             </a>
             .
           </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-3">Damages and Issues</h2>
-          <p className="mb-4">
-            Please inspect your order upon reception and contact us immediately if the item is
-            defective, damaged or if you receive the wrong item, so that we can evaluate the issue
-            and make it right.
+          <p>
+            To assist us, please include your order number, a description of the issue, and clear
+            photos of the product and packaging.
           </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-3">Exceptions / Non-Returnable Items</h2>
-          <p className="mb-4">
-            Certain types of items cannot be returned, like perishable goods (such as food, flowers,
-            or plants), custom products (such as special orders or personalized items), and personal
-            care goods (such as beauty products). We also do not accept returns for hazardous
-            materials, flammable liquids, or gases. Please get in touch if you have questions or
-            concerns about your specific item.
+          <p>
+            After reviewing your case, we may offer a replacement or store credit at our discretion.
           </p>
-
-          <p className="mb-4">
-            Unfortunately, we cannot accept returns on sale items or gift cards.
+          <p>
+            <strong>Please note:</strong>
           </p>
-        </section>
+          <ul className="list-disc list-inside space-y-1 ml-4">
+            <li>
+              We pack our products carefully and use appropriate shipping materials to maintain
+              temperature during transit.
+            </li>
+            <li>
+              DESTINO is not responsible for delays caused by shipping carriers, weather conditions,
+              or incorrect address information provided by the customer.
+            </li>
+          </ul>
+        </Section>
 
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-3">Exchanges</h2>
-          <p className="mb-4">
-            The fastest way to ensure you get what you want is to return the item you have, and once
-            the return is accepted, make a separate purchase for the new item.
+        <Section title="Catering Orders (Direct Delivery)">
+          <p>For catering deliveries, we inspect all orders carefully prior to handoff.</p>
+          <p>
+            If there is an issue with your catering order upon delivery, please notify our delivery
+            team immediately, or contact us at&nbsp;
+            <a
+              href="mailto:james@destinosf.com"
+              className="text-blue-600 underline hover:text-blue-800"
+            >
+              james@destinosf.com
+            </a>
+            &nbsp;at the time of delivery.
           </p>
-        </section>
+          <p>
+            We will review any concerns reported at the time of delivery and, if appropriate, may
+            offer a store credit toward a future order at our discretion.
+          </p>
+          <p>
+            After delivery has been accepted, all sales are final, and no refunds or adjustments can
+            be made.
+          </p>
+        </Section>
 
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-3">Refunds</h2>
-          <p className="mb-4">
-            We will notify you once we&apos;ve received and inspected your return, and let you know
-            if the refund was approved or not. If approved, you&apos;ll be automatically refunded on
-            your original payment method. Please remember it can take some time for your bank or
-            credit card company to process and post the refund too.
+        <Section title="Non-Returnable Items">
+          <p>
+            Because we sell perishable food items, we cannot accept returns on any shipped or
+            delivered orders.
           </p>
-        </section>
+          <p>Additionally, we do not accept returns on sale items or gift cards.</p>
+        </Section>
+
+        <p className="text-base leading-relaxed">
+          We appreciate your understanding and support of our small business.
+        </p>
+        <p className="text-base leading-relaxed font-semibold text-center mt-4">
+          Thank you for choosing DESTINO!
+        </p>
       </main>
     </div>
   );
