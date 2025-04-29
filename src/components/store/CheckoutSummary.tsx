@@ -4,12 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CheckoutSummaryProps {
   items: CartItem[];
+  /** Determines if the 3.5% service fee should be calculated and displayed. */
+  includeServiceFee?: boolean; // Optional prop, defaults to false if not provided
 }
 
-export function CheckoutSummary({ items }: CheckoutSummaryProps) {
+// Define the service fee rate
+const SERVICE_FEE_RATE = 0.035; // 3.5%
+
+export function CheckoutSummary({ items, includeServiceFee = false }: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0825; // 8.25% tax
-  const total = subtotal + tax;
+
+  // Calculate the base total before service fee
+  const totalBeforeFee = subtotal + tax;
+
+  // Calculate service fee only if includeServiceFee is true
+  const serviceFee = includeServiceFee ? totalBeforeFee * SERVICE_FEE_RATE : 0;
+
+  // Calculate the final total including the service fee
+  const total = totalBeforeFee + serviceFee;
 
   return (
     <Card>
@@ -61,6 +74,14 @@ export function CheckoutSummary({ items }: CheckoutSummaryProps) {
             <span>Tax (8.25%)</span>
             <span>${tax.toFixed(2)}</span>
           </div>
+
+          {/* Conditionally display the service fee */}
+          {includeServiceFee && serviceFee > 0 && (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Service Fee (3.5%)</span>
+              <span>${serviceFee.toFixed(2)}</span>
+            </div>
+          )}
 
           <div className="flex justify-between border-t pt-2 text-lg font-bold">
             <span>Total</span>
