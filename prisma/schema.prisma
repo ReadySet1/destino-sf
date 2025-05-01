@@ -69,31 +69,38 @@ model Variant {
 }
 
 model Order {
-  id              String        @id @default(uuid()) @db.Uuid
-  squareOrderId   String?       @unique
-  status          OrderStatus   @default(PENDING)
-  total           Decimal       @db.Decimal(10, 2)
-  userId          String?       @db.Uuid
-  customerName    String
-  email           String
-  phone           String
-  pickupTime      DateTime
-  notes           String?
-  cancelReason    String?
-  fulfillmentType String? // Type of fulfillment (e.g., 'pickup', 'shipping', 'delivery')
-  trackingNumber  String? // Tracking number for shipped orders
-  shippingCarrier String? // Carrier for shipped orders (e.g., 'UPS', 'FedEx')
-  paymentStatus   PaymentStatus @default(PENDING)
-  rawData         Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  profile         Profile?      @relation(fields: [userId], references: [id])
-  items           OrderItem[]
-  payments        Payment[]
+  id                        String        @id @default(uuid()) @db.Uuid
+  squareOrderId             String?       @unique
+  status                    OrderStatus   @default(PENDING)
+  total                     Decimal       @db.Decimal(10, 2)
+  userId                    String?       @db.Uuid
+  customerName              String
+  email                     String
+  phone                     String
+  fulfillmentType           String?       @map("fulfillment_type") // pickup, local_delivery, nationwide_shipping
+  notes                     String? // For storing extra details like delivery instructions or raw fulfillment JSON
+  pickupTime                DateTime?     @map("pickup_time") // Used for pickup or as a placeholder for other types if needed
+  deliveryDate              String?       @map("delivery_date") // e.g., "YYYY-MM-DD"
+  deliveryTime              String?       @map("delivery_time") // e.g., "HH:mm"
+  shippingMethodName        String?       @map("shipping_method_name") // User-friendly name, e.g., "USPS Priority Mail"
+  shippingCarrier           String?       @map("shipping_carrier") // e.g., "USPS"
+  shippingServiceLevelToken String?       @map("shipping_service_level_token") // The token, e.g., "usps_priority"
+  shippingCostCents         Int?          @map("shipping_cost_cents") // Cost in cents
+  shippingRateId            String?       @map("shipping_rate_id") // Shippo Rate object ID
+  trackingNumber            String? // Tracking number for shipped orders - MOVED here for grouping
+  cancelReason              String?
+  paymentStatus             PaymentStatus @default(PENDING)
+  rawData                   Json? // Store raw webhook data, etc.
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  profile                   Profile?      @relation(fields: [userId], references: [id])
+  items                     OrderItem[]
+  payments                  Payment[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@map("orders") // Ensure this matches your table name
 }
 
 model Payment {

@@ -77,7 +77,6 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 
 async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
-  // TODO: Define a more specific type for fulfillment update data if possible
   const fulfillmentUpdateData = data.object.order_fulfillment_updated as any; 
   console.log('Processing order.fulfillment.updated event:', data.id);
 
@@ -92,10 +91,12 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
   }
 
   let newStatus: OrderStatus | undefined;
-  let trackingData: { trackingNumber?: string | null; shippingCarrier?: string | null } = {}; // Use null for Prisma fields
+  let trackingData: { trackingNumber?: string | null; shippingCarrier?: string | null } = {};
 
-  // --- Fetch fulfillment type and potentially existing tracking info --- 
-  let fulfillmentType: 'pickup' | 'shipping' | 'delivery' | 'unknown' = 'unknown';
+  // Define a broader type for internal logic
+  type InternalFulfillmentType = 'pickup' | 'delivery_type' | 'shipping_type' | 'unknown';
+  let internalFulfillmentType: InternalFulfillmentType = 'unknown'; 
+
   try {
       const order = await prisma.order.findUnique({
           where: { squareOrderId },
@@ -103,11 +104,16 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
       });
 
       if (order && order.fulfillmentType) {
-          const type = order.fulfillmentType.toLowerCase();
-          if (type === 'pickup' || type === 'shipping' || type === 'delivery') {
-             fulfillmentType = type as 'pickup' | 'shipping' | 'delivery';
+          const dbType = order.fulfillmentType.toLowerCase();
+          // Map DB types to internal types
+          if (dbType === 'pickup') {
+             internalFulfillmentType = 'pickup';
+          } else if (dbType === 'shipping' || dbType === 'nationwide_shipping') {
+             internalFulfillmentType = 'shipping_type'; // Map both to shipping_type
+          } else if (dbType === 'delivery' || dbType === 'local_delivery') {
+             internalFulfillmentType = 'delivery_type'; // Map both to delivery_type
           } else {
-             console.warn(`Order ${squareOrderId} has unexpected fulfillmentType: ${order.fulfillmentType}`);
+             console.warn(`Order ${squareOrderId} has unrecognized fulfillmentType from DB: ${order.fulfillmentType}`);
           }
           trackingData.trackingNumber = order.trackingNumber;
           trackingData.shippingCarrier = order.shippingCarrier;
@@ -117,24 +123,27 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
   } catch (dbError: any) {
        console.error(`Error fetching order ${squareOrderId} to determine fulfillment type:`, dbError);
   }
-  // --- End Fetch fulfillment type ---
 
-  // --- Extract Tracking Info if applicable ---
-  const shipmentDetails = fulfillmentUpdateData?.shipment_details;
-  if (shipmentDetails && fulfillmentType === 'shipping') {
-      if (shipmentDetails.tracking_number) {
-          trackingData.trackingNumber = shipmentDetails.tracking_number;
-          console.log(`Extracted tracking number ${trackingData.trackingNumber} for order ${squareOrderId}`);
-      }
-      if (shipmentDetails.carrier) {
-          trackingData.shippingCarrier = shipmentDetails.carrier;
-           console.log(`Extracted shipping carrier ${trackingData.shippingCarrier} for order ${squareOrderId}`);
+  // --- Fetch latest tracking info from Square API for shipping orders ---
+  if (internalFulfillmentType === 'shipping_type') {
+      try {
+          console.log(`Fetching tracking details from Square API for order ${squareOrderId}...`);
+          const apiTrackingData = await getOrderTracking(squareOrderId);
+          if (apiTrackingData) {
+              trackingData.trackingNumber = apiTrackingData.trackingNumber;
+              trackingData.shippingCarrier = apiTrackingData.shippingCarrier;
+              console.log(`Fetched from API - Tracking: ${trackingData.trackingNumber ?? 'N/A'}, Carrier: ${trackingData.shippingCarrier ?? 'N/A'}`);
+          } else {
+              console.log(`No shipment details found via API for order ${squareOrderId}.`);
+          }
+      } catch (apiError: any) {
+          console.error(`Error fetching tracking details from Square API for order ${squareOrderId}:`, apiError);
       }
   }
-  // --- End Extract Tracking Info ---
+  // --- End Fetch tracking info ---
 
-  // Map status based on fulfillment type and state
-  switch (fulfillmentType) {
+  // Map status based on internal fulfillment type and state
+  switch (internalFulfillmentType) {
     case 'pickup':
       if (newFulfillmentState === 'PROPOSED' || newFulfillmentState === 'RESERVED') {
         newStatus = OrderStatus.PROCESSING;
@@ -146,24 +155,26 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
         newStatus = OrderStatus.CANCELLED;
       }
       break;
-    case 'shipping':
+    case 'shipping_type': // Use the internal type
        if (newFulfillmentState === 'PROPOSED' || newFulfillmentState === 'RESERVED') {
          newStatus = OrderStatus.PROCESSING;
        } else if (newFulfillmentState === 'PREPARED') { 
-         newStatus = OrderStatus.SHIPPING;
+         newStatus = OrderStatus.SHIPPING; // PREPARED maps to SHIPPING
        } else if (newFulfillmentState === 'COMPLETED') {
-         newStatus = OrderStatus.DELIVERED;
+         newStatus = OrderStatus.DELIVERED; // COMPLETED maps to DELIVERED
        } else if (newFulfillmentState === 'CANCELED') {
          newStatus = OrderStatus.CANCELLED;
        } else {
+         // If state is unknown but we have tracking, set to SHIPPING
          console.log(`Unhandled shipping state '${newFulfillmentState}' for order ${squareOrderId}. Check Square docs.`);
          if(trackingData.trackingNumber) {
             newStatus = OrderStatus.SHIPPING;
          }
        }
        break;
-    default:
-      console.warn(`Unhandled fulfillment type '${fulfillmentType}' or state '${newFulfillmentState}' for order ${squareOrderId}. No status update determined.`);
+    // TODO: Add case for 'delivery_type' if needed, mapping states appropriately
+    default: // Handles 'unknown'
+      console.warn(`Unhandled internal fulfillment type '${internalFulfillmentType}' or state '${newFulfillmentState}' for order ${squareOrderId}. No status update determined.`);
       break;
   }
 
@@ -311,26 +322,36 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
       return;
   }
 
-  // Log values just before the create call
-  console.log(`Attempting to create payment record with: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount}`);
+  // Log values just before the upsert call
+  console.log(`Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount}`);
 
   try {
-      await prisma.payment.create({
-        data: {
-          squarePaymentId: data.id,
-          amount: paymentAmount,
-          status: 'PENDING',
-          rawData: data.object as unknown as Prisma.InputJsonValue,
-          order: {
-            connect: { id: internalOrderId } // Use the internal order ID found
+      // Use upsert instead of create to handle duplicate webhooks
+      await prisma.payment.upsert({
+          where: { squarePaymentId: data.id }, // Unique identifier
+          update: { // What to update if it exists
+              amount: paymentAmount,
+              status: 'PENDING', // Or update based on paymentData.status?
+              rawData: data.object as unknown as Prisma.InputJsonValue,
+              // Ensure connection isn't attempted on update if already connected
+          },
+          create: { // What to create if it doesn't exist
+              squarePaymentId: data.id,
+              amount: paymentAmount,
+              status: 'PENDING', // Initial status
+              rawData: data.object as unknown as Prisma.InputJsonValue,
+              order: {
+                  connect: { id: internalOrderId }
+              }
           }
-        },
       });
-      console.log(`Successfully created payment record for internal order ${internalOrderId}`);
-  } catch (createError) {
-       console.error(`Error creating payment record for internal order ${internalOrderId}:`, createError);
-       // Rethrow or handle as needed, but logging the specific error is key
-       throw createError;
+      console.log(`Successfully upserted payment record for internal order ${internalOrderId}`);
+  } catch (upsertError: any) {
+       console.error(`Error upserting payment record for internal order ${internalOrderId}:`, upsertError);
+       if (upsertError.code === 'P2025') { // Handle case where order to connect doesn't exist
+            console.error(`Order with internal ID ${internalOrderId} not found when trying to connect payment ${data.id}`);
+       }
+       throw upsertError; // Rethrow or handle as needed
   }
 
   // Update order status
@@ -471,26 +492,52 @@ async function handleRefundUpdated(payload: SquareWebhookPayload): Promise<void>
     }
 }
 
+// Initialize Square Client with proper configuration
+const squareEnvString = process.env.SQUARE_ENVIRONMENT?.toLowerCase() ?? 'production';
+
 const client = new SquareClient({
   token: process.env.SQUARE_ACCESS_TOKEN,
-  environment: 'production', // or 'sandbox'
+  environment: squareEnvString === 'sandbox' ? 'sandbox' : 'production', // Use string literals
 });
 
 async function getOrderTracking(orderId: string) {
-  const response = await client.orders.get({ orderId }); // Get the full response
-  const order = response.order;
-  if (!order || !order.fulfillments) return null;
+  try {
+      console.log(`Fetching order details from Square API for order ${orderId}`);
+      
+      // Use client.orders.get method, which is the correct method name
+      const response = await client.orders.get({ orderId });
+      
+      console.log(`Square API response for order ${orderId}:`, JSON.stringify(response, null, 2)); 
+      
+      // Access order correctly based on response structure
+      const order = response.order;
+      if (!order || !order.fulfillments || order.fulfillments.length === 0) {
+        console.log(`No order or fulfillments found in API response for ${orderId}`);
+        return null;
+      }
 
-  // Find the SHIPMENT fulfillment using the SDK's Fulfillment type
-  const shipment = order.fulfillments.find((f: Square.Fulfillment) => f.type === 'SHIPMENT');
-  if (shipment && shipment.shipmentDetails) {
-    return {
-      trackingNumber: shipment.shipmentDetails.trackingNumber,
-      carrier: shipment.shipmentDetails.carrier,
-    };
+      // Find the SHIPMENT fulfillment using the SDK's Fulfillment type
+      const shipment = order.fulfillments.find((f: Square.Fulfillment) => f.type === 'SHIPMENT');
+      if (shipment && shipment.shipmentDetails) {
+        console.log(`Found shipment details for ${orderId}:`, shipment.shipmentDetails);
+        const trackingNumber = shipment.shipmentDetails.trackingNumber ?? null;
+        const shippingCarrier = shipment.shipmentDetails.carrier ?? null;
+        return { trackingNumber, shippingCarrier };
+      } else {
+        console.log(`No SHIPMENT fulfillment or shipmentDetails found for ${orderId}`);
+      }
+    } catch (error: any) {
+      // Improve error handling with more specific logging
+      console.error(`Error in getOrderTracking for ${orderId}:`, error);
+      
+      // Try to extract and log specific Square API errors if present
+      if (error.errors) {
+        console.error('Square API Errors:', error.errors);
+      }
+      
+      return null;
+    }
   }
-  return null;
-}
 
 /**
  * Handles POST requests from Square webhooks.

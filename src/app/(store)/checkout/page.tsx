@@ -6,7 +6,7 @@ import { useForm, Controller, FieldErrors, UseFormReturn } from 'react-hook-form
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 // --- Date/Time Imports ---
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, formatISO } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -35,8 +35,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 import { FulfillmentSelector, FulfillmentMethod as AppFulfillmentMethod } from '@/components/Store/FulfillmentSelector';
 import { AddressForm } from '@/components/Store/AddressForm';
-import { createOrderAndGenerateCheckoutUrl } from '@/app/actions';
-import type { FulfillmentData } from '@/app/actions';
+import { createOrderAndGenerateCheckoutUrl, getShippingRates } from '@/app/actions';
+import type { FulfillmentData, ShippingRate } from '@/app/actions';
 // --- Import Date Utilities ---
 import {
   getEarliestPickupDate,
@@ -50,6 +50,9 @@ import {
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
+
+// --- Add placeholder weight ---
+const PLACEHOLDER_WEIGHT_LB = 1; // TODO: Replace with actual cart weight calculation
 
 // Form validation schema
 const addressSchema = z.object({
@@ -89,7 +92,7 @@ const nationwideShippingSchema = z.object({
   email: z.string().email('Valid email is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
   shippingAddress: addressSchema,
-  shippingMethod: z.string().min(1, 'Shipping method is required').default('Standard'),
+  rateId: z.string().optional(),
 });
 
 // --- Add .superRefine() for cross-field validation ---
@@ -138,6 +141,12 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
   const [isMounted, setIsMounted] = useState(false);
+  // --- Add State for Shipping Rates ---
+  const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
+  const [shippingLoading, setShippingLoading] = useState<boolean>(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  // No need for selectedRateId state, react-hook-form will manage rateId field
+  // --- End State for Shipping Rates ---
   const supabase = createClient();
 
   const form = useForm<CheckoutFormData>({
@@ -149,6 +158,7 @@ export default function CheckoutPage() {
       phone: '',
       pickupDate: format(defaultPickupDate, 'yyyy-MM-dd'),
       pickupTime: defaultPickupTime,
+      rateId: undefined,
     } as Partial<CheckoutFormData>,
      mode: 'onBlur',
   });
@@ -173,6 +183,7 @@ export default function CheckoutPage() {
         fulfillmentMethod: 'pickup',
         pickupDate: format(getEarliestPickupDate(), 'yyyy-MM-dd'),
         pickupTime: getPickupTimeSlots()[0],
+        rateId: undefined,
       } as Partial<CheckoutFormData>);
     } else if (fulfillmentMethod === 'local_delivery') {
       reset({
@@ -184,6 +195,7 @@ export default function CheckoutPage() {
             recipientName: '', street: '', city: '', state: '', postalCode: '', country: 'US'
         },
         deliveryInstructions: '',
+        rateId: undefined,
       } as Partial<CheckoutFormData>);
     } else if (fulfillmentMethod === 'nationwide_shipping') {
        reset({
@@ -192,10 +204,13 @@ export default function CheckoutPage() {
         shippingAddress: { 
             recipientName: '', street: '', city: '', state: '', postalCode: '', country: 'US'
         },
-        shippingMethod: 'Standard',
-      } as Partial<CheckoutFormData>);
+        rateId: undefined,
+      } as Partial<CheckoutFormData>, { keepDefaultValues: false });
+       setShippingRates([]);
+       setShippingError(null);
     }
-  }, [fulfillmentMethod, reset, typedForm]); 
+    trigger(); 
+  }, [fulfillmentMethod, reset, typedForm, trigger]); 
 
 
   useEffect(() => {
@@ -245,43 +260,55 @@ export default function CheckoutPage() {
   }, [supabase, setValue, reset, typedForm]); 
 
 
-  // Helper function to prepare fulfillment data for the server action
-  const prepareFulfillmentData = (formData: CheckoutFormData): FulfillmentData | null => {
+  // --- Add function to fetch shipping rates ---
+  const fetchShippingRates = async () => {
+    const address = typedForm.getValues('shippingAddress') as z.infer<typeof addressSchema>; 
+    if (!address || !address.street || !address.city || !address.state || !address.postalCode || !address.country) {
+        setShippingError("Please complete the shipping address to fetch rates.");
+        setShippingRates([]);
+        return;
+    }
+
+    setShippingLoading(true);
+    setShippingError(null);
+    setShippingRates([]);
+    setValue('rateId', undefined, { shouldValidate: true }); 
+
     try {
-        if (formData.fulfillmentMethod === 'pickup') {
-            const { pickupDate, pickupTime } = formData;
-            if (!pickupDate || !pickupTime) throw new Error("Missing pickup date or time.");
-            return {
-                method: 'pickup',
-                pickupTime: `${pickupDate}T${pickupTime}:00`
-            };
-        } else if (formData.fulfillmentMethod === 'local_delivery') {
-            const { deliveryDate, deliveryTime, deliveryAddress, deliveryInstructions } = formData;
-            if (!deliveryDate || !deliveryTime || !deliveryAddress) throw new Error("Missing delivery details.");
-            return {
-                method: 'local_delivery',
-                deliveryDate: deliveryDate,
-                deliveryTime: `${deliveryDate}T${deliveryTime}:00`,
-                deliveryAddress: deliveryAddress,
-                deliveryInstructions: deliveryInstructions
-            };
-        } else if (formData.fulfillmentMethod === 'nationwide_shipping') {
-            const { shippingAddress, shippingMethod } = formData;
-            if (!shippingAddress || !shippingMethod) throw new Error("Missing shipping details.");
-            return {
-                method: 'nationwide_shipping',
-                shippingAddress: shippingAddress,
-                shippingMethod: shippingMethod
-            };
+      console.log("Fetching shipping rates for address:", address);
+      const weightLb = PLACEHOLDER_WEIGHT_LB;
+      console.log(`Using placeholder weight: ${weightLb} lbs`);
+
+      const result = await getShippingRates({
+        shippingAddress: address,
+        estimatedWeightLb: weightLb,
+        estimatedLengthIn: 10, 
+        estimatedWidthIn: 8,   
+        estimatedHeightIn: 4,  
+      });
+
+      if (result.success && result.rates) {
+        console.log("Received rates:", result.rates);
+        if (result.rates.length === 0) {
+            setShippingError('No shipping rates found for this address/weight. Please check the details or contact support.');
+            setShippingRates([]);
+        } else {
+            setShippingRates(result.rates);
         }
-        throw new Error('Invalid or unsupported fulfillment method encountered.');
+      } else {
+        console.error("Failed to fetch shipping rates:", result.error);
+        setShippingError(result.error || 'Failed to fetch shipping rates.');
+        setShippingRates([]);
+      }
     } catch (err: any) {
-        console.error("Error preparing fulfillment data:", err);
-        setError(err.message || "Failed to prepare order details.");
-        return null;
+      console.error("Error calling getShippingRates action:", err);
+      setShippingError(err.message || 'An unexpected error occurred while fetching rates.');
+      setShippingRates([]);
+    } finally {
+      setShippingLoading(false);
     }
   };
-
+  // --- End function to fetch shipping rates ---
 
   const onSubmit = async (formData: CheckoutFormData) => {
     console.log('CheckoutPage onSubmit triggered');
@@ -295,22 +322,82 @@ export default function CheckoutPage() {
       return;
     }
 
+    let fulfillmentData: FulfillmentData | null = null;
+    let customerInfo: { name: string; email: string; phone: string; };
+
     try {
       console.log('Form data submitted:', formData);
-      const fulfillmentData = prepareFulfillmentData(formData);
-      console.log('Prepared fulfillment data:', fulfillmentData);
 
-      if (!fulfillmentData) {
-          setIsSubmitting(false);
-          return;
+      // --- Construct Fulfillment Data Directly ---
+      if (formData.fulfillmentMethod === 'pickup') {
+          if (!formData.pickupDate || !formData.pickupTime) {
+              throw new Error("Missing pickup date or time.");
+          }
+          fulfillmentData = {
+              method: 'pickup',
+              // Format pickup time as required by the action (ISO string)
+              pickupTime: formatISO(parseISO(`${formData.pickupDate}T${formData.pickupTime}:00`))
+          };
+      } else if (formData.fulfillmentMethod === 'local_delivery') {
+          if (!formData.deliveryDate || !formData.deliveryTime || !formData.deliveryAddress) {
+              throw new Error("Missing delivery details.");
+          }
+          fulfillmentData = {
+              method: 'local_delivery',
+              deliveryDate: formData.deliveryDate,
+              deliveryTime: formData.deliveryTime,
+              deliveryAddress: formData.deliveryAddress,
+              deliveryInstructions: formData.deliveryInstructions,
+          };
+      } else if (formData.fulfillmentMethod === 'nationwide_shipping') {
+          if (!formData.rateId) {
+              // This check might be redundant if Zod validation is kept strict
+              // but good defense if rateId is optional in schema
+              setError("Please select a shipping method.");
+              toast.error("Please select a shipping method.");
+              setIsSubmitting(false);
+              return;
+          }
+          const selectedRate = shippingRates.find(rate => rate.id === formData.rateId);
+          if (!selectedRate) {
+              setError("Selected shipping rate not found. Please re-select.");
+              toast.error("Selected shipping rate not found. Please re-select.");
+              setShippingRates([]); // Clear rates as they might be stale
+              setIsSubmitting(false);
+              return;
+          }
+          if (!formData.shippingAddress) {
+              throw new Error("Missing shipping address.");
+          }
+          fulfillmentData = {
+              method: 'nationwide_shipping',
+              shippingAddress: formData.shippingAddress,
+              rateId: selectedRate.id,
+              shippingMethod: selectedRate.serviceLevelToken, // Use the token
+              shippingCarrier: selectedRate.carrier,
+              shippingCost: selectedRate.amount, // Amount in cents
+              // shippingMethodName could be derived here if needed for DB: selectedRate.name
+          };
+      } else {
+          throw new Error('Invalid fulfillment method.');
       }
 
-      const customerInfo = {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
+      if (!fulfillmentData) {
+          // This should ideally not be reached if the above logic is sound
+          throw new Error("Failed to determine fulfillment details.");
+      }
+      // --- End Construct Fulfillment Data ---
+
+      // Construct Customer Info (matches action input type)
+      customerInfo = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          // pickupTime is not needed here, it's derived from fulfillmentData in the action
       };
 
+      console.log('Constructed fulfillment data:', fulfillmentData);
+      console.log('Constructed customer info:', customerInfo);
       console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
 
       const actionPayload = {
@@ -322,12 +409,13 @@ export default function CheckoutPage() {
           variantId: item.variantId,
         })),
         customerInfo: customerInfo,
-        fulfillment: fulfillmentData,
+        fulfillment: fulfillmentData, // Pass the correctly typed object
       };
 
-      console.log('Server Action Payload:', actionPayload);
+      console.log('Server Action Payload:', JSON.stringify(actionPayload, null, 2)); // Log the final payload
 
-      const result = await createOrderAndGenerateCheckoutUrl(actionPayload);
+      // ---> Type Assertion to satisfy the complex action input type
+      const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
       console.log('Server action result:', result);
 
       if (!result.success || !result.checkoutUrl) {
@@ -409,7 +497,7 @@ export default function CheckoutPage() {
           {/* Fulfillment Method Selector */}
           <FulfillmentSelector
             selectedMethod={currentMethod as AppFulfillmentMethod} 
-            onChange={(method) => setFulfillmentMethod(method as FulfillmentMethod)} 
+            onSelectMethod={(method) => setFulfillmentMethod(method as FulfillmentMethod)} 
           />
 
           {/* Customer Information */}
@@ -595,24 +683,26 @@ export default function CheckoutPage() {
                 title="Shipping Address" 
               />
                <div>
-                  <Label htmlFor="shippingMethod">Shipping Method</Label>
+                  <Label htmlFor="rateId">Shipping Method</Label>
                    <Controller
-                        name="shippingMethod"
+                        name="rateId"
                         control={control}
-                        defaultValue="Standard" 
                         render={({ field }) => (
                            <Select onValueChange={field.onChange} value={field.value}> 
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select shipping method" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Standard">Standard</SelectItem>
-                                    <SelectItem value="Express">Express</SelectItem> 
+                                    {shippingRates.map(rate => (
+                                        <SelectItem key={rate.id} value={rate.id}>
+                                            {rate.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         )}
                     />
-                  {getErrorMessage('shippingMethod') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('shippingMethod')}</p>}
+                  {getErrorMessage('rateId') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('rateId')}</p>}
                 </div> 
             </div>
           )}
@@ -633,7 +723,7 @@ export default function CheckoutPage() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
            {isMounted ? (
-             <CheckoutSummary items={items} />
+             <CheckoutSummary items={items} includeServiceFee={true} />
            ) : (
              <p>Loading cart summary...</p> // Placeholder while mounting
            )}

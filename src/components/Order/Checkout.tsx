@@ -38,6 +38,50 @@ type ServerActionResult = {
     orderId: string | null;
   };
 
+// --- Define exact fulfillment types to match server action expectations ---
+type ExactPickupFulfillment = {
+  method: "pickup";
+  pickupTime: string;
+};
+
+type ExactLocalDeliveryFulfillment = {
+  method: "local_delivery";
+  deliveryAddress: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    recipientName?: string;
+    street2?: string;
+  };
+  deliveryDate: string;
+  deliveryTime: string;
+  deliveryInstructions?: string;
+};
+
+type ExactNationwideShippingFulfillment = {
+  method: "nationwide_shipping";
+  shippingAddress: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    recipientName?: string;
+    street2?: string;
+  };
+  rateId: string;
+  shippingMethod: string;
+  shippingCarrier: string;
+  shippingCost: number;
+};
+
+type ExactFulfillmentData = 
+  | ExactPickupFulfillment 
+  | ExactLocalDeliveryFulfillment 
+  | ExactNationwideShippingFulfillment;
+
 // --- Update Component Signature ---
 const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, fulfillment }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,16 +107,93 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, f
           return;
       }
 
-
       // --- Call Server Action instead of fetch ---
       console.log('Calling createOrderAndGenerateCheckoutUrl server action from Checkout component...');
 
+      // Map the fulfillment data to the format expected by the server action
+      let mappedFulfillment: ExactFulfillmentData;
+      
+      // Handle the different fulfillment methods and ensure the required fields are present
+      if (fulfillment.method === 'pickup') {
+        if (!fulfillment.pickupTime) {
+          throw new Error('Pickup time is required for pickup fulfillment');
+        }
+        
+        mappedFulfillment = {
+          method: 'pickup',
+          pickupTime: fulfillment.pickupTime
+        };
+      } 
+      else if (fulfillment.method === 'local_delivery') {
+        // Ensure we have all required fields for local delivery
+        if ('deliveryAddress' in fulfillment && 
+            'deliveryDate' in fulfillment && 
+            'deliveryTime' in fulfillment && 
+            fulfillment.deliveryAddress && 
+            fulfillment.deliveryDate && 
+            fulfillment.deliveryTime) {
+          
+          mappedFulfillment = {
+            method: 'local_delivery',
+            deliveryAddress: {
+              street: fulfillment.deliveryAddress.street,
+              city: fulfillment.deliveryAddress.city,
+              state: fulfillment.deliveryAddress.state,
+              postalCode: fulfillment.deliveryAddress.postalCode,
+              country: fulfillment.deliveryAddress.country || 'US',
+              recipientName: fulfillment.deliveryAddress.recipientName,
+              street2: fulfillment.deliveryAddress.street2
+            },
+            deliveryDate: fulfillment.deliveryDate,
+            deliveryTime: fulfillment.deliveryTime,
+            deliveryInstructions: fulfillment.deliveryInstructions
+          };
+        } else {
+          throw new Error('Missing required fields for local delivery fulfillment');
+        }
+      }
+      else if (fulfillment.method === 'nationwide_shipping') {
+        // Ensure we have all required fields for nationwide shipping with strict validation
+        if ('shippingAddress' in fulfillment && 
+            'rateId' in fulfillment && 
+            'shippingMethod' in fulfillment && 
+            'shippingCarrier' in fulfillment &&
+            'shippingCost' in fulfillment && 
+            fulfillment.shippingAddress && 
+            fulfillment.rateId && 
+            fulfillment.shippingMethod && 
+            fulfillment.shippingCarrier && 
+            typeof fulfillment.shippingCost === 'number') {
+          
+          mappedFulfillment = {
+            method: 'nationwide_shipping',
+            shippingAddress: {
+              street: fulfillment.shippingAddress.street,
+              city: fulfillment.shippingAddress.city,
+              state: fulfillment.shippingAddress.state,
+              postalCode: fulfillment.shippingAddress.postalCode,
+              country: fulfillment.shippingAddress.country || 'US',
+              recipientName: fulfillment.shippingAddress.recipientName,
+              street2: fulfillment.shippingAddress.street2
+            },
+            rateId: fulfillment.rateId,
+            shippingMethod: fulfillment.shippingMethod,
+            shippingCarrier: fulfillment.shippingCarrier,
+            shippingCost: fulfillment.shippingCost
+          };
+        } else {
+          throw new Error('Missing required fields for nationwide shipping fulfillment');
+        }
+      }
+      else {
+        throw new Error(`Unsupported fulfillment method: ${fulfillment.method}`);
+      }
 
-      // --- Use the fulfillment prop directly ---
+      // --- Use the properly formatted fulfillment ---
       const actionPayload = {
           items: items, // Pass items directly
           customerInfo: customerInfo, // Pass customerInfo
-          fulfillment: fulfillment // Use the passed fulfillment details
+          fulfillment: mappedFulfillment // Use the correctly formatted fulfillment
       };
 
       // Explicitly type the result

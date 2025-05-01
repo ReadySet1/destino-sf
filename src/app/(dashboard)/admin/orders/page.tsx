@@ -2,14 +2,15 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
 import { Decimal } from '@prisma/client/runtime/library';
+import { OrderStatus } from '@prisma/client';
 
 type OrderWithItems = {
   id: string;
-  status: string;
-  total: Decimal | number | string; // Updated to include Decimal type
+  status: OrderStatus;
+  total: Decimal;
   customerName: string;
-  pickupTime: Date | string;
-  createdAt: Date | string;
+  pickupTime: Date | null;
+  createdAt: Date;
   items: Array<{
     id: string;
     product: {
@@ -21,7 +22,7 @@ type OrderWithItems = {
       id: string;
       name: string;
       [key: string]: string | number | boolean | null | undefined;
-    };
+    } | null;
     [key: string]: string | number | boolean | null | undefined | object;
   }>;
   trackingNumber?: string | null;
@@ -75,28 +76,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
 
   // Transform the orders to match our expected type
   const orders = ordersFromDb.map(
-    (order: {
-      id: string;
-      status: string;
-      total: Decimal | number | string;
-      customerName: string;
-      pickupTime: Date | string;
-      createdAt: Date | string;
-      trackingNumber?: string | null;
-      shippingCarrier?: string | null;
-      fulfillmentType?: string | null;
-      items: Array<{
-        id: string;
-        product: {
-          id: string;
-          name: string;
-        };
-        variant: {
-          id: string;
-          name: string;
-        } | null;
-      }>;
-    }) => ({
+    (order) => ({
       id: order.id,
       status: order.status,
       total: order.total,
@@ -109,15 +89,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
           id: item.product.id,
           name: item.product.name,
         },
-        variant: item.variant
-          ? {
-              id: item.variant.id,
-              name: item.variant.name,
-            }
-          : {
-              id: '',
-              name: '',
-            },
+        variant: item.variant,
       })),
       trackingNumber: order.trackingNumber,
       shippingCarrier: order.shippingCarrier,
@@ -201,7 +173,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                     ${Number(order.total).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(order.pickupTime).toLocaleString()}
+                    {order.pickupTime ? new Date(order.pickupTime).toLocaleString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
@@ -255,7 +227,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
   );
 }
 
-function getStatusColor(status: string) {
+function getStatusColor(status: OrderStatus) {
   switch (status) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';

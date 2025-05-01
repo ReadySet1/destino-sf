@@ -96,6 +96,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      decimal.js:
+        specifier: ^10.5.0
+        version: 10.5.0
       dotenv:
         specifier: ^16.4.7
         version: 16.5.0
@@ -144,6 +147,9 @@ importers:
       sanity:
         specifier: '3'
         version: 3.86.1(@emotion/is-prop-valid@1.2.2)(@types/node@22.10.2)(@types/react@19.1.2)(immer@10.1.1)(jiti@1.21.7)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(styled-components@6.1.17(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(tsx@4.19.3)(yaml@2.7.1)
+      shippo:
+        specifier: ^2.15.0
+        version: 2.15.0(zod@3.24.3)
       sonner:
         specifier: ^2.0.2
         version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -6585,6 +6591,11 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  shippo@2.15.0:
+    resolution: {integrity: sha512-ND6QT3xSW8tMCkNNGqIbtpuuGR/CqPBa7dyYuHmT1F554LoqA9K24R2iVLC/yXO5LTT2xskbkY/IKUg2RazVFg==}
+    peerDependencies:
+      zod: '>= 3'
 
   side-channel-list@1.0.0:
     resolution: {integrity: sha512-FCLHtRD/gnpCiCHEiJLOwdmFP+wzCmDEkc9y7NsYxeF4u7Btsn1ZuwgwJGxImImHicJArLP4R0yX4c2KCrMrTA==}
@@ -14998,6 +15009,10 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  shippo@2.15.0(zod@3.24.3):
+    dependencies:
+      zod: 3.24.3
 
   side-channel-list@1.0.0:
     dependencies:
