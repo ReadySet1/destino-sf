@@ -45,21 +45,30 @@ const getStatusVariant = (status: string | null | undefined): "default" | "secon
   }
 };
 
-// Define props for the component
-interface OrderHistoryProps {
-  isActive: boolean;
+// Define and export props for the component
+export interface OrderHistoryProps {
+  userId: string; // Accept userId instead of isActive
 }
 
-export function OrderHistory({ isActive }: OrderHistoryProps) {
+export function OrderHistory({ userId }: OrderHistoryProps) {
   const [orders, setOrders] = useState<UserOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Don't fetch if userId is not available (though it should be)
+    if (!userId) {
+        setIsLoading(false);
+        setError('User ID is missing, cannot fetch orders.');
+        return;
+    }
+
     const fetchOrders = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        // Use the userId if your API needs it (assuming it uses session internally currently)
+        // Example: /api/user/orders?userId=${userId} - adjust if needed
         const response = await fetch('/api/user/orders');
         if (!response.ok) {
           const errorData = await response.json();
@@ -75,18 +84,12 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
       }
     };
 
-    // Only fetch if the tab is active
-    if (isActive) {
-       console.log('OrderHistory: Tab active, fetching orders...')
-       void fetchOrders();
-    }
-    // Optional: You might want to clear orders or show a specific state 
-    // when the tab is not active, depending on desired UX.
-    // else {
-    //    setOrders([]); // Example: Clear orders when tab is inactive
-    // }
+    // Fetch orders when the component mounts or userId changes
+    console.log('OrderHistory: Fetching orders for user:', userId);
+    void fetchOrders();
 
-  }, [isActive]); // Re-run effect when isActive changes
+    // No need to return a cleanup function unless you have subscriptions
+  }, [userId]); // Re-run effect only when userId changes
 
   if (isLoading) {
     return (

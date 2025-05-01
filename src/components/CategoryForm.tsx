@@ -1,28 +1,44 @@
 'use client';
 
-import { useCategory } from './CategoryActions';
-import { useState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import Image from 'next/image';
+import { type ActionResult, createCategoryAction } from '../app/(dashboard)/admin/categories/actions'; // Import action and type
+import { toast } from 'react-hot-toast'; // For displaying messages
 
-interface CategoryFormProps {
-  createCategory: (formData: FormData) => Promise<void>;
-  initialData?: {
-    name?: string;
-    description?: string;
-    order?: number;
-    isActive?: boolean;
-    parentId?: string;
-    imageUrl?: string;
-  };
-}
+// Remove initialData from props for simplicity with useActionState, can be added back if needed
+// interface CategoryFormProps {
+//   initialData?: {
+//     name?: string;
+//     description?: string;
+//     order?: number;
+//     isActive?: boolean;
+//     parentId?: string;
+//     imageUrl?: string;
+//   };
+// }
 
-export default function CategoryForm({ createCategory, initialData }: CategoryFormProps) {
-  const { handleServerAction, isPending } = useCategory();
-  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.imageUrl || null);
+const initialState: ActionResult = {
+  success: false,
+  message: '',
+};
 
-  async function handleCreateCategory(formData: FormData) {
-    await handleServerAction(createCategory(formData));
-  }
+export default function CategoryForm(/* { initialData }: CategoryFormProps */) {
+  const [state, formAction] = useActionState(createCategoryAction, initialState);
+  const [imagePreview, setImagePreview] = useState<string | null>(/* initialData?.imageUrl || */ null);
+  const [isPending, setIsPending] = useState(false); // Manual pending state
+
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast.success(state.message);
+        // Optionally reset form or handle redirect based on state.redirectPath
+        // For now, just log success and stop pending state
+      } else {
+        toast.error(state.message);
+      }
+      setIsPending(false); // Action finished (success or error)
+    }
+  }, [state]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,14 +48,24 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
     }
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Prevent default form submission
+    setIsPending(true); // Set pending state before calling action
+    const formData = new FormData(event.currentTarget);
+    formAction(formData); // Call the action managed by useActionState
   };
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-4">Add New Category</h2>
 
-      <form action={handleCreateCategory}>
+      {/* Use onSubmit for manual pending state and feedback */}
+      <form onSubmit={handleSubmit}> 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -50,7 +76,7 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
               name="name"
               id="name"
               required
-              defaultValue={initialData?.name}
+              // defaultValue={initialData?.name} // Removed initial data for simplicity
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
             />
           </div>
@@ -64,7 +90,7 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
               name="order"
               id="order"
               min="0"
-              defaultValue={initialData?.order || 0}
+              defaultValue={/* initialData?.order || */ 0}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
             />
           </div>
@@ -77,7 +103,7 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
               name="description"
               id="description"
               rows={3}
-              defaultValue={initialData?.description}
+              // defaultValue={initialData?.description} // Removed initial data
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
             ></textarea>
           </div>
@@ -89,7 +115,7 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
             <select
               name="isActive"
               id="isActive"
-              defaultValue={initialData?.isActive ? 'true' : 'false'}
+              defaultValue={/* initialData?.isActive ? 'true' : */ 'false'}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
             >
               <option value="true">Active</option>
@@ -125,7 +151,7 @@ export default function CategoryForm({ createCategory, initialData }: CategoryFo
           <div className="col-span-2">
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending} // Use manual pending state
               className={`px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 ${
                 isPending ? 'opacity-50 cursor-not-allowed' : ''
               }`}

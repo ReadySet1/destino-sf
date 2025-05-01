@@ -1,10 +1,8 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { client } from '@/sanity/lib/client';
-import { redirect } from 'next/navigation';
-import { toast } from 'react-hot-toast';
 import { JsonValue } from '@prisma/client/runtime/library';
+import { revalidatePath } from 'next/cache';
 
 interface CategoryCount {
   products: number;
@@ -44,7 +42,18 @@ export async function getCategories(): Promise<Category[]> {
   }
 }
 
-export async function createCategoryAction(formData: FormData): Promise<void> {
+// Define and export a return type for the action
+export interface ActionResult {
+  success: boolean;
+  message?: string;
+  redirectPath?: string;
+}
+
+// Update signature for useActionState
+export async function createCategoryAction(
+  prevState: ActionResult, // Add prevState argument
+  formData: FormData
+): Promise<ActionResult> {
   const name = formData.get('name');
   const description = formData.get('description');
   const orderRaw = formData.get('order');
@@ -53,8 +62,8 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
 
   // Validate inputs with type guards
   if (typeof name !== 'string' || name.trim() === '') {
-    toast.error('Invalid category name');
-    return;
+    // Return error object instead of calling toast
+    return { success: false, message: 'Invalid category name' };
   }
 
   const order = typeof orderRaw === 'string' ? parseInt(orderRaw, 10) || 0 : 0;
@@ -92,45 +101,43 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
       },
     });
 
-    // Create category in Sanity
-    await client.create({
-      _type: 'productCategory',
-      name: newCategory.name,
-      slug: {
-        _type: 'slug',
-        current: slug || `category-${Date.now()}`,
-      },
-      description: newCategory.description || '',
-      order: newCategory.order,
-      isActive: newCategory.isActive,
-      imageUrl: newCategory.imageUrl,
-    });
+    // Revalidate the categories page cache
+    revalidatePath('/admin/categories');
 
-    toast.success(`Category "${newCategory.name}" created successfully`);
-    redirect('/admin/categories');
+    // Return success object with redirect path instead of calling toast and redirect
+    return { 
+      success: true, 
+      message: `Category "${newCategory.name}" created successfully`, 
+      redirectPath: '/admin/categories' 
+    };
   } catch (error) {
-    // Handle Next.js redirect and other errors specifically
-    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-      redirect('/admin/categories');
-      return;
-    }
+    // Remove redirect handling from here
+    // if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+    //   // This should not happen anymore as we removed redirect
+    //   return { success: false, message: 'Redirect error occurred unexpectedly.' }; 
+    // }
 
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Unknown error occurred while creating category';
     
     console.error('Failed to create category:', error);
-    toast.error(`Failed to create category: ${errorMessage}`);
+    // Return error object instead of calling toast
+    return { success: false, message: `Failed to create category: ${errorMessage}` };
   }
 }
 
-export async function deleteCategoryAction(formData: FormData): Promise<void> {
+// Update signature for useActionState: accepts previous state (unused) and payload (FormData)
+export async function deleteCategoryAction(
+  prevState: ActionResult, // First arg: previous state (required by useActionState)
+  formData: FormData // Second arg: form payload
+): Promise<ActionResult> {
   const rawId = formData.get('id');
 
   // Validate ID input
   if (typeof rawId !== 'string' || !rawId) {
-    toast.error('No category ID provided');
-    return;
+    // Return error object
+    return { success: false, message: 'No category ID provided' };
   }
 
   try {
@@ -148,14 +155,17 @@ export async function deleteCategoryAction(formData: FormData): Promise<void> {
 
     // Check if category exists
     if (!category) {
-      toast.error('Category not found.');
-      return;
+      // Return error object
+      return { success: false, message: 'Category not found.' };
     }
 
     // Prevent deletion if category has products
     if (category._count.products > 0) {
-      toast.error(`Cannot delete category '${category.name}' because it has ${category._count.products} products.`);
-      return;
+      // Return error object
+      return { 
+        success: false, 
+        message: `Cannot delete category '${category.name}' because it has ${category._count.products} products.` 
+      };
     }
 
     // Delete from PostgreSQL
@@ -163,30 +173,28 @@ export async function deleteCategoryAction(formData: FormData): Promise<void> {
       where: { id: rawId },
     });
 
-    // Find and delete from Sanity
-    const sanityCategoryId = await client.fetch<string | null>(
-      `*[_type == "productCategory" && name == $name][0]._id`,
-      { name: category.name }
-    );
+    // Revalidate the categories page cache
+    revalidatePath('/admin/categories');
 
-    if (sanityCategoryId) {
-      await client.delete(sanityCategoryId);
-    }
-
-    toast.success(`Category "${category.name}" deleted successfully`);
-    redirect('/admin/categories');
+    // Return success object with redirect path
+    return { 
+      success: true, 
+      message: `Category "${category.name}" deleted successfully`,
+      redirectPath: '/admin/categories' 
+    };
   } catch (error) {
-    // Handle Next.js redirect specifically
-    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-      redirect('/admin/categories');
-      return;
-    }
+    // Remove redirect handling
+    // if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+    //   // This should not happen anymore
+    //   return { success: false, message: 'Redirect error occurred unexpectedly.' };
+    // }
 
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Failed to delete category. An unexpected error occurred.';
     
     console.error('Error deleting category:', error);
-    toast.error(errorMessage);
+    // Return error object
+    return { success: false, message: errorMessage };
   }
 } 

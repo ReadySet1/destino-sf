@@ -5,43 +5,73 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { toast } from 'sonner';
-import { Product } from '@/types/product';
+import { Product, Variant } from '@/types/product';
+import { useState } from 'react';
 
 interface ProductCardProps {
   product: Product;
 }
 
+// Helper function to safely format prices
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined || isNaN(Number(price))) {
+     return "0.00";
+  }
+  return Number(price).toFixed(2);
+};
+
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
-  
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
+    product.variants && product.variants.length > 0 ? product.variants[0] : null
+  );
+
+  // Calculate display price based on selected variant or product price
+  const displayPrice = selectedVariant?.price !== null && selectedVariant?.price !== undefined 
+    ? selectedVariant.price 
+    : product.price;
+
+  // Ensure mainImage logic considers product.images existence
+  const mainImage = product.images?.[0] || '/images/menu/empanadas.png'; // Use fallback if needed
+
   const handleAddToCart = () => {
+    // Ensure priceToAdd is a number, defaulting to 0 if conversion fails
+    const priceToAdd = Number(displayPrice) || 0;
+
     addItem({
       id: product.id,
-      name: product.name,
-      price: Number(product.price),
+      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
+      price: priceToAdd,
       quantity: 1,
-      image: product.images?.[0] || '',
+      image: mainImage, // Use the determined mainImage
+      variantId: selectedVariant?.id, // Add variantId
     });
 
-    toast.success(`${product.name} added to cart!`);
+    // Update toast message to include variant name if selected
+    toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} added to cart!`);
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full">
+    <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col">
       <Link 
-        href={`/products/${product.slug}`} 
-        className="flex flex-row md:flex-col h-full"
+        href={`/products/${product.slug || product.id}`} // Use slug or fallback to id
+        className="flex flex-row md:flex-col flex-grow" // Use flex-grow to allow content to expand
       >
-        {/* Image Container - left side on mobile, top on desktop */}
+        {/* Image Container */}
         <div className="w-[120px] h-[120px] md:w-full md:h-auto relative overflow-hidden rounded-xl m-2 md:mb-4 md:aspect-square md:m-4 md:mt-4 flex-shrink-0">
-          {product.images && product.images[0] ? (
+          {mainImage ? ( // Check mainImage directly
             <Image
-              src={product.images[0]}
+              src={mainImage}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
               sizes="(min-width: 768px) 33vw, 120px"
-              priority
+              priority={product.featured} // Use featured flag for priority
+              onError={(e) => {
+                // Handle image loading errors if necessary, e.g., set a flag
+                console.error("Image failed to load:", mainImage);
+                // Optionally set a state to show a fallback UI element
+              }}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-100">
@@ -49,7 +79,6 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
           
-          {/* Sale badge - only visible on desktop */}
           {product.featured && (
             <div className="absolute top-2 left-2 hidden md:block bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
               Featured
@@ -59,31 +88,62 @@ export function ProductCard({ product }: ProductCardProps) {
         
         {/* Content Container */}
         <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
+          {/* Top part: Name and Description */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate md:mb-2 group-hover:text-indigo-600 transition-colors">
               {product.name}
             </h3>
             
             {product.description && (
-              <p className="text-gray-600 text-sm line-clamp-2 md:mb-2">{product.description}</p>
+              <p className="text-gray-600 text-sm line-clamp-2 mb-2">{product.description}</p>
             )}
           </div>
           
-          <div className="flex items-center justify-between mt-2 md:mt-auto md:pt-4 md:border-t md:border-gray-100">
-            <span className="text-lg font-bold text-gray-900">
-              ${Number(product.price).toFixed(2)}
-            </span>
-            <Button
-              onClick={e => {
-                e.preventDefault();
-                handleAddToCart();
-              }}
-              className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-3 py-1 md:px-6 md:py-2 rounded-full transition-colors duration-300"
-              variant="ghost"
-            >
-              <span className="md:hidden">+Add</span>
-              <span className="hidden md:inline">Add to Cart</span>
-            </Button>
+          {/* Bottom part: Variants, Price, Button */}
+          <div className="mt-auto"> 
+            {/* Variant Selector - Add this section */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="mb-3">
+                <select
+                  // Prevent link navigation when clicking the select
+                  onClick={(e) => e.preventDefault()} 
+                  className="w-full border rounded-md py-1.5 px-2 text-sm border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={selectedVariant?.id || ''}
+                  onChange={(e) => {
+                    const variant = product.variants?.find(v => v.id === e.target.value);
+                    setSelectedVariant(variant || null);
+                  }}
+                  aria-label={`Select ${product.name} option`}
+                >
+                  {product.variants
+                    .filter(variant => variant.id) // Ensure variant has an ID
+                    .map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.name} - ${formatPrice(variant.price !== null ? Number(variant.price) : Number(product.price))}
+                      </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Price and Add to Cart Button */}
+            <div className="flex items-center justify-between pt-2 md:pt-4 md:border-t md:border-gray-100">
+              <span className="text-lg font-bold text-gray-900">
+                ${formatPrice(Number(displayPrice))} {/* Use displayPrice */}
+              </span>
+              <Button
+                onClick={e => {
+                  e.preventDefault(); // Keep preventing link navigation
+                  handleAddToCart();
+                }}
+                className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-3 py-1 md:px-6 md:py-2 rounded-full transition-colors duration-300"
+                variant="ghost"
+                aria-label={`Add ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} to cart`}
+              >
+                <span className="md:hidden">+Add</span>
+                <span className="hidden md:inline">Add to Cart</span>
+              </Button>
+            </div>
           </div>
         </div>
       </Link>

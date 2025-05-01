@@ -92,19 +92,6 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title })
             <p className="mt-1 text-sm text-red-500">{getError('postalCode')}</p>
           )}
         </div>
-
-        <div>
-          <Label htmlFor={`${prefix}.country`}>Country</Label>
-          <Input
-            id={`${prefix}.country`}
-            defaultValue="US"
-            {...register(`${prefix}.country`)}
-            className={getError('country') ? 'border-red-500' : ''}
-          />
-          {getError('country') && (
-            <p className="mt-1 text-sm text-red-500">{getError('country')}</p>
-          )}
-        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-// src/app/(store)/products/page.tsx
+// Component to be updated
+// src/app/(store)/products/page.tsx 
 
 import { prisma } from '@/lib/prisma';
 import ProductCard from "@/components/Products/ProductCard";

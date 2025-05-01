@@ -6,9 +6,9 @@ import { Product, Variant } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Decimal } from "@prisma/client/runtime/library";
 import { useCartStore } from "@/store/cart";
 import { useCartAlertStore } from "@/components/ui/cart-alert";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -25,13 +25,7 @@ const formatPrice = (price: number | null | undefined): string => {
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Log the received product prop
-  console.log('[ProductCard] Received product:', JSON.stringify(product, null, 2));
-  console.log('[ProductCard] product.price type:', typeof product.price, 'value:', product.price);
-  if (product.variants && product.variants.length > 0) {
-    console.log('[ProductCard] product.variants[0].price type:', typeof product.variants[0].price, 'value:', product.variants[0].price);
-  }
-
+  const [imageError, setImageError] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     product.variants && product.variants.length > 0 ? product.variants[0] : null
   );
@@ -40,7 +34,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Log the calculated displayPrice
   console.log(`[ProductCard] ${product.name} - Selected Variant Price:`, selectedVariant?.price, 'Product Price:', product.price, 'Resulting displayPrice:', displayPrice);
   
-  const mainImage = product.images?.[0] || '/placeholder-product.png';
+  const mainImage = !imageError && product.images?.[0] ? product.images[0] : '/images/menu/empanadas.png';
   
   const productId = String(product.id ?? '');
   const productUrl = `/products/${productId}`;
@@ -67,20 +61,24 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="group flex flex-col h-full border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <Link href={productUrl}>
-        <div className="relative w-full h-64 overflow-hidden bg-gray-200">
+      <Link href={productUrl} className="block relative">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
           <Image
             src={mainImage}
             alt={product.name}
-            width={500}
-            height={500}
-            className="w-full h-full object-cover object-center group-hover:opacity-75"
-            sizes="(max-width: 768px) 100vw, 500px"
+            fill
+            className={cn(
+              "object-cover object-center transition-all duration-300",
+              "group-hover:scale-105 group-hover:opacity-90"
+            )}
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             priority={product.featured}
+            quality={85}
+            onError={() => setImageError(true)}
           />
           {product.featured && (
-            <div className="absolute top-2 right-2">
-              <span className="bg-indigo-600 text-white px-2 py-1 text-xs font-semibold rounded">
+            <div className="absolute top-2 right-2 z-10">
+              <span className="bg-indigo-600 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
                 Featured
               </span>
             </div>
@@ -90,7 +88,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="text-lg font-semibold h-14 line-clamp-2">
-          <Link href={productUrl}>{product.name}</Link>
+          <Link href={productUrl} className="hover:text-indigo-600 transition-colors">
+            {product.name}
+          </Link>
         </h3>
         
         <p className="text-gray-600 mt-1 font-medium">${formatPrice(Number(displayPrice))}</p>

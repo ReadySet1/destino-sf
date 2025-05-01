@@ -1,7 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { DeleteButton } from './components/DeleteButton';
+import { UserRole as PrismaUserRole } from '@prisma/client';
+import { deleteUserAction } from './actions';
+import { logger } from '@/utils/logger';
 
 export const revalidate = 0; // Disable static generation
 export const dynamic = 'force-dynamic';
@@ -63,44 +67,31 @@ export default async function UsersPage() {
     email: string; 
     name: string; 
     phone: string; 
-    role: 'CUSTOMER' | 'ADMIN'; 
+    role: PrismaUserRole;
     created_at: Date; 
     orderCount: number; 
   };
 
-  async function deleteUser(formData: FormData) {
+  // Server action to handle the form submission for deletion
+  async function handleDelete(formData: FormData) {
     'use server';
 
     const id = formData.get('id') as string;
 
     if (!id) {
+      logger.error('Delete button submitted without user ID.');
       return;
     }
 
-    try {
-      // Delete from database
-      await prisma.profile.delete({
-        where: { id },
-      });
+    logger.info(`Handling delete request for user: ${id}`);
 
-      console.log(`User deleted successfully`);
+    const result = await deleteUserAction(id);
 
-      // Redirect to refresh the page
-      return redirect('/admin/users');
-    } catch (error) {
-      // Don't log redirect "errors" as they're normal
-      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-        // This is actually a redirect, not an error
-        throw error;
-      }
-
-      console.error('Error deleting user:', error);
-      // Pass through specific error messages, but use a generic one for unexpected errors
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      } else {
-        throw new Error('Failed to delete user. An unexpected error occurred.');
-      }
+    if (result.success) {
+      logger.info(`Successfully deleted user ${id}. Revalidating path /admin/users.`);
+      revalidatePath('/admin/users');
+    } else {
+      logger.error(`Failed to delete user ${id}: ${result.error}`);
     }
   }
 
@@ -216,9 +207,9 @@ export default async function UsersPage() {
                     {user.role !== 'ADMIN' && (
                       <DeleteButton
                         id={user.id}
-                        onDelete={deleteUser}
+                        onDelete={handleDelete}
                         entityName="user"
-                        warningMessage="This will permanently delete the user and cannot be undone."
+                        warningMessage="This will permanently delete the user from authentication and the database. This cannot be undone."
                       />
                     )}
                   </td>

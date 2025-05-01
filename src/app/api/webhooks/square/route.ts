@@ -5,6 +5,7 @@ import { OrderStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
 import type { Square } from 'square'; // Import the Square namespace for types
+import { purchaseShippingLabel } from '@/app/actions/labels'; // Import the new action
 
 type SquareEventType =
   | 'order.created'
@@ -370,38 +371,98 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
 async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const paymentData = data.object.payment as any;
-  console.log('Processing payment.updated event:', data.id);
+  const squarePaymentId = data.id;
+  const squareOrderId = paymentData?.order_id;
+  const paymentStatus = paymentData?.status?.toUpperCase();
+  console.log(`Processing payment.updated event: ${squarePaymentId}`);
 
-  const paymentStatus = paymentData?.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING';
+  if (!squareOrderId) {
+    console.warn(`No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`);
+    return;
+  }
 
   try {
-      const updatedPayment = await prisma.payment.update({
-          where: { squarePaymentId: data.id },
-          data: {
-              status: paymentStatus,
-              rawData: data.object as unknown as Prisma.InputJsonValue,
-          },
-          select: { orderId: true } // Select orderId to update the order status
-      });
-
-      // If payment completed, update the main order status as well
-      if (paymentStatus === 'COMPLETED' && updatedPayment.orderId) {
-          await prisma.order.update({
-              where: { id: updatedPayment.orderId },
-              // Check current order status before potentially overriding fulfillment status
-              // data: { status: 'COMPLETED', paymentStatus: 'PAID' }
-              data: { paymentStatus: 'PAID' } // Safer to only update paymentStatus here
-          });
+    // Find our internal order using the Square Order ID
+    const order = await prisma.order.findUnique({
+      where: { squareOrderId: squareOrderId },
+      select: { 
+        id: true, 
+        status: true, 
+        paymentStatus: true, 
+        fulfillmentType: true,
+        shippingRateId: true // Select the shipping rate ID
       }
+    });
+
+    if (!order) {
+      console.warn(`Order with squareOrderId ${squareOrderId} not found for payment update.`);
+      return;
+    }
+
+    // Update payment status based on Square's status
+    let updatedPaymentStatus: Prisma.PaymentUpdateInput['status'] = undefined;
+    if (paymentStatus === 'COMPLETED') updatedPaymentStatus = 'PAID';
+    else if (paymentStatus === 'FAILED') updatedPaymentStatus = 'FAILED';
+    else if (paymentStatus === 'CANCELED') updatedPaymentStatus = 'FAILED'; // Treat canceled payment as failed
+    else if (paymentStatus === 'REFUNDED') updatedPaymentStatus = 'REFUNDED';
+    else updatedPaymentStatus = 'PENDING';
+
+    // Prevent downgrading status
+    if (
+      (order.paymentStatus === 'PAID' && updatedPaymentStatus !== 'PAID' && updatedPaymentStatus !== 'REFUNDED') ||
+      (order.paymentStatus === 'REFUNDED' && updatedPaymentStatus !== 'REFUNDED') ||
+      (order.paymentStatus === 'FAILED' && updatedPaymentStatus !== 'FAILED')
+    ) {
+      console.log(`Preventing payment status downgrade for order ${order.id}. Current: ${order.paymentStatus}, Proposed: ${updatedPaymentStatus}`);
+      updatedPaymentStatus = order.paymentStatus; // Keep current status
+    }
+
+    // Update order status only if payment is newly PAID
+    const updatedOrderStatus = (order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID')
+      ? OrderStatus.PROCESSING // Update to PROCESSING when paid
+      : order.status; // Otherwise keep current status
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: updatedPaymentStatus,
+        status: updatedOrderStatus,
+        rawData: data.object as unknown as Prisma.InputJsonValue, // Append or replace raw data
+        updatedAt: new Date(),
+      },
+    });
+    console.log(`Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`);
+
+    // --- Purchase Shipping Label if applicable --- 
+    if (
+        updatedPaymentStatus === 'PAID' && // Payment just completed
+        order.fulfillmentType === 'nationwide_shipping' && // It's a shipping order
+        order.shippingRateId // We have a Shippo rate ID
+       ) {
+        console.log(`Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`);
+        try {
+            const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
+            if (labelResult.success) {
+                console.log(`Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`);
+            } else {
+                console.error(`Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`);
+                // Note: The purchaseShippingLabel action already attempts to update order notes on failure.
+            }
+        } catch (labelError: any) {
+             console.error(`Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`);
+             // Attempt to update notes here as a fallback
+             await prisma.order.update({
+                 where: { id: order.id },
+                 data: { notes: `Label purchase action failed: ${labelError?.message}` }
+             }).catch(e => console.error("Failed to update order notes on label action catch:", e));
+        }
+    } else if (updatedPaymentStatus === 'PAID' && order.fulfillmentType === 'nationwide_shipping' && !order.shippingRateId) {
+        console.warn(`Order ${order.id} is paid and shipping, but missing shippingRateId. Cannot purchase label automatically.`);
+    }
+    // --- End Purchase Shipping Label --- 
 
   } catch (error: any) {
-      if (error.code === 'P2025') {
-          console.warn(`Payment with squarePaymentId ${data.id} not found for update. Create event might have failed or is delayed.`);
-          // Optionally, attempt to create/upsert the payment record here as a fallback
-      } else {
-          console.error(`Error updating payment ${data.id}:`, error);
-          throw error;
-      }
+    console.error(`Error processing payment.updated event for order ${squareOrderId}:`, error);
   }
 }
 
@@ -528,11 +589,20 @@ async function getOrderTracking(orderId: string) {
       }
     } catch (error: any) {
       // Improve error handling with more specific logging
-      console.error(`Error in getOrderTracking for ${orderId}:`, error);
+      console.error(`Error in getOrderTracking for ${orderId}. Raw Error:`, error); // Log the raw error object
+      if (error instanceof Error) {
+        console.error(`Error Name: ${error.name}, Message: ${error.message}`);
+        if ('stack' in error) {
+            console.error(`Stack Trace: ${error.stack}`);
+        }
+      }
       
       // Try to extract and log specific Square API errors if present
-      if (error.errors) {
-        console.error('Square API Errors:', error.errors);
+      if (error?.errors) { // Use optional chaining
+        console.error('Square API Errors:', JSON.stringify(error.errors, null, 2)); // Stringify for better readability
+      }
+      if (error?.body) { // Log the body if available
+        console.error('Error Body:', error.body);
       }
       
       return null;
