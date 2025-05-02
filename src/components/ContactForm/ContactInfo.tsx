@@ -8,16 +8,27 @@ export function ContactInfo() {
     <div className="space-y-8">
       <div>
         <div className="mb-10">
-          <h2 className="text-4xl font-bold text-white mb-4">Contact Information</h2>
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Curious about our menu or catering options?{' '}
+          </h2>
           <p className="text-gray-100 text-lg">
-            Curious about our menu or catering options? Send us a message — we&apos;d love to hear
-            from you! Whether you&apos;re planning a special event or just craving something
-            delicious, we&apos;re here to help
+            Send us a message — we&apos;d love to hear from you! Whether you&apos;re planning a
+            special event or just craving something delicious, we&apos;re here to help
           </p>
         </div>
       </div>
 
       <div className="space-y-5">
+        <div className="flex items-center gap-4">
+          <Mail className="h-6 w-6 text-white" />
+          <Link
+            href="mailto:james@destinosf.com"
+            className="text-white hover:underline transition-colors text-lg"
+          >
+            james@destinosf.com
+          </Link>
+        </div>
+
         <div className="flex items-center gap-4">
           <Phone className="h-6 w-6 text-white" />
           <Link
@@ -29,16 +40,6 @@ export function ContactInfo() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Mail className="h-6 w-6 text-white" />
-          <Link
-            href="mailto:james@destinos.com"
-            className="text-white hover:underline transition-colors text-lg"
-          >
-            james@destinos.com
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4">
           <MapPin className="h-6 w-6 text-white" />
           <Link
             href="https://maps.google.com/?q=San+Francisco,+CA+94124"
@@ -46,7 +47,7 @@ export function ContactInfo() {
             rel="noopener noreferrer"
             className="text-white hover:underline transition-colors text-lg"
           >
-            San Francisco, CA 94124
+            San Francisco, CA 94114
           </Link>
         </div>
       </div>

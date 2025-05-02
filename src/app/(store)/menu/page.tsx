@@ -2,6 +2,7 @@ import React from 'react';
 import MenuBanner from '@/components/Menu';
 import ProductList from '@/components/Products/ProductList';
 import MarketingSection from '@/components/Marketing/MarketingSection';
+import FaqSection from '@/components/FAQ/MenuQuestions';
 
 const MenuPage: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const MenuPage: React.FC = () => {
         <ProductList />
       </div>
       <MarketingSection />
+      <FaqSection />
     </main>
   );
 };
