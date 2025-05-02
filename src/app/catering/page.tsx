@@ -7,34 +7,38 @@ import { twMerge } from 'tailwind-merge';
 const CateringPage = () => {
   return (
     <div className="min-h-screen bg-white">
-      <CateringBanner />
+      <div className="mb-8">
+        {' '}
+        {/* Agregado un espacio vertical aquí */}
+        <CateringBanner />
+      </div>
 
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Catering content */}
         <div className="mt-10">
-          <h1
-            className={twMerge(
-              'text-3xl md:text-3xl lg:text-3xl font-normal text-gray-900',
-              'leading-tight tracking-normal max-w-4xl mb-16'
-            )}
-          >
-            Offering a diverse selection of savory Latin American dishes, we would be delighted to
-            provide our catering services for your next event!
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+            Planning an event? Let us assist with vibrant Latin American flavors everyone will love.
           </h1>
 
           <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
             <div className="space-y-4 flex-1">
-              <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater For:</h3>
+              <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
               <ul className="space-y-3 text-xl text-gray-600">
-                <li>• Happy Hour Events</li>
-                <li>• Cocktail Receptions</li>
-                <li>• Birthday Celebrations</li>
-                <li>• Dinner Parties</li>
-                <li>• Corporate Meet & Greets</li>
                 <li>• Corporate Luncheons</li>
+                <li>• Cocktail Receptions</li>
+                <li>• Birthday Celebrations & Dinner Parties</li>
+                <li>• Happy Hour Events</li>
+                <li>• Corporate Meet & Greets</li>
               </ul>
+              <p style={{ fontSize: '1.2em' }} className="text-lg text-gray-700">
+                Our menus are fully customizable and include plenty of{' '}
+                <span className="font-semibold">gluten-free, vegetarian, and vegan</span> options to
+                meet your needs.
+              </p>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 mt-6 md:mt-0">
+              {' '}
+              {/* Ajuste para bajar la imagen en pantallas pequeñas */}
               <Image
                 src="/images/catering/catering.png"
                 alt="Catering service"
