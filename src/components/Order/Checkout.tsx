@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import { createOrderAndGenerateCheckoutUrl } from '@/app/actions'; // Import the server action
 import type { FulfillmentData } from '@/app/actions';
 
+// Define the PaymentMethod type
+type PaymentMethod = 'SQUARE' | 'VENMO' | 'CASH';
+
 // Define types more precisely if possible, aligning with server action schemas
 interface CartItem {
     id: string;
@@ -193,7 +196,8 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, f
       const actionPayload = {
           items: items, // Pass items directly
           customerInfo: customerInfo, // Pass customerInfo
-          fulfillment: mappedFulfillment // Use the correctly formatted fulfillment
+          fulfillment: mappedFulfillment, // Use the correctly formatted fulfillment
+          paymentMethod: 'SQUARE' as PaymentMethod // Add the missing paymentMethod field with the correct type
       };
 
       // Explicitly type the result

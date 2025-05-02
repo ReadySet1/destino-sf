@@ -1,9 +1,25 @@
-
 import './styles/globals.css';
 import ClientLayout from './client-layout';
 import { Metadata } from 'next';
+import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
 
+const quicksand = Quicksand({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-quicksand',
+});
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const greatVibes = Great_Vibes({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-great-vibes',
+});
 
 const baseUrl = process.env.NODE_ENV === 'development'
   ? 'http://localhost:3000'
@@ -66,6 +82,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  return <ClientLayout>{children}</ClientLayout>;
+  return (
+    <html
+      lang="en"
+      className={`${inter.variable} ${quicksand.variable} ${greatVibes.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="bg-background text-foreground antialiased">
+        <ClientLayout>{children}</ClientLayout>
+      </body>
+    </html>
+  );
 }

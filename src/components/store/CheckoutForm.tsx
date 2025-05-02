@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, FieldErrors, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,6 +38,7 @@ import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 import { FulfillmentSelector, FulfillmentMethod as AppFulfillmentMethod } from '@/components/Store/FulfillmentSelector';
 import { AddressForm } from '@/components/Store/AddressForm';
 import { createOrderAndGenerateCheckoutUrl, getShippingRates } from '@/app/actions';
+import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
 import type { FulfillmentData, ShippingRate } from '@/app/actions';
 // --- Import Date Utilities ---
 import {
@@ -49,9 +50,14 @@ import {
   isValidPickupDateTime,
   isValidDeliveryDateTime,
 } from '@/lib/dateUtils';
+// Import the delivery fee utilities
+import { calculateDeliveryFee, getDeliveryFeeMessage, DeliveryFeeResult } from '@/lib/deliveryUtils';
+import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
+// --- Add Payment Method Type ---
+type PaymentMethod = 'SQUARE' | 'VENMO' | 'CASH';
 
 // --- Add placeholder weight ---
 const PLACEHOLDER_WEIGHT_LB = 1; // TODO: Replace with actual cart weight calculation
@@ -74,6 +80,7 @@ const pickupSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   pickupDate: z.string().min(1, 'Pickup date is required'),
   pickupTime: z.string().min(1, 'Pickup time is required'),
+  paymentMethod: z.enum(['SQUARE', 'VENMO', 'CASH']),
 });
 
 const localDeliverySchema = z.object({
@@ -85,6 +92,7 @@ const localDeliverySchema = z.object({
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
+  paymentMethod: z.enum(['SQUARE', 'VENMO']), // No cash for delivery
 });
 
 const nationwideShippingSchema = z.object({
@@ -94,6 +102,7 @@ const nationwideShippingSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   shippingAddress: addressSchema,
   rateId: z.string().min(1, 'Please select a shipping method.'),
+  paymentMethod: z.enum(['SQUARE', 'VENMO']), // No cash for shipping
 });
 
 const checkoutSchema = z.discriminatedUnion('fulfillmentMethod', [
@@ -146,10 +155,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [error, setError] = useState<string | null>(null);
   // User state is now derived from initialUserData prop
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('SQUARE');
   const [isMounted, setIsMounted] = useState(false);
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
   const [shippingLoading, setShippingLoading] = useState<boolean>(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
+  // New state for delivery fee
+  const [deliveryFee, setDeliveryFee] = useState<DeliveryFeeResult | null>(null);
   // Client Supabase needed only if performing client-side auth actions, otherwise remove
   // const supabase = createClient(); 
 
@@ -158,6 +170,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     // --- Set defaultValues using initialUserData ---
     defaultValues: {
       fulfillmentMethod: 'pickup',
+      paymentMethod: 'SQUARE',
       name: initialUserData?.name || '',
       email: initialUserData?.email || '',
       phone: initialUserData?.phone || '',
@@ -171,9 +184,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   });
 
   const typedForm = form as UseFormReturn<CheckoutFormData>; 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors, touchedFields, isValid }, control, trigger } = typedForm;
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, touchedFields, isValid }, control, trigger, getValues } = typedForm;
 
   const currentMethod = watch('fulfillmentMethod');
+  const currentPaymentMethod = watch('paymentMethod');
 
   // --- Effect to Reset Form Based on Fulfillment Method ---
   // Keep this effect, but initialize based on potentially pre-filled common data
@@ -183,6 +197,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             name: currentValues.name || initialUserData?.name || '', // Prioritize current, then initial, then empty
             email: currentValues.email || initialUserData?.email || '',
             phone: currentValues.phone || initialUserData?.phone || '',
+            paymentMethod: currentValues.paymentMethod || 'SQUARE',
         };
 
         let recipientName = commonData.name;
@@ -194,36 +209,53 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         if (fulfillmentMethod === 'pickup') {
           return {
-            ...commonData,
-            fulfillmentMethod: 'pickup',
-            pickupDate: format(getEarliestPickupDate(), 'yyyy-MM-dd'),
-            pickupTime: getPickupTimeSlots()[0],
-            deliveryAddress: undefined, deliveryDate: undefined, deliveryTime: undefined, deliveryInstructions: undefined, shippingAddress: undefined, rateId: '',
+              fulfillmentMethod: 'pickup',
+              ...commonData,
+              pickupDate: format(defaultPickupDate, 'yyyy-MM-dd'),
+              pickupTime: defaultPickupTime,
           };
         } else if (fulfillmentMethod === 'local_delivery') {
-           return {
-            ...commonData, fulfillmentMethod: 'local_delivery', deliveryDate: format(getEarliestDeliveryDate(), 'yyyy-MM-dd'), deliveryTime: getDeliveryTimeSlots()[0],
-            deliveryAddress: { recipientName: recipientName, street: '', city: '', state: '', postalCode: '', country: 'US' },
-            deliveryInstructions: '',
-            pickupDate: undefined, pickupTime: undefined, shippingAddress: undefined, rateId: '',
+          return {
+              fulfillmentMethod: 'local_delivery',
+              ...commonData,
+              deliveryAddress: currentValues.fulfillmentMethod === 'local_delivery' ? currentValues.deliveryAddress : {
+                  recipientName: recipientName,
+                  street: '',
+                  street2: '',
+                  city: '',
+                  state: '',
+                  postalCode: '',
+                  country: 'US',
+              },
+              deliveryDate: format(defaultDeliveryDate, 'yyyy-MM-dd'),
+              deliveryTime: defaultDeliveryTime,
+              deliveryInstructions: currentValues.fulfillmentMethod === 'local_delivery' ? currentValues.deliveryInstructions : '',
+              // Don't allow cash for delivery
+              paymentMethod: currentValues.paymentMethod === 'CASH' ? 'SQUARE' : currentValues.paymentMethod || 'SQUARE',
           };
-        } else if (fulfillmentMethod === 'nationwide_shipping') {
-           return {
-            ...commonData, fulfillmentMethod: 'nationwide_shipping',
-            shippingAddress: { recipientName: recipientName, street: '', city: '', state: '', postalCode: '', country: 'US' },
-            rateId: '', 
-            pickupDate: undefined, pickupTime: undefined, deliveryAddress: undefined, deliveryDate: undefined, deliveryTime: undefined, deliveryInstructions: undefined,
+        } else {
+          return {
+              fulfillmentMethod: 'nationwide_shipping',
+              ...commonData,
+              shippingAddress: currentValues.fulfillmentMethod === 'nationwide_shipping' ? currentValues.shippingAddress : {
+                  recipientName: recipientName,
+                  street: '',
+                  street2: '',
+                  city: '',
+                  state: '',
+                  postalCode: '',
+                  country: 'US'
+              },
+              rateId: currentValues.fulfillmentMethod === 'nationwide_shipping' ? currentValues.rateId : '',
+              // Don't allow cash for shipping
+              paymentMethod: currentValues.paymentMethod === 'CASH' ? 'SQUARE' : currentValues.paymentMethod || 'SQUARE',
           };
         }
-        return { ...currentValues, fulfillmentMethod };
-    }, { keepDefaultValues: false, keepDirty: true, keepErrors: false, keepIsValid: false });
-
-    if (fulfillmentMethod === 'nationwide_shipping') {
-       setShippingRates([]);
-       setShippingError(null);
-    }
-    trigger(); 
-  }, [fulfillmentMethod, reset, trigger, initialUserData]); // Add initialUserData dependency
+    });
+    
+    // Required effect only on formMethod change, with deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fulfillmentMethod, reset, initialUserData?.name, initialUserData?.email, initialUserData?.phone]);
 
   // --- Effect to Check Cart and Mount Status ---
   // Keep these effects
@@ -278,6 +310,21 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   };
   // --- End fetchShippingRates ---
 
+  // --- Effect to update form based on payment method changes ---
+  useEffect(() => {
+    // Limit payment methods for certain fulfillment types
+    if (fulfillmentMethod === 'pickup') {
+      // Pickup allows all payment methods
+      setValue('paymentMethod', currentPaymentMethod);
+    } else {
+      // No cash option for delivery or shipping
+      if (currentPaymentMethod === 'CASH') {
+        setValue('paymentMethod', 'SQUARE');
+        setPaymentMethod('SQUARE');
+      }
+    }
+  }, [fulfillmentMethod, currentPaymentMethod, setValue, setPaymentMethod]);
+
   // --- Keep onSubmit function ---
   const onSubmit = async (formData: CheckoutFormData) => {
     console.log('CheckoutForm onSubmit triggered');
@@ -298,7 +345,16 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           fulfillmentData = { method: 'pickup', pickupTime: formatISO(parseISO(`${formData.pickupDate}T${formData.pickupTime}:00`)) };
       } else if (formData.fulfillmentMethod === 'local_delivery') {
           if (!formData.deliveryDate || !formData.deliveryTime || !formData.deliveryAddress) throw new Error("Missing delivery details.");
-          fulfillmentData = { method: 'local_delivery', deliveryDate: formData.deliveryDate, deliveryTime: formData.deliveryTime, deliveryAddress: {...formData.deliveryAddress, country: 'US'}, deliveryInstructions: formData.deliveryInstructions };
+          fulfillmentData = { 
+            method: 'local_delivery', 
+            deliveryDate: formData.deliveryDate, 
+            deliveryTime: formData.deliveryTime, 
+            deliveryAddress: {...formData.deliveryAddress, country: 'US'}, 
+            deliveryInstructions: formData.deliveryInstructions,
+            // Include delivery fee information
+            deliveryFee: deliveryFee?.fee || 0,
+            deliveryZone: deliveryFee?.zone || null
+          };
       } else if (formData.fulfillmentMethod === 'nationwide_shipping') {
           if (!formData.rateId) { setError("Please select a shipping method."); toast.error("Please select a shipping method."); setIsSubmitting(false); return; }
           const selectedRate = shippingRates.find(rate => rate.id === formData.rateId);
@@ -313,26 +369,63 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
       console.log('Constructed fulfillment data:', fulfillmentData);
       console.log('Constructed customer info:', customerInfo);
-      console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
+      
+      // Handle different payment methods
+      if (formData.paymentMethod === 'SQUARE') {
+        // Use existing Square checkout flow
+        console.log('Using Square checkout');
+        console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
 
-      const actionPayload = {
-        items: items.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity, variantId: item.variantId })),
-        customerInfo: customerInfo,
-        fulfillment: fulfillmentData, 
-      };
-      console.log('Server Action Payload:', JSON.stringify(actionPayload, null, 2)); 
+        const actionPayload = {
+          items: items.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity, variantId: item.variantId })),
+          customerInfo: customerInfo,
+          fulfillment: fulfillmentData, 
+        };
+        console.log('Server Action Payload:', JSON.stringify(actionPayload, null, 2)); 
 
-      const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any); // TODO: Improve type safety here if possible
-      console.log('Server action result:', result);
+        const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
+        console.log('Server action result:', result);
 
-      if (!result.success || !result.checkoutUrl) {
-        const errorMessage = result.error || 'Failed to create checkout session.';
-        setError(errorMessage); toast.error(errorMessage); setIsSubmitting(false); return;
+        if (!result.success || !result.checkoutUrl) {
+          const errorMessage = result.error || 'Failed to create checkout session.';
+          setError(errorMessage); toast.error(errorMessage); setIsSubmitting(false); return;
+        }
+        clearCart();
+        console.log('Redirecting to Square Checkout:', result.checkoutUrl);
+        window.location.href = result.checkoutUrl;
+      } else {
+        // Handle manual payment methods (Venmo, Cash)
+        console.log(`Using manual checkout: ${formData.paymentMethod}`);
+        
+        // First, create order in database
+        const actionPayload = {
+          items: items.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity, variantId: item.variantId })),
+          customerInfo: customerInfo,
+          fulfillment: fulfillmentData, 
+        };
+        
+        const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
+        
+        if (!result.success || !result.orderId) {
+          const errorMessage = result.error || 'Failed to create order.';
+          setError(errorMessage); toast.error(errorMessage); setIsSubmitting(false); return;
+        }
+        
+        // Then update it with manual payment method using server action
+        const updateResult = await updateOrderWithManualPayment(
+          result.orderId,
+          formData.paymentMethod as 'VENMO' | 'CASH'
+        );
+        
+        if (!updateResult.success) {
+          const errorMessage = updateResult.error || 'Failed to process manual checkout.';
+          setError(errorMessage); toast.error(errorMessage); setIsSubmitting(false); return;
+        }
+        
+        clearCart();
+        // Redirect to manual checkout success page
+        window.location.href = `/checkout/success/manual?orderId=${result.orderId}&paymentMethod=${formData.paymentMethod}`;
       }
-      clearCart();
-      console.log('Redirecting to Square Checkout:', result.checkoutUrl);
-      window.location.href = result.checkoutUrl;
-
     } catch (err: any) {
       console.error('Error during checkout process:', err);
       const message = err.message || 'An unexpected error occurred.';
@@ -353,6 +446,43 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     return errorObj?.message as string | undefined;
   };
   // --- End getErrorMessage ---
+
+  // Add a new function to calculate delivery fees
+  const calculateLocalDeliveryFee = useCallback(() => {
+    if (currentMethod !== 'local_delivery') {
+      setDeliveryFee(null);
+      return;
+    }
+
+    const formValues = form.getValues();
+    if (formValues.fulfillmentMethod === 'local_delivery' && formValues.deliveryAddress) {
+      const address = formValues.deliveryAddress;
+      const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const feeResult = calculateDeliveryFee(address, subtotal);
+      setDeliveryFee(feeResult);
+    }
+  }, [currentMethod, form, items, setDeliveryFee]);
+
+  // Add effect to update the delivery fee when address or cart changes
+  useEffect(() => {
+    if (isMounted && currentMethod === 'local_delivery') {
+      calculateLocalDeliveryFee();
+    }
+  }, [currentMethod, isMounted, calculateLocalDeliveryFee]);
+
+  // Update address selection handler to recalculate delivery fee
+  const handleAddressChange = useCallback(() => {
+    if (currentMethod === 'local_delivery') {
+      calculateLocalDeliveryFee();
+    }
+  }, [currentMethod, calculateLocalDeliveryFee]);
+
+  // Add new effect to trigger delivery fee calculation
+  useEffect(() => {
+    if (isMounted) {
+      calculateLocalDeliveryFee();
+    }
+  }, [isMounted, calculateLocalDeliveryFee]);
 
   // --- Return Form JSX ---
   if (!isMounted) {
@@ -420,39 +550,102 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         )}
 
         {currentMethod === 'local_delivery' && (
-          <div className="space-y-4 border-t pt-6">
-            <h2 className="text-xl font-semibold">Delivery Details</h2>
-            <AddressForm form={typedForm} prefix="deliveryAddress" title="Delivery Address" />
-            <div>
-              <Label htmlFor="deliveryDate">Delivery Date</Label>
-              <Controller name="deliveryDate" control={control}
-                render={({ field }) => (
-                   <Popover>
-                    <PopoverTrigger asChild><Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(parseISO(field.value), 'PPP') : <span>Pick a date</span>}</Button></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => { field.onChange(date ? format(date, 'yyyy-MM-dd') : ''); trigger(['deliveryDate', 'deliveryTime']); }} initialFocus fromDate={getEarliestDeliveryDate()} disabled={(date) => !isBusinessDay(date)} /></PopoverContent>
-                  </Popover>
-                )}
+          <>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Delivery Address</h3>
+              
+              <AddressForm 
+                form={typedForm} 
+                prefix="deliveryAddress" 
+                title="Delivery Address"
+                onAddressChange={handleAddressChange}
               />
-              {getErrorMessage('deliveryDate') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('deliveryDate')}</p>}
+              
+              {/* Add delivery fee information message */}
+              {deliveryFee && (
+                <div className="text-sm mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                  {getDeliveryFeeMessage(deliveryFee)}
+                </div>
+              )}
+              
+              {!deliveryFee && isMounted && (
+                <div className="text-sm mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  Please enter a valid delivery address to see delivery fees.
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="deliveryDate">Delivery Date</Label>
+                <Controller name="deliveryDate" control={control}
+                  render={({ field }) => (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !field.value && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? format(parseISO(field.value), 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar 
+                          mode="single" 
+                          selected={field.value ? parseISO(field.value) : undefined} 
+                          onSelect={(date) => { 
+                            field.onChange(date ? format(date, 'yyyy-MM-dd') : ''); 
+                            trigger(['deliveryDate', 'deliveryTime']); 
+                          }} 
+                          initialFocus 
+                          fromDate={getEarliestDeliveryDate()} 
+                          disabled={(date) => !isBusinessDay(date)} 
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                />
+                {getErrorMessage('deliveryDate') && (
+                  <p className="text-sm text-red-600 mt-1">{getErrorMessage('deliveryDate')}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="deliveryTime">Delivery Time</Label>
+                <Controller name="deliveryTime" control={control}
+                  render={({ field }) => (
+                    <Select 
+                      onValueChange={(value) => { 
+                        field.onChange(value); 
+                        trigger(['deliveryDate', 'deliveryTime']); 
+                      }} 
+                      value={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select delivery time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getDeliveryTimeSlots().map(time => (
+                          <SelectItem key={time} value={time}>
+                            {format(parseISO(`1970-01-01T${time}:00`), 'h:mm a')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {getErrorMessage('deliveryTime') && (
+                  <p className="text-sm text-red-600 mt-1">{getErrorMessage('deliveryTime')}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="deliveryInstructions">Delivery Instructions (Optional)</Label>
+                <textarea
+                  id="deliveryInstructions"
+                  className="w-full rounded-md border border-input p-2 mt-1"
+                  placeholder="Gate code, delivery preferences, etc."
+                  {...register("deliveryInstructions")}
+                />
+              </div>
             </div>
-             <div>
-                 <Label htmlFor="deliveryTime">Delivery Time</Label>
-                  <Controller name="deliveryTime" control={control}
-                      render={({ field }) => (
-                         <Select onValueChange={(value) => { field.onChange(value); trigger(['deliveryDate', 'deliveryTime']); }} value={field.value} >
-                              <SelectTrigger><SelectValue placeholder="Select delivery time" /></SelectTrigger>
-                              <SelectContent>{getDeliveryTimeSlots().map(time => (<SelectItem key={time} value={time}>{format(parseISO(`1970-01-01T${time}:00`), 'h:mm a')}</SelectItem>))}</SelectContent>
-                          </Select>
-                      )}
-                  />
-                 {getErrorMessage('deliveryTime') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('deliveryTime')}</p>}
-             </div>
-            <div>
-              <Label htmlFor="deliveryInstructions">Delivery Instructions (Optional)</Label>
-              <Input id="deliveryInstructions" {...register('deliveryInstructions')} placeholder="e.g., leave at front door" />
-              {getErrorMessage('deliveryInstructions') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('deliveryInstructions')}</p>}
-            </div>
-          </div>
+          </>
         )}
 
         {currentMethod === 'nationwide_shipping' && (
@@ -499,6 +692,21 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           </div>
         )}
 
+        {/* Payment Method Selector */}
+        <div className="border-t pt-6">
+          <PaymentMethodSelector
+            selectedMethod={currentPaymentMethod}
+            onSelectMethod={(method) => {
+              setPaymentMethod(method as PaymentMethod);
+              setValue('paymentMethod', method as 'SQUARE' | 'VENMO' | 'CASH');
+            }}
+            showCash={currentMethod === 'pickup'}
+          />
+          {getErrorMessage('paymentMethod') && (
+            <p className="text-sm text-red-600 mt-1">{getErrorMessage('paymentMethod')}</p>
+          )}
+        </div>
+
         {/* Error Alert */}
         {error && (
           <Alert variant="destructive">
@@ -508,12 +716,22 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         {/* Submit Button */}
         <Button type="submit" className="w-full" disabled={isSubmitting || !isMounted || items.length === 0 || !isValid }>
-          {isSubmitting ? 'Processing...' : 'Continue to Payment'}
+          {isSubmitting ? 'Processing...' : 
+            currentPaymentMethod === 'SQUARE' ? 'Continue to Payment' : 'Place Order'
+          }
         </Button>
       </form>
 
       <div className="lg:col-span-1">
-         <CheckoutSummary items={items} includeServiceFee={true} />
+        {isMounted ? (
+          <CheckoutSummary 
+            items={items} 
+            includeServiceFee={currentPaymentMethod === 'SQUARE'}
+            deliveryFee={currentMethod === 'local_delivery' ? deliveryFee : undefined}
+          />
+        ) : (
+          <p>Loading cart summary...</p>
+        )}
       </div>
     </>
   );

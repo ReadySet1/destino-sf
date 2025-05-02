@@ -48,10 +48,8 @@ export async function POST(request: Request) {
     // Get the Supabase client
     const supabase = await getSupabaseClient();
 
-    // Get the session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // Get authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
 
     const { items, customerInfo }: CheckoutRequestBody = await request.json();
 
@@ -77,7 +75,7 @@ export async function POST(request: Request) {
       data: {
         status: 'PENDING',
         total,
-        userId: session?.user?.id,
+        userId: user?.id,
         customerName: customerInfo.name,
         email: customerInfo.email,
         phone: customerInfo.phone,

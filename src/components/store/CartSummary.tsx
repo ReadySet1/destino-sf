@@ -10,20 +10,20 @@ export function CartSummary({ subtotal, totalItems }: CartSummaryProps) {
   const total = subtotal + tax;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Order Summary</CardTitle>
+    <Card className="border-0 lg:border shadow-none lg:shadow-sm">
+      <CardHeader className="px-0 lg:px-6 py-2 lg:py-4">
+        <CardTitle className="text-lg">Order Summary</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex justify-between">
+      <CardContent className="space-y-1 lg:space-y-2 px-0 lg:px-6 py-1 lg:py-2">
+        <div className="flex justify-between text-sm lg:text-base">
           <span>Subtotal ({totalItems} items)</span>
           <span>${subtotal.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between text-sm lg:text-base">
           <span>Tax</span>
           <span>${tax.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between border-t pt-2 text-lg font-bold">
+        <div className="flex justify-between border-t pt-2 text-base lg:text-lg font-bold">
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
         </div>

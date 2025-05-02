@@ -1,22 +1,28 @@
 import Image from 'next/image';
 import { CartItem } from '@/store/cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DeliveryFeeResult } from '@/lib/deliveryUtils';
 
 interface CheckoutSummaryProps {
   items: CartItem[];
   /** Determines if the 3.5% service fee should be calculated and displayed. */
-  includeServiceFee?: boolean; // Optional prop, defaults to false if not provided
+  includeServiceFee?: boolean;
+  /** Optional delivery fee information to display */
+  deliveryFee?: DeliveryFeeResult | null;
 }
 
 // Define the service fee rate
 const SERVICE_FEE_RATE = 0.035; // 3.5%
 
-export function CheckoutSummary({ items, includeServiceFee = false }: CheckoutSummaryProps) {
+export function CheckoutSummary({ items, includeServiceFee = false, deliveryFee }: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0825; // 8.25% tax
 
+  // Calculate the delivery fee amount
+  const deliveryFeeAmount = deliveryFee ? deliveryFee.fee : 0;
+
   // Calculate the base total before service fee
-  const totalBeforeFee = subtotal + tax;
+  const totalBeforeFee = subtotal + tax + deliveryFeeAmount;
 
   // Calculate service fee only if includeServiceFee is true
   const serviceFee = includeServiceFee ? totalBeforeFee * SERVICE_FEE_RATE : 0;
@@ -70,6 +76,19 @@ export function CheckoutSummary({ items, includeServiceFee = false }: CheckoutSu
             <span>${subtotal.toFixed(2)}</span>
           </div>
 
+          {/* Delivery Fee row */}
+          {deliveryFee !== undefined && (
+            <div className="flex justify-between text-sm">
+              <span>
+                Delivery{' '}
+                {deliveryFee && deliveryFee.isFreeDelivery && (
+                  <span className="text-green-600 font-medium">(Free)</span>
+                )}
+              </span>
+              <span>${deliveryFeeAmount.toFixed(2)}</span>
+            </div>
+          )}
+
           <div className="flex justify-between text-sm">
             <span>Tax (8.25%)</span>
             <span>${tax.toFixed(2)}</span>
@@ -87,6 +106,13 @@ export function CheckoutSummary({ items, includeServiceFee = false }: CheckoutSu
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
+          
+          {/* Delivery fee message */}
+          {deliveryFee && deliveryFee.zone === 'nearby' && !deliveryFee.isFreeDelivery && (
+            <div className="mt-2 text-xs text-green-600">
+              Orders over ${deliveryFee.minOrderForFreeDelivery?.toFixed(2)} qualify for free delivery!
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

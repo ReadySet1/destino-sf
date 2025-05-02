@@ -26,25 +26,27 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-none border-r"
+        className="h-8 w-8 sm:h-8 sm:w-8 rounded-none border-r"
         onClick={handleDecrement}
         disabled={value <= min}
         type="button"
+        aria-label="Decrease quantity"
       >
         <Minus className="h-3 w-3" />
       </Button>
 
-      <div className="w-10 text-center text-sm">
+      <div className="w-8 sm:w-10 text-center text-sm">
         <span>{value}</span>
       </div>
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-none border-l"
+        className="h-8 w-8 sm:h-8 sm:w-8 rounded-none border-l"
         onClick={handleIncrement}
         disabled={value >= max}
         type="button"
+        aria-label="Increase quantity"
       >
         <Plus className="h-3 w-3" />
       </Button>

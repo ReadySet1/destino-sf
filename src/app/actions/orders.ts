@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { OrderStatus, Prisma } from '@prisma/client';
+import { OrderStatus, Prisma, PaymentMethod } from '@prisma/client';
 import { z } from 'zod';
 import { formatISO, parseISO } from 'date-fns';
 import { randomUUID } from 'crypto';
@@ -82,10 +82,11 @@ const CartItemSchema = z.object({
   // Add other necessary fields like image, variant name etc. if needed for Square
 });
 
-const CreateOrderSchema = z.object({
-  items: z.array(CartItemSchema).min(1),
+const PayloadSchema = z.object({
+  items: z.array(CartItemSchema),
   customerInfo: CustomerInfoSchema,
-  fulfillment: FulfillmentSchema,
+  fulfillment: FulfillmentSchema, // Use the discriminated union type
+  paymentMethod: z.nativeEnum(PaymentMethod).optional(), // Make it optional for backward compatibility
 });
 
 // --- Types ---
@@ -125,6 +126,9 @@ interface LocalDeliveryFulfillment { // This seems potentially outdated? Fulfill
   deliveryDate: string;
   deliveryTime: string;
   deliveryInstructions?: string;
+  // Add fields for delivery fee
+  deliveryFee?: number;
+  deliveryZone?: string | null;
 }
 
 interface NationwideShippingFulfillment { // This seems potentially outdated? FulfillmentSchema covers it.
@@ -404,6 +408,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     items: z.infer<typeof CartItemSchema>[];
     customerInfo: z.infer<typeof CustomerInfoSchema>;
     fulfillment: z.infer<typeof FulfillmentSchema>; // Use the discriminated union type
+    paymentMethod: PaymentMethod; // VENMO, CASH, etc.
 }): Promise<ServerActionResult> {
     console.log("Server Action: createOrderAndGenerateCheckoutUrl started.");
     console.log("Received Fulfillment Data:", JSON.stringify(formData.fulfillment, null, 2));
@@ -443,7 +448,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     const supabaseUserId = user?.id;
 
     // Validate input using Zod schema before processing
-    const validationResult = CreateOrderSchema.safeParse(formData);
+    const validationResult = PayloadSchema.safeParse(formData);
     if (!validationResult.success) {
         console.error("Invalid form data:", validationResult.error.errors);
         // Combine Zod errors into a single message
@@ -451,7 +456,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         return { success: false, error: `Invalid input: ${errorMessage}`, checkoutUrl: null, orderId: null };
     }
 
-    const { items, customerInfo, fulfillment } = validationResult.data; // Use validated data
+    const { items, customerInfo, fulfillment, paymentMethod } = validationResult.data; // Use validated data
 
     // --- Calculate Totals using Decimal.js --- 
     let subtotal = new Decimal(0);
@@ -541,7 +546,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
             ...(supabaseUserId && { profile: { connect: { id: supabaseUserId } } }),
             status: OrderStatus.PENDING, // Use Prisma Enum
             paymentStatus: 'PENDING',
+            paymentMethod: paymentMethod,
             total: finalTotal, // Prisma handles Decimal
+            taxAmount: taxAmount,
             customerName: customerInfo.name,
             email: customerInfo.email,
             phone: customerInfo.phone,
@@ -722,6 +729,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 google_pay: true,
                 cash_app_pay: false,
                 afterpay_clearpay: false,
+                venmo: true
             },
         };
 
@@ -809,4 +817,222 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         }
         return { success: false, error: errorMessage, checkoutUrl: null, orderId: dbOrder?.id || null };
     }
+}
+
+/**
+ * Generates a manual payment page URL for payment methods that require manual processing
+ * Currently supports Venmo.
+ */
+export async function createManualPaymentOrder(formData: {
+    items: z.infer<typeof CartItemSchema>[];
+    customerInfo: z.infer<typeof CustomerInfoSchema>;
+    fulfillment: z.infer<typeof FulfillmentSchema>;
+    paymentMethod: PaymentMethod; // VENMO, CASH, etc.
+}): Promise<ServerActionResult> {
+    console.log("Server Action: createManualPaymentOrder started.");
+    
+    // Validate the payment method is supported
+    if (formData.paymentMethod !== 'VENMO' && formData.paymentMethod !== 'CASH') {
+        return { 
+            success: false, 
+            error: `Payment method ${formData.paymentMethod} is not supported for manual processing.`, 
+            checkoutUrl: null, 
+            orderId: null 
+        };
+    }
+
+    // Reuse much of the same logic as createOrderAndGenerateCheckoutUrl
+    // Validate input first
+    const validationResult = PayloadSchema.safeParse(formData);
+    if (!validationResult.success) {
+        console.error("Invalid form data:", validationResult.error.errors);
+        const errorMessage = validationResult.error.errors.map(e => `${e.path.join('.')} - ${e.message}`).join('; ');
+        return { success: false, error: `Invalid input: ${errorMessage}`, checkoutUrl: null, orderId: null };
+    }
+
+    const { items, customerInfo, fulfillment, paymentMethod } = formData;
+
+    // --- Calculate Totals using Decimal.js --- 
+    let subtotal = new Decimal(0);
+    const orderItemsData = items.map(item => {
+        const itemPrice = new Decimal(item.price);
+        const itemTotal = itemPrice.times(item.quantity);
+        subtotal = subtotal.plus(itemTotal);
+        return {
+            productId: item.id,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            price: itemPrice,
+        };
+    });
+
+    const taxAmount = subtotal.times(TAX_RATE).toDecimalPlaces(2);
+    const shippingCostCents = fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
+    const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
+    const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal);
+    const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+    const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
+
+    console.log(`Manual Payment - Calculated Subtotal: ${subtotal.toFixed(2)}`);
+    console.log(`Manual Payment - Calculated Tax: ${taxAmount.toFixed(2)}`);
+    console.log(`Manual Payment - Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`);
+    console.log(`Manual Payment - Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+    console.log(`Manual Payment - Calculated Final Total: ${finalTotal.toFixed(2)}`);
+
+    // --- Prepare Fulfillment DB Data --- 
+    let dbFulfillmentData: Partial<Prisma.OrderCreateInput> = {
+        fulfillmentType: fulfillment.method,
+        notes: undefined,
+        pickupTime: null,
+        deliveryDate: null,
+        deliveryTime: null,
+        shippingMethodName: null,
+        shippingCarrier: null,
+        shippingServiceLevelToken: null,
+        shippingCostCents: null,
+        shippingRateId: null,
+    };
+
+    let pickupTimeISO: string | null = null;
+
+    try {
+        // Process fulfillment data based on method
+        if (fulfillment.method === 'pickup') {
+            pickupTimeISO = formatISO(parseISO(fulfillment.pickupTime));
+            dbFulfillmentData.pickupTime = new Date(pickupTimeISO);
+        } else if (fulfillment.method === 'local_delivery') {
+            dbFulfillmentData.deliveryDate = fulfillment.deliveryDate;
+            dbFulfillmentData.deliveryTime = fulfillment.deliveryTime;
+            dbFulfillmentData.notes = JSON.stringify({
+                 deliveryAddress: fulfillment.deliveryAddress,
+                 deliveryInstructions: fulfillment.deliveryInstructions,
+            });
+        } else if (fulfillment.method === 'nationwide_shipping') {
+            dbFulfillmentData.shippingMethodName = `${fulfillment.shippingCarrier} ${fulfillment.shippingMethod}`;
+            dbFulfillmentData.shippingCarrier = fulfillment.shippingCarrier;
+            dbFulfillmentData.shippingServiceLevelToken = fulfillment.shippingMethod;
+            dbFulfillmentData.shippingCostCents = fulfillment.shippingCost;
+            dbFulfillmentData.shippingRateId = fulfillment.rateId;
+            dbFulfillmentData.notes = JSON.stringify({
+                 shippingAddress: fulfillment.shippingAddress,
+            });
+        }
+    } catch (dateError: any) {
+         console.error("Invalid date format provided for fulfillment:", dateError);
+         return { success: false, error: "Invalid date/time format for fulfillment.", checkoutUrl: null, orderId: null };
+    }
+
+    // Get current user from Supabase if available
+    const supabase = createServerClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                async get(name: string) {
+                  const cookieStore = await cookies();
+                  return cookieStore.get(name)?.value;
+                },
+                async set(name: string, value: string, options: CookieOptions) {
+                  try {
+                    const cookieStore = await cookies();
+                    cookieStore.set({ name, value, ...options });
+                  } catch (error) {
+                    // The `set` method was called from a Server Component.
+                    // This can be ignored if you have middleware refreshing
+                    // user sessions.
+                  }
+                },
+                async remove(name: string, options: CookieOptions) {
+                  try {
+                    const cookieStore = await cookies();
+                    cookieStore.set({ name, value: '', ...options });
+                  } catch (error) {
+                    // The `delete` method was called from a Server Component.
+                    // This can be ignored if you have middleware refreshing
+                    // user sessions.
+                  }
+                },
+              },
+        }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    const supabaseUserId = user?.id;
+
+    // --- Database Order Creation --- 
+    let dbOrder: { id: string } | null = null;
+    try {
+        const orderInputData: Prisma.OrderCreateInput = {
+            ...(supabaseUserId && { profile: { connect: { id: supabaseUserId } } }),
+            status: OrderStatus.PENDING,
+            paymentStatus: 'PENDING',
+            paymentMethod: paymentMethod,
+            total: finalTotal,
+            taxAmount: taxAmount,
+            customerName: customerInfo.name,
+            email: customerInfo.email,
+            phone: customerInfo.phone,
+            ...dbFulfillmentData,
+            items: {
+                create: orderItemsData.map(item => ({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                    price: item.price,
+                })),
+            },
+        };
+
+        dbOrder = await prisma.order.create({
+            data: orderInputData,
+            select: { id: true },
+        });
+        console.log(`Manual payment order created with ID: ${dbOrder.id}`);
+    } catch (error: any) {
+        console.error("Database Error creating manual payment order:", error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+             console.error("Prisma Error Code:", error.code, "Meta:", error.meta);
+        }
+        return { success: false, error: error.message || "Failed to save order details.", checkoutUrl: null, orderId: null };
+    }
+
+    // Generate a payment page URL
+    const origin = process.env.NEXT_PUBLIC_APP_URL;
+    if (!origin) {
+        console.error('Server Action Config Error: NEXT_PUBLIC_APP_URL is not set.');
+        if (dbOrder?.id) { 
+            await prisma.order.update({ 
+                where: { id: dbOrder.id }, 
+                data: { 
+                    status: OrderStatus.CANCELLED, 
+                    paymentStatus: 'FAILED', 
+                    notes: 'Missing base URL config' 
+                } 
+            }).catch(e => console.error("Failed to update order status on config error:", e)); 
+        }
+        return { 
+            success: false, 
+            error: 'Server configuration error: Base URL missing.', 
+            checkoutUrl: null, 
+            orderId: dbOrder?.id ?? null 
+        };
+    }
+
+    // Create a custom checkout URL for the manual payment flow
+    const paymentPageUrl = new URL(`/payment/${dbOrder!.id}`, origin);
+    paymentPageUrl.searchParams.set('method', paymentMethod);
+    
+    console.log(`Manual Payment URL generated: ${paymentPageUrl}`);
+    
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath(`/admin/orders/${dbOrder!.id}`);
+    revalidatePath('/orders');
+    revalidatePath(`/orders/${dbOrder!.id}`);
+
+    return { 
+        success: true, 
+        error: null, 
+        checkoutUrl: paymentPageUrl.toString(), 
+        orderId: dbOrder!.id 
+    };
 } 

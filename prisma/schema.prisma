@@ -73,6 +73,7 @@ model Order {
   squareOrderId             String?       @unique
   status                    OrderStatus   @default(PENDING)
   total                     Decimal       @db.Decimal(10, 2)
+  taxAmount                 Decimal       @default(0) @db.Decimal(10, 2) @map("tax_amount")
   userId                    String?       @db.Uuid
   customerName              String
   email                     String
@@ -89,6 +90,7 @@ model Order {
   shippingRateId            String?       @map("shipping_rate_id") // Shippo Rate object ID
   trackingNumber            String? // Tracking number for shipped orders - MOVED here for grouping
   cancelReason              String?
+  paymentMethod             PaymentMethod @default(SQUARE)
   paymentStatus             PaymentStatus @default(PENDING)
   rawData                   Json? // Store raw webhook data, etc.
   createdAt                 DateTime      @default(now())
@@ -226,6 +228,12 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   COMPLETED
+}
+
+enum PaymentMethod {
+  SQUARE
+  VENMO
+  CASH
 }
 
 enum DiscountType {
