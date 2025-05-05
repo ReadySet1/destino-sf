@@ -24,7 +24,7 @@ interface ManualOrderInput {
   email: string;
   phone: string;
   total: number;
-  fulfillmentType: string;
+  fulfillmentType: string; // Maps to fulfillment_type in the database via Prisma mapping
   pickupTime: string;
   notes: string;
   paymentMethod: PaymentMethod;
@@ -67,6 +67,7 @@ export async function createManualOrder(data: ManualOrderInput) {
           email: data.email,
           phone: data.phone,
           total: data.total,
+          // The schema uses @map("fulfillment_type") so we use the Prisma field name
           fulfillmentType: data.fulfillmentType,
           pickupTime: pickupTime,
           notes: data.notes,
@@ -109,6 +110,7 @@ export async function createManualOrder(data: ManualOrderInput) {
         email: data.email,
         phone: data.phone,
         total: data.total,
+        // The schema uses @map("fulfillment_type") so we use the Prisma field name
         fulfillmentType: data.fulfillmentType,
         pickupTime: pickupTime,
         notes: data.notes,
