@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { OrderStatus, Prisma, PaymentMethod } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { formatISO, parseISO } from 'date-fns';
 import { randomUUID } from 'crypto';
@@ -11,6 +11,13 @@ import Decimal from 'decimal.js';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
+
+// Define our own PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 // Re-add BigInt patch if needed directly in actions, or ensure it runs globally
 (BigInt.prototype as any).toJSON = function() {

@@ -1,9 +1,16 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';
+
+// Define our own PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 interface OrderItemInput {
   productId: string;

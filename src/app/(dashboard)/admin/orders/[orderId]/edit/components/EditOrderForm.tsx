@@ -3,8 +3,36 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createManualOrder } from '@/app/(dashboard)/admin/orders/manual/actions';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
+// Helper function to safely format price
+const convertDecimalToNumber = (decimal: unknown): number => {
+  // Check if it's already a number
+  if (typeof decimal === 'number') {
+    return isNaN(decimal) ? 0 : decimal;
+  }
+  // Check if it looks like a Decimal object (has toFixed method)
+  if (decimal !== null && typeof decimal === 'object' && 'toFixed' in decimal && typeof decimal.toFixed === 'function') {
+    // Convert Decimal to string, then parse as float
+    const num = parseFloat(decimal.toFixed());
+    return isNaN(num) ? 0 : num;
+  }
+   // Check if it's a string representation of a number
+   if (typeof decimal === 'string') {
+     const num = parseFloat(decimal);
+     return isNaN(num) ? 0 : num;
+   }
+  // Default to 0 if it's none of the above or conversion failed
+  return 0;
+};
+
+// Define our own PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 // Helper function to safely format price
 const formatPrice = (price: any): string => {

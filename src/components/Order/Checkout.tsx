@@ -4,8 +4,12 @@ import { toast } from 'sonner';
 import { createOrderAndGenerateCheckoutUrl } from '@/app/actions'; // Import the server action
 import type { FulfillmentData } from '@/app/actions';
 
-// Define the PaymentMethod type
-type PaymentMethod = 'SQUARE' | 'VENMO' | 'CASH';
+// Define the PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 // Define types more precisely if possible, aligning with server action schemas
 interface CartItem {
@@ -197,7 +201,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, f
           items: items, // Pass items directly
           customerInfo: customerInfo, // Pass customerInfo
           fulfillment: mappedFulfillment, // Use the correctly formatted fulfillment
-          paymentMethod: 'SQUARE' as PaymentMethod // Add the missing paymentMethod field with the correct type
+          paymentMethod: PaymentMethod.SQUARE // Use the enum value correctly
       };
 
       // Explicitly type the result

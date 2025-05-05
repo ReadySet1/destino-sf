@@ -56,8 +56,12 @@ import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector'
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
-// --- Add Payment Method Type ---
-type PaymentMethod = 'SQUARE' | 'VENMO' | 'CASH';
+// --- Define PaymentMethod enum to match Prisma schema ---
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 // --- Add placeholder weight ---
 const PLACEHOLDER_WEIGHT_LB = 1; // TODO: Replace with actual cart weight calculation
@@ -80,7 +84,7 @@ const pickupSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   pickupDate: z.string().min(1, 'Pickup date is required'),
   pickupTime: z.string().min(1, 'Pickup time is required'),
-  paymentMethod: z.enum(['SQUARE', 'VENMO', 'CASH']),
+  paymentMethod: z.nativeEnum(PaymentMethod),
 });
 
 const localDeliverySchema = z.object({
@@ -92,7 +96,7 @@ const localDeliverySchema = z.object({
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
-  paymentMethod: z.enum(['SQUARE', 'VENMO']), // No cash for delivery
+  paymentMethod: z.nativeEnum(PaymentMethod),
 });
 
 const nationwideShippingSchema = z.object({
@@ -102,7 +106,7 @@ const nationwideShippingSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   shippingAddress: addressSchema,
   rateId: z.string().min(1, 'Please select a shipping method.'),
-  paymentMethod: z.enum(['SQUARE', 'VENMO']), // No cash for shipping
+  paymentMethod: z.nativeEnum(PaymentMethod),
 });
 
 const checkoutSchema = z.discriminatedUnion('fulfillmentMethod', [
@@ -155,7 +159,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [error, setError] = useState<string | null>(null);
   // User state is now derived from initialUserData prop
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('SQUARE');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.SQUARE);
   const [isMounted, setIsMounted] = useState(false);
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
   const [shippingLoading, setShippingLoading] = useState<boolean>(false);
@@ -170,7 +174,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     // --- Set defaultValues using initialUserData ---
     defaultValues: {
       fulfillmentMethod: 'pickup',
-      paymentMethod: 'SQUARE',
+      paymentMethod: PaymentMethod.SQUARE,
       name: initialUserData?.name || '',
       email: initialUserData?.email || '',
       phone: initialUserData?.phone || '',
@@ -197,7 +201,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             name: currentValues.name || initialUserData?.name || '', // Prioritize current, then initial, then empty
             email: currentValues.email || initialUserData?.email || '',
             phone: currentValues.phone || initialUserData?.phone || '',
-            paymentMethod: currentValues.paymentMethod || 'SQUARE',
+            paymentMethod: currentValues.paymentMethod || PaymentMethod.SQUARE,
         };
 
         let recipientName = commonData.name;
@@ -231,7 +235,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
               deliveryTime: defaultDeliveryTime,
               deliveryInstructions: currentValues.fulfillmentMethod === 'local_delivery' ? currentValues.deliveryInstructions : '',
               // Don't allow cash for delivery
-              paymentMethod: currentValues.paymentMethod === 'CASH' ? 'SQUARE' : currentValues.paymentMethod || 'SQUARE',
+              paymentMethod: currentValues.paymentMethod === PaymentMethod.CASH ? PaymentMethod.SQUARE : currentValues.paymentMethod || PaymentMethod.SQUARE,
           };
         } else {
           return {
@@ -248,7 +252,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
               },
               rateId: currentValues.fulfillmentMethod === 'nationwide_shipping' ? currentValues.rateId : '',
               // Don't allow cash for shipping
-              paymentMethod: currentValues.paymentMethod === 'CASH' ? 'SQUARE' : currentValues.paymentMethod || 'SQUARE',
+              paymentMethod: currentValues.paymentMethod === PaymentMethod.CASH ? PaymentMethod.SQUARE : currentValues.paymentMethod || PaymentMethod.SQUARE,
           };
         }
     });
@@ -318,9 +322,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       setValue('paymentMethod', currentPaymentMethod);
     } else {
       // No cash option for delivery or shipping
-      if (currentPaymentMethod === 'CASH') {
-        setValue('paymentMethod', 'SQUARE');
-        setPaymentMethod('SQUARE');
+      if (currentPaymentMethod === PaymentMethod.CASH) {
+        setValue('paymentMethod', PaymentMethod.SQUARE);
+        setPaymentMethod(PaymentMethod.SQUARE);
       }
     }
   }, [fulfillmentMethod, currentPaymentMethod, setValue, setPaymentMethod]);
@@ -371,7 +375,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       console.log('Constructed customer info:', customerInfo);
       
       // Handle different payment methods
-      if (formData.paymentMethod === 'SQUARE') {
+      if (formData.paymentMethod === PaymentMethod.SQUARE) {
         // Use existing Square checkout flow
         console.log('Using Square checkout');
         console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
@@ -414,7 +418,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         // Then update it with manual payment method using server action
         const updateResult = await updateOrderWithManualPayment(
           result.orderId,
-          formData.paymentMethod as 'VENMO' | 'CASH'
+          formData.paymentMethod
         );
         
         if (!updateResult.success) {
@@ -698,7 +702,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             selectedMethod={currentPaymentMethod}
             onSelectMethod={(method) => {
               setPaymentMethod(method as PaymentMethod);
-              setValue('paymentMethod', method as 'SQUARE' | 'VENMO' | 'CASH');
+              setValue('paymentMethod', method as PaymentMethod.SQUARE | PaymentMethod.VENMO | PaymentMethod.CASH);
             }}
             showCash={currentMethod === 'pickup'}
           />
@@ -717,7 +721,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         {/* Submit Button */}
         <Button type="submit" className="w-full" disabled={isSubmitting || !isMounted || items.length === 0 || !isValid }>
           {isSubmitting ? 'Processing...' : 
-            currentPaymentMethod === 'SQUARE' ? 'Continue to Payment' : 'Place Order'
+            currentPaymentMethod === PaymentMethod.SQUARE ? 'Continue to Payment' : 'Place Order'
           }
         </Button>
       </form>
@@ -726,7 +730,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         {isMounted ? (
           <CheckoutSummary 
             items={items} 
-            includeServiceFee={currentPaymentMethod === 'SQUARE'}
+            includeServiceFee={currentPaymentMethod === PaymentMethod.SQUARE}
             deliveryFee={currentMethod === 'local_delivery' ? deliveryFee : undefined}
           />
         ) : (

@@ -2,7 +2,13 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { PaymentMethod } from '@prisma/client';
+
+// Define our own PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 /**
  * Updates an order to use a manual payment method like Venmo or Cash

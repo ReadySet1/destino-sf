@@ -3,8 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createManualOrder, updateOrderStatus } from '@/app/(dashboard)/admin/orders/manual/actions';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
+// Define our own PaymentMethod enum to match the Prisma schema
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  VENMO = "VENMO",
+  CASH = "CASH"
+}
 
 // Types
 type ProductWithVariants = {
