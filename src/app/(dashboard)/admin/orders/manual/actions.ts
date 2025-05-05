@@ -46,7 +46,7 @@ export async function createManualOrder(data: ManualOrderInput) {
     }
 
     // Convert pickup time from string to Date if provided
-    const pickupTime = data.pickupTime ? new Date(data.pickupTime) : null;
+    const pickupTime = data.pickupTime ? new Date(data.pickupTime) : undefined;
 
     // If updating an existing order
     if (data.existingOrderId) {
