@@ -71,6 +71,11 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <DashboardCard title="Orders" href="/admin/orders" description="Manage customer orders" />
         <DashboardCard
+          title="Manual Orders"
+          href="/admin/orders/manual"
+          description="Create and manage manual orders (cash/Venmo)"
+        />
+        <DashboardCard
           title="Products"
           href="/admin/products"
           description="Manage store products"

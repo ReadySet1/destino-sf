@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { UserOrder } from '@/app/api/user/orders/route'; // Import the type from the API route
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, Eye } from "lucide-react";
+import { Button } from '@/components/ui/button';
 
 // Helper function to format currency
 const formatCurrency = (amount: number | string | null | undefined) => {
@@ -29,19 +31,24 @@ const formatDate = (date: Date | string | null | undefined) => {
 };
 
 // Helper to map status to badge variant
-const getStatusVariant = (status: string | null | undefined): "default" | "secondary" | "destructive" | "outline" => {
+const getStatusVariant = (status: string | null | undefined): "default" | "primary" | "secondary" | "success" | "warning" | "danger" | "outline" => {
   switch (status?.toLowerCase()) {
     case 'completed':
     case 'ready':
-      return 'default'; // Greenish/Default
+      return 'success'; // Green
     case 'pending':
+      return 'warning'; // Yellow
     case 'processing':
-      return 'secondary'; // Yellowish/Secondary
+      return 'secondary'; // Purple
     case 'cancelled':
     case 'failed':
-      return 'destructive'; // Red/Destructive
+      return 'danger'; // Red
+    case 'shipping':
+      return 'primary'; // Blue
+    case 'delivered':
+      return 'success'; // Green
     default:
-      return 'outline'; // Gray/Outline
+      return 'outline'; // Gray
   }
 };
 
@@ -143,7 +150,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
               <TableHead>Payment</TableHead>
               {hasTrackingData && <TableHead>Tracking</TableHead>}
               <TableHead className="text-right">Total</TableHead>
-              {/* Add more columns if needed */}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,11 +160,11 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
                 <TableCell>{formatDate(order.createdAt)}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(order.status)}>
-                    {order.status?.toUpperCase() === 'READY' ? 'READY TO PICKUP' : (order.status || 'N/A')}
+                    {order.status?.toUpperCase() === 'READY' ? 'READY FOR PICKUP' : (order.status || 'N/A')}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={order.paymentStatus?.toLowerCase() === 'paid' ? 'default' : 'secondary'}>
+                  <Badge variant={order.paymentStatus?.toLowerCase() === 'paid' ? 'success' : 'secondary'}>
                     {order.paymentStatus || 'N/A'}
                   </Badge>
                 </TableCell>
@@ -194,6 +201,14 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
                   </TableCell>
                 )}
                 <TableCell className="text-right">{formatCurrency(order.total?.toString())}</TableCell>
+                <TableCell className="text-right">
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href={`/account/order/${order.id}`} aria-label={`View details for order ${order.id}`}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Link>
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

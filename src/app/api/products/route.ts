@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/utils/logger';
 
@@ -26,49 +26,76 @@ type PrismaProduct = {
   variants: PrismaVariant[];
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    logger.info('Fetching products from database');
-    
-    // Get all products with their variants
+    const searchParams = request.nextUrl.searchParams;
+    const includeVariants = searchParams.get('includeVariants') === 'true';
+    const onlyActive = searchParams.get('onlyActive') !== 'false'; // Default to true
+    const categoryId = searchParams.get('categoryId') || undefined;
+    const featured = searchParams.get('featured') === 'true' ? true : undefined;
+
+    // Build the query based on parameters
+    const whereCondition: any = {
+      active: onlyActive ? true : undefined,
+      categoryId: categoryId,
+      featured: featured,
+    };
+
+    // Remove undefined values
+    Object.keys(whereCondition).forEach(
+      (key) => whereCondition[key] === undefined && delete whereCondition[key]
+    );
+
+    // Get products with optional variants
     const products = await prisma.product.findMany({
-      where: { active: true },
-      include: {
-        category: true,
-        variants: true
-      }
+      where: whereCondition,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        images: true,
+        slug: true,
+        categoryId: true,
+        featured: true,
+        active: true,
+        variants: includeVariants ? {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        } : false,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
     });
-    
-    return NextResponse.json({
-      success: true,
-      count: products.length,
-      products: products.map((product) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price.toString(),
-        images: product.images,
-        categoryId: product.categoryId,
-        categoryName: product.category?.name,
-        variants: product.variants.map((variant) => ({
-          id: variant.id,
-          name: variant.name,
-          price: variant.price ? Number(variant.price) : undefined,
-          squareVariantId: variant.squareVariantId
-        })),
-        squareId: product.squareId,
-        featured: product.featured,
-        active: product.active,
-      }))
-    });
+
+    // Convert BigInt price to regular number for JSON serialization
+    const serializedProducts = products.map(product => ({
+      ...product,
+      price: product.price ? parseFloat(product.price.toString()) : 0,
+      variants: includeVariants 
+        ? product.variants.map(variant => ({
+            ...variant,
+            price: variant.price ? parseFloat(variant.price.toString()) : null,
+          }))
+        : [],
+    }));
+
+    return NextResponse.json(serializedProducts);
   } catch (error) {
     logger.error('Error fetching products:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch products',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to fetch products' },
       { status: 500 }
     );
   }

@@ -1,29 +1,29 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
-import { Decimal } from '@prisma/client/runtime/library';
 import { OrderStatus } from '@prisma/client';
+import { serializeObject } from '@/utils/serialization';
 
 type OrderWithItems = {
   id: string;
   status: OrderStatus;
-  total: Decimal;
+  total: number;
   customerName: string;
-  pickupTime: Date | null;
-  createdAt: Date;
+  pickupTime: Date | null | string;
+  createdAt: Date | string;
   items: Array<{
     id: string;
     product: {
       id: string;
       name: string;
-      [key: string]: string | number | boolean | null | undefined;
+      [key: string]: any;
     };
     variant: {
       id: string;
       name: string;
-      [key: string]: string | number | boolean | null | undefined;
+      [key: string]: any;
     } | null;
-    [key: string]: string | number | boolean | null | undefined | object;
+    [key: string]: any;
   }>;
   trackingNumber?: string | null;
   shippingCarrier?: string | null;
@@ -74,34 +74,20 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
     },
   });
 
-  // Transform the orders to match our expected type
-  const orders = ordersFromDb.map(
-    (order) => ({
-      id: order.id,
-      status: order.status,
-      total: order.total,
-      customerName: order.customerName,
-      pickupTime: order.pickupTime,
-      createdAt: order.createdAt,
-      items: order.items.map(item => ({
-        id: item.id,
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-        },
-        variant: item.variant,
-      })),
-      trackingNumber: order.trackingNumber,
-      shippingCarrier: order.shippingCarrier,
-      fulfillmentType: order.fulfillmentType,
-    })
-  ) as OrderWithItems[];
+  // Serialize to handle Decimal values
+  const serializedOrders = serializeObject(ordersFromDb);
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Order Management</h1>
         <div className="flex gap-2">
+          <Link
+            href="/admin/orders/manual"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+          >
+            Add Manual Order
+          </Link>
           <select className="border rounded p-2">
             <option value="all">All Orders</option>
             <option value="PENDING">Pending</option>
@@ -114,7 +100,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
         </div>
       </div>
 
-      {orders.length === 0 ? (
+      {serializedOrders.length === 0 ? (
         <div className="text-center py-10 text-gray-500">No orders found.</div>
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -151,7 +137,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map(order => (
+              {serializedOrders.map((order: OrderWithItems) => (
                 <tr key={order.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {order.id.substring(0, 8)}...
@@ -170,7 +156,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                     {order.items.length}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${Number(order.total).toFixed(2)}
+                    ${typeof order.total === 'number' ? order.total.toFixed(2) : (parseFloat(String(order.total)) || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {order.pickupTime ? new Date(order.pickupTime).toLocaleString() : 'N/A'}

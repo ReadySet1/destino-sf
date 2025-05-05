@@ -2,6 +2,7 @@ import './styles/globals.css';
 import ClientLayout from './client-layout';
 import { Metadata } from 'next';
 import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
+import Script from 'next/script';
 
 const quicksand = Quicksand({
   subsets: ['latin'],
@@ -90,6 +91,10 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground antialiased">
         <ClientLayout>{children}</ClientLayout>
+        <Script 
+          src="https://analytics.readysetllc.com/script.js" 
+          data-website-id="5a0ae847-dbb0-456c-b972-9e29944de4b2"
+        />
       </body>
     </html>
   );

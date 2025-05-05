@@ -31,8 +31,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   );
 
   const displayPrice = selectedVariant?.price || product.price;
-  // Log the calculated displayPrice
-  console.log(`[ProductCard] ${product.name} - Selected Variant Price:`, selectedVariant?.price, 'Product Price:', product.price, 'Resulting displayPrice:', displayPrice);
   
   const mainImage = !imageError && product.images?.[0] ? product.images[0] : '/images/menu/empanadas.png';
   

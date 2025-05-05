@@ -51,7 +51,14 @@ export default async function AccountPage() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <OrderHistory {...({ userId: user.id } as OrderHistoryProps)} />
+          <div className="space-y-4">
+            <OrderHistory {...({ userId: user.id } as OrderHistoryProps)} />
+            <div className="flex justify-end">
+              <Button asChild variant="outline">
+                <Link href="/account/orders">View All Orders</Link>
+              </Button>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </main>

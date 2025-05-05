@@ -56,11 +56,11 @@ export default async function CheckoutPage() {
           <UserIcon className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
             Have an account?{' '}
-            <Link href="/login?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
+            <Link href="/sign-in?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
               <LogInIcon className="inline h-4 w-4 mr-1" />Log in
             </Link>
             {' '}for faster checkout or{' '}
-            <Link href="/signup?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
+            <Link href="/sign-up?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
               <UserPlusIcon className="inline h-4 w-4 mr-1" />Sign up
             </Link>.
             You can also continue as a guest.
