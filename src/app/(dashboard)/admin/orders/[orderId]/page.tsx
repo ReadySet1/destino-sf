@@ -87,58 +87,14 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: {
-      id: true,
-      status: true,
-      customerName: true,
-      email: true,
-      phone: true,
-      total: true,
-      taxAmount: true,
-      pickupTime: true,
-      createdAt: true,
-      updatedAt: true,
-      squareOrderId: true,
-      paymentMethod: true,
-      paymentStatus: true,
-      notes: true,
-      fulfillmentType: true,
-      trackingNumber: true,
-      shippingCarrier: true,
+    include: {
       items: {
-        select: {
-          id: true,
-          productId: true,
-          variantId: true,
-          quantity: true,
-          price: true,
-          product: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              description: true,
-            }
-          },
-          variant: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-            }
-          },
+        include: {
+          product: true,
+          variant: true,
         },
       },
-      payments: {
-        select: {
-          id: true,
-          squarePaymentId: true,
-          amount: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        }
-      },
+      payments: true,
     },
   });
 
