@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm run typecheck-build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs"
+} 
