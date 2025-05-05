@@ -24,61 +24,14 @@ export default async function EditOrderPage({ params }: PageProps) {
   }
 
   try {
-    // Fetch the order with its items using select instead of include
+    // Fetch the order with its items using include instead of select
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      select: {
-        id: true,
-        status: true,
-        customerName: true,
-        email: true,
-        phone: true,
-        total: true,
-        taxAmount: true,
-        pickupTime: true,
-        createdAt: true,
-        updatedAt: true,
-        squareOrderId: true,
-        paymentMethod: true,
-        paymentStatus: true,
-        notes: true,
-        fulfillmentType: true,
-        trackingNumber: true,
-        shippingCarrier: true,
+      include: {
         items: {
-          select: {
-            id: true,
-            productId: true,
-            variantId: true,
-            quantity: true,
-            price: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                images: true,
-                active: true,
-                featured: true,
-                categoryId: true,
-                description: true,
-                slug: true,
-                squareId: true,
-                createdAt: true,
-                updatedAt: true,
-              }
-            },
-            variant: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                squareVariantId: true,
-                productId: true,
-                createdAt: true,
-                updatedAt: true,
-              }
-            },
+          include: {
+            product: true,
+            variant: true,
           },
         },
       },
