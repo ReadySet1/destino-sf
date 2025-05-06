@@ -11,6 +11,9 @@ const CateringBanner: React.FC = () => {
             margin-top: 0;
             margin-bottom: 0;
           }
+          .cater-text {
+            margin-top: 6px !important; /* Reduce the margin for mobile */
+          }
         }
       `}</style>
       <div
@@ -22,7 +25,9 @@ const CateringBanner: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-white font-quicksand tracking-tight">
             Catering
           </h1>
-          <p className="mt-12 text-lg md:text-xl text-gray-300">Let us cater your next event!</p>
+          <p className="cater-text mt-4 sm:mt-12 text-lg md:text-xl text-gray-300">
+            Let us cater your next event!
+          </p>
         </div>
       </div>
     </div>
