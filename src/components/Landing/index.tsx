@@ -7,7 +7,7 @@ export default function Hero() {
     <div className="flex flex-col">
       <HeroBanner />
       {/* <PopularEmpanadas /> */}
-      <MenuSection />
+      {/* <MenuSection /> */}
     </div>
   );
 }

@@ -25,7 +25,7 @@ const initialState: ActionResult = {
 export default function CategoryForm(/* { initialData }: CategoryFormProps */) {
   const [state, formAction] = useActionState(createCategoryAction, initialState);
   const [imagePreview, setImagePreview] = useState<string | null>(/* initialData?.imageUrl || */ null);
-  const [isPending, setIsPending] = useState(false); // Manual pending state
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     if (state.message) {
@@ -40,6 +40,12 @@ export default function CategoryForm(/* { initialData }: CategoryFormProps */) {
     }
   }, [state]);
 
+  // Get pending state directly from useActionState's internal state
+  useEffect(() => {
+    // @ts-ignore - Access React's internal pending state from the formAction
+    setIsPending(formAction.pending === true);
+  }, [formAction]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -53,19 +59,12 @@ export default function CategoryForm(/* { initialData }: CategoryFormProps */) {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission
-    setIsPending(true); // Set pending state before calling action
-    const formData = new FormData(event.currentTarget);
-    formAction(formData); // Call the action managed by useActionState
-  };
-
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-4">Add New Category</h2>
 
-      {/* Use onSubmit for manual pending state and feedback */}
-      <form onSubmit={handleSubmit}> 
+      {/* Use formAction directly as the form's action */}
+      <form action={formAction}> 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -151,7 +150,7 @@ export default function CategoryForm(/* { initialData }: CategoryFormProps */) {
           <div className="col-span-2">
             <button
               type="submit"
-              disabled={isPending} // Use manual pending state
+              disabled={isPending}
               className={`px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 ${
                 isPending ? 'opacity-50 cursor-not-allowed' : ''
               }`}

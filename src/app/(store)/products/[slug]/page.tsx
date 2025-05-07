@@ -157,12 +157,13 @@ export default async function ProductPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[hsl(var(--header-orange))]">
       <CategoryHeader 
-        title="Details"
+        title=""
         type="products"
+        className="bg-[hsl(var(--header-orange))]"
       >
-        <div className="py-8">
+        <div className="py-8 mb-0">
           <div className="max-w-4xl mx-auto">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">

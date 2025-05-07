@@ -52,10 +52,10 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header with title and filters */}
       {(title || showFilters) && (
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           {title && <h2 className="text-2xl font-bold tracking-tight">{title}</h2>}
 
           {showFilters && (
@@ -77,7 +77,7 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
       )}
 
       {/* Product grid with consistent spacing */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-6">
         {filteredProducts.map(product => (
           <ProductCard key={product.id} product={product} />
         ))}

@@ -22,8 +22,14 @@ const formatPrice = (price: number | null | undefined): string => {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  
+  // Check if product has valid variants
+  const hasVariants = product.variants && Array.isArray(product.variants) && 
+                     product.variants.filter(v => v && v.id).length > 0;
+  
+  // Only set a selected variant if there are valid variants
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
-    product.variants && product.variants.length > 0 ? product.variants[0] : null
+    hasVariants && product.variants ? product.variants[0] : null
   );
 
   // Calculate display price based on selected variant or product price
@@ -52,35 +58,31 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col">
+    <div className="group relative bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col rounded-lg overflow-hidden">
       <Link 
         href={`/products/${product.slug || product.id}`} // Use slug or fallback to id
-        className="flex flex-row md:flex-col flex-grow" // Use flex-grow to allow content to expand
+        className="flex flex-row md:flex-col h-full" // Use flex-grow to allow content to expand
       >
-        {/* Image Container */}
-        <div className="w-[120px] h-[120px] md:w-full md:h-auto relative overflow-hidden rounded-xl m-2 md:mb-4 md:aspect-square md:m-4 md:mt-4 flex-shrink-0">
-          {mainImage ? ( // Check mainImage directly
+        {/* Image Container - Mobile: Left side, Desktop: Top */}
+        <div className="w-[110px] h-[110px] md:w-full md:h-auto relative overflow-hidden md:rounded-t-lg flex-shrink-0 flex items-center justify-center bg-gray-50 m-3 md:m-0 rounded-lg md:aspect-[4/3]">
+          {mainImage ? (
             <Image
               src={mainImage}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-              sizes="(min-width: 768px) 33vw, 120px"
-              priority={product.featured} // Use featured flag for priority
-              onError={(e) => {
-                // Handle image loading errors if necessary, e.g., set a flag
-                console.error("Image failed to load:", mainImage);
-                // Optionally set a state to show a fallback UI element
-              }}
+              className="object-contain md:object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+              sizes="(min-width: 768px) 33vw, 110px"
+              priority={product.featured}
+              onError={() => console.error("Image failed to load:", mainImage)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gray-100">
+            <div className="flex h-full w-full items-center justify-center">
               <span className="text-gray-400">No image</span>
             </div>
           )}
           
           {product.featured && (
-            <div className="absolute top-2 left-2 hidden md:block bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+            <div className="absolute top-2 left-2 hidden md:block bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full z-10">
               Featured
             </div>
           )}
@@ -90,19 +92,19 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
           {/* Top part: Name and Description */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate md:mb-2 group-hover:text-indigo-600 transition-colors">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1 truncate md:mb-2 group-hover:text-indigo-600 transition-colors">
               {product.name}
             </h3>
             
             {product.description && (
-              <p className="text-gray-600 text-sm line-clamp-2 mb-2">{product.description}</p>
+              <p className="text-sm text-gray-600 line-clamp-2 md:mb-2 hidden md:block">{product.description}</p>
             )}
           </div>
           
           {/* Bottom part: Variants, Price, Button */}
           <div className="mt-auto"> 
-            {/* Variant Selector - Add this section */}
-            {product.variants && product.variants.length > 0 && (
+            {/* Variant Selector - Only show if multiple variants exist */}
+            {hasVariants && product.variants && product.variants.length > 1 && (
               <div className="mb-3">
                 <select
                   // Prevent link navigation when clicking the select
@@ -116,7 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   aria-label={`Select ${product.name} option`}
                 >
                   {product.variants
-                    .filter(variant => variant.id) // Ensure variant has an ID
+                    .filter(variant => variant && variant.id) // Ensure variant has an ID
                     .map((variant) => (
                       <option key={variant.id} value={variant.id}>
                         {variant.name} - ${formatPrice(variant.price !== null ? Number(variant.price) : Number(product.price))}
@@ -127,16 +129,16 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
 
             {/* Price and Add to Cart Button */}
-            <div className="flex items-center justify-between pt-2 md:pt-4 md:border-t md:border-gray-100">
-              <span className="text-lg font-bold text-gray-900">
-                ${formatPrice(Number(displayPrice))} {/* Use displayPrice */}
+            <div className="flex items-center justify-between pt-2 md:pt-3 md:border-t md:border-gray-100">
+              <span className="text-base md:text-lg font-bold text-gray-900">
+                ${formatPrice(Number(displayPrice))}
               </span>
               <Button
                 onClick={e => {
                   e.preventDefault(); // Keep preventing link navigation
                   handleAddToCart();
                 }}
-                className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-3 py-1 md:px-6 md:py-2 rounded-full transition-colors duration-300"
+                className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-3 py-1 md:px-5 md:py-2 rounded-full transition-colors duration-300"
                 variant="ghost"
                 aria-label={`Add ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} to cart`}
               >
