@@ -16,6 +16,11 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   children
 }) => {
   const getBgColor = () => {
+    // If custom className is provided, prefer that over default backgrounds
+    if (className.includes('bg-[')) {
+      return className;
+    }
+    
     switch (type) {
       case 'products':
       case 'menu':
@@ -27,7 +32,7 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
 
   return (
     <div className="w-full">
-      <div className={`w-full ${getBgColor()} -mt-2 ${className}`}>
+      <div className={`w-full ${getBgColor()} -mt-2`}>
         <div className="max-w-[1400px] mx-auto px-4">
           <h1 className="text-white text-4xl md:text-5xl font-script text-center py-6">
             {title}

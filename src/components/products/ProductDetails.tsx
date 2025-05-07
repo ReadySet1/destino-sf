@@ -25,6 +25,11 @@ const formatPrice = (price: number | Decimal | null | undefined): string => {
 };
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  // Check if product has valid variants and more than one
+  const hasMultipleVariants = product?.variants && 
+                           Array.isArray(product.variants) && 
+                           product.variants.filter(v => v && v.id).length > 1;
+                           
   // Call hooks unconditionally at the top level
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     product?.variants && product.variants.length > 0 ? product.variants[0] : null
@@ -78,7 +83,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative mb-0">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Image Gallery */}
         <div className="w-full">
@@ -108,79 +113,81 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       </div>
 
       {/* Product Details in White Background */}
-      <div className="mt-8 bg-white rounded-3xl p-8">
-        {product.description && (
-          <p className="text-gray-600 mb-8 text-lg">{product.description}</p>
-        )}
+      <div className="mt-8 bg-[hsl(var(--header-orange))] rounded-3xl p-2 mb-0">
+        <div className="bg-white rounded-2xl p-6">
+          {product.description && (
+            <p className="text-gray-600 mb-8 text-lg">{product.description}</p>
+          )}
 
-        <p className="text-3xl font-semibold mb-8 text-gray-900">
-          ${formatPrice(displayPrice)}
-        </p>
+          <p className="text-3xl font-semibold mb-8 text-gray-900">
+            ${formatPrice(displayPrice)}
+          </p>
 
-        {/* Variant Selector */}
-        {product.variants && product.variants.length > 0 && (
-          <div className="mb-8">
-            <label
-              htmlFor="variant-select"
-              className="block text-lg font-medium text-gray-900 mb-2"
-            >
-              Options:
-            </label>
-            <select
-              id="variant-select"
-              className="w-full border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              value={selectedVariant?.id || ""}
-              onChange={(e) => {
-                const variant = product.variants?.find(
-                  (v) => v.id === e.target.value
-                );
-                setSelectedVariant(variant || null);
-              }}
-            >
-              {product.variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Quantity and Add to Cart Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex-shrink-0">
-            <label className="block text-base text-gray-900 mb-2">
-              Quantity:
-            </label>
-            <div className="flex items-center">
-              <button
-                onClick={decrementQuantity}
-                disabled={quantity <= 1}
-                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+          {/* Variant Selector - Only shown if multiple variants exist */}
+          {hasMultipleVariants && (
+            <div className="mb-8">
+              <label
+                htmlFor="variant-select"
+                className="block text-lg font-medium text-gray-900 mb-2"
               >
-                -
-              </button>
-              <span className="text-base font-medium w-8 text-center text-gray-900">
-                {quantity}
-              </span>
-              <button
-                onClick={incrementQuantity}
-                disabled={quantity >= 20}
-                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                Options:
+              </label>
+              <select
+                id="variant-select"
+                className="w-full border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={selectedVariant?.id || ""}
+                onChange={(e) => {
+                  const variant = product.variants?.find(
+                    (v) => v.id === e.target.value
+                  );
+                  setSelectedVariant(variant || null);
+                }}
               >
-                +
-              </button>
+                {product.variants?.map((variant) => (
+                  <option key={variant.id} value={variant.id}>
+                    {variant.name} - ${formatPrice(variant.price) || formatPrice(product.price)}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
+          )}
 
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            className="h-10 px-6 bg-[#F7B614] text-white rounded-full text-sm font-semibold hover:bg-[#E5A912] transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!isActive || stock === 0}
-          >
-            Add to Cart
-          </button>
+          {/* Quantity and Add to Cart Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex-shrink-0">
+              <label className="block text-base text-gray-900 mb-2">
+                Quantity:
+              </label>
+              <div className="flex items-center">
+                <button
+                  onClick={decrementQuantity}
+                  disabled={quantity <= 1}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                >
+                  -
+                </button>
+                <span className="text-base font-medium w-8 text-center text-gray-900">
+                  {quantity}
+                </span>
+                <button
+                  onClick={incrementQuantity}
+                  disabled={quantity >= 20}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              className="h-10 px-6 bg-[#F7B614] text-white rounded-full text-sm font-semibold hover:bg-[#E5A912] transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isActive || stock === 0}
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </div>
