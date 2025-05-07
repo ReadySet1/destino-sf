@@ -12,6 +12,8 @@ export type UserOrder = Prisma.OrderGetPayload<{
     status: true;
     total: true;
     paymentStatus: true;
+    trackingNumber: true;
+    shippingCarrier: true;
     // Add other fields you want to display
     items: { // Include items if needed for display
       select: {
@@ -53,6 +55,8 @@ export async function GET() {
         status: true,
         total: true,
         paymentStatus: true,
+        trackingNumber: true,
+        shippingCarrier: true,
         items: {
           select: {
             id: true,

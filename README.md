@@ -102,3 +102,39 @@ Please file feedback and issues over on the [Supabase GitHub org](https://github
 - [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
 - [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
 - [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+
+## Manual Payment Options
+
+In addition to Square payment processing, the application now supports manual payment methods:
+
+1. **Venmo**: Customers can choose to pay via Venmo and receive detailed payment instructions.
+2. **Cash**: For pickup orders, customers can choose to pay with cash upon pickup.
+
+### Implementation Details
+
+- A `PaymentMethod` enum was added to the database schema with values `SQUARE`, `VENMO`, and `CASH`.
+- The `PaymentMethodSelector` component allows users to select their preferred payment method during checkout.
+- Manual payments follow a different flow than Square payments, collecting order information first and then updating the payment method.
+- Payment-specific success pages provide customers with relevant instructions based on their selected payment method.
+- Email confirmations are sent using Resend API with detailed payment instructions.
+
+### Email Notifications
+
+Order confirmation emails are sent automatically using Resend API (https://resend.com) and include:
+- Order details (ID, status, total)
+- Payment method information
+- Specific instructions for Venmo and Cash payments
+- Beautifully formatted HTML templates
+
+To configure email sending, set the following environment variables:
+```
+RESEND_API_KEY=your_resend_api_key
+SHOP_NAME=Destino SF
+FROM_EMAIL=orders@destino-sf.com
+```
+
+### Restrictions
+
+- Cash payment is only available for pickup orders, not for delivery or shipping.
+- Venmo payments include the order ID in the payment note for tracking purposes.
+- Service fees are waived for manual payment methods.

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Dancing_Script } from 'next/font/google';
+import styles from './ShopByCategory.module.css';
 
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
@@ -40,6 +41,30 @@ const categories: CategoryType[] = [
   },
 ];
 
+const BackgroundPattern = () => {
+  const numberOfIsotipos = 48; // 6x8 grid
+
+  return (
+    <div className={styles.patternWrapper}>
+      <div className={styles.patternGrid}>
+        {Array.from({ length: numberOfIsotipos }).map((_, i) => (
+          <div key={i} className={styles.patternImageContainer}>
+            <Image
+              src="/images/assets/isotipo.png"
+              alt=""
+              fill
+              sizes="(max-width: 768px) 10vw, 80px"
+              className="object-contain"
+              priority={i < 12}
+              unoptimized
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function ShopByCategory() {
   return (
     <div className="bg-white py-16">
@@ -53,11 +78,11 @@ export function ShopByCategory() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
+        <div className="mt-12 grid gap-8 md:grid-cols-3 px-2 py-4">
           {categories.map(category => (
             <Link
               key={category.id}
-              href={`/categories/${category.slug}`}
+              href={`/products/category/${category.slug}`}
               className="group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl"
             >
               <div className="relative h-64 w-full overflow-hidden">
@@ -95,23 +120,23 @@ export function ShopByCategory() {
         </div>
 
         {/* Commenting out View All Categories button
-        <div className="mt-12 text-center">
-          <Link
-            href="/categories"
-            className="inline-flex items-center rounded-md border border-transparent bg-gray-100 px-6 py-3 text-base font-medium text-gray-900 hover:bg-gray-200"
-          >
-            View All Categories
-            <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </Link>
-        </div>
-        */}
+          <div className="mt-12 text-center">
+            <Link
+              href="/categories"
+              className="inline-flex items-center rounded-md border border-transparent bg-gray-100 px-6 py-3 text-base font-medium text-gray-900 hover:bg-gray-200"
+            >
+              View All Categories
+              <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </Link>
+          </div>
+          */}
       </div>
     </div>
   );

@@ -30,11 +30,11 @@ export default function Footer() {
 
   const isLandingPage = pathname === '/';
   const isMenuPage = pathname === '/menu';
-  const isProductPage = pathname.startsWith('/products');
+  const isProductPage = pathname?.startsWith('/products');
 
   return (
     <>
-      {/* Curved transition from white to orange - hide on landing page and menu page */}
+      {/* Curved transition from white to orange - hide on landing page, menu page, and product pages */}
       {!isLandingPage && !isMenuPage && !isProductPage && (
         <div className="bg-white w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" className="w-full">
@@ -47,7 +47,8 @@ export default function Footer() {
         </div>
       )}
 
-      <div className="bg-[#F47A1F] w-full pt-8">
+      {/* Background for all pages including product pages */}
+      <div className={`bg-[#F47A1F] w-full ${isProductPage ? 'pt-0' : 'pt-8'}`}>
         <footer className="bg-[#FDC32D] w-full rounded-t-3xl max-w-[90%] lg:max-w-[85%] mx-auto">
           <div className="max-w-7xl mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-center items-center gap-16 md:gap-32">

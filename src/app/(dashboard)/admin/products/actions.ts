@@ -1,11 +1,10 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-// import { createSanityProduct } from '@/lib/sanity/createProduct'; // Removed Sanity import
 import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
-// import { client } from '@/sanity/lib/client'; // Removed Sanity client import
 import { revalidatePath } from 'next/cache';
+import { slugify } from '@/lib/slug';
 
 export async function createProductAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -19,19 +18,42 @@ export async function createProductAction(formData: FormData) {
 
   // Simple validation
   if (!name || !price || isNaN(price)) {
-    throw new Error('Invalid product data');
+    return { success: false, error: 'Invalid product data: Name and valid Price are required.' };
+  }
+
+  // Slug Generation and Uniqueness Check
+  const potentialSlug = slugify(name);
+  if (!potentialSlug) {
+    return { success: false, error: 'Invalid product name: Cannot generate a valid URL slug.' };
+  }
+
+  const existingProductWithSlug = await prisma.product.findUnique({
+    where: { slug: potentialSlug },
+    select: { id: true },
+  });
+
+  if (existingProductWithSlug) {
+    return {
+      success: false,
+      error: `Slug "${potentialSlug}" already exists. Please choose a slightly different product name.`
+    };
   }
 
   try {
     // Step 1: Create the product in Square (or get temporary ID in development)
     if (!squareId) {
-      squareId = await createSquareProduct({
-        name,
-        description,
-        price,
-        categoryId,
-        variations: [], // No variations for now, could be added later
-      });
+      try {
+        squareId = await createSquareProduct({
+          name,
+          description,
+          price,
+          categoryId,
+          variations: [],
+        });
+      } catch (squareError) {
+        logger.error('Failed to create product in Square:', squareError);
+        return { success: false, error: 'Failed to create product in payment system. Please try again.' };
+      }
     }
 
     // Step 2: Create the product in the database
@@ -45,39 +67,24 @@ export async function createProductAction(formData: FormData) {
         featured,
         active,
         squareId,
+        slug: potentialSlug,
       },
     });
 
-    // Step 3: Try to create the product in Sanity - REMOVED
-    /*
-    try {
-      await createSanityProduct({
-        name,
-        description,
-        price,
-        categoryId,
-        squareId,
-        images,
-        featured,
-      });
-      logger.info(`Product "${name}" created successfully in all systems`);
-    } catch (sanityError) {
-      // Log the error but continue - the product is already in our database
-      logger.error('Error creating product in Sanity (continuing anyway):', sanityError);
-      logger.info(`Product "${name}" created in database and Square, but not in Sanity`);
-    }
-    */
-    logger.info(`Product "${name}" created successfully in database and Square`);
+    logger.info(`Product "${name}" created successfully in database and Square with slug "${potentialSlug}"`);
 
     // Revalidate the products path after creation
     revalidatePath('/admin/products');
-    revalidatePath('/products'); // Revalidate public products path as well
+    revalidatePath('/products'); // Revalidate public products path
+    if (categoryId) {
+      revalidatePath(`/products/category/${categoryId}`);
+    }
 
     // Return success instead of redirecting
-    return { success: true };
+    return { success: true, message: `Product "${name}" created successfully.` };
   } catch (error) {
     logger.error('Error creating product:', error);
-    throw new Error('Failed to create product. Please try again.');
+    return { success: false, error: 'Database Error: Failed to create product.' };
   }
 }
 
@@ -118,6 +125,19 @@ export async function updateProductCategory(formData: FormData) {
     logger.info(`Updated category for product "${product.name}" (ID: ${productId}) to "${product.category.name}" in database.`);
 
     revalidatePath('/admin/products');
+    
+    // Return the updated product data
+    return { 
+      success: true, 
+      product: {
+        id: product.id,
+        categoryId: product.categoryId,
+        category: {
+          id: product.category.id,
+          name: product.category.name
+        }
+      }
+    };
   } catch (error) {
     console.error('Error updating product category:', error);
     throw error;

@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { createCategoryAction, deleteCategoryAction, getCategories } from './actions';
+import { createCategoryAction, getCategories } from './actions';
 import ToasterClient from '@/components/Toaster';
 import CategoryForm from '@/components/CategoryForm';
+import DeleteCategoryForm from './DeleteCategoryForm';
 
 export default async function CategoriesPage() {
   const categories = await getCategories();
@@ -101,21 +102,11 @@ export default async function CategoriesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <form action={deleteCategoryAction} className="inline">
-                        <input type="hidden" name="id" value={category.id} />
-                        <button
-                          type="submit"
-                          className={`text-red-600 hover:text-red-900 ml-4 ${category._count.products > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          disabled={category._count.products > 0}
-                          title={
-                            category._count.products > 0
-                              ? `Cannot delete category with ${category._count.products} products`
-                              : 'Delete category'
-                          }
-                        >
-                          Delete
-                        </button>
-                      </form>
+                      <DeleteCategoryForm 
+                        categoryId={category.id} 
+                        categoryName={category.name}
+                        productCount={category._count.products} 
+                      />
                     </td>
                   </tr>
                 ))}
@@ -125,7 +116,8 @@ export default async function CategoriesPage() {
         )}
       </div>
 
-      <CategoryForm createCategory={createCategoryAction} />
+      {/* CategoryForm now handles its own action via useActionState */}
+      <CategoryForm />
     </div>
   );
 }

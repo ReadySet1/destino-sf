@@ -14,7 +14,7 @@ export function EmptyCart() {
         Looks like you haven&apos;t added any items to your cart yet.
       </p>
 
-      <Link href="/products">
+      <Link href="/menu">
         <Button size="lg">Browse Menu</Button>
       </Link>
     </div>

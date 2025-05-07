@@ -25,18 +25,16 @@ type SettingsData = z.infer<typeof settingsSchema>;
 
 // Check if user is admin
 async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return false;
   }
 
   const { data: adminProfile } = await supabase
     .from('Profiles')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   return adminProfile?.role === 'ADMIN';

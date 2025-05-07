@@ -9,11 +9,15 @@ export const logger = {
   info: (...args: any[]) => {
     if (isDevelopment) {
       console.info(...args);
+    } else {
+      console.log(...args);
     }
   },
   warn: (...args: any[]) => {
     if (isDevelopment) {
       console.warn(...args);
+    } else {
+      console.log('WARNING:', ...args);
     }
   },
   error: (...args: any[]) => {

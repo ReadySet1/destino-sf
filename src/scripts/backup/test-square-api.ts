@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
-import { squareClient } from '../lib/square/client';
-import { logger } from '../utils/logger';
+import { squareClient } from '../../lib/square/client';
+import { logger } from '../../utils/logger';
 
 /**
  * Simple script to test the Square API connection

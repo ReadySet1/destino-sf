@@ -1,0 +1,43 @@
+.categorySection {
+  position: relative;
+  background-color: #fdc32d;
+  padding: 2rem 0;
+  overflow: hidden;
+  padding-top: 5rem;
+}
+
+@media (max-width: 767px) {
+  .categorySection {
+    padding-top: 2rem;
+  }
+}
+
+.patternWrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; 
+  pointer-events: none; 
+}
+
+.patternGrid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4rem;
+}
+
+.patternImageContainer {
+  position: relative;
+  width: 120px;
+  aspect-ratio: 1 / 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+} 

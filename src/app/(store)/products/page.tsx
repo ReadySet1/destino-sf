@@ -1,4 +1,5 @@
-// src/app/(store)/products/page.tsx
+// Component to be updated
+// src/app/(store)/products/page.tsx 
 
 import { prisma } from '@/lib/prisma';
 import ProductCard from "@/components/Products/ProductCard";
@@ -70,20 +71,8 @@ export default async function ProductsPage() {
     ]
   });
 
-  // Log the raw dbProducts before mapping
-  console.log('[ProductsPage] Raw dbProducts count:', dbProducts.length);
-  if (dbProducts.length > 0) {
-    console.log('[ProductsPage] First raw dbProduct:', JSON.stringify(dbProducts[0], null, 2));
-    console.log('[ProductsPage] First raw dbProduct price type:', typeof dbProducts[0].price, 'value:', dbProducts[0].price);
-    if(dbProducts[0].variants && dbProducts[0].variants.length > 0) {
-      console.log('[ProductsPage] First raw dbProduct variant price type:', typeof dbProducts[0].variants[0].price, 'value:', dbProducts[0].variants[0].price);
-    }
-  }
-
   // Transform Prisma products to the Product interface
   const allProducts: Product[] = dbProducts.map((p) => {
-    // Log price before conversion
-    console.log(`[ProductsPage Map] Processing product: ${p.name}, Raw price: ${p.price}, Type: ${typeof p.price}`);
     const mappedProduct = {
       id: p.id,
       squareId: p.squareId || '',
@@ -103,8 +92,6 @@ export default async function ProductsPage() {
         slug: p.category.slug || undefined 
       } : undefined,
       variants: p.variants.map((v): Variant => {
-        // Log variant price before conversion
-        console.log(`[ProductsPage Map] Processing variant: ${v.name} for ${p.name}, Raw price: ${v.price}, Type: ${typeof v.price}`);
         return {
           id: v.id,
           name: v.name,
@@ -122,8 +109,6 @@ export default async function ProductsPage() {
       // Add slug if it exists on the product model
       slug: p.slug || p.id // Fallback to ID if slug is not present
     };
-    // Log price after conversion
-    console.log(`[ProductsPage Map] Mapped product: ${mappedProduct.name}, Mapped price: ${mappedProduct.price}`);
     return mappedProduct;
   });
 

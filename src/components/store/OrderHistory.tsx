@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { UserOrder } from '@/app/api/user/orders/route'; // Import the type from the API route
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, Eye } from "lucide-react";
+import { Button } from '@/components/ui/button';
 
 // Helper function to format currency
 const formatCurrency = (amount: number | string | null | undefined) => {
@@ -29,37 +31,51 @@ const formatDate = (date: Date | string | null | undefined) => {
 };
 
 // Helper to map status to badge variant
-const getStatusVariant = (status: string | null | undefined): "default" | "secondary" | "destructive" | "outline" => {
+const getStatusVariant = (status: string | null | undefined): "default" | "primary" | "secondary" | "success" | "warning" | "danger" | "outline" => {
   switch (status?.toLowerCase()) {
     case 'completed':
     case 'ready':
-      return 'default'; // Greenish/Default
+      return 'success'; // Green
     case 'pending':
+      return 'warning'; // Yellow
     case 'processing':
-      return 'secondary'; // Yellowish/Secondary
+      return 'secondary'; // Purple
     case 'cancelled':
     case 'failed':
-      return 'destructive'; // Red/Destructive
+      return 'danger'; // Red
+    case 'shipping':
+      return 'primary'; // Blue
+    case 'delivered':
+      return 'success'; // Green
     default:
-      return 'outline'; // Gray/Outline
+      return 'outline'; // Gray
   }
 };
 
-// Define props for the component
-interface OrderHistoryProps {
-  isActive: boolean;
+// Define and export props for the component
+export interface OrderHistoryProps {
+  userId: string; // Accept userId instead of isActive
 }
 
-export function OrderHistory({ isActive }: OrderHistoryProps) {
+export function OrderHistory({ userId }: OrderHistoryProps) {
   const [orders, setOrders] = useState<UserOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Don't fetch if userId is not available (though it should be)
+    if (!userId) {
+        setIsLoading(false);
+        setError('User ID is missing, cannot fetch orders.');
+        return;
+    }
+
     const fetchOrders = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        // Use the userId if your API needs it (assuming it uses session internally currently)
+        // Example: /api/user/orders?userId=${userId} - adjust if needed
         const response = await fetch('/api/user/orders');
         if (!response.ok) {
           const errorData = await response.json();
@@ -75,18 +91,12 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
       }
     };
 
-    // Only fetch if the tab is active
-    if (isActive) {
-       console.log('OrderHistory: Tab active, fetching orders...')
-       void fetchOrders();
-    }
-    // Optional: You might want to clear orders or show a specific state 
-    // when the tab is not active, depending on desired UX.
-    // else {
-    //    setOrders([]); // Example: Clear orders when tab is inactive
-    // }
+    // Fetch orders when the component mounts or userId changes
+    console.log('OrderHistory: Fetching orders for user:', userId);
+    void fetchOrders();
 
-  }, [isActive]); // Re-run effect when isActive changes
+    // No need to return a cleanup function unless you have subscriptions
+  }, [userId]); // Re-run effect only when userId changes
 
   if (isLoading) {
     return (
@@ -122,6 +132,9 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
     );
   }
 
+  // Determine if any order has tracking data
+  const hasTrackingData = orders.some(order => !!order.trackingNumber);
+
   return (
     <Card>
       <CardHeader>
@@ -135,8 +148,9 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              {hasTrackingData && <TableHead>Tracking</TableHead>}
               <TableHead className="text-right">Total</TableHead>
-              {/* Add more columns if needed */}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -146,15 +160,55 @@ export function OrderHistory({ isActive }: OrderHistoryProps) {
                 <TableCell>{formatDate(order.createdAt)}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(order.status)}>
-                    {order.status?.toUpperCase() === 'READY' ? 'READY TO PICKUP' : (order.status || 'N/A')}
+                    {order.status?.toUpperCase() === 'READY' ? 'READY FOR PICKUP' : (order.status || 'N/A')}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={order.paymentStatus?.toLowerCase() === 'paid' ? 'default' : 'secondary'}>
+                  <Badge variant={order.paymentStatus?.toLowerCase() === 'paid' ? 'success' : 'secondary'}>
                     {order.paymentStatus || 'N/A'}
                   </Badge>
                 </TableCell>
+                {hasTrackingData && (
+                  <TableCell>
+                    {order.trackingNumber ? (
+                      <span>
+                        <span className="font-mono" aria-label="Tracking Number">{order.trackingNumber}</span>
+                        {order.shippingCarrier && (
+                          <>
+                            {' '}<span>({order.shippingCarrier})</span>
+                            {/* Tracking link for major carriers */}
+                            {(() => {
+                              const carrier = order.shippingCarrier?.toLowerCase();
+                              let url: string | null = null;
+                              if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${order.trackingNumber}`;
+                              else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${order.trackingNumber}`;
+                              else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.trackingNumber}`;
+                              if (url) {
+                                return (
+                                  <>
+                                    {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${order.shippingCarrier}`}>Track</a>
+                                  </>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell className="text-right">{formatCurrency(order.total?.toString())}</TableCell>
+                <TableCell className="text-right">
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href={`/account/order/${order.id}`} aria-label={`View details for order ${order.id}`}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Link>
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Lock, Mail } from 'lucide-react';
+import { AuthContainer } from '@/components/auth-container';
 
 // Define the shape of the resolved search params
 type ResolvedSearchParams = {
   message?: string;
+  error?: string;
 };
 
 export default async function Login({
@@ -17,43 +19,46 @@ export default async function Login({
   searchParams: Promise<ResolvedSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const message = resolvedSearchParams.message;
+  // Check for both message and error parameters
+  const message = resolvedSearchParams.message || resolvedSearchParams.error;
+  // Determine message type based on which parameter is present
+  const messageType = resolvedSearchParams.error ? 'error' : 'success';
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="m-auto w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-sm text-gray-600 mt-1">Sign in to your delicious account</p>
-        </div>
-
-        <form action={signInAction} className="space-y-6">
+    <AuthContainer 
+      title="Welcome Back" 
+      subtitle="Sign in to your Destino SF account"
+    >
+      <div className="pt-2">
+        <form action={signInAction} className="space-y-5">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-900">
+              <Label htmlFor="email" className="text-sm font-medium">
                 Email
               </Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-500" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <Input
                   name="email"
                   id="email"
                   placeholder="you@example.com"
+                  type="email"
+                  autoComplete="email"
                   required
-                  className="pl-10 border-gray-200 focus:border-gray-500 focus:ring-gray-500 rounded-lg"
+                  className="pl-10"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-900">
+                <Label htmlFor="password" className="text-sm font-medium">
                   Password
                 </Label>
                 <Link
-                  className="text-xs text-gray-600 hover:text-black hover:underline transition"
+                  className="text-xs text-primary hover:text-primary/90 underline underline-offset-4"
                   href="/forgot-password"
                 >
                   Forgot Password?
@@ -61,41 +66,40 @@ export default async function Login({
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500" />
+                  <Lock className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <Input
                   type="password"
                   name="password"
                   id="password"
                   placeholder="Your password"
+                  autoComplete="current-password"
                   required
-                  className="pl-10 border-gray-200 focus:border-gray-500 focus:ring-gray-500 rounded-lg"
+                  className="pl-10"
                 />
               </div>
             </div>
           </div>
 
-          <SubmitButton className="w-full py-2.5 px-4 bg-black hover:bg-gray-800 text-white font-medium rounded-lg transition duration-200 shadow-md hover:shadow-lg">
+          <SubmitButton className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11">
             Sign in
           </SubmitButton>
 
-          <FormMessage message={message} className="text-center" />
-
-          <div className="text-center text-sm text-gray-700 mt-4">
-            Don&apos;t have an account?{' '}
-            <Link
-              className="font-medium text-gray-600 hover:text-black hover:underline transition"
-              href="/sign-up"
-            >
-              Sign up
-            </Link>
-          </div>
+          <FormMessage message={message} type={messageType} className="text-center mt-2" />
         </form>
-
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
-          Taste the tradition at Destino SF
+      </div>
+      
+      <div className="flex flex-col space-y-4 pt-6">
+        <div className="text-center text-sm">
+          Don&apos;t have an account?{' '}
+          <Link
+            className="text-primary hover:text-primary/90 underline underline-offset-4 font-medium"
+            href="/sign-up"
+          >
+            Sign up
+          </Link>
         </div>
       </div>
-    </div>
+    </AuthContainer>
   );
 }

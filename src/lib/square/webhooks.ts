@@ -32,6 +32,30 @@ function mapSquarePaymentStatus(status: string): 'PENDING' | 'PAID' | 'FAILED' |
   }
 }
 
+// --- Add mapping for fulfillment type and state to status ---
+function mapSquareFulfillmentToStatus(fulfillmentType: string, squareState: string): 'PENDING' | 'PROCESSING' | 'READY' | 'SHIPPING' | 'OUT FOR DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' {
+  switch (fulfillmentType) {
+    case 'pickup':
+      if (squareState === 'PROPOSED' || squareState === 'RESERVED' || squareState === 'PREPARED') return 'READY';
+      if (squareState === 'COMPLETED') return 'COMPLETED';
+      if (squareState === 'CANCELED') return 'CANCELLED';
+      return 'PROCESSING';
+    case 'delivery':
+    case 'local_delivery':
+      if (squareState === 'PROPOSED' || squareState === 'RESERVED') return 'OUT FOR DELIVERY';
+      if (squareState === 'COMPLETED') return 'DELIVERED';
+      if (squareState === 'CANCELED') return 'CANCELLED';
+      return 'PROCESSING';
+    case 'shipping':
+    case 'nationwide_shipping':
+      if (squareState === 'PROPOSED' || squareState === 'RESERVED') return 'SHIPPING';
+      if (squareState === 'COMPLETED') return 'DELIVERED';
+      if (squareState === 'CANCELED') return 'CANCELLED';
+      return 'PROCESSING';
+    default:
+      return 'PROCESSING';
+  }
+}
 
 // Square webhook signature verification
 export function verifySquareSignature(
@@ -100,43 +124,71 @@ export async function handleSquareWebhook(
           let fulfillmentState: string | undefined;
 
           if (isFulfillmentUpdate) {
+            console.log('DEBUG: Inside isFulfillmentUpdate block');
             const fulfillmentUpdateData = event.data.object as any; // Use any or define a type
             squareOrderId = fulfillmentUpdateData?.order_fulfillment_updated?.order_id;
-            // Assuming fulfillment_update is an array, check the first update's new_state
             fulfillmentState = fulfillmentUpdateData?.order_fulfillment_updated?.fulfillment_update?.[0]?.new_state;
             logger.info(`Processing fulfillment update for Order ID: ${squareOrderId}, New Fulfillment State: ${fulfillmentState}`);
-            if (fulfillmentState?.toUpperCase() === 'PREPARED') {
-              newPrismaStatus = 'READY';
-            } else if (fulfillmentState?.toUpperCase() === 'COMPLETED') {
-                // Handle fulfillment completion if needed, maybe set order to COMPLETED?
-                // For now, let order.updated handle final COMPLETED state
-            } else if (fulfillmentState?.toUpperCase() === 'CANCELED') {
-                 newPrismaStatus = 'CANCELLED';
-            } else if (fulfillmentState?.toUpperCase() === 'PROPOSED') {
-                // Typically the initial state, map to PROCESSING or PENDING
-                newPrismaStatus = 'PROCESSING';
+            console.log(`DEBUG: Fulfillment State = ${fulfillmentState}, Order ID = ${squareOrderId}`);
+
+            // --- Fetch fulfillment type from DB order notes ---
+            let fulfillmentType = 'pickup'; // Default fallback
+            if (squareOrderId) {
+              const dbOrder = await prisma.order.findFirst({ where: { squareOrderId } });
+              if (dbOrder && dbOrder.notes) {
+                try {
+                  const notes = JSON.parse(dbOrder.notes);
+                  if (notes.method) {
+                    fulfillmentType = notes.method;
+                  }
+                } catch (e) {
+                  logger.warn(`Could not parse order notes for order ${squareOrderId}: ${e}`);
+                }
+              }
+            }
+            const upperCaseState = fulfillmentState?.toUpperCase();
+            console.log(`DEBUG: upperCaseState = ${upperCaseState}`);
+
+            // --- Use new mapping function ---
+            if (upperCaseState) {
+              newPrismaStatus = mapSquareFulfillmentToStatus(fulfillmentType, upperCaseState) as any;
+              logger.info(`Mapped fulfillment type ${fulfillmentType} and state ${upperCaseState} to Prisma status ${newPrismaStatus} for Order ID: ${squareOrderId}`);
             }
           } else {
-             // This handles order.created and order.updated
-            squareOrderId = eventObjectId; // For these events, the data.id is the order_id
+             console.log('DEBUG: Inside ELSE block (not isFulfillmentUpdate)');
+             squareOrderId = eventObjectId; // For these events, the data.id is the order_id
           }
 
           if (!squareOrderId) {
+            console.log('DEBUG: No squareOrderId found, breaking.');
             logger.warn(`Could not determine Square Order ID from event type ${event.type} and data ID ${eventObjectId}. Skipping update.`);
             break;
           }
 
-          // If we determined a status from fulfillment, update only that
+          console.log(`DEBUG: Before check if newPrismaStatus is set. Value: ${newPrismaStatus}`);
           if (newPrismaStatus) {
+            console.log('DEBUG: Entering newPrismaStatus update block.');
             logger.info(`[Fulfillment Update] Attempting to update status to ${newPrismaStatus} for Square Order ID: ${squareOrderId}`);
-            await prisma.order.updateMany({
-               where: { squareOrderId: squareOrderId },
-               data: { status: newPrismaStatus, updatedAt: new Date() },
-            });
-            logger.info(`[Fulfillment Update] Successfully updated status to ${newPrismaStatus} for Square Order ID: ${squareOrderId}`);
-          } else {
-            // If not a specific fulfillment update causing a status change, 
+            try {
+                const updateResult = await prisma.order.updateMany({
+                   where: { squareOrderId: squareOrderId },
+                   data: { status: newPrismaStatus, updatedAt: new Date() },
+                });
+                console.log(`DEBUG: prisma.order.updateMany result count: ${updateResult.count}`);
+                if (updateResult.count > 0) {
+                    logger.info(`[Fulfillment Update] Successfully updated status to ${newPrismaStatus} for ${updateResult.count} order(s) with Square Order ID: ${squareOrderId}`);
+                } else {
+                    logger.warn(`[Fulfillment Update] No order found in DB with Square Order ID ${squareOrderId} to update status to ${newPrismaStatus}.`);
+                }
+            } catch (dbError) {
+                console.error('DEBUG: Error during prisma.order.updateMany:', dbError);
+                logger.error(`Database error during fulfillment update for ${squareOrderId}:`, dbError);
+            }
+          } else if (!isFulfillmentUpdate) {
+            console.log('DEBUG: Entering !isFulfillmentUpdate upsert block.');
+            // If not a specific fulfillment update causing a status change,
             // fetch the full order and update based on its overall state (for order.created/updated)
+            logger.info(`Processing ${event.type} event by fetching full order details for Square Order ID: ${squareOrderId}`);
             const orderResp = await ordersApi.retrieveOrder(squareOrderId);
             const sqOrder = orderResp.result.order;
             if (!sqOrder) throw new Error(`No order found in Square response for ID: ${squareOrderId}`);
@@ -187,8 +239,11 @@ export async function handleSquareWebhook(
               },
             });
             logger.info(`[Order Upsert] Successfully upserted order ${sqOrder.id} with status ${finalStatus}`);
+          } else {
+              console.log('DEBUG: newPrismaStatus was not set and it IS a fulfillment update, doing nothing else.');
           }
         } catch (err) {
+          console.error('DEBUG: Error caught in inner try/catch:', err);
           logger.error('Error processing order event:', err);
         }
         break;

@@ -143,14 +143,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           description={category.description || CATEGORY_DESCRIPTIONS[slug] || ''} // Use DB description or fallback
         />
 
-        <div className="container mx-auto px-4 sm:px-6 max-w-screen-2xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <Suspense
             fallback={
               <div className="flex justify-center items-center h-64">
                 <div className="animate-pulse text-center w-full">
                   <div className="h-6 w-32 bg-gray-200 rounded mx-auto"></div>
-                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
-                    {Array.from({ length: 8 }).map((_, i) => (
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                    {Array.from({ length: 6 }).map((_, i) => (
                       <div key={i} className="h-64 bg-gray-200 rounded-2xl"></div>
                     ))}
                   </div>
@@ -159,7 +159,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             }
           >
             {products.length > 0 ? (
-              <div className="py-8 lg:py-12">
+              <div className="py-6 lg:py-10">
                 <ProductGrid
                   products={products}
                   title={`${category.name} Products`}
