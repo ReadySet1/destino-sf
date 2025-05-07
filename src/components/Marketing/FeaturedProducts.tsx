@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
+import Link from 'next/link';
+import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 
 interface ProductType {
@@ -14,32 +14,32 @@ interface ProductType {
 
 const featuredProducts: ProductType[] = [
   {
-    id: "1",
-    name: "Empanadas Tradicionales",
-    price: "$24.99",
-    imageUrl: "/images/assets/2Recurso 5.png",
-    slug: "empanadas-tradicionales",
+    id: '1',
+    name: 'Seasonal Alfajores',
+    price: '$24.99',
+    imageUrl: '/images/assets/2Recurso 5.png',
+    slug: 'empanadas-tradicionales',
   },
   {
-    id: "2",
-    name: "Alfajores Selection",
-    price: "$39.99",
-    imageUrl: "/images/assets/2Recurso 7.png",
-    slug: "alfajores-selection",
+    id: '2',
+    name: 'Limited-Edition Empanadas',
+    price: '$39.99',
+    imageUrl: '/images/assets/2Recurso 9.png',
+    slug: 'alfajores-selection',
   },
   {
-    id: "3",
-    name: "Chimichurri Sauce",
-    price: "$19.99",
-    imageUrl: "/images/assets/2Recurso 9.png",
-    slug: "chimichurri-sauce",
+    id: '3',
+    name: 'Sauces & Salsas',
+    price: '$19.99',
+    imageUrl: '/images/assets/2Recurso 7.png',
+    slug: 'chimichurri-sauce',
   },
   {
-    id: "4",
-    name: "Dulce de Leche",
-    price: "$15.99",
-    imageUrl: "/images/assets/2Recurso 20.png",
-    slug: "dulce-de-leche",
+    id: '4',
+    name: 'Montlhy Subscription',
+    price: '$15.99',
+    imageUrl: '/images/assets/2Recurso 20.png',
+    slug: 'dulce-de-leche',
   },
 ];
 
@@ -47,21 +47,19 @@ export function FeaturedProducts() {
   const [emblaRef] = useEmblaCarousel({
     align: 'start',
     containScroll: 'trimSnaps',
-    dragFree: true
+    dragFree: true,
   });
 
   return (
     <div className="bg-gray-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2
-          className={`mb-6 text-center text-4xl font-bold text-gray-900 md:mb-12 md:text-5xl`}
-        >
-          Featured Products
+        <h2 className={`mb-6 text-center text-4xl font-bold text-gray-900 md:mb-12 md:text-5xl`}>
+          Spotlight Picks
         </h2>
-        
+
         <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
-          Discover our selection of handcrafted specialties, perfect for any occasion. 
-          Each product is made with authentic ingredients and traditional recipes.
+          Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
+          Inspired by tradition. Driven by creativity.
         </p>
 
         <div className="mx-auto max-w-7xl overflow-hidden">
@@ -69,13 +67,16 @@ export function FeaturedProducts() {
             {/* Mobile Carousel */}
             <div className="md:hidden overflow-hidden" ref={emblaRef}>
               <div className="flex gap-4">
-                {featuredProducts.map((product) => (
+                {featuredProducts.map(product => (
                   <Link
                     key={product.id}
                     href={`/products/${product.slug}`}
                     className="block min-w-[85%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
                   >
-                    <div className="relative w-full rounded-3xl overflow-hidden" style={{ paddingBottom: "75%" }}>
+                    <div
+                      className="relative w-full rounded-3xl overflow-hidden"
+                      style={{ paddingBottom: '75%' }}
+                    >
                       <Image
                         src={product.imageUrl}
                         alt={product.name}
@@ -96,13 +97,12 @@ export function FeaturedProducts() {
 
             {/* Desktop/Tablet Grid */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/products/${product.slug}`}
-                  className="group"
-                >
-                  <div className="relative rounded-3xl overflow-hidden shadow-md transition-all duration-300 group-hover:shadow-lg" style={{ paddingBottom: "75%" }}>
+              {featuredProducts.map(product => (
+                <Link key={product.id} href={`/products/${product.slug}`} className="group">
+                  <div
+                    className="relative rounded-3xl overflow-hidden shadow-md transition-all duration-300 group-hover:shadow-lg"
+                    style={{ paddingBottom: '75%' }}
+                  >
                     <Image
                       src={product.imageUrl}
                       alt={product.name}
@@ -123,8 +123,8 @@ export function FeaturedProducts() {
         </div>
 
         <div className="mt-12 text-center">
-          <Link 
-            href="/products" 
+          <Link
+            href="/products"
             className="inline-block rounded-md bg-amber-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
           >
             View All Products
@@ -133,4 +133,4 @@ export function FeaturedProducts() {
       </div>
     </div>
   );
-} 
+}

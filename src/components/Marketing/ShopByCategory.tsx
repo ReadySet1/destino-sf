@@ -19,21 +19,21 @@ interface CategoryType {
 const categories: CategoryType[] = [
   {
     id: '1',
-    name: 'Empanadas',
+    name: 'Our Empanadas',
     description: 'Our signature savory pastries with various fillings',
     imageUrl: '/images/assets/2Recurso 3.png',
     slug: 'empanadas',
   },
   {
     id: '2',
-    name: 'Alfajores',
+    name: 'Our Alfajores',
     description: 'Delicious alfajores filled with creamy dulce de leche',
     imageUrl: '/images/menu/alfajores.png',
     slug: 'alfajores',
   },
   {
     id: '3',
-    name: 'Catering',
+    name: 'Our Catering',
     description: 'Professional catering services for all occasions',
     imageUrl: '/images/menu/catering.png',
     slug: 'catering',
@@ -46,10 +46,10 @@ export function ShopByCategory() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Shop By Category
+            Our Menus: What We Make
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-xl text-gray-500 sm:mt-4">
-            Explore our carefully curated collections of artisanal products
+            Craving something delicious? Explore our delicious lineup of Latin specialties.
           </p>
         </div>
 

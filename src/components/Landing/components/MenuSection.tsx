@@ -33,7 +33,7 @@ const menuItems: MenuItemType[] = [
     id: '3',
     name: 'Catering',
     imageUrl: '/images/homepage/catering.png',
-    slug: 'catering',
+    slug: '/catering',
   },
 ];
 
@@ -75,11 +75,7 @@ export function MenuSection() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-row justify-around items-center">
             {menuItems.map(item => (
-              <Link
-                href={item.id === '3' ? `/${item.slug}` : `/menu/${item.slug}`}
-                key={item.id}
-                className="flex flex-col items-center"
-              >
+              <Link href={item.slug} key={item.id} className="flex flex-col items-center">
                 <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-56 md:w-56 overflow-hidden rounded-full">
                   <Image
                     src={item.imageUrl}

@@ -11,9 +11,9 @@ export default async function Home() {
   return (
     <main>
       <Hero />
+      <ShopByCategory />
       <FeaturedProducts />
       <PromotionBanner />
-      <ShopByCategory />
       <CateringSection />
       {/* <section>
         <About variant="large" />

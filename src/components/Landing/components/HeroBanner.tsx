@@ -17,13 +17,14 @@ export function HeroBanner() {
       <div className="absolute inset-0 flex flex-col justify-center md:items-start px-8 md:px-16 lg:px-32 xl:px-40">
         <div className="max-w-2xl w-full text-white flex flex-col items-start md:block md:w-auto md:text-left">
           <h1 className="mb-4 text-3xl font-bold leading-tight text-left md:text-3xl lg:text-5xl xl:text-6xl [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
-            Flakey, golden empanadas
+            Delicious Latin American flavors, rooted in tradition
             <br />
-            filled with rich flavors
+            savored in every bite.
           </h1>
           <p className="hidden md:block mb-6 md:text-base lg:text-lg xl:text-xl text-gray-100 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
-            Inspired by traditions from Argentina, Spain, Peru, Chile, and beyond. Each bite is a
-            celebration of global culinary heritage!
+            From protein packed empanadas to sweet alfajores
+            <br />
+            our food makes people smile!
           </p>
           <Link
             href="/order"
