@@ -29,19 +29,20 @@ export const CateringSection = () => {
             </h2>
 
             <p className="text-lg opacity-90">
-              Offering a diverse selection of savory Latin American dishes, we would be delighted to
-              provide our catering services for your next event!
+              We’re here to take the stress out of planning — from office lunches to celebrations,
+              we will handle your catering needs effortlessly
             </p>
 
             <p className="text-lg opacity-90">
-              Customizable menus with a great selection of Gluten-free, Vegetarian & Vegan options!
+              Our customizable Latin American menus include plenty of gluten-free, vegetarian, and
+              vegan options — ideal for any gathering.
             </p>
 
             <Link
               href="/contact"
               className="inline-block px-8 py-3 bg-amber-400 text-slate-900 font-semibold rounded-full hover:bg-amber-300 transition-colors"
             >
-              Contact
+              Contact Us
             </Link>
           </div>
 

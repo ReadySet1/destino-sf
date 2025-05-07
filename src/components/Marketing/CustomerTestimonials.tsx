@@ -53,12 +53,10 @@ export function CustomerTestimonials() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className={`text-5xl font-bold text-white mb-4 ${dancingScript.className}`}>
-            Our Clients Know Best
+            Testimonials
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-xl text-white/90">
-            Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod
-            tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam,
-            quis nostrud exerci tation
+            Real stories from happy customers — so grateful for the love!
           </p>
         </div>
 
