@@ -125,6 +125,19 @@ export async function updateProductCategory(formData: FormData) {
     logger.info(`Updated category for product "${product.name}" (ID: ${productId}) to "${product.category.name}" in database.`);
 
     revalidatePath('/admin/products');
+    
+    // Return the updated product data
+    return { 
+      success: true, 
+      product: {
+        id: product.id,
+        categoryId: product.categoryId,
+        category: {
+          id: product.category.id,
+          name: product.category.name
+        }
+      }
+    };
   } catch (error) {
     console.error('Error updating product category:', error);
     throw error;
