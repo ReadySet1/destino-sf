@@ -1,4 +1,5 @@
-import { createClient } from 'next-sanity';
+// Use require syntax for compatibility
+const { createClient } = require('@sanity/client');
 
 import { apiVersion, dataset, projectId, token } from '../env';
 
