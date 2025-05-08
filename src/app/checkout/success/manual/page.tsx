@@ -7,7 +7,7 @@ import { CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Order Confirmation | Destino SF',
-  description: 'Your order has been received and is being processed'
+  description: 'Your order has been received and is being processed',
 };
 
 // Updated PageProps type for Next.js 15.3+
@@ -43,7 +43,7 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
   const resolvedSearchParams = await searchParams;
   const orderId = resolvedSearchParams.orderId?.toString();
   const paymentMethod = resolvedSearchParams.paymentMethod?.toString();
-  
+
   if (!orderId) {
     redirect('/');
   }
@@ -53,23 +53,22 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
     redirect('/');
   }
 
-  const paymentMethodName = 
-    order.paymentMethod === 'VENMO' ? 'Venmo' :
-    order.paymentMethod === 'CASH' ? 'Cash' : 'Unknown';
+  const paymentMethodName =
+    order.paymentMethod === 'VENMO' ? 'Venmo' : order.paymentMethod === 'CASH' ? 'Cash' : 'Unknown';
 
-  const paymentInstructions = 
-    order.paymentMethod === 'VENMO' ? 
-      'Please send the payment to our Venmo account and include your order reference number in the note. We will process your order once the payment is confirmed.' :
-    order.paymentMethod === 'CASH' ? 
-      'Please bring cash when you pick up your order. Your order will be prepared and ready for pickup at the scheduled time.' :
-      'Please follow the payment instructions sent to your email.';
+  const paymentInstructions =
+    order.paymentMethod === 'VENMO'
+      ? 'Please send the payment to our Venmo account and include your order reference number in the note. We will process your order once the payment is confirmed.'
+      : order.paymentMethod === 'CASH'
+        ? 'Please bring cash when you pick up your order. Your order will be prepared and ready for pickup at the scheduled time.'
+        : 'Please follow the payment instructions sent to your email.';
 
-  const nextSteps = 
-    order.paymentMethod === 'VENMO' ? 
-      'We will send you a confirmation email once your payment is verified.' :
-    order.paymentMethod === 'CASH' ? 
-      'Your order will be ready for pickup at the scheduled time.' :
-      'We will process your order according to the selected payment method.';
+  const nextSteps =
+    order.paymentMethod === 'VENMO'
+      ? 'We will send you a confirmation email once your payment is verified.'
+      : order.paymentMethod === 'CASH'
+        ? 'Your order will be ready for pickup at the scheduled time.'
+        : 'We will process your order according to the selected payment method.';
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
@@ -113,7 +112,10 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
         <h2 className="text-xl font-semibold mb-4">Payment Instructions</h2>
         <p className="mb-3">{paymentInstructions}</p>
         {order.paymentMethod === 'VENMO' && (
-          <Link href={`/payment/${order.id}?method=VENMO`} className="text-blue-600 hover:underline">
+          <Link
+            href={`/payment/${order.id}?method=VENMO`}
+            className="text-blue-600 hover:underline"
+          >
             Return to payment page
           </Link>
         )}
@@ -123,18 +125,16 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
         <h2 className="text-xl font-semibold mb-4">What Happens Next?</h2>
         <p className="mb-4">{nextSteps}</p>
         <p className="text-sm text-gray-600">
-          If you have any questions about your order, please contact us at orders@destino-sf.com
-          or call us at (415) 555-1234.
+          If you have any questions about your order or any special date/time requests please
+          contact us at orders@destino-sf.com or call us at (415) 577-1677. We are here to help!
         </p>
       </div>
 
       <div className="flex justify-center">
         <Button asChild variant="default">
-          <Link href="/">
-            Return to Home
-          </Link>
+          <Link href="/">Return to Home</Link>
         </Button>
       </div>
     </div>
   );
-} 
+}
