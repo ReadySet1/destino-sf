@@ -18,14 +18,14 @@ const featuredProducts: ProductType[] = [
     name: 'Seasonal Alfajores',
     price: '$24.99',
     imageUrl: '/images/assets/2Recurso 5.png',
-    slug: 'empanadas-tradicionales',
+    slug: 'alfajores',
   },
   {
     id: '2',
     name: 'Limited-Edition Empanadas',
     price: '$39.99',
     imageUrl: '/images/assets/2Recurso 9.png',
-    slug: 'alfajores-selection',
+    slug: 'empanadas',
   },
   {
     id: '3',
@@ -70,7 +70,11 @@ export function FeaturedProducts() {
                 {featuredProducts.map(product => (
                   <Link
                     key={product.id}
-                    href={`/products/${product.slug}`}
+                    href={
+                      product.id === '3'
+                        ? '/products/chimichurri-sauce'
+                        : `/products/category/${product.slug}`
+                    }
                     className="block min-w-[85%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
                   >
                     <div
@@ -98,7 +102,15 @@ export function FeaturedProducts() {
             {/* Desktop/Tablet Grid */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {featuredProducts.map(product => (
-                <Link key={product.id} href={`/products/${product.slug}`} className="group">
+                <Link
+                  key={product.id}
+                  href={
+                    product.id === '3'
+                      ? '/products/chimichurri-sauce'
+                      : `/products/category/${product.slug}`
+                  }
+                  className="group"
+                >
                   <div
                     className="relative rounded-3xl overflow-hidden shadow-md transition-all duration-300 group-hover:shadow-lg"
                     style={{ paddingBottom: '75%' }}

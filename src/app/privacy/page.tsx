@@ -148,7 +148,7 @@ const PrivacyPolicyPage: React.FC = () => {
         <Section title="Behavioral Advertising">
           <p>
             We may use your Personal Information to provide you with marketing communications or
-            advertisements we believe you&apos;ll enjoy. For example:
+            advertisements we believe you will enjoy. For example:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>

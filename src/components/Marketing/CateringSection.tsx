@@ -29,7 +29,7 @@ export const CateringSection = () => {
             </h2>
 
             <p className="text-lg opacity-90">
-              We’re here to take the stress out of planning — from office lunches to celebrations,
+              We are here to take the stress out of planning — from office lunches to celebrations,
               we will handle your catering needs effortlessly
             </p>
 

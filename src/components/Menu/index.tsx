@@ -14,7 +14,7 @@ const MenuBanner: React.FC = () => {
         }
       `}</style>
       <div
-        className="menu-banner w-full bg-gradient-to-r from-yellow-500 to-yellow-600 md:py-12 text-center"
+        className="menu-banner w-full bg-gradient-to-r from-yellow-500 to-yellow-600 md:py-6 text-center"
         role="banner"
         aria-label="Menu section"
       >

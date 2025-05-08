@@ -116,10 +116,10 @@ export const About: React.FC<AboutProps> = ({
               />
             </div>
           </div>
-          <div className="relative w-full max-w-md mx-auto mt-16 h-[600px] pb-8">
-            {/* Image to the right by default */}
-            <Image src={jamesImage} alt="Portrait of James Schenk" fill className="object-cover" />
-          </div>
+          {/* <div className="relative w-full max-w-md mx-auto mt-16 h-[600px] pb-8"> */}
+          {/* Image to the right by default */}
+          {/* <Image src={jamesImage} alt="Portrait of James Schenk" fill className="object-cover" />
+          </div> */}
         </div>
       </div>
     </div>

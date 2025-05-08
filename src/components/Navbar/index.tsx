@@ -159,26 +159,11 @@ export default function Navbar() {
                     </div>
                   </nav>
                   <div className="mt-auto pt-6 w-full">
-                    <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-around items-center w-[320px] md:hidden">
-                      <Link
-                        href="/cart"
-                        onClick={closeSheet}
-                        className="relative flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
-                      >
-                        <div className="relative">
-                          <ShoppingCart className="h-6 w-6 mb-1" />
-                          {mounted && items.length > 0 && (
-                            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                              {items.reduce((total, item) => total + item.quantity, 0)}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs">Cart</span>
-                      </Link>
+                    <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-center items-center w-[320px] md:hidden">
                       <Link
                         href="/account"
                         onClick={closeSheet}
-                        className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                        className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
                       >
                         <User className="h-6 w-6 mb-1" />
                         <span className="text-xs">Account</span>
@@ -287,26 +272,11 @@ export default function Navbar() {
                     </div>
                   </nav>
                   <div className="mt-auto pt-6 w-full">
-                    <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-around items-center w-[320px] md:hidden">
-                      <Link
-                        href="/cart"
-                        onClick={closeSheet}
-                        className="relative flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
-                      >
-                        <div className="relative">
-                          <ShoppingCart className="h-6 w-6 mb-1" />
-                          {mounted && items.length > 0 && (
-                            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                              {items.reduce((total, item) => total + item.quantity, 0)}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs">Cart</span>
-                      </Link>
+                    <div className="fixed bottom-0 right-0 bg-card border-t border-border/50 py-3 px-4 flex justify-center items-center w-[320px] md:hidden">
                       <Link
                         href="/account"
                         onClick={closeSheet}
-                        className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200 w-1/2"
+                        className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
                       >
                         <User className="h-6 w-6 mb-1" />
                         <span className="text-xs">Account</span>

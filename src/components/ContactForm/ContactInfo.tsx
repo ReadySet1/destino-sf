@@ -12,8 +12,8 @@ export function ContactInfo() {
             Curious about our menu or catering options?{' '}
           </h2>
           <p className="text-gray-100 text-lg">
-            Send us a message — we&apos;d love to hear from you! Whether you&apos;re planning a
-            special event or just craving something delicious, we&apos;re here to help
+            Send us a message — we would love to hear from you! Whether you are planning a special
+            event or just craving something delicious, we are here to help
           </p>
         </div>
       </div>

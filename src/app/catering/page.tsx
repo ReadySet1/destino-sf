@@ -76,7 +76,7 @@ const CateringPage: React.FC = () => {
               {
                 question: '1. Can you accommodate dietary restrictions or special requests?',
                 answer:
-                  "Absolutely! We offer a wide variety of options to accommodate different dietary needs — including vegetarian, vegan, gluten-free, and dairy-free selections! We're also happy to customize your order based on your event's needs. Just let us know your requirements when placing your order, and we'll work with you to create a menu everyone can enjoy.",
+                  "Absolutely! We offer a wide variety of options to accommodate different dietary needs — including vegetarian, vegan, gluten-free, and dairy-free selections! We are also happy to customize your order based on your event's needs. Just let us know your requirements when placing your order, and we will work with you to create a menu everyone can enjoy.",
               },
               {
                 question: '2. Where do you deliver catering orders?',
@@ -86,17 +86,17 @@ const CateringPage: React.FC = () => {
               {
                 question: '3. How much lead time do you need for catering orders?',
                 answer:
-                  "We kindly ask for at least three business days of notice for all catering orders. If you have a last-minute request, just email us at james@destinosf.com — we'll do our best to accommodate!",
+                  'We kindly ask for at least three business days of notice for all catering orders. If you have a last-minute request, just email us at james@destinosf.com — we will do our best to accommodate!',
               },
               {
                 question: '4. Do you offer family-style buffet or individually packaged meals?',
                 answer:
-                  "Absolutely. We offer both individually packaged meals and classic buffet-style setups — along with appetizer platters and family-style service. Let us know what works best for your event, and we'll tailor the format to your needs.",
+                  'Absolutely. We offer both individually packaged meals and classic buffet-style setups — along with appetizer platters and family-style service. Let us know what works best for your event, and we will tailor the format to your needs.',
               },
               {
                 question: '5. What services do you offer with catering?',
                 answer:
-                  "We offer a range of services to match your event needs. For full-service events, catering staff can be provided upon request — just let us know the details and we'll prepare a custom quote. For drop-off orders, we package everything for easy serving, and can also provide compostable plates, napkins, and utensils upon request.",
+                  'We offer a range of services to match your event needs. For full-service events, catering staff can be provided upon request — just let us know the details and we will prepare a custom quote. For drop-off orders, we package everything for easy serving, and can also provide compostable plates, napkins, and utensils upon request.',
               },
             ].map((faq, index) => (
               <div key={index}>
