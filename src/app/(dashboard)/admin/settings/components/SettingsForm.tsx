@@ -20,6 +20,7 @@ interface StoreSettingsProps {
     taxRate: Decimal | number;
     minAdvanceHours: number;
     minOrderAmount: Decimal | number;
+    cateringMinimumAmount: Decimal | number;
     maxDaysInAdvance: number;
     isStoreOpen: boolean;
     temporaryClosureMsg?: string | null;
@@ -48,6 +49,10 @@ const settingsSchema = z.object({
     (val) => (val === '' ? 0 : Number(val)), 
     z.number().min(0)
   ),
+  cateringMinimumAmount: z.preprocess(
+    (val) => (val === '' ? 0 : Number(val)), 
+    z.number().min(0)
+  ),
   maxDaysInAdvance: z.preprocess(
     (val) => (val === '' ? 0 : Number(val)),
     z.number().int().min(1)
@@ -66,6 +71,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
     ...settings,
     taxRate: Number(settings.taxRate),
     minOrderAmount: Number(settings.minOrderAmount),
+    cateringMinimumAmount: Number(settings.cateringMinimumAmount),
   };
 
   const { 
@@ -244,6 +250,26 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
           {errors.minOrderAmount && (
             <p className="mt-1 text-sm text-red-600">{errors.minOrderAmount.message}</p>
           )}
+        </div>
+
+        <div>
+          <label htmlFor="cateringMinimumAmount" className="block text-sm font-medium text-gray-700 mb-1">
+            Catering Minimum Order Amount ($)
+          </label>
+          <input
+            type="number"
+            id="cateringMinimumAmount"
+            step="0.01"
+            min="0"
+            {...register('cateringMinimumAmount')}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+          />
+          {errors.cateringMinimumAmount && (
+            <p className="mt-1 text-sm text-red-600">{errors.cateringMinimumAmount.message}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Minimum order amount specifically for catering orders
+          </p>
         </div>
 
         <div>

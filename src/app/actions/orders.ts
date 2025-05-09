@@ -11,6 +11,7 @@ import Decimal from 'decimal.js';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
+import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -464,6 +465,17 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     const { items, customerInfo, fulfillment, paymentMethod } = validationResult.data; // Use validated data
+    
+    // Add minimum order validation
+    const orderValidation = await validateOrderMinimums(items);
+    if (!orderValidation.isValid) {
+        return { 
+            success: false, 
+            error: orderValidation.errorMessage || 'Order does not meet minimum requirements', 
+            checkoutUrl: null, 
+            orderId: null 
+        };
+    }
 
     // --- Calculate Totals using Decimal.js --- 
     let subtotal = new Decimal(0);
@@ -858,6 +870,17 @@ export async function createManualPaymentOrder(formData: {
     }
 
     const { items, customerInfo, fulfillment, paymentMethod } = formData;
+    
+    // Add minimum order validation
+    const orderValidation = await validateOrderMinimums(items);
+    if (!orderValidation.isValid) {
+        return { 
+            success: false, 
+            error: orderValidation.errorMessage || 'Order does not meet minimum requirements', 
+            checkoutUrl: null, 
+            orderId: null 
+        };
+    }
 
     // --- Calculate Totals using Decimal.js --- 
     let subtotal = new Decimal(0);
