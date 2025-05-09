@@ -9,6 +9,11 @@ function GoogleMaps() {
   useEffect(() => {
     const initMap = async () => {
       try {
+        console.log(
+          'Valor de NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:',
+          process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        );
+
         const loader = new Loader({
           apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
           version: 'quarterly',
