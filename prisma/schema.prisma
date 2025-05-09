@@ -17,6 +17,7 @@ model Profile {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   orders     Order[]
+  cateringOrders CateringOrder[]
 }
 
 model Product {
@@ -206,6 +207,104 @@ model PromoCode {
   updatedAt      DateTime     @updatedAt
 }
 
+model CateringPackage {
+  id                String               @id @default(uuid()) @db.Uuid
+  name              String
+  description       String?
+  minPeople         Int                  @default(2)
+  pricePerPerson    Decimal              @db.Decimal(10, 2)
+  type              CateringPackageType
+  imageUrl          String?
+  isActive          Boolean              @default(true)
+  featuredOrder     Int?                 @default(0)
+  items             CateringPackageItem[]
+  dietaryOptions    String[]             @default([])
+  ratings           CateringRating[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+}
+
+model CateringItem {
+  id              String                @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  price           Decimal               @db.Decimal(10, 2)
+  category        CateringItemCategory
+  isVegetarian    Boolean               @default(false)
+  isVegan         Boolean               @default(false)
+  isGlutenFree    Boolean               @default(false)
+  servingSize     String?
+  imageUrl        String?
+  isActive        Boolean               @default(true)
+  packageItems    CateringPackageItem[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model CateringPackageItem {
+  id                String          @id @default(uuid()) @db.Uuid
+  packageId         String          @db.Uuid
+  itemId            String          @db.Uuid
+  quantity          Int             @default(1)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  cateringPackage   CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  cateringItem      CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@index([itemId])
+}
+
+model CateringRating {
+  id              String          @id @default(uuid()) @db.Uuid
+  packageId       String          @db.Uuid
+  rating          Int             @db.SmallInt
+  review          String?
+  reviewerName    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+}
+
+model CateringOrder {
+  id                String            @id @default(uuid()) @db.Uuid
+  customerId        String?           @db.Uuid
+  email             String
+  name              String
+  phone             String
+  eventDate         DateTime
+  numberOfPeople    Int
+  totalAmount       Decimal           @db.Decimal(10, 2)
+  status            CateringStatus    @default(PENDING)
+  notes             String?
+  specialRequests   String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  profile           Profile?          @relation(fields: [customerId], references: [id])
+  items             CateringOrderItem[]
+
+  @@index([customerId])
+}
+
+model CateringOrderItem {
+  id              String        @id @default(uuid()) @db.Uuid
+  orderId         String        @db.Uuid
+  itemType        String        // "package" or "item"
+  itemId          String        @db.Uuid
+  name            String        // Stored for historical record
+  quantity        Int
+  pricePerUnit    Decimal       @db.Decimal(10, 2)
+  totalPrice      Decimal       @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  order           CateringOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN
@@ -239,4 +338,27 @@ enum PaymentMethod {
 enum DiscountType {
   PERCENTAGE
   FIXED_AMOUNT
+}
+
+enum CateringPackageType {
+  INDIVIDUAL
+  BUFFET
+  FAMILY_STYLE
+}
+
+enum CateringItemCategory {
+  STARTER
+  ENTREE
+  SIDE
+  SALAD
+  DESSERT
+  BEVERAGE
+}
+
+enum CateringStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  COMPLETED
+  CANCELLED
 }
