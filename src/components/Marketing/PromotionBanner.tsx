@@ -24,12 +24,12 @@ export function PromotionBanner() {
                 </Link>
               </div>
               <div className="ml-3 inline-flex">
-                <Link
+                {/* <Link
                   href="/promotions"
                   className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
                 >
                   View All Promotions
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>

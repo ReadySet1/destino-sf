@@ -21,19 +21,19 @@ const menuItems: MenuItemType[] = [
     id: '1',
     name: 'Our Empanadas ',
     imageUrl: '/images/homepage/empanadas.png',
-    slug: 'empanadas',
+    slug: '/products/category/empanadas',
   },
   {
     id: '2',
     name: 'Our Alfajores',
     imageUrl: '/images/homepage/alfajor.png',
-    slug: 'alfajores',
+    slug: '/products/category/alfajores',
   },
   {
     id: '3',
     name: 'Catering',
     imageUrl: '/images/homepage/catering.png',
-    slug: 'catering',
+    slug: '/catering',
   },
 ];
 
@@ -64,20 +64,18 @@ const BackgroundPattern = () => {
 export function MenuSection() {
   return (
     <div className={styles.menuSection}>
-      <BackgroundPattern /> {/* Añadir el componente de patrón */}
-      <div className={styles.content}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-center text-3xl lg:text-5xl font-bold text-gray-800 sm:mt-4">
-            Menu
-          </h2>
+      <BackgroundPattern />
 
+      {/* Absolute positioned title at the very top */}
+      <h2 className="absolute top-0 left-0 right-0 text-center text-3xl lg:text-5xl font-bold text-gray-800 pt-2 sm:pt-4 z-20">
+        Menu
+      </h2>
+
+      <div className={styles.content}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:pt-28">
           <div className="flex flex-row justify-around items-center">
             {menuItems.map(item => (
-              <Link
-                href={`/menu/${item.slug}`}
-                key={item.id}
-                className="flex flex-col items-center"
-              >
+              <Link href={item.slug} key={item.id} className="flex flex-col items-center">
                 <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-56 md:w-56 overflow-hidden rounded-full">
                   <Image
                     src={item.imageUrl}

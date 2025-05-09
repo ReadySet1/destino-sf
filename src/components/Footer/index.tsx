@@ -63,18 +63,13 @@ export default function Footer() {
                       </Link>
                     </li>
                     <li>
-                      <Link href="/careers" className="text-base text-gray-700 hover:text-gray-900">
-                        Careers
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/press" className="text-base text-gray-700 hover:text-gray-900">
-                        Press
+                      <Link href="/contact" className="text-base text-gray-700 hover:text-gray-900">
+                        Contact Us
                       </Link>
                     </li>
                   </ul>
                 </div>
-                <div className="text-center md:text-left">
+                {/* <div className="text-center md:text-left">
                   <h3 className="text-lg font-bold text-gray-800 uppercase">Support</h3>
                   <ul className="mt-4 space-y-3 md:space-y-4">
                     <li>
@@ -82,16 +77,8 @@ export default function Footer() {
                         Contact Us
                       </Link>
                     </li>
-                    <li>
-                      <Link
-                        href="/shipping"
-                        className="text-base text-gray-700 hover:text-gray-900"
-                      >
-                        Shipping
-                      </Link>
-                    </li>
                   </ul>
-                </div>
+                </div> */}
                 <div className="text-center md:text-left">
                   <h3 className="text-lg font-bold text-gray-800 uppercase">Legal</h3>
                   <ul className="mt-4 space-y-3 md:space-y-4">

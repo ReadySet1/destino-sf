@@ -24,7 +24,7 @@ const testimonials: TestimonialType[] = [
     orderService: 'Event Planner',
     icon: '👨‍🍳',
     quote:
-      "The catering service was exceptional. Our guests couldn't stop talking about the empanadas. Will definitely order again for future events!",
+      'The catering service was exceptional. Our guests could not stop talking about the empanadas. Will definitely order again for future events!',
     rating: 5.0,
   },
   {
@@ -33,7 +33,7 @@ const testimonials: TestimonialType[] = [
     orderService: 'Food Enthusiast',
     icon: '🍽️',
     quote:
-      "Authentic flavors that transport me back to South America. The alfajores are simply the best I've had outside of Argentina.",
+      'Authentic flavors that transport me back to South America. The alfajores are simply the best I have had outside of Argentina.',
     rating: 5.0,
   },
   {
@@ -53,12 +53,10 @@ export function CustomerTestimonials() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className={`text-5xl font-bold text-white mb-4 ${dancingScript.className}`}>
-            Our Clients Know Best
+            Testimonials
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-xl text-white/90">
-            Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod
-            tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam,
-            quis nostrud exerci tation
+            Real stories from happy customers — so grateful for the love!
           </p>
         </div>
 

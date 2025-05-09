@@ -14,6 +14,16 @@ export function ContactInfoCatering() {
         </p>
       </div>
 
+      <div className="flex items-center gap-4">
+        <Mail className="h-6 w-6 text-white" />
+        <Link
+          href="mailto:james@destinos.com"
+          className="text-white hover:underline transition-colors text-lg"
+        >
+          james@destinosf.com
+        </Link>
+      </div>
+
       <div className="space-y-5">
         <div className="flex items-center gap-4">
           <Phone className="h-6 w-6 text-white" />
@@ -26,16 +36,6 @@ export function ContactInfoCatering() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Mail className="h-6 w-6 text-white" />
-          <Link
-            href="mailto:james@destinos.com"
-            className="text-white hover:underline transition-colors text-lg"
-          >
-            james@destinos.com
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4">
           <MapPin className="h-6 w-6 text-white" />
           <Link
             href="https://maps.google.com/?q=San+Francisco,+CA+94124"
@@ -43,7 +43,7 @@ export function ContactInfoCatering() {
             rel="noopener noreferrer"
             className="text-white hover:underline transition-colors text-lg"
           >
-            San Francisco, CA 94124
+            San Francisco, CA 94114
           </Link>
         </div>
       </div>
