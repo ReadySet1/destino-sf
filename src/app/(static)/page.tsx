@@ -6,7 +6,6 @@ import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { PromotionBanner } from '@/components/Marketing/PromotionBanner';
 import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
 import { CateringSection } from '@/components/Marketing/CateringSection';
-import GoogleMaps from '@/components/Maps/GoogleMaps';
 
 export default async function Home() {
   return (
@@ -31,7 +30,6 @@ export default async function Home() {
       {/* </div> */}
       {/* Original comment about adding more sections can be kept or removed */}
       {/* <Add more sections here as needed /> */}
-      <GoogleMaps />
     </main>
   );
 }
