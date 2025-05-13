@@ -22,14 +22,16 @@ const greatVibes = Great_Vibes({
   variable: '--font-great-vibes',
 });
 
-const baseUrl = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:3000'
-  : 'https://destino-sf-ready-set.vercel.app';
+const baseUrl =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : 'https://destino-sf-ready-set.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
+  themeColor: '#004225', // ¡Mueve esta línea aquí!
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -37,30 +39,34 @@ export const metadata: Metadata = {
     siteName: 'Destino SF',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
-    images: [{
-      url: '/opengraph-image.jpg',
-      width: 1200,
-      height: 630,
-      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
-    }],
+    images: [
+      {
+        url: '/opengraph-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
     creator: '@destinosf',
-    images: [{
-      url: '/twitter-image.jpg',
-      width: 1200,
-      height: 630,
-      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
-    }],
+    images: [
+      {
+        url: '/twitter-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
   },
   other: {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
-    'theme-color': '#004225',
+    // 'theme-color': '#004225', ¡Elimina esta línea!
     'og:image': `${baseUrl}/opengraph-image.jpg`,
     'og:image:secure_url': `${baseUrl}/opengraph-image.jpg`,
     'og:image:width': '1200',
@@ -74,7 +80,7 @@ export const metadata: Metadata = {
     other: {
       'msvalidate.01': '',
       'yandex-verification': '',
-    }
+    },
   },
 };
 
@@ -91,8 +97,8 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground antialiased">
         <ClientLayout>{children}</ClientLayout>
-        <Script 
-          src="https://analytics.readysetllc.com/script.js" 
+        <Script
+          src="https://analytics.readysetllc.com/script.js"
           data-website-id="5a0ae847-dbb0-456c-b972-9e29944de4b2"
         />
       </body>
