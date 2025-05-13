@@ -176,6 +176,7 @@ model StoreSettings {
   taxRate             Decimal  @default(8.25) @db.Decimal(5, 2)
   minAdvanceHours     Int      @default(2)
   minOrderAmount      Decimal  @default(0) @db.Decimal(10, 2)
+  cateringMinimumAmount Decimal @default(0) @db.Decimal(10, 2)
   maxDaysInAdvance    Int      @default(7)
   isStoreOpen         Boolean  @default(true)
   temporaryClosureMsg String?

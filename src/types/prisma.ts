@@ -141,6 +141,7 @@ export interface StoreSettings {
   taxRate: Decimal;
   minAdvanceHours: number;
   minOrderAmount: Decimal;
+  cateringMinimumAmount: Decimal;
   maxDaysInAdvance: number;
   isStoreOpen: boolean;
   temporaryClosureMsg?: string | null;

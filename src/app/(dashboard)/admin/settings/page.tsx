@@ -23,6 +23,7 @@ export default async function SettingsPage() {
     taxRate: 8.25,
     minAdvanceHours: 2,
     minOrderAmount: 0,
+    cateringMinimumAmount: 150,
     maxDaysInAdvance: 7,
     isStoreOpen: true,
     temporaryClosureMsg: null,

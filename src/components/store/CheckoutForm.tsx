@@ -53,6 +53,7 @@ import {
 // Import the delivery fee utilities
 import { calculateDeliveryFee, getDeliveryFeeMessage, DeliveryFeeResult } from '@/lib/deliveryUtils';
 import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
+import { validateOrderMinimums } from '@/lib/cart-helpers';
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
@@ -331,18 +332,30 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // --- Keep onSubmit function ---
   const onSubmit = async (formData: CheckoutFormData) => {
-    console.log('CheckoutForm onSubmit triggered');
     setIsSubmitting(true);
-    setError(null);
-
-    if (!items || items.length === 0) {
-      setError('Your cart is empty.'); setIsSubmitting(false); toast.error('Cannot checkout with an empty cart.'); return;
-    }
-
-    let fulfillmentData: FulfillmentData | null = null;
-    let customerInfo: { name: string; email: string; phone: string; };
-
+    setError('');
+    
     try {
+      // First check if cart is empty
+      if (!items || items.length === 0) {
+        setError('Your cart is empty.');
+        toast.error('Your cart is empty.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validate minimum order requirements
+      const orderValidation = await validateOrderMinimums(items);
+      if (!orderValidation.isValid) {
+        setError(orderValidation.errorMessage || 'Order does not meet minimum requirements');
+        toast.error(orderValidation.errorMessage || 'Order does not meet minimum requirements');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      let fulfillmentData: FulfillmentData | null = null;
+      let customerInfo: { name: string; email: string; phone: string; };
+
       console.log('Form data submitted:', formData);
       if (formData.fulfillmentMethod === 'pickup') {
           if (!formData.pickupDate || !formData.pickupTime) throw new Error("Missing pickup date or time.");
