@@ -115,7 +115,7 @@ importers:
         specifier: ^8.6.0
         version: 8.6.0(react@19.1.0)
       framer-motion:
-        specifier: ^12.6.2
+        specifier: ^12.10.1
         version: 12.10.1(@emotion/is-prop-valid@1.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       lucide-react:
         specifier: ^0.468.0

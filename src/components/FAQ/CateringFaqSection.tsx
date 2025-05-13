@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FaqItem {
   question: string;
@@ -49,15 +50,65 @@ const CateringFaqSection: React.FC = () => {
     },
   ];
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 300,
+        damping: 24,
+      },
+    },
+  };
+
+  const contentVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: 'auto',
+      transition: {
+        duration: 0.3,
+        ease: 'easeInOut',
+      },
+    },
+  };
+
   return (
     <div className="mb-12 md:mb-16">
-      <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 md:mb-8">
+      <motion.h2
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 md:mb-8"
+      >
         Catering: Frequently Asked Questions
-      </h2>
+      </motion.h2>
 
-      <div className="space-y-4">
+      <motion.div
+        className="space-y-4"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {faqItems.map((faq, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+          <motion.div
+            key={index}
+            className="border border-gray-200 rounded-lg overflow-hidden"
+            variants={itemVariants}
+          >
             <button
               onClick={() => toggleItem(index)}
               className="flex justify-between items-center w-full p-4 text-left bg-white hover:bg-gray-50 transition-colors"
@@ -65,8 +116,10 @@ const CateringFaqSection: React.FC = () => {
               <h3 className="text-xl font-medium text-gray-800">
                 {index + 1}. {faq.question}
               </h3>
-              <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${openItems.includes(index) ? 'transform rotate-180' : ''}`}
+              <motion.svg
+                animate={{ rotate: openItems.includes(index) ? 180 : 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="w-5 h-5 text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -78,17 +131,34 @@ const CateringFaqSection: React.FC = () => {
                   strokeWidth={2}
                   d="M19 9l-7 7-7-7"
                 />
-              </svg>
+              </motion.svg>
             </button>
 
-            {openItems.includes(index) && (
-              <div className="p-4 bg-gray-50 border-t border-gray-200">
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
-            )}
-          </div>
+            <AnimatePresence>
+              {openItems.includes(index) && (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={contentVariants}
+                  className="bg-gray-50 border-t border-gray-200 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="text-gray-600"
+                    >
+                      {faq.answer}
+                    </motion.p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };
