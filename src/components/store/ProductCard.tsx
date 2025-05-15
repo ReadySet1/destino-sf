@@ -6,22 +6,41 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { toast } from 'sonner';
 import { Product, Variant } from '@/types/product';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { formatPrice, getProxiedImageUrl } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
 }
 
-// Helper function to safely format prices
-const formatPrice = (price: number | null | undefined): string => {
-  if (price === null || price === undefined || isNaN(Number(price))) {
-     return "0.00";
+// Helper function to validate image URLs
+const validateImageUrl = async (url: string): Promise<boolean> => {
+  if (!url) return false;
+  // Skip validation for relative URLs or already proxied URLs
+  if (url.startsWith('/') || url.includes('/api/proxy/image')) return true;
+  
+  try {
+    // Create a new Image object and try to load the image
+    return new Promise<boolean>((resolve) => {
+      const img = new window.Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      // Add cache busting to make sure we're not getting a cached image
+      img.src = `${url}${url.includes('?') ? '&' : '?'}cb=${new Date().getTime()}`;
+    });
+  } catch (error) {
+    console.error('Error validating image URL:', error);
+    return false;
   }
-  return Number(price).toFixed(2);
 };
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  
+  // Add state to handle image loading failures
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   
   // Check if product has valid variants
   const hasVariants = product.variants && Array.isArray(product.variants) && 
@@ -37,8 +56,52 @@ export function ProductCard({ product }: ProductCardProps) {
     ? selectedVariant.price 
     : product.price;
 
-  // Ensure mainImage logic considers product.images existence
-  const mainImage = product.images?.[0] || '/images/menu/empanadas.png'; // Use fallback if needed
+  // Validate and set image URL on component mount and when product changes
+  useEffect(() => {
+    const validateAndSetImage = async () => {
+      // Start with loading state
+      setImageLoading(true);
+      setImageError(false);
+      
+      // Default/fallback image
+      const fallbackImage = '/images/menu/empanadas.png';
+      
+      // Get the first image from product.images if it exists
+      const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
+      
+      if (firstImage) {
+        try {
+          // Process the URL through our proxy if it's external
+          const processedUrl = getProxiedImageUrl(firstImage);
+          
+          // Check if the image is valid
+          const isValid = await validateImageUrl(processedUrl);
+          
+          if (isValid) {
+            setImageUrl(processedUrl);
+            setImageError(false);
+          } else {
+            console.warn(`Invalid image URL for product ${product.name}:`, firstImage);
+            setImageUrl(fallbackImage);
+            setImageError(true);
+          }
+        } catch (error) {
+          console.error(`Error processing image for ${product.name}:`, error);
+          setImageUrl(fallbackImage);
+          setImageError(true);
+        }
+      } else {
+        // No image available, use fallback
+        setImageUrl(fallbackImage);
+        setImageError(true);
+      }
+      
+      // Done loading
+      setImageLoading(false);
+    };
+    
+    validateAndSetImage();
+  }, [product.id, product.images, product.name]);
 
   const handleAddToCart = () => {
     // Ensure priceToAdd is a number, defaulting to 0 if conversion fails
@@ -49,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
       price: priceToAdd,
       quantity: 1,
-      image: mainImage, // Use the determined mainImage
+      image: imageUrl || '/images/menu/empanadas.png', // Use our validated imageUrl or fallback
       variantId: selectedVariant?.id, // Add variantId
     });
 
@@ -65,15 +128,24 @@ export function ProductCard({ product }: ProductCardProps) {
       >
         {/* Image Container - Mobile: Left side, Desktop: Top */}
         <div className="w-[110px] h-[110px] md:w-full md:h-auto relative overflow-hidden md:rounded-t-lg flex-shrink-0 flex items-center justify-center bg-gray-50 m-3 md:m-0 rounded-lg md:aspect-[4/3]">
-          {mainImage ? (
+          {imageLoading ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+            </div>
+          ) : imageUrl ? (
             <Image
-              src={mainImage}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-contain md:object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
               sizes="(min-width: 768px) 33vw, 110px"
               priority={product.featured}
-              onError={() => console.error("Image failed to load:", mainImage)}
+              crossOrigin="anonymous"
+              onError={() => {
+                console.error("Image failed to load:", imageUrl);
+                setImageError(true);
+                setImageUrl('/images/menu/empanadas.png'); // Set to fallback on error
+              }}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">

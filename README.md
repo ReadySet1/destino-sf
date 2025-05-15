@@ -103,20 +103,63 @@ Please file feedback and issues over on the [Supabase GitHub org](https://github
 - [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
 - [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
 
-## Manual Payment Options
+## Square Integration
+
+### Product Sync
+
+The application syncs products from Square to the local database using the Square API. This ensures that product information is always up-to-date with what's in Square.
+
+### Manual Payment Options
 
 In addition to Square payment processing, the application now supports manual payment methods:
 
 1. **Venmo**: Customers can choose to pay via Venmo and receive detailed payment instructions.
 2. **Cash**: For pickup orders, customers can choose to pay with cash upon pickup.
 
-### Implementation Details
+#### Implementation Details
 
 - A `PaymentMethod` enum was added to the database schema with values `SQUARE`, `VENMO`, and `CASH`.
 - The `PaymentMethodSelector` component allows users to select their preferred payment method during checkout.
 - Manual payments follow a different flow than Square payments, collecting order information first and then updating the payment method.
 - Payment-specific success pages provide customers with relevant instructions based on their selected payment method.
 - Email confirmations are sent using Resend API with detailed payment instructions.
+
+### Catering Categories Integration
+
+The application now supports syncing catering categories from Square. This functionality allows for better organization of catering items in the system.
+
+#### Features
+
+- **Automatic Category Detection**: Identifies categories that start with "CATERING" or "CATERING-" prefixes in Square
+- **Category Mapping**: Maps Square catering categories to the `CateringItemCategory` enum in the database schema
+- **Catering Items Sync**: Automatically syncs catering items to the appropriate categories
+- **Mapping Persistence**: Stores category mappings in `catering-categories-mapping.json` for future reference
+
+#### Category Mapping
+
+The system maps Square catering categories to the following `CateringItemCategory` enum values:
+
+- STARTER (for appetizers, starters)
+- ENTREE (for main dishes, entrees)
+- SIDE (for side dishes, platters)
+- SALAD (for salads)
+- DESSERT (for desserts)
+- BEVERAGE (for drinks)
+
+#### Using the Sync Script
+
+To sync both regular products and catering categories/items from Square, run:
+
+```bash
+node src/scripts/sync-production.mjs
+```
+
+This script will:
+1. Fetch all categories from Square
+2. Process and identify catering vs. regular categories
+3. Sync regular categories to the Product/Category models
+4. Map catering categories to appropriate types
+5. Sync products and catering items
 
 ### Email Notifications
 

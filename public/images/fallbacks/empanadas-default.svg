@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#fdf0d5" />
+  <path d="M150,100 C100,100 70,125 70,150 C70,175 100,200 150,200 C200,200 230,175 230,150 C230,125 200,100 150,100 Z" fill="#e3b04b" />
+  <path d="M150,110 C105,110 80,130 80,150 C80,170 105,190 150,190 C195,190 220,170 220,150 C220,130 195,110 150,110 Z" fill="#f8edeb" />
+  <path d="M70,150 L230,150" stroke="#8c6d46" stroke-width="5" stroke-linecap="round" />
+  <path d="M80,150 C80,150 100,130 150,130 C200,130 220,150 220,150" fill="none" stroke="#8c6d46" stroke-width="3" stroke-dasharray="5,5" />
+  <text x="150" y="240" font-family="Arial" font-size="16" text-anchor="middle" fill="#8c6d46">Empanadas</text>
+</svg> 

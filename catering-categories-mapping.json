@@ -1,0 +1,9 @@
+{
+  "// This file will be automatically populated by the sync-production.mjs script": "",
+  "// Format will be: Square Category ID -> { name: 'Category Name', mappedCategory: 'ENUM_VALUE' }": "",
+  "// Example:": "",
+  "EXAMPLE_ID": {
+    "name": "CATERING- APPETIZERS",
+    "mappedCategory": "STARTER"
+  }
+} 

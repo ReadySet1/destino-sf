@@ -23,6 +23,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "validate": "pnpm run type-check && pnpm run lint",
     "fix-all": "pnpm run format && pnpm run lint:fix",
+    "fix-images": "node src/scripts/update-missing-images.mjs",
+    "square-sync": "curl -X POST http://localhost:3000/api/square/sync",
+    "clean-products": "node src/scripts/clean-invalid-products.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
