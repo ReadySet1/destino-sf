@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#f5f2e9" />
+  <path d="M110,100 L190,100 L180,200 L120,200 Z" fill="#6f4e37" />
+  <path d="M110,100 L190,100 L190,110 C190,120 180,130 150,130 C120,130 110,120 110,110 Z" fill="#b58e6c" />
+  <path d="M180,200 L190,210 L110,210 L120,200" fill="#563824" />
+  <path d="M190,110 C215,110 220,130 220,140 C220,160 205,170 190,170" fill="none" stroke="#dcd1c1" stroke-width="6" />
+  <ellipse cx="150" cy="150" rx="30" ry="10" fill="#dcd1c1" opacity="0.7" />
+  <text x="150" y="240" font-family="Arial" font-size="16" text-anchor="middle" fill="#6f4e37">Café</text>
+</svg> 

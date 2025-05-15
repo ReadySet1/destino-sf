@@ -73,16 +73,42 @@ export const formatDateTime = (date: Date | string | null | undefined): string =
  * @returns Formatted currency string
  */
 export const formatCurrency = (amount: any): string => {
-  // Use our serializeDecimal utility to handle different input types
-  const num = serializeDecimal(amount);
-  
-  // If conversion fails, use 0
-  if (num === null) {
-    logger.warn('Failed to format currency value:', amount);
+  // Handle null/undefined case first
+  if (amount === null || amount === undefined) {
     return '$0.00';
   }
   
+  // If it's already a number
+  if (typeof amount === 'number') {
+    // Extra safety check for NaN values
+    if (isNaN(amount)) {
+      logger.warn('Failed to format currency value (NaN):', amount);
+      return '$0.00';
+    }
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch (error) {
+      logger.error('Error formatting currency:', error);
+      return '$0.00';
+    }
+  }
+  
+  // Try to convert to number using our utility
   try {
+    const num = serializeDecimal(amount);
+    
+    // If conversion returns null or NaN, use zero
+    if (num === null || isNaN(num)) {
+      logger.warn('Failed to format currency value:', amount);
+      return '$0.00';
+    }
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',

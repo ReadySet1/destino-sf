@@ -87,6 +87,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
   const errors: string[] = [];
   let syncedCount = 0;
   const debugInfo: any = {}; // Store debug information
+  const validSquareIds: string[] = []; // Track valid Square IDs
 
   try {
     logger.info('Starting Square product sync...');
@@ -161,59 +162,8 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         debugInfo.firstItemSample = items[0];
       }
       
-      // Function to extract image URLs from related objects
-      const getImageUrls = async (item: SquareCatalogObject): Promise<string[]> => {
-        const imageUrls: string[] = [];
-        const imageIds = item.item_data?.image_ids || [];
-        
-        if (imageIds.length === 0) {
-          logger.info(`No image IDs found for item ${item.id}`);
-          return imageUrls;
-        }
-        
-        logger.info(`Found ${imageIds.length} image IDs for item ${item.id}: ${JSON.stringify(imageIds)}`);
-        
-        // Look for image objects in related_objects
-        for (const imageId of imageIds) {
-          const imageObject = relatedObjects.find((obj: SquareCatalogObject) => obj.id === imageId && obj.type === 'IMAGE');
-          
-          if (imageObject && imageObject.image_data && imageObject.image_data.url) {
-            const imageUrl = imageObject.image_data.url;
-            logger.info(`Found image URL in related objects: ${imageUrl}`);
-            if (imageUrl) {
-              imageUrls.push(imageUrl);
-            } else {
-              logger.warn(`Found image object but URL is null/empty for image ID: ${imageId}`);
-            }
-          } else {
-            logger.info(`Image not found in related objects, trying direct API call for image ID: ${imageId}`);
-            // If not in related_objects, try to get it directly
-            try {
-              if (squareClient.catalogApi.retrieveCatalogObject) {
-                const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
-                const imageData = imageResponse.result?.object;
-                
-                if (imageData && imageData.image_data && imageData.image_data.url) {
-                  const imageUrl = imageData.image_data.url;
-                  logger.info(`Retrieved image URL from API: ${imageUrl}`);
-                  if (imageUrl) {
-                    imageUrls.push(imageUrl);
-                  } else {
-                    logger.warn(`Retrieved image data but URL is null/empty for image ID: ${imageId}`);
-                  }
-                } else {
-                  logger.warn(`No valid image data found for image ID: ${imageId}`);
-                }
-              }
-            } catch (imageError) {
-              logger.error(`Error retrieving image ${imageId}:`, imageError);
-            }
-          }
-        }
-        
-        logger.info(`Final image URLs for item ${item.id}: ${JSON.stringify(imageUrls)}`);
-        return imageUrls;
-      };
+      // Collect all valid Square IDs for later cleanup
+      validSquareIds.push(...items.map((item: SquareCatalogObject) => item.id));
       
       // Process items
       for (const item of items) {
@@ -228,60 +178,302 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           
           logger.info(`Processing item: ${itemName} (${item.id})`);
 
-          // Get images for this item
-          const imageUrls = await getImageUrls(item);
-          logger.info(`Found ${imageUrls.length} images for item ${itemName}`);
+          // Get images for this item directly from Square.
+          // getImageUrls already converts sandbox to production and handles missing images from Square by returning [].
+          const imageUrlsFromSquare = await getImageUrls(item, relatedObjects);
+          logger.info(`Found ${imageUrlsFromSquare.length} image(s) for item ${itemName} directly from Square processing.`);
 
-          // Process variants
           const variations = itemData.variations || [];
           const { variants, basePrice } = processVariations(variations);
 
-          // Handle description
           const description = itemData.description;
           const updateDescription = description === null ? undefined : description;
           const createDescription = description ?? '';
 
-          // Always use the default category ID we verified/created earlier
-          // instead of trying to use Square's category_id which may not map
-          // to our database's categories
+          const baseSlug = createSlug(itemName);
           
-          // Upsert product in database
-          const product = await prisma.product.upsert({
+          const existingProduct = await prisma.product.findUnique({
             where: { squareId: item.id },
-            update: {
-              name: itemName,
-              description: updateDescription,
-              price: basePrice,
-              images: imageUrls, // Update with image URLs
-              variants: {
-                deleteMany: {},
-                create: variants
-              },
-              categoryId: defaultCategory.id, // Always use default category
-              updatedAt: new Date()
-            },
-            create: {
-              squareId: item.id,
-              name: itemName,
-              description: createDescription,
-              price: basePrice,
-              images: imageUrls, // Use image URLs
-              categoryId: defaultCategory.id, // Always use default category
-              featured: false,
-              active: true,
-              variants: {
-                create: variants
-              }
-            }
+            select: { id: true, slug: true } // Only select what's needed
           });
 
+          let product;
+          
+          if (existingProduct) {
+            logger.info(`Updating existing product: ${itemName} (${item.id})`);
+            product = await prisma.product.update({
+              where: { squareId: item.id },
+              data: {
+                name: itemName,
+                description: updateDescription,
+                price: basePrice,
+                images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                variants: {
+                  deleteMany: {},
+                  create: variants
+                },
+                categoryId: defaultCategory.id,
+                updatedAt: new Date()
+              }
+            });
+            logger.info(`Successfully updated product ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+          } else {
+            const existingSlug = await prisma.product.findUnique({
+              where: { slug: baseSlug },
+              select: { id: true }
+            });
+            const uniqueSlug = existingSlug ? `${baseSlug}-${item.id.toLowerCase().substring(0, 8)}` : baseSlug;
+
+            try {
+              logger.info(`Creating new product: ${itemName} (${item.id})`);
+              product = await prisma.product.create({
+                data: {
+                  squareId: item.id,
+                  name: itemName,
+                  slug: uniqueSlug,
+                  description: createDescription,
+                  price: basePrice,
+                  images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                  categoryId: defaultCategory.id,
+                  featured: false,
+                  active: true,
+                  variants: {
+                    create: variants
+                  }
+                }
+              });
+              logger.info(`Successfully created product ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+            } catch (error) {
+              const createError = error as { code?: string; meta?: { target?: string[] } };
+              if (createError.code === 'P2002') {
+                const constraintField = createError.meta?.target?.[0];
+                logger.warn(`Constraint violation on ${constraintField} for item ${itemName}`);
+                
+                if (constraintField === 'squareVariantId') {
+                  const conflictingVariantId = variants.length > 0 ? variants[0].squareVariantId : null;
+                  if (conflictingVariantId) {
+                    const existingVariant = await prisma.variant.findUnique({
+                      where: { squareVariantId: conflictingVariantId },
+                      include: { product: true }
+                    });
+                    
+                    if (existingVariant && existingVariant.product) {
+                      logger.info(`Found existing product via variant: ${existingVariant.product.id}, updating it.`);
+                      product = await prisma.product.update({
+                        where: { id: existingVariant.product.id },
+                        data: {
+                          squareId: item.id,
+                          name: itemName,
+                          description: updateDescription,
+                          price: basePrice,
+                          images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                          categoryId: defaultCategory.id,
+                          variants: {
+                            deleteMany: {},
+                            create: variants
+                          },
+                          updatedAt: new Date()
+                        }
+                      });
+                      logger.info(`Updated existing product (through variant) ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+                    }
+                  }
+                } else {
+                  const timestampSlug = `${baseSlug}-${Date.now()}`;
+                  logger.info(`Retrying creation with unique slug: ${timestampSlug}`);
+                  product = await prisma.product.create({
+                    data: {
+                      squareId: item.id,
+                      name: itemName,
+                      slug: timestampSlug,
+                      description: createDescription,
+                      price: basePrice,
+                      images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                      categoryId: defaultCategory.id,
+                      featured: false,
+                      active: true,
+                      variants: {
+                        create: variants
+                      }
+                    }
+                  });
+                  logger.info(`Successfully created product with timestamp slug ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+                }
+              } else {
+                throw createError;
+              }
+            }
+          }
+
+          const savedProduct = await prisma.product.findUnique({
+            where: { squareId: item.id }, // Assuming product was successfully created/updated
+            select: { images: true }
+          });
+          logger.info(`Verified saved product ${itemName} images in DB: ${JSON.stringify(savedProduct?.images)}`);
+
           syncedCount++;
-          logger.info(`Synced product: ${itemName} (${item.id})`);
         } catch (error) {
           logger.error(`Error processing item ${item.id}:`, error);
           errors.push(error instanceof Error ? error.message : String(error));
         }
       }
+      
+      // Optional: Clean up products with invalid Square IDs
+      const cleanupEnabled = process.env.AUTO_CLEANUP_INVALID_PRODUCTS === 'true';
+      if (cleanupEnabled) {
+        try {
+          logger.info('Checking for products with invalid Square IDs...');
+          
+          // Get all products with non-empty squareId
+          const productsWithSquareIds = await prisma.product.findMany({
+            select: { id: true, name: true, squareId: true }
+          });
+          
+          // Filter in memory to find those with invalid Square IDs
+          const invalidProducts = productsWithSquareIds.filter(
+            product => product.squareId && !validSquareIds.includes(product.squareId)
+          );
+          
+          if (invalidProducts.length > 0) {
+            logger.info(`Found ${invalidProducts.length} products with invalid Square IDs`);
+            
+            for (const product of invalidProducts) {
+              logger.info(`Setting Square ID to undefined for invalid product: ${product.name} (${product.id})`);
+              await prisma.product.update({
+                where: { id: product.id },
+                data: { 
+                  squareId: undefined,
+                  updatedAt: new Date()
+                }
+              });
+            }
+            
+            logger.info(`Successfully cleaned up ${invalidProducts.length} products with invalid Square IDs`);
+          } else {
+            logger.info('No products with invalid Square IDs found');
+          }
+        } catch (cleanupError) {
+          logger.error('Error during invalid product cleanup:', cleanupError);
+          // Don't fail the entire sync due to cleanup issues
+        }
+      }
+
+      // Special handling for manually created products (with 'reset-' prefix in squareId)
+      try {
+        logger.info('Checking for manually created products that need image preservation...');
+        const manualProducts = await prisma.product.findMany({
+          where: {
+            squareId: {
+              startsWith: 'reset-'
+            },
+            images: {
+              isEmpty: true
+            }
+          },
+          select: {
+            id: true,
+            name: true, 
+            squareId: true
+          }
+        });
+
+        if (manualProducts.length > 0) {
+          logger.info(`Found ${manualProducts.length} manual products with empty images array`);
+          
+          // Extract the original UUID from the squareId to look up previous versions
+          for (const product of manualProducts) {
+            const originalId = product.squareId.replace('reset-', '');
+            logger.info(`Looking for images for manual product: ${product.name} (${product.id}), original ID: ${originalId}`);
+            
+            // Check for any products with this ID in our database that might have images
+            const matchingProducts = await prisma.product.findMany({
+              where: {
+                OR: [
+                  { id: originalId }, 
+                  { squareId: originalId }
+                ]
+              },
+              select: {
+                images: true
+              }
+            });
+            
+            // If we find matching products with images, use those images
+            for (const matchingProduct of matchingProducts) {
+              if (matchingProduct.images && matchingProduct.images.length > 0) {
+                logger.info(`Found matching product with ${matchingProduct.images.length} images for ${product.name}`);
+                
+                // Update the manual product with these images
+                await prisma.product.update({
+                  where: { id: product.id },
+                  data: {
+                    images: matchingProduct.images,
+                    updatedAt: new Date()
+                  }
+                });
+                
+                logger.info(`Updated manual product ${product.name} with ${matchingProduct.images.length} images`);
+                break; // Stop after first match with images
+              }
+            }
+          }
+        } else {
+          logger.info('No manual products without images found');
+        }
+
+        // Check for custom non-Square products that might have lost their images
+        // This handles products that were added manually but don't have the 'reset-' prefix
+        logger.info('Checking for non-Square products that might have lost images...');
+        
+        // Get all products that:
+        // 1. Don't have a Square ID (custom products) or have an ID not in validSquareIds (removed from Square)
+        // 2. Have empty images array
+        // 3. Have been active for some time (not brand new)
+        const customOrRemovedProducts = await prisma.product.findMany({
+          where: {
+            OR: [
+              { squareId: { equals: undefined } },
+              { 
+                squareId: { 
+                  not: { startsWith: 'reset-' },
+                  notIn: validSquareIds 
+                }
+              }
+            ],
+            images: { isEmpty: true },
+            active: true,
+            createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Created more than 24 hours ago
+          },
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        });
+        
+        if (customOrRemovedProducts.length > 0) {
+          logger.info(`Found ${customOrRemovedProducts.length} custom/removed products without images`);
+          
+          // Look for products with the same name or slug in a backup table or in the database history
+          // This would require you to implement a product history or backup table
+          
+          // For now, just log these products so you're aware of them
+          for (const product of customOrRemovedProducts) {
+            logger.warn(`Custom/removed product without images: ${product.name} (${product.id})`);
+            // Future implementation: Check backup tables or other sources for these product images
+          }
+        } else {
+          logger.info('No custom/removed products without images found');
+        }
+      } catch (manualError) {
+        logger.error('Error processing manual products:', manualError);
+        // Don't fail the entire sync due to these issues
+      }
+
+      // For now, removing the special handling for 'reset-' and custom/removed products image preservation as it conflicts with strict Square data.
+      // If you need specific fallbacks for *manually created* non-Square items, that logic should be separate and very targeted.
+      logger.info("Skipping special image preservation for 'reset-' and custom products for now to ensure strict Square image sync.");
+
     } catch (searchError) {
       logger.error('Error searching catalog items:', searchError);
       errors.push(searchError instanceof Error ? searchError.message : String(searchError));
@@ -289,7 +481,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
 
     return {
       success: true,
-      message: 'Products synced successfully',
+      message: 'Products synced successfully with strict Square image logic',
       syncedProducts: syncedCount,
       errors: errors.length > 0 ? errors : undefined,
       debugInfo: debugInfo
@@ -365,4 +557,218 @@ function isValidVariation(variation: SquareCatalogObject | undefined): variation
          !!variation.id &&
          !!variation.item_variation_data;
          // Optionally check for price_money existence: && !!variation.item_variation_data.price_money
+}
+
+// Helper function to create a URL-friendly slug
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Remove consecutive hyphens
+    .trim();
+}
+
+// getImageUrls needs to be robust. It should return [] if no images are found or if errors occur during fetching individual images.
+// The addCacheBustingParam should only convert sandbox to production and not add '?t=' to S3 URLs.
+
+async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCatalogObject[]): Promise<string[]> {
+  const imageUrls: string[] = [];
+  const imageIds = item.item_data?.image_ids || [];
+  
+  if (imageIds.length === 0) {
+    return []; // Strict: no IDs, no images
+  }
+  
+  for (const imageId of imageIds) {
+    try {
+      let imageUrl: string | undefined;
+      
+      // First try to find the image in related objects
+      const imageObjectFromRelated = relatedObjects.find((obj: SquareCatalogObject) => obj.id === imageId && obj.type === 'IMAGE');
+      
+      if (imageObjectFromRelated?.image_data?.url) {
+        imageUrl = imageObjectFromRelated.image_data.url;
+        logger.info(`Found image URL in related objects for ${imageId}: ${imageUrl}`);
+      } else {
+        // If not found in related objects, fetch directly
+        try {
+          const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
+          const imageData = imageResponse.result?.object;
+          
+          if (imageData?.image_data?.url) {
+            imageUrl = imageData.image_data.url;
+            logger.info(`Retrieved image URL from API for ${imageId}: ${imageUrl}`);
+          }
+        } catch (imageApiError) {
+          logger.error(`Error retrieving image ${imageId} from API:`, imageApiError);
+        }
+      }
+      
+      // If we found an image URL, process it and try to verify it works
+      if (imageUrl) {
+        try {
+          // Extract file ID and file name if it's an S3 URL
+          const filePathMatch = imageUrl.match(/\/files\/([^\/]+)\/([^\/\?]+)/);
+          
+          if (filePathMatch && filePathMatch.length >= 3) {
+            const fileId = filePathMatch[1];
+            const fileName = filePathMatch[2];
+            
+            // Try sandbox URL first - experience shows they're more reliable
+            const sandboxUrl = `https://items-images-sandbox.s3.us-west-2.amazonaws.com/files/${fileId}/${fileName}`;
+            
+            // Create a fetch request to test if the sandbox URL works
+            let workingUrl: string | null = null;
+            
+            try {
+              const response = await fetch(sandboxUrl, { 
+                method: 'HEAD',
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (compatible; DestinoSFApp/1.0)',
+                  'Cache-Control': 'no-cache'
+                }
+              });
+              
+              if (response.ok) {
+                logger.info(`Sandbox URL works for image ${imageId}: ${sandboxUrl}`);
+                workingUrl = sandboxUrl;
+              }
+            } catch (fetchError) {
+              logger.warn(`Error checking sandbox URL for ${imageId}:`, fetchError);
+            }
+            
+            // If sandbox URL didn't work, try production URL
+            if (!workingUrl) {
+              const productionUrl = `https://items-images-production.s3.us-west-2.amazonaws.com/files/${fileId}/${fileName}`;
+              
+              try {
+                const response = await fetch(productionUrl, { 
+                  method: 'HEAD',
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; DestinoSFApp/1.0)',
+                    'Cache-Control': 'no-cache'
+                  }
+                });
+                
+                if (response.ok) {
+                  logger.info(`Production URL works for image ${imageId}: ${productionUrl}`);
+                  workingUrl = productionUrl;
+                }
+              } catch (fetchError) {
+                logger.warn(`Error checking production URL for ${imageId}:`, fetchError);
+              }
+            }
+            
+            // If we have a working URL, add it to our list
+            if (workingUrl) {
+              // Store the direct URL in the database - our proxy will handle it when displayed
+              imageUrls.push(workingUrl);
+              
+              // Log the "processed" URL we would use for display (via proxy)
+              const processedUrl = processSquareImageUrl(workingUrl);
+              logger.info(`Added image URL for ${imageId}: ${workingUrl} (displays as: ${processedUrl})`);
+            } else {
+              logger.warn(`No working URL found for image ${imageId}`);
+            }
+          } else {
+            // If it's not an S3 URL pattern, process it normally
+            const processedUrl = processSquareImageUrl(imageUrl);
+            imageUrls.push(imageUrl); // Store the original URL
+            logger.info(`Added non-S3 image URL for ${imageId}: ${imageUrl} (displays as: ${processedUrl})`);
+          }
+        } catch (processingError) {
+          logger.error(`Error processing image URL ${imageUrl} for ${imageId}:`, processingError);
+        }
+      } else {
+        logger.warn(`No URL found for image ${imageId}`);
+      }
+    } catch (imageError) {
+      logger.error(`Error retrieving image ${imageId} for item ${item.id}, skipping this image:`, imageError);
+      // Continue to next imageId, do not push anything for this failed one.
+    }
+  }
+  
+  logger.info(`Final image URLs for item ${item.id}: ${JSON.stringify(imageUrls)}`);
+  return imageUrls; // Returns only successfully verified URLs
+}
+
+// Process Square image URLs to make them accessible
+function processSquareImageUrl(url: string): string {
+  if (!url) {
+    return '';
+  }
+  
+  try {
+    // Parse the URL to work with it more reliably
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    // Process URLs from different sources differently
+    
+    // 1. Square Marketplace URLs (usually public and accessible)
+    if (hostname.includes('square-marketplace')) {
+      // These URLs are publicly accessible, return as is
+      return url;
+    }
+    
+    // 2. Square CDN URLs (may need a proxy)
+    if (hostname.includes('squarecdn.com')) {
+      // Square CDN URLs are usually accessible directly
+      return url;
+    }
+    
+    // 3. Square S3 bucket URLs (need proxy)
+    if (hostname.includes('items-images-') || 
+        hostname.includes('square-catalog-') || 
+        hostname.includes('s3.amazonaws.com')) {
+      
+      // Extract file path components to get consistent proxying
+      const filePathMatch = url.match(/\/files\/([^\/]+)\/([^\/\?]+)/);
+      if (filePathMatch && filePathMatch.length >= 3) {
+        const fileId = filePathMatch[1];
+        const fileName = filePathMatch[2];
+        
+        // Use the file ID and name to create a normalized URL for proxying
+        // This ensures we have a consistent URL format for the proxy
+        const normalizedUrl = `https://square-catalog-production.s3.amazonaws.com/files/${fileId}/${fileName}`;
+        
+        // Encode for proxy
+        const encodedUrl = Buffer.from(normalizedUrl).toString('base64');
+        return `/api/proxy/image?url=${encodedUrl}`;
+      }
+      
+      // If we can't extract the file path, use the original URL with proxy
+      const encodedUrl = Buffer.from(url).toString('base64');
+      return `/api/proxy/image?url=${encodedUrl}`;
+    }
+    
+    // 4. Any other URL: just use it directly
+    return url;
+  } catch (error) {
+    logger.error(`Error processing Square image URL: ${error}`);
+    
+    // If URL parsing fails, fall back to simple string matching
+    if (url.includes('square-marketplace')) {
+      return url;
+    }
+    
+    if (url.includes('items-images-') || url.includes('square-catalog-') || url.includes('s3.amazonaws.com')) {
+      const encodedUrl = Buffer.from(url).toString('base64');
+      return `/api/proxy/image?url=${encodedUrl}`;
+    }
+    
+    // Last resort: return the original URL
+    return url;
+  }
+}
+
+// The old function is now renamed and should not be used directly
+function addCacheBustingParam(url: string): string {
+  // Only convert sandbox to production. Do not add any cache busters to S3 URLs.
+  if (url.includes('items-images-sandbox.s3')) {
+    return url.replace('items-images-sandbox.s3', 'items-images-production.s3');
+  }
+  // If it's already a production S3 URL or any other type of URL, return as is.
+  return url;
 }

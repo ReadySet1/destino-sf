@@ -23,23 +23,39 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'cdn.sanity.io',
-        port: '',
-        pathname: '/images/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'items-images-production.s3.us-west-2.amazonaws.com',
-        port: '',
-        pathname: '/**',
+        hostname: '*.s3.us-west-2.amazonaws.com',
       },
       {
         protocol: 'https',
         hostname: 'items-images-sandbox.s3.us-west-2.amazonaws.com',
-        port: '',
-        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'items-images-production.s3.us-west-2.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.squarecdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'square-marketplace.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'square-marketplace-sandbox.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'square-catalog-production.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'square-catalog-sandbox.s3.amazonaws.com',
       },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 

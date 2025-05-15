@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#f4e9dc" />
+  <circle cx="150" cy="130" r="50" fill="#c4a381" />
+  <circle cx="150" cy="170" r="50" fill="#c4a381" />
+  <rect x="100" y="130" width="100" height="40" fill="#e5cbb0" />
+  <path d="M110,130 L110,170" stroke="#8c745b" stroke-width="2" />
+  <path d="M130,130 L130,170" stroke="#8c745b" stroke-width="2" />
+  <path d="M150,130 L150,170" stroke="#8c745b" stroke-width="2" />
+  <path d="M170,130 L170,170" stroke="#8c745b" stroke-width="2" />
+  <path d="M190,130 L190,170" stroke="#8c745b" stroke-width="2" />
+  <text x="150" y="240" font-family="Arial" font-size="16" text-anchor="middle" fill="#8c745b">Alfajores</text>
+</svg> 

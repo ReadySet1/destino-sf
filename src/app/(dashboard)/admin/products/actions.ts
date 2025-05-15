@@ -5,6 +5,8 @@ import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';
 import { slugify } from '@/lib/slug';
+import { redirect } from 'next/navigation';
+import { syncSquareProducts } from '@/lib/square/sync';
 
 export async function createProductAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -88,58 +90,66 @@ export async function createProductAction(formData: FormData) {
   }
 }
 
+/**
+ * Updates a product's category
+ */
 export async function updateProductCategory(formData: FormData) {
   const productId = formData.get('productId') as string;
   const categoryId = formData.get('categoryId') as string;
 
   if (!productId || !categoryId) {
-    throw new Error('Missing required fields');
+    return { success: false, message: 'Missing required fields' };
   }
 
   try {
-    // Update in PostgreSQL
-    const product = await prisma.product.update({
+    await prisma.product.update({
       where: { id: productId },
-      data: { categoryId },
-      include: { category: true }
+      data: { categoryId }
     });
 
-    // Update in Sanity - REMOVED
-    /*
-    const sanityProduct = await client.fetch(
-      `*[_type == "product" && squareId == $squareId][0]`,
-      { squareId: product.squareId }
-    );
-
-    if (sanityProduct?._id) {
-      await client.patch(sanityProduct._id)
-        .set({
-          category: {
-            _type: 'reference',
-            _ref: product.category.id
-          }
-        })
-        .commit();
-    }
-    */
-    logger.info(`Updated category for product "${product.name}" (ID: ${productId}) to "${product.category.name}" in database.`);
-
     revalidatePath('/admin/products');
-    
-    // Return the updated product data
-    return { 
-      success: true, 
-      product: {
-        id: product.id,
-        categoryId: product.categoryId,
-        category: {
-          id: product.category.id,
-          name: product.category.name
-        }
-      }
-    };
+    revalidatePath('/products');
+    revalidatePath('/products/category/[slug]');
+
+    return { success: true, message: 'Category updated successfully' };
   } catch (error) {
     console.error('Error updating product category:', error);
-    throw error;
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Failed to update category'
+    };
+  }
+}
+
+/**
+ * Manually triggers a product sync from Square
+ * Useful for debugging and fixing issues
+ */
+export async function manualSyncFromSquare() {
+  try {
+    logger.info('Manual sync from Square initiated');
+    
+    const result = await syncSquareProducts();
+    
+    logger.info('Manual sync complete:', result);
+    
+    revalidatePath('/admin/products');
+    revalidatePath('/products');
+    revalidatePath('/products/category/[slug]');
+    
+    return {
+      success: result.success,
+      message: result.message || (result.success ? 'Sync completed successfully' : 'Sync failed'),
+      syncedProducts: result.syncedProducts,
+      errors: result.errors || [],
+    };
+  } catch (error) {
+    logger.error('Error in manual sync:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An unknown error occurred during sync',
+      syncedProducts: 0,
+      errors: [error instanceof Error ? error.message : String(error)]
+    };
   }
 }

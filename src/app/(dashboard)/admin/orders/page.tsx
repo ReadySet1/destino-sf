@@ -4,8 +4,8 @@ import { formatDistance } from 'date-fns';
 import { OrderStatus } from '@prisma/client';
 import { formatPrice, formatDateTime, formatCurrency } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
-import { serializeObject } from '@/utils/serialization';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Define the shape of the resolved params
 type ResolvedParams = {
@@ -29,6 +29,52 @@ interface SerializedOrder {
   shippingCarrier: string | null;
 }
 
+// Safe conversion of Decimal to number
+function decimalToNumber(value: Decimal | number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  
+  // If it's already a number
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  
+  // If it's a Decimal
+  if (typeof value === 'object') {
+    try {
+      if (typeof value.toNumber === 'function') {
+        return value.toNumber();
+      }
+    } catch (e) {
+      console.error('Error converting Decimal to number:', e);
+    }
+  }
+  
+  // Fallback
+  return 0;
+}
+
+// Manual serialization for orders
+function manuallySerializeOrders(orders: any[]): SerializedOrder[] {
+  return orders.map(order => {
+    // Serialize items
+    const serializedItems = order.items?.map((item: any) => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: decimalToNumber(item.price)
+    })) || [];
+    
+    return {
+      id: order.id,
+      status: order.status,
+      customerName: order.customerName,
+      total: decimalToNumber(order.total),
+      items: serializedItems,
+      pickupTime: order.pickupTime ? new Date(order.pickupTime).toISOString() : null,
+      createdAt: order.createdAt.toISOString(),
+      trackingNumber: order.trackingNumber,
+      shippingCarrier: order.shippingCarrier
+    };
+  });
+}
+
 export default async function OrdersPage({ params }: { params: Promise<ResolvedParams> }) {
   await params; // We're not using the params, but we need to await the promise
 
@@ -44,8 +90,8 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
       },
     });
 
-    // Serialize the orders to handle Decimal values
-    const serializedOrders = serializeObject(orders) as SerializedOrder[];
+    // Manually serialize the orders to handle Decimal values
+    const serializedOrders = manuallySerializeOrders(orders);
     
     logger.info(`Found ${serializedOrders.length} orders for display`);
 
@@ -109,8 +155,8 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {serializedOrders.map((order) => (
-                  <tr key={order.id}>
+                {serializedOrders.map((order, index) => (
+                  <tr key={order.id || `order-${index}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {order.id ? `${order.id.substring(0, 8)}...` : 'N/A'}
                     </td>

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock } from 'lucide-react'; // Added missing icons
+import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock, UtensilsCrossed } from 'lucide-react'; // Added UtensilsCrossed icon
 import { MobileMenu } from './components/MobileMenu'; // Ensure path is correct
 
 // Authentication and authorization checks (Supabase, Prisma) MUST be performed
@@ -109,6 +109,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin/categories"
               label="Categories"
               icon={<Tag size={18} />}
+              currentPath={pathname}
+            />
+            <NavItem
+              href="/admin/catering"
+              label="Catering"
+              icon={<UtensilsCrossed size={18} />}
               currentPath={pathname}
             />
             <NavItem

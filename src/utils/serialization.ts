@@ -25,26 +25,28 @@ export const serializeDecimal = (value: any): number | null => {
     }
     
     // Try to use toNumber method if available (Prisma Decimal standard method)
-    if (typeof value === 'object' && value !== null && typeof value.toNumber === 'function') {
-      return value.toNumber();
-    }
-    
-    // Try to use valueOf method if available
-    if (typeof value === 'object' && value !== null && typeof value.valueOf === 'function') {
-      const valueOfResult = value.valueOf();
-      if (typeof valueOfResult === 'number') return valueOfResult;
-      if (typeof valueOfResult === 'string') {
-        const parsed = parseFloat(valueOfResult);
-        return isNaN(parsed) ? null : parsed;
+    if (typeof value === 'object' && value !== null) {
+      // Direct check for Decimal type
+      if (value instanceof Decimal) {
+        return value.toNumber();
       }
-    }
-    
-    // Fallback to toString and parse
-    if (typeof value === 'object' && value !== null && typeof value.toString === 'function') {
-      const stringVal = value.toString();
-      const parsed = parseFloat(stringVal);
-      if (!isNaN(parsed)) {
-        return parsed;
+      
+      // Access toString and valueOf directly from Prisma's Decimal
+      if (typeof value.toNumber === 'function') {
+        return value.toNumber();
+      }
+      
+      // Handle other Decimal-like objects that might have different APIs
+      if (typeof value.toString === 'function') {
+        const stringVal = value.toString();
+        if (stringVal && !isNaN(parseFloat(stringVal))) {
+          return parseFloat(stringVal);
+        }
+      }
+
+      // If the object has a value property that is a number (some ORMs do this)
+      if (typeof value.value === 'number') {
+        return value.value;
       }
     }
     
@@ -57,10 +59,10 @@ export const serializeDecimal = (value: any): number | null => {
     
     // If we got here, we couldn't convert it
     console.warn(`Failed to convert Decimal value: ${typeof value}`, value);
-    return null;
+    return 0; // Return 0 as fallback instead of null to avoid null errors
   } catch (e) {
     console.error("Error serializing Decimal:", e, "Value:", value);
-    return null; // Return null as fallback so we can identify the issue
+    return 0; // Return 0 as fallback instead of null
   }
 };
 
@@ -93,7 +95,6 @@ export const serializeObject = <T extends Record<string, any>>(obj: T): any => {
   console.log('serializeObject input type:', obj ? typeof obj : 'null/undefined');
   
   if (!obj || typeof obj !== 'object') {
-    console.log('Early return - not an object');
     return obj;
   }
   
@@ -108,50 +109,28 @@ export const serializeObject = <T extends Record<string, any>>(obj: T): any => {
   // Handle Decimal object directly
   if (isDecimal(obj)) {
     console.log('serializeObject processing direct Decimal object');
-    const serialized = serializeDecimal(obj);
-    if (serialized === null) {
-      console.warn('Failed to serialize Decimal object directly', obj);
-      // Fallback to a safe default of 0
-      return 0;
-    }
-    return serialized;
+    return serializeDecimal(obj) || 0; // Always return a number, default to 0
   }
   
   const serialized: Record<string, any> = {};
   
-  // List all keys for debugging
-  const objKeys = Object.keys(obj);
-  if (objKeys.includes('id') || objKeys.includes('status')) {
-    console.log(`serializeObject processing object with keys: ${objKeys.join(', ')}`);
-  }
-  
   for (const [key, value] of Object.entries(obj)) {
-    // Special handling for 'total' field for debugging
-    if (key === 'total' || key === 'price' || key === 'amount') {
-      console.log(`Processing ${key} field with value:`, value);
-    }
-    
     if (value === undefined) {
       serialized[key] = null; // Use null instead of undefined for serialization
       continue;
     }
     
     if (isDecimal(value)) {
+      // Critical fields should never be null
+      const criticalFields = ['total', 'price', 'amount', 'taxAmount', 'shippingCostCents'];
+      const shouldDefaultToZero = criticalFields.includes(key);
+      
       const serializedValue = serializeDecimal(value);
-      if (serializedValue === null && (key === 'total' || key === 'price' || key === 'amount')) {
-        console.warn(`Failed to serialize ${key} field:`, value);
-        // Default important fields to 0 instead of null
-        serialized[key] = 0;
-      } else {
-        serialized[key] = serializedValue;
-      }
+      serialized[key] = serializedValue !== null ? serializedValue : (shouldDefaultToZero ? 0 : null);
     } else if (typeof value === 'function') {
       // Skip functions, they can't be serialized
       continue;
     } else if (Array.isArray(value)) {
-      if (key === 'items') {
-        console.log(`Serializing items array with ${value.length} items`);
-      }
       serialized[key] = value.map(item => 
         typeof item === 'object' && item !== null ? serializeObject(item) : item
       );
@@ -163,15 +142,6 @@ export const serializeObject = <T extends Record<string, any>>(obj: T): any => {
       // Primitive value
       serialized[key] = value;
     }
-  }
-  
-  // Debug output for key properties specifically
-  if ('id' in obj) {
-    console.log(`Final serialized id: ${serialized.id}`);
-  }
-  
-  if ('total' in obj) {
-    console.log(`Final serialized total: ${serialized.total}`);
   }
   
   return serialized;

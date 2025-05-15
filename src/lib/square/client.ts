@@ -1,265 +1,83 @@
 // src/lib/square/client.ts
 
 import { logger } from '../../utils/logger';
-import https from 'https';
+import * as Square from 'square';
+import { directCatalogApi } from './catalog-api';
 
-// Get access token from environment
-const accessToken = process.env.SQUARE_ACCESS_TOKEN;
+// Determine the token to use based on environment variables
+const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
 
+// Select the appropriate token with better fallback logic
+let accessToken: string | undefined;
+let tokenSource: string;
+
+if (useSandbox) {
+  accessToken = process.env.SQUARE_SANDBOX_TOKEN;
+  tokenSource = 'SQUARE_SANDBOX_TOKEN';
+} else if (process.env.NODE_ENV === 'production') {
+  // In production, prioritize SQUARE_PRODUCTION_TOKEN then fall back to SQUARE_ACCESS_TOKEN
+  accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
+  tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
+} else {
+  // In development (but not sandbox), use SQUARE_ACCESS_TOKEN
+  accessToken = process.env.SQUARE_ACCESS_TOKEN;
+  tokenSource = 'SQUARE_ACCESS_TOKEN';
+}
+
+// Validate token is available
 if (!accessToken) {
-  logger.error("Square access token is not configured in environment variables.");
-  throw new Error("Missing Square Access Token");
+  logger.error(`Square access token not configured for ${tokenSource}.`);
+  logger.error('Available tokens:', {
+    SQUARE_SANDBOX_TOKEN: !!process.env.SQUARE_SANDBOX_TOKEN,
+    SQUARE_PRODUCTION_TOKEN: !!process.env.SQUARE_PRODUCTION_TOKEN,
+    SQUARE_ACCESS_TOKEN: !!process.env.SQUARE_ACCESS_TOKEN,
+  });
+  throw new Error(`Missing Square Access Token for ${tokenSource}`);
 }
 
 // Determine the API host based on environment
-const apiHost = process.env.NODE_ENV === 'production'
-  ? 'connect.squareup.com'
-  : 'connect.squareupsandbox.com';
+const apiHost = useSandbox
+  ? 'sandbox.squareup.com'
+  : 'connect.squareup.com';
 
-// Create a helper function for HTTPS requests
-function httpsRequest(options: any, data?: any): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk.toString());
-      res.on('end', () => {
-        if (res.statusCode! >= 200 && res.statusCode! < 300) {
-          try {
-            resolve(JSON.parse(body));
-          } catch (error) {
-            reject(new Error(`Failed to parse response: ${error}`));
-          }
-        } else {
-          reject(new Error(`HTTP Error: ${res.statusCode} - ${body}`));
-        }
-      });
-    });
-    
-    req.on('error', (error) => {
-      reject(error);
-    });
-    
-    if (data) {
-      req.write(JSON.stringify(data));
-    }
-    
-    req.end();
+logger.info(`Using Square API at ${apiHost} in ${useSandbox ? 'SANDBOX' : process.env.NODE_ENV} mode`);
+
+// Initialize the Square client based on Square SDK v42.1.0
+let squareClient: any;
+
+try {
+  // Initialize using the SDK's preferred format
+  squareClient = new Square.SquareClient({
+    // Use 'token' not 'accessToken' as it seems that's what our SDK version expects
+    token: accessToken,
+    environment: useSandbox ? 'sandbox' : 'production'
   });
+  
+  // Validate client was created properly
+  if (!squareClient) {
+    throw new Error("Square client initialization failed");
+  }
+} catch (error) {
+  logger.error("Error initializing Square client:", error);
+  throw new Error("Failed to initialize Square client");
 }
 
-// Define the Square client with the necessary API services
-const squareClient = {
-  // Locations API
-  locationsApi: {
-    listLocations: async () => {
-      logger.info('Calling Square locations API via HTTPS');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/locations',
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options);
-      return { result: data };
-    }
-  },
-  
-  // Catalog API
-  catalogApi: {
-    searchCatalogObjects: async (request: any) => {
-      logger.info('Calling Square catalog API via HTTPS');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/catalog/search',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options, request);
-      return { result: data };
-    },
-    
-    listCatalog: async (options?: any, types?: string) => {
-      logger.info('Calling Square catalog list API via HTTPS');
-      let path = '/v2/catalog/list';
-      if (types) {
-        path += `?types=${types}`;
-      }
-      
-      const requestOptions = {
-        hostname: apiHost,
-        path,
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(requestOptions);
-      return { result: data };
-    },
-    
-    upsertCatalogObject: async (request: any) => {
-      logger.info('Calling Square catalog upsert API via HTTPS');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/catalog/object',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options, request);
-      return { result: data };
-    },
-    
-    retrieveCatalogObject: async (objectId: string) => {
-      logger.info(`Calling Square catalog retrieve API for object ${objectId}`);
-      const options = {
-        hostname: apiHost,
-        path: `/v2/catalog/object/${objectId}`,
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options);
-      return { result: data };
-    }
-  },
-  
-  // Orders API
-  ordersApi: {
-    retrieveOrder: async (orderId: string) => {
-      logger.info(`Retrieving order ${orderId}`);
-      const options = {
-        hostname: apiHost,
-        path: `/v2/orders/${orderId}`,
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options);
-      return { result: data };
-    },
-    
-    searchOrders: async (request: any) => {
-      logger.info('Searching orders');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/orders/search',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options, request);
-      return { result: data };
-    },
-    
-    createOrder: async (request: any) => {
-      logger.info('Creating order');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/orders',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options, request);
-      return { result: data };
-    }
-  },
-  
-  // Payments API
-  paymentsApi: {
-    listPayments: async (params: any = {}) => {
-      logger.info('Listing payments');
-      let queryParams = Object.entries(params)
-        .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
-        .join('&');
-      
-      const path = `/v2/payments${queryParams ? `?${queryParams}` : ''}`;
-      
-      const options = {
-        hostname: apiHost,
-        path,
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options);
-      return { result: data };
-    },
-    
-    retrievePayment: async (paymentId: string) => {
-      logger.info(`Retrieving payment ${paymentId}`);
-      const options = {
-        hostname: apiHost,
-        path: `/v2/payments/${paymentId}`,
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options);
-      return { result: data };
-    },
-    
-    getPayment: async (paymentId: string) => {
-      logger.info(`Getting payment ${paymentId} (alias for retrievePayment)`);
-      return squareClient.paymentsApi.retrievePayment(paymentId);
-    },
-    
-    createPayment: async (request: any) => {
-      logger.info('Creating payment');
-      const options = {
-        hostname: apiHost,
-        path: '/v2/payments',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Square-Version': '2023-12-13',
-          'Content-Type': 'application/json'
-        }
-      };
-      const data = await httpsRequest(options, request);
-      return { result: data };
-    }
-  }
-};
+// Inject our direct API implementations if SDK properties are missing
+if (!squareClient.catalogApi) {
+  logger.info("Adding direct catalog API implementation to Square client");
+  squareClient.catalogApi = directCatalogApi;
+}
 
-// Log available Square client information
-logger.info('Direct Square client initialized with HTTPS');
-logger.info('Square client domain:', apiHost);
-logger.info('Square client properties:', Object.keys(squareClient));
+// Check for locations API
+if (!squareClient.locationsApi || !squareClient.locationsApi.listLocations) {
+  logger.warn("Square locations API not available or listLocations method not found");
+  // If needed, could add implementation here similar to catalogApi
+}
 
-// Export the Square client
+logger.info("Square client initialized with:", {
+  hasDirectCatalogApi: !!squareClient.catalogApi,
+  hasLocationsApi: !!squareClient.locationsApi,
+  squareClientKeys: Object.keys(squareClient)
+});
+
 export { squareClient };
-export const client = squareClient;
-export const { locationsApi, catalogApi, ordersApi, paymentsApi } = squareClient;
