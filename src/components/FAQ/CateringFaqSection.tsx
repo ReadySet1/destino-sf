@@ -50,13 +50,14 @@ const CateringFaqSection: React.FC = () => {
     },
   ];
 
-  // Animation variants
+  // Enhanced animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        delayChildren: 0.15,
+        staggerChildren: 0.12,
       },
     },
   };
@@ -75,14 +76,70 @@ const CateringFaqSection: React.FC = () => {
   };
 
   const contentVariants = {
-    hidden: { opacity: 0, height: 0 },
+    hidden: {
+      opacity: 0,
+      height: 0,
+      translateY: -10,
+    },
     visible: {
       opacity: 1,
       height: 'auto',
+      translateY: 0,
       transition: {
-        duration: 0.3,
-        ease: 'easeInOut',
+        height: {
+          duration: 0.4,
+          ease: [0.04, 0.62, 0.23, 0.98],
+        },
+        opacity: {
+          duration: 0.25,
+          delay: 0.1,
+        },
+        translateY: {
+          duration: 0.3,
+          ease: 'easeOut',
+        },
       },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      translateY: -10,
+      transition: {
+        height: {
+          duration: 0.3,
+          ease: [0.04, 0.62, 0.23, 0.98],
+        },
+        opacity: {
+          duration: 0.2,
+        },
+        translateY: {
+          duration: 0.25,
+        },
+      },
+    },
+  };
+
+  // Button hover animation effect
+  const buttonHoverVariants = {
+    rest: {
+      backgroundColor: 'rgba(255, 255, 255, 1)',
+      transition: { duration: 0.2, ease: 'easeInOut' },
+    },
+    hover: {
+      backgroundColor: 'rgba(249, 250, 251, 1)',
+      transition: { duration: 0.2, ease: 'easeInOut' },
+    },
+  };
+
+  // Improved arrow animation
+  const arrowVariants = {
+    up: {
+      rotate: 180,
+      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] },
+    },
+    down: {
+      rotate: 0,
+      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] },
     },
   };
 
@@ -91,7 +148,10 @@ const CateringFaqSection: React.FC = () => {
       <motion.h2
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{
+          duration: 0.6,
+          ease: [0.22, 1, 0.36, 1],
+        }}
         className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 md:mb-8"
       >
         Catering: Frequently Asked Questions
@@ -106,20 +166,32 @@ const CateringFaqSection: React.FC = () => {
         {faqItems.map((faq, index) => (
           <motion.div
             key={index}
-            className="border border-gray-200 rounded-lg overflow-hidden"
+            className="border border-gray-200 rounded-lg overflow-hidden shadow-sm"
             variants={itemVariants}
+            whileHover={{
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+              transition: { duration: 0.3 },
+            }}
           >
-            <button
+            <motion.button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-4 text-left bg-white hover:bg-gray-50 transition-colors"
+              className="flex justify-between items-center w-full p-4 text-left bg-white transition-colors"
+              variants={buttonHoverVariants}
+              initial="rest"
+              whileHover="hover"
+              whileTap={{ scale: 0.995 }}
             >
-              <h3 className="text-xl font-medium text-gray-800">
+              <motion.h3
+                className="text-xl font-medium text-gray-800"
+                initial={{ opacity: 0.95 }}
+                whileHover={{ opacity: 1 }}
+              >
                 {index + 1}. {faq.question}
-              </h3>
+              </motion.h3>
               <motion.svg
-                animate={{ rotate: openItems.includes(index) ? 180 : 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="w-5 h-5 text-gray-500"
+                variants={arrowVariants}
+                animate={openItems.includes(index) ? 'up' : 'down'}
+                className="w-5 h-5 text-gray-500 flex-shrink-0 ml-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -132,22 +204,34 @@ const CateringFaqSection: React.FC = () => {
                   d="M19 9l-7 7-7-7"
                 />
               </motion.svg>
-            </button>
+            </motion.button>
 
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {openItems.includes(index) && (
                 <motion.div
+                  key={`content-${index}`}
                   initial="hidden"
                   animate="visible"
-                  exit="hidden"
+                  exit="exit"
                   variants={contentVariants}
                   className="bg-gray-50 border-t border-gray-200 overflow-hidden"
                 >
                   <div className="p-4">
                     <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3, delay: 0.1 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          delay: 0.15,
+                          duration: 0.35,
+                          ease: 'easeOut',
+                        },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        transition: { duration: 0.2 },
+                      }}
                       className="text-gray-600"
                     >
                       {faq.answer}
