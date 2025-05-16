@@ -78,7 +78,10 @@ const MenuFaqSection: React.FC = () => {
 
   const openMap = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsMapOpen(true);
+    window.open(
+      'https://www.google.com/maps/@37.7710103,-122.4773772,11.14z/data=!4m3!11m2!2sokgqyFdyQTKCGpP7P4zogg!3e3?entry=ttu&g_ep=EgoyMDI1MDUxMy4xIKXMDSoASAFQAw%3D%3D',
+      '_blank'
+    );
   };
 
   // FAQ data

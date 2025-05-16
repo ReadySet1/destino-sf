@@ -31,7 +31,7 @@ export default async function Home() {
       {/* </div> */}
       {/* Original comment about adding more sections can be kept or removed */}
       {/* <Add more sections here as needed /> */}
-      <GoogleMaps apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} />
+      {/* <GoogleMaps apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} /> */}
     </main>
   );
 }

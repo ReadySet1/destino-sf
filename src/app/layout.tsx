@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
-  themeColor: '#004225', // ¡Mueve esta línea aquí!
+  themeColor: '#004225',
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
-    // 'theme-color': '#004225', ¡Elimina esta línea!
+    // 'theme-color': '#004225',
     'og:image': `${baseUrl}/opengraph-image.jpg`,
     'og:image:secure_url': `${baseUrl}/opengraph-image.jpg`,
     'og:image:width': '1200',
