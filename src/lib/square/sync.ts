@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 // import { createSanityProduct } from '@/lib/sanity/createProduct'; // Removed Sanity import
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
+import { CateringItemCategory } from '@prisma/client';
 
 // Import types from Prisma
 import type { Prisma } from '@prisma/client';
@@ -1054,11 +1055,29 @@ export async function syncCateringItemsWithSquare(): Promise<{ updated: number; 
     
     // Get all catering categories from Square
     const catalogApi = squareClient.catalogApi;
-    let cateringCategories: SquareCatalogObject[] = [];
+    if (!catalogApi) {
+      logger.error('Square catalog API not available');
+      throw new Error('Square catalog API not available');
+    }
     
-    // Fetch all categories
-    const categoriesResponse = await catalogApi.listCatalog(undefined, 'CATEGORY');
-    const allCategories = categoriesResponse.result.objects || [];
+    // Log available methods on the catalogApi object
+    logger.info('Available catalog API methods:', Object.keys(catalogApi));
+    
+    let cateringCategories: SquareCatalogObject[] = [];
+    let allCategories: SquareCatalogObject[] = [];
+    
+    // Use searchCatalogObjects instead of listCatalog
+    try {
+      logger.info('Fetching categories using searchCatalogObjects...');
+      const searchResponse = await catalogApi.searchCatalogObjects({
+        object_types: ['CATEGORY']
+      });
+      allCategories = searchResponse.result.objects || [];
+      logger.info(`Retrieved ${allCategories.length} categories using searchCatalogObjects`);
+    } catch (searchError) {
+      logger.error('Failed to retrieve categories:', searchError);
+      throw new Error('Failed to retrieve categories from Square');
+    }
     
     // Filter to only catering categories
     cateringCategories = allCategories.filter((cat: SquareCatalogObject) => {
@@ -1075,9 +1094,20 @@ export async function syncCateringItemsWithSquare(): Promise<{ updated: number; 
     
     logger.info(`Found ${cateringItems.length} active catering items in our database`);
     
-    // Get all products from Square catalog
-    const productsResponse = await catalogApi.listCatalog(undefined, 'ITEM');
-    const allProducts = productsResponse.result.objects || [];
+    // Get all products from Square catalog using searchCatalogObjects
+    let allProducts: SquareCatalogObject[] = [];
+    
+    try {
+      logger.info('Fetching products using searchCatalogObjects...');
+      const searchResponse = await catalogApi.searchCatalogObjects({
+        object_types: ['ITEM']
+      });
+      allProducts = searchResponse.result.objects || [];
+      logger.info(`Retrieved ${allProducts.length} products using searchCatalogObjects`);
+    } catch (searchError) {
+      logger.error('Failed to retrieve products:', searchError);
+      throw new Error('Failed to retrieve products from Square');
+    }
     
     // For each catering category, find products and update our catering items
     for (const category of cateringCategories) {
@@ -1129,14 +1159,26 @@ export async function syncCateringItemsWithSquare(): Promise<{ updated: number; 
             
             // Use raw SQL to update catering items to avoid Prisma schema issues
             // This handles both the case when the schema has the new fields or not
-            await prisma.$executeRaw`
-              UPDATE "CateringItem"
-              SET
-                "updatedAt" = NOW()
-                ${categoryName ? `, "squareCategory" = ${categoryName}` : ''}
-                ${product.id ? `, "squareProductId" = ${product.id}` : ''}
-              WHERE "id" = ${item.id}
-            `;
+            let updateQuery = `UPDATE "CateringItem" SET "updatedAt" = NOW()`;
+            const params: any[] = [];
+            
+            // Add fields conditionally with proper parameter binding
+            if (categoryName) {
+              params.push(categoryName);
+              updateQuery += `, "squareCategory" = $${params.length}`;
+            }
+            
+            if (product.id) {
+              params.push(product.id);
+              updateQuery += `, "squareProductId" = $${params.length}`;
+            }
+            
+            // Add the where clause with explicit UUID casting
+            params.push(item.id);
+            updateQuery += ` WHERE "id"::text = $${params.length}`;
+            
+            // Execute the raw query with parameters
+            await prisma.$executeRawUnsafe(updateQuery, ...params);
             
             logger.info(`Successfully updated catering item ${item.name} with Square product ID ${product.id}`);
             
@@ -1146,6 +1188,100 @@ export async function syncCateringItemsWithSquare(): Promise<{ updated: number; 
             logger.error(`Error updating catering item ${item.id}:`, error);
             result.errors++;
           }
+        }
+      }
+    }
+    
+    // If we haven't found any catering items but have catering categories, 
+    // let's try to create items for the catering products we found
+    if (result.updated === 0 && cateringCategories.length > 0) {
+      logger.info('No existing catering items were updated. Attempting to create new catering items from Square products...');
+      
+      // Get all categories we consider catering categories
+      const cateringCategoryIds = cateringCategories.map(cat => cat.id);
+      
+      // Find all products in catering categories
+      const cateringProducts = allProducts.filter((product: SquareCatalogObject) => {
+        const productCategoryIds = product.item_data?.category_id 
+          ? [product.item_data.category_id]
+          : product.item_data?.categories?.map(c => c.id) || [];
+        
+        return productCategoryIds.some(id => cateringCategoryIds.includes(id));
+      });
+      
+      logger.info(`Found ${cateringProducts.length} products in catering categories to potentially create as new items`);
+      
+      // Create new catering items from products in catering categories
+      for (const product of cateringProducts) {
+        try {
+          const productName = product.item_data?.name || '';
+          if (!productName) continue;
+          
+          // Skip if we already have an item with this name
+          const existingItem = cateringItems.find(item => 
+            item.name.toLowerCase() === productName.toLowerCase()
+          );
+          
+          if (existingItem) {
+            logger.info(`Skipping creation for ${productName} as it already exists`);
+            continue;
+          }
+          
+          // Get category of this product
+          const productCategoryId = product.item_data?.category_id || 
+                                  (product.item_data?.categories && product.item_data.categories.length > 0 
+                                    ? product.item_data.categories[0].id 
+                                    : null);
+          
+          if (!productCategoryId) {
+            logger.warn(`No category found for product ${productName}, skipping creation`);
+            continue;
+          }
+          
+          const category = cateringCategories.find(cat => cat.id === productCategoryId);
+          const categoryName = category?.category_data?.name || 'UNKNOWN_CATEGORY';
+          
+          // Determine price from first variation
+          let price = 0;
+          if (product.item_data?.variations && product.item_data.variations.length > 0) {
+            const variation = product.item_data.variations[0];
+            if (variation.item_variation_data?.price_money?.amount) {
+              price = Number(variation.item_variation_data.price_money.amount) / 100;
+            }
+          }
+          
+          // Determine category enum value based on name
+          let categoryEnum = 'STARTER' as CateringItemCategory; // Default
+          if (categoryName.includes('ENTREE')) {
+            categoryEnum = 'ENTREE' as CateringItemCategory;
+          } else if (categoryName.includes('SIDE')) {
+            categoryEnum = 'SIDE' as CateringItemCategory;
+          } else if (categoryName.includes('DESSERT')) {
+            categoryEnum = 'DESSERT' as CateringItemCategory;
+          } else if (categoryName.includes('SALAD')) {
+            categoryEnum = 'SALAD' as CateringItemCategory; 
+          } else if (categoryName.includes('BEVERAGE')) {
+            categoryEnum = 'BEVERAGE' as CateringItemCategory;
+          }
+          
+          // Create new catering item
+          await prisma.cateringItem.create({
+            data: {
+              name: productName,
+              description: product.item_data?.description || null,
+              price: new Decimal(price),
+              category: categoryEnum,
+              isActive: true,
+              squareCategory: categoryName,
+              squareProductId: product.id
+            }
+          });
+          
+          logger.info(`Created new catering item ${productName} with Square category ${categoryName}`);
+          result.updated++;
+        } catch (error) {
+          logger.error(`Error creating catering item:`, error);
+          result.errors++;
         }
       }
     }

@@ -5,10 +5,12 @@ import { PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CateringPackage, CateringItem, CateringItemCategory, CateringPackageType, SQUARE_CATEGORY_MAPPING, getItemsForTab } from '@/types/catering';
+import { getCateringPackages, getCateringItems } from '@/actions/catering';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export const dynamic = 'force-dynamic';
 
-// Mock data for development until database migration is complete
+// Mock data for development or when database tables are not yet available
 const mockPackages: CateringPackage[] = [
   {
     id: '1',
@@ -132,13 +134,33 @@ function groupItemsBySquareCategory(items: CateringItem[]): Record<string, Cater
 }
 
 const AdminCateringPage = async () => {
-  // In production, this would fetch from the database
-  // const packages = await getCateringPackages();
-  // const items = await getCateringItems();
-  
-  // Using mock data for development
-  const packages = mockPackages;
-  const items = mockItems;
+  // Try to fetch data from the database, fallback to mock data if tables don't exist yet
+  let packages: CateringPackage[] = [];
+  let items: CateringItem[] = [];
+  let useDbData = true;
+  let errorMessage = '';
+
+  try {
+    // Attempt to fetch from the database
+    packages = await getCateringPackages();
+    items = await getCateringItems();
+  } catch (error) {
+    console.error('Error fetching catering data:', error);
+    useDbData = false;
+    
+    // Check for specific Prisma errors
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2021') {
+        errorMessage = 'Catering tables do not exist yet in the database. Using mock data instead.';
+      }
+    } else {
+      errorMessage = `Failed to fetch catering data: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    
+    // Fallback to mock data
+    packages = mockPackages;
+    items = mockItems;
+  }
 
   // Tabs que queremos mostrar
   const tabs = ['appetizers', 'buffet', 'lunch', 'lunch-packets'];
@@ -147,36 +169,37 @@ const AdminCateringPage = async () => {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Catering Management</h1>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/admin/catering/packages/new">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Package
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/catering/items/new">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Item
-            </Link>
-          </Button>
-        </div>
       </div>
 
+      {!useDbData && errorMessage && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 mb-6 rounded">
+          <p className="font-bold">Note:</p>
+          <p>{errorMessage}</p>
+        </div>
+      )}
+
       <Tabs defaultValue="appetizers" className="w-full">
-        <TabsList className="w-full max-w-md mx-auto grid grid-cols-4 mb-6">
-          <TabsTrigger value="appetizers">Appetizers</TabsTrigger>
-          <TabsTrigger value="buffet">Buffet</TabsTrigger>
-          <TabsTrigger value="lunch">Lunch</TabsTrigger>
-          <TabsTrigger value="lunch-packets">Lunch Packets</TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="appetizers">
+            Appetizers
+          </TabsTrigger>
+          <TabsTrigger value="buffet">
+            Buffet
+          </TabsTrigger>
+          <TabsTrigger value="lunch">
+            Lunch
+          </TabsTrigger>
+          <TabsTrigger value="lunch-packets">
+            Lunch Packets
+          </TabsTrigger>
         </TabsList>
 
         {tabs.map(tab => (
-          <TabsContent key={tab} value={tab}>
+          <TabsContent key={tab} value={tab} className="mt-4">
             <div className="space-y-8">
               {tab === 'lunch-packets' ? (
                 <section>
-                  <h2 className="text-2xl font-bold mb-4">Lunch Packets</h2>
+                  <h2 className="text-2xl font-bold mb-4 uppercase tracking-wide">Lunch Packets</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {packages.filter(pkg => SQUARE_CATEGORY_MAPPING[pkg.squareCategory || ''] === 'lunch-packets').map((pkg) => (
                       <PackageCard key={pkg.id} package={pkg} />
@@ -190,7 +213,7 @@ const AdminCateringPage = async () => {
                 // Para los otros tabs, agrupamos por categoría de Square
                 Object.entries(groupItemsBySquareCategory(getItemsForTab(items, tab))).map(([category, categoryItems]) => (
                   <section key={category}>
-                    <h2 className="text-2xl font-bold mb-4">{category}</h2>
+                    <h2 className="text-2xl font-bold mb-4 uppercase tracking-wide">{category.replace('CATERING- ', '')}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {categoryItems.map((item) => (
                         <ItemCard key={item.id} item={item} />
@@ -221,8 +244,8 @@ const ItemCard = ({ item }: { item: CateringItem }) => (
     <CardHeader className="pb-2">
       <div className="flex justify-between items-start">
         <div>
-          <CardTitle>{item.name}</CardTitle>
-          <CardDescription>{formatCategoryName(item.category)}</CardDescription>
+          <CardTitle className="capitalize">{item.name}</CardTitle>
+          <CardDescription className="text-xs uppercase tracking-wider">{formatCategoryName(item.category)}</CardDescription>
         </div>
         <div className="text-xl font-bold">${item.price.toFixed(2)}</div>
       </div>
@@ -231,27 +254,20 @@ const ItemCard = ({ item }: { item: CateringItem }) => (
       <p className="text-sm text-gray-500 mb-4">{item.description}</p>
       <div className="flex flex-wrap gap-1 mb-4">
         {item.isVegetarian && (
-          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
             Vegetarian
           </span>
         )}
         {item.isVegan && (
-          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
             Vegan
           </span>
         )}
         {item.isGlutenFree && (
-          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
             Gluten-Free
           </span>
         )}
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/admin/catering/items/${item.id}`}>
-            Edit
-          </Link>
-        </Button>
       </div>
     </CardContent>
   </Card>
@@ -262,8 +278,8 @@ const PackageCard = ({ package: pkg }: { package: CateringPackage }) => (
     <CardHeader className="pb-2">
       <div className="flex justify-between items-start">
         <div>
-          <CardTitle>{pkg.name}</CardTitle>
-          <CardDescription>{pkg.type}</CardDescription>
+          <CardTitle className="capitalize">{pkg.name}</CardTitle>
+          <CardDescription className="text-xs uppercase tracking-wider">{pkg.type}</CardDescription>
         </div>
         <div className="text-xl font-bold">${pkg.pricePerPerson.toFixed(2)}/person</div>
       </div>
@@ -274,18 +290,11 @@ const PackageCard = ({ package: pkg }: { package: CateringPackage }) => (
         {pkg.dietaryOptions.map((option, index) => (
           <span 
             key={index} 
-            className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+            className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
           >
             {option}
           </span>
         ))}
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/admin/catering/packages/${pkg.id}`}>
-            Edit
-          </Link>
-        </Button>
       </div>
     </CardContent>
   </Card>

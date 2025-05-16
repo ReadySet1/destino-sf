@@ -186,6 +186,63 @@ export async function searchCatalogObjects(requestBody: any) {
 }
 
 /**
+ * Direct implementation of Square's listCatalog API
+ * This is needed for syncCateringItemsWithSquare function
+ */
+export async function listCatalog(cursor?: string, objectTypes?: string) {
+  // Refresh config for each request
+  squareConfig = getSquareConfig();
+  
+  if (!squareConfig.accessToken) {
+    throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
+  }
+  
+  logger.info(`Listing catalog objects on ${squareConfig.apiHost} with objectTypes: ${objectTypes || 'all'}`);
+  
+  let path = '/v2/catalog/list';
+  let params = [];
+  
+  if (cursor) {
+    params.push(`cursor=${encodeURIComponent(cursor)}`);
+  }
+  
+  if (objectTypes) {
+    params.push(`types=${encodeURIComponent(objectTypes)}`);
+  }
+  
+  if (params.length > 0) {
+    path += `?${params.join('&')}`;
+  }
+  
+  const options = {
+    hostname: squareConfig.apiHost,
+    path,
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      'Square-Version': '2023-12-13',
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store'
+    }
+  };
+  
+  try {
+    const response = await httpsRequest(options);
+    
+    // Format the response to match Square SDK structure
+    return {
+      result: {
+        objects: response.objects || [],
+        cursor: response.cursor
+      }
+    };
+  } catch (error) {
+    logger.error('Error listing catalog objects:', error);
+    throw error;
+  }
+}
+
+/**
  * Helper function to test API connectivity
  */
 export async function testApiConnection() {
@@ -229,5 +286,6 @@ export async function testApiConnection() {
 export const directCatalogApi = {
   retrieveCatalogObject,
   searchCatalogObjects,
+  listCatalog,
   testConnection: testApiConnection
 }; 

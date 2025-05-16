@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { createCategoryAction, getCategories } from './actions';
+import { getCategories } from './actions';
 import ToasterClient from '@/components/Toaster';
-import CategoryForm from '@/components/CategoryForm';
 import DeleteCategoryForm from './DeleteCategoryForm';
 
 export default async function CategoriesPage() {
@@ -115,9 +114,6 @@ export default async function CategoriesPage() {
           </div>
         )}
       </div>
-
-      {/* CategoryForm now handles its own action via useActionState */}
-      <CategoryForm />
     </div>
   );
 }

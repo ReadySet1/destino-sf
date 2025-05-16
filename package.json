@@ -49,6 +49,7 @@
     "@sanity/image-url": "1",
     "@sanity/vision": "3",
     "@square/web-sdk": "^2.1.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@t3-oss/env-core": "^0.12.0",

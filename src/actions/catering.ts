@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 /**
  * Fetches all active catering packages with their ratings
@@ -30,7 +31,16 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
     })) as unknown as CateringPackage[];
   } catch (error) {
     console.error('Error fetching catering packages:', error);
-    throw new Error('Failed to fetch catering packages');
+    
+    // More specific error handling
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2021') {
+        // Database table doesn't exist yet
+        throw new Error(`Catering package table does not exist. Error code: ${error.code}`);
+      }
+    }
+    
+    throw error; // Re-throw the error to be handled by the calling component
   }
 }
 
@@ -70,7 +80,16 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
     } as unknown as CateringPackage;
   } catch (error) {
     console.error(`Error fetching catering package with ID ${packageId}:`, error);
-    throw new Error(`Failed to fetch catering package with ID ${packageId}`);
+    
+    // More specific error handling
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2021') {
+        // Database table doesn't exist yet
+        throw new Error(`Catering package table does not exist. Error code: ${error.code}`);
+      }
+    }
+    
+    throw error; // Re-throw the error to be handled by the calling component
   }
 }
 
@@ -94,7 +113,16 @@ export async function getCateringItems(): Promise<CateringItem[]> {
     })) as unknown as CateringItem[];
   } catch (error) {
     console.error('Error fetching catering items:', error);
-    throw new Error('Failed to fetch catering items');
+    
+    // More specific error handling
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2021') {
+        // Database table doesn't exist yet
+        throw new Error(`Catering items table does not exist. Error code: ${error.code}`);
+      }
+    }
+    
+    throw error; // Re-throw the error to be handled by the calling component
   }
 }
 
@@ -429,6 +457,7 @@ const CateringOrderSchema = z.object({
   }),
   items: z.array(CateringOrderItemSchema),
   totalAmount: z.number().positive(),
+  paymentMethod: z.enum(['SQUARE', 'VENMO', 'CASH']).default('SQUARE'),
 });
 
 export type ServerActionResult<T = unknown> = Promise<
@@ -443,9 +472,9 @@ export async function createCateringOrderAndProcessPayment(
   formData: z.infer<typeof CateringOrderSchema>
 ): Promise<ServerActionResult<{ orderId: string; checkoutUrl?: string }>> {
   try {
-    const { customerInfo, eventDetails, items, totalAmount } = formData;
+    const { customerInfo, eventDetails, items, totalAmount, paymentMethod } = formData;
     
-    console.log('Creating catering order with Square payment processing...');
+    console.log(`Creating catering order with ${paymentMethod} payment method...`);
     
     // 1. Create the catering order in our database
     const cateringOrder = await db.cateringOrder.create({
@@ -458,9 +487,9 @@ export async function createCateringOrderAndProcessPayment(
         numberOfPeople: eventDetails.numberOfPeople,
         specialRequests: eventDetails.specialRequests || undefined,
         totalAmount: totalAmount,
-        status: CateringStatus.PENDING,
-        paymentStatus: PaymentStatus.PENDING,
-        paymentMethod: PaymentMethod.SQUARE,
+        status: paymentMethod === 'CASH' ? CateringStatus.CONFIRMED : CateringStatus.PENDING,
+        paymentStatus: paymentMethod === 'CASH' ? PaymentStatus.PENDING : PaymentStatus.PENDING,
+        paymentMethod: paymentMethod as PaymentMethod,
         items: {
           create: items.map(item => ({
             itemType: item.itemType,
@@ -477,6 +506,20 @@ export async function createCateringOrderAndProcessPayment(
     
     console.log(`Catering order created with ID: ${cateringOrder.id}`);
     
+    // For cash payments, don't create a Square payment link
+    if (paymentMethod === 'CASH') {
+      revalidatePath('/catering');
+      revalidatePath('/admin/catering/orders');
+      
+      return {
+        success: true,
+        data: {
+          orderId: cateringOrder.id
+        }
+      };
+    }
+    
+    // Only proceed with Square payment processing for SQUARE payment method
     // 2. Get Square configuration
     const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
     const accessToken = squareEnv === 'sandbox' 
