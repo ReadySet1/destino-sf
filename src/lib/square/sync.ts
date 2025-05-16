@@ -16,7 +16,11 @@ interface SquareCatalogObject {
   item_data?: {
     name: string;
     description?: string | null;
-    category_id?: string;
+    category_id?: string; // Legacy field, kept for backward compatibility
+    categories?: Array<{
+      id: string;
+      ordinal?: number;
+    }>;
     variations?: SquareCatalogObject[];
     image_ids?: string[];
   };
@@ -30,6 +34,9 @@ interface SquareCatalogObject {
   image_data?: {
     url?: string;
     caption?: string;
+  };
+  category_data?: {
+    name: string;
   };
 }
 
@@ -83,20 +90,181 @@ async function getOrCreateDefaultCategory() {
   }
 }
 
+// Function to check if a category name is a catering category
+function isCateringCategory(name: string): boolean {
+  // Normalize by trimming spaces and converting to uppercase
+  const normalizedName = name.trim().toUpperCase();
+  // Detailed logging for debugging
+  logger.info(`Category name check: "${name}" normalized to "${normalizedName}"`);
+  
+  // Check for both formats with and without space after hyphen
+  const isCatering = normalizedName === 'CATERING' || 
+         normalizedName.startsWith('CATERING-') || 
+         normalizedName.startsWith('CATERING- ');
+         
+  if (isCatering) {
+    logger.info(`✓ DETECTED AS CATERING CATEGORY: "${name}"`);
+  }
+  
+  return isCatering;
+}
+
+// New function to get or create a category by name
+async function getOrCreateCategoryByName(name: string): Promise<{ id: string, name: string }> {
+  try {
+    // Generate the slug first
+    const slug = createSlug(name);
+    logger.info(`Looking for category "${name}" with slug "${slug}"`);
+    
+    // Try to find the category by slug first (more reliable than name)
+    let category = await prisma.category.findFirst({
+      where: { slug }
+    });
+    
+    if (category) {
+      logger.info(`Found existing category by slug: "${name}" → "${category.name}" with ID: ${category.id}`);
+      return category;
+    }
+    
+    // If not found by slug, try by name (case insensitive)
+    category = await prisma.category.findFirst({
+      where: { 
+        name: {
+          equals: name,
+          mode: 'insensitive'
+        }
+      }
+    });
+    
+    if (category) {
+      logger.info(`Found existing category by name (case insensitive): "${name}" with ID: ${category.id}`);
+      return category;
+    }
+    
+    // If we reach here, we need to create a new category
+    logger.info(`Category "${name}" (slug: "${slug}") not found, creating...`);
+    
+    try {
+      // Try to create it
+      category = await prisma.category.create({
+        data: {
+          name,
+          description: `Category for ${name} products`,
+          slug,
+          order: 0, // Default order
+          isActive: true
+        }
+      });
+      
+      logger.info(`Created new category "${name}" with ID: ${category.id}`);
+      return category;
+    } catch (createError) {
+      // Handle unique constraint violation
+      const error = createError as { code?: string; meta?: { target?: string[] } };
+      
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'unknown field';
+        logger.warn(`Unique constraint violation on ${field} when creating category "${name}". Another process may have created it simultaneously.`);
+        
+        // Try to fetch the category one more time by slug
+        const existingCategory = await prisma.category.findFirst({
+          where: { slug }
+        });
+        
+        if (existingCategory) {
+          logger.info(`Found category after conflict "${name}" → "${existingCategory.name}" with ID: ${existingCategory.id}`);
+          return existingCategory;
+        }
+        
+        // If we still can't find it, create a unique slug by adding a timestamp
+        const timestampSlug = `${slug}-${Date.now()}`;
+        logger.info(`Creating category with unique timestamp slug: ${timestampSlug}`);
+        
+        category = await prisma.category.create({
+          data: {
+            name,
+            description: `Category for ${name} products`,
+            slug: timestampSlug,
+            order: 0,
+            isActive: true
+          }
+        });
+        
+        logger.info(`Created new category with timestamp slug: "${name}" with ID: ${category.id}`);
+        return category;
+      }
+      
+      // For other errors, just rethrow
+      logger.error(`Error creating category "${name}":`, createError);
+      throw createError;
+    }
+  } catch (error) {
+    logger.error(`Error in getOrCreateCategoryByName for "${name}":`, error);
+    throw error;
+  }
+}
+
+// Helper function to ensure we have at least one CATERING category for testing
+async function ensureTestCateringCategory(): Promise<void> {
+  try {
+    // Check if we already have a CATERING category
+    const existingCateringCategory = await prisma.category.findFirst({
+      where: {
+        name: {
+          contains: 'CATERING',
+          mode: 'insensitive'
+        }
+      }
+    });
+    
+    if (!existingCateringCategory) {
+      logger.info('No CATERING category found, creating a test one...');
+      // Create a test CATERING category
+      const testCategory = await prisma.category.create({
+        data: {
+          name: 'CATERING-TEST',
+          description: 'Test catering category for debugging',
+          slug: 'catering-test',
+          order: 1000, // High order number to place at the end
+          isActive: true
+        }
+      });
+      logger.info(`Created test catering category with ID ${testCategory.id}`);
+    } else {
+      logger.info(`Found existing catering category: ${existingCateringCategory.name}`);
+    }
+  } catch (error) {
+    logger.warn('Error creating test catering category:', error);
+    // Don't throw, just log the error - this is a fallback function
+  }
+}
+
 export async function syncSquareProducts(): Promise<SyncResult> {
   const errors: string[] = [];
   let syncedCount = 0;
-  const debugInfo: any = {}; // Store debug information
-  const validSquareIds: string[] = []; // Track valid Square IDs
+      const debugInfo: any = {}; // Store debug information
+    const validSquareIds: string[] = []; // Track valid Square IDs
 
-  try {
-    logger.info('Starting Square product sync...');
+    try {
+        logger.info('Starting Square product sync...');
+        
+        // Also sync catering items with Square categories
+        try {
+            const cateringResult = await syncCateringItemsWithSquare();
+            logger.info(`Catering items sync: ${cateringResult.updated} updated, ${cateringResult.skipped} skipped, ${cateringResult.errors} errors`);
+        } catch (error: any) {
+            logger.error('Error syncing catering items:', error);
+            errors.push(`Catering sync error: ${error?.message || 'Unknown error'}`);
+        }
     
     // Get the default category first
     const defaultCategory = await getOrCreateDefaultCategory();
     if (!defaultCategory) {
       throw new Error('Failed to get or create default category');
     }
+
+    // Create test catering category for debugging
+    await ensureTestCateringCategory();
 
     // Check available methods
     const clientProperties = Object.keys(squareClient);
@@ -139,7 +307,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       
       // Use the searchCatalogObjects method for more reliable catalog retrieval
       const requestBody = {
-        object_types: ['ITEM', 'IMAGE'],
+        object_types: ['ITEM', 'IMAGE', 'CATEGORY'],
         include_related_objects: true,
         include_deleted_objects: false
       };
@@ -149,13 +317,51 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       logger.info('Catalog response keys:', Object.keys(catalogResponse));
       debugInfo.catalogResponseKeys = Object.keys(catalogResponse);
       
-      // Extract the items from the response
-      const items = catalogResponse.result?.objects || [];
+      // Extract the items and related objects from the response
+      const items = catalogResponse.result?.objects?.filter((obj: SquareCatalogObject) => obj.type === 'ITEM') || [];
       const relatedObjects = catalogResponse.result?.related_objects || [];
       
-      logger.info(`Found ${items.length} catalog items and ${relatedObjects.length} related objects`);
+      // Extract categories
+      const categories = catalogResponse.result?.objects?.filter((obj: SquareCatalogObject) => obj.type === 'CATEGORY') || [];
+      
+      logger.info(`Found ${items.length} catalog items, ${categories.length} categories, and ${relatedObjects.length} related objects`);
       debugInfo.itemsFound = items.length;
+      debugInfo.categoriesFound = categories.length;
       debugInfo.relatedObjectsFound = relatedObjects.length;
+      
+      // Log all found category names for debugging
+      if (categories.length > 0) {
+        logger.info(`Square categories found: ${JSON.stringify(categories.map((cat: SquareCatalogObject) => 
+          cat.category_data?.name || 'Unnamed Category'
+        ))}`);
+        
+        // Specifically check for any CATERING categories
+        const cateringCategories = categories
+          .filter((cat: SquareCatalogObject) => cat.category_data?.name && isCateringCategory(cat.category_data.name))
+          .map((cat: SquareCatalogObject) => cat.category_data?.name);
+        
+        if (cateringCategories.length > 0) {
+          logger.info(`Found ${cateringCategories.length} catering categories: ${JSON.stringify(cateringCategories)}`);
+          
+          // Also synchronize catering items with Square
+          try {
+            logger.info('Starting catering items synchronization with Square...');
+            const cateringResult = await syncCateringItemsWithSquare();
+            logger.info(`Catering items sync results: ${JSON.stringify(cateringResult)}`);
+          } catch (cateringError) {
+            logger.error('Error synchronizing catering items:', cateringError);
+            errors.push(`Catering items sync error: ${cateringError instanceof Error ? cateringError.message : 'Unknown error'}`);
+          }
+        } else {
+          logger.warn('No CATERING categories found in Square data!');
+        }
+      }
+      
+      // Create a map of category IDs to category objects for quick lookup
+      const categoryMap = new Map<string, SquareCatalogObject>();
+      categories.forEach((category: SquareCatalogObject) => {
+        categoryMap.set(category.id, category);
+      });
       
       if (items.length > 0) {
         logger.info('First item sample:', JSON.stringify(items[0]));
@@ -192,6 +398,68 @@ export async function syncSquareProducts(): Promise<SyncResult> {
 
           const baseSlug = createSlug(itemName);
           
+          // Find the appropriate category for this item
+          let categoryId = defaultCategory.id;
+          let categoryName = defaultCategory.name;
+          
+          // Try to get category ID from the categories array first (new Square API format)
+          if (itemData.categories && itemData.categories.length > 0 && itemData.categories[0].id) {
+            const categoryIdFromArray = itemData.categories[0].id;
+            logger.info(`Found category ID from categories array: ${categoryIdFromArray} for item ${itemName}`);
+            
+            const categoryObject = categoryMap.get(categoryIdFromArray);
+            if (categoryObject && categoryObject.category_data && categoryObject.category_data.name) {
+              categoryName = categoryObject.category_data.name;
+              
+              // Log for catering category debug
+              if (isCateringCategory(categoryName)) {
+                logger.info(`Found catering category: ${categoryName} for item ${itemName}`);
+              }
+              
+              try {
+                // Get or create the appropriate category
+                const category = await getOrCreateCategoryByName(categoryName);
+                categoryId = category.id;
+                logger.info(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId})`);
+              } catch (categoryError) {
+                logger.error(`Error getting/creating category for "${itemName}":`, categoryError);
+                errors.push(`Failed to process category for item "${itemName}": ${categoryError instanceof Error ? categoryError.message : String(categoryError)}`);
+                // Fall back to default category
+                categoryId = defaultCategory.id;
+              }
+            } else {
+              logger.warn(`Category ${categoryIdFromArray} not found for item "${itemName}", using default`);
+            }
+          }
+          // Fall back to legacy category_id field if categories array is not present
+          else if (itemData.category_id) {
+            const categoryObject = categoryMap.get(itemData.category_id);
+            if (categoryObject && categoryObject.category_data && categoryObject.category_data.name) {
+              categoryName = categoryObject.category_data.name;
+              
+              // Log for catering category debug
+              if (isCateringCategory(categoryName)) {
+                logger.info(`Found catering category: ${categoryName} for item ${itemName}`);
+              }
+              
+              try {
+                // Get or create the appropriate category
+                const category = await getOrCreateCategoryByName(categoryName);
+                categoryId = category.id;
+                logger.info(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId})`);
+              } catch (categoryError) {
+                logger.error(`Error getting/creating category for "${itemName}":`, categoryError);
+                errors.push(`Failed to process category for item "${itemName}": ${categoryError instanceof Error ? categoryError.message : String(categoryError)}`);
+                // Fall back to default category
+                categoryId = defaultCategory.id;
+              }
+            } else {
+              logger.warn(`Category ${itemData.category_id} not found for item "${itemName}", using default`);
+            }
+          } else {
+            logger.info(`No category specified for item "${itemName}", using default`);
+          }
+          
           const existingProduct = await prisma.product.findUnique({
             where: { squareId: item.id },
             select: { id: true, slug: true } // Only select what's needed
@@ -212,7 +480,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                   deleteMany: {},
                   create: variants
                 },
-                categoryId: defaultCategory.id,
+                categoryId: categoryId, // Use the appropriate category
                 updatedAt: new Date()
               }
             });
@@ -234,7 +502,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                   description: createDescription,
                   price: basePrice,
                   images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
-                  categoryId: defaultCategory.id,
+                  categoryId: categoryId, // Use the appropriate category
                   featured: false,
                   active: true,
                   variants: {
@@ -267,7 +535,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                           description: updateDescription,
                           price: basePrice,
                           images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
-                          categoryId: defaultCategory.id,
+                          categoryId: categoryId, // Use the appropriate category
                           variants: {
                             deleteMany: {},
                             create: variants
@@ -289,7 +557,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                       description: createDescription,
                       price: basePrice,
                       images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
-                      categoryId: defaultCategory.id,
+                      categoryId: categoryId, // Use the appropriate category
                       featured: false,
                       active: true,
                       variants: {
@@ -771,4 +1039,122 @@ function addCacheBustingParam(url: string): string {
   }
   // If it's already a production S3 URL or any other type of URL, return as is.
   return url;
+}
+
+/**
+ * Synchronizes catering items with Square categories
+ * This function ensures that catering items in our database are properly
+ * linked to their corresponding Square categories
+ */
+export async function syncCateringItemsWithSquare(): Promise<{ updated: number; skipped: number; errors: number }> {
+  const result = { updated: 0, skipped: 0, errors: 0 };
+  
+  try {
+    logger.info('Starting synchronization of catering items with Square categories...');
+    
+    // Get all catering categories from Square
+    const catalogApi = squareClient.catalogApi;
+    let cateringCategories: SquareCatalogObject[] = [];
+    
+    // Fetch all categories
+    const categoriesResponse = await catalogApi.listCatalog(undefined, 'CATEGORY');
+    const allCategories = categoriesResponse.result.objects || [];
+    
+    // Filter to only catering categories
+    cateringCategories = allCategories.filter((cat: SquareCatalogObject) => {
+      const catName = cat.category_data?.name || '';
+      return isCateringCategory(catName);
+    });
+    
+    logger.info(`Found ${cateringCategories.length} catering categories in Square`);
+    
+    // Get all active catering items from our database
+    const cateringItems = await prisma.cateringItem.findMany({
+      where: { isActive: true }
+    });
+    
+    logger.info(`Found ${cateringItems.length} active catering items in our database`);
+    
+    // Get all products from Square catalog
+    const productsResponse = await catalogApi.listCatalog(undefined, 'ITEM');
+    const allProducts = productsResponse.result.objects || [];
+    
+    // For each catering category, find products and update our catering items
+    for (const category of cateringCategories) {
+      const categoryId = category.id;
+      const categoryName = category.category_data?.name || '';
+      
+      logger.info(`Processing category: ${categoryName} (${categoryId})`);
+      
+      // Find products in this category
+      const categoryProducts = allProducts.filter((product: SquareCatalogObject) => {
+        const productCategoryIds = product.item_data?.category_id 
+          ? [product.item_data.category_id]
+          : product.item_data?.categories?.map(c => c.id) || [];
+        
+        return productCategoryIds.includes(categoryId);
+      });
+      
+      logger.info(`Found ${categoryProducts.length} products in category ${categoryName}`);
+      
+      // Update our catering items that match these products by name
+      for (const product of categoryProducts) {
+        const productName = product.item_data?.name || '';
+        if (!productName) continue;
+        
+        // Find matching catering item by name (case insensitive)
+        const matchingItems = cateringItems.filter(item => 
+          item.name.toLowerCase() === productName.toLowerCase()
+        );
+        
+        if (matchingItems.length === 0) {
+          logger.info(`No matching catering item found for Square product: ${productName}`);
+          result.skipped++;
+          continue;
+        }
+        
+        // Update each matching item
+        for (const item of matchingItems) {
+          try {
+            // Get the Square variation price if available
+            let squarePrice = null;
+            if (product.item_data?.variations && product.item_data.variations.length > 0) {
+              const variation = product.item_data.variations[0];
+              if (variation.item_variation_data?.price_money?.amount) {
+                // Convert Square cents to decimal dollars
+                squarePrice = Number(variation.item_variation_data.price_money.amount) / 100;
+                logger.info(`Found Square price ${squarePrice} for catering item ${item.name}`);
+              }
+            }
+            
+            // Use raw SQL to update catering items to avoid Prisma schema issues
+            // This handles both the case when the schema has the new fields or not
+            await prisma.$executeRaw`
+              UPDATE "CateringItem"
+              SET
+                "updatedAt" = NOW()
+                ${categoryName ? `, "squareCategory" = ${categoryName}` : ''}
+                ${product.id ? `, "squareProductId" = ${product.id}` : ''}
+              WHERE "id" = ${item.id}
+            `;
+            
+            logger.info(`Successfully updated catering item ${item.name} with Square product ID ${product.id}`);
+            
+            logger.info(`Updated catering item "${item.name}" with Square category: ${categoryName}`);
+            result.updated++;
+          } catch (error) {
+            logger.error(`Error updating catering item ${item.id}:`, error);
+            result.errors++;
+          }
+        }
+      }
+    }
+    
+    logger.info(`Catering items sync complete: ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`);
+    return result;
+  } catch (error) {
+    logger.error('Error synchronizing catering items with Square:', error);
+    result.errors++;
+    return result;
+  }
 }

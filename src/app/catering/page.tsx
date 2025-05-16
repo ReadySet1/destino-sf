@@ -27,7 +27,8 @@ const mockPackages: CateringPackage[] = [
       { id: '1', packageId: '1', rating: 5, reviewerName: 'John D.' },
       { id: '2', packageId: '1', rating: 4, reviewerName: 'Sarah T.' },
       { id: '3', packageId: '1', rating: 5, reviewerName: 'Michael R.' },
-    ]
+    ],
+    squareCategory: 'LUNCH PACKETS'
   },
   {
     id: '2',
@@ -43,7 +44,8 @@ const mockPackages: CateringPackage[] = [
     ratings: [
       { id: '4', packageId: '2', rating: 5, reviewerName: 'Lisa P.' },
       { id: '5', packageId: '2', rating: 5, reviewerName: 'Robert K.' },
-    ]
+    ],
+    squareCategory: 'CATERING- BUFFET, ENTREES'
   }
 ];
 
@@ -59,6 +61,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: false,
     servingSize: '25 Pieces',
     isActive: true,
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     id: '2',
@@ -71,6 +74,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: false,
     servingSize: '25 Pieces',
     isActive: true,
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     id: '3',
@@ -83,6 +87,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: false,
     servingSize: '25 Pieces',
     isActive: true,
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     id: '4',
@@ -94,6 +99,7 @@ const mockItems: CateringItem[] = [
     isVegan: false,
     isGlutenFree: false,
     isActive: true,
+    squareCategory: 'LUNCH PACKETS',
   },
   {
     id: '5',
@@ -106,6 +112,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: true,
     servingSize: '6 Ounces',
     isActive: true,
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     id: '6',
@@ -118,6 +125,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: true,
     servingSize: '6 Ounces',
     isActive: true,
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     id: '7',
@@ -129,6 +137,7 @@ const mockItems: CateringItem[] = [
     isVegan: true,
     isGlutenFree: true,
     isActive: true,
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     id: '8',
@@ -140,6 +149,7 @@ const mockItems: CateringItem[] = [
     isVegan: true,
     isGlutenFree: true,
     isActive: true,
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     id: '9',
@@ -151,6 +161,7 @@ const mockItems: CateringItem[] = [
     isVegan: true,
     isGlutenFree: true,
     isActive: true,
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     id: '10',
@@ -163,6 +174,7 @@ const mockItems: CateringItem[] = [
     isGlutenFree: false,
     servingSize: '25 Pieces',
     isActive: true,
+    squareCategory: 'CATERING- DESSERTS',
   }
 ];
 
@@ -243,18 +255,29 @@ const CateringPage = async () => {
 
       {/* Catering Options - Packages and A La Carte */}
       <div className="max-w-[1200px] mx-auto px-4 mb-16">
-        <Tabs defaultValue="packages" className="w-full">
-          <TabsList className="w-full max-w-md mx-auto grid grid-cols-2 mb-10">
-            <TabsTrigger value="packages" className="text-lg py-3">Catering Packages</TabsTrigger>
-            <TabsTrigger value="alacarte" className="text-lg py-3">A La Carte Menu</TabsTrigger>
+        <h2 className="text-3xl font-bold text-center mb-8">Catering Menu</h2>
+        <Tabs defaultValue="appetizers" className="w-full">
+          <TabsList className="w-full max-w-md mx-auto grid grid-cols-4 mb-10">
+            <TabsTrigger value="appetizers" className="text-lg py-3">Appetizers</TabsTrigger>
+            <TabsTrigger value="buffet" className="text-lg py-3">Buffet</TabsTrigger>
+            <TabsTrigger value="lunch" className="text-lg py-3">Lunch</TabsTrigger>
+            <TabsTrigger value="lunch-packets" className="text-lg py-3">Lunch Packets</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="packages" className="mt-4">
-            <CateringPackages packages={cateringPackages} />
+          <TabsContent value="appetizers" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="appetizers" />
           </TabsContent>
           
-          <TabsContent value="alacarte" className="mt-4">
-            <ALaCarteMenu items={cateringItems} />
+          <TabsContent value="buffet" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="buffet" />
+          </TabsContent>
+          
+          <TabsContent value="lunch" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="lunch" />
+          </TabsContent>
+          
+          <TabsContent value="lunch-packets" className="mt-4">
+            <CateringPackages packages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} />
           </TabsContent>
         </Tabs>
       </div>

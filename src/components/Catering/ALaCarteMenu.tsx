@@ -1,104 +1,55 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CateringItem, CateringItemCategory } from '@/types/catering';
+import { CateringItem, getItemsForTab, groupItemsBySubcategory } from '@/types/catering';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface ALaCarteMenuProps {
   items: CateringItem[];
+  activeCategory?: string;
 }
 
-export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items }) => {
-  const [activeCategory, setActiveCategory] = useState<CateringItemCategory | null>(null);
-
-  // Group items by category
-  const categorizedItems = items.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<CateringItemCategory, CateringItem[]>);
-
-  // Get all available categories from the items
-  const availableCategories = Object.keys(categorizedItems) as CateringItemCategory[];
-
-  // Filter items by selected category
-  const displayedItems = activeCategory ? categorizedItems[activeCategory] : items;
-
+export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategory = 'appetizers' }) => {
+  // Filtrar los items para esta pestaña y agruparlos por subcategoría
+  const filteredItems = getItemsForTab(items, activeCategory);
+  const groupedItems = groupItemsBySubcategory(filteredItems);
+  
   return (
     <div className="w-full">
-      <h2 className="text-3xl font-bold text-center mb-8">A La Carte Menu</h2>
-      
-      <div className="flex flex-wrap justify-center gap-2 mb-8">
-        <Button
-          onClick={() => setActiveCategory(null)}
-          variant={activeCategory === null ? "default" : "outline"}
-          className={cn(
-            "rounded-full px-6 mb-2",
-            activeCategory === null ? "bg-[#2d3538] hover:bg-[#2d3538]/90" : ""
-          )}
-        >
-          All Items
-        </Button>
-        
-        {availableCategories.map(category => (
-          <Button
-            key={category}
-            onClick={() => setActiveCategory(category)}
-            variant={activeCategory === category ? "default" : "outline"}
-            className={cn(
-              "rounded-full px-6 mb-2",
-              activeCategory === category ? "bg-[#2d3538] hover:bg-[#2d3538]/90" : ""
-            )}
-          >
-            {formatCategory(category)}
-          </Button>
-        ))}
-      </div>
-
-      <div className="space-y-8">
-        {activeCategory === null && availableCategories.map(category => (
+      <div className="space-y-12">
+        {Object.entries(groupedItems).map(([categoryName, categoryItems]) => (
           <CategorySection 
-            key={category} 
-            category={category} 
-            items={categorizedItems[category]} 
+            key={categoryName}
+            title={categoryName}
+            items={categoryItems}
           />
         ))}
-
-        {activeCategory !== null && (
-          <CategorySection 
-            category={activeCategory} 
-            items={displayedItems} 
-          />
-        )}
       </div>
     </div>
   );
 };
 
 interface CategorySectionProps {
-  category: CateringItemCategory;
+  title: string;
   items: CateringItem[];
 }
 
-const CategorySection: React.FC<CategorySectionProps> = ({ category, items }) => {
+const CategorySection: React.FC<CategorySectionProps> = ({ title, items }) => {
   const [showAll, setShowAll] = useState(false);
   const displayItems = showAll ? items : items.slice(0, 6);
   
   return (
     <div>
-      <h3 className="text-2xl font-semibold border-b border-gray-300 pb-2 mb-4">{formatCategory(category)}</h3>
+      <h3 className="text-2xl font-semibold border-b border-gray-300 pb-2 mb-6">{title}</h3>
       
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         {displayItems.map(item => (
           <MenuItem key={item.id} item={item} />
         ))}
       </div>
       
       {items.length > 6 && (
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <Button 
             variant="outline" 
             onClick={() => setShowAll(!showAll)}
@@ -160,13 +111,6 @@ const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
       {label}
     </div>
   );
-};
-
-// Helper function to format category names for display
-const formatCategory = (category: CateringItemCategory): string => {
-  return category.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  ).join(' ');
 };
 
 export default ALaCarteMenu; 

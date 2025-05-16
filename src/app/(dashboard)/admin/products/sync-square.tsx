@@ -12,20 +12,47 @@ export function SyncSquareButton() {
     success: boolean;
     message: string;
     syncedProducts: number;
+    syncedCategories?: number;
+    newCategories?: number;
+    cateringCategories?: number;
+    cateringCategoryNames?: string[];
     errors?: string[];
+    imagesUpdated?: number;
+    imagesNoChange?: number;
+    imagesErrors?: number;
   } | null>(null);
 
   const handleSync = async () => {
     try {
       setIsLoading(true);
       
-      // Call the server action directly
+      // Step 1: Call the server action to sync products
       const result = await manualSyncFromSquare();
-
-      setStats(result);
+      
+      // Step 2: Call the image refresh API
+      const imageResponse = await fetch('/api/square/fix-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!imageResponse.ok) {
+        throw new Error(`HTTP error ${imageResponse.status} refreshing images`);
+      }
+      
+      const imageResult = await imageResponse.json();
+      
+      // Combine results
+      setStats({
+        ...result,
+        imagesUpdated: imageResult.results?.updated || 0,
+        imagesNoChange: imageResult.results?.noChange || 0,
+        imagesErrors: imageResult.results?.errors || 0
+      });
       
       if (result.success) {
-        toast.success(`Successfully synced ${result.syncedProducts} products from Square`);
+        toast.success(`Successfully synced ${result.syncedProducts} products and updated ${imageResult.results?.updated || 0} images from Square`);
       } else {
         toast.error(`Sync failed: ${result.message}`);
       }
@@ -45,7 +72,7 @@ export function SyncSquareButton() {
         className="gap-2 bg-green-600 hover:bg-green-700 text-white"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Sync with Square
+        Sync Products & Images from Square
       </Button>
       
       {stats && (
@@ -55,10 +82,44 @@ export function SyncSquareButton() {
           </p>
           <p>Products synced: {stats.syncedProducts}</p>
           
+          {/* Category information */}
+          <div className="mt-1 border-t border-gray-200 pt-1">
+            <h3 className="font-medium">Categories</h3>
+            <p>Total categories: {stats.syncedCategories || 0}</p>
+            {stats.newCategories !== undefined && (
+              <p className="text-green-600">Newly created categories: {stats.newCategories}</p>
+            )}
+          </div>
+          
+          {/* Enhanced catering categories display */}
+          {stats.cateringCategories !== undefined && (
+            <div className="mt-1 border-t border-gray-200 pt-1">
+              <h3 className="font-medium">Catering Categories ({stats.cateringCategories})</h3>
+              {stats.cateringCategoryNames && stats.cateringCategoryNames.length > 0 ? (
+                <ul className="list-disc pl-5 text-xs">
+                  {stats.cateringCategoryNames.map((name, index) => (
+                    <li key={index}>{name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-amber-600 text-xs">No catering categories found!</p>
+              )}
+            </div>
+          )}
+          
+          {/* Image statistics */}
+          <div className="mt-1 border-t border-gray-200 pt-1">
+            <h3 className="font-medium">Images</h3>
+            <p>Updated: {stats.imagesUpdated}</p>
+            <p>Unchanged: {stats.imagesNoChange}</p>
+            <p>Errors: {stats.imagesErrors}</p>
+          </div>
+          
+          {/* Error display */}
           {stats.errors && stats.errors.length > 0 && (
-            <div className="mt-2">
-              <p className="font-semibold">Errors:</p>
-              <ul className="list-disc pl-5 text-xs text-red-600">
+            <div className="mt-2 border-t border-gray-200 pt-1">
+              <p className="font-semibold text-red-600">Errors ({stats.errors.length}):</p>
+              <ul className="list-disc pl-5 text-xs text-red-600 max-h-40 overflow-y-auto">
                 {stats.errors.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
