@@ -36,22 +36,26 @@ type ProductWithCategory = {
 };
 
 type ProductPageProps = {
-  searchParams?: {
+  searchParams: Promise<{
     page?: string;
     search?: string;
     category?: string;
     status?: string;
     featured?: string;
-  };
+    _debugInfo?: string;
+  }>;
 };
 
 export default async function ProductsPage({ searchParams }: ProductPageProps) {
+  // Await the searchParams promise
+  const params = await searchParams;
+  
   // Parse search params
-  const currentPage = Number(searchParams?.page || 1);
-  const searchQuery = searchParams?.search || '';
-  const categoryFilter = searchParams?.category || '';
-  const statusFilter = searchParams?.status || '';
-  const featuredFilter = searchParams?.featured || '';
+  const currentPage = Number(params?.page || 1);
+  const searchQuery = params?.search || '';
+  const categoryFilter = params?.category || '';
+  const statusFilter = params?.status || '';
+  const featuredFilter = params?.featured || '';
   
   const itemsPerPage = 10;
   const skip = (currentPage - 1) * itemsPerPage;
@@ -338,7 +342,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
           <Pagination 
             currentPage={currentPage} 
             totalPages={totalPages} 
-            searchParams={searchParams || {}} 
+            searchParams={params || {}} 
           />
         )}
       </div>
