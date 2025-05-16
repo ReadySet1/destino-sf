@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { format } from "date-fns";
 
 /**
  * Utility function to merge class names with Tailwind CSS classes
@@ -23,6 +24,27 @@ export function formatPrice(price: number | string | null | undefined): string {
   
   // Format with 2 decimal places
   return numPrice.toFixed(2);
+}
+
+/**
+ * Formats a number as currency (USD)
+ */
+export function formatCurrency(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return "$0.00";
+  
+  // Convert string to number if needed
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  // Check if it's a valid number
+  if (isNaN(numAmount)) return "$0.00";
+  
+  // Format as USD currency
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(numAmount);
 }
 
 /**
@@ -84,7 +106,8 @@ export function getProxiedImageUrl(url: string): string {
     // For other external URLs, proxy them too for CORS safety
     if (!parsedUrl.hostname.includes('localhost') && 
         !parsedUrl.hostname.includes('.local') &&
-        !parsedUrl.hostname.includes(window.location.hostname)) {
+        // Check for window only in browser environment
+        (typeof window === 'undefined' || !parsedUrl.hostname.includes(window.location.hostname))) {
       const encodedUrl = Buffer.from(url).toString('base64');
       return `/api/proxy/image?url=${encodedUrl}`;
     }
@@ -140,4 +163,13 @@ export function isExternalUrl(url: string): boolean {
   } catch (err) {
     return false;
   }
+}
+
+/**
+ * Formats a date for display
+ * @param date The date to format
+ * @returns A formatted date string (e.g., "Monday, January 1, 2023")
+ */
+export function formatDate(date: Date): string {
+  return format(date, "EEEE, MMMM d, yyyy");
 } 

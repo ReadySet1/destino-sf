@@ -5,52 +5,41 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { formatCurrency, formatDateTime } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { CateringStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Define types for serialized data
-interface SerializedOrderItem {
+interface SerializedCateringOrderItem {
   id: string;
+  name: string;
   quantity: number;
-  price: number;
-  productId: string;
-  variantId: string | null;
-  product?: {
-    id: string;
-    name: string;
-  } | null;
-  variant?: {
-    id: string;
-    name: string;
-  } | null;
+  pricePerUnit: number;
+  totalPrice: number;
+  notes: string | null;
+  itemType: string;
 }
 
-interface SerializedPayment {
+interface SerializedCateringOrder {
   id: string;
-  squarePaymentId: string;
-  status: PaymentStatus;
-  amount: number;
-  createdAt: string;
-}
-
-interface SerializedOrder {
-  id: string;
-  status: OrderStatus;
+  status: CateringStatus;
   paymentStatus: PaymentStatus;
-  total: number;
-  customerName: string;
+  paymentMethod: string | null;
+  totalAmount: number;
+  name: string;
   email: string;
   phone: string;
   squareOrderId: string | null;
-  pickupTime: string | null;
+  squarePaymentId: string | null;
+  squareCheckoutUrl: string | null;
+  eventDate: string;
+  numberOfPeople: number;
+  notes: string | null;
+  specialRequests: string | null;
   createdAt: string;
   updatedAt: string;
-  userId: string | null;
-  trackingNumber: string | null;
-  shippingCarrier: string | null;
-  items: SerializedOrderItem[];
-  payments: SerializedPayment[];
+  customerId: string | null;
+  items: SerializedCateringOrderItem[];
 }
 
 // Helper function to manually convert Decimal to number
@@ -91,34 +80,19 @@ function decimalToNumber(value: any): number {
   return 0;
 }
 
-// Manual serialization for order
-function manuallySerializeOrder(order: any): SerializedOrder {
+// Manual serialization for catering order
+function manuallySerializeCateringOrder(order: any): SerializedCateringOrder {
   if (!order) return null as any;
   
   // Manually serialize items
   const serializedItems = (order.items || []).map((item: any) => ({
     id: item.id,
+    name: item.name || '',
     quantity: item.quantity || 0,
-    price: decimalToNumber(item.price),
-    productId: item.productId,
-    variantId: item.variantId,
-    product: item.product ? {
-      id: item.product.id,
-      name: item.product.name
-    } : null,
-    variant: item.variant ? {
-      id: item.variant.id,
-      name: item.variant.name
-    } : null
-  }));
-  
-  // Manually serialize payments
-  const serializedPayments = (order.payments || []).map((payment: any) => ({
-    id: payment.id,
-    squarePaymentId: payment.squarePaymentId,
-    status: payment.status,
-    amount: decimalToNumber(payment.amount),
-    createdAt: payment.createdAt ? new Date(payment.createdAt).toISOString() : ''
+    pricePerUnit: decimalToNumber(item.pricePerUnit),
+    totalPrice: decimalToNumber(item.totalPrice),
+    notes: item.notes,
+    itemType: item.itemType || 'item'
   }));
   
   // Create serialized order with manual decimal conversions
@@ -126,19 +100,22 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     id: order.id,
     status: order.status,
     paymentStatus: order.paymentStatus,
-    total: decimalToNumber(order.total),
-    customerName: order.customerName || '',
+    paymentMethod: order.paymentMethod,
+    totalAmount: decimalToNumber(order.totalAmount),
+    name: order.name || '',
     email: order.email || '',
     phone: order.phone || '',
     squareOrderId: order.squareOrderId,
-    pickupTime: order.pickupTime ? new Date(order.pickupTime).toISOString() : null,
+    squarePaymentId: order.squarePaymentId,
+    squareCheckoutUrl: order.squareCheckoutUrl,
+    eventDate: order.eventDate ? new Date(order.eventDate).toISOString() : '',
+    numberOfPeople: order.numberOfPeople || 0,
+    notes: order.notes,
+    specialRequests: order.specialRequests,
     createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : '',
     updatedAt: order.updatedAt ? new Date(order.updatedAt).toISOString() : '',
-    userId: order.userId,
-    trackingNumber: order.trackingNumber,
-    shippingCarrier: order.shippingCarrier,
-    items: serializedItems,
-    payments: serializedPayments
+    customerId: order.customerId,
+    items: serializedItems
   };
 }
 
@@ -147,16 +124,14 @@ function getStatusColor(status: string | null | undefined): string {
   switch (status?.toUpperCase()) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
-    case 'PROCESSING':
-      return 'bg-blue-100 text-blue-800';
-    case 'READY':
+    case 'CONFIRMED':
       return 'bg-green-100 text-green-800';
+    case 'PREPARING':
+      return 'bg-blue-100 text-blue-800';
     case 'COMPLETED':
       return 'bg-gray-100 text-gray-800';
     case 'CANCELLED':
       return 'bg-red-100 text-red-800';
-    case 'FULFILLMENT_UPDATED':
-        return 'bg-purple-100 text-purple-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -164,54 +139,49 @@ function getStatusColor(status: string | null | undefined): string {
 
 // Helper for payment status badge colors
 function getPaymentStatusColor(status: string | null | undefined): string {
-    switch (status?.toUpperCase()) {
-      case 'PAID':
-        return 'bg-green-100 text-green-800';
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'REFUNDED':
-        return 'bg-orange-100 text-orange-800';
-      case 'FAILED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  switch (status?.toUpperCase()) {
+    case 'PAID':
+      return 'bg-green-100 text-green-800';
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'REFUNDED':
+      return 'bg-orange-100 text-orange-800';
+    case 'FAILED':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
+}
 
 type PageProps = {
   params: {
-    orderId: string
+    cateringId: string
   }
-};
+}
 
 /**
- * OrderDetailsPage - Server Component for displaying order details.
+ * CateringOrderDetailsPage - Server Component for displaying catering order details.
  */
-const OrderDetailsPage = async ({ params }: PageProps) => {
+const CateringOrderDetailsPage = async ({ params }: PageProps) => {
   try {
-    // Get orderId from params
-    const { orderId } = params;
+    // Get cateringId from params
+    const { cateringId } = params;
 
-    console.log("Order ID:", orderId);
+    console.log("Catering ID:", cateringId);
 
-    if (!orderId) {
-      console.error("No order ID provided");
+    if (!cateringId) {
+      console.error("No catering ID provided");
       notFound();
     }
 
     // Log before database query
-    console.log("Fetching order with ID:", orderId);
+    console.log("Fetching catering order with ID:", cateringId);
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const order = await prisma.cateringOrder.findUnique({
+      where: { id: cateringId },
       include: {
-        items: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-        payments: true,
+        items: true,
+        profile: true
       },
     });
 
@@ -219,11 +189,11 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     console.log("Database query result:", order ? "Order found" : "No order found");
 
     if (!order) {
-      console.error(`Order not found for ID: ${orderId}`);
+      console.error(`Catering order not found for ID: ${cateringId}`);
       notFound(); // Trigger 404 if order doesn't exist
     }
 
-    // Log key info about the raw order
+    // Log raw order data for inspection - but don't log the whole object to avoid console clutter
     console.log("Raw order data found:", { 
       id: order.id, 
       status: order.status,
@@ -231,28 +201,28 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     });
 
     // Manually serialize the order to handle Decimal values
-    const serializedOrder = manuallySerializeOrder(order);
+    const serializedOrder = manuallySerializeCateringOrder(order);
     
-    // Log key info about the serialized order
+    // Log key info
     console.log("Serialized order:", {
       id: serializedOrder.id,
       status: serializedOrder.status,
-      total: serializedOrder.total,
+      totalAmount: serializedOrder.totalAmount,
       itemsCount: serializedOrder.items?.length || 0
     });
     
     // Log key info for debugging
-    logger.info('Order details - serialized data:', {
+    logger.info('Catering order details - serialized data:', {
       id: serializedOrder.id,
       status: serializedOrder.status,
-      total: serializedOrder.total,
+      total: serializedOrder.totalAmount,
       itemsCount: serializedOrder.items?.length || 0
     });
     
     // Calculate totals
-    const orderTotal = serializedOrder.total || 0;
+    const orderTotal = serializedOrder.totalAmount || 0;
     const totalQuantity = (serializedOrder.items || []).reduce(
-      (sum: number, item: SerializedOrderItem) => sum + (item.quantity || 0), 
+      (sum: number, item: SerializedCateringOrderItem) => sum + (item.quantity || 0), 
       0
     );
 
@@ -262,19 +232,19 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Order Details</h1>
+          <h1 className="text-3xl font-bold">Catering Order Details</h1>
           <div className="flex gap-2">
             <Link
               href="/admin/orders"
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 mr-2"
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
             >
               Back to Orders
             </Link>
             <Link
-              href={`/admin/orders/${orderId}/edit`}
+              href={`/admin/catering/${cateringId}/edit`}
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
             >
-              Edit Order
+              Edit Catering Order
             </Link>
           </div>
         </div>
@@ -292,28 +262,24 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   {serializedOrder?.status || 'UNKNOWN'}
                 </Badge>
               </div>
-               <div>
+              <div>
                 <strong>Payment Status:</strong>{' '}
                 <Badge className={`text-xs ${getPaymentStatusColor(serializedOrder?.paymentStatus)}`}>
                   {serializedOrder?.paymentStatus || 'PENDING'}
                 </Badge>
               </div>
+              {serializedOrder?.paymentMethod && (
+                <p><strong>Payment Method:</strong> {serializedOrder.paymentMethod}</p>
+              )}
               <p><strong>Total Amount:</strong> {formatCurrency(orderTotal)}</p>
-              <p><strong>Total Items:</strong> {totalQuantity}</p>
-              <p><strong>Pickup/Delivery Time:</strong> {formatDateTime(serializedOrder?.pickupTime)}</p>
+              <p><strong>Number of People:</strong> {serializedOrder?.numberOfPeople || 0}</p>
+              <p><strong>Event Date:</strong> {formatDateTime(serializedOrder?.eventDate)}</p>
               <p><strong>Order Placed:</strong> {formatDateTime(serializedOrder?.createdAt)} 
                 {serializedOrder?.createdAt ? 
                   ` (${formatDistance(new Date(serializedOrder.createdAt), new Date(), { addSuffix: true })})` : 
                   ''}
               </p>
               <p><strong>Last Updated:</strong> {formatDateTime(serializedOrder?.updatedAt)}</p>
-              
-              {serializedOrder?.trackingNumber && (
-                <p>
-                  <strong>Tracking Number:</strong> <span className="font-mono">{serializedOrder.trackingNumber}</span>
-                  {serializedOrder.shippingCarrier && ` (${serializedOrder.shippingCarrier})`}
-                </p>
-              )}
             </div>
           </div>
 
@@ -321,16 +287,37 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
             <div className="space-y-2 text-sm">
-              <p><strong>Name:</strong> {serializedOrder?.customerName || 'N/A'}</p>
+              <p><strong>Name:</strong> {serializedOrder?.name || 'N/A'}</p>
               <p><strong>Email:</strong> {serializedOrder?.email || 'N/A'}</p>
               <p><strong>Phone:</strong> {serializedOrder?.phone || 'N/A'}</p>
               {/* Add user link if available */}
-              {serializedOrder?.userId && 
-                <p><strong>User Account:</strong> <Link href={`/admin/users/${serializedOrder.userId}`} className="text-indigo-600 hover:underline">View User</Link></p>
+              {serializedOrder?.customerId && 
+                <p><strong>User Account:</strong> <Link href={`/admin/users/${serializedOrder.customerId}`} className="text-indigo-600 hover:underline">View User</Link></p>
               }
             </div>
           </div>
         </div>
+
+        {/* Special Requests / Notes */}
+        {(serializedOrder?.notes || serializedOrder?.specialRequests) && (
+          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
+            <div className="space-y-4">
+              {serializedOrder?.notes && (
+                <div>
+                  <h3 className="font-medium text-gray-700">Order Notes</h3>
+                  <p className="text-gray-600 mt-1 whitespace-pre-line">{serializedOrder.notes}</p>
+                </div>
+              )}
+              {serializedOrder?.specialRequests && (
+                <div>
+                  <h3 className="font-medium text-gray-700">Special Requests</h3>
+                  <p className="text-gray-600 mt-1 whitespace-pre-line">{serializedOrder.specialRequests}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Order Items */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -339,25 +326,27 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Price/Item</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
                   <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {serializedOrder?.items && serializedOrder.items.length > 0 ? 
-                  serializedOrder.items.map((item: SerializedOrderItem) => {
-                    const itemPrice = item.price || 0;
-                    const quantity = item.quantity || 0;
+                  serializedOrder.items.map((item: SerializedCateringOrderItem) => {
                     return (
                       <tr key={item.id || 'unknown'}>
-                        <td className="px-4 py-3 whitespace-nowrap">{item.product?.name || 'N/A'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">{item.variant?.name || '-'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{quantity}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(itemPrice)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(itemPrice * quantity)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">{item.name || 'N/A'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge className={`text-xs ${item.itemType === 'package' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {item.itemType === 'package' ? 'PACKAGE' : 'ITEM'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">{item.quantity}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(item.pricePerUnit)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(item.totalPrice)}</td>
                       </tr>
                     );
                   }) 
@@ -368,7 +357,6 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   <td colSpan={4} className="px-4 py-3 text-right">Subtotal:</td>
                   <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
                 </tr>
-                {/* Add rows for Tax, Tips, Discounts if applicable */}
                 <tr className="font-bold text-base">
                   <td colSpan={4} className="px-4 py-3 text-right">Grand Total:</td>
                   <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
@@ -379,50 +367,46 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
         </div>
 
         {/* Payment Information */}
-        {serializedOrder?.payments && serializedOrder.payments.length > 0 ? (
+        {serializedOrder?.squarePaymentId && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
             <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Square Payment ID</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {serializedOrder.payments.map((payment: SerializedPayment) => (
-                    <tr key={payment.id || 'unknown'}>
-                      <td className="px-4 py-3 whitespace-nowrap">{payment.squarePaymentId || 'N/A'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge className={`text-xs ${getPaymentStatusColor(payment.status)}`}>
-                          {payment.status || 'UNKNOWN'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(payment.amount)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(payment.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-2 text-sm">
+              <p><strong>Square Payment ID:</strong> {serializedOrder.squarePaymentId}</p>
+              <div>
+                <strong>Payment Status:</strong>{' '}
+                <Badge className={`text-xs ${getPaymentStatusColor(serializedOrder?.paymentStatus)}`}>
+                  {serializedOrder?.paymentStatus || 'PENDING'}
+                </Badge>
+              </div>
+              {serializedOrder?.squareCheckoutUrl && (
+                <p>
+                  <strong>Checkout URL:</strong>{' '}
+                  <a 
+                    href={serializedOrder.squareCheckoutUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View Square Checkout
+                  </a>
+                </p>
+              )}
             </div>
           </div>
-        ) : null}
+        )}
       </div>
     );
   } catch (error) {
-    console.error('Error rendering order details:', error);
-    logger.error('Error rendering order details:', error);
+    console.error('Error rendering catering order details:', error);
+    logger.error('Error rendering catering order details:', error);
     
     // Provide a fallback UI when there's an error
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Order Details</h1>
+        <h1 className="text-3xl font-bold mb-6">Catering Order Details</h1>
         <ErrorDisplay 
           title="Error Loading Order" 
-          message={`There was a problem loading the order details: ${error instanceof Error ? error.message : 'Unknown error'}`}
+          message={`There was a problem loading the catering order details: ${error instanceof Error ? error.message : 'Unknown error'}`}
           returnLink={{ href: "/admin/orders", label: "Return to Orders List" }} 
         />
       </div>
@@ -430,4 +414,4 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
   }
 };
 
-export default OrderDetailsPage; 
+export default CateringOrderDetailsPage; 

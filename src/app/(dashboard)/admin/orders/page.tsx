@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, CateringStatus, PaymentStatus } from '@prisma/client';
 import { formatPrice, formatDateTime, formatCurrency } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
@@ -12,10 +12,10 @@ type ResolvedParams = {
   [key: string]: string | string[] | undefined;
 };
 
-// Define our serialized order type
-interface SerializedOrder {
+// Define our unified order type
+interface UnifiedOrder {
   id: string;
-  status: OrderStatus;
+  status: OrderStatus | CateringStatus;
   customerName: string | null;
   total: number;
   items: Array<{
@@ -24,9 +24,12 @@ interface SerializedOrder {
     price: number;
   }>;
   pickupTime: string | null;
+  eventDate?: string | null;
   createdAt: string;
   trackingNumber: string | null;
   shippingCarrier: string | null;
+  type: 'regular' | 'catering';
+  paymentStatus: PaymentStatus;
 }
 
 // Safe conversion of Decimal to number
@@ -51,8 +54,8 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
   return 0;
 }
 
-// Manual serialization for orders
-function manuallySerializeOrders(orders: any[]): SerializedOrder[] {
+// Manual serialization for regular orders
+function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
   return orders.map(order => {
     // Serialize items
     const serializedItems = order.items?.map((item: any) => ({
@@ -70,7 +73,36 @@ function manuallySerializeOrders(orders: any[]): SerializedOrder[] {
       pickupTime: order.pickupTime ? new Date(order.pickupTime).toISOString() : null,
       createdAt: order.createdAt.toISOString(),
       trackingNumber: order.trackingNumber,
-      shippingCarrier: order.shippingCarrier
+      shippingCarrier: order.shippingCarrier,
+      type: 'regular',
+      paymentStatus: order.paymentStatus
+    };
+  });
+}
+
+// Manual serialization for catering orders
+function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
+  return orders.map(order => {
+    // Serialize items
+    const serializedItems = order.items?.map((item: any) => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: decimalToNumber(item.totalPrice)
+    })) || [];
+    
+    return {
+      id: order.id,
+      status: order.status,
+      customerName: order.name,
+      total: decimalToNumber(order.totalAmount),
+      items: serializedItems,
+      pickupTime: null,
+      eventDate: order.eventDate ? new Date(order.eventDate).toISOString() : null,
+      createdAt: order.createdAt.toISOString(),
+      trackingNumber: null,
+      shippingCarrier: null,
+      type: 'catering',
+      paymentStatus: order.paymentStatus
     };
   });
 }
@@ -79,9 +111,9 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
   await params; // We're not using the params, but we need to await the promise
 
   try {
-    // Fetch orders with items included
-    const orders = await prisma.order.findMany({
-      take: 10,
+    // Fetch regular orders with items included
+    const regularOrders = await prisma.order.findMany({
+      take: 20,
       orderBy: {
         createdAt: 'desc',
       },
@@ -90,10 +122,27 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
       },
     });
 
-    // Manually serialize the orders to handle Decimal values
-    const serializedOrders = manuallySerializeOrders(orders);
+    // Fetch catering orders with items included
+    const cateringOrders = await prisma.cateringOrder.findMany({
+      take: 20,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    // Serialize both types of orders
+    const serializedRegularOrders = serializeRegularOrders(regularOrders);
+    const serializedCateringOrders = serializeCateringOrders(cateringOrders);
     
-    logger.info(`Found ${serializedOrders.length} orders for display`);
+    // Combine and sort all orders by creation date
+    const allOrders = [...serializedRegularOrders, ...serializedCateringOrders]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 20); // Limit to 20 most recent orders
+    
+    logger.info(`Found ${serializedRegularOrders.length} regular orders and ${serializedCateringOrders.length} catering orders for display`);
 
     return (
       <div>
@@ -108,6 +157,8 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
             </Link>
             <select className="border rounded p-2">
               <option value="all">All Orders</option>
+              <option value="regular">Regular Orders</option>
+              <option value="catering">Catering Orders</option>
               <option value="PENDING">Pending</option>
               <option value="PROCESSING">Processing</option>
               <option value="READY">Ready</option>
@@ -118,7 +169,7 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
           </div>
         </div>
 
-        {serializedOrders.length === 0 ? (
+        {allOrders.length === 0 ? (
           <div className="text-center py-10 text-gray-500">No orders found.</div>
         ) : (
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -129,10 +180,16 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                     Order ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Items
@@ -141,13 +198,10 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                     Total
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pickup Time
+                    Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tracking
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -155,10 +209,15 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {serializedOrders.map((order, index) => (
-                  <tr key={order.id || `order-${index}`}>
+                {allOrders.map((order, index) => (
+                  <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {order.id ? `${order.id.substring(0, 8)}...` : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {order.customerName || 'N/A'}
@@ -170,6 +229,13 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                         {order.status}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}
+                      >
+                        {order.paymentStatus}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {order.items?.length || 0}
                     </td>
@@ -177,44 +243,16 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDateTime(order.pickupTime)}
+                      {order.type === 'catering' 
+                        ? (order.eventDate ? formatDateTime(order.eventDate) : 'N/A')
+                        : (order.pickupTime ? formatDateTime(order.pickupTime) : 'N/A')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {order.createdAt ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true }) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.trackingNumber ? (
-                        <span>
-                          <span className="font-mono" aria-label="Tracking Number">{order.trackingNumber}</span>
-                          {order.shippingCarrier && (
-                            <>
-                              {' '}<span>({order.shippingCarrier})</span>
-                              {/* Tracking link for major carriers */}
-                              {(() => {
-                                const carrier = order.shippingCarrier?.toLowerCase();
-                                let url: string | null = null;
-                                if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${order.trackingNumber}`;
-                                else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${order.trackingNumber}`;
-                                else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.trackingNumber}`;
-                                if (url) {
-                                  return (
-                                    <>
-                                      {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${order.shippingCarrier}`}>Track</a>
-                                    </>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <Link
-                        href={`/admin/orders/${order.id}`}
+                        href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
                         className="text-indigo-600 hover:text-indigo-900 mr-2"
                       >
                         View
@@ -243,18 +281,37 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
   }
 }
 
-function getStatusColor(status: OrderStatus) {
+function getStatusColor(status: OrderStatus | CateringStatus) {
   switch (status) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
     case 'PROCESSING':
+    case 'PREPARING':
       return 'bg-blue-100 text-blue-800';
     case 'READY':
+    case 'CONFIRMED':
       return 'bg-green-100 text-green-800';
     case 'COMPLETED':
       return 'bg-gray-100 text-gray-800';
     case 'CANCELLED':
       return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+function getPaymentStatusColor(status: PaymentStatus) {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'PAID':
+      return 'bg-green-100 text-green-800';
+    case 'FAILED':
+      return 'bg-red-100 text-red-800';
+    case 'REFUNDED':
+      return 'bg-purple-100 text-purple-800';
+    case 'COMPLETED':
+      return 'bg-blue-100 text-blue-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

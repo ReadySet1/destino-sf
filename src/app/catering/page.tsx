@@ -6,165 +6,11 @@ import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
 import { CateringPackages, ALaCarteMenu } from '@/components/Catering';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CateringPackage, CateringItem, CateringItemCategory, CateringPackageType } from '@/types/catering';
+import { CateringPackage, CateringItem, CateringItemCategory, CateringPackageType, getItemsForTab } from '@/types/catering';
+import { getCateringPackages, getCateringItems } from '@/actions/catering';
+import CateringCartButton from '@/components/Catering/CateringCartButton';
 
 export const dynamic = 'force-dynamic';
-
-// Mock data for development until database migration is complete
-const mockPackages: CateringPackage[] = [
-  {
-    id: '1',
-    name: 'Individual Modern Latin Meals',
-    description: 'Bring some Latin flair to your next office lunch with fresh and flavorful food from Destino. This package features healthy yet delicious seasonal offerings, including a variety of vegetarian options.',
-    minPeople: 5,
-    pricePerPerson: 14.00,
-    type: CateringPackageType.INDIVIDUAL,
-    imageUrl: '/images/catering/individual.jpg',
-    isActive: true,
-    featuredOrder: 1,
-    dietaryOptions: ['Vegetarian', 'Gluten-Free'],
-    ratings: [
-      { id: '1', packageId: '1', rating: 5, reviewerName: 'John D.' },
-      { id: '2', packageId: '1', rating: 4, reviewerName: 'Sarah T.' },
-      { id: '3', packageId: '1', rating: 5, reviewerName: 'Michael R.' },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Seasonal Latin American Lunch Buffet',
-    description: 'Bring some Latin flair to your next office lunch with fresh and flavorful food from Destino. This package features healthy yet delicious seasonal offerings, including a variety of vegetarian options.',
-    minPeople: 10,
-    pricePerPerson: 14.50,
-    type: CateringPackageType.BUFFET,
-    imageUrl: '/images/catering/buffet.jpg',
-    isActive: true,
-    featuredOrder: 2,
-    dietaryOptions: ['Vegetarian', 'Gluten-Free', 'Vegan'],
-    ratings: [
-      { id: '4', packageId: '2', rating: 5, reviewerName: 'Lisa P.' },
-      { id: '5', packageId: '2', rating: 5, reviewerName: 'Robert K.' },
-    ]
-  }
-];
-
-const mockItems: CateringItem[] = [
-  {
-    id: '1',
-    name: 'Tray of Chicken Empanadas',
-    description: 'Chicken breast, cream–aji chile reduction and parmesan (25 Pieces)',
-    price: 75.00,
-    category: CateringItemCategory.STARTER,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '25 Pieces',
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Tray of Beef Empanadas',
-    description: 'Ground beef, golden raisins, pimiento stuffed olives, egg (25 Pieces)',
-    price: 75.00,
-    category: CateringItemCategory.STARTER,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '25 Pieces',
-    isActive: true,
-  },
-  {
-    id: '3',
-    name: 'Tray of Vegetarian Empanadas',
-    description: 'Hearts of palms, white cheddar, cilantro, aji amarillo (25 Pieces)',
-    price: 75.00,
-    category: CateringItemCategory.STARTER,
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '25 Pieces',
-    isActive: true,
-  },
-  {
-    id: '4',
-    name: 'Individual Latin Combo Plate',
-    description: 'Your choice of one entree and sides',
-    price: 14.00,
-    category: CateringItemCategory.ENTREE,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: false,
-    isActive: true,
-  },
-  {
-    id: '5',
-    name: 'Acorn Squash',
-    description: 'Roasted squash, sweet potato puree, mushrooms, coconut milk, carrot, pepitas, romesco salsa',
-    price: 8.00,
-    category: CateringItemCategory.ENTREE,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    servingSize: '6 Ounces',
-    isActive: true,
-  },
-  {
-    id: '6',
-    name: 'Chicken with Mojo',
-    description: 'Grilled chicken breast, piquillo pepper, onions, orange-garlic mojo',
-    price: 8.50,
-    category: CateringItemCategory.ENTREE,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: true,
-    servingSize: '6 Ounces',
-    isActive: true,
-  },
-  {
-    id: '7',
-    name: 'Arroz Verde',
-    description: 'Cilantro infused rice, red bell pepper, english peas, aji amarillo, spices',
-    price: 3.50,
-    category: CateringItemCategory.SIDE,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    isActive: true,
-  },
-  {
-    id: '8',
-    name: 'Arroz Rojo',
-    description: 'White rice, tomatoes, onion, oregano',
-    price: 3.00,
-    category: CateringItemCategory.SIDE,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    isActive: true,
-  },
-  {
-    id: '9',
-    name: 'Quinoa Salad',
-    description: 'Organic white quinoa, arugula, red bell pepper, toybox squash, mint mojo',
-    price: 4.00,
-    category: CateringItemCategory.SALAD,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    isActive: true,
-  },
-  {
-    id: '10',
-    name: 'Tray of Alfajores',
-    description: 'South american butter cookies, dulce de leche',
-    price: 55.00,
-    category: CateringItemCategory.DESSERT,
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '25 Pieces',
-    isActive: true,
-  }
-];
 
 // Define catering services
 const cateringServices: string[] = [
@@ -179,21 +25,48 @@ const cateringServices: string[] = [
 ];
 
 const CateringPage = async () => {
-  // In production, this would fetch from the database
-  // const cateringPackages = await getCateringPackages();
-  // const cateringItems = await getCateringItems();
-  
-  // Using mock data for development
-  const cateringPackages = mockPackages;
-  const cateringItems = mockItems;
+  // Fetch data from the database
+  let cateringPackages: CateringPackage[] = [];
+  let cateringItems: CateringItem[] = [];
+  let errorMessage = '';
+
+  try {
+    // Fetch packages and items from the database
+    cateringPackages = await getCateringPackages();
+    cateringItems = await getCateringItems();
+  } catch (error) {
+    console.error('Error fetching catering data:', error);
+    errorMessage = error instanceof Error ? error.message : 'Failed to load catering data';
+    
+    // If database fetch fails, the page will still render but with empty arrays
+    // This ensures graceful degradation
+  }
+
+  // Get counts of items per category for debugging
+  const appetizersCount = getItemsForTab(cateringItems, 'appetizers').length;
+  const buffetCount = getItemsForTab(cateringItems, 'buffet').length;
+  const lunchCount = getItemsForTab(cateringItems, 'lunch').length;
+  const lunchPacketsCount = getItemsForTab(cateringItems, 'lunch-packets').length;
+  const hasSquareCategoryCount = cateringItems.filter(item => !!item.squareCategory).length;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Banner Section */}
+    <>
+      {/* Add the CateringCartButton component */}
+      <CateringCartButton />
+      
+      {/* Catering Banner */}
       <CateringBanner />
 
       {/* Main Content Container */}
-      <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-12">
+      <div className="min-h-screen bg-white">
+        {/* Error message if any */}
+        {errorMessage && (
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{errorMessage}</p>
+          </div>
+        )}
+        
         {/* Hero Section */}
         <Card className="border-none shadow-none mb-12">
           <CardContent className="p-0">
@@ -243,21 +116,51 @@ const CateringPage = async () => {
 
       {/* Catering Options - Packages and A La Carte */}
       <div className="max-w-[1200px] mx-auto px-4 mb-16">
-        <Tabs defaultValue="packages" className="w-full">
-          <TabsList className="w-full max-w-md mx-auto grid grid-cols-2 mb-10">
-            <TabsTrigger value="packages" className="text-lg py-3">Catering Packages</TabsTrigger>
-            <TabsTrigger value="alacarte" className="text-lg py-3">A La Carte Menu</TabsTrigger>
-          </TabsList>
+        <h2 className="text-3xl font-bold text-center mb-8">Catering Menu</h2>
+        <Tabs defaultValue="appetizers" className="w-full">
+          <div className="flex justify-center mb-10">
+            <TabsList>
+              <TabsTrigger value="appetizers">Appetizers</TabsTrigger>
+              <TabsTrigger value="buffet">Buffet</TabsTrigger>
+              <TabsTrigger value="lunch">Lunch</TabsTrigger>
+              <TabsTrigger value="lunch-packets">Lunch Packets</TabsTrigger>
+            </TabsList>
+          </div>
           
-          <TabsContent value="packages" className="mt-4">
-            <CateringPackages packages={cateringPackages} />
+          <TabsContent value="appetizers" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="appetizers" />
           </TabsContent>
           
-          <TabsContent value="alacarte" className="mt-4">
-            <ALaCarteMenu items={cateringItems} />
+          <TabsContent value="buffet" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="buffet" />
+          </TabsContent>
+          
+          <TabsContent value="lunch" className="mt-4">
+            <ALaCarteMenu items={cateringItems} activeCategory="lunch" />
+          </TabsContent>
+          
+          <TabsContent value="lunch-packets" className="mt-4">
+            <CateringPackages packages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} />
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Debug section - remove after fixing */}
+      {/* <div className="max-w-[1200px] mx-auto px-4 mb-16 border p-4 bg-gray-50">
+        <h3 className="font-bold">Debug Info:</h3>
+        <p>Total items: {cateringItems.length}</p>
+        <p>Items with squareCategory: {hasSquareCategoryCount}</p>
+        <p>Appetizers: {appetizersCount}</p>
+        <p>Buffet: {buffetCount}</p>
+        <p>Lunch: {lunchCount}</p>
+        <p>Lunch Packets: {lunchPacketsCount}</p>
+        <h4 className="mt-4 font-bold">Square Categories:</h4>
+        <ul>
+          {Array.from(new Set(cateringItems.map(item => item.squareCategory))).map(
+            (category, index) => category && <li key={index}>{category}</li>
+          )}
+        </ul>
+      </div> */}
 
       {/* Contact form and FAQ Section */}
       <div className="max-w-[1200px] mx-auto px-4">
@@ -273,7 +176,7 @@ const CateringPage = async () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </>
   );
 };
 

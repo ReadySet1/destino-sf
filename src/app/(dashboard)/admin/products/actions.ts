@@ -129,18 +129,59 @@ export async function manualSyncFromSquare() {
   try {
     logger.info('Manual sync from Square initiated');
     
+    // Log existing categories BEFORE sync for debugging
+    const beforeCategories = await prisma.category.findMany({
+      select: { id: true, name: true, slug: true }
+    });
+    logger.info(`Categories BEFORE sync (${beforeCategories.length}): ${JSON.stringify(beforeCategories.map(c => `${c.name} (${c.slug})` ))}`);
+    
     const result = await syncSquareProducts();
+    
+    // Count categories in database after sync
+    const categoriesCount = await prisma.category.count();
+    
+    // Get detailed info about catering categories
+    const cateringCategories = await prisma.category.findMany({
+      where: {
+        name: {
+          contains: 'CATERING',
+          mode: 'insensitive'
+        },
+      },
+      select: { id: true, name: true, slug: true }
+    });
+    
+    const cateringCategoriesCount = cateringCategories.length;
+    logger.info(`Found ${cateringCategoriesCount} catering categories after sync: ${JSON.stringify(cateringCategories.map(c => `${c.name} (${c.slug})` ))}`);
+    
+    // Log all categories AFTER sync for comparison
+    const afterCategories = await prisma.category.findMany({
+      select: { id: true, name: true, slug: true }
+    });
+    logger.info(`Categories AFTER sync (${afterCategories.length}): ${JSON.stringify(afterCategories.map(c => `${c.name} (${c.slug})` ))}`);
+    
+    // Find newly created categories
+    const newCategoryIds = afterCategories
+      .filter(cat => !beforeCategories.some(before => before.id === cat.id))
+      .map(cat => cat.id);
+    
+    const newCategories = afterCategories.filter(cat => newCategoryIds.includes(cat.id));
+    logger.info(`Newly created categories (${newCategories.length}): ${JSON.stringify(newCategories.map(c => `${c.name} (${c.slug})` ))}`);
     
     logger.info('Manual sync complete:', result);
     
     revalidatePath('/admin/products');
     revalidatePath('/products');
-    revalidatePath('/products/category/[slug]');
+    revalidatePath('/products/category/[slug]', 'page');
     
     return {
       success: result.success,
       message: result.message || (result.success ? 'Sync completed successfully' : 'Sync failed'),
       syncedProducts: result.syncedProducts,
+      syncedCategories: categoriesCount,
+      newCategories: newCategories.length,
+      cateringCategories: cateringCategoriesCount,
+      cateringCategoryNames: cateringCategories.map(c => `${c.name} (${c.slug})`),
       errors: result.errors || [],
     };
   } catch (error) {

@@ -237,6 +237,8 @@ model CateringItem {
   servingSize     String?
   imageUrl        String?
   isActive        Boolean               @default(true)
+  squareCategory  String?               // Category name in Square
+  squareProductId String?               // Product ID in Square catalog
   packageItems    CateringPackageItem[]
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
@@ -279,6 +281,11 @@ model CateringOrder {
   numberOfPeople    Int
   totalAmount       Decimal           @db.Decimal(10, 2)
   status            CateringStatus    @default(PENDING)
+  paymentStatus     PaymentStatus     @default(PENDING)
+  paymentMethod     PaymentMethod?
+  squareOrderId     String?           @unique
+  squarePaymentId   String?           @unique
+  squareCheckoutUrl String?
   notes             String?
   specialRequests   String?
   createdAt         DateTime          @default(now())
@@ -287,6 +294,7 @@ model CateringOrder {
   items             CateringOrderItem[]
 
   @@index([customerId])
+  @@index([squareOrderId])
 }
 
 model CateringOrderItem {

@@ -80,4 +80,8 @@ logger.info("Square client initialized with:", {
   squareClientKeys: Object.keys(squareClient)
 });
 
+// Export the Square client and specific API clients
+export const client = squareClient;
+export const ordersApi = squareClient.ordersApi;
+export const paymentsApi = squareClient.paymentsApi;
 export { squareClient };

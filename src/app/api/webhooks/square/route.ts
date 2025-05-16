@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
 import type { Square } from 'square'; // Import the Square namespace for types
 import { purchaseShippingLabel } from '@/app/actions/labels'; // Import the new action
+import { headers } from 'next/headers';
+import crypto from 'crypto';
 
 type SquareEventType =
   | 'order.created'
@@ -368,6 +370,8 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
   }
 }
 
+
+
 async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const paymentData = data.object.payment as any;
@@ -382,7 +386,67 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
   }
 
   try {
-    // Find our internal order using the Square Order ID
+    // First check for a catering order with this Square order ID using simpler query approach
+    try {
+      // Check if a catering order with this Square order ID exists using raw SQL
+      const cateringOrderExists = await prisma.$queryRaw`
+        SELECT EXISTS (
+          SELECT 1 FROM "CateringOrder"
+          WHERE "squareOrderId" = ${squareOrderId}
+        );
+      `;
+      
+      // Convert the response properly to boolean
+      const isCateringOrder = (cateringOrderExists as any)?.[0]?.exists === true;
+      
+      if (isCateringOrder) {
+        console.log(`Detected catering order with squareOrderId ${squareOrderId}`);
+        
+        // Map Square payment status to our status values
+        let updatedPaymentStatus = 'PENDING';
+        let updatedOrderStatus = null;
+        
+        if (paymentStatus === 'COMPLETED') {
+          updatedPaymentStatus = 'PAID';
+          updatedOrderStatus = 'CONFIRMED';
+          console.log(`Payment completed for catering order ${squareOrderId}, updating to CONFIRMED status`);
+        } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELED') {
+          updatedPaymentStatus = 'FAILED';
+          updatedOrderStatus = 'CANCELLED';
+          console.log(`Payment failed/canceled for catering order ${squareOrderId}, updating to CANCELLED status`);
+        } else if (paymentStatus === 'REFUNDED') {
+          updatedPaymentStatus = 'REFUNDED';
+          updatedOrderStatus = 'CANCELLED';
+          console.log(`Payment refunded for catering order ${squareOrderId}, updating to CANCELLED status`);
+        } else {
+          console.log(`Other payment status ${paymentStatus} for catering order ${squareOrderId}, keeping as PENDING`);
+        }
+        
+        try {
+          // Use raw SQL to update the catering order without relying on schema validation
+          await prisma.$executeRaw`
+            UPDATE "CateringOrder" 
+            SET 
+              "paymentStatus" = ${updatedPaymentStatus}::text::"PaymentStatus", 
+              "status" = ${updatedOrderStatus ? `${updatedOrderStatus}::text::"CateringStatus"` : 'status'},
+              "squarePaymentId" = ${squarePaymentId},
+              "updatedAt" = NOW()
+            WHERE "squareOrderId" = ${squareOrderId}
+          `;
+          
+          console.log(`Successfully updated catering order with squareOrderId ${squareOrderId} to payment status ${updatedPaymentStatus}`);
+        } catch (updateError) {
+          console.error(`Error updating catering order ${squareOrderId}:`, updateError);
+        }
+        
+        return; // Exit after handling catering order
+      }
+    } catch (err) {
+      console.error('Error checking/updating catering order:', err);
+      // Continue to regular order processing even if catering check fails
+    }
+
+    // If not a catering order, find our internal order using the Square Order ID
     const order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
       select: { 
@@ -618,14 +682,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Received Square webhook request');
 
   try {
-    // It's crucial to respond quickly, so we parse the body but don't do heavy processing here.
-    const payload: SquareWebhookPayload = await request.json();
+    // Read the body as text first to verify signature
+    const bodyText = await request.text();
+    
+    // Verify the webhook signature if a webhook secret is configured
+    const signature = request.headers.get('x-square-hmacsha256-signature');
+    const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
+    const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
+    
+    if (webhookSecret && signature && timestamp) {
+      try {
+        // Compute expected signature: HMAC-SHA256(CONCAT(|timestamp|, |notification body|), |SignatureKey|)
+        const message = `${timestamp}${bodyText}`;
+        const hmac = crypto.createHmac('sha256', webhookSecret);
+        hmac.update(message);
+        const expectedSignature = hmac.digest('hex');
+        
+        if (expectedSignature !== signature) {
+          console.warn('Square webhook signature validation failed');
+          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+        
+        console.log('Square webhook signature validated successfully');
+      } catch (signatureError) {
+        console.error('Error validating Square webhook signature:', signatureError);
+        // Continue processing even if signature validation fails, but log it
+      }
+    } else if (webhookSecret) {
+      console.warn('Square webhook signature validation skipped: missing headers');
+    }
+    
+    // Parse the JSON payload
+    let payload: SquareWebhookPayload;
+    try {
+      payload = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('Error parsing Square webhook JSON:', parseError);
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
 
     // Log the received payload for debugging
     // In a production environment, you might process this asynchronously
-    console.log('Square Webhook Payload:', JSON.stringify(payload, null, 2));
- 
-    // TODO: Add webhook signature verification using x-square-hmacsha256-signature header
+    console.log('Square Webhook Payload Type:', payload.type);
 
     // Handle different event types
     switch (payload.type) {

@@ -23,6 +23,24 @@ export enum CateringStatus {
   CANCELLED = 'CANCELLED'
 }
 
+// Definimos un mapeo de categorías de Square a nuestras pestañas
+export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
+  'CATERING- APPETIZERS': 'appetizers',
+  'CATERING- SHARE PLATTERS': 'appetizers',
+  'CATERING- DESSERTS': 'appetizers', // También aparece en buffet
+  
+  'CATERING- BUFFET, STARTERS': 'buffet',
+  'CATERING- BUFFET, ENTREES': 'buffet',
+  'CATERING- BUFFET, SIDES': 'buffet',
+  'CATERING- BUFFET DESSERTS': 'buffet', // Los postres también van en buffet
+  
+  'CATERING- LUNCH, STARTERS': 'lunch',
+  'CATERING- LUNCH, ENTREES': 'lunch',
+  'CATERING- LUNCH, SIDES': 'lunch',
+  
+  'LUNCH PACKETS': 'lunch-packets'
+};
+
 export interface CateringPackage {
   id: string;
   name: string;
@@ -36,6 +54,7 @@ export interface CateringPackage {
   dietaryOptions: string[];
   ratings?: CateringRating[];
   items?: CateringPackageItem[];
+  squareCategory?: string; // Categoría de Square
 }
 
 export interface CateringItem {
@@ -50,6 +69,7 @@ export interface CateringItem {
   servingSize?: string | null;
   imageUrl?: string | null;
   isActive: boolean;
+  squareCategory?: string; // Categoría de Square
 }
 
 export interface CateringPackageItem {
@@ -103,4 +123,28 @@ export interface CateringFormData {
   numberOfPeople: number;
   notes?: string;
   specialRequests?: string;
+}
+
+// Funciones de utilidad para trabajar con categorías de Square
+export function getItemsForTab(items: CateringItem[], tabId: string): CateringItem[] {
+  return items.filter(item => {
+    if (!item.squareCategory) return false;
+    return SQUARE_CATEGORY_MAPPING[item.squareCategory] === tabId;
+  });
+}
+
+export function groupItemsBySubcategory(items: CateringItem[]): Record<string, CateringItem[]> {
+  const result: Record<string, CateringItem[]> = {};
+  
+  items.forEach(item => {
+    if (!item.squareCategory) return;
+    
+    if (!result[item.squareCategory]) {
+      result[item.squareCategory] = [];
+    }
+    
+    result[item.squareCategory].push(item);
+  });
+  
+  return result;
 } 

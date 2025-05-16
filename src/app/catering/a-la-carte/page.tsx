@@ -3,6 +3,7 @@ import CateringBanner from '@/components/CateringBanner';
 import { ALaCarteMenu } from '@/components/Catering';
 import ContactCateringPage from '@/app/contact-catering/page';
 import { CateringItem, CateringItemCategory } from '@/types/catering';
+import CateringCartButton from '@/components/Catering/CateringCartButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,6 +137,7 @@ const ALaCartePage = async () => {
   return (
     <div className="min-h-screen bg-white">
       <CateringBanner />
+      <CateringCartButton />
 
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="mt-10 mb-16">
@@ -143,7 +145,7 @@ const ALaCartePage = async () => {
             A La Carte Menu
           </h1>
           <p className="text-center text-gray-600 max-w-3xl mx-auto mb-12">
-            If our catering packages don't fit your needs, Destino also offers a la carte ordering.
+            If our catering packages don&apos;t fit your needs, Destino also offers a la carte ordering.
             Select individual items for your event based on your specific requirements.
           </p>
 
