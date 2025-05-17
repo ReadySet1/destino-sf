@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 interface FaqItem {
   question: string;
@@ -50,40 +51,48 @@ const FaqSection: React.FC = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h2 className="text-3xl font-bold text-gray-800 mb-8">Menu: Frequently Asked Questions</h2>
+    <div className="mx-auto w-full max-w-4xl">
+      <h2 className="font-quicksand text-3xl font-bold text-amber-900 mb-8 text-center sm:text-4xl">
+        Frequently Asked Questions
+        <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
+      </h2>
 
       <div className="space-y-4">
         {faqItems.map((faq, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+          <div 
+            key={index} 
+            className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm transition-all duration-300"
+          >
             <button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-4 text-left bg-white hover:bg-gray-50 transition-colors"
+              className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-amber-50/50"
+              aria-expanded={openItems.includes(index)}
+              aria-controls={`faq-answer-${index}`}
             >
-              <h3 className="text-xl font-medium text-gray-800">
-                {index + 1}. {faq.question}
+              <h3 className="font-quicksand text-lg font-medium text-amber-900 pr-8 sm:text-xl">
+                {faq.question}
               </h3>
-              <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${openItems.includes(index) ? 'transform rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <ChevronDown 
+                className={`h-5 w-5 text-amber-500 transition-transform duration-300 ${
+                  openItems.includes(index) ? 'rotate-180 transform' : ''
+                }`} 
+              />
             </button>
 
-            {openItems.includes(index) && (
-              <div className="p-4 bg-gray-50 border-t border-gray-200">
-                <p className="text-gray-700">{faq.answer}</p>
+            <div 
+              id={`faq-answer-${index}`}
+              className={`overflow-hidden transition-all duration-300 ${
+                openItems.includes(index) 
+                  ? 'max-h-[500px] opacity-100' 
+                  : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="border-t border-amber-100 bg-amber-50/30 p-5">
+                <p className="text-amber-900/80 leading-relaxed">
+                  {faq.answer}
+                </p>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>

@@ -84,7 +84,7 @@ export function ShopByCategory() {
             {categories.map(category => (
               <Link
                 key={category.id}
-                href={`/products/category/${category.slug}`}
+                href={category.slug === 'catering' ? '/catering' : `/products/category/${category.slug}`}
                 className="group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl"
               >
                 <div className="relative h-64 w-full overflow-hidden">

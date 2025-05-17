@@ -1,6 +1,6 @@
 import './styles/globals.css';
 import ClientLayout from './client-layout';
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import { Inter, Quicksand, Great_Vibes } from 'next/font/google';
 import Script from 'next/script';
 
@@ -25,6 +25,18 @@ const greatVibes = Great_Vibes({
 const baseUrl = process.env.NODE_ENV === 'development'
   ? 'http://localhost:3000'
   : 'https://destino-sf-ready-set.vercel.app';
+
+// Add viewport configuration
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#ffffff' }
+  ]
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -60,7 +72,9 @@ export const metadata: Metadata = {
     'og:site_name': 'Destino SF',
     'og:locale': 'en_US',
     'og:type': 'website',
-    'theme-color': '#004225',
+    'theme-color': '#ffffff', // Updated from #004225 to match background
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
     'og:image': `${baseUrl}/opengraph-image.jpg`,
     'og:image:secure_url': `${baseUrl}/opengraph-image.jpg`,
     'og:image:width': '1200',
@@ -89,6 +103,11 @@ export default function RootLayout({
       className={`${inter.variable} ${quicksand.variable} ${greatVibes.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="bg-background text-foreground antialiased">
         <ClientLayout>{children}</ClientLayout>
         <Script 

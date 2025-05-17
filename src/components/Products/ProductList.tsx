@@ -39,13 +39,18 @@ const products: Product[] = [
 const ProductList: React.FC = () => {
   return (
     <section className="w-full py-8 md:py-12 lg:py-16">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="font-quicksand text-3xl font-bold text-amber-900 text-center mb-12 sm:text-4xl">
+          Explore Our Offerings
+          <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
+        </h2>
+        
         <div className="grid grid-cols-1 gap-8 sm:gap-10 md:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
             <Link
               key={product.name}
               href={product.slug}
-              className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+              className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden">
                 <Image
@@ -60,15 +65,15 @@ const ProductList: React.FC = () => {
               </div>
               
               <div className="flex flex-1 flex-col p-6">
-                <h3 className="font-quicksand text-xl font-bold text-gray-900 group-hover:text-yellow-600 md:text-2xl">
+                <h3 className="font-quicksand text-xl font-bold text-amber-900 group-hover:text-yellow-600 md:text-2xl">
                   {product.name}
                 </h3>
                 
-                <p className="mt-2 flex-1 text-gray-600 md:mt-3">
+                <p className="mt-2 flex-1 text-amber-900/70 md:mt-3">
                   {product.description}
                 </p>
                 
-                <div className="mt-4 flex items-center justify-end">
+                <div className="mt-6 flex items-center justify-end">
                   <span className="flex items-center text-sm font-medium text-yellow-600 transition-all duration-300 group-hover:translate-x-1">
                     View details <ArrowRight className="ml-1 h-4 w-4" />
                   </span>

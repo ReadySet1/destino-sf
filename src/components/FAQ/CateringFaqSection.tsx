@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FaqItem {
   question: string;
@@ -9,7 +10,7 @@ interface FaqItem {
 
 const CateringFaqSection: React.FC = () => {
   // State to track which FAQ items are open
-  const [openItems, setOpenItems] = useState<number[]>([]);
+  const [openItems, setOpenItems] = useState<number[]>([0]); // Default first item open
 
   // Toggle function to open/close FAQ items
   const toggleItem = (index: number) => {
@@ -50,42 +51,65 @@ const CateringFaqSection: React.FC = () => {
   ];
 
   return (
-    <div className="mb-12 md:mb-16">
-      <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 md:mb-8">
-        Catering: Frequently Asked Questions
-      </h2>
+    <div className="mb-8">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+          Frequently Asked Questions
+        </h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Find answers to common questions about our catering services
+        </p>
+      </div>
 
-      <div className="space-y-4">
+      <div className="max-w-3xl mx-auto space-y-5">
         {faqItems.map((faq, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+          <div 
+            key={index} 
+            className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
             <button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-4 text-left bg-white hover:bg-gray-50 transition-colors"
+              className="flex justify-between items-center w-full p-5 text-left bg-white hover:bg-gray-50 transition-colors"
+              aria-expanded={openItems.includes(index)}
+              aria-controls={`faq-answer-${index}`}
             >
               <h3 className="text-xl font-medium text-gray-800">
-                {index + 1}. {faq.question}
+                {faq.question}
               </h3>
-              <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${openItems.includes(index) ? 'transform rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 transition-transform duration-300 ${openItems.includes(index) ? 'transform rotate-180' : ''}`}>
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
             </button>
 
-            {openItems.includes(index) && (
-              <div className="p-4 bg-gray-50 border-t border-gray-200">
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
-            )}
+            <AnimatePresence>
+              {openItems.includes(index) && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  id={`faq-answer-${index}`}
+                  className="overflow-hidden"
+                >
+                  <div className="p-5 bg-gray-50 border-t border-gray-200">
+                    <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>
