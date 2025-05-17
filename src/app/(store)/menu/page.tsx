@@ -6,7 +6,7 @@ import FaqSection from '@/components/FAQ/MenuQuestions';
 
 export const metadata = {
   title: 'Our Menu | Destino SF',
-  description: 'Explore our authentic Argentine treats - handcrafted empanadas, alfajores, and catering services.',
+  description: 'Discover our delicious selection of traditional treats.',
 };
 
 const MenuPage = () => {

@@ -1,36 +1,36 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const CateringBanner: React.FC = () => {
   return (
-    <div className="relative overflow-hidden bg-[#2d3538]">
+    <div className="relative overflow-hidden">
+      {/* Background with gray gradient */}
+      <div className="absolute inset-0 z-0 bg-[#2d3538]" />
+      
       {/* Background pattern using CSS */}
       <div 
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 z-0 opacity-10"
         style={{
           backgroundImage: `radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.2) 2%, transparent 0%), 
                             radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.2) 2%, transparent 0%)`,
           backgroundSize: '100px 100px'
         }}
       />
-      
-      {/* Main content */}
-      <div className="relative py-10 md:py-16 text-center">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
-              Catering
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
-              Authentic Latin American flavors for your special events
-            </p>
-          </motion.div>
+
+      {/* Content */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <div className="max-w-xl">
+          <h1 className="font-quicksand text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Catering
+          </h1>
+          
+          <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
+          
+          <p className="mt-6 max-w-lg text-lg text-gray-300 sm:text-xl">
+            Authentic Latin American flavors for your special events
+          </p>
         </div>
       </div>
     </div>
