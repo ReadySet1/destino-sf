@@ -1,32 +1,35 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 const CateringBanner: React.FC = () => {
   return (
-    <div className="m-0">
-      <style jsx>{`
-        @media (max-width: 640px) {
-          .menu-banner {
-            margin-top: 0;
-            margin-bottom: 0;
-          }
-          .cater-text {
-            margin-top: 6px !important; /* Reduce the margin for mobile */
-          }
-        }
-      `}</style>
-      <div
-        className="menu-banner w-full bg-[#2d3538] py-6 md:py-6 text-center"
-        role="banner"
-        aria-label="Menu section"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white font-quicksand tracking-tight">
+    <div className="relative overflow-hidden">
+      {/* Background with gray gradient */}
+      <div className="absolute inset-0 z-0 bg-[#2d3538]" />
+      
+      {/* Background pattern using CSS */}
+      <div 
+        className="absolute inset-0 z-0 opacity-10"
+        style={{
+          backgroundImage: `radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.2) 2%, transparent 0%), 
+                            radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.2) 2%, transparent 0%)`,
+          backgroundSize: '100px 100px'
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <div className="max-w-xl">
+          <h1 className="font-quicksand text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Catering
           </h1>
-          <p className="cater-text mt-2 sm:mt-4 text-lg md:text-xl text-gray-300">
-            Let us cater your next event!
+          
+          <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
+          
+          <p className="mt-6 max-w-lg text-lg text-gray-300 sm:text-xl">
+            Authentic Latin American flavors for your special events
           </p>
         </div>
       </div>

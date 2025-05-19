@@ -10,7 +10,7 @@ interface FaqItem {
 
 const CateringFaqSection: React.FC = () => {
   // State to track which FAQ items are open
-  const [openItems, setOpenItems] = useState<number[]>([]);
+  const [openItems, setOpenItems] = useState<number[]>([0]); // Default first item open
 
   // Toggle function to open/close FAQ items
   const toggleItem = (index: number) => {
@@ -144,103 +144,66 @@ const CateringFaqSection: React.FC = () => {
   };
 
   return (
-    <div className="mb-12 md:mb-16">
-      <motion.h2
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.6,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 md:mb-8"
-      >
-        Catering: Frequently Asked Questions
-      </motion.h2>
+    <div className="mb-8">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+          Frequently Asked Questions
+        </h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Find answers to common questions about our catering services
+        </p>
+      </div>
 
-      <motion.div
-        className="space-y-4"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="max-w-3xl mx-auto space-y-5">
         {faqItems.map((faq, index) => (
-          <motion.div
-            key={index}
-            className="border border-gray-200 rounded-lg overflow-hidden shadow-sm"
-            variants={itemVariants}
-            whileHover={{
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-              transition: { duration: 0.3 },
-            }}
+          <div 
+            key={index} 
+            className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
           >
-            <motion.button
+            <button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-4 text-left bg-white transition-colors"
-              variants={buttonHoverVariants}
-              initial="rest"
-              whileHover="hover"
-              whileTap={{ scale: 0.995 }}
+              className="flex justify-between items-center w-full p-5 text-left bg-white hover:bg-gray-50 transition-colors"
+              aria-expanded={openItems.includes(index)}
+              aria-controls={`faq-answer-${index}`}
             >
-              <motion.h3
-                className="text-xl font-medium text-gray-800"
-                initial={{ opacity: 0.95 }}
-                whileHover={{ opacity: 1 }}
-              >
-                {index + 1}. {faq.question}
-              </motion.h3>
-              <motion.svg
-                variants={arrowVariants}
-                animate={openItems.includes(index) ? 'up' : 'down'}
-                className="w-5 h-5 text-gray-500 flex-shrink-0 ml-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </motion.svg>
-            </motion.button>
+              <h3 className="text-xl font-medium text-gray-800">
+                {faq.question}
+              </h3>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 transition-transform duration-300 ${openItems.includes(index) ? 'transform rotate-180' : ''}`}>
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </button>
 
-            <AnimatePresence initial={false}>
+            <AnimatePresence>
               {openItems.includes(index) && (
                 <motion.div
-                  key={`content-${index}`}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  variants={contentVariants}
-                  className="bg-gray-50 border-t border-gray-200 overflow-hidden"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  id={`faq-answer-${index}`}
+                  className="overflow-hidden"
                 >
-                  <div className="p-4">
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: {
-                          delay: 0.15,
-                          duration: 0.35,
-                          ease: 'easeOut',
-                        },
-                      }}
-                      exit={{
-                        opacity: 0,
-                        transition: { duration: 0.2 },
-                      }}
-                      className="text-gray-600"
-                    >
-                      {faq.answer}
-                    </motion.p>
+                  <div className="p-5 bg-gray-50 border-t border-gray-200">
+                    <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         ))}
       </motion.div>
     </div>

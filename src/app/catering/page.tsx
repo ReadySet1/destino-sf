@@ -5,10 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
 import { CateringPackages, ALaCarteMenu } from '@/components/Catering';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CateringPackage, CateringItem, CateringItemCategory, CateringPackageType, getItemsForTab } from '@/types/catering';
 import { getCateringPackages, getCateringItems } from '@/actions/catering';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
+import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +50,7 @@ const CateringPage = async () => {
   const hasSquareCategoryCount = cateringItems.filter(item => !!item.squareCategory).length;
 
   return (
-    <>
+    <div className="bg-white">
       {/* Add the CateringCartButton component */}
       <CateringCartButton />
       
@@ -58,56 +58,60 @@ const CateringPage = async () => {
       <CateringBanner />
 
       {/* Main Content Container */}
-      <div className="min-h-screen bg-white">
+      <div>
         {/* Error message if any */}
         {errorMessage && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-            <p className="font-bold">Error</p>
-            <p>{errorMessage}</p>
+          <div className="max-w-[1300px] mx-auto px-6 md:px-8 mt-8">
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+              <p className="font-bold">Error</p>
+              <p>{errorMessage}</p>
+            </div>
           </div>
         )}
         
         {/* Hero Section */}
-        <Card className="border-none shadow-none mb-12">
-          <CardContent className="p-0">
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8">
-              Planning an event? Let us assist with vibrant Latin American flavors everyone will love.
-            </h1>
+        <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
+          <Card className="border-none shadow-none">
+            <CardContent className="p-0">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 mb-8 md:mb-10 leading-tight">
+                Planning an event? Let us assist with vibrant Latin American flavors everyone will love.
+              </h1>
 
-            <div className="flex flex-col md:flex-row gap-10 items-start">
-              {/* Services List */}
-              <div className="space-y-6 flex-1">
-                <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
-                <ul className="space-y-3">
-                  {cateringServices.map((service, index) => (
-                    <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
-                      <span className="text-[#fdc32d] font-bold">•</span>
-                      <span>{service}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex flex-col lg:flex-row gap-8 md:gap-10 items-start">
+                {/* Services List */}
+                <div className="space-y-4 flex-1 order-2 lg:order-1">
+                  <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
+                  <ul className="space-y-3">
+                    {cateringServices.map((service, index) => (
+                      <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
+                        <span className="text-[#fdc32d] font-bold text-2xl">•</span>
+                        <span>{service}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Image Container */}
+                <div className="w-full lg:w-3/5 overflow-hidden rounded-xl shadow-lg order-1 lg:order-2">
+                  <Image
+                    src="/images/catering/catering.png"
+                    alt="Catering service"
+                    width={800}
+                    height={600}
+                    className="object-cover w-full h-auto hover:scale-105 transition-transform duration-500"
+                    priority
+                  />
+                </div>
               </div>
-              
-              {/* Image Container */}
-              <div className="w-full md:w-2/3 overflow-hidden rounded-lg">
-                <Image
-                  src="/images/catering/catering.png"
-                  alt="Catering service"
-                  width={800}
-                  height={600}
-                  className="object-cover w-full h-auto hover:scale-105 transition-transform duration-500"
-                  priority
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </section>
       </div>
 
       {/* Dietary Options Section - Full-width accent */}
-      <div className="bg-[#fdc32d] py-8 md:py-12 my-12 md:my-16 transform transition-all hover:bg-[#fdc32d]/90">
-        <div className="max-w-[1200px] mx-auto px-4">
-          <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight">
+      <div className="bg-[#fdc32d] py-8 md:py-10">
+        <div className="max-w-[1300px] mx-auto px-6 md:px-8">
+          <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight md:leading-relaxed">
             Our menus are fully customizable and include plenty of gluten-free, vegetarian, and
             vegan options to meet your needs.
           </h3>
@@ -115,55 +119,18 @@ const CateringPage = async () => {
       </div>
 
       {/* Catering Options - Packages and A La Carte */}
-      <div className="max-w-[1200px] mx-auto px-4 mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">Catering Menu</h2>
-        <Tabs defaultValue="appetizers" className="w-full">
-          <div className="flex justify-center mb-10">
-            <TabsList>
-              <TabsTrigger value="appetizers">Appetizers</TabsTrigger>
-              <TabsTrigger value="buffet">Buffet</TabsTrigger>
-              <TabsTrigger value="lunch">Lunch</TabsTrigger>
-              <TabsTrigger value="lunch-packets">Lunch Packets</TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <TabsContent value="appetizers" className="mt-4">
-            <ALaCarteMenu items={cateringItems} activeCategory="appetizers" />
-          </TabsContent>
-          
-          <TabsContent value="buffet" className="mt-4">
-            <ALaCarteMenu items={cateringItems} activeCategory="buffet" />
-          </TabsContent>
-          
-          <TabsContent value="lunch" className="mt-4">
-            <ALaCarteMenu items={cateringItems} activeCategory="lunch" />
-          </TabsContent>
-          
-          <TabsContent value="lunch-packets" className="mt-4">
-            <CateringPackages packages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Debug section - remove after fixing */}
-      {/* <div className="max-w-[1200px] mx-auto px-4 mb-16 border p-4 bg-gray-50">
-        <h3 className="font-bold">Debug Info:</h3>
-        <p>Total items: {cateringItems.length}</p>
-        <p>Items with squareCategory: {hasSquareCategoryCount}</p>
-        <p>Appetizers: {appetizersCount}</p>
-        <p>Buffet: {buffetCount}</p>
-        <p>Lunch: {lunchCount}</p>
-        <p>Lunch Packets: {lunchPacketsCount}</p>
-        <h4 className="mt-4 font-bold">Square Categories:</h4>
-        <ul>
-          {Array.from(new Set(cateringItems.map(item => item.squareCategory))).map(
-            (category, index) => category && <li key={index}>{category}</li>
-          )}
-        </ul>
-      </div> */}
+      <section className="max-w-[1300px] mx-auto px-6 md:px-8 py-12 md:py-16">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12">Catering Menu</h2>
+        
+        {/* Use the client component for tabs */}
+        <CateringMenuTabs 
+          cateringItems={cateringItems} 
+          cateringPackages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} 
+        />
+      </section>
 
       {/* Contact form and FAQ Section */}
-      <div className="max-w-[1200px] mx-auto px-4">
+      <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-8 pb-16 md:pt-12 md:pb-20">
         {/* Contact form */}
         <div className="mb-16">
           <CateringContactForm />
@@ -175,8 +142,8 @@ const CateringPage = async () => {
             <CateringFaqSection />
           </CardContent>
         </Card>
-      </div>
-    </>
+      </section>
+    </div>
   );
 };
 

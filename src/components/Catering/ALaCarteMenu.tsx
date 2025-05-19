@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { CateringItem, getItemsForTab, groupItemsBySubcategory } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ALaCarteMenuProps {
   items: CateringItem[];
@@ -25,7 +26,7 @@ const formatDescription = (str: string | null | undefined): string => {
 };
 
 export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategory = 'appetizers' }) => {
-  // Filtrar los items para esta pestaña y agruparlos por subcategoría
+  // Filter items for this tab and group them by subcategory
   const filteredItems = getItemsForTab(items, activeCategory);
   const groupedItems = groupItemsBySubcategory(filteredItems);
   
@@ -33,12 +34,18 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategor
     <div className="w-full">
       <Toaster position="top-right" />
       <div className="space-y-12">
-        {Object.entries(groupedItems).map(([categoryName, categoryItems]) => (
-          <CategorySection 
+        {Object.entries(groupedItems).map(([categoryName, categoryItems], index) => (
+          <motion.div
             key={categoryName}
-            title={toTitleCase(categoryName)}
-            items={categoryItems}
-          />
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <CategorySection 
+              title={toTitleCase(categoryName)}
+              items={categoryItems}
+            />
+          </motion.div>
         ))}
       </div>
     </div>
@@ -55,23 +62,38 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items }) => {
   const displayItems = showAll ? items : items.slice(0, 6);
   
   return (
-    <div>
-      <h3 className="text-2xl font-semibold border-b border-gray-300 pb-2 mb-6">{title}</h3>
+    <div className="bg-white rounded-xl p-5 md:p-6 shadow-sm border border-gray-100">
+      <h3 className="text-2xl font-bold text-gray-800 border-b border-gray-200 pb-3 mb-6">{title}</h3>
       
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-        {displayItems.map(item => (
-          <MenuItem key={item.id} item={item} />
+        {displayItems.map((item, index) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <MenuItem item={item} />
+          </motion.div>
         ))}
       </div>
       
       {items.length > 6 && (
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <Button 
             variant="outline" 
             onClick={() => setShowAll(!showAll)}
-            className="border-gray-300 text-gray-700"
+            className="border-gray-300 text-gray-700 py-5 px-8 rounded-full flex items-center gap-2 hover:bg-gray-50 transition-colors"
           >
-            {showAll ? 'Show Less' : `Show ${items.length - 6} More Options`}
+            {showAll ? (
+              <>
+                Show Less <ChevronUp className="h-4 w-4 ml-1" />
+              </>
+            ) : (
+              <>
+                Show {items.length - 6} More Options <ChevronDown className="h-4 w-4 ml-1" />
+              </>
+            )}
           </Button>
         </div>
       )}
@@ -99,7 +121,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
       const parts = formattedDesc.split(',');
       
       return (
-        <div className="text-sm">
+        <div className="text-sm md:text-base">
           <span className="font-medium">{parts[0].trim()}</span>
           <span className="text-gray-600">{parts.length > 1 ? ',' : ''} </span>
           <span className="italic">
@@ -110,44 +132,46 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     }
     
     // If it's a simple description without commas, just add some basic styling
-    return <p className="text-gray-600 text-sm">{formattedDesc}</p>;
+    return <p className="text-gray-600 text-sm md:text-base">{formattedDesc}</p>;
   };
   
   return (
     <>
-      <div className="border-b border-gray-200 pb-4">
-        <div className="flex justify-between items-start mb-1">
-          <div className="flex items-center gap-2">
-            <h4 className="text-lg font-medium">{toTitleCase(name)}</h4>
-            <div className="flex gap-1">
-              {isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
-              {isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
-              {isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
+      <div className="border-b border-gray-200 pb-4 h-full flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-lg md:text-xl font-medium">{toTitleCase(name)}</h4>
+              <div className="flex gap-1 mt-1">
+                {isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
+                {isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
+                {isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
+              </div>
+            </div>
+            <div className="text-lg md:text-xl font-semibold text-gray-800">
+              ${price.toFixed(2)}
             </div>
           </div>
-          <div className="text-lg font-semibold">
-            ${price.toFixed(2)}
-          </div>
+          
+          {servingSize && (
+            <div className="text-sm md:text-base font-medium text-gray-600 mb-1">
+              <span className="font-bold">Serving: </span>
+              {formatDescription(servingSize)}
+            </div>
+          )}
+          
+          {description && formatMenuItemDescription(description)}
         </div>
-        
-        {servingSize && (
-          <div className="text-sm font-medium text-gray-600 mb-1">
-            <span className="font-bold">Serving: </span>
-            {formatDescription(servingSize)}
-          </div>
-        )}
-        
-        {description && formatMenuItemDescription(description)}
         
         <div className="mt-3">
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => setShowOrderModal(true)}
-            className="border-gray-300 hover:bg-gray-100"
+            className="border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
           >
-            <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-            Order Now
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Add to Order
           </Button>
         </div>
       </div>
@@ -170,8 +194,9 @@ interface DietaryBadgeProps {
 const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
   return (
     <div 
-      className="inline-flex items-center justify-center bg-green-100 text-green-800 text-xs font-medium px-1.5 rounded-sm" 
+      className="inline-flex items-center justify-center bg-green-100 text-green-800 text-xs font-medium px-1.5 py-0.5 rounded" 
       title={tooltip}
+      aria-label={tooltip}
     >
       {label}
     </div>

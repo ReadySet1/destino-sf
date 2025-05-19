@@ -6,12 +6,14 @@ export function HeroBanner() {
     <div className="relative w-full overflow-hidden">
       <div className="relative h-[50vh] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
         <Image
-          src="/images/hero/hero-empanada.png"
+          src="/images/hero/hero-empanada.jpg"
           alt="Delicious Empanadas"
           fill
           className="object-cover object-top"
           priority
+          sizes="100vw"
         />
+        <div className="absolute inset-0 bg-black/30"></div>
       </div>
 
       <div className="absolute inset-0 flex flex-col justify-center md:items-start px-8 md:px-16 lg:px-32 xl:px-40">
@@ -29,7 +31,7 @@ export function HeroBanner() {
             our food makes people smile!
           </p>
           <Link
-            href="/order"
+            href="/menu"
             className="mt-4 md:mt-8 lg:mt-12 md:self-auto inline-block rounded-full bg-yellow-400 px-6 py-3 md:px-8 md:py-4 text-base md:text-xl lg:text-2xl font-bold text-gray-800 transition-all hover:bg-yellow-500 hover:scale-105 [text-shadow:0_1px_2px_rgba(0,0,0,0.1)]"
           >
             Order Now

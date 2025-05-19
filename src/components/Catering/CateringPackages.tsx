@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CateringPackage, CateringPackageType } from '@/types/catering';
-import { Star, StarHalf, ShoppingCart } from 'lucide-react';
+import { Star, StarHalf, ShoppingCart, Users, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { Toaster } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 interface CateringPackagesProps {
   packages: CateringPackage[];
@@ -37,68 +38,88 @@ export const CateringPackages: React.FC<CateringPackagesProps> = ({ packages }) 
     <div className="w-full">
       <Toaster position="top-right" />
       <div className="text-center mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-          Destino Catering Packages
-        </h2>
-        <p className="text-gray-600 max-w-3xl mx-auto">
-          {formatDescription("Catering for a crowd is hard. That's why we've taken the best items on our menu and created ready to order catering packages for your convenience. Each package is priced per person and can be customized to suit any group size and any taste.")}
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            Destino Catering Packages
+          </h2>
+          <p className="text-gray-600 max-w-3xl mx-auto text-lg">
+            {formatDescription("Catering for a crowd is hard. That's why we've taken the best items on our menu and created ready to order catering packages for your convenience. Each package is priced per person and can be customized to suit any group size and any taste.")}
+          </p>
+        </motion.div>
       </div>
 
-      <div className="flex justify-center gap-2 mb-8">
+      <div className="flex flex-wrap justify-center gap-3 mb-8">
         <Button 
           onClick={() => setFilter('ALL')}
           variant={filter === 'ALL' ? "default" : "outline"}
           className={cn(
-            "rounded-full px-6",
+            "rounded-full px-8 py-6 text-base",
             filter === 'ALL' ? "bg-[#2d3538] hover:bg-[#2d3538]/90" : ""
           )}
         >
-          All
+          All Packages
         </Button>
         <Button 
           onClick={() => setFilter(CateringPackageType.INDIVIDUAL)}
           variant={filter === CateringPackageType.INDIVIDUAL ? "default" : "outline"}
           className={cn(
-            "rounded-full px-6",
+            "rounded-full px-8 py-6 text-base",
             filter === CateringPackageType.INDIVIDUAL ? "bg-[#2d3538] hover:bg-[#2d3538]/90" : ""
           )}
         >
-          Individuals
+          <Coffee className="mr-2 h-5 w-5" />
+          Individual Boxes
         </Button>
         <Button 
           onClick={() => setFilter(CateringPackageType.BUFFET)}
           variant={filter === CateringPackageType.BUFFET ? "default" : "outline"}
           className={cn(
-            "rounded-full px-6",
+            "rounded-full px-8 py-6 text-base",
             filter === CateringPackageType.BUFFET ? "bg-[#2d3538] hover:bg-[#2d3538]/90" : ""
           )}
         >
-          Buffet
+          <Users className="mr-2 h-5 w-5" />
+          Buffet Style
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {filteredPackages.map(pkg => (
-          <CateringPackageCard key={pkg.id} cateringPackage={pkg} />
+      <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+        {filteredPackages.map((pkg, index) => (
+          <motion.div
+            key={pkg.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <CateringPackageCard cateringPackage={pkg} />
+          </motion.div>
         ))}
       </div>
 
-      <div className="text-center mt-12 mb-16">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-          A La Carte Menu
+      <motion.div 
+        className="text-center mt-12 mb-8 bg-gray-50 p-8 rounded-xl shadow-sm border border-gray-100"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">
+          Prefer to Build Your Own?
         </h3>
-        <p className="text-gray-600 max-w-3xl mx-auto mb-6">
-          {formatDescription("If our catering packages don't fit your needs, Destino also offers a la carte ordering.")}
+        <p className="text-gray-600 max-w-3xl mx-auto mb-8 text-lg">
+          {formatDescription("If our catering packages don't fit your needs, Destino also offers a la carte ordering to create your own custom menu.")}
         </p>
         <Link href="/catering/a-la-carte">
           <Button 
-            className="bg-[#fab526] hover:bg-[#fab526]/90 text-black font-semibold px-8 py-6 text-lg"
+            className="bg-[#fab526] hover:bg-[#fab526]/90 text-black font-semibold px-10 py-6 text-lg rounded-full"
           >
-            Order A La Carte
+            Browse A La Carte Menu
           </Button>
         </Link>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -170,47 +191,49 @@ const CateringPackageCard: React.FC<CateringPackageCardProps> = ({ cateringPacka
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex flex-col md:flex-row">
-          <div className="w-full md:w-1/3 relative">
-            <div className="aspect-[4/3] relative">
-              <Image
-                src={imageUrl || '/images/catering/default-package.jpg'}
-                alt={toTitleCase(name)}
-                fill
-                className="object-cover"
-              />
-            </div>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+        <div className="relative">
+          <div className="w-full aspect-[16/9] relative">
+            <Image
+              src={imageUrl || '/images/catering/default-package.jpg'}
+              alt={toTitleCase(name)}
+              fill
+              className="object-cover"
+            />
           </div>
-          <div className="w-full md:w-2/3 p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">{toTitleCase(name)}</h3>
-            {formatPackageDescription(description)}
-            
-            {ratings && ratings.length > 0 && (
-              <div className="flex items-center gap-1 mb-4">
-                {renderStars(averageRating)}
-                <span className="text-gray-500 text-sm ml-1">({ratings.length})</span>
-              </div>
-            )}
-            
-            <div className="flex justify-between items-center mt-auto">
-              <div className="px-4 py-2 bg-gray-100 rounded-full text-center">
-                {type === CateringPackageType.INDIVIDUAL ? 'Individual' : 'Buffet'}
-              </div>
-              <div className="text-xl font-bold">
-                ${pricePerPerson.toFixed(2)} <span className="text-sm font-normal">/Person</span>
+          <div className="absolute top-4 right-4 px-4 py-2 bg-white bg-opacity-90 rounded-full text-center shadow-sm">
+            <span className={type === CateringPackageType.INDIVIDUAL ? "text-blue-700" : "text-emerald-700"}>
+              {type === CateringPackageType.INDIVIDUAL ? 'Individual' : 'Buffet Style'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="p-5 md:p-6 flex flex-col flex-grow">
+          <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">{toTitleCase(name)}</h3>
+          
+          {formatPackageDescription(description)}
+          
+          {ratings && ratings.length > 0 && (
+            <div className="flex items-center gap-1 mb-4">
+              {renderStars(averageRating)}
+              <span className="text-gray-500 text-sm ml-1">({ratings.length})</span>
+            </div>
+          )}
+          
+          <div className="mt-auto pt-3">
+            <div className="flex justify-between items-center mb-3">
+              <div className="text-2xl font-bold text-gray-800">
+                ${pricePerPerson.toFixed(2)} <span className="text-sm font-normal text-gray-600">per person</span>
               </div>
             </div>
             
-            <div className="mt-4">
-              <Button 
-                onClick={() => setShowOrderModal(true)}
-                className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Order Package
-              </Button>
-            </div>
+            <Button 
+              onClick={() => setShowOrderModal(true)}
+              className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-5 text-base font-medium"
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              Order This Package
+            </Button>
           </div>
         </div>
       </div>
