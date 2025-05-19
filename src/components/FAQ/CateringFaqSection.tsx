@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, ButtonHTMLAttributes } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FaqItem {
@@ -154,10 +154,15 @@ const CateringFaqSection: React.FC = () => {
         </p>
       </div>
 
-      <div className="max-w-3xl mx-auto space-y-5">
+      <motion.div
+        className="max-w-3xl mx-auto space-y-5"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {faqItems.map((faq, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
           >
             <button
@@ -166,10 +171,10 @@ const CateringFaqSection: React.FC = () => {
               aria-expanded={openItems.includes(index)}
               aria-controls={`faq-answer-${index}`}
             >
-              <h3 className="text-xl font-medium text-gray-800">
-                {faq.question}
-              </h3>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 transition-transform duration-300 ${openItems.includes(index) ? 'transform rotate-180' : ''}`}>
+              <h3 className="text-xl font-medium text-gray-800">{faq.question}</h3>
+              <div
+                className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 transition-transform duration-300 ${openItems.includes(index) ? 'transform rotate-180' : ''}`}
+              >
                 <svg
                   className="w-5 h-5 text-gray-600"
                   fill="none"
