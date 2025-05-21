@@ -13,11 +13,10 @@ export default async function Home() {
     <main>
       <Hero />
       <ShopByCategory />
-
-      {/* <PromotionBanner /> */}
       <FeaturedProducts />
 
       <CateringSection />
+      <PromotionBanner />
       {/* <section>
         <About variant="large" />
       </section> */}

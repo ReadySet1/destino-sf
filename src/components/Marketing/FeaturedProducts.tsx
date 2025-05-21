@@ -59,6 +59,7 @@ export function FeaturedProducts() {
 
         <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
           Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
+          <br />
           Inspired by tradition. Driven by creativity.
         </p>
 
