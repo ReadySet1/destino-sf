@@ -78,12 +78,11 @@ const CateringPage = async () => {
         <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
           <Card className="border-none shadow-none">
             <CardContent className="p-0">
-              {/* THIS IS THE KEY CHANGE */}
-              <div className="flex flex-col lg:flex-row gap-8 md:gap-10 items-start">
-                {/* Combined Text Content - order for mobile, flex-1 for desktop width */}
+              {/* KEY CHANGE: Added lg:items-center to vertically align content,
+                            and adjusted text/image containers to allow better centering effect */}
+              <div className="flex flex-col lg:flex-row gap-8 md:gap-10 items-start lg:items-center">
+                {/* Combined Text Content */}
                 <div className="w-full lg:w-1/2 order-2 lg:order-1 space-y-8">
-                  {' '}
-                  {/* Adjusted width, order, and space-y */}
                   {/* Updated Text Formatting */}
                   <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 leading-tight">
                     <span className="block">Planning an event?</span>
@@ -92,7 +91,7 @@ const CateringPage = async () => {
                     <span className="block">everyone will love!</span>
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
+                    <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">Ofrecemos:</h3>
                     <ul className="space-y-3">
                       {cateringServices.map((service, index) => (
                         <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
@@ -104,10 +103,8 @@ const CateringPage = async () => {
                   </div>
                 </div>
 
-                {/* Image Container - order for mobile, w-1/2 for desktop width */}
-                <div className="w-full lg:w-1/2 order-1 lg:order-2 overflow-hidden rounded-xl shadow-lg">
-                  {' '}
-                  {/* Adjusted width and order */}
+                {/* Image Container - Using flex to center the image itself within its half-width */}
+                <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center items-center overflow-hidden rounded-xl shadow-lg">
                   <Image
                     src="/images/catering/catering.png"
                     alt="Catering service"
@@ -127,9 +124,9 @@ const CateringPage = async () => {
       <div className="bg-[#fdc32d] py-8 md:py-10">
         <div className="max-w-[1300px] mx-auto px-6 md:px-8">
           <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight md:leading-relaxed text-center">
-            Our menus are fully customizable and include a variety <br /> of{' '}
+            Our menus are fully customizable and include a variety of <br />{' '}
             <b>
-              <i>gluten-free</i>
+              <i>gluten free</i>
             </b>
             ,{' '}
             <b>

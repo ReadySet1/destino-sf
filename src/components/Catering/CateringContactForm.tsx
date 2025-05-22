@@ -20,11 +20,7 @@ import { submitCateringInquiry } from '@/actions/catering';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 // Form schema with validation
@@ -38,11 +34,13 @@ const formSchema = z.object({
   phone: z.string().min(10, {
     message: 'Please enter a valid phone number.',
   }),
-  eventDate: z.date({
-    required_error: 'Please select a date for your event.',
-  }).refine(date => date >= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), {
-    message: 'Event date must be at least 2 days from now.',
-  }),
+  eventDate: z
+    .date({
+      required_error: 'Please select a date for your event.',
+    })
+    .refine(date => date >= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), {
+      message: 'Event date must be at least 2 days from now.',
+    }),
   numberOfPeople: z.coerce.number().int().positive({
     message: 'Number of people must be a positive number.',
   }),
@@ -58,7 +56,11 @@ interface CateringContactFormProps {
   onSubmitSuccess?: () => void;
 }
 
-export function CateringContactForm({ packageId, packageName, onSubmitSuccess }: CateringContactFormProps) {
+export function CateringContactForm({
+  packageId,
+  packageName,
+  onSubmitSuccess,
+}: CateringContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -101,19 +103,24 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-gray-800">Get in Touch</h2>
+        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-gray-800">
+          Ready to plan your event?
+        </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Fill out the form below to discuss your event needs and get a customized quote.
+          Let us help you creating an unforgettable experience with our
+          <br />
+          Latin American catering services!
         </p>
       </div>
-      
-      <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+
+      <div className="bg-[#fdc32d] rounded-xl shadow-md p-6 md:p-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {packageName && (
               <div className="rounded-lg bg-amber-50 p-5 mb-6 border border-amber-200">
                 <p className="text-amber-800">
-                  Your inquiry is for the <span className="font-semibold">{packageName}</span> package.
+                  Your inquiry is for the <span className="font-semibold">{packageName}</span>{' '}
+                  package.
                 </p>
               </div>
             )}
@@ -170,11 +177,11 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
                   <FormItem>
                     <FormLabel className="text-base">Number of People</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="Enter number of guests" 
-                        className="h-12" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="Enter number of guests"
+                        className="h-12"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -193,17 +200,13 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant={"outline"}
+                          variant={'outline'}
                           className={cn(
-                            "w-full h-12 pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-full h-12 pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
                           )}
                         >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                         </Button>
                       </FormControl>
@@ -213,7 +216,7 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
+                        disabled={date =>
                           // Disable dates in the past and dates less than 2 days from now
                           date < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
                         }
@@ -250,7 +253,7 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#fab526] hover:bg-[#fab526]/90 text-black font-medium py-4 text-lg mt-6"
+              className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 text-white font-medium py-4 text-lg mt-6"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Catering Inquiry'}
             </Button>
@@ -258,7 +261,9 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
             {submitSuccess && (
               <div className="rounded-lg bg-green-50 p-6 text-green-800 border border-green-200 mt-8">
                 <p className="font-medium text-lg">Thank you for your inquiry!</p>
-                <p className="mt-2">We&apos;ll get back to you soon to discuss your catering needs.</p>
+                <p className="mt-2">
+                  We&apos;ll get back to you soon to discuss your catering needs.
+                </p>
               </div>
             )}
           </form>
@@ -266,4 +271,4 @@ export function CateringContactForm({ packageId, packageName, onSubmitSuccess }:
       </div>
     </div>
   );
-} 
+}
