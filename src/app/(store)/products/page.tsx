@@ -168,12 +168,14 @@ export default async function ProductsPage() {
                         padding: '1rem',
                       }}
                     >
-                      Indulge in our handcrafted alfajores, where tradition meets perfection. Each
-                      delicate cookie sandwich embraces a generous layer of velvety dulce de leche,
-                      finished with a touch of powdered coconut or chocolate coating. Made with
-                      authentic recipes passed down through generations, our alfajores bring the
-                      sweet flavors of Argentina to your home. Perfect for gifting or treating
-                      yourself to a moment of sweet bliss.
+                      Our alfajores are buttery shortbread cookies filled with rich, velvety dulce
+                      de leche — a beloved Latin American treat made the DESTINO way. We offer a
+                      variety of flavors including classic, chocolate, gluten-free, lemon, and
+                      seasonal specialties. Each cookie is handcrafted in small batches using a
+                      family-honored recipe and premium ingredients for that perfect
+                      melt-in-your-mouth texture. Whether you are gifting, sharing, or treating
+                      yourself, our alfajores bring comfort, flavor, and a touch of tradition to
+                      every bite.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
