@@ -8,14 +8,14 @@ const CateringBanner: React.FC = () => {
     <div className="relative overflow-hidden">
       {/* Background with gray gradient */}
       <div className="absolute inset-0 z-0 bg-[#2d3538]" />
-      
+
       {/* Background pattern using CSS */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-10"
         style={{
           backgroundImage: `radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.2) 2%, transparent 0%), 
                             radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.2) 2%, transparent 0%)`,
-          backgroundSize: '100px 100px'
+          backgroundSize: '100px 100px',
         }}
       />
 
@@ -25,11 +25,11 @@ const CateringBanner: React.FC = () => {
           <h1 className="font-quicksand text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Catering
           </h1>
-          
+
           <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
-          
+
           <p className="mt-6 max-w-lg text-lg text-gray-300 sm:text-xl">
-            Authentic Latin American flavors for your special events
+            Let us cater your next event!
           </p>
         </div>
       </div>

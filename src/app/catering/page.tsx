@@ -4,8 +4,13 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
-import { CateringPackages, ALaCarteMenu } from '@/components/Catering';
-import { CateringPackage, CateringItem, CateringItemCategory, CateringPackageType, getItemsForTab } from '@/types/catering';
+import {
+  CateringPackage,
+  CateringItem,
+  CateringItemCategory,
+  CateringPackageType,
+  getItemsForTab,
+} from '@/types/catering';
 import { getCateringPackages, getCateringItems } from '@/actions/catering';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
 import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
@@ -21,7 +26,7 @@ const cateringServices: string[] = [
   'Private Dinner Parties',
   'Film & Photo Shoots',
   'Conferences & Meetings',
-  'Social Events & Reunions'
+  'Social Events & Reunions',
 ];
 
 const CateringPage = async () => {
@@ -37,7 +42,7 @@ const CateringPage = async () => {
   } catch (error) {
     console.error('Error fetching catering data:', error);
     errorMessage = error instanceof Error ? error.message : 'Failed to load catering data';
-    
+
     // If database fetch fails, the page will still render but with empty arrays
     // This ensures graceful degradation
   }
@@ -53,7 +58,7 @@ const CateringPage = async () => {
     <div className="bg-white">
       {/* Add the CateringCartButton component */}
       <CateringCartButton />
-      
+
       {/* Catering Banner */}
       <CateringBanner />
 
@@ -68,31 +73,41 @@ const CateringPage = async () => {
             </div>
           </div>
         )}
-        
+
         {/* Hero Section */}
         <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
           <Card className="border-none shadow-none">
             <CardContent className="p-0">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 mb-8 md:mb-10 leading-tight">
-                Planning an event? Let us assist with vibrant Latin American flavors everyone will love.
-              </h1>
-
+              {/* THIS IS THE KEY CHANGE */}
               <div className="flex flex-col lg:flex-row gap-8 md:gap-10 items-start">
-                {/* Services List */}
-                <div className="space-y-4 flex-1 order-2 lg:order-1">
-                  <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
-                  <ul className="space-y-3">
-                    {cateringServices.map((service, index) => (
-                      <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
-                        <span className="text-[#fdc32d] font-bold text-2xl">•</span>
-                        <span>{service}</span>
-                      </li>
-                    ))}
-                  </ul>
+                {/* Combined Text Content - order for mobile, flex-1 for desktop width */}
+                <div className="w-full lg:w-1/2 order-2 lg:order-1 space-y-8">
+                  {' '}
+                  {/* Adjusted width, order, and space-y */}
+                  {/* Updated Text Formatting */}
+                  <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 leading-tight">
+                    <span className="block">Planning an event?</span>
+                    <span className="block">Let us assist</span>
+                    <span className="block">with vibrant LA flavors</span>
+                    <span className="block">everyone will love!</span>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
+                    <ul className="space-y-3">
+                      {cateringServices.map((service, index) => (
+                        <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
+                          <span className="text-[#fdc32d] font-bold text-2xl">•</span>
+                          <span>{service}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                
-                {/* Image Container */}
-                <div className="w-full lg:w-3/5 overflow-hidden rounded-xl shadow-lg order-1 lg:order-2">
+
+                {/* Image Container - order for mobile, w-1/2 for desktop width */}
+                <div className="w-full lg:w-1/2 order-1 lg:order-2 overflow-hidden rounded-xl shadow-lg">
+                  {' '}
+                  {/* Adjusted width and order */}
                   <Image
                     src="/images/catering/catering.png"
                     alt="Catering service"
@@ -121,11 +136,13 @@ const CateringPage = async () => {
       {/* Catering Options - Packages and A La Carte */}
       <section className="max-w-[1300px] mx-auto px-6 md:px-8 py-12 md:py-16">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12">Catering Menu</h2>
-        
+
         {/* Use the client component for tabs */}
-        <CateringMenuTabs 
-          cateringItems={cateringItems} 
-          cateringPackages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} 
+        <CateringMenuTabs
+          cateringItems={cateringItems}
+          cateringPackages={cateringPackages.filter(
+            pkg => pkg.type === CateringPackageType.INDIVIDUAL
+          )}
         />
       </section>
 
