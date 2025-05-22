@@ -126,9 +126,20 @@ const CateringPage = async () => {
       {/* Dietary Options Section - Full-width accent */}
       <div className="bg-[#fdc32d] py-8 md:py-10">
         <div className="max-w-[1300px] mx-auto px-6 md:px-8">
-          <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight md:leading-relaxed">
-            Our menus are fully customizable and include plenty of gluten-free, vegetarian, and
-            vegan options to meet your needs.
+          <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight md:leading-relaxed text-center">
+            Our menus are fully customizable and include a variety <br /> of{' '}
+            <b>
+              <i>gluten-free</i>
+            </b>
+            ,{' '}
+            <b>
+              <i>vegetarian</i>
+            </b>
+            , and
+            <b>
+              <i> vegan</i>
+            </b>{' '}
+            options to meet your needs!
           </h3>
         </div>
       </div>
