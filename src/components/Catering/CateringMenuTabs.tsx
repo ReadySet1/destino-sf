@@ -44,7 +44,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
         ))}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-8 md:mt-10">
         {activeTab === 'appetizers' && (
           <ALaCarteMenu items={cateringItems} activeCategory="appetizers" />
         )}

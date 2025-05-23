@@ -477,6 +477,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         };
     }
 
+    // Check if this is a catering order
+    const hasCateringItems = await hasCateringProducts(items.map(item => item.id));
+
     // --- Calculate Totals using Decimal.js --- 
     let subtotal = new Decimal(0);
     const orderItemsData = items.map(item => {
@@ -571,6 +574,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
             customerName: customerInfo.name,
             email: customerInfo.email,
             phone: customerInfo.phone,
+            // Set the catering order flag
+            isCateringOrder: hasCateringItems,
             // Spread the prepared fulfillment data
             ...dbFulfillmentData,
             items: {
@@ -587,7 +592,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
             data: orderInputData,
             select: { id: true }, // Select only the ID
         });
-        console.log(`Database order created with ID: ${dbOrder.id}`);
+        console.log(`Database order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`);
     } catch (error: any) {
         console.error("Database Error creating order:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -988,6 +993,9 @@ export async function createManualPaymentOrder(formData: {
     const { data: { user } } = await supabase.auth.getUser();
     const supabaseUserId = user?.id;
 
+    // Check if this is a catering order
+    const hasCateringItems = await hasCateringProducts(items.map(item => item.id));
+
     // --- Database Order Creation --- 
     let dbOrder: { id: string } | null = null;
     try {
@@ -1001,6 +1009,7 @@ export async function createManualPaymentOrder(formData: {
             customerName: customerInfo.name,
             email: customerInfo.email,
             phone: customerInfo.phone,
+            isCateringOrder: hasCateringItems,
             ...dbFulfillmentData,
             items: {
                 create: orderItemsData.map(item => ({
@@ -1016,7 +1025,7 @@ export async function createManualPaymentOrder(formData: {
             data: orderInputData,
             select: { id: true },
         });
-        console.log(`Manual payment order created with ID: ${dbOrder.id}`);
+        console.log(`Manual payment order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`);
     } catch (error: any) {
         console.error("Database Error creating manual payment order:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {

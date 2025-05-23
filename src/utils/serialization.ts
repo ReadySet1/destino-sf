@@ -1,8 +1,9 @@
-import { Decimal } from '@prisma/client/runtime/library';
+// Removed the Prisma Decimal import to make this file client-safe
 
 /**
- * Safely converts a Decimal value to a JavaScript number
- * @param value Decimal value to convert
+ * Safely converts a Decimal-like value to a JavaScript number
+ * This is a client-safe version that doesn't import Prisma
+ * @param value Decimal-like value to convert
  * @returns number or null if value is null/undefined
  */
 export const serializeDecimal = (value: any): number | null => {
@@ -26,12 +27,7 @@ export const serializeDecimal = (value: any): number | null => {
     
     // Try to use toNumber method if available (Prisma Decimal standard method)
     if (typeof value === 'object' && value !== null) {
-      // Direct check for Decimal type
-      if (value instanceof Decimal) {
-        return value.toNumber();
-      }
-      
-      // Access toString and valueOf directly from Prisma's Decimal
+      // Access toNumber if available
       if (typeof value.toNumber === 'function') {
         return value.toNumber();
       }
@@ -67,20 +63,20 @@ export const serializeDecimal = (value: any): number | null => {
 };
 
 /**
- * Safely checks if a value is a Decimal object
+ * Safely checks if a value is a Decimal-like object
+ * This is a client-safe version that doesn't rely on instanceof checks
  */
 const isDecimal = (value: any): boolean => {
   return (
     value !== null &&
     typeof value === 'object' &&
-    (value instanceof Decimal || 
-     (typeof value.constructor === 'function' && 
-      value.constructor.name === 'Decimal') ||
-     // Additional check for BigDecimal or other decimal-like objects
-     (typeof value.toNumber === 'function' || 
-      typeof value.toString === 'function' && 
+    (
+      // Check for common Decimal-like properties/methods
+      (typeof value.toNumber === 'function') || 
+      (typeof value.toString === 'function' && 
       !Array.isArray(value) && 
-      Object.prototype.toString.call(value) !== '[object Date]'))
+      Object.prototype.toString.call(value) !== '[object Date]')
+    )
   );
 };
 
@@ -91,16 +87,12 @@ const isDecimal = (value: any): boolean => {
  * @returns Serialized object with Decimal values converted to numbers
  */
 export const serializeObject = <T extends Record<string, any>>(obj: T): any => {
-  // Add focused debugging
-  console.log('serializeObject input type:', obj ? typeof obj : 'null/undefined');
-  
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
   
   // Handle arrays
   if (Array.isArray(obj)) {
-    console.log(`serializeObject processing array with ${obj.length} items`);
     return obj.map(item => 
       typeof item === 'object' && item !== null ? serializeObject(item) : item
     );
@@ -108,7 +100,6 @@ export const serializeObject = <T extends Record<string, any>>(obj: T): any => {
   
   // Handle Decimal object directly
   if (isDecimal(obj)) {
-    console.log('serializeObject processing direct Decimal object');
     return serializeDecimal(obj) || 0; // Always return a number, default to 0
   }
   

@@ -19,6 +19,25 @@ const nextConfig = {
   },
   // Add Sanity to transpile modules to avoid issues with conflicting types
   transpilePackages: ['next-sanity', '@sanity/client'],
+  // Configure external packages for Prisma compatibility with Next.js 15.3.2
+  serverExternalPackages: ['@prisma/client', 'prisma'],
+  // Experimental features
+  experimental: {
+    // Empty for now
+  },
+  // Configure webpack for client-side to avoid Node.js modules
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

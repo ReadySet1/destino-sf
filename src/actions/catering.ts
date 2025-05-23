@@ -98,6 +98,7 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
+    // Fetch catering items
     const items = await db.cateringItem.findMany({
       where: {
         isActive: true,
@@ -107,10 +108,72 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       },
     });
     
-    return items.map(item => ({
-      ...item,
-      price: Number(item.price)
-    })) as unknown as CateringItem[];
+    // Fetch products that might correspond to catering items
+    const productNames = items.map(item => item.name.toLowerCase());
+    const products = await db.product.findMany({
+      where: {
+        OR: [
+          { name: { in: productNames } },
+          ...productNames.map(name => ({ name: { contains: name, mode: 'insensitive' as const } }))
+        ]
+      },
+      select: {
+        name: true,
+        images: true
+      }
+    });
+    
+    // Create a mapping of product names to their images
+    const productImageMap = new Map<string, string[]>();
+    products.forEach(product => {
+      const normalizedName = product.name.toLowerCase();
+      productImageMap.set(normalizedName, product.images as string[]);
+      
+      // Also add without "catering-" prefix if it exists
+      if (normalizedName.startsWith('catering-')) {
+        productImageMap.set(normalizedName.replace('catering-', ''), product.images as string[]);
+      }
+    });
+    
+    // Attach product images to catering items where possible
+    const result = items.map(item => {
+      const normalizedName = item.name.toLowerCase();
+      let imageUrl = item.imageUrl;
+      
+      // If the item doesn't have an imageUrl, try to find a matching product
+      if (!imageUrl) {
+        // Look for exact match first
+        const images = productImageMap.get(normalizedName);
+        
+        if (images && images.length > 0) {
+          imageUrl = images[0];
+          console.log(`[DEBUG] Found image for "${item.name}": ${imageUrl}`);
+        } else {
+          // Look for partial matches
+          for (const [productName, productImages] of productImageMap.entries()) {
+            if (normalizedName.includes(productName) || productName.includes(normalizedName)) {
+              if (productImages && productImages.length > 0) {
+                imageUrl = productImages[0];
+                console.log(`[DEBUG] Found partial match image for "${item.name}" from "${productName}": ${imageUrl}`);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      return {
+        ...item,
+        price: Number(item.price),
+        imageUrl
+      };
+    }) as unknown as CateringItem[];
+    
+    // Log overall statistics
+    const itemsWithImages = result.filter(item => item.imageUrl).length;
+    console.log(`[DEBUG] Catering items with images: ${itemsWithImages}/${result.length}`);
+    
+    return result;
   } catch (error) {
     console.error('Error fetching catering items:', error);
     

@@ -57,24 +57,24 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
 // Manual serialization for regular orders
 function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
   return orders.map(order => {
-    // Serialize items
-    const serializedItems = order.items?.map((item: any) => ({
-      id: item.id,
-      quantity: item.quantity,
-      price: decimalToNumber(item.price)
-    })) || [];
+    const itemsCount = order.items?.length || 0;
+    const totalItems = order.items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
     
     return {
       id: order.id,
       status: order.status,
       customerName: order.customerName,
-      total: decimalToNumber(order.total),
-      items: serializedItems,
-      pickupTime: order.pickupTime ? new Date(order.pickupTime).toISOString() : null,
+      total: Number(order.total || 0),
+      items: order.items?.map((item: any) => ({
+        id: item.id,
+        quantity: item.quantity,
+        price: Number(item.price || 0),
+      })) || [],
+      pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
       createdAt: order.createdAt.toISOString(),
-      trackingNumber: order.trackingNumber,
-      shippingCarrier: order.shippingCarrier,
-      type: 'regular',
+      trackingNumber: order.trackingNumber || null,
+      shippingCarrier: order.shippingCarrier || null,
+      type: order.isCateringOrder ? 'catering' : 'regular',
       paymentStatus: order.paymentStatus
     };
   });

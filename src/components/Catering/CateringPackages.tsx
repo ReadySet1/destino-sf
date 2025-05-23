@@ -199,6 +199,10 @@ const CateringPackageCard: React.FC<CateringPackageCardProps> = ({ cateringPacka
               alt={toTitleCase(name)}
               fill
               className="object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/catering/default-package.jpg';
+              }}
             />
           </div>
           <div className="absolute top-4 right-4 px-4 py-2 bg-white bg-opacity-90 rounded-full text-center shadow-sm">

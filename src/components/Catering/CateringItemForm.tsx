@@ -276,7 +276,7 @@ export default function CateringItemForm({ item, isEditing = false }: CateringIt
                 <Input placeholder="Enter image URL" {...field} value={field.value || ''} />
               </FormControl>
               <FormDescription>
-                Provide a URL to an image of this item (optional)
+                Provide a URL to an image of this item. Use full URLs (https://...) or paths relative to the public directory (e.g., /images/catering/item-name.jpg).
               </FormDescription>
               <FormMessage />
             </FormItem>
