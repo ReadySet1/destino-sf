@@ -36,6 +36,18 @@ interface MapModalProps {
   onClose: () => void;
 }
 
+// Utility function to generate Google Maps link
+const generateGoogleMapsLink = (location: StoreLocation): string => {
+  // If we have lat/lng coordinates, use them for more precise linking
+  if (location.lat && location.lng) {
+    return `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+  }
+
+  // Otherwise, use the address
+  const encodedAddress = encodeURIComponent(location.address);
+  return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+};
+
 // Google Maps Component with direct JavaScript API integration
 const GoogleMapsComponent: React.FC<{
   apiKey: string | undefined;
@@ -96,6 +108,10 @@ const GoogleMapsComponent: React.FC<{
 
             markersRef.current[index] = marker;
             bounds.extend(position);
+
+            // Store lat/lng coordinates in the location object for Google Maps links
+            location.lat = position.lat();
+            location.lng = position.lng();
 
             marker.addListener('click', () => {
               // Trigger the click event in the parent component to update selectedLocationIndex
@@ -197,10 +213,18 @@ const GoogleMapsComponent: React.FC<{
           }
           setTimeout(() => {
             if (infoWindowRef.current && mapInstance.current) {
+              const googleMapsLink = generateGoogleMapsLink(selectedLocation);
               infoWindowRef.current.setContent(
                 `<div>
                   <h3 style="font-weight: bold; margin-bottom: 5px; color: #8C4B00;">${selectedLocation.name}</h3>
-                  <p style="margin: 0; color: #B35E00;">${selectedLocation.address}</p>
+                  <p style="margin: 0 0 8px 0; color: #B35E00;">${selectedLocation.address}</p>
+                  <a href="${googleMapsLink}" target="_blank" rel="noopener noreferrer" 
+                     style="color: #4285f4; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>View in Google Maps</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                  </a>
                 </div>`
               );
               infoWindowRef.current.open(mapInstance.current, selectedMarker);
@@ -316,6 +340,13 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
   // Handle showing all locations again
   const handleShowAllLocations = useCallback(() => {
     setSelectedLocationIndex(null);
+  }, []);
+
+  // Handle opening Google Maps link
+  const handleOpenInGoogleMaps = useCallback((location: StoreLocation, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent location selection when clicking the link
+    const googleMapsLink = generateGoogleMapsLink(location);
+    window.open(googleMapsLink, '_blank', 'noopener,noreferrer');
   }, []);
 
   if (!isOpen) return null;
@@ -447,25 +478,41 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
                     }`}
                     onClick={() => handleLocationClick(index)}
                   >
-                    <span
-                      className={`font-quicksand font-medium block ${
-                        selectedLocationIndex === index ? 'text-amber-900' : 'text-amber-800'
-                      }`}
-                    >
-                      {location.name}
-                    </span>
-                    <span
-                      className={`text-sm ${
-                        selectedLocationIndex === index ? 'text-amber-800' : 'text-amber-700'
-                      }`}
-                    >
-                      {location.address}
-                    </span>
-                    {selectedLocationIndex === index && (
-                      <span className="text-xs text-amber-600 mt-1 block italic">
-                        Click again to show all locations
-                      </span>
-                    )}
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <span
+                          className={`font-quicksand font-medium block ${
+                            selectedLocationIndex === index ? 'text-amber-900' : 'text-amber-800'
+                          }`}
+                        >
+                          {location.name}
+                        </span>
+                        <span
+                          className={`text-sm ${
+                            selectedLocationIndex === index ? 'text-amber-800' : 'text-amber-700'
+                          }`}
+                        >
+                          {location.address}
+                        </span>
+                        {selectedLocationIndex === index && (
+                          <span className="text-xs text-amber-600 mt-1 block italic">
+                            Click again to show all locations
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Google Maps Link Button */}
+                      <button
+                        onClick={e => handleOpenInGoogleMaps(location, e)}
+                        className="ml-2 p-1.5 rounded-full hover:bg-amber-200 transition-colors text-amber-600 hover:text-amber-800 flex-shrink-0"
+                        title="Open in Google Maps"
+                        aria-label={`Open ${location.name} in Google Maps`}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+                        </svg>
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
