@@ -756,4 +756,307 @@ export async function createCateringOrderAndProcessPayment(
     const message = error instanceof Error ? error.message : 'An unexpected error occurred';
     return { success: false, error: message };
   }
+}
+
+/**
+ * Creates boxed lunch packages based on the tier system
+ */
+export async function createBoxedLunchPackages(): Promise<{ success: boolean; error?: string; created?: number }> {
+  try {
+    const { BOXED_LUNCH_TIERS } = await import('@/types/catering');
+    
+    let createdCount = 0;
+    
+    for (const [tierKey, tierConfig] of Object.entries(BOXED_LUNCH_TIERS)) {
+      // Check if this tier package already exists
+      const existingPackage = await db.cateringPackage.findFirst({
+        where: {
+          name: tierConfig.name,
+          type: 'BOXED_LUNCH' as any // Cast to bypass TypeScript check
+        }
+      });
+      
+      if (!existingPackage) {
+        await db.cateringPackage.create({
+          data: {
+            name: tierConfig.name,
+            description: tierConfig.description,
+            minPeople: 1,
+            pricePerPerson: tierConfig.price,
+            type: 'BOXED_LUNCH' as any, // Cast to bypass TypeScript check
+            isActive: true,
+            featuredOrder: Object.keys(BOXED_LUNCH_TIERS).indexOf(tierKey),
+            dietaryOptions: [], // You can customize this based on protein options
+          }
+        });
+        createdCount++;
+      }
+    }
+    
+    return { success: true, created: createdCount };
+  } catch (error) {
+    console.error('Error creating boxed lunch packages:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch packages' 
+    };
+  }
+}
+
+/**
+ * Creates boxed lunch protein options
+ */
+export async function createBoxedLunchProteins(): Promise<{ success: boolean; error?: string; created?: number }> {
+  try {
+    const { PROTEIN_OPTIONS } = await import('@/types/catering');
+    
+    let createdCount = 0;
+    
+    for (const [proteinKey, proteinInfo] of Object.entries(PROTEIN_OPTIONS)) {
+      // Check if this protein already exists
+      const existingItem = await db.cateringItem.findFirst({
+        where: {
+          name: proteinInfo.name,
+          category: 'ENTREE' as any // Use existing ENTREE category
+        }
+      });
+      
+      if (!existingItem) {
+        await db.cateringItem.create({
+          data: {
+            name: proteinInfo.name,
+            description: proteinInfo.description,
+            price: 0, // Proteins are included in tier pricing
+            category: 'ENTREE' as any, // Use existing ENTREE category
+            isVegetarian: proteinInfo.dietary.includes('vegetarian'),
+            isVegan: proteinInfo.dietary.includes('vegan'),
+            isGlutenFree: proteinInfo.dietary.includes('gluten-free'),
+            servingSize: 'Varies by tier',
+            isActive: true,
+            squareCategory: 'BOXED_LUNCH_PROTEINS'
+          }
+        });
+        createdCount++;
+      }
+    }
+    
+    return { success: true, created: createdCount };
+  } catch (error) {
+    console.error('Error creating boxed lunch proteins:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch proteins' 
+    };
+  }
+}
+
+/**
+ * Creates boxed lunch add-on items
+ */
+export async function createBoxedLunchAddOns(): Promise<{ success: boolean; error?: string; created?: number }> {
+  try {
+    const { BOXED_LUNCH_ADD_ONS } = await import('@/types/catering');
+    
+    let createdCount = 0;
+    
+    for (const addOn of Object.values(BOXED_LUNCH_ADD_ONS)) {
+      // Check if this add-on already exists
+      const existingItem = await db.cateringItem.findFirst({
+        where: {
+          name: addOn.name,
+          category: 'SIDE' as any // Use existing SIDE category
+        }
+      });
+      
+      if (!existingItem) {
+        await db.cateringItem.create({
+          data: {
+            name: addOn.name,
+            description: addOn.description,
+            price: addOn.price,
+            category: 'SIDE' as any, // Use existing SIDE category
+            isVegetarian: true, // Add-ons are generally neutral
+            isVegan: true,
+            isGlutenFree: true,
+            servingSize: '1 item',
+            isActive: true,
+            squareCategory: 'BOXED_LUNCH_ADD_ONS'
+          }
+        });
+        createdCount++;
+      }
+    }
+    
+    return { success: true, created: createdCount };
+  } catch (error) {
+    console.error('Error creating boxed lunch add-ons:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch add-ons' 
+    };
+  }
+}
+
+/**
+ * Creates boxed lunch salad options
+ */
+export async function createBoxedLunchSalads(): Promise<{ success: boolean; error?: string; created?: number }> {
+  try {
+    const { BOXED_LUNCH_SALADS } = await import('@/types/catering');
+    
+    let createdCount = 0;
+    
+    for (const [saladKey, salad] of Object.entries(BOXED_LUNCH_SALADS)) {
+      // Check if this salad already exists
+      const existingItem = await db.cateringItem.findFirst({
+        where: {
+          name: salad.name,
+          category: 'SALAD' as any
+        }
+      });
+      
+      if (!existingItem) {
+        await db.cateringItem.create({
+          data: {
+            name: salad.name,
+            description: salad.description,
+            price: salad.price,
+            category: 'SALAD' as any,
+            isVegetarian: true,
+            isVegan: saladKey === 'ARUGULA_JICAMA', // Only arugula-jicama is vegan (honey in dressing)
+            isGlutenFree: true,
+            servingSize: '3oz salad + 1oz dressing',
+            isActive: true,
+            squareCategory: 'BOXED_LUNCH_SALADS'
+          }
+        });
+        createdCount++;
+      }
+    }
+    
+    return { success: true, created: createdCount };
+  } catch (error) {
+    console.error('Error creating boxed lunch salads:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch salads' 
+    };
+  }
+}
+
+/**
+ * Gets all boxed lunch related items (packages, salads, add-ons, proteins)
+ */
+export async function getBoxedLunchData(): Promise<{
+  packages: CateringPackage[];
+  salads: CateringItem[];
+  addOns: CateringItem[];
+  proteins: CateringItem[];
+}> {
+  try {
+    const [packages, salads, addOns, proteins] = await Promise.all([
+      // Use raw string instead of enum that might not exist in DB
+      db.cateringPackage.findMany({
+        where: {
+          type: 'BOXED_LUNCH' as any, // Cast to bypass TypeScript check
+          isActive: true
+        },
+        orderBy: {
+          featuredOrder: 'asc'
+        }
+      }),
+      // Get all salads with the square category
+      db.cateringItem.findMany({
+        where: {
+          category: 'SALAD' as any,
+          squareCategory: 'BOXED_LUNCH_SALADS',
+          isActive: true
+        }
+      }),
+      // Get all add-ons with the square category  
+      db.cateringItem.findMany({
+        where: {
+          category: 'SIDE' as any, // Use existing SIDE category
+          squareCategory: 'BOXED_LUNCH_ADD_ONS',
+          isActive: true
+        }
+      }),
+      // Get all proteins with the square category
+      db.cateringItem.findMany({
+        where: {
+          category: 'ENTREE' as any, // Use existing ENTREE category
+          squareCategory: 'BOXED_LUNCH_PROTEINS',
+          isActive: true
+        }
+      })
+    ]);
+
+    return {
+      packages: packages.map(pkg => ({
+        ...pkg,
+        pricePerPerson: Number(pkg.pricePerPerson)
+      })) as unknown as CateringPackage[],
+      salads: salads.map(item => ({
+        ...item,
+        price: Number(item.price)
+      })) as unknown as CateringItem[],
+      addOns: addOns.map(item => ({
+        ...item,
+        price: Number(item.price)
+      })) as unknown as CateringItem[],
+      proteins: proteins.map(item => ({
+        ...item,
+        price: Number(item.price)
+      })) as unknown as CateringItem[]
+    };
+  } catch (error) {
+    console.error('Error fetching boxed lunch data:', error);
+    return {
+      packages: [],
+      salads: [],
+      addOns: [],
+      proteins: []
+    };
+  }
+}
+
+/**
+ * Initialize all boxed lunch data (packages, salads, add-ons, proteins)
+ */
+export async function initializeBoxedLunchData(): Promise<{ success: boolean; error?: string; summary?: string }> {
+  try {
+    const [packagesResult, saladsResult, addOnsResult, proteinsResult] = await Promise.all([
+      createBoxedLunchPackages(),
+      createBoxedLunchSalads(),
+      createBoxedLunchAddOns(),
+      createBoxedLunchProteins()
+    ]);
+
+    if (!packagesResult.success || !saladsResult.success || !addOnsResult.success || !proteinsResult.success) {
+      const errors = [
+        !packagesResult.success && packagesResult.error,
+        !saladsResult.success && saladsResult.error,
+        !addOnsResult.success && addOnsResult.error,
+        !proteinsResult.success && proteinsResult.error
+      ].filter(Boolean);
+      
+      return {
+        success: false,
+        error: `Some items failed to create: ${errors.join(', ')}`
+      };
+    }
+
+    const summary = `Created ${packagesResult.created} packages, ${saladsResult.created} salads, ${addOnsResult.created} add-ons, ${proteinsResult.created} proteins`;
+    
+    return {
+      success: true,
+      summary
+    };
+  } catch (error) {
+    console.error('Error initializing boxed lunch data:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data'
+    };
+  }
 } 

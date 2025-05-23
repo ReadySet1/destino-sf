@@ -13,7 +13,12 @@ export function CateringCartButton() {
   const cateringItems = items.filter(item => {
     try {
       const metadata = JSON.parse(item.variantId || '{}');
-      return metadata.type === 'item' || metadata.type === 'package';
+      return (
+        metadata.type === 'item' || 
+        metadata.type === 'package' || 
+        metadata.type === 'boxed-lunch' || 
+        metadata.type === 'appetizer-package'
+      );
     } catch {
       return false;
     }

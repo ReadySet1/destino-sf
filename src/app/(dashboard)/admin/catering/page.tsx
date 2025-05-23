@@ -163,7 +163,7 @@ const AdminCateringPage = async () => {
   }
 
   // Tabs que queremos mostrar
-  const tabs = ['appetizers', 'buffet', 'lunch', 'lunch-packets'];
+  const tabs = ['appetizers', 'buffet', 'lunch', 'lunch-packets', 'boxed-lunches'];
 
   return (
     <div className="container mx-auto p-6">
@@ -192,12 +192,30 @@ const AdminCateringPage = async () => {
           <TabsTrigger value="lunch-packets">
             Lunch Packets
           </TabsTrigger>
+          <TabsTrigger value="boxed-lunches">
+            Boxed Lunches
+          </TabsTrigger>
         </TabsList>
 
         {tabs.map(tab => (
           <TabsContent key={tab} value={tab} className="mt-4">
             <div className="space-y-8">
-              {tab === 'lunch-packets' ? (
+              {tab === 'boxed-lunches' ? (
+                <section>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold mb-4">Boxed Lunch Management</h2>
+                    <p className="text-gray-600 mb-6">
+                      Manage the 2025 Individual Packaged Lunch Options including tiers, proteins, salads, and add-ons.
+                    </p>
+                    <Link href="/admin/catering/boxed-lunch">
+                      <Button size="lg" className="bg-amber-600 hover:bg-amber-700">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Manage Boxed Lunches
+                      </Button>
+                    </Link>
+                  </div>
+                </section>
+              ) : tab === 'lunch-packets' ? (
                 <section>
                   <h2 className="text-2xl font-bold mb-4 uppercase tracking-wide">Lunch Packets</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

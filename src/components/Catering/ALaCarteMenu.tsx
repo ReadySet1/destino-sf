@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { CateringItem, getItemsForTab, groupItemsBySubcategory } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
+import { PlatterMenuItem } from '@/components/Catering/PlatterMenuItem';
 import { ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface ALaCarteMenuProps {
   items: CateringItem[];
   activeCategory?: string;
+  showDessertsAtBottom?: boolean;
 }
 
 // Helper functions for text formatting
@@ -26,16 +28,43 @@ const formatDescription = (str: string | null | undefined): string => {
   return trimmedStr.charAt(0).toUpperCase() + trimmedStr.slice(1);
 };
 
-export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategory = 'appetizers' }) => {
+// Function to check if an item is a platter item
+const isPlatterItem = (item: CateringItem): boolean => {
+  const platterNames = ['Plantain Chips Platter', 'Cocktail Prawn Platter', 'Cheese & Charcuterie Platter'];
+  return platterNames.includes(item.name);
+};
+
+export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ 
+  items, 
+  activeCategory = 'appetizers', 
+  showDessertsAtBottom = false 
+}) => {
   // Filter items for this tab and group them by subcategory
-  const filteredItems = getItemsForTab(items, activeCategory);
+  const filteredItems = activeCategory === 'appetizers' && items.length < getItemsForTab(items, activeCategory).length 
+    ? items // If pre-filtered items passed in, use them
+    : getItemsForTab(items, activeCategory);
+  
   const groupedItems = groupItemsBySubcategory(filteredItems);
+  
+  // If showDessertsAtBottom is true, separate desserts and show them last
+  let sectionsToShow = Object.entries(groupedItems);
+  
+  if (showDessertsAtBottom) {
+    const dessertSections = sectionsToShow.filter(([categoryName]) => 
+      categoryName.toLowerCase().includes('dessert')
+    );
+    const nonDessertSections = sectionsToShow.filter(([categoryName]) => 
+      !categoryName.toLowerCase().includes('dessert')
+    );
+    
+    sectionsToShow = [...nonDessertSections, ...dessertSections];
+  }
   
   return (
     <div className="w-full">
       <Toaster position="top-right" />
       <div className="space-y-12">
-        {Object.entries(groupedItems).map(([categoryName, categoryItems], index) => (
+        {sectionsToShow.map(([categoryName, categoryItems], index) => (
           <motion.div
             key={categoryName}
             initial={{ opacity: 0, y: 20 }}
@@ -45,6 +74,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategor
             <CategorySection 
               title={toTitleCase(categoryName)}
               items={categoryItems}
+              isDessertSection={categoryName.toLowerCase().includes('dessert')}
             />
           </motion.div>
         ))}
@@ -56,15 +86,22 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ items, activeCategor
 interface CategorySectionProps {
   title: string;
   items: CateringItem[];
+  isDessertSection?: boolean;
 }
 
-const CategorySection: React.FC<CategorySectionProps> = ({ title, items }) => {
+const CategorySection: React.FC<CategorySectionProps> = ({ title, items, isDessertSection = false }) => {
   const [showAll, setShowAll] = useState(false);
   const displayItems = showAll ? items : items.slice(0, 6);
   
   return (
-    <div className="bg-white rounded-xl p-5 md:p-6 shadow-sm border border-gray-100">
-      <h3 className="text-2xl font-bold text-gray-800 border-b border-gray-200 pb-3 mb-6">{title}</h3>
+    <div className={`bg-white rounded-xl p-5 md:p-6 shadow-sm border border-gray-100 ${
+      isDessertSection ? 'border-orange-200 bg-orange-50' : ''
+    }`}>
+      <h3 className={`text-2xl font-bold border-b pb-3 mb-6 ${
+        isDessertSection ? 'text-orange-800 border-orange-200' : 'text-gray-800 border-gray-200'
+      }`}>
+        {title}
+      </h3>
       
       <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
         {displayItems.map((item, index) => (
@@ -75,7 +112,11 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items }) => {
             transition={{ duration: 0.3, delay: index * 0.05 }}
             className="h-full"
           >
-            <MenuItem item={item} />
+            {isPlatterItem(item) ? (
+              <PlatterMenuItem item={item} />
+            ) : (
+              <MenuItem item={item} />
+            )}
           </motion.div>
         ))}
       </div>
@@ -183,7 +224,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
               </div>
             </div>
             <div className="text-lg md:text-xl font-bold text-gray-800">
-              ${price.toFixed(2)}
+              {price > 0 ? `$${price.toFixed(2)}` : 'Package Selection Only'}
             </div>
           </div>
           
@@ -205,10 +246,11 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
               variant="outline" 
               size="sm"
               onClick={() => setShowOrderModal(true)}
-              className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
+              disabled={price === 0}
+              className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Order
+              {price === 0 ? 'Package Selection Only' : 'Add to Order'}
             </Button>
           </div>
         </div>

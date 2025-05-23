@@ -355,6 +355,7 @@ enum CateringPackageType {
   INDIVIDUAL
   BUFFET
   FAMILY_STYLE
+  BOXED_LUNCH
 }
 
 enum CateringItemCategory {
@@ -364,6 +365,8 @@ enum CateringItemCategory {
   SALAD
   DESSERT
   BEVERAGE
+  PROTEIN
+  ADD_ON
 }
 
 enum CateringStatus {
