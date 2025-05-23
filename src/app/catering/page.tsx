@@ -22,14 +22,11 @@ export const dynamic = 'force-dynamic';
 
 // Define catering services
 const cateringServices: string[] = [
-  'Corporate Events & Office Catering',
-  'Weddings & Engagement Parties',
-  'Birthday Celebrations',
-  'Holiday Gatherings',
-  'Private Dinner Parties',
-  'Film & Photo Shoots',
-  'Conferences & Meetings',
-  'Social Events & Reunions',
+  'Corporate Luncheons',
+  'Cocktail Receptions',
+  'Birthday Celebrations & Dinner Parties',
+  'Happy Hour Events',
+  'Corporate Meet & Greets',
 ];
 
 const CateringPage = async () => {
@@ -90,11 +87,11 @@ const CateringPage = async () => {
                   <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 leading-tight">
                     <span className="block">Planning an event?</span>
                     <span className="block">Let us assist</span>
-                    <span className="block">with vibrant LA flavors</span>
-                    <span className="block">everyone will love!</span>
+                    <span className="block">with vibrant Latin American</span>
+                    <span className="block"> flavors everyone will love!</span>
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">Ofrecemos:</h3>
+                    <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
                     <ul className="space-y-3">
                       {cateringServices.map((service, index) => (
                         <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
