@@ -2,7 +2,7 @@ import React from 'react';
 import MenuBanner from '@/components/Menu';
 import ProductList from '@/components/Products/ProductList';
 import MarketingSection from '@/components/Marketing/MarketingSection';
-import FaqSection from '@/components/FAQ/MenuQuestions';
+import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 
 export const metadata = {
   title: 'Our Menu | Destino SF',
@@ -33,7 +33,7 @@ const MenuPage = () => {
         {/* FAQ section with improved styling */}
         <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="rounded-xl bg-white/90 p-6 shadow-sm backdrop-blur-sm sm:p-8">
-            <FaqSection />
+            <MenuFaqSection />
           </div>
         </section>
       </main>

@@ -2,69 +2,18 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react'; // Importamos ChevronDown de lucide-react para mantener la coherencia
+import MapModal from '../Maps/MapModal';
 
 interface FaqItem {
   question: string;
   answer: React.ReactNode; // Permitimos nodos React para el enlace
 }
 
-interface MapModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ type: 'spring', damping: 20 }}
-        className="bg-white rounded-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col"
-      >
-        <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-gray-800">Our Store Locations</h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <svg
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div className="w-full flex-grow relative min-h-[400px]">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d100940.14245968247!2d-122.43759099999999!3d37.75769985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80859a6d00690021%3A0x4a501367f076adff!2sSan%20Francisco%2C%20CA!5e0!3m2!1sen!2sus!4v1681977391199!5m2!1sen!2sus"
-            className="absolute inset-0 w-full h-full border-0"
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
 const MenuFaqSection: React.FC = () => {
   // State to track which FAQ items are open
   const [openItems, setOpenItems] = useState<number[]>([]);
+  // Este estado controla la visibilidad de TU MapModal real
   const [isMapOpen, setIsMapOpen] = useState<boolean>(false);
 
   // Toggle function to open/close FAQ items
@@ -78,13 +27,9 @@ const MenuFaqSection: React.FC = () => {
 
   const openMap = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.open(
-      'https://www.google.com/maps/@37.7710103,-122.4773772,11.14z/data=!4m3!11m2!2sokgqyFdyQTKCGpP7P4zogg!3e3?entry=ttu&g_ep=EgoyMDI1MDUxMy4xIKXMDSoASAFQAw%3D%3D',
-      '_blank'
-    );
+    setIsMapOpen(true);
   };
 
-  // FAQ data
   const faqItems: FaqItem[] = [
     {
       question: 'Do you sell your empanadas and alfajores in stores?',
@@ -93,7 +38,11 @@ const MenuFaqSection: React.FC = () => {
           Yes! Our empanadas and alfajores are currently sold in 14 retail stores across San
           Francisco and Oakland, including Faletti&apos;s Market, Luke&apos;s Local, Epicurean
           Trader, Bryan&apos;s Market, Evergreen Market, El Chavo Market, and Skyline Market.{' '}
-          <a href="#" onClick={openMap} className="text-blue-600 hover:text-blue-800 underline">
+          <a
+            href="#"
+            onClick={openMap}
+            className="text-amber-600 hover:text-amber-800 underline font-medium"
+          >
             Check our store locator map
           </a>{' '}
           for a full list of locations. Coming soon: Marin County and the Peninsula!
@@ -122,7 +71,7 @@ const MenuFaqSection: React.FC = () => {
     },
   ];
 
-  // Enhanced animation variants
+  // Enhanced animation variants (se mantienen igual ya que son de Framer Motion y no de estilo directo)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -194,11 +143,11 @@ const MenuFaqSection: React.FC = () => {
   // Button hover animation effect
   const buttonHoverVariants = {
     rest: {
-      backgroundColor: 'rgba(255, 255, 255, 1)',
+      backgroundColor: 'rgba(255, 255, 255, 1)', // Fondo blanco
       transition: { duration: 0.2, ease: 'easeInOut' },
     },
     hover: {
-      backgroundColor: 'rgba(249, 250, 251, 1)',
+      backgroundColor: 'rgba(254, 252, 232, 0.5)', // Color ámbar-50/50
       transition: { duration: 0.2, ease: 'easeInOut' },
     },
   };
@@ -216,11 +165,13 @@ const MenuFaqSection: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="mx-auto w-full max-w-4xl py-8">
+      {' '}
+      {/* Ajustado para centrar y max-width como el original */}
       <AnimatePresence>
-        <MapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />
+        {/* Renderizamos el MapModal SOLAMENTE cuando isMapOpen es true */}
+        {isMapOpen && <MapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />}
       </AnimatePresence>
-
       <motion.h2
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -228,11 +179,11 @@ const MenuFaqSection: React.FC = () => {
           duration: 0.6,
           ease: [0.22, 1, 0.36, 1],
         }}
-        className="text-3xl font-bold text-gray-800 mb-8"
+        className="font-quicksand text-3xl font-bold text-amber-900 mb-8 text-center sm:text-4xl" // Estilos del título actualizados
       >
         Menu: Frequently Asked Questions
+        <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" /> {/* Línea amarilla */}
       </motion.h2>
-
       <motion.div
         className="space-y-4"
         variants={containerVariants}
@@ -242,44 +193,41 @@ const MenuFaqSection: React.FC = () => {
         {faqItems.map((faq, index) => (
           <motion.div
             key={index}
-            className="border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+            className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm" // Estilos de la tarjeta actualizados
             variants={itemVariants}
             whileHover={{
+              // Mantener la sombra y el fondo del hover consistente
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+              backgroundColor: 'rgba(255, 255, 255, 1)', // Aseguramos que el fondo no cambie para la sombra
               transition: { duration: 0.3 },
             }}
           >
             <motion.button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-4 text-left bg-white transition-colors"
+              className="flex justify-between items-center w-full p-5 text-left bg-white transition-colors" // P-5 para padding consistente, bg-white
               variants={buttonHoverVariants}
               initial="rest"
               whileHover="hover"
               whileTap={{ scale: 0.995 }}
+              aria-expanded={openItems.includes(index)} // Atributo de accesibilidad
+              aria-controls={`faq-answer-${index}`} // Atributo de accesibilidad
             >
               <motion.h3
-                className="text-xl font-medium text-gray-800"
+                className="font-quicksand text-lg font-medium text-amber-900 pr-8 sm:text-xl" // Estilos de la pregunta actualizados
                 initial={{ opacity: 0.95 }}
                 whileHover={{ opacity: 1 }}
               >
-                {index + 1}. {faq.question}
+                {faq.question}
               </motion.h3>
-              <motion.svg
+              <motion.div // Se usa un div para contener el ícono de Lucide React
                 variants={arrowVariants}
                 animate={openItems.includes(index) ? 'up' : 'down'}
-                className="w-5 h-5 text-gray-500 flex-shrink-0 ml-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+                className="flex-shrink-0 ml-4"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+                <ChevronDown
+                  className="h-5 w-5 text-amber-500" // Color del icono actualizado
                 />
-              </motion.svg>
+              </motion.div>
             </motion.button>
 
             <AnimatePresence initial={false}>
@@ -290,9 +238,12 @@ const MenuFaqSection: React.FC = () => {
                   animate="visible"
                   exit="exit"
                   variants={contentVariants}
-                  className="bg-gray-50 border-t border-gray-200 overflow-hidden"
+                  className="bg-amber-50/30 border-t border-amber-100 overflow-hidden" // Fondo y borde de la respuesta actualizados
+                  id={`faq-answer-${index}`} // ID para accesibilidad
                 >
-                  <div className="p-4">
+                  <div className="p-5">
+                    {' '}
+                    {/* Padding consistente */}
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{
@@ -308,7 +259,7 @@ const MenuFaqSection: React.FC = () => {
                         opacity: 0,
                         transition: { duration: 0.2 },
                       }}
-                      className="text-gray-700"
+                      className="text-amber-900/80 leading-relaxed" // Estilos de la respuesta actualizados
                     >
                       {faq.answer}
                     </motion.p>
