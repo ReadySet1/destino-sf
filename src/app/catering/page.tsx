@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
-import DietaryLegend from '@/components/Catering/DietaryLegend'; // Add this import
+import DietaryLegend from '@/components/Catering/DietaryLegend';
 import {
   CateringPackage,
   CateringItem,
@@ -15,6 +15,8 @@ import {
 import { getCateringPackages, getCateringItems } from '@/actions/catering';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
 import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
+import { ContactForm, ContactInfo, ContactInfoCatering } from '@/components/ContactForm';
+import { FormMessage } from '../../components/form-message';
 
 export const dynamic = 'force-dynamic';
 
@@ -146,6 +148,11 @@ const CateringPage = async () => {
       <section className="max-w-[1300px] mx-auto px-6 md:px-8 py-12 md:py-16">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12">Catering Menu</h2>
 
+        {/* Dietary Legend - Moved here above the menu tabs */}
+        <div className="mb-8">
+          <DietaryLegend />
+        </div>
+
         {/* Use the client component for tabs */}
         <CateringMenuTabs
           cateringItems={cateringItems}
@@ -157,15 +164,26 @@ const CateringPage = async () => {
 
       {/* Contact form and FAQ Section */}
       <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-8 pb-16 md:pt-12 md:pb-20">
-        {/* Dietary Legend - Added above contact form */}
-        <div className="mb-8">
-          <DietaryLegend />
-        </div>
+        {/* NEW: Contact Section - Added before FAQ */}
+        <section className="max-w-[1300px] mx-auto px-6 md:px-8 pb-12 md:pb-16">
+          {/* Contact form with catering-specific styling */}
+          <div className="bg-[#2d3538] rounded-lg overflow-hidden mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+              {/* Left side - Contact info */}
+              <div className="p-8 md:p-12">
+                <ContactInfoCatering />
+              </div>
 
-        {/* Contact form */}
-        <div className="mb-16">
-          <CateringContactForm />
-        </div>
+              {/* Right side - Contact form */}
+              <div className="p-8 md:p-12">
+                <div className="bg-white rounded-lg p-6 md:p-8">
+                  <h2 className="text-xl mb-6 font-semibold text-gray-800">Send us a message</h2>
+                  <ContactForm />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* FAQ Section */}
         <Card className="border-none shadow-none">

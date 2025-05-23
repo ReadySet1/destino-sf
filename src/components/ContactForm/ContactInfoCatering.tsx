@@ -10,7 +10,7 @@ export function ContactInfoCatering() {
         <h2 className="text-4xl font-bold text-white mb-4">Ready to plan your event?</h2>
         <p className="text-white/90 text-lg">
           Let us help you create an unforgettable experience with our Latin American catering
-          services.
+          services!
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export function ContactInfoCatering() {
           aria-label="Facebook"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Facebook className="h-5 w-5 text-[#722F37]" />
+          <Facebook className="h-5 w-5 text-[#2d3538]" />
         </Link>
         <Link
           href="https://instagram.com"
@@ -65,7 +65,7 @@ export function ContactInfoCatering() {
           aria-label="Instagram"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Instagram className="h-5 w-5 text-[#722F37]" />
+          <Instagram className="h-5 w-5 text-[#2d3538]" />
         </Link>
         <Link
           href="https://linkedin.com"
@@ -74,7 +74,7 @@ export function ContactInfoCatering() {
           aria-label="LinkedIn"
           className="bg-white rounded-full p-2.5 hover:opacity-90 transition-opacity"
         >
-          <Linkedin className="h-5 w-5 text-[#722F37]" />
+          <Linkedin className="h-5 w-5 text-[#2d3538]" />
         </Link>
       </div>
     </div>

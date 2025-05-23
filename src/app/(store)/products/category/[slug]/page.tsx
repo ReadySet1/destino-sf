@@ -185,7 +185,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           </Suspense>
         </div>
 
-        {/* Add the MenuFaqQuestions component here, likely after the main content */}
+        {/* FAQ Section */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl py-8">
           <MenuFaqSection />
         </div>
