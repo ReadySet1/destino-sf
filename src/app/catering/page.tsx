@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
+import DietaryLegend from '@/components/Catering/DietaryLegend'; // Add this import
 import {
   CateringPackage,
   CateringItem,
@@ -156,6 +157,11 @@ const CateringPage = async () => {
 
       {/* Contact form and FAQ Section */}
       <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-8 pb-16 md:pt-12 md:pb-20">
+        {/* Dietary Legend - Added above contact form */}
+        <div className="mb-8">
+          <DietaryLegend />
+        </div>
+
         {/* Contact form */}
         <div className="mb-16">
           <CateringContactForm />
