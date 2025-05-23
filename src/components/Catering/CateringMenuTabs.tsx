@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ALaCarteMenu, CateringPackages } from '@/components/Catering';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
+import { LunchPacketsMenu } from '@/components/Catering/LunchPacketsMenu';
 import { AppetizerPackageSelector } from '@/components/Catering/AppetizerPackageSelector';
 import { CateringItem, CateringPackage, getItemsForTab } from '@/types/catering';
 
@@ -112,24 +113,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
         )}
         
         {activeTab === 'lunch-packets' && (
-          <div className="space-y-12">
-            {/* Other Package Types (non-appetizer packages) */}
-            {(() => {
-              const otherPackages = cateringPackages.filter(pkg => 
-                !pkg.name.includes('Appetizer Selection')
-              );
-              
-              return otherPackages.length > 0 ? (
-                <CateringPackages packages={otherPackages} />
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">
-                    Lunch packet options are being set up. Please check back soon!
-                  </p>
-                </div>
-              );
-            })()}
-          </div>
+          <LunchPacketsMenu />
         )}
       </div>
     </div>

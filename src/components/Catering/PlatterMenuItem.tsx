@@ -33,7 +33,21 @@ const PLATTER_SIZES = {
 // Helper functions for text formatting
 const toTitleCase = (str: string | null | undefined): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  
+  // Words that should not be capitalized (articles, conjunctions, prepositions)
+  const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'de'];
+  
+  // Split the string into words
+  const words = str.toLowerCase().split(' ');
+  
+  // Always capitalize the first and last word
+  return words.map((word, index) => {
+    // Always capitalize first and last word, or if not a minor word
+    if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+    return word;
+  }).join(' ');
 };
 
 const formatDescription = (str: string | null | undefined): string => {
@@ -203,9 +217,24 @@ interface DietaryBadgeProps {
 }
 
 const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
+  // Color mapping based on dietary label
+  const getColorClass = () => {
+    switch (label) {
+      case 'GF':
+        return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'VG':
+        return 'bg-green-100 text-green-800 border border-green-300';
+      case 'VGN':
+      case 'V':
+        return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+      default:
+        return 'bg-blue-100 text-blue-800 border border-blue-300';
+    }
+  };
+
   return (
     <div 
-      className="inline-flex items-center justify-center bg-green-100 text-green-800 text-xs font-medium px-1.5 py-0.5 rounded" 
+      className={`inline-flex items-center justify-center ${getColorClass()} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`} 
       title={tooltip}
       aria-label={tooltip}
     >

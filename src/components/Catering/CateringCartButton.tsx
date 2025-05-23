@@ -17,7 +17,10 @@ export function CateringCartButton() {
         metadata.type === 'item' || 
         metadata.type === 'package' || 
         metadata.type === 'boxed-lunch' || 
-        metadata.type === 'appetizer-package'
+        metadata.type === 'appetizer-package' ||
+        metadata.type === 'lunch-packet' ||
+        metadata.type === 'lunch-packet-salad' ||
+        metadata.type === 'lunch-packet-addon'
       );
     } catch {
       return false;

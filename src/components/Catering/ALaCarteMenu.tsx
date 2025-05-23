@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { CateringItem, getItemsForTab, groupItemsBySubcategory } from '@/types/catering';
+import { CateringItem, getItemsForTab, groupItemsBySubcategory, groupBuffetItemsByCategory } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { PlatterMenuItem } from '@/components/Catering/PlatterMenuItem';
@@ -19,7 +19,21 @@ interface ALaCarteMenuProps {
 // Helper functions for text formatting
 const toTitleCase = (str: string | null | undefined): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  
+  // Words that should not be capitalized (articles, conjunctions, prepositions)
+  const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'de'];
+  
+  // Split the string into words
+  const words = str.toLowerCase().split(' ');
+  
+  // Always capitalize the first and last word
+  return words.map((word, index) => {
+    // Always capitalize first and last word, or if not a minor word
+    if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+    return word;
+  }).join(' ');
 };
 
 const formatDescription = (str: string | null | undefined): string => {
@@ -40,11 +54,23 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
   showDessertsAtBottom = false 
 }) => {
   // Filter items for this tab and group them by subcategory
-  const filteredItems = activeCategory === 'appetizers' && items.length < getItemsForTab(items, activeCategory).length 
-    ? items // If pre-filtered items passed in, use them
-    : getItemsForTab(items, activeCategory);
+  let filteredItems;
   
-  const groupedItems = groupItemsBySubcategory(filteredItems);
+  if (activeCategory === 'buffet') {
+    // For buffet tab, get regular buffet items plus dessert items
+    const buffetItems = getItemsForTab(items, 'buffet');
+    const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS');
+    filteredItems = [...buffetItems, ...dessertItems];
+  } else if (activeCategory === 'appetizers' && items.length < getItemsForTab(items, activeCategory).length) {
+    filteredItems = items; // If pre-filtered items passed in, use them
+  } else {
+    filteredItems = getItemsForTab(items, activeCategory);
+  }
+  
+  // Use different grouping functions based on the active category
+  const groupedItems = activeCategory === 'buffet' 
+    ? groupBuffetItemsByCategory(filteredItems)
+    : groupItemsBySubcategory(filteredItems);
   
   // If showDessertsAtBottom is true, separate desserts and show them last
   let sectionsToShow = Object.entries(groupedItems);
@@ -59,6 +85,19 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
     
     sectionsToShow = [...nonDessertSections, ...dessertSections];
   }
+
+  // For buffet tab, we want to ensure the order is: Starters, Entradas, Sides, Desserts
+  if (activeCategory === 'buffet') {
+    const desiredOrder = ['Starters', 'Entradas', 'Sides', 'Desserts'];
+    sectionsToShow = sectionsToShow.sort(([a], [b]) => {
+      const indexA = desiredOrder.indexOf(a);
+      const indexB = desiredOrder.indexOf(b);
+      // If not found in desired order, put at the end
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }
   
   return (
     <div className="w-full">
@@ -72,7 +111,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
             <CategorySection 
-              title={toTitleCase(categoryName)}
+              title={activeCategory === 'buffet' ? categoryName : toTitleCase(categoryName)}
               items={categoryItems}
               isDessertSection={categoryName.toLowerCase().includes('dessert')}
             />
@@ -272,9 +311,24 @@ interface DietaryBadgeProps {
 }
 
 const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
+  // Color mapping based on dietary label
+  const getColorClass = () => {
+    switch (label) {
+      case 'GF':
+        return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'VG':
+        return 'bg-green-100 text-green-800 border border-green-300';
+      case 'VGN':
+      case 'V':
+        return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+      default:
+        return 'bg-blue-100 text-blue-800 border border-blue-300';
+    }
+  };
+
   return (
     <div 
-      className="inline-flex items-center justify-center bg-green-100 text-green-800 text-xs font-medium px-1.5 py-0.5 rounded" 
+      className={`inline-flex items-center justify-center ${getColorClass()} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`} 
       title={tooltip}
       aria-label={tooltip}
     >

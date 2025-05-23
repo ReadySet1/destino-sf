@@ -128,12 +128,46 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     setPeopleCount(2);
   };
 
+  // Add a custom formatted titleCase function to match other components
+  const toTitleCase = (str: string | null | undefined): string => {
+    if (!str) return '';
+    
+    // Words that should not be capitalized (articles, conjunctions, prepositions)
+    const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'de'];
+    
+    // Split the string into words
+    const words = str.toLowerCase().split(' ');
+    
+    // Always capitalize the first and last word
+    return words.map((word, index) => {
+      // Always capitalize first and last word, or if not a minor word
+      if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      return word;
+    }).join(' ');
+  };
+
   const getDietaryBadges = (item: CateringItem) => {
     const badges = [];
     if (item.isGlutenFree) badges.push('GF');
     if (item.isVegan) badges.push('VGN');
     else if (item.isVegetarian) badges.push('VG');
     return badges;
+  };
+
+  // Get styled badges with appropriate colors
+  const getDietaryBadgeStyle = (badge: string) => {
+    switch (badge) {
+      case 'GF':
+        return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'VG':
+        return 'bg-green-100 text-green-800 border border-green-300';
+      case 'VGN':
+        return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+      default:
+        return 'bg-blue-100 text-blue-800 border border-blue-300';
+    }
   };
 
   return (
@@ -281,7 +315,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     <div className="relative w-full h-32">
                       <Image
                         src={getImageUrl(item.imageUrl)}
-                        alt={item.name}
+                        alt={toTitleCase(item.name)}
                         fill
                         className="object-cover"
                         onError={(e) => {
@@ -305,7 +339,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     
                     <CardContent className="p-4">
                       <h5 className="font-medium text-sm leading-tight mb-2">
-                        {item.name}
+                        {toTitleCase(item.name)}
                       </h5>
                       
                       {item.description && (
@@ -316,9 +350,12 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                       
                       <div className="flex flex-wrap gap-1">
                         {getDietaryBadges(item).map((badge) => (
-                          <Badge key={badge} variant="secondary" className="text-xs">
+                          <span 
+                            key={badge} 
+                            className={`inline-flex items-center justify-center ${getDietaryBadgeStyle(badge)} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`}
+                          >
                             {badge}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
                     </CardContent>

@@ -133,7 +133,9 @@ const CateringPage = async () => {
         {/* Use the client component for tabs */}
         <CateringMenuTabs 
           cateringItems={cateringItems} 
-          cateringPackages={cateringPackages.filter(pkg => pkg.type === CateringPackageType.INDIVIDUAL)} 
+          cateringPackages={cateringPackages.filter(pkg => 
+            pkg.type === CateringPackageType.INDIVIDUAL || pkg.type === CateringPackageType.BOXED_LUNCH
+          )} 
         />
       </section>
 
