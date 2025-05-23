@@ -1,7 +1,8 @@
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+// Note: We're removing the edge runtime directive since it conflicts with static generation
+// Edge runtime will be inferred by Next.js based on ImageResponse usage
 
 // Set response headers for better caching and content type specification
 export async function GET(req: NextRequest) {
