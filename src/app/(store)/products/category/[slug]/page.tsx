@@ -12,23 +12,23 @@ import { preparePrismaData } from '@/utils/server/serialize-server-data';
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
   if (!images) return [];
-  
+
   // Case 1: Already an array of strings
-  if (Array.isArray(images) && 
-      images.length > 0 && 
-      typeof images[0] === 'string') {
+  if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'string') {
     return images.filter(url => url && url.trim() !== '');
   }
-  
+
   // Case 2: Array of objects with url property (Sanity format)
-  if (Array.isArray(images) && 
-      images.length > 0 && 
-      typeof images[0] === 'object' &&
-      images[0] !== null &&
-      'url' in images[0]) {
+  if (
+    Array.isArray(images) &&
+    images.length > 0 &&
+    typeof images[0] === 'object' &&
+    images[0] !== null &&
+    'url' in images[0]
+  ) {
     return images.map(img => img.url).filter(url => url && typeof url === 'string');
   }
-  
+
   // Case 3: String that might be a JSON array
   if (typeof images === 'string') {
     try {
@@ -42,7 +42,7 @@ function normalizeImages(images: any): string[] {
       return [images];
     }
   }
-  
+
   return [];
 }
 
@@ -53,8 +53,10 @@ interface CategoryPageProps {
 }
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  alfajores: "Indulge in the delicate delight of our signature Alfajores. These classic South American butter cookies boast a tender, crumbly texture, lovingly filled with creamy dulce de leche. Explore a variety of tempting flavors, from traditional favorites to unique seasonal creations – the perfect sweet treat for yourself or a thoughtful gift.",
-  empanadas: "Discover our authentic, hand-folded empanadas, flash-frozen to preserve their freshness and flavor. Each 4-pack features golden, flaky pastry enveloping savory fillings inspired by Latin American culinary traditions. From the aromatic Huacatay Chicken to hearty Argentine Beef, these easy-to-prepare delights bring restaurant-quality taste to your home in minutes."
+  alfajores:
+    'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in- your-mouth texture. Whether you are gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+  empanadas:
+    'Discover our authentic, hand-folded empanadas, flash-frozen to preserve their freshness and flavor. Each 4-pack features golden, flaky pastry enveloping savory fillings inspired by Latin American culinary traditions. From the aromatic Huacatay Chicken to hearty Argentine Beef, these easy-to-prepare delights bring restaurant-quality taste to your home in minutes.',
 };
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
@@ -67,7 +69,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const category = await prisma.category.findUnique({
     where: {
       // Assuming the category table has a unique 'slug' field
-      slug: slug, 
+      slug: slug,
     },
   });
 
@@ -83,51 +85,52 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     const dbProducts = await prisma.product.findMany({
       where: {
         categoryId: category.id,
-        active: true // Only fetch active products
+        active: true, // Only fetch active products
       },
       include: {
-        variants: true // Include variants if needed by ProductGrid
+        variants: true, // Include variants if needed by ProductGrid
       },
       orderBy: {
         // Optional: Add sorting, e.g., by name or a custom order field
-        name: 'asc' 
-      }
+        name: 'asc',
+      },
     });
 
     // Process database products before mapping to GridProduct
     const serializedProducts = await preparePrismaData(dbProducts);
 
     // Map serialized database products to the GridProduct interface
-    products = await Promise.all(serializedProducts.map(async (p): Promise<GridProduct> => {
-      // Parse the images JSON string or handle array
-      const imageArray = normalizeImages(p.images);
-      
-      return {
-        id: p.id,
-        squareId: p.squareId || '',
-        name: p.name,
-        description: p.description,
-        price: p.price || 0, // Already converted to number by preparePrismaData
-        images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
-        categoryId: p.categoryId || '',
-        category: await preparePrismaData(category), // Serialize the category object too
-        slug: p.slug || p.id, // Use product slug or ID if slug is missing
-        featured: p.featured || false,
-        active: p.active,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-        variants: p.variants.map((v) => ({
-          id: v.id,
-          name: v.name,
-          price: v.price || null, // Already converted by preparePrismaData
-          squareVariantId: v.squareVariantId,
-          productId: p.id,
-          createdAt: v.createdAt,
-          updatedAt: v.updatedAt,
-        }))
-      };
-    }));
+    products = await Promise.all(
+      serializedProducts.map(async (p): Promise<GridProduct> => {
+        // Parse the images JSON string or handle array
+        const imageArray = normalizeImages(p.images);
 
+        return {
+          id: p.id,
+          squareId: p.squareId || '',
+          name: p.name,
+          description: p.description,
+          price: p.price || 0, // Already converted to number by preparePrismaData
+          images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
+          categoryId: p.categoryId || '',
+          category: await preparePrismaData(category), // Serialize the category object too
+          slug: p.slug || p.id, // Use product slug or ID if slug is missing
+          featured: p.featured || false,
+          active: p.active,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          variants: p.variants.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: v.price || null, // Already converted by preparePrismaData
+            squareVariantId: v.squareVariantId,
+            productId: p.id,
+            createdAt: v.createdAt,
+            updatedAt: v.updatedAt,
+          })),
+        };
+      })
+    );
   } catch (error) {
     console.error(
       `Failed to fetch products for category ${category.name} (ID: ${category.id}):`,
@@ -141,7 +144,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 bg-white">
         {/* Use the fetched category data */}
-        <CategoryHeader 
+        <CategoryHeader
           title={category.name}
           description={category.description || CATEGORY_DESCRIPTIONS[slug] || ''} // Use DB description or fallback
         />
@@ -185,6 +188,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             )}
           </Suspense>
         </div>
+
+        {/* FAQ Section */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl py-8">
+          <MenuFaqSection />
+        </div>
       </main>
     </div>
   );
@@ -205,8 +213,8 @@ export async function generateStaticParams() {
         // products: {
         //   some: { active: true }
         // }
-        slug: { not: null } // Ensure slug is not null
-      }
+        slug: { not: null }, // Ensure slug is not null
+      },
     });
 
     // Filter out any null slugs just in case and map to the expected format
@@ -215,9 +223,8 @@ export async function generateStaticParams() {
       .map(category => ({
         slug: category.slug!,
       }));
-      
   } catch (error) {
-    console.error("Failed to generate static params for category pages:", error);
+    console.error('Failed to generate static params for category pages:', error);
     // Return an empty array in case of error to prevent build failure
     // Or handle the error more gracefully depending on requirements
     return [];

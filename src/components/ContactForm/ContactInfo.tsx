@@ -9,11 +9,12 @@ export function ContactInfo() {
       <div>
         <div className="mb-10">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Curious about our menu or catering options?{' '}
+            Curious about our menu <br />
+            or catering options?{' '}
           </h2>
           <p className="text-gray-100 text-lg">
             Send us a message — we would love to hear from you! Whether you are planning a special
-            event or just craving something delicious, we are here to help
+            event or just craving something delicious, we are here to help!
           </p>
         </div>
       </div>

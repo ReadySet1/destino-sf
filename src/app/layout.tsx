@@ -22,9 +22,10 @@ const greatVibes = Great_Vibes({
   variable: '--font-great-vibes',
 });
 
-const baseUrl = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:3000'
-  : 'https://destino-sf-ready-set.vercel.app';
+const baseUrl =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : 'https://destino-sf-ready-set.vercel.app';
 
 // Add viewport configuration
 export const viewport: Viewport = {
@@ -34,14 +35,15 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#ffffff' }
-  ]
+    { media: '(prefers-color-scheme: dark)', color: '#ffffff' },
+  ],
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
+  themeColor: '#004225',
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -49,24 +51,28 @@ export const metadata: Metadata = {
     siteName: 'Destino SF',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
-    images: [{
-      url: '/opengraph-image.jpg',
-      width: 1200,
-      height: 630,
-      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
-    }],
+    images: [
+      {
+        url: '/opengraph-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF',
     description: 'Handcrafted Empanadas & Alfajores',
     creator: '@destinosf',
-    images: [{
-      url: '/twitter-image.jpg',
-      width: 1200,
-      height: 630,
-      alt: 'Destino SF - Handcrafted Empanadas & Alfajores'
-    }],
+    images: [
+      {
+        url: '/twitter-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
+      },
+    ],
   },
   other: {
     'og:site_name': 'Destino SF',
@@ -88,7 +94,7 @@ export const metadata: Metadata = {
     other: {
       'msvalidate.01': '',
       'yandex-verification': '',
-    }
+    },
   },
 };
 
@@ -110,8 +116,8 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-foreground antialiased">
         <ClientLayout>{children}</ClientLayout>
-        <Script 
-          src="https://analytics.readysetllc.com/script.js" 
+        <Script
+          src="https://analytics.readysetllc.com/script.js"
           data-website-id="5a0ae847-dbb0-456c-b972-9e29944de4b2"
         />
       </body>

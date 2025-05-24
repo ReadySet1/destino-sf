@@ -21,21 +21,21 @@ const categories: CategoryType[] = [
   {
     id: '1',
     name: 'Our Empanadas',
-    description: 'Our signature savory pastries with various fillings',
+    description: 'Our signature savory pastries with exquisite fillings',
     imageUrl: '/images/assets/2Recurso 3.png',
     slug: 'empanadas',
   },
   {
     id: '2',
     name: 'Our Alfajores',
-    description: 'Delicious alfajores filled with creamy dulce de leche',
+    description: 'Delicious butter cookies filled with creamy dulce de leche',
     imageUrl: '/images/menu/alfajores.png',
     slug: 'alfajores',
   },
   {
     id: '3',
     name: 'Our Catering',
-    description: 'Professional catering services for all occasions',
+    description: 'Professional catering services for all your needs',
     imageUrl: '/images/menu/catering.png',
     slug: 'catering',
   },
@@ -75,7 +75,10 @@ export function ShopByCategory() {
             <h2 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">
               Our Menus: What We Make
             </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-xl text-slate-700 sm:mt-4">
+            <p
+              className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
+              style={{ fontStyle: 'italic' }}
+            >
               Craving something delicious? Explore our delicious lineup of Latin specialties.
             </p>
           </div>
@@ -84,7 +87,9 @@ export function ShopByCategory() {
             {categories.map(category => (
               <Link
                 key={category.id}
-                href={category.slug === 'catering' ? '/catering' : `/products/category/${category.slug}`}
+                href={
+                  category.slug === 'catering' ? '/catering' : `/products/category/${category.slug}`
+                }
                 className="group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl"
               >
                 <div className="relative h-64 w-full overflow-hidden">
@@ -101,7 +106,14 @@ export function ShopByCategory() {
                   <h3 className={`text-2xl font-bold ${dancingScript.className}`}>
                     {category.name}
                   </h3>
-                  <p className="mt-2 text-sm text-white/90">{category.description}</p>
+                  {category.slug === 'alfajores' ? (
+                    <div className="mt-2 text-sm text-white/90">
+                      <p>Delicious butter cookies filled</p>
+                      <p>with creamy dulce de leche</p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-white/90">{category.description}</p>
+                  )}
                   <div className="mt-4 inline-flex items-center text-sm font-medium text-white">
                     Shop Now
                     <svg

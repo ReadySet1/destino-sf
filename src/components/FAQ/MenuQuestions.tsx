@@ -59,8 +59,8 @@ const FaqSection: React.FC = () => {
 
       <div className="space-y-4">
         {faqItems.map((faq, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm transition-all duration-300"
           >
             <button
@@ -72,25 +72,21 @@ const FaqSection: React.FC = () => {
               <h3 className="font-quicksand text-lg font-medium text-amber-900 pr-8 sm:text-xl">
                 {faq.question}
               </h3>
-              <ChevronDown 
+              <ChevronDown
                 className={`h-5 w-5 text-amber-500 transition-transform duration-300 ${
                   openItems.includes(index) ? 'rotate-180 transform' : ''
-                }`} 
+                }`}
               />
             </button>
 
-            <div 
+            <div
               id={`faq-answer-${index}`}
               className={`overflow-hidden transition-all duration-300 ${
-                openItems.includes(index) 
-                  ? 'max-h-[500px] opacity-100' 
-                  : 'max-h-0 opacity-0'
+                openItems.includes(index) ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
               <div className="border-t border-amber-100 bg-amber-50/30 p-5">
-                <p className="text-amber-900/80 leading-relaxed">
-                  {faq.answer}
-                </p>
+                <p className="text-amber-900/80 leading-relaxed">{faq.answer}</p>
               </div>
             </div>
           </div>

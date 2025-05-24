@@ -15,11 +15,12 @@ const MenuBanner: React.FC = () => {
           <h1 className="font-quicksand text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Our Menu
           </h1>
-          
+
           <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
-          
+
           <p className="mt-6 max-w-lg text-lg text-yellow-100 sm:text-xl">
-            Discover our delicious selection of authentic Argentine treats, handcrafted with love and tradition
+            Please explore our menu of handcrafted Latin American favorites - available for retail
+            and wholesale!
           </p>
         </div>
       </div>

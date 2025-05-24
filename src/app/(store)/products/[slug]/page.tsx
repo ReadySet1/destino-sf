@@ -12,8 +12,8 @@ function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-')     // Replace spaces with hyphens
-    .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .trim();
 }
 
@@ -23,9 +23,7 @@ function normalizeImages(images: any): string[] {
   if (!images) return [];
 
   // Case 1: Already an array of strings
-  if (Array.isArray(images) &&
-      images.length > 0 &&
-      typeof images[0] === 'string') {
+  if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'string') {
     return images.filter(url => url && url.trim() !== '');
   }
 
@@ -44,10 +42,10 @@ function normalizeImages(images: any): string[] {
       }
       // If not a JSON array, and not a URL, maybe it's a malformed single entry?
       // Or just return empty if parsing fails and it's not a URL.
-      return []; 
+      return [];
     } catch (e) {
       // If not valid JSON and not a direct URL, return empty
-       return [];
+      return [];
     }
   }
 
@@ -79,14 +77,16 @@ export default async function ProductPage({ params }: PageProps) {
   const { slug } = resolvedParams;
 
   // Basic UUID check (adjust regex if using different UUID format)
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    slug
+  );
 
   // Fetch from database using slug or id (if it's a UUID)
   const dbProduct = await prisma.product.findFirst({
     where: {
       OR: [
         { slug: slug }, // Try matching by slug field
-        ...(isUUID ? [{ id: slug }] : []) // Conditionally add ID match if slug is a UUID
+        ...(isUUID ? [{ id: slug }] : []), // Conditionally add ID match if slug is a UUID
       ],
       active: true, // Only fetch active products
     },
@@ -122,14 +122,17 @@ export default async function ProductPage({ params }: PageProps) {
     images: normalizeImages(dbProduct.images), // Use the updated normalizeImages
     slug: dbProduct.slug || dbProduct.id, // Add the missing slug field
     categoryId: dbProduct.categoryId || '', // Provide default empty string if null
-    category: dbProduct.category ? { // Map Prisma category to Product category type
-      id: dbProduct.category.id,
-      name: dbProduct.category.name,
-      description: dbProduct.category.description,
-      order: dbProduct.category.order ?? 0, // Handle potential null order
-      createdAt: dbProduct.category.createdAt,
-      updatedAt: dbProduct.category.updatedAt,
-    } : undefined, // Set to undefined if no category linked
+    category: dbProduct.category
+      ? {
+          // Map Prisma category to Product category type
+          id: dbProduct.category.id,
+          name: dbProduct.category.name,
+          description: dbProduct.category.description,
+          order: dbProduct.category.order ?? 0, // Handle potential null order
+          createdAt: dbProduct.category.createdAt,
+          updatedAt: dbProduct.category.updatedAt,
+        }
+      : undefined, // Set to undefined if no category linked
     variants: dbProduct.variants.map(
       (variant: PrismaVariant): Variant => ({
         id: variant.id,
@@ -151,25 +154,21 @@ export default async function ProductPage({ params }: PageProps) {
   const validProduct: Product = {
     ...product,
     // Provide a default image if images array is empty after normalization
-    images: product.images.length > 0 
-      ? product.images 
-      : ['/images/menu/empanadas.png'], 
+    images: product.images.length > 0 ? product.images : ['/images/menu/empanadas.png'],
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-[hsl(var(--header-orange))]">
-      <CategoryHeader 
-        title=""
-        type="products"
-        className="bg-[hsl(var(--header-orange))]"
-      >
+      <CategoryHeader title="" type="products" className="bg-[hsl(var(--header-orange))]">
         <div className="py-8 mb-0">
           <div className="max-w-4xl mx-auto">
-            <Suspense fallback={
-              <div className="flex items-center justify-center py-20">
-                <FoodLoader text="Preparing product details..." size="medium" />
-              </div>
-            }>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-20">
+                  <FoodLoader text="Preparing product details..." size="medium" />
+                </div>
+              }
+            >
               <ProductDetails product={validProduct} />
             </Suspense>
           </div>
