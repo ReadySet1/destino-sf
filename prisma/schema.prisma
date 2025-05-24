@@ -9,15 +9,15 @@ datasource db {
 }
 
 model Profile {
-  id         String   @id @db.Uuid
-  email      String   @unique
-  name       String?
-  phone      String?
-  role       UserRole @default(CUSTOMER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orders     Order[]
+  id             String          @id @db.Uuid
+  email          String          @unique
+  name           String?
+  phone          String?
+  role           UserRole        @default(CUSTOMER)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
   cateringOrders CateringOrder[]
+  orders         Order[]
 }
 
 model Product {
@@ -27,12 +27,12 @@ model Product {
   description String?
   price       Decimal     @db.Decimal(10, 2)
   images      String[]
-  slug        String?     @unique
   categoryId  String      @db.Uuid
   featured    Boolean     @default(false)
   active      Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  slug        String?     @unique
   orderItems  OrderItem[]
   category    Category    @relation(fields: [categoryId], references: [id])
   variants    Variant[]
@@ -42,7 +42,6 @@ model Product {
 
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
-  squareId    String?   @unique
   name        String    @unique
   description String?
   order       Int       @default(0)
@@ -52,6 +51,7 @@ model Category {
   metadata    Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  squareId    String?   @unique
   products    Product[]
 }
 
@@ -74,36 +74,38 @@ model Order {
   squareOrderId             String?       @unique
   status                    OrderStatus   @default(PENDING)
   total                     Decimal       @db.Decimal(10, 2)
-  taxAmount                 Decimal       @default(0) @db.Decimal(10, 2) @map("tax_amount")
   userId                    String?       @db.Uuid
   customerName              String
   email                     String
   phone                     String
-  fulfillmentType           String?       @map("fulfillment_type") // pickup, local_delivery, nationwide_shipping
-  notes                     String? // For storing extra details like delivery instructions or raw fulfillment JSON
-  pickupTime                DateTime?     @map("pickup_time") // Used for pickup or as a placeholder for other types if needed
-  deliveryDate              String?       @map("delivery_date") // e.g., "YYYY-MM-DD"
-  deliveryTime              String?       @map("delivery_time") // e.g., "HH:mm"
-  shippingMethodName        String?       @map("shipping_method_name") // User-friendly name, e.g., "USPS Priority Mail"
-  shippingCarrier           String?       @map("shipping_carrier") // e.g., "USPS"
-  shippingServiceLevelToken String?       @map("shipping_service_level_token") // The token, e.g., "usps_priority"
-  shippingCostCents         Int?          @map("shipping_cost_cents") // Cost in cents
-  shippingRateId            String?       @map("shipping_rate_id") // Shippo Rate object ID
-  trackingNumber            String? // Tracking number for shipped orders - MOVED here for grouping
+  fulfillmentType           String?       @map("fulfillment_type")
+  notes                     String?
+  pickupTime                DateTime?     @map("pickup_time")
+  deliveryDate              String?       @map("delivery_date")
+  deliveryTime              String?       @map("delivery_time")
+  shippingMethodName        String?       @map("shipping_method_name")
+  shippingCarrier           String?       @map("shipping_carrier")
+  shippingServiceLevelToken String?       @map("shipping_service_level_token")
+  shippingCostCents         Int?          @map("shipping_cost_cents")
+  shippingRateId            String?       @map("shipping_rate_id")
+  trackingNumber            String?
   cancelReason              String?
-  paymentMethod             PaymentMethod @default(SQUARE)
   paymentStatus             PaymentStatus @default(PENDING)
-  rawData                   Json? // Store raw webhook data, etc.
+  rawData                   Json?
   createdAt                 DateTime      @default(now())
   updatedAt                 DateTime      @updatedAt
-  profile                   Profile?      @relation(fields: [userId], references: [id])
+  paymentMethod             PaymentMethod @default(SQUARE)
+  taxAmount                 Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  isCateringOrder           Boolean       @default(false)
   items                     OrderItem[]
   payments                  Payment[]
+  profile                   Profile?      @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
-  @@map("orders") // Ensure this matches your table name
+  @@index([isCateringOrder])
+  @@map("orders")
 }
 
 model Payment {
@@ -166,23 +168,23 @@ model BusinessHours {
 }
 
 model StoreSettings {
-  id                  String   @id @default(uuid()) @db.Uuid
-  name                String   @default("Destino SF")
-  address             String?
-  city                String?
-  state               String?
-  zipCode             String?
-  phone               String?
-  email               String?
-  taxRate             Decimal  @default(8.25) @db.Decimal(5, 2)
-  minAdvanceHours     Int      @default(2)
-  minOrderAmount      Decimal  @default(0) @db.Decimal(10, 2)
-  cateringMinimumAmount Decimal @default(0) @db.Decimal(10, 2)
-  maxDaysInAdvance    Int      @default(7)
-  isStoreOpen         Boolean  @default(true)
-  temporaryClosureMsg String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @default("Destino SF")
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  phone                 String?
+  email                 String?
+  taxRate               Decimal  @default(8.25) @db.Decimal(5, 2)
+  minAdvanceHours       Int      @default(2)
+  minOrderAmount        Decimal  @default(0) @db.Decimal(10, 2)
+  maxDaysInAdvance      Int      @default(7)
+  isStoreOpen           Boolean  @default(true)
+  temporaryClosureMsg   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
 }
 
 model Subscriber {
@@ -209,24 +211,25 @@ model PromoCode {
 }
 
 model CateringPackage {
-  id                String               @id @default(uuid()) @db.Uuid
-  name              String
-  description       String?
-  minPeople         Int                  @default(2)
-  pricePerPerson    Decimal              @db.Decimal(10, 2)
-  type              CateringPackageType
-  imageUrl          String?
-  isActive          Boolean              @default(true)
-  featuredOrder     Int?                 @default(0)
-  items             CateringPackageItem[]
-  dietaryOptions    String[]             @default([])
-  ratings           CateringRating[]
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  description    String?
+  minPeople      Int                   @default(2)
+  pricePerPerson Decimal               @db.Decimal(10, 2)
+  type           CateringPackageType
+  imageUrl       String?
+  isActive       Boolean               @default(true)
+  featuredOrder  Int?                  @default(0)
+  dietaryOptions String[]              @default([])
+  squareCategory String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @default(now()) @updatedAt
+  items          CateringPackageItem[]
+  ratings        CateringRating[]
 }
 
 model CateringItem {
-  id              String                @id @default(uuid()) @db.Uuid
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
   description     String?
   price           Decimal               @db.Decimal(10, 2)
@@ -237,81 +240,81 @@ model CateringItem {
   servingSize     String?
   imageUrl        String?
   isActive        Boolean               @default(true)
-  squareCategory  String?               // Category name in Square
-  squareProductId String?               // Product ID in Square catalog
-  packageItems    CateringPackageItem[]
+  squareCategory  String?
+  squareProductId String?
   createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  updatedAt       DateTime              @default(now()) @updatedAt
+  packageItems    CateringPackageItem[]
 }
 
 model CateringPackageItem {
-  id                String          @id @default(uuid()) @db.Uuid
-  packageId         String          @db.Uuid
-  itemId            String          @db.Uuid
-  quantity          Int             @default(1)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  cateringPackage   CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  cateringItem      CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId       String          @db.Uuid
+  itemId          String          @db.Uuid
+  quantity        Int             @default(1)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now()) @updatedAt
+  cateringItem    CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_item")
+  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_package")
 
-  @@index([packageId])
-  @@index([itemId])
+  @@index([itemId], map: "idx_catering_package_item_item_id")
+  @@index([packageId], map: "idx_catering_package_item_package_id")
 }
 
 model CateringRating {
-  id              String          @id @default(uuid()) @db.Uuid
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   packageId       String          @db.Uuid
   rating          Int             @db.SmallInt
   review          String?
   reviewerName    String?
   createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime        @default(now()) @updatedAt
+  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rating_package")
 
-  @@index([packageId])
+  @@index([packageId], map: "idx_catering_rating_package_id")
 }
 
 model CateringOrder {
-  id                String            @id @default(uuid()) @db.Uuid
-  customerId        String?           @db.Uuid
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId        String?             @db.Uuid
   email             String
   name              String
   phone             String
   eventDate         DateTime
   numberOfPeople    Int
-  totalAmount       Decimal           @db.Decimal(10, 2)
-  status            CateringStatus    @default(PENDING)
-  paymentStatus     PaymentStatus     @default(PENDING)
+  totalAmount       Decimal             @db.Decimal(10, 2)
+  status            CateringStatus      @default(PENDING)
+  paymentStatus     PaymentStatus       @default(PENDING)
   paymentMethod     PaymentMethod?
-  squareOrderId     String?           @unique
-  squarePaymentId   String?           @unique
+  squareOrderId     String?             @unique
+  squarePaymentId   String?             @unique
   squareCheckoutUrl String?
   notes             String?
   specialRequests   String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  profile           Profile?          @relation(fields: [customerId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
+  profile           Profile?            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_customer")
   items             CateringOrderItem[]
 
-  @@index([customerId])
-  @@index([squareOrderId])
+  @@index([customerId], map: "idx_catering_order_customer_id")
+  @@index([squareOrderId], map: "idx_catering_order_square_order_id")
 }
 
 model CateringOrderItem {
-  id              String        @id @default(uuid()) @db.Uuid
-  orderId         String        @db.Uuid
-  itemType        String        // "package" or "item"
-  itemId          String        @db.Uuid
-  name            String        // Stored for historical record
-  quantity        Int
-  pricePerUnit    Decimal       @db.Decimal(10, 2)
-  totalPrice      Decimal       @db.Decimal(10, 2)
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  order           CateringOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String        @db.Uuid
+  itemType     String
+  itemId       String        @db.Uuid
+  name         String
+  quantity     Int
+  pricePerUnit Decimal       @db.Decimal(10, 2)
+  totalPrice   Decimal       @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @default(now()) @updatedAt
+  order        CateringOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_order")
 
-  @@index([orderId])
+  @@index([orderId], map: "idx_catering_order_item_order_id")
 }
 
 enum UserRole {
@@ -326,8 +329,8 @@ enum OrderStatus {
   COMPLETED
   CANCELLED
   FULFILLMENT_UPDATED
-  SHIPPING // Order has been shipped
-  DELIVERED // Order has been delivered
+  SHIPPING
+  DELIVERED
 }
 
 enum PaymentStatus {
@@ -353,6 +356,7 @@ enum CateringPackageType {
   INDIVIDUAL
   BUFFET
   FAMILY_STYLE
+  BOXED_LUNCH
 }
 
 enum CateringItemCategory {
@@ -362,6 +366,8 @@ enum CateringItemCategory {
   SALAD
   DESSERT
   BEVERAGE
+  PROTEIN
+  ADD_ON
 }
 
 enum CateringStatus {

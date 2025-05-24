@@ -20,6 +20,19 @@ import { FormMessage } from '../../components/form-message';
 
 export const dynamic = 'force-dynamic';
 
+// Debug function to check image availability
+const debugImages = (items: CateringItem[]) => {
+  const withImages = items.filter(item => item.imageUrl).length;
+  console.log(
+    `[DEBUG] Catering page loaded with ${withImages}/${items.length} items having images`
+  );
+
+  // Log the first few items with their image URLs
+  items.slice(0, 5).forEach(item => {
+    console.log(`[DEBUG] Item "${item.name}" has image: ${item.imageUrl || 'NO IMAGE'}`);
+  });
+};
+
 // Define catering services
 const cateringServices: string[] = [
   'Corporate Luncheons',
@@ -39,6 +52,9 @@ const CateringPage = async () => {
     // Fetch packages and items from the database
     cateringPackages = await getCateringPackages();
     cateringItems = await getCateringItems();
+
+    // Debug image URLs in fetched items
+    debugImages(cateringItems);
   } catch (error) {
     console.error('Error fetching catering data:', error);
     errorMessage = error instanceof Error ? error.message : 'Failed to load catering data';
@@ -46,13 +62,6 @@ const CateringPage = async () => {
     // If database fetch fails, the page will still render but with empty arrays
     // This ensures graceful degradation
   }
-
-  // Get counts of items per category for debugging
-  const appetizersCount = getItemsForTab(cateringItems, 'appetizers').length;
-  const buffetCount = getItemsForTab(cateringItems, 'buffet').length;
-  const lunchCount = getItemsForTab(cateringItems, 'lunch').length;
-  const lunchPacketsCount = getItemsForTab(cateringItems, 'lunch-packets').length;
-  const hasSquareCategoryCount = cateringItems.filter(item => !!item.squareCategory).length;
 
   return (
     <div className="bg-white">
@@ -154,7 +163,9 @@ const CateringPage = async () => {
         <CateringMenuTabs
           cateringItems={cateringItems}
           cateringPackages={cateringPackages.filter(
-            pkg => pkg.type === CateringPackageType.INDIVIDUAL
+            pkg =>
+              pkg.type === CateringPackageType.INDIVIDUAL ||
+              pkg.type === CateringPackageType.BOXED_LUNCH
           )}
         />
       </section>

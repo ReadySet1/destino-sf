@@ -119,4 +119,5 @@ export const formatCurrency = (amount: any): string => {
     logger.error('Error formatting currency:', error);
     return '$0.00';
   }
-}; 
+};
+

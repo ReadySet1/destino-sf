@@ -7,8 +7,7 @@ import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
 import { prisma } from '@/lib/prisma'; // Import Prisma client
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
-import { Decimal } from '@prisma/client/runtime/library';
-import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
+import { preparePrismaData } from '@/utils/server/serialize-server-data';
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -97,36 +96,41 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       },
     });
 
-    // Map database products to the GridProduct interface
-    products = dbProducts.map((p): GridProduct => {
-      // Parse the images JSON string or handle array
-      const imageArray = normalizeImages(p.images);
+    // Process database products before mapping to GridProduct
+    const serializedProducts = await preparePrismaData(dbProducts);
 
-      return {
-        id: p.id,
-        squareId: p.squareId || '',
-        name: p.name,
-        description: p.description,
-        price: p.price ? Number(p.price) : 0, // Convert Decimal to number
-        images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
-        categoryId: p.categoryId || '',
-        category: category, // Attach the fetched category object
-        slug: p.slug || p.id, // Use product slug or ID if slug is missing
-        featured: p.featured || false,
-        active: p.active,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-        variants: p.variants.map(v => ({
-          id: v.id,
-          name: v.name,
-          price: v.price ? Number(v.price) : null, // Convert Decimal or keep null
-          squareVariantId: v.squareVariantId,
-          productId: p.id,
-          createdAt: v.createdAt,
-          updatedAt: v.updatedAt,
-        })),
-      };
-    });
+    // Map serialized database products to the GridProduct interface
+    products = await Promise.all(
+      serializedProducts.map(async (p): Promise<GridProduct> => {
+        // Parse the images JSON string or handle array
+        const imageArray = normalizeImages(p.images);
+
+        return {
+          id: p.id,
+          squareId: p.squareId || '',
+          name: p.name,
+          description: p.description,
+          price: p.price || 0, // Already converted to number by preparePrismaData
+          images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
+          categoryId: p.categoryId || '',
+          category: await preparePrismaData(category), // Serialize the category object too
+          slug: p.slug || p.id, // Use product slug or ID if slug is missing
+          featured: p.featured || false,
+          active: p.active,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          variants: p.variants.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: v.price || null, // Already converted by preparePrismaData
+            squareVariantId: v.squareVariantId,
+            productId: p.id,
+            createdAt: v.createdAt,
+            updatedAt: v.updatedAt,
+          })),
+        };
+      })
+    );
   } catch (error) {
     console.error(
       `Failed to fetch products for category ${category.name} (ID: ${category.id}):`,

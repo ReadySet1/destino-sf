@@ -1,10 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getLocations } from '@/lib/square/quickstart';
 import { logger } from '@/utils/logger';
+import { getSquareService } from '@/lib/square/service';
 
+/**
+ * API route to fetch Square location data
+ * Uses the optimized Square service layer to prevent build-time API calls
+ */
 export async function GET() {
   try {
-    const locations = await getLocations();
+    // Using the service layer instead of direct client access
+    const squareService = getSquareService();
+    const locations = await squareService.getLocations();
+    
+    logger.info(`Successfully fetched ${locations.length} Square location(s)`);
+    
     return NextResponse.json({ 
       success: true, 
       locations 

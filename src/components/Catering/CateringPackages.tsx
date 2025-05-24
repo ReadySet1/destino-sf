@@ -18,7 +18,21 @@ interface CateringPackagesProps {
 // Helper functions for text formatting
 const toTitleCase = (str: string | null | undefined): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  
+  // Words that should not be capitalized (articles, conjunctions, prepositions)
+  const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'de'];
+  
+  // Split the string into words
+  const words = str.toLowerCase().split(' ');
+  
+  // Always capitalize the first and last word
+  return words.map((word, index) => {
+    // Always capitalize first and last word, or if not a minor word
+    if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+    return word;
+  }).join(' ');
 };
 
 const formatDescription = (str: string | null | undefined): string => {
@@ -199,6 +213,10 @@ const CateringPackageCard: React.FC<CateringPackageCardProps> = ({ cateringPacka
               alt={toTitleCase(name)}
               fill
               className="object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/catering/default-package.jpg';
+              }}
             />
           </div>
           <div className="absolute top-4 right-4 px-4 py-2 bg-white bg-opacity-90 rounded-full text-center shadow-sm">
