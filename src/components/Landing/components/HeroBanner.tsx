@@ -25,7 +25,7 @@ export function HeroBanner() {
             <br />
             <span>Savored in every bite.</span>
           </h1>
-          <p className="hidden md:block mb-6 md:text-base lg:text-lg xl:text-xl text-gray-100 italic text-center w-full [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
+          <p className="hidden md:block mb-6 md:text-base lg:text-lg xl:text-xl text-gray-100 italic text-left w-full [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
             From protein packed empanadas to sweet alfajores
             <br />
             our food makes people smile!
