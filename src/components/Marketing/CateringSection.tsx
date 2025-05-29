@@ -5,13 +5,13 @@ export const CateringSection = () => {
   return (
     <section className="relative bg-[#2d3538] text-white overflow-hidden">
       {/* Background watermark logo */}
-      <div className="absolute inset-0 left-[-50%] w-full opacity-[0.85]">
-        <div className="relative w-full h-full">
+      <div className="absolute inset-0 left-[-50%] w-full opacity-[0.85] md:left-[-50%]">
+        <div className="relative w-full h-full flex items-center justify-center md:block">
           <Image
             src="/images/logo/logo-watermark.png"
             alt=""
             fill
-            className="object-contain"
+            className="object-contain opacity-50 md:opacity-[0.85]"
             style={{ transform: 'scale(0.8)' }}
             aria-hidden="true"
             priority
@@ -19,36 +19,37 @@ export const CateringSection = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6 max-w-xl">
-            <h2 className="text-4xl md:text-5xl font-bold whitespace-nowrap">
+      <div className="container mx-auto px-4 py-12 md:py-16 lg:py-24 relative z-10">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-8 lg:gap-12 items-center">
+          <div className="space-y-6 max-w-full md:max-w-md lg:max-w-md xl:max-w-xl text-center md:text-left">
+            <h2 className="text-4xl leading-tight md:text-4xl lg:text-4xl xl:text-5xl font-bold xl:whitespace-nowrap">
               Let Us Cater Your Next Event
             </h2>
-
-            <div className="text-lg opacity-90 space-y-1 text-center">
-              <p>We are here to take the stress out of planning</p>
-              <p>From office lunches to celebrations,</p>
-              <p>we will handle your catering needs effortlessly!</p>
+            <div className="text-lg opacity-90 space-y-2 md:space-y-1">
+              <p>
+                We are here to take the stress out of planning. From office lunches to celebrations,
+                we will handle your catering needs effortlessly!
+              </p>
             </div>
 
-            <div className="text-lg opacity-90 space-y-1 text-center">
-              <p>Our customizable Latin American menus include a variety</p>
-              <p>of gluten-free, vegetarian, and vegan options — ideal for any gathering!</p>
+            <div className="text-lg opacity-90 space-y-2 md:space-y-1">
+              <p>
+                Our customizable Latin American menus include a variety of gluten-free, vegetarian,
+                and vegan options — ideal for any gathering!
+              </p>{' '}
             </div>
 
-            {/* Added margin-top to move button down */}
-            <div className="mt-16">
+            <div className="mt-8 md:mt-16 flex justify-center md:justify-start">
               <Link
                 href="/contact"
-                className="inline-block px-8 py-3 bg-amber-400 text-slate-900 font-semibold rounded-full hover:bg-amber-300 transition-colors"
+                className="inline-block px-8 py-3 bg-amber-400 text-slate-900 font-semibold rounded-full hover:bg-amber-300 transition-colors text-lg"
               >
                 Contact Us
               </Link>
             </div>
           </div>
 
-          <div className="relative h-[600px] w-full">
+          <div className="relative h-[300px] md:h-[450px] lg:h-[600px] w-full mt-8 md:mt-0">
             <Image
               src="/images/homepage/section-catering.png"
               alt="Showcase of our catering options including shrimp appetizer, empanadas, and signature cocktail"

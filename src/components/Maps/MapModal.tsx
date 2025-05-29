@@ -361,12 +361,36 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
       address: '960 Cole St, San Francisco, CA 94117',
     },
     {
+      name: "Luke's Local",
+      address: '580 Green St, San Francisco, CA 94133',
+    },
+    {
+      name: "Luke's Local",
+      address: '1266 9th Ave, San Francisco, CA 94122',
+    },
+    {
+      name: "Luke's Local",
+      address: '2190 Union St, San Francisco, CA 94123',
+    },
+    {
       name: 'Epicurean Trader - Cortland Ave',
       address: '401 Cortland Ave, San Francisco, CA 94110',
     },
     {
       name: 'Epicurean Trader - Divisadero',
       address: '1 Divisadero St, San Francisco, CA 94117',
+    },
+    {
+      name: 'Epicurean Trader - Hayes',
+      address: '465 Hayes St, San Francisco, CA 94102',
+    },
+    {
+      name: 'Epicurean Trader - Union',
+      address: '1909 Union St, San Francisco, CA 94123',
+    },
+    {
+      name: 'Epicurean Trader - Market St',
+      address: '2240 Market St, San Francisco, CA 94114',
     },
     {
       name: "Bryan's Market",
@@ -383,26 +407,6 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
     {
       name: 'Skyline Market',
       address: '2685 Skyline Blvd, Oakland, CA 94619',
-    },
-    {
-      name: "Gus's Community Market - Harrison",
-      address: '2111 Harrison St, San Francisco, CA 94110',
-    },
-    {
-      name: "Gus's Community Market - Mission",
-      address: '1530 Mission St, San Francisco, CA 94103',
-    },
-    {
-      name: 'La Palma Mexicatessen',
-      address: '2884 24th St, San Francisco, CA 94110',
-    },
-    {
-      name: 'Canyon Market',
-      address: '2815 Diamond St, San Francisco, CA 94131',
-    },
-    {
-      name: 'Berkeley Bowl West',
-      address: '920 Heinz Ave, Berkeley, CA 94710',
     },
   ];
 
