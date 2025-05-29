@@ -6,7 +6,7 @@ import { useCartStore } from '@/store/cart';
 import { CateringOrderForm } from '@/components/Catering/CateringOrderForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { addDays, format } from 'date-fns';
@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
+import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
+import { getActiveDeliveryZones } from '@/types/catering';
 
 // Define the PaymentMethod enum to match the one in the PaymentMethodSelector
 enum PaymentMethod {
@@ -69,6 +71,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Payment method state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.SQUARE);
   
+  // Delivery zone validation state
+  const [deliveryValidation, setDeliveryValidation] = useState<{
+    isValid: boolean;
+    errorMessage?: string;
+    deliveryZone?: string;
+    minimumRequired?: number;
+    currentAmount?: number;
+    deliveryFee?: number;
+  } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [activeDeliveryZones] = useState(getActiveDeliveryZones());
+  
   // Filter catering items from cart
   const cateringItems = items.filter(item => {
     try {
@@ -86,22 +100,58 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
   }, [cateringItems.length, router]);
 
-  // Calculate the total price considering per-person pricing for packages
-  const calculateTotal = () => {
-    return cateringItems.reduce((total, item) => {
-      try {
-        const metadata = JSON.parse(item.variantId || '{}');
-        if (metadata.type === 'package') {
-          // For packages, multiply the price by the number of people
-          return total + (item.price * customerInfo.peopleCount * item.quantity);
-        } else {
-          // For individual items, use the regular price
-          return total + (item.price * item.quantity);
-        }
-      } catch {
-        return total + (item.price * item.quantity);
+  // Validate delivery zone minimum when address changes
+  useEffect(() => {
+    const validateDeliveryZone = async () => {
+      if (fulfillmentMethod !== 'local_delivery' || !deliveryAddress.city || !deliveryAddress.postalCode) {
+        setDeliveryValidation(null);
+        return;
       }
+
+      setIsValidating(true);
+      
+      try {
+        const validation = await validateCateringOrderWithDeliveryZone(
+          cateringItems.map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          {
+            city: deliveryAddress.city,
+            postalCode: deliveryAddress.postalCode
+          }
+        );
+        
+        setDeliveryValidation(validation);
+      } catch (error) {
+        console.error('Error validating delivery zone:', error);
+        setDeliveryValidation({
+          isValid: false,
+          errorMessage: 'Error validating delivery zone. Please try again.'
+        });
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    // Debounce validation
+    const timeoutId = setTimeout(validateDeliveryZone, 500);
+    return () => clearTimeout(timeoutId);
+  }, [fulfillmentMethod, deliveryAddress.city, deliveryAddress.postalCode, cateringItems]);
+
+  // Calculate total with delivery fee
+  const calculateTotal = () => {
+    const subtotal = cateringItems.reduce((sum, item) => {
+      const metadata = JSON.parse(item.variantId || '{}');
+      if (metadata.type === 'package') {
+        return sum + (item.price * customerInfo.peopleCount * item.quantity);
+      }
+      return sum + (item.price * item.quantity);
     }, 0);
+    
+    const deliveryFee = deliveryValidation?.deliveryFee || 0;
+    return subtotal + (fulfillmentMethod === 'local_delivery' ? deliveryFee : 0);
   };
 
   // Handle customer info form submission
@@ -148,7 +198,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           specialRequests: customerInfo.specialRequests
         },
         fulfillment: {
-          method: fulfillmentMethod,
+          method: fulfillmentMethod as 'pickup' | 'local_delivery',
           ...(fulfillmentMethod === 'pickup' ? {
             pickupDate: format(pickupDate, 'yyyy-MM-dd'),
             pickupTime
@@ -213,6 +263,17 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           eventDate: formattedEventDate as unknown as Date,
           numberOfPeople: customerInfo.peopleCount,
           specialRequests: customerInfo.specialRequests || null
+        },
+        fulfillment: {
+          method: fulfillmentMethod as 'pickup' | 'local_delivery',
+          ...(fulfillmentMethod === 'pickup' ? {
+            pickupDate: format(pickupDate, 'yyyy-MM-dd'),
+            pickupTime
+          } : {
+            deliveryAddress,
+            deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
+            deliveryTime: pickupTime
+          })
         },
         items: formattedItems,
         totalAmount: calculateTotal(),
@@ -296,73 +357,36 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             />
 
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="p-6">
                 {fulfillmentMethod === 'pickup' ? (
                   <>
                     <h3 className="text-lg font-medium mb-4">Pickup Details</h3>
-                    <div className="grid gap-4">
-                      <div>
-                        <Label htmlFor="pickupDate">Pickup Date</Label>
-                        <div className="mt-1">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                id="pickupDate"
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !pickupDate && "text-muted-foreground"
-                                )}
-                              >
-                                {pickupDate ? (
-                                  format(pickupDate, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={pickupDate}
-                                onSelect={(date) => date && setPickupDate(date)}
-                                initialFocus
-                                disabled={(date) => {
-                                  const today = new Date();
-                                  const minDate = addDays(today, 2);
-                                  minDate.setHours(0, 0, 0, 0);
-                                  return date < minDate;
-                                }}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="pickupTime">Pickup Time</Label>
-                        <Select
-                          value={pickupTime}
-                          onValueChange={setPickupTime}
-                        >
-                          <SelectTrigger id="pickupTime">
-                            <SelectValue placeholder="Select a time" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {['10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'].map((time) => (
-                              <SelectItem key={time} value={time}>
-                                {time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Pick up your catering order at our restaurant location.
+                      </p>
                     </div>
                   </>
                 ) : fulfillmentMethod === 'local_delivery' ? (
                   <>
                     <h3 className="text-lg font-medium mb-4">Delivery Details</h3>
+                    
+                    {/* Delivery Zones Information */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <h4 className="font-semibold text-blue-800 mb-2">Delivery Zones & Minimums</h4>
+                      <div className="grid gap-2 text-sm">
+                        {activeDeliveryZones.map(zone => (
+                          <div key={zone.zone} className="flex justify-between">
+                            <span className="text-blue-700">{zone.name}:</span>
+                            <span className="font-medium text-blue-800">
+                              ${zone.minimumAmount.toFixed(2)} minimum
+                              {zone.deliveryFee && ` (+$${zone.deliveryFee.toFixed(2)} delivery)`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
                     <div className="grid gap-4">
                       <div>
                         <Label htmlFor="street">Street Address</Label>
@@ -419,6 +443,59 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           required
                         />
                       </div>
+                      
+                      {/* Delivery Zone Validation Messages */}
+                      {isValidating && deliveryAddress.city && deliveryAddress.postalCode && (
+                        <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                          <span className="text-yellow-800 text-sm">Checking delivery zone...</span>
+                        </div>
+                      )}
+                      
+                      {deliveryValidation && !isValidating && (
+                        <div className={`p-3 rounded-lg border ${
+                          deliveryValidation.isValid 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-red-50 border-red-200'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className={`w-4 h-4 mt-0.5 ${
+                              deliveryValidation.isValid ? 'text-green-600' : 'text-red-600'
+                            }`} />
+                            <div className="flex-1">
+                              {deliveryValidation.isValid ? (
+                                <div>
+                                  <p className="text-green-800 text-sm font-medium">
+                                    ✓ Valid delivery zone
+                                  </p>
+                                  {deliveryValidation.deliveryZone && (
+                                    <p className="text-green-700 text-sm mt-1">
+                                      Delivering to: {deliveryValidation.deliveryZone.replace('_', ' ')}
+                                      {deliveryValidation.deliveryFee && deliveryValidation.deliveryFee > 0 && (
+                                        <span className="ml-2">
+                                          (+${deliveryValidation.deliveryFee.toFixed(2)} delivery fee)
+                                        </span>
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-red-800 text-sm font-medium">
+                                    {deliveryValidation.errorMessage}
+                                  </p>
+                                  {deliveryValidation.minimumRequired && deliveryValidation.currentAmount && (
+                                    <p className="text-red-700 text-sm mt-1">
+                                      Current order: ${deliveryValidation.currentAmount.toFixed(2)} | 
+                                      Required: ${deliveryValidation.minimumRequired.toFixed(2)}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       <div>
                         <Label htmlFor="deliveryDate">Delivery Date</Label>
@@ -496,10 +573,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               disabled={
                 (fulfillmentMethod === 'local_delivery' && 
                   (!deliveryAddress.street || !deliveryAddress.city || !deliveryAddress.state || !deliveryAddress.postalCode)) ||
-                fulfillmentMethod === 'nationwide_shipping'
+                fulfillmentMethod === 'nationwide_shipping' ||
+                (fulfillmentMethod === 'local_delivery' && deliveryValidation && !deliveryValidation.isValid) ||
+                (fulfillmentMethod === 'local_delivery' && isValidating)
               }
             >
-              Continue to Payment
+              {fulfillmentMethod === 'local_delivery' && isValidating 
+                ? "Validating..." 
+                : "Continue to Payment"
+              }
             </Button>
           </form>
         )}
@@ -683,7 +765,25 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             </div>
             
             <div className="border-t border-gray-200 pt-4 space-y-2">
-              <div className="flex justify-between text-base font-medium">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>${cateringItems.reduce((sum, item) => {
+                  const metadata = JSON.parse(item.variantId || '{}');
+                  if (metadata.type === 'package') {
+                    return sum + (item.price * customerInfo.peopleCount * item.quantity);
+                  }
+                  return sum + (item.price * item.quantity);
+                }, 0).toFixed(2)}</span>
+              </div>
+              
+              {fulfillmentMethod === 'local_delivery' && deliveryValidation?.deliveryFee && deliveryValidation.deliveryFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Delivery Fee</span>
+                  <span>${deliveryValidation.deliveryFee.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
                 <span>Total</span>
                 <span>${calculateTotal().toFixed(2)}</span>
               </div>
