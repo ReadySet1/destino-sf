@@ -43,7 +43,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Destino SF',
   description: 'Handcrafted Empanadas & Alfajores',
-  themeColor: '#004225',
   openGraph: {
     type: 'website',
     locale: 'en_US',

@@ -1,7 +1,16 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { type CateringPackage, type CateringItem, CateringPackageType, CateringItemCategory } from '@/types/catering';
+import { 
+  type CateringPackage, 
+  type CateringItem, 
+  CateringPackageType, 
+  CateringItemCategory,
+  DeliveryZone,
+  determineDeliveryZone,
+  validateMinimumPurchase,
+  getZoneConfig
+} from '@/types/catering';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
@@ -518,6 +527,20 @@ const CateringOrderSchema = z.object({
     numberOfPeople: z.number().int().min(1),
     specialRequests: z.string().optional().nullable(),
   }),
+  fulfillment: z.object({
+    method: z.enum(['pickup', 'local_delivery']),
+    pickupDate: z.string().optional(),
+    pickupTime: z.string().optional(),
+    deliveryAddress: z.object({
+      street: z.string(),
+      street2: z.string().optional(),
+      city: z.string(),
+      state: z.string(),
+      postalCode: z.string(),
+    }).optional(),
+    deliveryDate: z.string().optional(),
+    deliveryTime: z.string().optional(),
+  }),
   items: z.array(CateringOrderItemSchema),
   totalAmount: z.number().positive(),
   paymentMethod: z.enum(['SQUARE', 'VENMO', 'CASH']).default('SQUARE'),
@@ -535,9 +558,41 @@ export async function createCateringOrderAndProcessPayment(
   formData: z.infer<typeof CateringOrderSchema>
 ): Promise<ServerActionResult<{ orderId: string; checkoutUrl?: string }>> {
   try {
-    const { customerInfo, eventDetails, items, totalAmount, paymentMethod } = formData;
+    const { customerInfo, eventDetails, fulfillment, items, totalAmount, paymentMethod } = formData;
     
     console.log(`Creating catering order with ${paymentMethod} payment method...`);
+    
+    // Validate delivery zone if it's a delivery order
+    let deliveryZone = null;
+    let deliveryFee = 0;
+    
+    if (fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress) {
+      const validation = await validateCateringOrderWithDeliveryZone(
+        items.map(item => ({
+          id: item.itemId,
+          quantity: item.quantity,
+          price: item.pricePerUnit
+        })),
+        {
+          city: fulfillment.deliveryAddress.city,
+          postalCode: fulfillment.deliveryAddress.postalCode
+        }
+      );
+      
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: validation.errorMessage || 'Delivery validation failed'
+        };
+      }
+      
+      deliveryZone = validation.deliveryZone;
+      deliveryFee = validation.deliveryFee || 0;
+      
+      // Update total amount to include delivery fee
+      const updatedTotalAmount = totalAmount + deliveryFee;
+      formData.totalAmount = updatedTotalAmount;
+    }
     
     // 1. Create the catering order in our database
     const cateringOrder = await db.cateringOrder.create({
@@ -549,7 +604,12 @@ export async function createCateringOrderAndProcessPayment(
         eventDate: eventDetails.eventDate,
         numberOfPeople: eventDetails.numberOfPeople,
         specialRequests: eventDetails.specialRequests || undefined,
-        totalAmount: totalAmount,
+        totalAmount: formData.totalAmount,
+        deliveryZone: deliveryZone || undefined,
+        deliveryAddress: fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress
+          ? `${fulfillment.deliveryAddress.street} ${fulfillment.deliveryAddress.street2 || ''} ${fulfillment.deliveryAddress.city}, ${fulfillment.deliveryAddress.state} ${fulfillment.deliveryAddress.postalCode}`.trim()
+          : undefined,
+        deliveryFee: deliveryFee > 0 ? deliveryFee : undefined,
         status: paymentMethod === 'CASH' ? CateringStatus.CONFIRMED : CateringStatus.PENDING,
         paymentStatus: paymentMethod === 'CASH' ? PaymentStatus.PENDING : PaymentStatus.PENDING,
         paymentMethod: paymentMethod as PaymentMethod,
@@ -567,7 +627,7 @@ export async function createCateringOrderAndProcessPayment(
       },
     });
     
-    console.log(`Catering order created with ID: ${cateringOrder.id}`);
+    console.log(`Catering order created with ID: ${cateringOrder.id} (delivery zone: ${deliveryZone})`);
     
     // For cash payments, don't create a Square payment link
     if (paymentMethod === 'CASH') {
@@ -1057,6 +1117,81 @@ export async function initializeBoxedLunchData(): Promise<{ success: boolean; er
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data'
+    };
+  }
+}
+
+/**
+ * Validate catering order with delivery zone minimum requirements
+ */
+export async function validateCateringOrderWithDeliveryZone(
+  items: Array<{ id: string; quantity: number; price: number }>,
+  deliveryAddress?: { city?: string; postalCode?: string }
+): Promise<{
+  isValid: boolean;
+  errorMessage?: string;
+  deliveryZone?: DeliveryZone;
+  minimumRequired?: number;
+  currentAmount?: number;
+  deliveryFee?: number;
+}> {
+  try {
+    if (!items || items.length === 0) {
+      return { isValid: false, errorMessage: 'Your cart is empty' };
+    }
+    
+    // Calculate cart total
+    const cartTotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity, 
+      0
+    );
+    
+    // For pickup orders, no delivery zone validation needed
+    if (!deliveryAddress) {
+      return { isValid: true, currentAmount: cartTotal };
+    }
+    
+    // Determine delivery zone from address
+    const deliveryZone = determineDeliveryZone(
+      deliveryAddress.postalCode || '', 
+      deliveryAddress.city
+    );
+    
+    if (!deliveryZone) {
+      return {
+        isValid: false,
+        errorMessage: 'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.'
+      };
+    }
+    
+    // Validate minimum purchase for the zone
+    const validation = validateMinimumPurchase(cartTotal, deliveryZone);
+    const zoneConfig = getZoneConfig(deliveryZone);
+    
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        errorMessage: validation.message,
+        deliveryZone,
+        minimumRequired: validation.minimumRequired,
+        currentAmount: validation.currentAmount,
+        deliveryFee: zoneConfig.deliveryFee
+      };
+    }
+    
+    return { 
+      isValid: true,
+      deliveryZone,
+      minimumRequired: validation.minimumRequired,
+      currentAmount: validation.currentAmount,
+      deliveryFee: zoneConfig.deliveryFee
+    };
+    
+  } catch (error) {
+    console.error('Error validating catering order:', error);
+    return {
+      isValid: false,
+      errorMessage: 'An error occurred while validating your order. Please try again.'
     };
   }
 } 

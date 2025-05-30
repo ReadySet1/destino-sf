@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import useEmblaCarousel from 'embla-carousel-react';
 import { useState } from 'react';
 
 interface ProductType {
@@ -116,11 +115,10 @@ function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
 }
 
 export function FeaturedProducts() {
-  const [emblaRef] = useEmblaCarousel({
-    align: 'start',
-    containScroll: 'trimSnaps',
-    dragFree: true,
-  });
+  //   align: 'start',
+  //   containScroll: 'trimSnaps',
+  //   dragFree: true,
+  // });
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -150,7 +148,7 @@ export function FeaturedProducts() {
               alt={product.name}
               fill
               className="object-cover transition-transform duration-500 hover:scale-105 absolute inset-0 rounded-3xl"
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw" // Keep this for larger screens
               priority
             />
           </div>
@@ -178,7 +176,7 @@ export function FeaturedProducts() {
             alt={product.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105 absolute inset-0 rounded-3xl"
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw" // Keep this for larger screens
             priority
           />
         </div>
@@ -194,11 +192,13 @@ export function FeaturedProducts() {
     <>
       <div className="bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className={`mb-6 text-center text-4xl font-bold text-gray-900 md:mb-12 md:text-5xl`}>
+          <h2
+            className={`mb-6 text-center text-3xl sm:text-4xl font-bold text-gray-900 md:mb-12 md:text-5xl`}
+          >
             Spotlight Picks
           </h2>
 
-          <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
+          <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto px-2 sm:px-0">
             Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
             <br />
             Inspired by tradition. Driven by creativity.
@@ -206,20 +206,21 @@ export function FeaturedProducts() {
 
           <div className="mx-auto max-w-7xl overflow-hidden">
             <div className="md:flex md:justify-center">
-              {/* Mobile Carousel */}
-              <div className="md:hidden overflow-hidden" ref={emblaRef}>
-                <div className="flex gap-4">
-                  {featuredProducts.map(product => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      className="block min-w-[85%] flex-shrink-0 transition-transform duration-300 hover:scale-[1.02]"
-                    />
-                  ))}
-                </div>
+              {/* Mobile Vertical Stack (formerly Carousel) */}
+              {/* Hidden for md and larger, visible for smaller screens */}
+              <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 px-4">
+                {' '}
+                {/* Changed to grid for vertical stacking */}
+                {featuredProducts.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    className="block w-full transition-transform duration-300 hover:scale-[1.02]" // w-full for stacking
+                  />
+                ))}
               </div>
 
-              {/* Desktop/Tablet Grid */}
+              {/* Desktop/Tablet Grid (This remains the same) */}
               <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {featuredProducts.map(product => (
                   <ProductCard key={product.id} product={product} className="group" />

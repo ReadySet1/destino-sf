@@ -82,7 +82,7 @@ const config = {
       },
     },
   },
-  plugins: [animate],
+  plugins: [animate, require('@tailwindcss/line-clamp')],
 } satisfies Config;
 
 export default config;
