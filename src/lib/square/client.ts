@@ -128,11 +128,30 @@ class SquareClientSingleton {
 // Export getter function for the singleton instance
 export const getSquareClient = () => SquareClientSingleton.getInstance();
 
-// For backwards compatibility, maintain the previous export pattern
-export const squareClient = SquareClientSingleton.getInstance();
+// For backwards compatibility, maintain the previous export pattern but make them lazy
+export const squareClient = new Proxy({}, {
+  get(target, prop) {
+    const client = SquareClientSingleton.getInstance();
+    return client ? client[prop] : undefined;
+  }
+});
+
 export const client = squareClient;
-export const ordersApi = squareClient?.ordersApi;
-export const paymentsApi = squareClient?.paymentsApi;
+
+// Lazy getters for API endpoints
+export const ordersApi = new Proxy({}, {
+  get(target, prop) {
+    const client = SquareClientSingleton.getInstance();
+    return client?.ordersApi ? client.ordersApi[prop] : undefined;
+  }
+});
+
+export const paymentsApi = new Proxy({}, {
+  get(target, prop) {
+    const client = SquareClientSingleton.getInstance();
+    return client?.paymentsApi ? client.paymentsApi[prop] : undefined;
+  }
+});
 
 // Export reset function for testing purposes
 export const resetSquareClient = () => SquareClientSingleton.reset();
