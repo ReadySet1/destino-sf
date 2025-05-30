@@ -3,34 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import { ShoppingCart } from 'lucide-react';
 
 export function CateringCartButton() {
-  const { items, totalItems } = useCartStore();
+  const { items, totalItems } = useCateringCartStore();
   
-  // Filter to get only catering items
-  const cateringItems = items.filter(item => {
-    try {
-      const metadata = JSON.parse(item.variantId || '{}');
-      return (
-        metadata.type === 'item' || 
-        metadata.type === 'package' || 
-        metadata.type === 'boxed-lunch' || 
-        metadata.type === 'appetizer-package' ||
-        metadata.type === 'lunch-packet' ||
-        metadata.type === 'lunch-packet-salad' ||
-        metadata.type === 'lunch-packet-addon'
-      );
-    } catch {
-      return false;
-    }
-  });
-  
-  // Calculate catering items count
-  const cateringItemsCount = cateringItems.reduce((total, item) => total + item.quantity, 0);
-  
-  if (cateringItemsCount === 0) {
+  if (totalItems === 0) {
     return null;
   }
   
@@ -44,7 +23,7 @@ export function CateringCartButton() {
           <ShoppingCart className="mr-2 h-5 w-5" />
           <span className="mr-1">View Cart</span>
           <span className="inline-flex items-center justify-center bg-white text-[#2d3538] rounded-full w-6 h-6 text-sm font-bold">
-            {cateringItemsCount}
+            {totalItems}
           </span>
         </Button>
       </Link>

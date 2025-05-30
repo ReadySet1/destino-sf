@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, User, ShoppingBag, CalendarDays, Users, FileText } from 'lucide-react';
+import { CheckCircle2, User, ShoppingBag, CalendarDays, FileText } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -29,7 +29,6 @@ interface OrderData {
   };
   eventDetails: {
     eventDate: string;
-    peopleCount: number;
     specialRequests?: string;
   };
   items: OrderItem[];
@@ -155,13 +154,6 @@ function ConfirmationContent() {
                       <CalendarDays className="text-green-700 h-3 w-3" />
                     </div>
                     <p><span className="font-medium">Event Date:</span> {formatDate(new Date(orderData.eventDetails.eventDate))}</p>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <div className="bg-green-100 p-1 rounded-full mr-2">
-                      <Users className="text-green-700 h-3 w-3" />
-                    </div>
-                    <p><span className="font-medium">People:</span> {orderData.eventDetails.peopleCount} guests</p>
                   </div>
                   
                   {orderData.eventDetails.specialRequests && (

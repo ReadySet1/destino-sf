@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Plus, ShoppingCart, Utensils, Users, Package, Minus, UserPlus, Trash2 } from 'lucide-react';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 
@@ -106,13 +105,6 @@ const ADD_ONS: AddOnOption[] = [
     category: 'boxed-lunch'
   },
   {
-    id: 'compostable-spoon',
-    name: 'Compostable Serving Spoon',
-    price: 1.50,
-    description: 'Compostable serving spoon for family style service',
-    category: 'family-style'
-  },
-  {
     id: 'individual-setup',
     name: 'Individual Set-Up: Bamboo Cutlery w/ Napkin, Compostable Plate',
     price: 2.00,
@@ -139,7 +131,7 @@ export const LunchPacketsMenu: React.FC<LunchPacketsMenuProps> = ({ className })
   const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   
-  const { addItem } = useCartStore();
+  const { addItem } = useCateringCartStore();
 
   // Utility functions
   const getQuantity = (itemId: string) => quantities[itemId] || 1;
@@ -250,7 +242,7 @@ export const LunchPacketsMenu: React.FC<LunchPacketsMenuProps> = ({ className })
       }
 
       addItem(cartItem);
-      toast.success(`Added ${cartItem.name} to cart`);
+      toast.success(`Added ${cartItem.name} to catering cart`);
       
     } catch (error) {
       console.error('Error adding to cart:', error);

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Plus, ShoppingCart, Utensils, Users } from 'lucide-react';
+import { CheckCircle, Plus, ShoppingCart, Utensils, Users, Cookie } from 'lucide-react';
 import { 
   BOXED_LUNCH_TIERS, 
   BOXED_LUNCH_SALADS, 
@@ -18,8 +18,52 @@ import {
   ProteinOption,
   BoxedLunchTierConfig
 } from '@/types/catering';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import toast from 'react-hot-toast';
+
+// Alfajores data for boxed lunch menu
+const ALFAJORES_ITEMS = [
+  {
+    id: 'alfajores-classic',
+    name: 'Alfajores - Classic',
+    description: 'South american butter cookies: shortbread / dulce de leche',
+    price: 2.50,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece'
+  },
+  {
+    id: 'alfajores-chocolate',
+    name: 'Alfajores - Chocolate',
+    description: 'Dulce de leche / dark chocolate / peruvian sea salt',
+    price: 2.50,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece'
+  },
+  {
+    id: 'alfajores-lemon',
+    name: 'Alfajores - Lemon',
+    description: 'Shortbread / dulce de leche / lemon royal icing',
+    price: 2.50,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece'
+  },
+  {
+    id: 'alfajores-gluten-free',
+    name: 'Alfajores - Gluten-Free',
+    description: 'Gluten-free dulce de leche butter cookies',
+    price: 2.50,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: true,
+    servingSize: '1 piece'
+  }
+];
 
 interface BoxedLunchMenuProps {
   className?: string;
@@ -36,7 +80,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
   const [selectedAddOns, setSelectedAddOns] = useState<Set<AddOnOption>>(new Set());
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   
-  const { addItem } = useCartStore();
+  const { addItem } = useCateringCartStore();
 
   const handleTierSelect = (tier: BoxedLunchTier) => {
     setSelectedTier(selectedTier === tier ? null : tier);
@@ -75,7 +119,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
     setQuantities(prev => ({ ...prev, [itemId]: Math.max(1, quantity) }));
   };
 
-  const addToCart = (type: 'tier' | 'salad' | 'addon', itemId: string, item: any) => {
+  const addToCart = (type: 'tier' | 'salad' | 'addon' | 'alfajores', itemId: string, item: any) => {
     const quantity = getQuantity(itemId);
     
     // For tier items, check if protein is selected
@@ -110,11 +154,11 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         image: undefined
       });
 
-      toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to cart!`);
+      toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to catering cart!`);
       return;
     }
     
-    // For non-tier items (salads, add-ons), use existing logic
+    // For non-tier items (salads, add-ons, alfajores), use existing logic
     const productId = `boxed-lunch-${type}-${itemId}`;
     
     const metadata = {
@@ -122,7 +166,8 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
       subType: type,
       itemId,
       ...(type === 'salad' && { saladOption: itemId }),
-      ...(type === 'addon' && { addOnOption: itemId })
+      ...(type === 'addon' && { addOnOption: itemId }),
+      ...(type === 'alfajores' && { alfajoresOption: itemId })
     };
 
     addItem({
@@ -134,7 +179,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
       image: undefined
     });
 
-    toast.success(`Added ${quantity}x ${item.name} to cart!`);
+    toast.success(`Added ${quantity}x ${item.name} to catering cart!`);
   };
 
   return (
@@ -218,6 +263,25 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
               onAddToCart={() => addToCart('addon', addOn.id, addOn)}
               quantity={getQuantity(addOn.id)}
               onQuantityChange={(qty) => setQuantity(addOn.id, qty)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Alfajores Section */}
+      <section>
+        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <Cookie className="h-6 w-6 text-orange-600" />
+          Alfajores - $2.50 each
+        </h3>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {ALFAJORES_ITEMS.map((alfajor) => (
+            <AlfajorCard
+              key={alfajor.id}
+              alfajor={alfajor}
+              onAddToCart={() => addToCart('alfajores', alfajor.id, alfajor)}
+              quantity={getQuantity(alfajor.id)}
+              onQuantityChange={(qty) => setQuantity(alfajor.id, qty)}
             />
           ))}
         </div>
@@ -501,6 +565,102 @@ const AddOnCard: React.FC<AddOnCardProps> = ({
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Service
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Alfajor Card Component
+interface AlfajorCardProps {
+  alfajor: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    isVegetarian: boolean;
+    isVegan: boolean;
+    isGlutenFree: boolean;
+    servingSize: string;
+  };
+  onAddToCart: () => void;
+  quantity: number;
+  onQuantityChange: (quantity: number) => void;
+}
+
+const AlfajorCard: React.FC<AlfajorCardProps> = ({
+  alfajor,
+  onAddToCart,
+  quantity,
+  onQuantityChange
+}) => {
+  return (
+    <Card className="transition-all duration-300 hover:shadow-md h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg font-bold text-gray-800">
+            {alfajor.name}
+          </CardTitle>
+          <div className="text-right">
+            <div className="text-xl font-bold text-amber-600">
+              ${alfajor.price.toFixed(2)}
+            </div>
+            <Badge variant="secondary" className="mt-1 text-xs">
+              {alfajor.servingSize}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 flex-1 flex flex-col">
+        <p className="text-gray-600 text-sm flex-1">{alfajor.description}</p>
+        
+        {/* Dietary badges */}
+        <div className="flex flex-wrap gap-1">
+          {alfajor.isVegetarian && (
+            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+              Vegetarian
+            </Badge>
+          )}
+          {alfajor.isVegan && (
+            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+              Vegan
+            </Badge>
+          )}
+          {alfajor.isGlutenFree && (
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+              Gluten-Free
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center justify-between pt-2 mt-auto">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onQuantityChange(quantity - 1)}
+              disabled={quantity <= 1}
+            >
+              -
+            </Button>
+            <span className="font-medium px-3">{quantity}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onQuantityChange(quantity + 1)}
+            >
+              +
+            </Button>
+          </div>
+          
+          <Button
+            onClick={onAddToCart}
+            variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Dessert
           </Button>
         </div>
       </CardContent>

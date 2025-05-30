@@ -272,7 +272,6 @@ const CateringOrderDetailsPage = async ({ params }: PageProps) => {
                 <p><strong>Payment Method:</strong> {serializedOrder.paymentMethod}</p>
               )}
               <p><strong>Total Amount:</strong> {formatCurrency(orderTotal)}</p>
-              <p><strong>Number of People:</strong> {serializedOrder?.numberOfPeople || 0}</p>
               <p><strong>Event Date:</strong> {formatDateTime(serializedOrder?.eventDate)}</p>
               <p><strong>Order Placed:</strong> {formatDateTime(serializedOrder?.createdAt)} 
                 {serializedOrder?.createdAt ? 

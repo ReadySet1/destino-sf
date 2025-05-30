@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { ShoppingCart } from 'lucide-react';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from 'react-hot-toast';
 
 interface PlatterMenuItemProps {
@@ -57,7 +57,7 @@ const formatDescription = (str: string | null | undefined): string => {
 };
 
 export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
-  const { addItem } = useCartStore();
+  const { addItem } = useCateringCartStore();
   const [selectedSize, setSelectedSize] = useState<'small' | 'large'>('small');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
@@ -101,7 +101,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
     };
 
     addItem(cartItem);
-    toast.success(`${cartItem.name} added to your cart`);
+    toast.success(`${cartItem.name} added to your catering cart`);
   };
 
   // Create a modified item for the modal with current size info

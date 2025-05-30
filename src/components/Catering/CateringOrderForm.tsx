@@ -47,15 +47,12 @@ const formSchema = z.object({
   eventDate: z.date({
     required_error: "Please select an event date.",
   }).refine((date) => {
-    const minDate = addDays(new Date(), 2);
+    const minDate = addDays(new Date(), 5);
     minDate.setHours(0, 0, 0, 0);
     return date >= minDate;
   }, {
-    message: "Event date must be at least 48 hours from now.",
+    message: "Catering orders must be confirmed 5 days in advance.",
   }),
-  peopleCount: z.number({
-    required_error: "Please select the number of people.",
-  }).int().min(1),
   specialRequests: z.string().optional(),
 });
 
@@ -72,9 +69,9 @@ export function CateringOrderForm({
   onSubmit,
   isSubmitting
 }: CateringOrderFormProps) {
-  // Get current date for minimum date selection
+  // Get current date for minimum date selection (5 days advance)
   const today = new Date();
-  const minDate = addDays(today, 2);
+  const minDate = addDays(today, 5);
   minDate.setHours(0, 0, 0, 0);
   
   // Initialize form with defaultValues
@@ -84,8 +81,7 @@ export function CateringOrderForm({
       name: defaultValues?.name || '',
       email: defaultValues?.email || '',
       phone: defaultValues?.phone || '',
-      eventDate: defaultValues?.eventDate || addDays(new Date(), 3),
-      peopleCount: defaultValues?.peopleCount || 10,
+      eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
       specialRequests: defaultValues?.specialRequests || '',
     },
   });
@@ -185,34 +181,6 @@ export function CateringOrderForm({
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="peopleCount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Number of People</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                      defaultValue={field.value?.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select number of people" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200].map((count) => (
-                          <SelectItem key={count} value={count.toString()}>
-                            {count} people
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CateringItem, CateringPackage } from '@/types/catering';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -17,7 +17,7 @@ interface CateringOrderModalProps {
 }
 
 export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrderModalProps) {
-  const { addItem } = useCartStore();
+  const { addItem } = useCateringCartStore();
   const [quantity, setQuantity] = useState(1);
   
   // For packages we need the per-person price
@@ -68,7 +68,7 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
     };
     
     addItem(cartItem);
-    toast.success(`${quantity} ${item.name} added to your cart`);
+    toast.success(`${quantity} ${item.name} added to your catering cart`);
     onClose();
   };
   

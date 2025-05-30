@@ -313,7 +313,6 @@ export enum SaladOption {
 
 export enum AddOnOption {
   BAMBOO_CUTLERY = 'BAMBOO_CUTLERY', // $1.50 - Individually wrapped bamboo cutlery w/ napkin
-  COMPOSTABLE_SPOON = 'COMPOSTABLE_SPOON', // $1.50 - Compostable serving spoon
   INDIVIDUAL_SETUP = 'INDIVIDUAL_SETUP' // $2.00 - Bamboo cutlery w/ napkin, compostable plate
 }
 
@@ -430,13 +429,6 @@ export const BOXED_LUNCH_ADD_ONS: Record<AddOnOption, BoxedLunchAddOn> = {
     name: 'Bamboo Cutlery Set',
     price: 1.50,
     description: 'Individually wrapped bamboo cutlery with napkin'
-  },
-  [AddOnOption.COMPOSTABLE_SPOON]: {
-    id: 'compostable-spoon',
-    type: AddOnOption.COMPOSTABLE_SPOON,
-    name: 'Compostable Serving Spoon',
-    price: 1.50,
-    description: 'Compostable serving spoon for family style'
   },
   [AddOnOption.INDIVIDUAL_SETUP]: {
     id: 'individual-setup',

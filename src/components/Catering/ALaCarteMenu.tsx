@@ -54,19 +54,22 @@ const SERVICE_ADD_ONS = [
     id: 'bamboo-cutlery',
     name: 'Individually Wrapped Bamboo Cutlery w/ Napkin',
     price: 1.50,
-    description: 'Eco-friendly bamboo cutlery set with napkin'
-  },
-  {
-    id: 'compostable-spoon',
-    name: 'Compostable Serving Spoon',
-    price: 1.50,
-    description: 'Compostable serving spoon for family style service'
+    description: 'Eco-friendly bamboo cutlery set with napkin',
+    categories: ['buffet', 'lunch'] // Available for both buffet and lunch
   },
   {
     id: 'individual-setup',
     name: 'Individual Set-Up: Bamboo Cutlery w/ Napkin, Compostable Plate',
     price: 2.00,
-    description: 'Complete individual place setting'
+    description: 'Complete individual place setting',
+    categories: ['buffet', 'lunch'] // Available for both buffet and lunch
+  },
+  {
+    id: 'compostable-serving-spoon',
+    name: 'Compostable Serving Spoon',
+    price: 1.50,
+    description: 'Compostable serving spoon for family style',
+    categories: ['buffet'] // Only available for buffet
   }
 ];
 
@@ -224,7 +227,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: (sectionsToShow.length + 1) * 0.1 }}
           >
-            <ServiceAddOnsSection />
+            <ServiceAddOnsSection activeCategory={activeCategory} />
           </motion.div>
         )}
       </div>
@@ -446,9 +449,14 @@ const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
 };
 
 // Service Add-ons Section Component
-const ServiceAddOnsSection: React.FC = () => {
+const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCategory }) => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedAddOn, setSelectedAddOn] = useState<any>(null);
+
+  // Filter add-ons based on the active category
+  const filteredAddOns = SERVICE_ADD_ONS.filter(addOn => 
+    addOn.categories.includes(activeCategory)
+  );
 
   const handleViewDetails = (addOn: any) => {
     setSelectedAddOn(addOn);
@@ -464,7 +472,7 @@ const ServiceAddOnsSection: React.FC = () => {
         </h3>
         
         <div className="grid md:grid-cols-3 gap-6">
-          {SERVICE_ADD_ONS.map((addOn, index) => (
+          {filteredAddOns.map((addOn, index) => (
             <motion.div
               key={addOn.id}
               initial={{ opacity: 0 }}

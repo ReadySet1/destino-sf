@@ -38,8 +38,8 @@ const formSchema = z.object({
     .date({
       required_error: 'Please select a date for your event.',
     })
-    .refine(date => date >= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), {
-      message: 'Event date must be at least 2 days from now.',
+    .refine(date => date >= new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), {
+      message: 'Catering orders must be confirmed 5 days in advance.',
     }),
   numberOfPeople: z.coerce.number().int().positive({
     message: 'Number of people must be a positive number.',

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringOrderForm } from '@/components/Catering/CateringOrderForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,9 +40,8 @@ type CheckoutStep = 'customer-info' | 'fulfillment' | 'payment' | 'review';
 
 export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckoutClientProps) {
   const router = useRouter();
-  const { items, removeItem, clearCart } = useCartStore();
+  const { items, removeItem, clearCart } = useCateringCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [peopleCount, setPeopleCount] = useState(10);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('customer-info');
   
   // Customer info state
@@ -51,13 +50,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     email: userData?.email || '',
     phone: userData?.phone || '',
     specialRequests: '',
-    eventDate: addDays(new Date(), 3),
-    peopleCount: 10,
+    eventDate: addDays(new Date(), 5),
   });
   
   // Fulfillment info state
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
-  const [pickupDate, setPickupDate] = useState<Date>(addDays(new Date(), 3));
+  const [pickupDate, setPickupDate] = useState<Date>(addDays(new Date(), 5));
   const [pickupTime, setPickupTime] = useState<string>('10:00 AM');
   const [deliveryAddress, setDeliveryAddress] = useState({
     street: '',
@@ -82,15 +80,8 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const [isValidating, setIsValidating] = useState(false);
   const [activeDeliveryZones] = useState(getActiveDeliveryZones());
   
-  // Filter catering items from cart
-  const cateringItems = items.filter(item => {
-    try {
-      const metadata = JSON.parse(item.variantId || '{}');
-      return metadata.type === 'item' || metadata.type === 'package' || metadata.type === 'boxed-lunch';
-    } catch {
-      return false;
-    }
-  });
+  // Use catering cart items directly instead of filtering
+  const cateringItems = items;
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -142,10 +133,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Calculate total with delivery fee
   const calculateTotal = () => {
     const subtotal = cateringItems.reduce((sum, item) => {
-      const metadata = JSON.parse(item.variantId || '{}');
-      if (metadata.type === 'package') {
-        return sum + (item.price * customerInfo.peopleCount * item.quantity);
-      }
       return sum + (item.price * item.quantity);
     }, 0);
     
@@ -161,9 +148,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       phone: values.phone,
       specialRequests: values.specialRequests || '',
       eventDate: values.eventDate,
-      peopleCount: values.peopleCount,
     });
-    setPeopleCount(values.peopleCount);
     setCurrentStep('fulfillment');
   };
 
@@ -193,7 +178,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         },
         eventDetails: {
           eventDate: format(customerInfo.eventDate, 'yyyy-MM-dd'),
-          peopleCount: customerInfo.peopleCount,
           specialRequests: customerInfo.specialRequests
         },
         fulfillment: {
@@ -215,9 +199,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           return {
             ...item,
             metadata,
-            finalPrice: metadata.type === 'package' 
-              ? item.price * customerInfo.peopleCount * item.quantity
-              : item.price * item.quantity
+            finalPrice: item.price * item.quantity
           };
         }),
         totalAmount: calculateTotal()
@@ -228,11 +210,8 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         const metadata = JSON.parse(item.variantId || '{}');
-        const isPackage = metadata.type === 'package';
         const pricePerUnit = item.price;
-        const totalPrice = isPackage 
-          ? item.price * customerInfo.peopleCount * item.quantity
-          : item.price * item.quantity;
+        const totalPrice = item.price * item.quantity;
 
         return {
           itemType: metadata.type || 'item',
@@ -260,7 +239,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         },
         eventDetails: {
           eventDate: formattedEventDate as unknown as Date,
-          numberOfPeople: customerInfo.peopleCount,
+          numberOfPeople: 1, // Default value since we removed people count
           specialRequests: customerInfo.specialRequests || null
         },
         fulfillment: {
@@ -331,8 +310,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               name: userData?.name || '',
               email: userData?.email || '',
               phone: userData?.phone || '',
-              peopleCount: peopleCount,
-              eventDate: addDays(new Date(), 3)
+              eventDate: addDays(new Date(), 5)
             }}
             onSubmit={handleCustomerInfoSubmit}
             isSubmitting={false}
@@ -525,7 +503,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                                 initialFocus
                                 disabled={(date) => {
                                   const today = new Date();
-                                  const minDate = addDays(today, 2);
+                                  const minDate = addDays(today, 5);
                                   minDate.setHours(0, 0, 0, 0);
                                   return date < minDate;
                                 }}
@@ -644,7 +622,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                     <h4 className="font-medium text-sm text-gray-500">Event Details</h4>
                     <div className="mt-1">
                       <p>Date: {format(customerInfo.eventDate, 'PPP')}</p>
-                      <p>People: {customerInfo.peopleCount}</p>
                       {customerInfo.specialRequests && (
                         <p>Special Requests: {customerInfo.specialRequests}</p>
                       )}
@@ -741,19 +718,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                       
                       <div className="flex justify-between items-center mt-1">
                         <div className="text-sm">
-                          {isPackage ? (
-                            <span>${item.price.toFixed(2)} per person</span>
-                          ) : (
-                            <span>${item.price.toFixed(2)} each</span>
-                          )}
+                          <span>${item.price.toFixed(2)} each</span>
                         </div>
                         
                         <div className="font-medium">
-                          {isPackage ? (
-                            <span>${(item.price * customerInfo.peopleCount * item.quantity).toFixed(2)}</span>
-                          ) : (
-                            <span>${(item.price * item.quantity).toFixed(2)}</span>
-                          )}
+                          <span>${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -766,10 +735,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
                 <span>${cateringItems.reduce((sum, item) => {
-                  const metadata = JSON.parse(item.variantId || '{}');
-                  if (metadata.type === 'package') {
-                    return sum + (item.price * customerInfo.peopleCount * item.quantity);
-                  }
                   return sum + (item.price * item.quantity);
                 }, 0).toFixed(2)}</span>
               </div>

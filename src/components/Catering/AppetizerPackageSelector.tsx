@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useCartStore } from '@/store/cart';
+import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringPackage, CateringItem } from '@/types/catering';
 import { Users, CheckCircle, Circle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
   packages,
   availableItems
 }) => {
-  const { addItem } = useCartStore();
+  const { addItem } = useCateringCartStore();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({});
   const [peopleCount, setPeopleCount] = useState<number>(2);
@@ -120,7 +120,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     };
 
     addItem(cartItem);
-    toast.success(`${currentPackage.name} added to cart for ${peopleCount} people`);
+    toast.success(`${currentPackage.name} added to catering cart for ${peopleCount} people`);
     
     // Reset selection
     setSelectedPackage(null);
