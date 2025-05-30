@@ -77,9 +77,27 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
                   />
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-gray-500">
-                      Appetizer packages are being set up. Please check back soon!
-                    </p>
+                    <div className="max-w-md mx-auto space-y-4">
+                      <div className="text-6xl">🍽️</div>
+                      <h4 className="text-xl font-semibold text-gray-700">
+                        Appetizer Packages Unavailable
+                      </h4>
+                      <div className="text-gray-600 space-y-2">
+                        <p>Our appetizer packages are currently being set up.</p>
+                        <p className="text-sm">
+                          {appetizerPackages.length === 0 && appetizerItems.length === 0 
+                            ? "Both packages and package items are missing."
+                            : appetizerPackages.length === 0 
+                              ? "Package options are missing." 
+                              : "Package-only items are missing."
+                          }
+                        </p>
+                      </div>
+                      <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                        <p>Please contact us directly for appetizer catering at:</p>
+                        <p className="font-medium">(415) 555-0123</p>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
