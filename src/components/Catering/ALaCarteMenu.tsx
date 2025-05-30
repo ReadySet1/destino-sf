@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { CateringItem, getItemsForTab, groupItemsBySubcategory, groupBuffetItemsByCategory } from '@/types/catering';
+import { CateringItem, getItemsForTab, groupItemsBySubcategory, groupBuffetItemsByCategory, groupLunchItemsByCategory } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { PlatterMenuItem } from '@/components/Catering/PlatterMenuItem';
-import { ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingCart, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -48,6 +48,80 @@ const isPlatterItem = (item: CateringItem): boolean => {
   return platterNames.includes(item.name);
 };
 
+// Service Add-ons data
+const SERVICE_ADD_ONS = [
+  {
+    id: 'bamboo-cutlery',
+    name: 'Individually Wrapped Bamboo Cutlery w/ Napkin',
+    price: 1.50,
+    description: 'Eco-friendly bamboo cutlery set with napkin'
+  },
+  {
+    id: 'compostable-spoon',
+    name: 'Compostable Serving Spoon',
+    price: 1.50,
+    description: 'Compostable serving spoon for family style service'
+  },
+  {
+    id: 'individual-setup',
+    name: 'Individual Set-Up: Bamboo Cutlery w/ Napkin, Compostable Plate',
+    price: 2.00,
+    description: 'Complete individual place setting'
+  }
+];
+
+// Alfajores data for lunch menu
+const ALFAJORES_ITEMS = [
+  {
+    id: 'alfajores-classic',
+    name: 'Alfajores - Classic',
+    description: 'South american butter cookies: shortbread / dulce de leche',
+    price: 2.50,
+    category: 'DESSERT',
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    isActive: true
+  },
+  {
+    id: 'alfajores-chocolate',
+    name: 'Alfajores - Chocolate',
+    description: 'Dulce de leche / dark chocolate / peruvian sea salt',
+    price: 2.50,
+    category: 'DESSERT',
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    isActive: true
+  },
+  {
+    id: 'alfajores-lemon',
+    name: 'Alfajores - Lemon',
+    description: 'Shortbread / dulce de leche / lemon royal icing',
+    price: 2.50,
+    category: 'DESSERT',
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    isActive: true
+  },
+  {
+    id: 'alfajores-gluten-free',
+    name: 'Alfajores - Gluten-Free',
+    description: 'Gluten-free dulce de leche butter cookies',
+    price: 2.50,
+    category: 'DESSERT',
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: true,
+    servingSize: '1 piece',
+    isActive: true
+  }
+];
+
 export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ 
   items, 
   activeCategory = 'appetizers', 
@@ -57,10 +131,15 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
   let filteredItems;
   
   if (activeCategory === 'buffet') {
-    // For buffet tab, get regular buffet items plus dessert items
-    const buffetItems = getItemsForTab(items, 'buffet');
-    const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS');
+    // For buffet tab, get regular buffet items plus dessert items, but exclude $0 items
+    const buffetItems = getItemsForTab(items, 'buffet').filter(item => item.price > 0);
+    const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0);
     filteredItems = [...buffetItems, ...dessertItems];
+  } else if (activeCategory === 'lunch') {
+    // For lunch tab, get regular lunch items plus dessert items, but exclude $0 items
+    const lunchItems = getItemsForTab(items, 'lunch').filter(item => item.price > 0);
+    const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0);
+    filteredItems = [...lunchItems, ...dessertItems];
   } else if (activeCategory === 'appetizers' && items.length < getItemsForTab(items, activeCategory).length) {
     filteredItems = items; // If pre-filtered items passed in, use them
   } else {
@@ -68,9 +147,14 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
   }
   
   // Use different grouping functions based on the active category
-  const groupedItems = activeCategory === 'buffet' 
-    ? groupBuffetItemsByCategory(filteredItems)
-    : groupItemsBySubcategory(filteredItems);
+  let groupedItems;
+  if (activeCategory === 'buffet') {
+    groupedItems = groupBuffetItemsByCategory(filteredItems);
+  } else if (activeCategory === 'lunch') {
+    groupedItems = groupLunchItemsByCategory(filteredItems);
+  } else {
+    groupedItems = groupItemsBySubcategory(filteredItems);
+  }
   
   // If showDessertsAtBottom is true, separate desserts and show them last
   let sectionsToShow = Object.entries(groupedItems);
@@ -86,9 +170,9 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
     sectionsToShow = [...nonDessertSections, ...dessertSections];
   }
 
-  // For buffet tab, we want to ensure the order is: Starters, Entradas, Sides, Desserts
-  if (activeCategory === 'buffet') {
-    const desiredOrder = ['Starters', 'Entradas', 'Sides', 'Desserts'];
+  // For buffet and lunch tabs, ensure proper ordering: Starters → Entrees → Sides → Desserts
+  if (activeCategory === 'buffet' || activeCategory === 'lunch') {
+    const desiredOrder = ['Starters', 'Entrees', 'Sides', 'Desserts'];
     sectionsToShow = sectionsToShow.sort(([a], [b]) => {
       const indexA = desiredOrder.indexOf(a);
       const indexB = desiredOrder.indexOf(b);
@@ -111,12 +195,38 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
             <CategorySection 
-              title={activeCategory === 'buffet' ? categoryName : toTitleCase(categoryName)}
+              title={activeCategory === 'buffet' || activeCategory === 'lunch' ? categoryName : toTitleCase(categoryName)}
               items={categoryItems}
               isDessertSection={categoryName.toLowerCase().includes('dessert')}
             />
           </motion.div>
         ))}
+        
+        {/* Add Alfajores section for lunch menu */}
+        {activeCategory === 'lunch' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: sectionsToShow.length * 0.1 }}
+          >
+            <CategorySection 
+              title="Alfajores"
+              items={ALFAJORES_ITEMS as CateringItem[]}
+              isDessertSection={true}
+            />
+          </motion.div>
+        )}
+        
+        {/* Add Service Add-ons section for buffet and lunch */}
+        {(activeCategory === 'buffet' || activeCategory === 'lunch') && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: (sectionsToShow.length + 1) * 0.1 }}
+          >
+            <ServiceAddOnsSection />
+          </motion.div>
+        )}
       </div>
     </div>
   );
@@ -263,7 +373,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
               </div>
             </div>
             <div className="text-lg md:text-xl font-bold text-gray-800">
-              {price > 0 ? `$${price.toFixed(2)}` : 'Package Selection Only'}
+              ${price.toFixed(2)}
             </div>
           </div>
           
@@ -285,11 +395,9 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
               variant="outline" 
               size="sm"
               onClick={() => setShowOrderModal(true)}
-              disabled={price === 0}
-              className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+              className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {price === 0 ? 'Package Selection Only' : 'Add to Order'}
+              View Details
             </Button>
           </div>
         </div>
@@ -334,6 +442,89 @@ const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
     >
       {label}
     </div>
+  );
+};
+
+// Service Add-ons Section Component
+const ServiceAddOnsSection: React.FC = () => {
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedAddOn, setSelectedAddOn] = useState<any>(null);
+
+  const handleViewDetails = (addOn: any) => {
+    setSelectedAddOn(addOn);
+    setShowOrderModal(true);
+  };
+
+  return (
+    <>
+      <div className="bg-white rounded-xl p-5 md:p-6 shadow-sm border border-gray-100">
+        <h3 className="text-2xl font-bold text-gray-800 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
+          <Users className="h-6 w-6 text-blue-600" />
+          Service Add-Ons
+        </h3>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          {SERVICE_ADD_ONS.map((addOn, index) => (
+            <motion.div
+              key={addOn.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="h-full"
+            >
+              <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
+                <div className="p-4 flex flex-col flex-grow">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-lg font-semibold text-gray-800 pr-2">
+                      {addOn.name}
+                    </h4>
+                    <div className="text-lg font-bold text-gray-800">
+                      ${addOn.price.toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4 flex-grow">
+                    <p className="text-gray-600 text-sm">
+                      {addOn.description}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-auto pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewDetails(addOn)}
+                      className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+      
+      {selectedAddOn && (
+        <CateringOrderModal 
+          item={{
+            ...selectedAddOn,
+            category: 'ADD_ON',
+            isVegetarian: true,
+            isVegan: true,
+            isGlutenFree: true,
+            isActive: true
+          }} 
+          type="item" 
+          isOpen={showOrderModal} 
+          onClose={() => {
+            setShowOrderModal(false);
+            setSelectedAddOn(null);
+          }} 
+        />
+      )}
+    </>
   );
 };
 

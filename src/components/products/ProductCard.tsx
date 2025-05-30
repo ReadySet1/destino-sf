@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group flex flex-col h-full border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div className="group flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
       <Link href={productUrl} className="block relative">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
           <Image
@@ -67,7 +67,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className={cn(
               "object-cover object-center transition-all duration-300",
-              "group-hover:scale-105 group-hover:opacity-90"
+              "group-hover:scale-105"
             )}
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             priority={product.featured}
@@ -76,7 +76,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
           {product.featured && (
             <div className="absolute top-2 right-2 z-10">
-              <span className="bg-indigo-600 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
+              <span className="bg-orange-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
                 Featured
               </span>
             </div>
@@ -85,25 +85,23 @@ export default function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-semibold h-14 line-clamp-2">
-          <Link href={productUrl} className="hover:text-indigo-600 transition-colors">
+        <Link href={productUrl} className="block">
+          <h3 className="text-lg font-semibold text-gray-900 hover:text-orange-600 transition-colors line-clamp-2 mb-2">
             {product.name}
-          </Link>
-        </h3>
-        
-        <p className="text-gray-600 mt-1 font-medium">${formatPrice(Number(displayPrice))}</p>
+          </h3>
+        </Link>
         
         {product.description && (
-          <p className="text-sm text-gray-500 mt-2 line-clamp-2 flex-grow">
+          <p className="text-sm text-gray-600 line-clamp-3 flex-grow mb-4">
             {product.description}
           </p>
         )}
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto">
           {product.variants && product.variants.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-3">
               <select
-                className="w-full border rounded-md py-1.5 px-2 text-sm"
+                className="w-full border border-gray-300 rounded-md py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={selectedVariant?.id || ''}
                 onChange={(e) => {
                   const variant = product.variants?.find(v => v.id === e.target.value);
@@ -121,12 +119,21 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          <button 
-            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </button>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-gray-900">
+              ${formatPrice(Number(displayPrice))}
+            </span>
+            
+            <button 
+              className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2"
+              onClick={handleAddToCart}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
+              </svg>
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </div>

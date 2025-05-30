@@ -1077,12 +1077,19 @@ export async function createManualPaymentOrder(formData: {
 }
 
 /**
- * Server action to validate order minimums
+ * Server action to validate order minimums with delivery zone support for catering orders
  * Ensures Prisma calls only happen on the server
  */
 export async function validateOrderMinimumsServer(
-  items: z.infer<typeof CartItemSchema>[]
-): Promise<{ isValid: boolean; errorMessage: string | null }> {
+  items: z.infer<typeof CartItemSchema>[],
+  deliveryAddress?: { city?: string; postalCode?: string }
+): Promise<{ 
+  isValid: boolean; 
+  errorMessage: string | null;
+  deliveryZone?: string;
+  minimumRequired?: number;
+  currentAmount?: number;
+}> {
   if (!items || items.length === 0) {
     return { isValid: false, errorMessage: 'Your cart is empty' };
   }
@@ -1093,7 +1100,54 @@ export async function validateOrderMinimumsServer(
     0
   );
   
-  // Get store settings
+  // Check if this is a catering order
+  const hasCateringItems = await hasCateringProducts(items.map(item => item.id));
+  
+  // If it's a catering order and we have delivery address, use delivery zone validation
+  if (hasCateringItems && deliveryAddress) {
+    // Import catering validation functions
+    const { 
+      determineDeliveryZone, 
+      validateMinimumPurchase, 
+      DeliveryZone 
+    } = await import('@/types/catering');
+    
+    // Determine delivery zone from address
+    const deliveryZone = determineDeliveryZone(
+      deliveryAddress.postalCode || '', 
+      deliveryAddress.city
+    );
+    
+    if (!deliveryZone) {
+      return {
+        isValid: false,
+        errorMessage: 'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.'
+      };
+    }
+    
+    // Validate minimum purchase for the zone
+    const validation = validateMinimumPurchase(cartTotal, deliveryZone);
+    
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        errorMessage: validation.message || `Minimum order required for this delivery zone.`,
+        deliveryZone: deliveryZone,
+        minimumRequired: validation.minimumRequired,
+        currentAmount: validation.currentAmount
+      };
+    }
+    
+    return { 
+      isValid: true, 
+      errorMessage: null,
+      deliveryZone: deliveryZone,
+      minimumRequired: validation.minimumRequired,
+      currentAmount: validation.currentAmount
+    };
+  }
+  
+  // Fall back to store settings for non-catering orders or pickup orders
   const storeSettings = await prisma.storeSettings.findFirst({
     orderBy: { createdAt: 'asc' },
   });
@@ -1103,9 +1157,6 @@ export async function validateOrderMinimumsServer(
     return { isValid: true, errorMessage: null };
   }
   
-  // Check if this is a catering order
-  const hasCateringItems = await hasCateringProducts(items.map(item => item.id));
-  
   // Convert store settings to numbers for comparison
   const minOrderAmount = Number(storeSettings.minOrderAmount);
   const cateringMinimumAmount = Number(storeSettings.cateringMinimumAmount);
@@ -1114,12 +1165,16 @@ export async function validateOrderMinimumsServer(
   if (hasCateringItems && cartTotal < cateringMinimumAmount && cateringMinimumAmount > 0) {
     return {
       isValid: false,
-      errorMessage: `Catering orders require a minimum purchase of $${cateringMinimumAmount.toFixed(2)}`
+      errorMessage: `Catering orders require a minimum purchase of $${cateringMinimumAmount.toFixed(2)}`,
+      minimumRequired: cateringMinimumAmount,
+      currentAmount: cartTotal
     };
   } else if (cartTotal < minOrderAmount && minOrderAmount > 0) {
     return {
       isValid: false,
-      errorMessage: `Orders require a minimum purchase of $${minOrderAmount.toFixed(2)}`
+      errorMessage: `Orders require a minimum purchase of $${minOrderAmount.toFixed(2)}`,
+      minimumRequired: minOrderAmount,
+      currentAmount: cartTotal
     };
   }
   

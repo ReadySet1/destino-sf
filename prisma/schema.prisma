@@ -291,6 +291,9 @@ model CateringOrder {
   squareCheckoutUrl String?
   notes             String?
   specialRequests   String?
+  deliveryZone      String?             // Delivery zone for minimum validation
+  deliveryAddress   String?             // Full delivery address
+  deliveryFee       Decimal?            @db.Decimal(10, 2) // Delivery fee amount
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   profile           Profile?            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_customer")

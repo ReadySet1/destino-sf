@@ -232,7 +232,7 @@ export function groupBuffetItemsByCategory(items: CateringItem[]): Record<string
   // Define the category mapping for buffet items
   const buffetCategoryMapping: Record<string, string> = {
     'CATERING- BUFFET, STARTERS': 'Starters',
-    'CATERING- BUFFET, ENTREES': 'Entradas', 
+    'CATERING- BUFFET, ENTREES': 'Entrees', 
     'CATERING- BUFFET, SIDES': 'Sides',
     'CATERING- BUFFET DESSERTS': 'Desserts',
     'CATERING- DESSERTS': 'Desserts' // Some desserts might be under this category too
@@ -243,6 +243,34 @@ export function groupBuffetItemsByCategory(items: CateringItem[]): Record<string
     
     const cleanCategory = buffetCategoryMapping[item.squareCategory];
     if (!cleanCategory) return; // Skip items that don't belong to buffet categories
+    
+    if (!result[cleanCategory]) {
+      result[cleanCategory] = [];
+    }
+    
+    result[cleanCategory].push(item);
+  });
+  
+  return result;
+}
+
+// Function to group lunch items with cleaner category names and proper ordering
+export function groupLunchItemsByCategory(items: CateringItem[]): Record<string, CateringItem[]> {
+  const result: Record<string, CateringItem[]> = {};
+  
+  // Define the category mapping for lunch items
+  const lunchCategoryMapping: Record<string, string> = {
+    'CATERING- LUNCH, STARTERS': 'Starters',
+    'CATERING- LUNCH, ENTREES': 'Entrees', 
+    'CATERING- LUNCH, SIDES': 'Sides',
+    'CATERING- DESSERTS': 'Desserts' // Desserts are shared across categories
+  };
+  
+  items.forEach(item => {
+    if (!item.squareCategory) return;
+    
+    const cleanCategory = lunchCategoryMapping[item.squareCategory];
+    if (!cleanCategory) return; // Skip items that don't belong to lunch categories
     
     if (!result[cleanCategory]) {
       result[cleanCategory] = [];
