@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Define payment method type to match Prisma's PaymentMethod enum
-type PaymentMethodType = 'SQUARE' | 'VENMO' | 'CASH';
+type PaymentMethodType = 'SQUARE' | 'CASH';
 
 // Extend the Prisma Order type to include paymentMethod
 interface OrderWithPaymentMethod extends Omit<PrismaOrder, 'paymentMethod'> {
@@ -83,8 +83,8 @@ function createEmailTemplate({
   // Define the payment instructions section
   const paymentInstructionsHtml = paymentInstructions 
     ? `
-      <div style="margin-top: 20px; padding: 15px; background-color: ${paymentMethod === 'VENMO' ? '#3D95CE20' : '#4CAF5020'}; border-radius: 5px;">
-        <h3 style="margin-top: 0; color: ${paymentMethod === 'VENMO' ? '#3D95CE' : '#4CAF50'};">Payment Instructions</h3>
+      <div style="margin-top: 20px; padding: 15px; background-color: ${paymentMethod === 'CASH' ? '#4CAF5020' : '#f5f5f5'}; border-radius: 5px;">
+        <h3 style="margin-top: 0; color: ${paymentMethod === 'CASH' ? '#4CAF50' : '#666'};">Payment Instructions</h3>
         <p style="font-size: 16px; line-height: 24px; color: #4a5568;">${paymentInstructions}</p>
       </div>
     ` 
@@ -160,10 +160,8 @@ function getPaymentInstructions(order: OrderWithPaymentMethod): string {
   const paymentMethod = order.paymentMethod;
   
   switch (paymentMethod) {
-    case 'VENMO':
-      return `Please complete your payment via Venmo to <strong>@destino-sf</strong> and include your order number <strong>#${order.id}</strong> in the payment note. Your order will be processed once payment is received and verified.`;
     case 'CASH':
-      return `Please bring exact cash amount of <strong>$${order.total.toFixed(2)}</strong> when you pick up your order. Your order will be ready according to the selected pickup time.`;
+      return `Please bring exact change for your order. Your order total is <strong>$${order.total}</strong>. Cash payment will be collected at pickup.`;
     default:
       return '';
   }

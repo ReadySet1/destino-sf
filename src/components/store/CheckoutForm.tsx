@@ -60,7 +60,6 @@ type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
 // --- Define PaymentMethod enum to match Prisma schema ---
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -411,7 +410,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         console.log('Redirecting to Square Checkout:', result.checkoutUrl);
         window.location.href = result.checkoutUrl;
       } else {
-        // Handle manual payment methods (Venmo, Cash)
+        // Handle manual payment methods (Cash only)
         console.log(`Using manual checkout: ${formData.paymentMethod}`);
         
         // First, create order in database
@@ -715,7 +714,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             selectedMethod={currentPaymentMethod}
             onSelectMethod={(method) => {
               setPaymentMethod(method as PaymentMethod);
-              setValue('paymentMethod', method as PaymentMethod.SQUARE | PaymentMethod.VENMO | PaymentMethod.CASH);
+              setValue('paymentMethod', method as PaymentMethod.SQUARE | PaymentMethod.CASH);
             }}
             showCash={currentMethod === 'pickup'}
           />

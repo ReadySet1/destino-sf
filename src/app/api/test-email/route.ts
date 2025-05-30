@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       customerName: 'Test Customer',
       email: email,
       phone: '555-123-4567',
-      paymentMethod: paymentMethod as 'SQUARE' | 'VENMO' | 'CASH',
+      paymentMethod: paymentMethod as 'SQUARE' | 'CASH',
       paymentStatus: 'PENDING',
       createdAt: new Date(),
       updatedAt: new Date(),

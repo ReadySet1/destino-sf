@@ -7,7 +7,6 @@ import type { FulfillmentData } from '@/app/actions';
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 

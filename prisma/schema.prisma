@@ -346,7 +346,6 @@ enum PaymentStatus {
 
 enum PaymentMethod {
   SQUARE
-  VENMO
   CASH
 }
 

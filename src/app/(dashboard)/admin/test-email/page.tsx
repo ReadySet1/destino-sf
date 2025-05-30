@@ -11,7 +11,7 @@ import { CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
 
 export default function TestEmailPage() {
   const [email, setEmail] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'SQUARE' | 'VENMO' | 'CASH'>('SQUARE');
+  const [paymentMethod, setPaymentMethod] = useState<'SQUARE' | 'CASH'>('SQUARE');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
 
@@ -70,16 +70,12 @@ export default function TestEmailPage() {
               <Label>Payment Method</Label>
               <RadioGroup
                 value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as 'SQUARE' | 'VENMO' | 'CASH')}
+                onValueChange={(value) => setPaymentMethod(value as 'SQUARE' | 'CASH')}
                 className="flex flex-col space-y-2"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="SQUARE" id="payment-square" />
                   <Label htmlFor="payment-square">Square</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="VENMO" id="payment-venmo" />
-                  <Label htmlFor="payment-venmo">Venmo</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="CASH" id="payment-cash" />

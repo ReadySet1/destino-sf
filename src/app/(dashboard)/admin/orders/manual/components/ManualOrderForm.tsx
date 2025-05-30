@@ -9,7 +9,6 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -376,7 +375,7 @@ export function ManualOrderForm() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value={PaymentMethod.CASH}>Cash</option>
-                <option value={PaymentMethod.VENMO}>Venmo</option>
+                <option value={PaymentMethod.SQUARE}>Square</option>
               </select>
             </div>
             <div>

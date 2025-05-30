@@ -25,10 +25,9 @@ import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
 import { getActiveDeliveryZones } from '@/types/catering';
 
-// Define the PaymentMethod enum to match the one in the PaymentMethodSelector
+// Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -676,7 +675,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                     <h4 className="font-medium text-sm text-gray-500">Payment Method</h4>
                     <div className="mt-1">
                       {paymentMethod === PaymentMethod.SQUARE && <p>Credit Card</p>}
-                      {paymentMethod === PaymentMethod.VENMO && <p>Venmo</p>}
                       {paymentMethod === PaymentMethod.CASH && <p>Cash</p>}
                     </div>
                   </div>

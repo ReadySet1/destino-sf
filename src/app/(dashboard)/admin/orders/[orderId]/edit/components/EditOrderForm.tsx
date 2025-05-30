@@ -30,7 +30,6 @@ const convertDecimalToNumber = (decimal: unknown): number => {
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -477,7 +476,6 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value={PaymentMethod.CASH}>Cash</option>
-                <option value={PaymentMethod.VENMO}>Venmo</option>
                 <option value={PaymentMethod.SQUARE}>Square</option>
               </select>
             </div>

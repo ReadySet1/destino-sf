@@ -73,7 +73,7 @@ export default async function AdminDashboard() {
         <DashboardCard
           title="Manual Orders"
           href="/admin/orders/manual"
-          description="Create and manage manual orders (cash/Venmo)"
+          description="Create and manage manual orders (cash only)"
         />
         <DashboardCard
           title="Products"

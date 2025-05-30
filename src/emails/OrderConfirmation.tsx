@@ -19,7 +19,7 @@ interface OrderConfirmationEmailProps {
   id: string;
   customerName: string;
   total: number;
-  paymentMethod: 'SQUARE' | 'VENMO' | 'CASH';
+  paymentMethod: 'SQUARE' | 'CASH';
   status: string;
   shopName: string;
   paymentInstructions?: string;
@@ -69,9 +69,9 @@ export const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
             
             {paymentInstructions && (
               <Section style={
-                paymentMethod === 'VENMO' 
-                  ? {...styles.paymentInstructions, ...styles.venmoInstructions}
-                  : {...styles.paymentInstructions, ...styles.cashInstructions}
+                paymentMethod === 'CASH'
+                  ? {...styles.paymentInstructions, ...styles.cashInstructions}
+                  : styles.paymentInstructions
               }>
                 <Heading as="h3" style={styles.instructionsHeading}>
                   Payment Instructions
@@ -162,9 +162,6 @@ const styles = {
     padding: '15px',
     borderRadius: '5px',
     margin: '20px 0',
-  },
-  venmoInstructions: {
-    backgroundColor: '#3D95CE20',
   },
   cashInstructions: {
     backgroundColor: '#4CAF5020',

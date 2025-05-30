@@ -1,11 +1,9 @@
 import React from 'react';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
-import { VenmoIcon } from '@/components/Icons/VenmoIcon';
 
 // Define the PaymentMethod enum to match the one in Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -27,13 +25,6 @@ export function PaymentMethodSelector({
       name: 'Credit Card',
       description: 'Pay securely with your credit or debit card via Square',
       icon: <CreditCardIcon className="h-5 w-5" />,
-      available: true,
-    },
-    {
-      id: PaymentMethod.VENMO,
-      name: 'Venmo',
-      description: 'Pay using your Venmo account',
-      icon: <VenmoIcon className="h-5 w-5" />,
       available: true,
     },
     {

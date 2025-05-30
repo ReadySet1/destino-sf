@@ -4,7 +4,7 @@ import { OrderStatus, Prisma } from '@prisma/client';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 
 // Define the valid payment methods
-type ManualPaymentMethod = 'VENMO' | 'CASH';
+type ManualPaymentMethod = 'CASH';
 
 export async function POST(request: Request) {
   try {
@@ -16,8 +16,11 @@ export async function POST(request: Request) {
     }
 
     // Validate payment method
-    if (paymentMethod !== 'VENMO' && paymentMethod !== 'CASH') {
-      return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
+    if (paymentMethod !== 'CASH') {
+      return NextResponse.json(
+        { error: 'Invalid payment method. Only CASH is supported for manual payments.' },
+        { status: 400 }
+      );
     }
 
     // Get order from database

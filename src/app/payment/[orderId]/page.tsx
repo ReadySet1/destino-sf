@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
-import { VenmoPaymentDetails } from '@/components/Payment/VenmoPaymentDetails';
 import { CashPaymentDetails } from '@/components/Payment/CashPaymentDetails';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -22,7 +21,7 @@ export default async function PaymentPage({ params, searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   
   const { orderId } = resolvedParams;
-  const paymentMethod = resolvedSearchParams.method?.toString() || 'VENMO';
+  const paymentMethod = resolvedSearchParams.method?.toString() || 'CASH';
   
   if (!orderId) {
     redirect('/');
@@ -53,12 +52,14 @@ export default async function PaymentPage({ params, searchParams }: PageProps) {
   // Determine which payment component to render based on the payment method
   const renderPaymentDetails = () => {
     switch (paymentMethod) {
-      case 'VENMO':
-        return <VenmoPaymentDetails order={order} />;
       case 'CASH':
         return <CashPaymentDetails order={order} />;
       default:
-        return <div className="text-red-500">Unsupported payment method: {paymentMethod}</div>;
+        return (
+          <div className="text-center py-8">
+            <p className="text-red-500">Unsupported payment method: {paymentMethod}</p>
+          </div>
+        );
     }
   };
 

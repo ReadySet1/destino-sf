@@ -6,19 +6,28 @@ import { revalidatePath } from 'next/cache';
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
 /**
- * Updates an order to use a manual payment method like Venmo or Cash
- * Returns a URL to a custom payment page based on the payment method
+ * Updates an order to use a manual payment method like Cash
+ * This is used when customers want to pay with cash at pickup
  */
 export async function updateOrderWithManualPayment(
   orderId: string,
   paymentMethod: PaymentMethod
-): Promise<{ success: boolean; error: string | null; checkoutUrl: string | null }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Updating order ${orderId} with manual payment method: ${paymentMethod}`);
+    
+    // Validate that this is a supported manual payment method
+    if (paymentMethod !== 'CASH') {
+      return {
+        success: false,
+        error: `Payment method ${paymentMethod} is not supported for manual processing. Only CASH is supported.`
+      };
+    }
+
     // Validate the order exists
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -28,16 +37,6 @@ export async function updateOrderWithManualPayment(
       return {
         success: false,
         error: 'Order not found',
-        checkoutUrl: null,
-      };
-    }
-
-    // Validate the payment method
-    if (paymentMethod !== 'VENMO' && paymentMethod !== 'CASH') {
-      return {
-        success: false,
-        error: `Payment method ${paymentMethod} is not supported for manual processing`,
-        checkoutUrl: null,
       };
     }
 
@@ -53,7 +52,6 @@ export async function updateOrderWithManualPayment(
       return {
         success: false,
         error: 'Server configuration error: Base URL missing',
-        checkoutUrl: null,
       };
     }
 
@@ -69,15 +67,12 @@ export async function updateOrderWithManualPayment(
 
     return {
       success: true,
-      error: null,
-      checkoutUrl: paymentPageUrl.toString(),
     };
   } catch (error: any) {
     console.error('Error updating order with manual payment method:', error);
     return {
       success: false,
       error: error.message || 'An unexpected error occurred',
-      checkoutUrl: null,
     };
   }
 } 

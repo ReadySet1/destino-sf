@@ -53,22 +53,15 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
     redirect('/');
   }
 
-  const paymentMethodName =
-    order.paymentMethod === 'VENMO' ? 'Venmo' : order.paymentMethod === 'CASH' ? 'Cash' : 'Unknown';
+  const paymentMethodName = order.paymentMethod === 'CASH' ? 'Cash' : 'Unknown';
 
-  const paymentInstructions =
-    order.paymentMethod === 'VENMO'
-      ? 'Please send the payment to our Venmo account and include your order reference number in the note. We will process your order once the payment is confirmed.'
-      : order.paymentMethod === 'CASH'
-        ? 'Please bring cash when you pick up your order. Your order will be prepared and ready for pickup at the scheduled time.'
-        : 'Please follow the payment instructions sent to your email.';
+  const paymentInstructions = order.paymentMethod === 'CASH'
+    ? 'Please bring exact change when you pick up your order. Your order will be prepared according to your selected pickup time.'
+    : 'Please contact us for payment instructions.';
 
-  const nextSteps =
-    order.paymentMethod === 'VENMO'
-      ? 'We will send you a confirmation email once your payment is verified.'
-      : order.paymentMethod === 'CASH'
-        ? 'Your order will be ready for pickup at the scheduled time.'
-        : 'We will process your order according to the selected payment method.';
+  const nextSteps = order.paymentMethod === 'CASH'
+    ? 'Your order will be ready for pickup at the scheduled time.'
+    : 'We will process your order according to the selected payment method.';
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
@@ -111,14 +104,6 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
         <h2 className="text-xl font-semibold mb-4">Payment Instructions</h2>
         <p className="mb-3">{paymentInstructions}</p>
-        {order.paymentMethod === 'VENMO' && (
-          <Link
-            href={`/payment/${order.id}?method=VENMO`}
-            className="text-blue-600 hover:underline"
-          >
-            Return to payment page
-          </Link>
-        )}
       </div>
 
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">

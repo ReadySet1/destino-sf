@@ -13,10 +13,9 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
 
-// Define our own PaymentMethod enum to match the Prisma schema
+// Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
@@ -416,7 +415,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     items: z.infer<typeof CartItemSchema>[];
     customerInfo: z.infer<typeof CustomerInfoSchema>;
     fulfillment: z.infer<typeof FulfillmentSchema>; // Use the discriminated union type
-    paymentMethod: PaymentMethod; // VENMO, CASH, etc.
+    paymentMethod: PaymentMethod; // CASH, SQUARE, etc.
 }): Promise<ServerActionResult> {
     console.log("Server Action: createOrderAndGenerateCheckoutUrl started.");
     console.log("Received Fulfillment Data:", JSON.stringify(formData.fulfillment, null, 2));
@@ -753,7 +752,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 google_pay: true,
                 cash_app_pay: false,
                 afterpay_clearpay: false,
-                venmo: true
+                venmo: false
             },
         };
 
@@ -845,18 +844,18 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
 /**
  * Generates a manual payment page URL for payment methods that require manual processing
- * Currently supports Venmo.
+ * Currently supports Cash only.
  */
 export async function createManualPaymentOrder(formData: {
     items: z.infer<typeof CartItemSchema>[];
     customerInfo: z.infer<typeof CustomerInfoSchema>;
     fulfillment: z.infer<typeof FulfillmentSchema>;
-    paymentMethod: PaymentMethod; // VENMO, CASH, etc.
+    paymentMethod: PaymentMethod; // CASH, etc.
 }): Promise<ServerActionResult> {
     console.log("Server Action: createManualPaymentOrder started.");
     
     // Validate the payment method is supported
-    if (formData.paymentMethod !== 'VENMO' && formData.paymentMethod !== 'CASH') {
+    if (formData.paymentMethod !== 'CASH') {
         return { 
             success: false, 
             error: `Payment method ${formData.paymentMethod} is not supported for manual processing.`, 

@@ -36,7 +36,7 @@ export default async function CheckoutSuccess({ searchParams }: CheckoutSuccessP
     }
 
     // Check if paymentMethod exists and is a manual method
-    if (order.paymentMethod === 'VENMO' || order.paymentMethod === 'CASH') {
+    if (order.paymentMethod === 'CASH') {
       redirect(`/checkout/success/manual?orderId=${orderId}&paymentMethod=${order.paymentMethod}`);
     }
     

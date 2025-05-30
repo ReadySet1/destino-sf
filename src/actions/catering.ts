@@ -543,7 +543,7 @@ const CateringOrderSchema = z.object({
   }),
   items: z.array(CateringOrderItemSchema),
   totalAmount: z.number().positive(),
-  paymentMethod: z.enum(['SQUARE', 'VENMO', 'CASH']).default('SQUARE'),
+  paymentMethod: z.enum(['SQUARE', 'CASH']).default('SQUARE'),
 });
 
 export type ServerActionResult<T = unknown> = Promise<
@@ -727,7 +727,7 @@ export async function createCateringOrderAndProcessPayment(
         google_pay: true,
         cash_app_pay: false,
         afterpay_clearpay: false,
-        venmo: true
+        venmo: false
       },
     };
     

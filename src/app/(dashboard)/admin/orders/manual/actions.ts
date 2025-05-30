@@ -8,7 +8,6 @@ import { revalidatePath } from 'next/cache';
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
   SQUARE = "SQUARE",
-  VENMO = "VENMO",
   CASH = "CASH"
 }
 
