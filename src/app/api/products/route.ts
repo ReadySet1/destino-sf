@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
     const onlyActive = searchParams.get('onlyActive') !== 'false'; // Default to true
     const categoryId = searchParams.get('categoryId') || undefined;
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
+    const exclude = searchParams.get('exclude') || undefined; // Product ID to exclude
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
     // Build the query based on parameters
     const whereCondition: any = {
@@ -40,6 +42,13 @@ export async function GET(request: NextRequest) {
       categoryId: categoryId,
       featured: featured,
     };
+
+    // Add exclusion condition if provided
+    if (exclude) {
+      whereCondition.NOT = {
+        id: exclude,
+      };
+    }
 
     // Remove undefined values
     Object.keys(whereCondition).forEach(
@@ -77,6 +86,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         name: 'asc',
       },
+      take: limit, // Apply limit if provided
     });
 
     // Convert BigInt price to regular number for JSON serialization
