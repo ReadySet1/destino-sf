@@ -39,8 +39,10 @@ const MarketingSection: React.FC = () => {
             <h2 className="text-3xl font-bold text-[#2d3538] lg:text-4xl mb-4">
               Why Choose Our Treats?
             </h2>
-            <p className="text-lg text-[#2d3538]/80 max-w-3xl mx-auto">
-              We bring the best of Latin American flavor to every <br />
+
+            <p className="text-lg text-[#2d3538]/80 max-w-xs mx-auto md:max-w-3xl">
+              We bring the best of Latin American flavor to every
+              <br className="hidden md:inline" />
               bite — made with love, tradition, and intention
             </p>
           </div>
