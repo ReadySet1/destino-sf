@@ -408,6 +408,10 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
       name: 'Skyline Market',
       address: '2685 Skyline Blvd, Oakland, CA 94619',
     },
+    {
+      name: 'Corona Heights Market and Deli',
+      address: '4400 17th St, San Francisco, CA 94114',
+    },
   ];
 
   return (
