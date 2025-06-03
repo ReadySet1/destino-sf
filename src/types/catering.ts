@@ -100,7 +100,6 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- APPETIZERS': 'appetizers',
   'CATERING- SHARE PLATTERS': 'appetizers', 
   'CATERING- DESSERTS': 'appetizers', // También aparece en buffet
-  'APPETIZER_PACKAGES': 'lunch-packets', // Appetizer packages go in the lunch-packets tab
   
   'CATERING- BUFFET, STARTERS': 'buffet',
   'CATERING- BUFFET, ENTREES': 'buffet',
@@ -110,8 +109,6 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- LUNCH, STARTERS': 'lunch',
   'CATERING- LUNCH, ENTREES': 'lunch',
   'CATERING- LUNCH, SIDES': 'lunch',
-  
-  'LUNCH PACKETS': 'lunch-packets'
 };
 
 export interface CateringPackage {

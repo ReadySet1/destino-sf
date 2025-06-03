@@ -50,7 +50,7 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
   const handleAddToCart = () => {
     // Don't allow adding items with $0 price directly to cart
     if (itemPrice === 0) {
-      toast.error('This item is only available as part of our appetizer packages. Please use the "Lunch Packets" tab to create a package.');
+      toast.error('This item is only available as part of our appetizer packages. Please use the "Appetizers" tab to create a package.');
       return;
     }
     

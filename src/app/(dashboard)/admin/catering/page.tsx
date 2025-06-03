@@ -14,12 +14,12 @@ export const dynamic = 'force-dynamic';
 const mockPackages: CateringPackage[] = [
   {
     id: '1',
-    name: 'Individual Modern Latin Meals',
-    description: 'Bring some Latin flair to your next office lunch with fresh and flavorful food from Destino. This package features healthy yet delicious seasonal offerings, including a variety of vegetarian options.',
-    minPeople: 5,
-    pricePerPerson: 14.00,
+    name: 'Appetizer Selection Package',
+    description: 'A curated selection of our most popular appetizers perfect for any gathering. Includes empanadas, share platters, and seasonal favorites.',
+    minPeople: 8,
+    pricePerPerson: 12.50,
     type: CateringPackageType.INDIVIDUAL,
-    imageUrl: '/images/catering/individual.jpg',
+    imageUrl: '/images/catering/appetizer-package.jpg',
     isActive: true,
     featuredOrder: 1,
     dietaryOptions: ['Vegetarian', 'Gluten-Free'],
@@ -28,7 +28,7 @@ const mockPackages: CateringPackage[] = [
       { id: '2', packageId: '1', rating: 4, reviewerName: 'Sarah T.' },
       { id: '3', packageId: '1', rating: 5, reviewerName: 'Michael R.' },
     ],
-    squareCategory: 'LUNCH PACKETS'
+    squareCategory: 'CATERING- APPETIZERS'
   },
   {
     id: '2',
@@ -99,7 +99,7 @@ const mockItems: CateringItem[] = [
     isVegan: false,
     isGlutenFree: false,
     isActive: true,
-    squareCategory: 'LUNCH PACKETS'
+    squareCategory: 'CATERING- LUNCH, ENTREES'
   },
   {
     id: '5',
@@ -162,13 +162,20 @@ const AdminCateringPage = async () => {
     items = mockItems;
   }
 
-  // Tabs que queremos mostrar
-  const tabs = ['appetizers', 'buffet', 'lunch', 'lunch-packets', 'boxed-lunches'];
+  const tabs = ['appetizers', 'buffet', 'lunch', 'boxed-lunches'];
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Catering Management</h1>
+        <div className="space-x-2">
+          <Button asChild>
+            <Link href="/admin/catering/items/new">Add Item</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/catering/packages/new">Add Package</Link>
+          </Button>
+        </div>
       </div>
 
       {!useDbData && errorMessage && (
@@ -179,7 +186,7 @@ const AdminCateringPage = async () => {
       )}
 
       <Tabs defaultValue="appetizers" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="appetizers">
             Appetizers
           </TabsTrigger>
@@ -188,9 +195,6 @@ const AdminCateringPage = async () => {
           </TabsTrigger>
           <TabsTrigger value="lunch">
             Lunch
-          </TabsTrigger>
-          <TabsTrigger value="lunch-packets">
-            Lunch Packets
           </TabsTrigger>
           <TabsTrigger value="boxed-lunches">
             Boxed Lunches
@@ -202,27 +206,12 @@ const AdminCateringPage = async () => {
             <div className="space-y-8">
               {tab === 'boxed-lunches' ? (
                 <section>
-                  <div className="text-center py-12">
-                    <h2 className="text-2xl font-bold mb-4">Boxed Lunch Management</h2>
-                    <p className="text-gray-600 mb-6">
-                      Manage the 2025 Individual Packaged Lunch Options including tiers, proteins, salads, and add-ons.
-                    </p>
-                    <Link href="/admin/catering/boxed-lunch">
-                      <Button size="lg" className="bg-amber-600 hover:bg-amber-700">
-                        <PlusCircle className="mr-2 h-5 w-5" />
-                        Manage Boxed Lunches
-                      </Button>
-                    </Link>
-                  </div>
-                </section>
-              ) : tab === 'lunch-packets' ? (
-                <section>
-                  <h2 className="text-2xl font-bold mb-4 uppercase tracking-wide">Lunch Packets</h2>
+                  <h2 className="text-2xl font-bold mb-4 uppercase tracking-wide">Boxed Lunches</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {packages.filter(pkg => SQUARE_CATEGORY_MAPPING[pkg.squareCategory || ''] === 'lunch-packets').map((pkg) => (
+                    {packages.filter(pkg => SQUARE_CATEGORY_MAPPING[pkg.squareCategory || ''] === 'boxed-lunches').map((pkg) => (
                       <PackageCard key={pkg.id} package={pkg} />
                     ))}
-                    {getItemsForTab(items, 'lunch-packets').map((item) => (
+                    {getItemsForTab(items, 'boxed-lunches').map((item) => (
                       <ItemCard key={item.id} item={item} />
                     ))}
                   </div>
