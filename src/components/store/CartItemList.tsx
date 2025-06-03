@@ -1,8 +1,9 @@
 import { CartItem } from '@/store/cart';
+import { CateringCartItem } from '@/store/catering-cart';
 import { CartItemRow } from './CartItemRow';
 
 interface CartItemListProps {
-  items: CartItem[];
+  items: (CartItem | CateringCartItem)[];
   onRemove: (id: string, variantId?: string) => void;
   onUpdateQuantity: (id: string, quantity: number, variantId?: string) => void;
 }

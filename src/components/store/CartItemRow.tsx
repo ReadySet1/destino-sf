@@ -3,9 +3,10 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { QuantityStepper } from './QuantityStepper';
 import { CartItem } from '@/store/cart';
+import { CateringCartItem } from '@/store/catering-cart';
 
 interface CartItemRowProps {
-  item: CartItem;
+  item: CartItem | CateringCartItem;
   onRemove: () => void;
   onUpdateQuantity: (quantity: number) => void;
 }
