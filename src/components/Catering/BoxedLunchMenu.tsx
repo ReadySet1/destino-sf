@@ -598,37 +598,43 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
   return (
     <Card className="transition-all duration-300 hover:shadow-md h-full flex flex-col">
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-bold text-gray-800">
+        <div className="flex items-start justify-between mb-2">
+          <CardTitle className="text-lg font-bold text-gray-800 line-clamp-2 flex-1 mr-2">
             {alfajor.name}
           </CardTitle>
-          <div className="text-right">
-            <div className="text-xl font-bold text-amber-600">
+          <div className="text-right flex-shrink-0">
+            <div className="text-xl font-bold text-orange-600">
               ${alfajor.price.toFixed(2)}
             </div>
-            <Badge variant="secondary" className="mt-1 text-xs">
-              {alfajor.servingSize}
-            </Badge>
           </div>
         </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-600">
+            {alfajor.servingSize}
+          </span>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            Per piece
+          </span>
+        </div>
       </CardHeader>
+      
       <CardContent className="space-y-4 flex-1 flex flex-col">
         <p className="text-gray-600 text-sm flex-1">{alfajor.description}</p>
         
-        {/* Dietary badges */}
         <div className="flex flex-wrap gap-1">
-          {alfajor.isVegetarian && (
-            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
-              Vegetarian
-            </Badge>
-          )}
           {alfajor.isVegan && (
-            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+            <Badge variant="outline" className="text-xs border-green-600 text-green-700 bg-green-50">
               Vegan
             </Badge>
           )}
+          {alfajor.isVegetarian && !alfajor.isVegan && (
+            <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
+              Vegetarian
+            </Badge>
+          )}
           {alfajor.isGlutenFree && (
-            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+            <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 bg-blue-50">
               Gluten-Free
             </Badge>
           )}
@@ -656,11 +662,10 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
           
           <Button
             onClick={onAddToCart}
-            variant="outline"
-            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+            className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Dessert
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Add to Cart
           </Button>
         </div>
       </CardContent>

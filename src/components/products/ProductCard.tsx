@@ -9,6 +9,12 @@ import { useState } from 'react';
 import { useCartStore } from "@/store/cart";
 import { useCartAlertStore } from "@/components/ui/cart-alert";
 import { cn } from "@/lib/utils";
+import { ImagePlaceholder } from './ImagePlaceholder';
+import { 
+  getProductImageConfig, 
+  getPlaceholderCategory,
+  getDefaultImageForCategory 
+} from '@/lib/image-utils';
 
 interface ProductCardProps {
   product: Product;
@@ -32,7 +38,20 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const displayPrice = selectedVariant?.price || product.price;
   
-  const mainImage = !imageError && product.images?.[0] ? product.images[0] : '/images/menu/empanadas.png';
+  // Use image utilities to determine if we should show placeholder
+  const imageConfig = getProductImageConfig(
+    product.name,
+    product.images,
+    product.category?.name
+  );
+  
+  const shouldShowPlaceholder = imageConfig.placeholder || imageError || !imageConfig.src;
+  const placeholderCategory = getPlaceholderCategory(product.name, product.category?.name);
+  
+  // Fallback to default image if not using placeholder
+  const mainImage = shouldShowPlaceholder 
+    ? getDefaultImageForCategory(product.category?.name)
+    : imageConfig.src;
   
   const productId = String(product.id ?? '');
   const productUrl = `/products/${productId}`;
@@ -61,19 +80,28 @@ export default function ProductCard({ product }: ProductCardProps) {
     <div className="group flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
       <Link href={productUrl} className="block relative">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-          <Image
-            src={mainImage}
-            alt={product.name}
-            fill
-            className={cn(
-              "object-cover object-center transition-all duration-300",
-              "group-hover:scale-105"
-            )}
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            priority={product.featured}
-            quality={85}
-            onError={() => setImageError(true)}
-          />
+          {shouldShowPlaceholder ? (
+            <ImagePlaceholder
+              productName={product.name}
+              category={placeholderCategory}
+              size="lg"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              className={cn(
+                "object-cover object-center transition-all duration-300",
+                "group-hover:scale-105"
+              )}
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+              priority={product.featured}
+              quality={85}
+              onError={() => setImageError(true)}
+            />
+          )}
           {product.featured && (
             <div className="absolute top-2 right-2 z-10">
               <span className="bg-orange-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">

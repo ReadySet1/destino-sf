@@ -172,229 +172,272 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
 
   return (
     <div className="space-y-8">
-      {/* Package Selection */}
+      {/* 2025 Appetizer Menu Header */}
       <div className="text-center space-y-6">
         <div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">
-            Choose Your Appetizer Package
+          <h3 className="text-3xl font-bold text-gray-800 mb-4">
+            2025 Appetizer Menu
           </h3>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Select from our curated appetizer packages. Each package is priced per person and includes 
-            your choice of appetizers from our 2025 menu.
+          <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed">
+            Create the perfect appetizer experience for your event. Choose from our signature packages
+            featuring authentic Latin American flavors with fresh, local ingredients. All packages are
+            fully customizable to accommodate dietary preferences.
           </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {packages.map((pkg) => {
-            const itemCount = pkg.name.includes('5 Items') ? 5 :
-                             pkg.name.includes('7 Items') ? 7 :
-                             pkg.name.includes('9 Items') ? 9 : 0;
-            
-            return (
-              <Card 
-                key={pkg.id}
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:shadow-md",
-                  selectedPackage === pkg.id ? "ring-2 ring-amber-500 bg-amber-50" : ""
-                )}
-                onClick={() => handlePackageSelect(pkg.id)}
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="mb-4">
-                    {selectedPackage === pkg.id ? (
-                      <CheckCircle className="h-8 w-8 text-amber-600 mx-auto" />
-                    ) : (
-                      <Circle className="h-8 w-8 text-gray-400 mx-auto" />
-                    )}
-                  </div>
-                  
-                  <h4 className="text-lg font-semibold mb-2">
-                    {itemCount} Appetizers
-                  </h4>
-                  
-                  <div className="text-2xl font-bold text-amber-600 mb-2">
-                    ${pkg.pricePerPerson.toFixed(2)}
-                  </div>
-                  
-                  <p className="text-sm text-gray-500">per person</p>
-                  
-                  <Badge variant="outline" className="mt-3">
-                    Min {pkg.minPeople} people
-                  </Badge>
-                </CardContent>
-              </Card>
-            );
-          })}
         </div>
       </div>
 
-      {/* People Count Selector */}
-      <AnimatePresence>
-        {selectedPackage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-gray-50 rounded-xl p-6"
-          >
-            <div className="text-center space-y-4">
-              <h4 className="text-lg font-semibold flex items-center justify-center gap-2">
-                <Users className="h-5 w-5" />
-                How many people?
-              </h4>
-              
-              <div className="flex items-center justify-center space-x-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPeopleCount(Math.max(2, peopleCount - 1))}
-                  disabled={peopleCount <= 2}
-                >
-                  -
-                </Button>
-                
-                <span className="text-xl font-semibold min-w-[3rem] text-center">
-                  {peopleCount}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPeopleCount(peopleCount + 1)}
-                >
-                  +
-                </Button>
-              </div>
-              
-              {currentPackage && (
-                <div className="text-center pt-2">
-                  <p className="text-sm text-gray-600">
-                    Total: ${(currentPackage.pricePerPerson * peopleCount).toFixed(2)}
-                  </p>
-                </div>
-              )}
+      {/* Check if packages are available */}
+      {packages.length === 0 || availableItems.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="text-6xl">🍽️</div>
+            <h4 className="text-xl font-semibold text-gray-700">
+              Appetizer packages are being set up. Please check back soon!
+            </h4>
+            <div className="text-gray-600 space-y-2">
+              <p>Our appetizer packages are currently being configured.</p>
+              <p className="text-sm">
+                {packages.length === 0 && availableItems.length === 0 
+                  ? "Both packages and package items are missing."
+                  : packages.length === 0 
+                    ? "Package options are missing." 
+                    : "Package-only items are missing."
+                }
+              </p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Item Selection */}
-      <AnimatePresence>
-        {selectedPackage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            <div className="text-center">
-              <h4 className="text-xl font-semibold mb-2">
-                Select {requiredItemCount} Appetizers
-              </h4>
-              <p className="text-gray-600">
-                Choose {requiredItemCount} appetizers for your package 
-                ({currentSelectedItems.length}/{requiredItemCount} selected)
+            <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+              <p>Please contact us directly for appetizer catering at:</p>
+              <p className="font-medium">(415) 555-0123</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Package Selection */}
+          <div className="text-center space-y-6">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                Choose Your Appetizer Package
+              </h3>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Select from our curated appetizer packages. Each package is priced per person and includes 
+                your choice of appetizers from our 2025 menu.
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableItems.map((item) => {
-                const isSelected = currentSelectedItems.includes(item.id);
-                const canSelect = currentSelectedItems.length < requiredItemCount || isSelected;
+            <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              {packages.map((pkg) => {
+                const itemCount = pkg.name.includes('5 Items') ? 5 :
+                                 pkg.name.includes('7 Items') ? 7 :
+                                 pkg.name.includes('9 Items') ? 9 : 0;
                 
                 return (
-                  <Card
-                    key={item.id}
+                  <Card 
+                    key={pkg.id}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 overflow-hidden",
-                      isSelected ? "ring-2 ring-green-500 bg-green-50" : "",
-                      !canSelect ? "opacity-50 cursor-not-allowed" : "hover:shadow-md"
+                      "cursor-pointer transition-all duration-200 hover:shadow-md",
+                      selectedPackage === pkg.id ? "ring-2 ring-amber-500 bg-amber-50" : ""
                     )}
-                    onClick={() => canSelect && handleItemToggle(item.id)}
+                    onClick={() => handlePackageSelect(pkg.id)}
                   >
-                    <div className="relative w-full h-32">
-                      <Image
-                        src={getImageUrl(item.imageUrl)}
-                        alt={toTitleCase(item.name)}
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/images/catering/default-item.jpg';
-                        }}
-                        priority={false}
-                        loading="lazy"
-                      />
-                      {isSelected && (
-                        <div className="absolute top-2 right-2">
-                          <CheckCircle className="h-6 w-6 text-green-600 bg-white rounded-full" />
-                        </div>
-                      )}
-                      {!canSelect && !isSelected && (
-                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                          <Circle className="h-6 w-6 text-gray-300" />
-                        </div>
-                      )}
-                    </div>
-                    
-                    <CardContent className="p-4">
-                      <h5 className="font-medium text-sm leading-tight mb-2">
-                        {toTitleCase(item.name)}
-                      </h5>
-                      
-                      {item.description && (
-                        <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {getDietaryBadges(item).map((badge) => (
-                          <span 
-                            key={badge} 
-                            className={`inline-flex items-center justify-center ${getDietaryBadgeStyle(badge)} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`}
-                          >
-                            {badge}
-                          </span>
-                        ))}
+                    <CardContent className="p-6 text-center">
+                      <div className="mb-4">
+                        {selectedPackage === pkg.id ? (
+                          <CheckCircle className="h-8 w-8 text-amber-600 mx-auto" />
+                        ) : (
+                          <Circle className="h-8 w-8 text-gray-400 mx-auto" />
+                        )}
                       </div>
+                      
+                      <h4 className="text-lg font-semibold mb-2">
+                        {itemCount} Appetizers
+                      </h4>
+                      
+                      <div className="text-2xl font-bold text-amber-600 mb-2">
+                        ${pkg.pricePerPerson.toFixed(2)}
+                      </div>
+                      
+                      <p className="text-sm text-gray-500">per person</p>
+                      
+                      <Badge variant="outline" className="mt-3">
+                        Min {pkg.minPeople} people
+                      </Badge>
                     </CardContent>
                   </Card>
                 );
               })}
             </div>
+          </div>
 
-            {/* Add to Cart Button */}
-            <div className="text-center pt-6">
-              <Button
-                onClick={handleAddToCart}
-                disabled={currentSelectedItems.length !== requiredItemCount}
-                className="bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg"
+          {/* People Count Selector */}
+          <AnimatePresence>
+            {selectedPackage && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-gray-50 rounded-xl p-6"
               >
-                Add Package to Cart
-                {currentPackage && (
-                  <span className="ml-2">
-                    (${(currentPackage.pricePerPerson * peopleCount).toFixed(2)})
-                  </span>
-                )}
-              </Button>
-            </div>
+                <div className="text-center space-y-4">
+                  <h4 className="text-lg font-semibold flex items-center justify-center gap-2">
+                    <Users className="h-5 w-5" />
+                    How many people?
+                  </h4>
+                  
+                  <div className="flex items-center justify-center space-x-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPeopleCount(Math.max(2, peopleCount - 1))}
+                      disabled={peopleCount <= 2}
+                    >
+                      -
+                    </Button>
+                    
+                    <span className="text-xl font-semibold min-w-[3rem] text-center">
+                      {peopleCount}
+                    </span>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPeopleCount(peopleCount + 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  
+                  {currentPackage && (
+                    <div className="text-center pt-2">
+                      <p className="text-sm text-gray-600">
+                        Total: ${(currentPackage.pricePerPerson * peopleCount).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* Info Note */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Important Notes:</p>
-                <ul className="space-y-1 text-xs">
-                  <li>• Catering orders must be confirmed 5 days in advance</li>
-                  <li>• All items can be customized for dietary restrictions</li>
-                  <li>• Contact us for larger groups or special requests</li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Item Selection */}
+          <AnimatePresence>
+            {selectedPackage && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="text-center">
+                  <h4 className="text-xl font-semibold mb-2">
+                    Select {requiredItemCount} Appetizers
+                  </h4>
+                  <p className="text-gray-600">
+                    Choose {requiredItemCount} appetizers for your package 
+                    ({currentSelectedItems.length}/{requiredItemCount} selected)
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableItems.map((item) => {
+                    const isSelected = currentSelectedItems.includes(item.id);
+                    const canSelect = currentSelectedItems.length < requiredItemCount || isSelected;
+                    
+                    return (
+                      <Card
+                        key={item.id}
+                        className={cn(
+                          "cursor-pointer transition-all duration-200 overflow-hidden",
+                          isSelected ? "ring-2 ring-green-500 bg-green-50" : "",
+                          !canSelect ? "opacity-50 cursor-not-allowed" : "hover:shadow-md"
+                        )}
+                        onClick={() => canSelect && handleItemToggle(item.id)}
+                      >
+                        <div className="relative w-full h-32">
+                          <Image
+                            src={getImageUrl(item.imageUrl)}
+                            alt={toTitleCase(item.name)}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/images/catering/default-item.jpg';
+                            }}
+                            priority={false}
+                            loading="lazy"
+                          />
+                          {isSelected && (
+                            <div className="absolute top-2 right-2">
+                              <CheckCircle className="h-6 w-6 text-green-600 bg-white rounded-full" />
+                            </div>
+                          )}
+                          {!canSelect && !isSelected && (
+                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                              <Circle className="h-6 w-6 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <CardContent className="p-4">
+                          <h5 className="font-medium text-sm leading-tight mb-2">
+                            {toTitleCase(item.name)}
+                          </h5>
+                          
+                          {item.description && (
+                            <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                              {item.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {getDietaryBadges(item).map((badge) => (
+                              <span 
+                                key={badge} 
+                                className={`inline-flex items-center justify-center ${getDietaryBadgeStyle(badge)} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`}
+                              >
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Add to Cart Button */}
+                <div className="text-center pt-6">
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={currentSelectedItems.length !== requiredItemCount}
+                    className="bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg"
+                  >
+                    Add Package to Cart
+                    {currentPackage && (
+                      <span className="ml-2">
+                        (${(currentPackage.pricePerPerson * peopleCount).toFixed(2)})
+                      </span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Info Note */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-1">Important Notes:</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>• Catering orders must be confirmed 5 days in advance</li>
+                      <li>• All items can be customized for dietary restrictions</li>
+                      <li>• Contact us for larger groups or special requests</li>
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }; 
