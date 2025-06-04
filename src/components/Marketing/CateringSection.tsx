@@ -21,25 +21,27 @@ export const CateringSection = () => {
 
       <div className="container mx-auto px-4 py-12 md:py-16 lg:py-24 relative z-10">
         <div className="grid md:grid-cols-2 gap-8 md:gap-8 lg:gap-12 items-center">
-          <div className="space-y-6 max-w-full md:max-w-md lg:max-w-md xl:max-w-xl text-center md:text-left">
-            <h2 className="text-4xl leading-tight md:text-4xl lg:text-4xl xl:text-5xl font-bold xl:whitespace-nowrap">
+          <div className="space-y-6 max-w-full md:max-w-md lg:max-w-md xl:max-w-xl text-center">
+            <h2 className={`text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl`}>
               Let Us Cater Your Next Event
             </h2>
             <div className="text-lg opacity-90 space-y-2 md:space-y-1">
-              <p>
+              <p className={`text-xl text-slate-200`} style={{ fontStyle: 'italic' }}>
                 We are here to take the stress out of planning. From office lunches to celebrations,
-                we will handle your catering needs effortlessly!
+                we will handle your catering needs{' '}
+                <span className="text-amber-400 font-bold text-xl">effortlessly!</span>
               </p>
             </div>
 
             <div className="text-lg opacity-90 space-y-2 md:space-y-1">
-              <p>
+              <p className={`text-xl text-slate-200`} style={{ fontStyle: 'italic' }}>
                 Our customizable Latin American menus include a variety of gluten-free, vegetarian,
-                and vegan options — ideal for any gathering!
-              </p>{' '}
+                and vegan options — ideal for any{' '}
+                <span className="text-amber-400 font-bold text-xl">gathering!</span>
+              </p>
             </div>
 
-            <div className="mt-8 md:mt-16 flex justify-center md:justify-start">
+            <div className="mt-8 md:mt-16 flex justify-center">
               <Link
                 href="/contact"
                 className="inline-block px-8 py-3 bg-amber-400 text-slate-900 font-semibold rounded-full hover:bg-amber-300 transition-colors text-lg"
