@@ -53,7 +53,7 @@ export const About: React.FC<AboutProps> = ({
             {/* Nuevo div con el texto en negritas */}
             <div className="text-lg md:text-xl font-bold space-y-2">
               <p>INSPIRED BY TRADITION</p>
-              <p>CRAFTED WITH CORE</p>
+              <p>CRAFTED WITH CARE</p>
               <p>SHARED WITH LOVE</p>
             </div>
 
