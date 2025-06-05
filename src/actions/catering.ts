@@ -103,6 +103,41 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
 }
 
 /**
+ * Fetches a single catering item by ID
+ */
+export async function getCateringItem(itemId: string): Promise<{ success: boolean; data?: CateringItem; error?: string }> {
+  try {
+    const item = await db.cateringItem.findUnique({
+      where: {
+        id: itemId,
+      },
+    });
+    
+    if (!item) {
+      return { success: false, error: 'Catering item not found' };
+    }
+    
+    return {
+      success: true,
+      data: {
+        ...item,
+        price: Number(item.price),
+      } as unknown as CateringItem
+    };
+  } catch (error) {
+    console.error(`Error fetching catering item with ID ${itemId}:`, error);
+    
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2021') {
+        return { success: false, error: 'Catering items table does not exist' };
+      }
+    }
+    
+    return { success: false, error: 'Failed to fetch catering item' };
+  }
+}
+
+/**
  * Fetches all active catering items
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
@@ -144,7 +179,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       }
     });
     
-    // Attach product images to catering items where possible
+    // Attach product images to catering items where possible and serialize Decimal fields
     const result = items.map(item => {
       const normalizedName = item.name.toLowerCase();
       let imageUrl = item.imageUrl;
@@ -1192,6 +1227,36 @@ export async function validateCateringOrderWithDeliveryZone(
     return {
       isValid: false,
       errorMessage: 'An error occurred while validating your order. Please try again.'
+    };
+  }
+}
+
+/**
+ * Server action to initialize boxed lunch data from the admin UI
+ */
+export async function initializeBoxedLunchDataAction(): Promise<{ 
+  success: boolean; 
+  error?: string; 
+  summary?: string 
+}> {
+  'use server';
+  
+  try {
+    const result = await initializeBoxedLunchData();
+    
+    if (result.success) {
+      // Revalidate admin catering pages to show updated data
+      revalidatePath('/admin/catering');
+      revalidatePath('/admin/catering/boxed-lunch');
+      revalidatePath('/catering');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error in initializeBoxedLunchDataAction:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data'
     };
   }
 } 

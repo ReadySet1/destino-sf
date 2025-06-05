@@ -552,4 +552,67 @@ export function determineDeliveryZone(postalCode: string, city?: string): Delive
   }
   
   return null; // Unable to determine zone
+}
+
+// Smart Override System for Square vs Local Items (matches Prisma schema)
+export interface CateringItemOverrides {
+  id: string;
+  itemId: string; // Reference to the catering item
+  // Fields that can be overridden locally (Prisma uses null, not undefined)
+  localDescription: string | null;
+  localImageUrl: string | null;
+  localIsVegetarian: boolean | null;
+  localIsVegan: boolean | null;
+  localIsGlutenFree: boolean | null;
+  localServingSize: string | null;
+  localDietaryOptions: string[];
+  // Control flags
+  overrideDescription: boolean;
+  overrideImage: boolean;
+  overrideDietary: boolean;
+  overrideServingSize: boolean;
+  // Meta
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EnhancedCateringItem extends Omit<CateringItem, 'category'> {
+  // Use category from this module instead of Prisma
+  category: CateringItemCategory;
+  // Indicate if this item is from Square
+  isSquareItem: boolean;
+  // Original Square data (preserved during sync)
+  squareData?: {
+    originalDescription?: string;
+    originalImageUrl?: string;
+    originalPrice: number;
+    lastSyncedAt: Date;
+  };
+  // Override data if present
+  overrides?: CateringItemOverrides;
+  // Computed final values (either Square or local override)
+  finalDescription: string;
+  finalImageUrl?: string;
+  finalIsVegetarian: boolean;
+  finalIsVegan: boolean;
+  finalIsGlutenFree: boolean;
+  finalServingSize?: string;
+}
+
+export enum ItemSource {
+  LOCAL = 'LOCAL',
+  SQUARE = 'SQUARE'
+}
+
+export interface ItemEditCapabilities {
+  canEditName: boolean;
+  canEditDescription: boolean;
+  canEditPrice: boolean;
+  canEditCategory: boolean;
+  canEditDietary: boolean;
+  canEditImage: boolean;
+  canEditServingSize: boolean;
+  canEditActive: boolean;
+  source: ItemSource;
+  warnings?: string[];
 } 
