@@ -11,14 +11,12 @@ const MenuBanner: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-        <div className="max-w-xl">
-          <h1 className="font-quicksand text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Our Menu
-          </h1>
+        <div className="flex flex-col items-center text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Our Menu</h1>
 
           <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
 
-          <p className="mt-6 max-w-lg text-lg text-yellow-100 sm:text-xl">
+          <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
             Please explore our menu of handcrafted Latin American favorites - available for retail
             and wholesale!
           </p>
