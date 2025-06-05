@@ -52,13 +52,9 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
             {/* Appetizer Packages */}
             <div className="mb-12">
               <AppetizerPackageSelector 
-                packages={cateringPackages.filter(pkg => {
-                  // Get items that are $0 (package-only items) for appetizers
-                  const appetizerItems = getItemsForTab(cateringItems, 'appetizers').filter(item => item.price === 0);
-                  return appetizerItems.some(item => 
-                    pkg.items?.some(pkgItem => pkgItem.itemId === item.id)
-                  );
-                })}
+                packages={cateringPackages.filter(pkg => 
+                  pkg.name.includes('Appetizer Selection')
+                )}
                 availableItems={getItemsForTab(cateringItems, 'appetizers').filter(item => item.price === 0)}
               />
             </div>

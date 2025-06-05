@@ -73,57 +73,7 @@ const SERVICE_ADD_ONS = [
   }
 ];
 
-// Alfajores data for lunch menu
-const ALFAJORES_ITEMS = [
-  {
-    id: 'alfajores-classic',
-    name: 'Alfajores - Classic',
-    description: 'South american butter cookies: shortbread / dulce de leche',
-    price: 2.50,
-    category: 'DESSERT',
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '1 piece',
-    isActive: true
-  },
-  {
-    id: 'alfajores-chocolate',
-    name: 'Alfajores - Chocolate',
-    description: 'Dulce de leche / dark chocolate / peruvian sea salt',
-    price: 2.50,
-    category: 'DESSERT',
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '1 piece',
-    isActive: true
-  },
-  {
-    id: 'alfajores-lemon',
-    name: 'Alfajores - Lemon',
-    description: 'Shortbread / dulce de leche / lemon royal icing',
-    price: 2.50,
-    category: 'DESSERT',
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: '1 piece',
-    isActive: true
-  },
-  {
-    id: 'alfajores-gluten-free',
-    name: 'Alfajores - Gluten-Free',
-    description: 'Gluten-free dulce de leche butter cookies',
-    price: 2.50,
-    category: 'DESSERT',
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: true,
-    servingSize: '1 piece',
-    isActive: true
-  }
-];
+
 
 export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({ 
   items, 
@@ -205,27 +155,12 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
           </motion.div>
         ))}
         
-        {/* Add Alfajores section for lunch menu */}
-        {activeCategory === 'lunch' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: sectionsToShow.length * 0.1 }}
-          >
-            <CategorySection 
-              title="Alfajores"
-              items={ALFAJORES_ITEMS as CateringItem[]}
-              isDessertSection={true}
-            />
-          </motion.div>
-        )}
-        
         {/* Add Service Add-ons section for buffet and lunch */}
         {(activeCategory === 'buffet' || activeCategory === 'lunch') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: (sectionsToShow.length + 1) * 0.1 }}
+            transition={{ duration: 0.4, delay: sectionsToShow.length * 0.1 }}
           >
             <ServiceAddOnsSection activeCategory={activeCategory} />
           </motion.div>
