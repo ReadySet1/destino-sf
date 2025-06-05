@@ -93,11 +93,18 @@ const MarketingSection: React.FC = () => {
       {/* Call to Action Section */}
       <section className="w-full bg-[#2d3538] py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h3 className="text-2xl font-bold text-white mb-4">
-            Ready to offer your customers something unforgettable? Delight your audience with
-            DESTINO’s handcrafted empanadas and alfajores — the flavors people keep coming back for!
+          <h3 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-8">
+            BECOME A WHOLESALE PARTNER WITH DESTINO
           </h3>
-          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
+          <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
+            Ready to offer your customers something unforgettable? Delight your audience with
+            DESTINO&apos;s handcrafted empanadas and alfajores — the flavors people keep coming back
+            for!
+          </p>
+          <p
+            className="mx-auto mt-3 text-xl text-white mb-8 sm:mt-4"
+            style={{ fontStyle: 'italic' }}
+          >
             We offer chef-crafted, small-batch products with strong retail appeal and flexible
             wholesale options. Our empanadas are sold frozen for lasting quality, and our alfajores
             are shelf-stable — both designed for excellent longevity and easy retail display!

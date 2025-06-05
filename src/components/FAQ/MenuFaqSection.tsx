@@ -2,18 +2,17 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react'; // Importamos ChevronDown de lucide-react para mantener la coherencia
+import { ChevronDown } from 'lucide-react';
 import MapModal from '../Maps/MapModal';
 
 interface FaqItem {
   question: string;
-  answer: React.ReactNode; // Permitimos nodos React para el enlace
+  answer: React.ReactNode;
 }
 
 const MenuFaqSection: React.FC = () => {
   // State to track which FAQ items are open
   const [openItems, setOpenItems] = useState<number[]>([]);
-  // Este estado controla la visibilidad de TU MapModal real
   const [isMapOpen, setIsMapOpen] = useState<boolean>(false);
 
   // Toggle function to open/close FAQ items
@@ -71,7 +70,6 @@ const MenuFaqSection: React.FC = () => {
     },
   ];
 
-  // Enhanced animation variants (se mantienen igual ya que son de Framer Motion y no de estilo directo)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -143,11 +141,11 @@ const MenuFaqSection: React.FC = () => {
   // Button hover animation effect
   const buttonHoverVariants = {
     rest: {
-      backgroundColor: 'rgba(255, 255, 255, 1)', // Fondo blanco
+      backgroundColor: 'rgba(255, 255, 255, 1)',
       transition: { duration: 0.2, ease: 'easeInOut' },
     },
     hover: {
-      backgroundColor: 'rgba(254, 252, 232, 0.5)', // Color ámbar-50/50
+      backgroundColor: 'rgba(254, 252, 232, 0.5)',
       transition: { duration: 0.2, ease: 'easeInOut' },
     },
   };
@@ -167,9 +165,7 @@ const MenuFaqSection: React.FC = () => {
   return (
     <div className="mx-auto w-full max-w-4xl py-8">
       {' '}
-      {/* Ajustado para centrar y max-width como el original */}
       <AnimatePresence>
-        {/* Renderizamos el MapModal SOLAMENTE cuando isMapOpen es true */}
         {isMapOpen && <MapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />}
       </AnimatePresence>
       <motion.h2
@@ -179,10 +175,10 @@ const MenuFaqSection: React.FC = () => {
           duration: 0.6,
           ease: [0.22, 1, 0.36, 1],
         }}
-        className="font-quicksand text-3xl font-bold text-amber-900 mb-8 text-center sm:text-4xl" // Estilos del título actualizados
+        className="font-quicksand text-3xl font-bold text-amber-900 mb-8 text-center sm:text-4xl"
       >
         Menu: Frequently Asked Questions
-        <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" /> {/* Línea amarilla */}
+        <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
       </motion.h2>
       <motion.div
         className="space-y-4"
@@ -193,40 +189,37 @@ const MenuFaqSection: React.FC = () => {
         {faqItems.map((faq, index) => (
           <motion.div
             key={index}
-            className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm" // Estilos de la tarjeta actualizados
+            className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm"
             variants={itemVariants}
             whileHover={{
-              // Mantener la sombra y el fondo del hover consistente
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-              backgroundColor: 'rgba(255, 255, 255, 1)', // Aseguramos que el fondo no cambie para la sombra
+              backgroundColor: 'rgba(255, 255, 255, 1)',
               transition: { duration: 0.3 },
             }}
           >
             <motion.button
               onClick={() => toggleItem(index)}
-              className="flex justify-between items-center w-full p-5 text-left bg-white transition-colors" // P-5 para padding consistente, bg-white
+              className="flex justify-between items-center w-full p-5 text-left bg-white transition-colors"
               variants={buttonHoverVariants}
               initial="rest"
               whileHover="hover"
               whileTap={{ scale: 0.995 }}
-              aria-expanded={openItems.includes(index)} // Atributo de accesibilidad
-              aria-controls={`faq-answer-${index}`} // Atributo de accesibilidad
+              aria-expanded={openItems.includes(index)}
+              aria-controls={`faq-answer-${index}`}
             >
               <motion.h3
-                className="font-quicksand text-lg font-medium text-amber-900 pr-8 sm:text-xl" // Estilos de la pregunta actualizados
+                className="font-quicksand text-lg font-medium text-amber-900 pr-8 sm:text-xl"
                 initial={{ opacity: 0.95 }}
                 whileHover={{ opacity: 1 }}
               >
                 {faq.question}
               </motion.h3>
-              <motion.div // Se usa un div para contener el ícono de Lucide React
+              <motion.div
                 variants={arrowVariants}
                 animate={openItems.includes(index) ? 'up' : 'down'}
                 className="flex-shrink-0 ml-4"
               >
-                <ChevronDown
-                  className="h-5 w-5 text-amber-500" // Color del icono actualizado
-                />
+                <ChevronDown className="h-5 w-5 text-amber-500" />
               </motion.div>
             </motion.button>
 

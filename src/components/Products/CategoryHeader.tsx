@@ -2,25 +2,26 @@ import React from 'react';
 
 interface CategoryHeaderProps {
   className?: string;
+  titleClassName?: string;
   title: string;
   description?: string;
   type?: 'products' | 'menu' | 'default';
   children?: React.ReactNode;
 }
 
-export const CategoryHeader: React.FC<CategoryHeaderProps> = ({ 
-  className = '', 
+export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
+  className = '',
+  titleClassName = '',
   title,
   description,
   type = 'default',
-  children
+  children,
 }) => {
   const getBgColor = () => {
-    // If custom className is provided, prefer that over default backgrounds
     if (className.includes('bg-[')) {
       return className;
     }
-    
+
     switch (type) {
       case 'products':
       case 'menu':
@@ -34,15 +35,19 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     <div className="w-full">
       <div className={`w-full ${getBgColor()} -mt-2`}>
         <div className="max-w-[1400px] mx-auto px-4">
-          <h1 className="text-white text-4xl md:text-5xl font-script text-center py-6">
+          {/* QUITAR font-script de aquí directamente si no lo quieres */}
+          {/* O asegúrate de que titleClassName pueda sobrescribir estilos de fuente */}
+          <h1 className={`text-white text-4xl md:text-5xl text-center py-6 ${titleClassName}`}>
             {title}
           </h1>
-          {children}
         </div>
       </div>
       {description && (
         <div className="max-w-[1400px] mx-auto px-4 py-8">
-          <p className="text-center text-gray-700 text-lg max-w-3xl mx-auto mb-12">
+          <p
+            className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
+            style={{ fontStyle: 'italic' }}
+          >
             {description}
           </p>
         </div>
@@ -51,4 +56,4 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   );
 };
 
-export default CategoryHeader; 
+export default CategoryHeader;
