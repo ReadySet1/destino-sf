@@ -62,3 +62,39 @@ declare global {
     [key: string]: any;
   }
 }
+
+// Square Tip Settings Interface
+export interface SquareTipSettings {
+  /** Whether to allow tipping */
+  allow_tipping: boolean;
+  /** Whether to show tips on a separate screen */
+  separate_tip_screen: boolean;
+  /** Whether to show a custom tip input field */
+  custom_tip_field: boolean;
+  /** Array of tip percentages (0-100, max 3 values) */
+  tip_percentages: number[];
+  /** Whether to use Square's smart tip amounts (overrides tip_percentages if true) */
+  smart_tip_amounts: boolean;
+}
+
+// Square Checkout Options Interface
+export interface SquareCheckoutOptions {
+  /** Whether to allow tipping */
+  allow_tipping: boolean;
+  /** URL to redirect to after successful payment */
+  redirect_url: string;
+  /** Merchant support email */
+  merchant_support_email: string;
+  /** Whether to ask for shipping address */
+  ask_for_shipping_address: boolean;
+  /** Accepted payment methods */
+  accepted_payment_methods: {
+    apple_pay: boolean;
+    google_pay: boolean;
+    cash_app_pay: boolean;
+    afterpay_clearpay: boolean;
+    venmo: boolean;
+  };
+  /** Custom tip settings */
+  tip_settings?: SquareTipSettings;
+}

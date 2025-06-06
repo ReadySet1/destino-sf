@@ -63,8 +63,7 @@ enum PaymentMethod {
   CASH = "CASH"
 }
 
-// --- Add placeholder weight ---
-const PLACEHOLDER_WEIGHT_LB = 1; // TODO: Replace with actual cart weight calculation
+// --- Weight calculation is now handled dynamically in shipping utils ---
 
 // --- Define Schemas (keep these here as they define form structure) ---
 const addressSchema = z.object({
@@ -292,16 +291,41 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
     try {
       console.log("Fetching shipping rates for address:", address);
-      const weightLb = PLACEHOLDER_WEIGHT_LB;
-      console.log(`Using placeholder weight: ${weightLb} lbs`);
+      
+      // Convert cart items to the enhanced format expected by shipping calculation
+      const cartItems = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        variantId: item.variantId,
+        price: item.price, // Include price for insurance and customs calculations
+      }));
+      
+      console.log(`Using dynamic weight calculation for ${cartItems.length} cart items`);
+      const enhancedAddress = {
+        recipientName: address.recipientName,
+        street: address.street,
+        street2: address.street2,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country || 'US',
+        phone: undefined,
+        email: undefined,
+      };
+      
       const result = await getShippingRates({
-        shippingAddress: address, estimatedWeightLb: weightLb, estimatedLengthIn: 10, estimatedWidthIn: 8, estimatedHeightIn: 4, 
+        shippingAddress: enhancedAddress, 
+        cartItems: cartItems,
+        estimatedLengthIn: 10, 
+        estimatedWidthIn: 8, 
+        estimatedHeightIn: 4, 
       });
 
       if (result.success && result.rates) {
         console.log("Received rates:", result.rates);
         if (result.rates.length === 0) {
-            setShippingError('No shipping rates found for this address/weight.'); setShippingRates([]);
+            setShippingError('No shipping rates found for this address.'); setShippingRates([]);
         } else { setShippingRates(result.rates); }
       } else {
         console.error("Failed to fetch shipping rates:", result.error);

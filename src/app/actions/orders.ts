@@ -12,6 +12,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
+import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -743,7 +744,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         cancelUrl.searchParams.set('orderId', dbOrder.id); // Include orderId in cancel URL
 
         const squareCheckoutOptions = {
-            allow_tipping: false,
+            allow_tipping: true,
             redirect_url: redirectUrl.toString(),
             merchant_support_email: supportEmail || customerInfo.email, // Fallback to customer email
             ask_for_shipping_address: false, // Provided via fulfillment
@@ -754,6 +755,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 afterpay_clearpay: false,
                 venmo: false
             },
+            // Custom tip settings with 5%, 10%, and 15% instead of default 15%, 20%, 25%
+            tip_settings: createRegularOrderTipSettings()
         };
 
         // --- Build Full Square Request Body --- 

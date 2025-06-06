@@ -16,6 +16,7 @@ import { randomUUID } from 'crypto';
 import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
 
 /**
  * Fetches all active catering packages with their ratings
@@ -764,6 +765,8 @@ export async function createCateringOrderAndProcessPayment(
         afterpay_clearpay: false,
         venmo: false
       },
+      // Custom tip settings with 5%, 10%, and 15% instead of default 15%, 20%, 25%
+      tip_settings: createCateringOrderTipSettings()
     };
     
     // 7. Build full Square request body
