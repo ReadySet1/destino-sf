@@ -3,6 +3,7 @@
 import { logger } from '../../utils/logger';
 import * as Square from 'square';
 import { directCatalogApi } from './catalog-api';
+import type { SquareClient } from '../../types/square';
 
 /**
  * Singleton class to manage Square API client instance
@@ -129,7 +130,7 @@ class SquareClientSingleton {
 export const getSquareClient = () => SquareClientSingleton.getInstance();
 
 // For backwards compatibility, maintain the previous export pattern but make them lazy
-export const squareClient = new Proxy({}, {
+export const squareClient = new Proxy({} as SquareClient, {
   get(target, prop) {
     const client = SquareClientSingleton.getInstance();
     return client ? client[prop] : undefined;

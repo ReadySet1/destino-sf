@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 import { CateringItemCategory } from '@prisma/client';
+import type { SquareClient, SquareCatalogApi } from '@/types/square';
 
 // Import types from Prisma
 import type { Prisma } from '@prisma/client';
@@ -313,7 +314,11 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         include_deleted_objects: false
       };
       
-      const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+      const catalogResponse = await squareClient.catalogApi?.searchCatalogObjects(requestBody);
+      
+      if (!catalogResponse) {
+        throw new Error('Square catalog API not available or returned no response');
+      }
       
       logger.info('Catalog response keys:', Object.keys(catalogResponse));
       debugInfo.catalogResponseKeys = Object.keys(catalogResponse);
@@ -463,8 +468,11 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           
           const existingProduct = await prisma.product.findUnique({
             where: { squareId: item.id },
-            select: { id: true, slug: true } // Only select what's needed
+            select: { id: true, slug: true, images: true, name: true } // Added images and name to selection
           });
+
+          // Determine the best images to use
+          const finalImages = await determineProductImages(item, relatedObjects, existingProduct || undefined);
 
           let product;
           
@@ -476,7 +484,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 name: itemName,
                 description: updateDescription,
                 price: basePrice,
-                images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                images: finalImages, // Use smart image selection
                 variants: {
                   deleteMany: {},
                   create: variants
@@ -485,7 +493,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 updatedAt: new Date()
               }
             });
-            logger.info(`Successfully updated product ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+            logger.info(`Successfully updated product ${itemName}. Images: ${finalImages.length} (${finalImages.length === existingProduct.images.length ? 'preserved' : 'updated'})`);
           } else {
             const existingSlug = await prisma.product.findUnique({
               where: { slug: baseSlug },
@@ -502,7 +510,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                   slug: uniqueSlug,
                   description: createDescription,
                   price: basePrice,
-                  images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                  images: finalImages, // Use smart image selection
                   categoryId: categoryId, // Use the appropriate category
                   featured: false,
                   active: true,
@@ -511,7 +519,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                   }
                 }
               });
-              logger.info(`Successfully created product ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+              logger.info(`Successfully created product ${itemName}. Images: ${finalImages.length}`);
             } catch (error) {
               const createError = error as { code?: string; meta?: { target?: string[] } };
               if (createError.code === 'P2002') {
@@ -528,6 +536,15 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                     
                     if (existingVariant && existingVariant.product) {
                       logger.info(`Found existing product via variant: ${existingVariant.product.id}, updating it.`);
+                      
+                      // Get the full product data for smart image selection
+                      const fullExistingProduct = await prisma.product.findUnique({
+                        where: { id: existingVariant.product.id },
+                        select: { id: true, images: true, name: true }
+                      });
+                      
+                      const variantFinalImages = await determineProductImages(item, relatedObjects, fullExistingProduct || undefined);
+                      
                       product = await prisma.product.update({
                         where: { id: existingVariant.product.id },
                         data: {
@@ -535,7 +552,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                           name: itemName,
                           description: updateDescription,
                           price: basePrice,
-                          images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                          images: variantFinalImages, // Use smart image selection
                           categoryId: categoryId, // Use the appropriate category
                           variants: {
                             deleteMany: {},
@@ -544,7 +561,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                           updatedAt: new Date()
                         }
                       });
-                      logger.info(`Updated existing product (through variant) ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+                      logger.info(`Updated existing product (through variant) ${itemName}. Images: ${variantFinalImages.length}`);
                     }
                   }
                 } else {
@@ -557,7 +574,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                       slug: timestampSlug,
                       description: createDescription,
                       price: basePrice,
-                      images: imageUrlsFromSquare, // STRICTLY USE IMAGES FROM SQUARE
+                      images: finalImages, // Use smart image selection
                       categoryId: categoryId, // Use the appropriate category
                       featured: false,
                       active: true,
@@ -566,7 +583,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                       }
                     }
                   });
-                  logger.info(`Successfully created product with timestamp slug ${itemName}. Image count set from Square: ${imageUrlsFromSquare.length}`);
+                  logger.info(`Successfully created product with timestamp slug ${itemName}. Images: ${finalImages.length}`);
                 }
               } else {
                 throw createError;
@@ -836,7 +853,7 @@ function createSlug(name: string): string {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Remove consecutive hyphens
     .trim();
-}
+  }
 
 // getImageUrls needs to be robust. It should return [] if no images are found or if errors occur during fetching individual images.
 // The addCacheBustingParam should only convert sandbox to production and not add '?t=' to S3 URLs.
@@ -862,12 +879,16 @@ async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCat
       } else {
         // If not found in related objects, fetch directly
         try {
-          const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
-          const imageData = imageResponse.result?.object;
-          
-          if (imageData?.image_data?.url) {
-            imageUrl = imageData.image_data.url;
-            logger.info(`Retrieved image URL from API for ${imageId}: ${imageUrl}`);
+          if (squareClient.catalogApi) {
+            const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
+            const imageData = imageResponse?.result?.object;
+            
+            if (imageData?.image_data?.url) {
+              imageUrl = imageData.image_data.url;
+              logger.info(`Retrieved image URL from API for ${imageId}: ${imageUrl}`);
+            }
+          } else {
+            logger.warn(`Square catalog API not available for retrieving image ${imageId}`);
           }
         } catch (imageApiError) {
           logger.error(`Error retrieving image ${imageId} from API:`, imageApiError);
@@ -1293,4 +1314,71 @@ export async function syncCateringItemsWithSquare(): Promise<{ updated: number; 
     result.errors++;
     return result;
   }
+}
+
+// Helper function to determine the best images for a product
+async function determineProductImages(
+  item: SquareCatalogObject, 
+  relatedObjects: SquareCatalogObject[], 
+  existingProduct?: { id: string; images: string[]; name: string }
+): Promise<string[]> {
+  const itemName = item.item_data?.name || '';
+  
+  // Get images from Square
+  const imageUrlsFromSquare = await getImageUrls(item, relatedObjects);
+  logger.info(`Square provided ${imageUrlsFromSquare.length} image(s) for ${itemName}`);
+  
+  // If this is a new product, use Square images
+  if (!existingProduct) {
+    logger.info(`New product ${itemName}: using ${imageUrlsFromSquare.length} images from Square`);
+    return imageUrlsFromSquare;
+  }
+  
+  // For existing products, implement smart image management
+  const existingImages = existingProduct.images || [];
+  
+  // Check if existing images are manually assigned (not from Square)
+  const hasManualImages = existingImages.some(img => 
+    img.startsWith('/images/') || // Local images
+    img.includes('items-images-production.s3.us-west-2.amazonaws.com') || // Our manually assigned S3 images
+    !img.includes('square-') // Non-Square URLs
+  );
+  
+  // If we have manual images and Square doesn't provide better ones, keep manual images
+  if (hasManualImages && imageUrlsFromSquare.length === 0) {
+    logger.info(`Product ${itemName}: preserving ${existingImages.length} manually assigned images (Square has none)`);
+    return existingImages;
+  }
+  
+  // If we have manual images and Square provides images, prefer manual unless they're clearly better
+  if (hasManualImages && imageUrlsFromSquare.length > 0) {
+    // Check if any existing images are for specific variants (like different alfajores types)
+    const hasVariantSpecificImages = existingImages.some(img => 
+      (itemName.toLowerCase().includes('alfajor') && img.includes('alfajor')) ||
+      (itemName.toLowerCase().includes('platter') && img.includes('platter')) ||
+      (itemName.toLowerCase().includes('classic') && img.includes('classic')) ||
+      (itemName.toLowerCase().includes('chocolate') && img.includes('chocolate')) ||
+      (itemName.toLowerCase().includes('lemon') && img.includes('lemon')) ||
+      (itemName.toLowerCase().includes('gluten') && img.includes('gluten'))
+    );
+    
+    if (hasVariantSpecificImages) {
+      logger.info(`Product ${itemName}: preserving variant-specific manually assigned images over Square images`);
+      return existingImages;
+    }
+    
+    // If Square images are significantly better (more images), use those
+    if (imageUrlsFromSquare.length > existingImages.length) {
+      logger.info(`Product ${itemName}: using ${imageUrlsFromSquare.length} Square images (better than ${existingImages.length} existing)`);
+      return imageUrlsFromSquare;
+    }
+    
+    // Otherwise, keep existing manual images
+    logger.info(`Product ${itemName}: preserving ${existingImages.length} manually assigned images`);
+    return existingImages;
+  }
+  
+  // If no manual images, use Square images (even if empty)
+  logger.info(`Product ${itemName}: using ${imageUrlsFromSquare.length} images from Square`);
+  return imageUrlsFromSquare;
 }

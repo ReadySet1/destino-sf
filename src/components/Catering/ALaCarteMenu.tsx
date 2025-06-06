@@ -44,8 +44,29 @@ const formatDescription = (str: string | null | undefined): string => {
 
 // Function to check if an item is a platter item
 const isPlatterItem = (item: CateringItem): boolean => {
-  const platterNames = ['Plantain Chips Platter', 'Cocktail Prawn Platter', 'Cheese & Charcuterie Platter'];
-  return platterNames.includes(item.name);
+  return item.name.includes('Platter') && (item.name.includes('Small') || item.name.includes('Large'));
+};
+
+// Function to get base platter name
+const getBasePlatterName = (name: string): string => {
+  return name.replace(/ - (Small|Large)$/, '');
+};
+
+// Function to group platter items by base name
+const groupPlatterItems = (items: CateringItem[]): Record<string, CateringItem[]> => {
+  const platterGroups: Record<string, CateringItem[]> = {};
+  
+  items.forEach(item => {
+    if (isPlatterItem(item)) {
+      const baseName = getBasePlatterName(item.name);
+      if (!platterGroups[baseName]) {
+        platterGroups[baseName] = [];
+      }
+      platterGroups[baseName].push(item);
+    }
+  });
+  
+  return platterGroups;
 };
 
 // Service Add-ons data
@@ -178,7 +199,25 @@ interface CategorySectionProps {
 
 const CategorySection: React.FC<CategorySectionProps> = ({ title, items, isDessertSection = false }) => {
   const [showAll, setShowAll] = useState(false);
-  const displayItems = showAll ? items : items.slice(0, 6);
+  
+  // Group platter items and separate non-platter items
+  const platterGroups = groupPlatterItems(items);
+  const nonPlatterItems = items.filter(item => !isPlatterItem(item));
+  
+  // Create display items array with grouped platters and individual items
+  const displayItemsArray: Array<{ type: 'platter' | 'item', data: CateringItem[] | CateringItem }> = [];
+  
+  // Add platter groups
+  Object.entries(platterGroups).forEach(([baseName, platterItems]) => {
+    displayItemsArray.push({ type: 'platter', data: platterItems });
+  });
+  
+  // Add individual items
+  nonPlatterItems.forEach(item => {
+    displayItemsArray.push({ type: 'item', data: item });
+  });
+  
+  const displayItems = showAll ? displayItemsArray : displayItemsArray.slice(0, 6);
   
   return (
     <div className={`bg-white rounded-xl p-5 md:p-6 shadow-sm border border-gray-100 ${
@@ -191,24 +230,27 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, isDesse
       </h3>
       
       <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-        {displayItems.map((item, index) => (
+        {displayItems.map((displayItem, index) => (
           <motion.div
-            key={item.id}
+            key={displayItem.type === 'platter' 
+              ? `platter-${getBasePlatterName((displayItem.data as CateringItem[])[0].name)}`
+              : (displayItem.data as CateringItem).id
+            }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             className="h-full"
           >
-            {isPlatterItem(item) ? (
-              <PlatterMenuItem item={item} />
+            {displayItem.type === 'platter' ? (
+              <PlatterMenuItem items={displayItem.data as CateringItem[]} />
             ) : (
-              <MenuItem item={item} />
+              <MenuItem item={displayItem.data as CateringItem} />
             )}
           </motion.div>
         ))}
       </div>
       
-      {items.length > 6 && (
+      {displayItemsArray.length > 6 && (
         <div className="mt-10 text-center">
           <Button 
             variant="outline" 
@@ -221,7 +263,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, items, isDesse
               </>
             ) : (
               <>
-                Show {items.length - 6} More Options <ChevronDown className="h-4 w-4 ml-1" />
+                Show {displayItemsArray.length - 6} More Options <ChevronDown className="h-4 w-4 ml-1" />
               </>
             )}
           </Button>
