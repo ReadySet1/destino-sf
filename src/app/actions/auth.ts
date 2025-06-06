@@ -203,6 +203,87 @@ export const resetPasswordAction = async (formData: FormData) => {
   return encodedRedirect('success', '/account', 'Your password has been updated successfully');
 };
 
+export const setupPasswordAction = async (formData: FormData) => {
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+  const supabase = await createClient();
+
+  // Validate password requirements
+  if (!password || !confirmPassword) {
+    return encodedRedirect(
+      'error',
+      '/setup-password',
+      'Password and confirm password are required'
+    );
+  }
+
+  if (password !== confirmPassword) {
+    return encodedRedirect('error', '/setup-password', 'Passwords do not match');
+  }
+
+  // Validate password strength
+  const passwordRequirements = [
+    { test: (pwd: string) => pwd.length >= 8, message: 'Password must be at least 8 characters long' },
+    { test: (pwd: string) => /[A-Z]/.test(pwd), message: 'Password must contain an uppercase letter' },
+    { test: (pwd: string) => /[a-z]/.test(pwd), message: 'Password must contain a lowercase letter' },
+    { test: (pwd: string) => /\d/.test(pwd), message: 'Password must contain a number' },
+    { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: 'Password must contain a special character' },
+  ];
+
+  for (const requirement of passwordRequirements) {
+    if (!requirement.test(password)) {
+      return encodedRedirect('error', '/setup-password', requirement.message);
+    }
+  }
+
+  // Get current user (should be authenticated via invitation link)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return encodedRedirect('error', '/setup-password', 'Authentication required. Please use the invitation link.');
+  }
+
+  // Update the user's password
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (updateError) {
+    console.error('Password setup error:', updateError);
+    return encodedRedirect('error', '/setup-password', 'Failed to set up password. Please try again.');
+  }
+
+  // Check if user has a profile, if not create one
+  try {
+    const existingProfile = await prisma.profile.findUnique({
+      where: { id: user.id },
+    });
+
+    if (!existingProfile) {
+      // Create profile if it doesn't exist (shouldn't happen with admin-created users, but safety check)
+      await prisma.profile.create({
+        data: {
+          id: user.id,
+          email: user.email!,
+          name: user.user_metadata?.name || null,
+          phone: user.user_metadata?.phone || null,
+          role: UserRole.CUSTOMER,
+        },
+      });
+    }
+  } catch (profileError) {
+    console.error('Profile check/creation error during password setup:', profileError);
+    // Don't fail the password setup for profile issues, just log it
+  }
+
+  // Redirect to sign-in with success message
+  return encodedRedirect(
+    'success',
+    '/sign-in',
+    'Password set up successfully! You can now sign in with your new password.'
+  );
+};
+
 export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();

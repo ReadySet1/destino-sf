@@ -4,8 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { DeleteButton } from './components/DeleteButton';
 import { UserRole as PrismaUserRole } from '@prisma/client';
-import { deleteUserAction } from './actions';
+import { deleteUserAction, resendPasswordSetupAction } from './actions';
 import { logger } from '@/utils/logger';
+import { createClient } from '@/utils/supabase/server';
 
 export const revalidate = 0; // Disable static generation
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,11 @@ type Profile = Parameters<typeof prisma.profile.create>[0]['data'] & {
 };
 
 export default async function UsersPage() {
+  // Get current user for self-deletion prevention
+  const supabase = await createClient();
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  const currentUserId = currentUser?.id;
+
   // Fetch users with their orders
   const usersFromDb = await prisma.profile.findMany({
     orderBy: {
@@ -95,6 +101,29 @@ export default async function UsersPage() {
     }
   }
 
+  // Server action to handle password setup invitation
+  async function handleSendPasswordSetup(formData: FormData) {
+    'use server';
+
+    const id = formData.get('id') as string;
+
+    if (!id) {
+      logger.error('Send password setup submitted without user ID.');
+      return;
+    }
+
+    logger.info(`Handling password setup invitation for user: ${id}`);
+
+    const result = await resendPasswordSetupAction(id);
+
+    if (result.success) {
+      logger.info(`Successfully sent password setup invitation for user ${id}. Revalidating path /admin/users.`);
+      revalidatePath('/admin/users');
+    } else {
+      logger.error(`Failed to send password setup invitation for user ${id}: ${result.error}`);
+    }
+  }
+
   async function editUser(formData: FormData) {
     'use server';
 
@@ -146,72 +175,101 @@ export default async function UsersPage() {
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full divide-y divide-gray-200 table-fixed">
+          <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="hidden sm:table-cell w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Phone
                 </th>
-                <th className="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="hidden sm:table-cell w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Orders
                 </th>
-                <th className="hidden sm:table-cell w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
-                <th className="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user: UserTableData) => (
-                <tr key={user.id}>
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-[150px]">
-                    {user.email}
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <div className="max-w-xs truncate">
+                      {user.email}
+                    </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {user.name}
                   </td>
-                  <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
+                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {user.phone}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}
                     >
                       {user.role}
                     </span>
                   </td>
-                  <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
+                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {user.orderCount}
                   </td>
-                  <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500">
+                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                    <form action={editUser} className="inline">
-                      <input type="hidden" name="id" value={user.id} />
-                      <button type="submit" className="text-indigo-600 hover:text-indigo-900 mr-2">
-                        Edit
-                      </button>
-                    </form>
-                    {user.role !== 'ADMIN' && (
-                      <DeleteButton
-                        id={user.id}
-                        onDelete={handleDelete}
-                        entityName="user"
-                        warningMessage="This will permanently delete the user from authentication and the database. This cannot be undone."
-                      />
-                    )}
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <div className="flex items-center space-x-4">
+                      {/* Edit Button */}
+                      <form action={editUser} className="inline">
+                        <input type="hidden" name="id" value={user.id} />
+                        <button 
+                          type="submit" 
+                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                        >
+                          Edit
+                        </button>
+                      </form>
+
+                      {/* Password Setup Button */}
+                      <form action={handleSendPasswordSetup} className="inline">
+                        <input type="hidden" name="id" value={user.id} />
+                        <button 
+                          type="submit" 
+                          className="text-blue-600 hover:text-blue-900 font-medium"
+                          title="Send password setup invitation"
+                        >
+                          Send Invite
+                        </button>
+                      </form>
+
+                      {/* Delete Button - Show for all users except current user (prevent self-deletion) */}
+                      {user.id !== currentUserId && (
+                        <DeleteButton
+                          id={user.id}
+                          onDelete={handleDelete}
+                          entityName="user"
+                          warningMessage={`This will permanently delete ${user.email} from authentication and the database. This cannot be undone.`}
+                        />
+                      )}
+
+                      {/* Self-deletion prevention message */}
+                      {user.id === currentUserId && (
+                        <span className="text-gray-400 text-sm italic">
+                          (You)
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

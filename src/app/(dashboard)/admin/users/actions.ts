@@ -44,17 +44,16 @@ export async function createUserAction(formData: FormData) {
   }
 
   try {
-    // 1. Create user in Supabase Auth using Admin client
+    // 1. Create user in Supabase Auth using Admin client and send invitation email
     // This will send an invitation email to the user to set their password.
-    logger.info(`Attempting to create Supabase Auth user for: ${email}`);
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      email_confirm: true, // Send invitation email
-      user_metadata: { 
+    logger.info(`Attempting to create Supabase Auth user and send invitation for: ${email}`);
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: { 
         name: name || '', 
         phone: phone || '',
         // Note: Avoid storing 'role' directly in user_metadata if you manage it in Prisma
       },
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(email)}`,
     });
 
     if (authError) {
@@ -256,6 +255,53 @@ export async function deleteUserAction(userId: string): Promise<{ success: boole
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unknown error occurred during user deletion.'
+    };
+  }
+}
+
+export async function resendPasswordSetupAction(userId: string): Promise<{ success: boolean; error?: string }> {
+  if (!userId) {
+    logger.warn('resendPasswordSetupAction called without userId.');
+    return { success: false, error: 'User ID is required.' };
+  }
+
+  logger.info(`Attempting to resend password setup invitation for user: ${userId}`);
+
+  try {
+    // Get the user's profile to get their email
+    const profile = await prisma.profile.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true, phone: true },
+    });
+
+    if (!profile) {
+      logger.error(`Profile not found for user ${userId}`);
+      return { success: false, error: 'User profile not found.' };
+    }
+
+    // Send invitation email using Supabase Admin
+    logger.info(`Sending password setup invitation to: ${profile.email}`);
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(profile.email, {
+      data: { 
+        name: profile.name || '', 
+        phone: profile.phone || '',
+      },
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(profile.email)}`,
+    });
+
+    if (inviteError) {
+      logger.error(`Failed to send password setup invitation for user ${userId}:`, inviteError);
+      return { success: false, error: `Failed to send invitation: ${inviteError.message}` };
+    }
+
+    logger.info(`Password setup invitation sent successfully for user ${userId}`);
+    return { success: true };
+
+  } catch (error) {
+    logger.error(`Error in resendPasswordSetupAction for user ${userId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred while sending the invitation.'
     };
   }
 } 
