@@ -113,7 +113,7 @@ const CateringPage = async () => {
                 </div>
 
                 {/* Image Container - Using flex to center the image itself within its half-width */}
-                <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center items-center overflow-hidden rounded-xl shadow-lg">
+                <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center items-center overflow-hidden rounded-xl">
                   <Image
                     src="/images/catering/catering.png"
                     alt="Catering service"

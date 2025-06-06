@@ -42,15 +42,17 @@ export const CateringSection: FC<CateringSectionProps> = ({ className = '' }) =>
             </h2>
 
             {/* First paragraph with 'effortlessly!' at the end */}
-            <p className="text-base md:text-lg text-slate-200 italic opacity-90 leading-relaxed">
+            <p className="text-lg md:text-xl text-slate-200 italic opacity-90 leading-relaxed">
               We are here to take the stress out of planning. From office lunches to celebrations,
-              we will handle your catering needs effortlessly!
+              we will handle your catering needs{' '}
+              <span style={{ whiteSpace: 'nowrap' }}>effortlessly!</span>
             </p>
 
             {/* Second paragraph with 'gathering!' at the end */}
-            <p className="text-base md:text-lg text-slate-200 italic opacity-90 leading-relaxed">
+            <p className="text-lg md:text-xl text-slate-200 italic opacity-90 leading-relaxed">
               Our customizable Latin American menus include a variety of gluten-free, vegetarian,
-              and vegan options — ideal for any gathering!
+              and vegan options — ideal for any{' '}
+              <span style={{ whiteSpace: 'nowrap' }}>gathering!</span>
             </p>
 
             {/* Centered button */}
