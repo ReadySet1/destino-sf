@@ -108,12 +108,24 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
     // For buffet tab, get regular buffet items plus dessert items, but exclude $0 items
     const buffetItems = getItemsForTab(items, 'buffet').filter(item => item.price > 0);
     const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0);
-    filteredItems = [...buffetItems, ...dessertItems];
+    
+    // Combine and remove duplicates by using a Set of item IDs
+    const allItems = [...buffetItems, ...dessertItems];
+    const uniqueItems = allItems.filter((item, index, self) => 
+      index === self.findIndex(i => i.id === item.id)
+    );
+    filteredItems = uniqueItems;
   } else if (activeCategory === 'lunch') {
     // For lunch tab, get regular lunch items plus dessert items, but exclude $0 items
     const lunchItems = getItemsForTab(items, 'lunch').filter(item => item.price > 0);
     const dessertItems = items.filter(item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0);
-    filteredItems = [...lunchItems, ...dessertItems];
+    
+    // Combine and remove duplicates by using a Set of item IDs
+    const allItems = [...lunchItems, ...dessertItems];
+    const uniqueItems = allItems.filter((item, index, self) => 
+      index === self.findIndex(i => i.id === item.id)
+    );
+    filteredItems = uniqueItems;
   } else if (activeCategory === 'appetizers' && items.length < getItemsForTab(items, activeCategory).length) {
     filteredItems = items; // If pre-filtered items passed in, use them
   } else {

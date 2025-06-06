@@ -517,8 +517,10 @@ export function determineDeliveryZone(postalCode: string, city?: string): Delive
     return DeliveryZone.SOUTH_BAY;
   }
   
-  // Lower Peninsula ZIP codes: 94301-94399 (Palo Alto, Mountain View, etc.)
-  if (zipNumber >= 94301 && zipNumber <= 94399) {
+  // Lower Peninsula ZIP codes: 94000-94099 and 94301-94399
+  // This includes San Carlos (94070), Belmont, Burlingame, Daly City, Menlo Park, 
+  // Redwood City, San Bruno, South San Francisco, and other San Mateo County cities
+  if ((zipNumber >= 94000 && zipNumber <= 94099) || (zipNumber >= 94301 && zipNumber <= 94399)) {
     return DeliveryZone.LOWER_PENINSULA;
   }
   
@@ -541,7 +543,10 @@ export function determineDeliveryZone(postalCode: string, city?: string): Delive
     }
     
     if (cityLower.includes('palo alto') || cityLower.includes('mountain view') || 
-        cityLower.includes('redwood city')) {
+        cityLower.includes('redwood city') || cityLower.includes('san carlos') ||
+        cityLower.includes('belmont') || cityLower.includes('burlingame') ||
+        cityLower.includes('menlo park') || cityLower.includes('san bruno') ||
+        cityLower.includes('south san francisco') || cityLower.includes('daly city')) {
       return DeliveryZone.LOWER_PENINSULA;
     }
     

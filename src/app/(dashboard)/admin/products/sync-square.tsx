@@ -21,6 +21,9 @@ export function SyncSquareButton() {
     imagesNoChange?: number;
     imagesErrors?: number;
     cateringImagesProtected?: number;
+    appetizerPackagesRestored?: number;
+    appetizerItemsRestored?: number;
+    cateringSetupSuccess?: boolean;
   } | null>(null);
 
   const handleSync = async () => {
@@ -74,17 +77,53 @@ export function SyncSquareButton() {
         console.log(`Protected ${protectionResult.protected} catering images`);
       }
       
+      // Step 5: Restore appetizer packages and catering menu
+      console.log('Restoring appetizer packages and catering menu...');
+      const cateringSetupResponse = await fetch('/api/catering/setup-menu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      let cateringSetupResult = { 
+        success: false, 
+        packagesCreated: 0, 
+        itemsCreated: 0,
+        message: 'Failed to setup catering menu'
+      };
+      
+      if (cateringSetupResponse.ok) {
+        cateringSetupResult = await cateringSetupResponse.json();
+        console.log(`Restored ${cateringSetupResult.packagesCreated} appetizer packages and ${cateringSetupResult.itemsCreated} catering items`);
+      } else {
+        console.error('Failed to setup catering menu:', await cateringSetupResponse.text());
+      }
+      
       // Combine results
       setStats({
         ...result,
         imagesUpdated: imageResult.results?.updated || 0,
         imagesNoChange: imageResult.results?.noChange || 0,
         imagesErrors: imageResult.results?.errors || 0,
-        cateringImagesProtected: protectionResult.protected
+        cateringImagesProtected: protectionResult.protected,
+        appetizerPackagesRestored: cateringSetupResult.packagesCreated,
+        appetizerItemsRestored: cateringSetupResult.itemsCreated,
+        cateringSetupSuccess: cateringSetupResult.success
       });
       
       if (result.success) {
-        toast.success(`Successfully synced ${result.syncedProducts} products, updated ${imageResult.results?.updated || 0} images, and protected ${protectionResult.protected} catering images`);
+        const successMessage = [
+          `Successfully synced ${result.syncedProducts} products`,
+          `updated ${imageResult.results?.updated || 0} images`,
+          `protected ${protectionResult.protected} catering images`
+        ];
+        
+        if (cateringSetupResult.success) {
+          successMessage.push(`restored ${cateringSetupResult.packagesCreated} appetizer packages`);
+        }
+        
+        toast.success(successMessage.join(', '));
       } else {
         toast.error(`Sync failed: ${result.message}`);
       }
@@ -104,7 +143,7 @@ export function SyncSquareButton() {
         className="gap-2 bg-green-600 hover:bg-green-700 text-white"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Sync Products & Images from Square
+        Sync Products, Images & Catering Menu
       </Button>
       
       {stats && (
@@ -147,6 +186,20 @@ export function SyncSquareButton() {
             <p>Errors: {stats.imagesErrors}</p>
             {stats.cateringImagesProtected !== undefined && (
               <p className="text-green-600">Catering images protected: {stats.cateringImagesProtected}</p>
+            )}
+          </div>
+          
+          {/* Appetizer packages and catering menu restoration */}
+          <div className="mt-1 border-t border-gray-200 pt-1">
+            <h3 className="font-medium">Appetizer Packages & Catering Menu</h3>
+            {stats.cateringSetupSuccess !== undefined && (
+              <p className={stats.cateringSetupSuccess ? "text-green-600" : "text-red-600"}>
+                {stats.cateringSetupSuccess ? "✓ Restored" : "❌ Failed"}
+                {stats.appetizerPackagesRestored !== undefined && 
+                  ` - ${stats.appetizerPackagesRestored} packages`}
+                {stats.appetizerItemsRestored !== undefined && 
+                  `, ${stats.appetizerItemsRestored} items`}
+              </p>
             )}
           </div>
           

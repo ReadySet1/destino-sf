@@ -16,6 +16,8 @@ export default function TestDeliveryZonesPage() {
     { code: '94110', city: 'San Francisco', expected: 'SAN_FRANCISCO' },
     { code: '95110', city: 'San José', expected: 'SOUTH_BAY' },
     { code: '94301', city: 'Palo Alto', expected: 'LOWER_PENINSULA' },
+    { code: '94070', city: 'San Carlos', expected: 'LOWER_PENINSULA' }, // The specific issue being fixed
+    { code: '94010', city: 'Burlingame', expected: 'LOWER_PENINSULA' }, // Another San Mateo County city
     { code: '94500', city: 'Fremont', expected: 'PENINSULA' },
     { code: '90210', city: 'Beverly Hills', expected: null },
   ];

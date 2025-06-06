@@ -1,6 +1,6 @@
 # Post-Sync Database Setup
 
-After syncing data from Square or resetting the database, you need to run additional setup scripts to ensure all catering functionality works properly.
+After syncing data from Square or resetting the database, you need to ensure all catering functionality works properly.
 
 ## Problem
 
@@ -9,29 +9,58 @@ The Square sync process only creates **CateringItem** records but does NOT creat
 1. CateringPackage records with names containing "Appetizer Selection"
 2. CateringItem records with `price = 0` (package-only items)
 
-## Solution
+## Solution (UPDATED - Now Automated!)
 
-After running the Square sync process, you must also run the catering menu setup script:
+### ✅ Automatic Restoration (Recommended)
 
+The Square sync button in the admin panel (`/admin/products`) now **automatically restores** the catering menu after completing the Square sync. The sync process now includes these steps:
+
+1. **Square Product Sync**: Syncs products and categories from Square
+2. **Image Refresh**: Updates product images  
+3. **Image Protection**: Protects custom catering images
+4. **🆕 Catering Menu Restoration**: Automatically restores appetizer packages and items
+
+**No manual intervention required!** The sync button will show the restoration status in the results.
+
+### Manual Restoration (If Needed)
+
+If you need to restore the catering menu independently, you can either:
+
+**Option A: API Endpoint**
+```bash
+curl -X POST http://localhost:3000/api/catering/setup-menu
+```
+
+**Option B: Script**
 ```bash
 npx tsx src/scripts/setup-catering-menu-2025.ts
 ```
 
-## What This Script Does
+## What Gets Restored
 
-1. **Creates Appetizer Items**: Adds proper appetizer items with `price = 0` for package selections
-2. **Creates Platter Items**: Adds share platters with specific pricing
-3. **Creates Dessert Items**: Adds dessert options for catering
-4. **Creates Appetizer Packages**: Creates the required package records:
+1. **Appetizer Items**: 22 appetizer items with `price = 0` for package selections
+2. **Platter Items**: 6 share platters with specific pricing
+3. **Dessert Items**: 7 dessert options for catering
+4. **Appetizer Packages**: 3 required package records:
    - "Appetizer Selection - 5 Items" ($22/person)
    - "Appetizer Selection - 7 Items" ($34/person) 
    - "Appetizer Selection - 9 Items" ($46/person)
-5. **Updates Store Settings**: Sets catering minimum amounts and advance notice requirements
+5. **Store Settings**: Sets catering minimum amounts and advance notice requirements
 
 ## Verification
 
-After running the script, verify the data:
+After running the sync or setup, verify the data:
 
+```bash
+npx tsx scripts/check-catering-data.ts
+```
+
+Expected results:
+- `Total Packages`: 3, `Appetizer Packages`: 3
+- `Total Items`: ~120+, `Zero-price Items`: ~50+
+- `Appetizer Section Working`: ✅ YES
+
+**Or check manually:**
 ```sql
 -- Check packages were created
 SELECT COUNT(*) as total_packages, 
@@ -44,9 +73,23 @@ SELECT COUNT(*) as total_items,
 FROM "CateringItem";
 ```
 
-Expected results:
-- `total_packages`: 3, `appetizer_packages`: 3
-- `total_items`: ~120+, `zero_price_items`: ~50+
+## Troubleshooting
+
+If the appetizer section still shows "packages unavailable":
+
+1. **Check the sync results** in the admin panel for any errors in the "Appetizer Packages & Catering Menu" section
+2. **Run the diagnostic**: `npx tsx scripts/check-catering-data.ts`
+3. **Manual API call**: `curl -X POST http://localhost:3000/api/catering/setup-menu`
+4. **Check logs** in the browser developer console and server logs for any API errors
+
+## Implementation Details
+
+The automated restoration is implemented in:
+- **Frontend**: `src/app/(dashboard)/admin/products/sync-square.tsx` (Step 5)
+- **Backend**: `src/app/api/catering/setup-menu/route.ts`
+- **Data Source**: Same data as `src/scripts/setup-catering-menu-2025.ts`
+
+This ensures consistency between manual and automatic restoration processes.
 
 ## Future Prevention
 
