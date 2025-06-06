@@ -36,7 +36,7 @@ const categories: CategoryType[] = [
     id: '3',
     name: 'Our Catering',
     description: 'Professional catering services for all your needs',
-    imageUrl: '/images/menu/catering.png',
+    imageUrl: '/images/menu/catering1.png',
     slug: 'catering',
   },
 ];
