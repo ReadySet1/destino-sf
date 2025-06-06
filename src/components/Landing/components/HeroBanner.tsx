@@ -19,17 +19,16 @@ export function HeroBanner() {
       <div className="absolute inset-0 flex flex-col justify-center items-center md:items-start px-4 sm:px-8 md:px-16 lg:px-32 xl:px-40 text-center md:text-left">
         {' '}
         {/* Added items-center and text-center for mobile */}
-        <div className="max-w-2xl w-full text-white flex flex-col items-center md:items-start">
+        <div className="max-w-3xl w-full text-white flex flex-col items-center md:items-start">
           {' '}
-          {/* Adjusted items-center for mobile */}
-          <h1 className="mb-4 text-2xl sm:text-3xl font-bold leading-tight [text-shadow:0_2px_4px_rgba(0,0,0,0.6)] md:text-3xl lg:text-5xl xl:text-6xl">
+          {/* Changed max-w-2xl to max-w-3xl to give more horizontal space for the text */}
+          <h1 className="mb-4 text-2xl sm:text-3xl font-bold leading-tight [text-shadow:0_2px_4px_rgba(0,0,0,0.6)] md:text-3xl lg:text-4xl xl:text-5xl md:whitespace-normal">
             {' '}
-            {/* Adjusted text-size for small screens */}
-            <span>Delicious Latin American flavors,</span> {/* Removed whitespace-nowrap */}
+            <span>Delicious Latin American flavors,</span>
             <br />
-            <span>Rooted in tradition</span>
+            <span>rooted in tradition</span>
             <br />
-            <span>Savored in every bite.</span>
+            <span>savored in every bite!</span>
           </h1>
           <p className="hidden md:block mb-6 md:text-base lg:text-lg xl:text-xl text-gray-100 italic w-full [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
             From protein packed empanadas to sweet alfajores

@@ -29,7 +29,7 @@ const products: Product[] = [
   },
   {
     name: 'Catering',
-    imageSrc: '/images/menu/catering.png',
+    imageSrc: '/images/menu/catering.jpeg',
     altText: 'Catering',
     description:
       'Custom catering services for private events, corporate gatherings & celebrations.',
@@ -41,7 +41,7 @@ const ProductList: React.FC = () => {
   return (
     <section className="w-full py-8 md:py-12 lg:py-16">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-quicksand text-3xl font-bold text-amber-900 text-center mb-12 sm:text-4xl">
+        <h2 className="text-3xl font-bold text-amber-900 text-center mb-12 sm:text-4xl tracking-tight">
           Explore Our Offerings Below:
           <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
         </h2>
@@ -65,14 +65,19 @@ const ProductList: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </div>
 
-              <div className="flex flex-1 flex-col p-6">
-                <h3 className="font-quicksand text-xl font-bold text-amber-900 group-hover:text-yellow-600 md:text-2xl">
+              <div className="flex flex-1 flex-col p-6 text-center">
+                <h3 className="text-3xl font-bold  tracking-tight text-amber-900 sm:text-3xl">
                   {product.name}
                 </h3>
 
-                <p className="mt-2 flex-1 text-amber-900/70 md:mt-3">{product.description}</p>
+                <p
+                  className="mx-auto mt-3 text-xl text-amber-800 sm:mt-4"
+                  style={{ fontStyle: 'italic' }}
+                >
+                  {product.description}
+                </p>
 
-                <div className="mt-6 flex items-center justify-end">
+                <div className="mt-6 flex items-center justify-center">
                   <span className="flex items-center text-sm font-medium text-yellow-600 transition-all duration-300 group-hover:translate-x-1">
                     View details <ArrowRight className="ml-1 h-4 w-4" />
                   </span>

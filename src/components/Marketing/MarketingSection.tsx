@@ -10,7 +10,7 @@ interface MarketingFeature {
 
 const features: MarketingFeature[] = [
   {
-    title: ' Rooted in Tradition',
+    title: ' Inspired By Tradition',
     description:
       'Every recipe is inspired by time-honored techniques from across Latin America — a celebration of regional flavors and family heritage.',
     icon: <Heart className="w-12 h-12 text-[#fdc32d]" />,
@@ -36,11 +36,14 @@ const MarketingSection: React.FC = () => {
       <section className="w-full bg-[#fcfcf5] py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-[#2d3538] lg:text-4xl mb-4">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl mb-4">
               Why Choose Our Treats?
             </h2>
 
-            <p className="text-lg text-[#2d3538]/80 max-w-xs mx-auto md:max-w-3xl">
+            <p
+              className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
+              style={{ fontStyle: 'italic' }}
+            >
               We bring the best of Latin American flavor to every
               <br className="hidden md:inline" />
               bite — made with love, tradition, and intention
@@ -54,8 +57,15 @@ const MarketingSection: React.FC = () => {
                 className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300"
               >
                 <div className="mb-6 p-4 rounded-full bg-[#fcfcf5]">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-[#2d3538] mb-4">{feature.title}</h3>
-                <p className="text-[#2d3538]/80 leading-relaxed">{feature.description}</p>
+                <h3 className="text-2xl font-bold tracking-tight text-slate-800 sm:text-2xl mb-4">
+                  {feature.title}
+                </h3>
+                <p
+                  className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
+                  style={{ fontStyle: 'italic' }}
+                >
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -83,11 +93,18 @@ const MarketingSection: React.FC = () => {
       {/* Call to Action Section */}
       <section className="w-full bg-[#2d3538] py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h3 className="text-2xl font-bold text-white mb-4">
-            Ready to offer your customers something unforgettable? Delight your audience with
-            DESTINO’s handcrafted empanadas and alfajores — the flavors people keep coming back for!
+          <h3 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-8">
+            BECOME A WHOLESALE PARTNER WITH DESTINO
           </h3>
-          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
+          <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
+            Ready to offer your customers something unforgettable? Delight your audience with
+            DESTINO&apos;s handcrafted empanadas and alfajores — the flavors people keep coming back
+            for!
+          </p>
+          <p
+            className="mx-auto mt-3 text-xl text-white mb-8 sm:mt-4"
+            style={{ fontStyle: 'italic' }}
+          >
             We offer chef-crafted, small-batch products with strong retail appeal and flexible
             wholesale options. Our empanadas are sold frozen for lasting quality, and our alfajores
             are shelf-stable — both designed for excellent longevity and easy retail display!

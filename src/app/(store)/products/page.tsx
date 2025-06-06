@@ -148,6 +148,7 @@ export default async function ProductsPage() {
                 <CategoryHeader
                   title={category}
                   description="" // Empty string as placeholder since we're adding custom description below
+                  titleClassName="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl"
                 />
                 <div className="container mx-auto px-4 py-6">
                   {/* Custom styled description with Quicksand font */}

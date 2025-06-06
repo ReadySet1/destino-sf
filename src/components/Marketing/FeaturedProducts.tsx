@@ -3,6 +3,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { Dancing_Script } from 'next/font/google';
+
+// Configuramos la fuente al igual que en el otro componente
+const dancingScript = Dancing_Script({
+  // <-- ¡Nueva configuración de fuente!
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
 
 interface ProductType {
   id: string;
@@ -15,21 +24,21 @@ interface ProductType {
 const featuredProducts: ProductType[] = [
   {
     id: '1',
-    name: 'Seasonal Alfajores',
+    name: 'Pride Alfajores',
     price: '$24.99',
     imageUrl: '/images/assets/2Recurso 5.png',
     slug: 'alfajores',
   },
   {
     id: '2',
-    name: 'Limited-Edition Empanadas',
+    name: 'Huacatay Chicken Empanadas',
     price: '$39.99',
     imageUrl: '/images/assets/2Recurso 9.png',
     slug: 'empanadas',
   },
   {
     id: '3',
-    name: 'Sauces & Salsas',
+    name: 'Aji Amarillo Salsa',
     price: '$19.99',
     imageUrl: '/images/assets/2Recurso 7.png',
     slug: 'chimichurri-sauce',
@@ -115,11 +124,6 @@ function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
 }
 
 export function FeaturedProducts() {
-  //   align: 'start',
-  //   containScroll: 'trimSnaps',
-  //   dragFree: true,
-  // });
-
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const handleProductClick = (e: React.MouseEvent, productId: string) => {
@@ -193,12 +197,16 @@ export function FeaturedProducts() {
       <div className="bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2
-            className={`mb-6 text-center text-3xl sm:text-4xl font-bold text-gray-900 md:mb-12 md:text-5xl`}
+            className={`text-center text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl mb-6 md:mb-12`}
           >
             Spotlight Picks
           </h2>
 
-          <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto px-2 sm:px-0">
+          {/* Texto "Explore our current favorites..." con la nueva tipografía y tamaño - CENTERED */}
+          <p
+            className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4 mb-10 max-w-3xl px-2 sm:px-0 text-center"
+            style={{ fontStyle: 'italic' }}
+          >
             Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
             <br />
             Inspired by tradition. Driven by creativity.

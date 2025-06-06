@@ -5,21 +5,21 @@ import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react
 
 export function ContactInfo() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-center">
       <div>
         <div className="mb-10">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Curious about our menu <br />
             or catering options?{' '}
           </h2>
-          <p className="text-gray-100 text-lg">
+          <p className="mx-auto mt-3 text-xl text-gray-100 sm:mt-4" style={{ fontStyle: 'italic' }}>
             Send us a message — we would love to hear from you! Whether you are planning a special
             event or just craving something delicious, we are here to help!
           </p>
         </div>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-5 flex flex-col items-center">
         <div className="flex items-center gap-4">
           <Mail className="h-6 w-6 text-white" />
           <Link
@@ -53,7 +53,7 @@ export function ContactInfo() {
         </div>
       </div>
 
-      <div className="flex gap-4 pt-4">
+      <div className="flex gap-4 pt-4 justify-center">
         <Link
           href="https://facebook.com"
           target="_blank"

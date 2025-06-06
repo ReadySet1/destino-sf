@@ -1,5 +1,4 @@
 import Image from 'next/image';
-
 import { twMerge } from 'tailwind-merge';
 
 interface AboutProps {
@@ -8,6 +7,7 @@ interface AboutProps {
   aboutImage?: string;
   signatureImage?: string;
   jamesImage?: string;
+  historyImage?: string; // New prop for history section image
   className?: string;
   variant?: 'default' | 'large';
 }
@@ -17,6 +17,7 @@ export const About: React.FC<AboutProps> = ({
   description = ' For over two decades, Chef and San Francisco native James Schenk has brought his passion for Latin American cuisine to the Bay Area and the international stage.',
   aboutImage = '/images/about/about-us.png',
   jamesImage = '/images/about/james-schenk.jpg',
+  historyImage = '/images/about/about-us1.png', // Default image for history section
   className = '',
   variant = 'default',
 }) => {
@@ -50,19 +51,17 @@ export const About: React.FC<AboutProps> = ({
               {description}
             </p>
 
-            {/* Nuevo div con el texto en negritas */}
+            {/* Texto en negritas */}
             <div className="text-lg md:text-xl font-bold space-y-2">
               <p>INSPIRED BY TRADITION</p>
-              <p>CRAFTED WITH CORE</p>
+              <p>CRAFTED WITH CARE</p>
               <p>SHARED WITH LOVE</p>
             </div>
 
-            {/* Nueva firma de James Schenk */}
+            {/* Firma de James Schenk */}
             <div className="relative h-20 w-64 mt-4">
-              {' '}
-              {/* Ajusta el h y w según sea necesario para el tamaño de la firma */}
               <Image
-                src="/images/about/signature.png" // Asegúrate de que esta sea la ruta correcta a la imagen de la firma de James Schenk
+                src="/images/about/signature.png"
                 alt="Signature of James Schenk"
                 fill
                 className="object-contain"
@@ -73,11 +72,11 @@ export const About: React.FC<AboutProps> = ({
           </div>
         </div>
 
-        {/* Added "Our History" title here */}
-
+        {/* Our History Section */}
         <h2 className="font-bold text-5xl mb-8">Our History</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+          {/* Left Column - Text Content */}
           <div className="flex flex-col justify-center space-y-6 max-w-xl">
             <p className="leading-relaxed font-quicksand font-medium text-justify">
               In 2000, James opened <strong>DESTINO</strong> — the Bay Area&apos;s first upscale
@@ -122,18 +121,26 @@ export const About: React.FC<AboutProps> = ({
               Gracias for being part of our journey!
             </p>
 
-            {/* Added signature image below text */}
-
+            {/* Signature image below text */}
             <div className="relative mt-8 h-20 w-64">
-              {' '}
-              {/* Container for sizing */}
               <Image
-                src="/images/about/signature.png" /* Path relative to public directory */
+                src="/images/about/signature.png"
                 alt="Signature"
                 fill
                 className="object-contain"
               />
             </div>
+          </div>
+
+          {/* Right Column - History Image */}
+          <div className="relative w-full h-[500px] md:h-[700px] rounded-lg overflow-hidden">
+            <Image
+              src={historyImage}
+              alt="Chef James Schenk in the kitchen preparing traditional Latin American dishes"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           </div>
         </div>
       </div>

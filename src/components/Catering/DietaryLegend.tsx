@@ -28,7 +28,7 @@ const DietaryLegend: React.FC<DietaryLegendProps> = ({ className = '' }) => {
 
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 text-sm font-bold rounded-md border border-blue-200">
-              VGN
+              V
             </span>
             <span className="font-medium">Vegan</span>
           </div>

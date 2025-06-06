@@ -101,16 +101,38 @@ export function CateringContactForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-gray-800">
+    <div className="space-y-8 text-center">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Ready to plan your event?
         </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Let us help you creating an unforgettable experience with our
+
+        <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
+          Let us help you create an unforgettable experience with our
           <br />
           Latin American catering services!
         </p>
+
+        {/* Contact Information Section - Aquí también se centrarán los elementos flex */}
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            {' '}
+            {/* Aseguramos justify-center */}
+            <span className="text-white text-lg">james@destinosf.com</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            {' '}
+            {/* Aseguramos justify-center */}
+            <span className="text-white text-lg">415.577.1677</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            {' '}
+            {/* Aseguramos justify-center */}
+            <span className="text-white text-lg">San Francisco, CA 94114</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-[#fdc32d] rounded-xl shadow-md p-6 md:p-8">
