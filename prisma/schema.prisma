@@ -94,9 +94,9 @@ model Order {
   rawData                   Json?
   createdAt                 DateTime      @default(now())
   updatedAt                 DateTime      @updatedAt
-  paymentMethod             PaymentMethod @default(SQUARE)
   taxAmount                 Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
   isCateringOrder           Boolean       @default(false)
+  paymentMethod             PaymentMethod @default(SQUARE)
   items                     OrderItem[]
   payments                  Payment[]
   profile                   Profile?      @relation(fields: [userId], references: [id])
@@ -187,6 +187,20 @@ model StoreSettings {
   cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
 }
 
+model ShippingConfiguration {
+  id                String   @id @default(uuid()) @db.Uuid
+  productName       String   @unique // e.g., "alfajores", "empanadas"
+  baseWeightLb      Decimal  @db.Decimal(10, 4) // Base weight for 1 unit in pounds
+  weightPerUnitLb   Decimal  @db.Decimal(10, 4) // Additional weight per extra unit
+  isActive          Boolean  @default(true)
+  applicableForNationwideOnly Boolean @default(true) // Only apply for nationwide shipping
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([productName])
+  @@index([isActive])
+}
+
 model Subscriber {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
@@ -229,22 +243,52 @@ model CateringPackage {
 }
 
 model CateringItem {
-  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
   description     String?
-  price           Decimal               @db.Decimal(10, 2)
+  price           Decimal                 @db.Decimal(10, 2)
   category        CateringItemCategory
-  isVegetarian    Boolean               @default(false)
-  isVegan         Boolean               @default(false)
-  isGlutenFree    Boolean               @default(false)
+  isVegetarian    Boolean                 @default(false)
+  isVegan         Boolean                 @default(false)
+  isGlutenFree    Boolean                 @default(false)
   servingSize     String?
   imageUrl        String?
-  isActive        Boolean               @default(true)
+  isActive        Boolean                 @default(true)
   squareCategory  String?
   squareProductId String?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @default(now()) @updatedAt
+  // Square sync metadata
+  squareImageUrl  String?                 // Original Square image URL
+  lastSyncedAt    DateTime?               // Last time synced from Square
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now()) @updatedAt
   packageItems    CateringPackageItem[]
+  overrides       CateringItemOverrides?  // Local overrides for Square items
+}
+
+model CateringItemOverrides {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itemId               String      @unique @db.Uuid
+  // Override fields
+  localDescription     String?
+  localImageUrl        String?     // Supabase-stored image URL
+  localIsVegetarian    Boolean?
+  localIsVegan         Boolean?
+  localIsGlutenFree    Boolean?
+  localServingSize     String?
+  localDietaryOptions  String[]    @default([])
+  // Control flags - what gets overridden
+  overrideDescription  Boolean     @default(false)
+  overrideImage        Boolean     @default(false)
+  overrideDietary      Boolean     @default(false)
+  overrideServingSize  Boolean     @default(false)
+  // Meta
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @default(now()) @updatedAt
+  
+  // Relations
+  cateringItem         CateringItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@index([itemId], map: "idx_catering_item_overrides_item_id")
 }
 
 model CateringPackageItem {
@@ -291,9 +335,9 @@ model CateringOrder {
   squareCheckoutUrl String?
   notes             String?
   specialRequests   String?
-  deliveryZone      String?             // Delivery zone for minimum validation
-  deliveryAddress   String?             // Full delivery address
-  deliveryFee       Decimal?            @db.Decimal(10, 2) // Delivery fee amount
+  deliveryZone      String?
+  deliveryAddress   String?
+  deliveryFee       Decimal?            @db.Decimal(10, 2)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   profile           Profile?            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_customer")

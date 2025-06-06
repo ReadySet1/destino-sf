@@ -2,8 +2,9 @@
 
 import { z } from 'zod';
 import { Shippo } from 'shippo';
+import { calculateShippingWeight, type CartItemForShipping } from '@/lib/shippingUtils';
 
-// --- Schemas --- 
+// --- Enhanced Schemas for Shippo Integration --- 
 const addressSchema = z.object({
   recipientName: z.string().optional(),
   street: z.string().min(1, 'Street address is required'),
@@ -11,158 +12,346 @@ const addressSchema = z.object({
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   postalCode: z.string().min(5, 'Valid postal code is required'),
-  country: z.string().optional(),
+  country: z.string().optional().default('US'),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+});
+
+const cartItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  quantity: z.number().positive(),
+  variantId: z.string().optional(),
+  price: z.number().optional(), // For customs and insurance purposes
 });
 
 const shippingRateRequestSchema = z.object({
   shippingAddress: addressSchema,
-  // TODO: Add product dimensions/weight calculation logic here
-  // For now, using a placeholder weight
-  estimatedWeightLb: z.number().positive(),
+  cartItems: z.array(cartItemSchema),
   estimatedLengthIn: z.number().positive().optional().default(10),
   estimatedWidthIn: z.number().positive().optional().default(8),
   estimatedHeightIn: z.number().positive().optional().default(4),
+  insuranceAmount: z.number().optional(), // For valuable shipments
+  extraServices: z.array(z.string()).optional(), // Additional Shippo services
 });
 
-// --- Types ---
+// --- Enhanced Types ---
 export interface ShippingRate {
-  id: string;       // Shippo Rate object ID
-  name: string;     // e.g., "USPS Priority Mail (Est. 2 days)"
-  amount: number;   // Cost in cents
-  carrier: string;  // e.g., "USPS"
-  serviceLevelToken: string; // e.g., "usps_priority"
+  id: string;
+  name: string;
+  amount: number;
+  carrier: string;
+  serviceLevelToken: string;
   estimatedDays?: number;
+  currency: string;
+  providerImage75?: string; // Carrier logo from Shippo
+  providerImage200?: string;
+  attributes?: string[]; // Service attributes (e.g., "CHEAPEST", "FASTEST")
+  zone?: string; // Shipping zone
+  arrives_by?: string; // Expected delivery date
+}
+
+export interface ShippoShipmentMetadata {
+  orderId?: string;
+  customerEmail?: string;
+  productTypes: string[];
+  totalWeight: number;
+  itemCount: number;
+  estimatedValue: number;
 }
 
 type ShippingRateRequestInput = z.infer<typeof shippingRateRequestSchema>;
 
-// --- Server Action Implementation: getShippingRates (Updated Payload Keys) ---
+// --- Enhanced Shippo Integration with Full Feature Support ---
 export async function getShippingRates(
   input: ShippingRateRequestInput
-): Promise<{ success: boolean; rates?: ShippingRate[]; error?: string }> {
-    console.log("Server Action: getShippingRates started with input:", input);
+): Promise<{ success: boolean; rates?: ShippingRate[]; error?: string; shipmentId?: string }> {
+    console.log("🚢 Shippo Integration: getShippingRates started with input:", input);
 
     const apiKey = process.env.SHIPPO_API_KEY;
-    console.log("Value of process.env.SHIPPO_API_KEY:", apiKey);
+    console.log("🔑 Shippo API Key:", apiKey ? "✅ Configured" : "❌ Not configured");
+    
     if (!apiKey) {
-        console.error("Shippo API Key not configured.");
+        console.error("❌ Shippo API Key not configured.");
         return { success: false, error: "Shipping provider configuration error." };
     }
 
-    // Define origin address *within* the scope where it's needed or pass it
+    // Enhanced origin address configuration
     const originAddress = {
-        name: process.env.SHIPPING_ORIGIN_NAME,
+        name: process.env.SHIPPING_ORIGIN_NAME || 'Destino SF',
+        company: process.env.SHIPPING_ORIGIN_COMPANY || 'Destino SF',
         street1: process.env.SHIPPING_ORIGIN_STREET1,
+        street2: process.env.SHIPPING_ORIGIN_STREET2,
         city: process.env.SHIPPING_ORIGIN_CITY,
         state: process.env.SHIPPING_ORIGIN_STATE,
         zip: process.env.SHIPPING_ORIGIN_ZIP,
         country: process.env.SHIPPING_ORIGIN_COUNTRY || 'US',
         phone: process.env.SHIPPING_ORIGIN_PHONE,
         email: process.env.SHIPPING_ORIGIN_EMAIL,
+        validate: true, // Validate origin address with Shippo
     };
     
-    // Add check for origin name
-    if (!originAddress.street1 || !originAddress.city || !originAddress.state || !originAddress.zip || !originAddress.name) { 
-      console.error("Missing required shipping origin address details (Name, Street, City, State, Zip) in environment variables.");
-      return { success: false, error: "Shipping origin configuration error." };
+    // Validate required origin address fields
+    if (!originAddress.street1 || !originAddress.city || !originAddress.state || !originAddress.zip) { 
+        console.error("❌ Missing required shipping origin address details in environment variables.");
+        return { success: false, error: "Shipping origin configuration error." };
     }
 
-    const shippo = new Shippo({ // Define shippo client instance
+    const shippo = new Shippo({
         apiKeyHeader: apiKey,
+        shippoApiVersion: '2018-02-08', // Use stable API version
     });
 
-    const { shippingAddress, estimatedWeightLb, estimatedLengthIn, estimatedWidthIn, estimatedHeightIn } = input;
+    const { shippingAddress, cartItems, estimatedLengthIn, estimatedWidthIn, estimatedHeightIn, insuranceAmount, extraServices } = input;
 
     try {
-        console.log("Creating shipment object with Shippo...");
+        console.log("⚖️ Calculating dynamic shipping weight for cart items...");
+        
+        // Calculate weight based on cart items for nationwide shipping
+        const estimatedWeightLb = await calculateShippingWeight(cartItems, 'nationwide_shipping');
+        
+        console.log(`📦 Calculated shipping weight: ${estimatedWeightLb} lbs for ${cartItems.length} unique items`);
+        console.log("🛍️ Cart items breakdown:", cartItems.map(item => `${item.name} (qty: ${item.quantity})`));
 
+        // Calculate estimated value for insurance purposes
+        const estimatedValue = cartItems.reduce((total, item) => {
+            return total + (item.price || 25) * item.quantity; // Default $25 per item if price not provided
+        }, 0);
+
+        // Create metadata for tracking and analytics
+        const shipmentMetadata: ShippoShipmentMetadata = {
+            productTypes: [...new Set(cartItems.map(item => {
+                if (item.name.toLowerCase().includes('alfajor')) return 'alfajores';
+                if (item.name.toLowerCase().includes('empanada')) return 'empanadas';
+                return 'other';
+            }))],
+            totalWeight: estimatedWeightLb,
+            itemCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+            estimatedValue: estimatedValue,
+        };
+
+        console.log("📊 Shipment metadata:", shipmentMetadata);
+
+        // Enhanced parcel data with better categorization
         const parcelData = {
             length: estimatedLengthIn?.toString() ?? '10',
             width: estimatedWidthIn?.toString() ?? '8',
             height: estimatedHeightIn?.toString() ?? '4',
-            distanceUnit: 'in' as const,
+            distance_unit: 'in' as const,
             weight: estimatedWeightLb.toString(),
-            massUnit: 'lb' as const,
+            mass_unit: 'lb' as const,
+            template: '', // Can be used for standard package sizes
+            metadata: JSON.stringify({
+                product_types: shipmentMetadata.productTypes,
+                item_count: shipmentMetadata.itemCount,
+            }),
         };
-        // console.log("Parcel Data:", parcelData);
 
+        console.log("📦 Enhanced Parcel Data:", parcelData);
+
+        // Enhanced destination address with better validation
         const addressToData = {
-            name: shippingAddress.recipientName || '',
+            name: shippingAddress.recipientName || 'Customer',
+            company: '', // Can be filled if B2B
             street1: shippingAddress.street,
-            street2: shippingAddress.street2,
+            street2: shippingAddress.street2 || '',
             city: shippingAddress.city,
             state: shippingAddress.state,
             zip: shippingAddress.postalCode,
-            country: 'US',
-            validate: true,
+            country: shippingAddress.country || 'US',
+            phone: shippingAddress.phone || '',
+            email: shippingAddress.email || '',
+            validate: true, // Enable Shippo address validation
         };
-        // console.log("Address To Data:", addressToData);
 
-        // Use camelCase keys for Shippo SDK
+        console.log("🏠 Enhanced Address To Data:", addressToData);
+
+        // Enhanced shipment payload with additional Shippo features
         const shipmentPayload = {
-            addressFrom: originAddress, // camelCase
-            addressTo: addressToData,   // camelCase
+            addressFrom: originAddress,
+            addressTo: addressToData,
             parcels: [parcelData],
-            async: false
-        } as any; // Use type assertion to any to avoid TypeScript errors
-        
-        const shipmentResult: any = await shippo.shipments.create(shipmentPayload); // Use any type for result
-        console.log("Raw Shippo Shipment Create Result:", JSON.stringify(shipmentResult, null, 2));
+            async: false, // Synchronous for immediate rate retrieval
+            // Add metadata for tracking and analytics
+            metadata: JSON.stringify({
+                source: 'destino_sf_website',
+                order_type: 'food_delivery',
+                ...shipmentMetadata,
+                timestamp: new Date().toISOString(),
+            }),
+        } as any; // Temporarily use any to avoid complex type mismatches
 
-        // --- Updated Address Validation Check --- 
+        console.log("🚢 Creating enhanced Shippo shipment...");
+        const shipmentResult = await shippo.shipments.create(shipmentPayload);
+        
+        console.log("📋 Shippo Shipment Created:", {
+            id: shipmentResult.objectId,
+            status: shipmentResult.status,
+            rates_count: shipmentResult.rates?.length || 0,
+        });
+
+        // Enhanced address validation with detailed error handling
         const validationResults = shipmentResult.addressTo?.validationResults;
-        // Check if validation failed OR if there are any warning/error messages
         if (validationResults && (!validationResults.isValid || (validationResults.messages && validationResults.messages.length > 0))) {
             const validationMessages = validationResults.messages || [];
-            // Prioritize error messages, then warnings, then generic
             const errorText = validationMessages.find((m: any) => m.type === 'address_error')?.text;
             const warningText = validationMessages.find((m: any) => m.type === 'address_warning')?.text;
             const errorMessage = errorText || warningText || "Invalid or incomplete shipping address provided.";
             
-            console.warn("Shippo address validation failed or has warnings:", errorMessage);
-            // Provide a slightly more informative error type
+            console.warn("⚠️ Shippo address validation failed:", errorMessage);
             const errorType = errorText ? "Validation Error" : (warningText ? "Address Warning" : "Validation Issue");
-            return { success: false, error: `${errorType}: ${errorMessage}` }; // Return validation error/warning
+            return { 
+                success: false, 
+                error: `${errorType}: ${errorMessage}`,
+                shipmentId: shipmentResult.objectId,
+            };
         }
-        // --- END Address Validation Check ---
 
-        // Original check for general shipment failure or no rates (can likely be simplified now)
-        // if (shipmentResult.object_state === 'INVALID' || !shipmentResult.rates || shipmentResult.rates.length === 0) {
-        // Check ONLY if rates array exists and is not empty 
+        // Check for rates availability
         if (!shipmentResult.rates || shipmentResult.rates.length === 0) {
-            console.warn("Shippo shipment creation returned no rates:", shipmentResult.messages);
-            // Construct error message from general messages if available
+            console.warn("⚠️ Shippo shipment creation returned no rates:", shipmentResult.messages);
             const errorMsg = shipmentResult.messages?.map((m: any) => m.text).join(', ') || 'No shipping rates found for this address/parcel.';
-            return { success: false, error: errorMsg }; 
+            return { 
+                success: false, 
+                error: errorMsg,
+                shipmentId: shipmentResult.objectId,
+            };
         }
 
+        // Enhanced rate mapping with additional Shippo data
         const rates: ShippingRate[] = shipmentResult.rates
-            .map((rate: any) => ({
-                id: rate.objectId,
-                name: `${rate.provider} ${rate.servicelevel.name} (Est. ${rate.estimatedDays || 'N/A'} days)`,
-                amount: Math.round(parseFloat(rate.amount) * 100),
-                carrier: rate.provider,
-                serviceLevelToken: rate.servicelevel.token,
-                estimatedDays: rate.estimatedDays,
-            }))
-            .sort((a: ShippingRate, b: ShippingRate) => a.amount - b.amount);
+            .filter((rate: any) => rate.available) // Only include available rates
+                         .map((rate: any) => ({
+                 id: rate.objectId,
+                 name: `${rate.provider} ${rate.servicelevel.name}${rate.estimatedDays ? ` (Est. ${rate.estimatedDays} days)` : ''}`,
+                 amount: Math.round(parseFloat(rate.amount) * 100), // Convert to cents
+                 carrier: rate.provider,
+                 serviceLevelToken: rate.servicelevel.token,
+                 estimatedDays: rate.estimatedDays,
+                 currency: rate.currency,
+                 providerImage75: rate.providerImage75,
+                 providerImage200: rate.providerImage200,
+                 attributes: rate.attributes || [],
+                 zone: rate.zone,
+                 arrives_by: rate.arrivesBy,
+             }))
+            .sort((a: ShippingRate, b: ShippingRate) => {
+                // Smart sorting: prioritize by attributes first, then by price
+                const aIsFastest = a.attributes?.includes('FASTEST');
+                const bIsFastest = b.attributes?.includes('FASTEST');
+                const aIsCheapest = a.attributes?.includes('CHEAPEST');
+                const bIsCheapest = b.attributes?.includes('CHEAPEST');
+                
+                // If one is fastest and the other isn't, prioritize fastest
+                if (aIsFastest && !bIsFastest) return -1;
+                if (bIsFastest && !aIsFastest) return 1;
+                
+                // If one is cheapest and the other isn't, prioritize cheapest
+                if (aIsCheapest && !bIsCheapest) return -1;
+                if (bIsCheapest && !aIsCheapest) return 1;
+                
+                // Otherwise sort by price
+                return a.amount - b.amount;
+            });
 
-        console.log("Formatted Rates:", rates);
+        console.log("💰 Enhanced Formatted Rates:", rates.map(r => ({
+            carrier: r.carrier,
+            name: r.name,
+            amount: `$${(r.amount / 100).toFixed(2)}`,
+            attributes: r.attributes,
+        })));
 
         if (rates.length === 0) {
-            return { success: false, error: 'No valid shipping options available for this address.' }; // RETURN ERROR
+            return { 
+                success: false, 
+                error: 'No valid shipping options available for this address.',
+                shipmentId: shipmentResult.objectId,
+            };
         }
 
-        return { success: true, rates: rates }; // RETURN SUCCESS
+        return { 
+            success: true, 
+            rates: rates,
+            shipmentId: shipmentResult.objectId,
+        };
 
     } catch (error: any) {
-        console.error("Shippo API Error in getShippingRates:", error);
+        console.error("❌ Shippo API Error in getShippingRates:", error);
         let errorMessage = 'Failed to fetch shipping rates due to an unexpected error.';
-        if (error?.body?.detail) {
+        
+        // Enhanced error handling for different Shippo error types
+        if (error?.response?.data) {
+            const errorData = error.response.data;
+            if (errorData.detail) {
+                errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+            } else if (errorData.message) {
+                errorMessage = errorData.message;
+            }
+        } else if (error?.body?.detail) {
             errorMessage = typeof error.body.detail === 'string' ? error.body.detail : JSON.stringify(error.body.detail);
         } else if (error instanceof Error) {
             errorMessage = error.message;
         }
-        return { success: false, error: errorMessage }; // RETURN ERROR
+        
+        return { success: false, error: errorMessage };
+    }
+}
+
+// --- New Function: Create Shipping Label (Full Shippo Integration) ---
+export async function createShippingLabel(
+  rateId: string,
+  orderMetadata?: { orderId?: string; customerEmail?: string }
+): Promise<{ success: boolean; label?: any; error?: string }> {
+    console.log("🏷️ Creating shipping label with Shippo for rate:", rateId);
+
+    const apiKey = process.env.SHIPPO_API_KEY;
+    if (!apiKey) {
+        return { success: false, error: "Shipping provider configuration error." };
+    }
+
+    const shippo = new Shippo({
+        apiKeyHeader: apiKey,
+        shippoApiVersion: '2018-02-08',
+    });
+
+    try {
+        // Create transaction (purchase label) with enhanced metadata
+        const transaction = await shippo.transactions.create({
+            rate: rateId,
+            labelFileType: 'PDF',
+            async: false,
+            metadata: JSON.stringify({
+                source: 'destino_sf_website',
+                ...orderMetadata,
+                created_at: new Date().toISOString(),
+            }),
+        });
+
+        if (transaction.status === 'SUCCESS') {
+            console.log("✅ Shipping label created successfully:", transaction.objectId);
+            return {
+                success: true,
+                label: {
+                    id: transaction.objectId,
+                    status: transaction.status,
+                    labelUrl: transaction.labelUrl,
+                    trackingNumber: transaction.trackingNumber,
+                    eta: transaction.eta,
+                    trackingUrlProvider: transaction.trackingUrlProvider,
+                },
+            };
+        } else {
+            console.error("❌ Label creation failed:", transaction.messages);
+            return {
+                success: false,
+                error: transaction.messages?.map((m: any) => m.text).join(', ') || 'Failed to create shipping label',
+            };
+        }
+    } catch (error: any) {
+        console.error("❌ Error creating shipping label:", error);
+        return {
+            success: false,
+            error: error.message || 'Failed to create shipping label',
+        };
     }
 } 

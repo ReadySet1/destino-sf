@@ -11,24 +11,22 @@ import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from 'react-hot-toast';
 
 interface PlatterMenuItemProps {
-  item: CateringItem;
+  items: CateringItem[]; // Now accepts an array of related platter items (Small/Large)
 }
 
-// Define size options for each platter type
-const PLATTER_SIZES = {
-  'Plantain Chips Platter': {
-    small: { price: 45.00, servingSize: '10-20 people', description: 'Yellow pepper cream sauce (approximately 10-20 people)' },
-    large: { price: 80.00, servingSize: '25-40 people', description: 'Yellow pepper cream sauce (approximately 25-40 people)' }
-  },
-  'Cocktail Prawn Platter': {
-    small: { price: 80.00, servingSize: '10-20 people', description: 'Jumbo tiger prawns / zesty cocktail sauce - 25 prawns (approximately 10-20 people)' },
-    large: { price: 150.00, servingSize: '25-40 people', description: 'Jumbo tiger prawns / zesty cocktail sauce - 50 prawns (approximately 25-40 people)' }
-  },
-  'Cheese & Charcuterie Platter': {
-    small: { price: 150.00, servingSize: '10-20 people', description: 'Selection of local & imported artisan - 8oz portions of 4 offerings (approximately 10-20 people)' },
-    large: { price: 280.00, servingSize: '25-40 people', description: 'Selection of local & imported artisan - 8oz portions of 6 offerings (approximately 25-40 people)' }
-  }
-};
+interface DietaryBadgeProps {
+  label: string;
+  tooltip: string;
+}
+
+const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => (
+  <span 
+    className="inline-flex items-center justify-center bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm"
+    title={tooltip}
+  >
+    {label}
+  </span>
+);
 
 // Helper functions for text formatting
 const toTitleCase = (str: string | null | undefined): string => {
@@ -56,23 +54,43 @@ const formatDescription = (str: string | null | undefined): string => {
   return trimmedStr.charAt(0).toUpperCase() + trimmedStr.slice(1);
 };
 
-export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
+// Extract base platter name from size-specific name
+const getBasePlatterName = (name: string): string => {
+  return name.replace(/ - (Small|Large)$/, '');
+};
+
+export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
   const { addItem } = useCateringCartStore();
   const [selectedSize, setSelectedSize] = useState<'small' | 'large'>('small');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
-  const { name, isVegetarian, isVegan, isGlutenFree, imageUrl } = item;
-  
-  // Get size configuration for this platter
-  const sizeConfig = PLATTER_SIZES[name as keyof typeof PLATTER_SIZES];
-  
-  if (!sizeConfig) {
-    // Fallback for platters not in our configuration
+  // Sort items to ensure consistent ordering (Small first, then Large)
+  const sortedItems = items.sort((a, b) => {
+    if (a.name.includes('Small')) return -1;
+    if (b.name.includes('Small')) return 1;
+    return 0;
+  });
+
+  const smallItem = sortedItems.find(item => item.name.includes('Small'));
+  const largeItem = sortedItems.find(item => item.name.includes('Large'));
+
+  if (!smallItem && !largeItem) {
     return null;
   }
 
-  const currentSize = sizeConfig[selectedSize];
-  
+  // Use the first available item for base info
+  const baseItem = smallItem || largeItem!;
+  const baseName = getBasePlatterName(baseItem.name);
+  const currentItem = selectedSize === 'small' ? smallItem : largeItem;
+
+  if (!currentItem) {
+    // If selected size doesn't exist, fall back to available size
+    const availableItem = smallItem || largeItem!;
+    const availableSize = smallItem ? 'small' : 'large';
+    setSelectedSize(availableSize);
+    return null; // Re-render with correct size
+  }
+
   // Function to get the correct image URL
   const getImageUrl = (url: string | null | undefined): string => {
     if (!url) return '/images/catering/default-item.jpg';
@@ -87,16 +105,16 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
 
   const handleAddToCart = () => {
     const cartItem = {
-      id: `${item.id}-${selectedSize}`,
-      name: `${name} - ${selectedSize === 'small' ? 'Small' : 'Large'}`,
-      price: currentSize.price,
+      id: `${currentItem.id}`,
+      name: currentItem.name,
+      price: Number(currentItem.price),
       quantity: 1,
-      image: getImageUrl(imageUrl),
+      image: getImageUrl(currentItem.imageUrl),
       variantId: JSON.stringify({
         type: 'item',
-        itemId: item.id,
+        itemId: currentItem.id,
         size: selectedSize,
-        servingSize: currentSize.servingSize
+        servingSize: currentItem.servingSize
       })
     };
 
@@ -104,21 +122,13 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
     toast.success(`${cartItem.name} added to your catering cart`);
   };
 
-  // Create a modified item for the modal with current size info
-  const modalItem = {
-    ...item,
-    price: currentSize.price,
-    description: currentSize.description,
-    servingSize: currentSize.servingSize
-  };
-
   return (
     <>
       <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
         <div className="relative w-full h-48">
           <Image
-            src={getImageUrl(imageUrl)}
-            alt={toTitleCase(name)}
+            src={getImageUrl(currentItem.imageUrl)}
+            alt={toTitleCase(baseName)}
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
             onError={(e) => {
@@ -134,16 +144,16 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <h4 className="text-lg md:text-xl font-semibold text-gray-800">
-                {toTitleCase(name)}
+                {toTitleCase(baseName)}
               </h4>
               <div className="flex gap-1 mt-1">
-                {isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
-                {isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
-                {isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
+                {baseItem.isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
+                {baseItem.isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
+                {baseItem.isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
               </div>
             </div>
             <div className="text-lg md:text-xl font-bold text-gray-800">
-              ${currentSize.price.toFixed(2)}
+              ${Number(currentItem.price).toFixed(2)}
             </div>
           </div>
           
@@ -157,12 +167,16 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="small">
-                  Small - {sizeConfig.small.servingSize} (${sizeConfig.small.price})
-                </SelectItem>
-                <SelectItem value="large">
-                  Large - {sizeConfig.large.servingSize} (${sizeConfig.large.price})
-                </SelectItem>
+                {smallItem && (
+                  <SelectItem value="small">
+                    Small - {smallItem.servingSize} (${Number(smallItem.price)})
+                  </SelectItem>
+                )}
+                {largeItem && (
+                  <SelectItem value="large">
+                    Large - {largeItem.servingSize} (${Number(largeItem.price)})
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -170,13 +184,13 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
           {/* Serving Size */}
           <div className="text-sm md:text-base font-medium text-gray-600 mb-2">
             <span className="font-bold">Serving: </span>
-            {currentSize.servingSize}
+            {currentItem.servingSize}
           </div>
           
           {/* Description */}
           <div className="mb-4 flex-grow">
             <p className="text-gray-600 text-sm md:text-base">
-              {formatDescription(currentSize.description)}
+              {formatDescription(currentItem.description)}
             </p>
           </div>
           
@@ -202,45 +216,11 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
       </div>
       
       <CateringOrderModal 
-        item={modalItem} 
+        item={currentItem} 
         type="item" 
         isOpen={showOrderModal} 
         onClose={() => setShowOrderModal(false)} 
       />
     </>
   );
-};
-
-interface DietaryBadgeProps {
-  label: string;
-  tooltip: string;
-}
-
-const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
-  // Color mapping based on dietary label
-  const getColorClass = () => {
-    switch (label) {
-      case 'GF':
-        return 'bg-amber-100 text-amber-800 border border-amber-300';
-      case 'VG':
-        return 'bg-green-100 text-green-800 border border-green-300';
-      case 'VGN':
-      case 'V':
-        return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
-      default:
-        return 'bg-blue-100 text-blue-800 border border-blue-300';
-    }
-  };
-
-  return (
-    <div 
-      className={`inline-flex items-center justify-center ${getColorClass()} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`} 
-      title={tooltip}
-      aria-label={tooltip}
-    >
-      {label}
-    </div>
-  );
-};
-
-export default PlatterMenuItem; 
+}; 

@@ -20,16 +20,32 @@ export function SyncSquareButton() {
     imagesUpdated?: number;
     imagesNoChange?: number;
     imagesErrors?: number;
+    cateringImagesProtected?: number;
   } | null>(null);
 
   const handleSync = async () => {
     try {
       setIsLoading(true);
       
-      // Step 1: Call the server action to sync products
+      // Step 1: Create backup of catering images before sync
+      const backupResponse = await fetch('/api/catering/backup-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      let backup = {};
+      if (backupResponse.ok) {
+        const backupResult = await backupResponse.json();
+        backup = backupResult.backup || {};
+        console.log(`Created backup of ${Object.keys(backup).length} catering images`);
+      }
+      
+      // Step 2: Call the server action to sync products
       const result = await manualSyncFromSquare();
       
-      // Step 2: Call the image refresh API
+      // Step 3: Call the image refresh API
       const imageResponse = await fetch('/api/square/fix-images', {
         method: 'POST',
         headers: {
@@ -43,16 +59,32 @@ export function SyncSquareButton() {
       
       const imageResult = await imageResponse.json();
       
+      // Step 4: Protect/restore catering images
+      const protectionResponse = await fetch('/api/catering/protect-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ backup })
+      });
+      
+      let protectionResult = { protected: 0, skipped: 0, errors: 0 };
+      if (protectionResponse.ok) {
+        protectionResult = await protectionResponse.json();
+        console.log(`Protected ${protectionResult.protected} catering images`);
+      }
+      
       // Combine results
       setStats({
         ...result,
         imagesUpdated: imageResult.results?.updated || 0,
         imagesNoChange: imageResult.results?.noChange || 0,
-        imagesErrors: imageResult.results?.errors || 0
+        imagesErrors: imageResult.results?.errors || 0,
+        cateringImagesProtected: protectionResult.protected
       });
       
       if (result.success) {
-        toast.success(`Successfully synced ${result.syncedProducts} products and updated ${imageResult.results?.updated || 0} images from Square`);
+        toast.success(`Successfully synced ${result.syncedProducts} products, updated ${imageResult.results?.updated || 0} images, and protected ${protectionResult.protected} catering images`);
       } else {
         toast.error(`Sync failed: ${result.message}`);
       }
@@ -113,6 +145,9 @@ export function SyncSquareButton() {
             <p>Updated: {stats.imagesUpdated}</p>
             <p>Unchanged: {stats.imagesNoChange}</p>
             <p>Errors: {stats.imagesErrors}</p>
+            {stats.cateringImagesProtected !== undefined && (
+              <p className="text-green-600">Catering images protected: {stats.cateringImagesProtected}</p>
+            )}
           </div>
           
           {/* Error display */}
