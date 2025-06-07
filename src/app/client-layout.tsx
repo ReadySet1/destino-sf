@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
 import { Toaster } from 'sonner';
+import { AuthHandler } from '@/components/auth-handler';
 import './styles/globals.css';
 import { usePathname } from 'next/navigation';
 
@@ -33,6 +34,9 @@ export default function ClientLayout({
       enableSystem
       disableTransitionOnChange
     >
+      {/* Auth handler for magic links */}
+      <AuthHandler />
+      
       <div className="flex min-h-screen flex-col">
         {!hideNavigation && <Navbar />}
         <main className={`flex-1 ${!hideNavigation ? 'pt-2' : ''}`}>{children}</main>
