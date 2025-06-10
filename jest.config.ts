@@ -14,6 +14,12 @@ const baseConfig: Partial<Config> = {
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   moduleDirectories: ['node_modules', '<rootDir>'],
   resolver: '<rootDir>/jest.resolver.cjs',
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
+    }],
+  },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
