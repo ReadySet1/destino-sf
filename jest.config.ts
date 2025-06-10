@@ -2,33 +2,18 @@ import type { Config } from 'jest';
 import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',
 });
 
-// Add any custom config to be passed to Jest
-const config: Config = {
-  // Setup files
+// Base configuration shared across all test types
+const baseConfig: Partial<Config> = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-
-  // Path mapping for TypeScript imports
   moduleNameMapper: {
-    // Handle module aliases
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-
-  // Specify test match pattern
-  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
-
-  // Test environment based on file location
-  testEnvironment: 'node', // Default to node for API and lib tests
-  
-  // Override test environment for specific files
-  testEnvironmentOptions: {
-    url: 'http://localhost',
-  },
-
-  // Global settings
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  moduleDirectories: ['node_modules', '<rootDir>'],
+  resolver: '<rootDir>/jest.resolver.cjs',
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
@@ -36,9 +21,7 @@ const config: Config = {
     '!src/__mocks__/**',
     '!src/**/node_modules/**',
   ],
-
   coverageReporters: ['text', 'lcov', 'html'],
-  
   coverageThreshold: {
     global: {
       branches: 70,
@@ -47,16 +30,40 @@ const config: Config = {
       statements: 70,
     },
   },
-
-  // Ignore these directories
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
-
-  // Modules to mock
-  moduleDirectories: ['node_modules', '<rootDir>'],
-
-  // Add resolver
-  resolver: '<rootDir>/jest.resolver.cjs',
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+// Main configuration that delegates to specific environments
+const config: Config = {
+  ...baseConfig,
+  projects: [
+    // Node.js environment for API routes, lib, and utils
+    {
+      ...baseConfig,
+      displayName: 'node',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/src/__tests__/lib/**/*.test.ts',
+        '<rootDir>/src/__tests__/utils/**/*.test.ts',
+        '<rootDir>/src/__tests__/app/api/**/*.test.ts',
+        '<rootDir>/src/__tests__/integration/**/*.test.ts',
+      ],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/setup/node-setup.js'],
+    },
+    // jsdom environment for React components
+    {
+      ...baseConfig,
+      displayName: 'jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: [
+        '<rootDir>/src/__tests__/components/**/*.test.tsx',
+        '<rootDir>/src/__tests__/components/**/*.test.ts',
+      ],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/setup/jsdom-setup.js'],
+      testEnvironmentOptions: {
+        url: 'http://localhost:3000',
+      },
+    },
+  ],
+};
+
 export default createJestConfig(config);
