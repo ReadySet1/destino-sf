@@ -34,22 +34,23 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "types": ["jest", "node"]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     "jest.setup.js",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__tests__/**/*"
   ],
   "exclude": [
     "node_modules",
     "react-app/vite.config.ts",
     "**/vite.config.ts",
-    "react-app/dist",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/__tests__/**/*"
+    "react-app/dist"
   ]
 }
