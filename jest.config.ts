@@ -45,7 +45,6 @@ const config: Config = {
         '<rootDir>/src/__tests__/lib/**/*.test.ts',
         '<rootDir>/src/__tests__/utils/**/*.test.ts',
         '<rootDir>/src/__tests__/app/api/**/*.test.ts',
-        '<rootDir>/src/__tests__/integration/**/*.test.ts',
       ],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/setup/node-setup.js'],
     },
@@ -62,6 +61,23 @@ const config: Config = {
       testEnvironmentOptions: {
         url: 'http://localhost:3000',
       },
+    },
+    // Real database integration tests
+    {
+      ...baseConfig,
+      displayName: 'integration-db',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/src/__tests__/integration/**/*.db.test.ts',
+      ],
+      setupFilesAfterEnv: [
+        '<rootDir>/jest.setup.js', 
+        '<rootDir>/src/__tests__/setup/integration-db-setup.js'
+      ],
+      globalSetup: '<rootDir>/src/__tests__/setup/global-db-setup.js',
+      globalTeardown: '<rootDir>/src/__tests__/setup/global-db-teardown.js',
+      // Run integration tests serially to avoid database conflicts
+      maxWorkers: 1,
     },
   ],
 };
