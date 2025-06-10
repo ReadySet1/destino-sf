@@ -24,6 +24,10 @@ if (!global.Headers) {
 // Import jest-dom for DOM testing extensions
 import '@testing-library/jest-dom';
 
+// Setup test environment variables
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

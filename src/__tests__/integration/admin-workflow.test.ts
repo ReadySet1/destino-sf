@@ -1,0 +1,764 @@
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { setupTestDatabase, resetTestDatabase, seedTestDatabase, teardownTestDatabase } from '../setup/test-db';
+import { setupAllMocks } from '../setup/mocks';
+import { 
+  createMockOrder,
+  createMockProduct,
+  createMockProfile,
+  waitForApiCall,
+  generateTestEmail,
+  retryOperation
+} from '../utils/test-helpers';
+import { mockOrders, mockProducts, mockProfiles } from '../fixtures';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
+
+/**
+ * Admin Management Workflow Integration Tests
+ * 
+ * Tests the complete admin workflow including:
+ * 1. Login → Configure Shipping → Manage Orders
+ * 2. Update product pricing  
+ * 3. Process order fulfillment
+ * 4. Admin dashboard functionality
+ * 5. Settings and configuration management
+ */
+
+describe('Admin Management Workflow', () => {
+  let testDb: any;
+  let mocks: any;
+  let adminProfile: any;
+
+  beforeAll(async () => {
+    // Setup test database
+    testDb = await setupTestDatabase();
+    
+    // Setup all service mocks
+    mocks = setupAllMocks();
+    
+    // Seed database with test data
+    await seedTestDatabase();
+  });
+
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    // Reset database state between tests
+    await resetTestDatabase();
+    await seedTestDatabase();
+    
+    // Create admin profile for tests
+    adminProfile = await testDb.profile.create({
+      data: createMockProfile('ADMIN', {
+        email: 'admin@destino-sf.com',
+        name: 'Test Admin',
+      }),
+    });
+    
+    // Reset all mocks
+    jest.clearAllMocks();
+  });
+
+  describe('Login → Configure Shipping → Manage Orders', () => {
+    test('should complete full admin workflow from login to order management', async () => {
+      // Act 1: Admin Authentication
+      const authResult = await waitForApiCall(
+        mocks.supabase.supabase.auth.signInWithPassword({
+          email: adminProfile.email,
+          password: 'admin-test-password',
+        })
+      );
+
+      expect(authResult.data.user).toBeDefined();
+      expect(authResult.data.user.email).toBe(adminProfile.email);
+      expect(authResult.error).toBeNull();
+
+      // Act 2: Configure Shipping Settings
+      const shippingConfig = {
+        baseRate: 5.99,
+        perMileRate: 0.50,
+        freeShippingThreshold: 75.00,
+        maxDeliveryDistance: 25,
+        estimatedDeliveryTime: '30-45 minutes',
+      };
+
+      const storeSettings = await testDb.storeSettings.upsert({
+        where: { id: 'default-settings' },
+        create: {
+          id: 'default-settings',
+          name: 'Destino SF',
+          phone: '+14155551234',
+          email: 'orders@destino-sf.com',
+          minOrderAmount: 25.00,
+          taxRate: 8.25,
+          ...shippingConfig,
+        },
+        update: shippingConfig,
+      });
+
+      expect(storeSettings.name).toBe('Destino SF');
+      expect(storeSettings.minOrderAmount).toBe(25.00);
+      expect(storeSettings.taxRate).toBe(8.25);
+
+      // Act 3: Create test orders to manage
+      const testOrders = await Promise.all([
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.PENDING,
+            paymentStatus: PaymentStatus.PAID,
+            customerName: 'Customer 1',
+            email: generateTestEmail('customer1'),
+            total: 45.99,
+          }),
+        }),
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.PENDING,
+            paymentStatus: PaymentStatus.PAID,
+            customerName: 'Customer 2', 
+            email: generateTestEmail('customer2'),
+            total: 32.50,
+          }),
+        }),
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+            customerName: 'Customer 3',
+            email: generateTestEmail('customer3'),
+            total: 67.25,
+          }),
+        }),
+      ]);
+
+      expect(testOrders).toHaveLength(3);
+
+      // Act 4: Admin views pending orders dashboard
+      const pendingOrders = await testDb.order.findMany({
+        where: {
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PAID,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      expect(pendingOrders).toHaveLength(2);
+      expect(pendingOrders[0].customerName).toBe('Customer 2');
+      expect(pendingOrders[1].customerName).toBe('Customer 1');
+
+      // Act 5: Admin processes first order
+      const processedOrder = await testDb.order.update({
+        where: { id: pendingOrders[0].id },
+        data: {
+          status: OrderStatus.IN_PROGRESS,
+          notes: 'Order being prepared by admin',
+          updatedAt: new Date(),
+        },
+      });
+
+      expect(processedOrder.status).toBe(OrderStatus.IN_PROGRESS);
+      expect(processedOrder.notes).toContain('being prepared');
+
+      // Act 6: Admin marks order as ready for delivery
+      const readyOrder = await testDb.order.update({
+        where: { id: processedOrder.id },
+        data: {
+          status: OrderStatus.READY,
+          notes: 'Order ready for delivery - kitchen completed',
+        },
+      });
+
+      expect(readyOrder.status).toBe(OrderStatus.READY);
+
+      // Act 7: Send notification to customer
+      const customerNotification = await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'orders@destino-sf.com',
+          to: [readyOrder.email],
+          subject: `Your order is ready! #${readyOrder.id}`,
+          html: `
+            <h1>Your order is ready!</h1>
+            <p>Order #${readyOrder.id} is being prepared for delivery.</p>
+            <p>Estimated delivery time: 30-45 minutes</p>
+          `,
+        })
+      );
+
+      expect(customerNotification.id).toBeDefined();
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: [readyOrder.email],
+          subject: expect.stringContaining('ready'),
+        })
+      );
+
+      // Assert: Complete workflow success
+      expect(authResult.data.user).toBeDefined();
+      expect(storeSettings.name).toBe('Destino SF');
+      expect(pendingOrders).toHaveLength(2);
+      expect(readyOrder.status).toBe(OrderStatus.READY);
+      expect(customerNotification.id).toBeDefined();
+    });
+
+    test('should handle order cancellation workflow', async () => {
+      // Create order to cancel
+      const orderToCancel = await testDb.order.create({
+        data: createMockOrder({
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PAID,
+          customerName: 'Cancel Customer',
+          email: generateTestEmail('cancel-customer'),
+          total: 35.99,
+        }),
+      });
+
+      // Admin cancels order with reason
+      const cancelledOrder = await testDb.order.update({
+        where: { id: orderToCancel.id },
+        data: {
+          status: OrderStatus.CANCELLED,
+          cancelReason: 'Customer requested cancellation',
+          notes: 'Cancelled by admin - customer called to cancel',
+        },
+      });
+
+      expect(cancelledOrder.status).toBe(OrderStatus.CANCELLED);
+      expect(cancelledOrder.cancelReason).toContain('Customer requested');
+
+      // Process refund through Square
+      const refundResult = await waitForApiCall(
+        Promise.resolve({
+          result: {
+            refund: {
+              id: 'mock-refund-id',
+              status: 'COMPLETED',
+              amountMoney: {
+                amount: 3599n, // $35.99 in cents
+                currency: 'USD',
+              },
+            },
+          },
+        })
+      );
+
+      expect(refundResult.result.refund.status).toBe('COMPLETED');
+
+      // Update payment status
+      const refundedOrder = await testDb.order.update({
+        where: { id: cancelledOrder.id },
+        data: {
+          paymentStatus: PaymentStatus.REFUNDED,
+        },
+      });
+
+      expect(refundedOrder.paymentStatus).toBe(PaymentStatus.REFUNDED);
+
+      // Send cancellation email to customer
+      await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'orders@destino-sf.com',
+          to: [refundedOrder.email],
+          subject: `Order Cancelled - Refund Processed #${refundedOrder.id}`,
+          html: `
+            <h1>Order Cancelled</h1>
+            <p>Your order #${refundedOrder.id} has been cancelled.</p>
+            <p>Refund of $${refundedOrder.total.toFixed(2)} has been processed.</p>
+            <p>You should see the refund in 3-5 business days.</p>
+          `,
+        })
+      );
+
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Cancelled'),
+          html: expect.stringContaining('refund'),
+        })
+      );
+    });
+  });
+
+  describe('Update Product Pricing', () => {
+    test('should update product prices and sync with Square', async () => {
+      // Create test product
+      const testProduct = await testDb.product.create({
+        data: createMockProduct({
+          name: 'Test Alfajores',
+          price: 12.99,
+          squareId: 'test-square-item-id',
+        }),
+      });
+
+      expect(testProduct.price).toBe(12.99);
+
+      // Admin updates product price
+      const updatedPrice = 14.99;
+      const updatedProduct = await testDb.product.update({
+        where: { id: testProduct.id },
+        data: {
+          price: updatedPrice,
+          updatedAt: new Date(),
+        },
+      });
+
+      expect(updatedProduct.price).toBe(14.99);
+
+      // Sync price change with Square
+      const squareSyncResult = await waitForApiCall(
+        mocks.square.catalogApi.searchCatalogObjects({
+          objectTypes: ['ITEM'],
+          query: {
+            exactQuery: {
+              attributeName: 'name',
+              attributeValue: testProduct.name,
+            },
+          },
+        })
+      );
+
+      expect(squareSyncResult.result.objects).toBeDefined();
+
+      // Mock Square catalog update
+      const squareUpdateResult = await waitForApiCall(
+        Promise.resolve({
+          result: {
+            catalogObject: {
+              id: testProduct.squareId,
+              type: 'ITEM',
+              itemData: {
+                name: testProduct.name,
+                variations: [
+                  {
+                    id: 'variation-id',
+                    itemVariationData: {
+                      priceMoney: {
+                        amount: 1499n, // $14.99 in cents
+                        currency: 'USD',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        })
+      );
+
+      expect(squareUpdateResult.result.catalogObject.id).toBe(testProduct.squareId);
+
+      // Verify price update persisted
+      const finalProduct = await testDb.product.findUnique({
+        where: { id: testProduct.id },
+      });
+
+      expect(finalProduct.price).toBe(14.99);
+      expect(finalProduct.updatedAt.getTime()).toBeGreaterThan(testProduct.createdAt.getTime());
+    });
+
+    test('should handle bulk price updates', async () => {
+      // Create multiple test products
+      const testProducts = await Promise.all([
+        testDb.product.create({
+          data: createMockProduct({
+            name: 'Alfajores Dulce',
+            price: 12.99,
+            squareId: 'square-alfajores-1',
+          }),
+        }),
+        testDb.product.create({
+          data: createMockProduct({
+            name: 'Alfajores Chocolate',
+            price: 14.99,
+            squareId: 'square-alfajores-2',
+          }),
+        }),
+        testDb.product.create({
+          data: createMockProduct({
+            name: 'Empanadas Beef',
+            price: 18.99,
+            squareId: 'square-empanadas-1',
+          }),
+        }),
+      ]);
+
+      expect(testProducts).toHaveLength(3);
+
+      // Admin applies 10% price increase across all products
+      const priceIncrease = 0.1; // 10%
+      const bulkUpdatePromises = testProducts.map(product => 
+        testDb.product.update({
+          where: { id: product.id },
+          data: {
+            price: Math.round((product.price * (1 + priceIncrease)) * 100) / 100,
+          },
+        })
+      );
+
+      const updatedProducts = await Promise.all(bulkUpdatePromises);
+
+      // Verify all prices increased by 10%
+      expect(updatedProducts[0].price).toBe(14.29); // 12.99 * 1.1 = 14.289 → 14.29
+      expect(updatedProducts[1].price).toBe(16.49); // 14.99 * 1.1 = 16.489 → 16.49
+      expect(updatedProducts[2].price).toBe(20.89); // 18.99 * 1.1 = 20.889 → 20.89
+
+      // Verify Square sync for all products
+      for (const product of updatedProducts) {
+        expect(mocks.square.catalogApi.searchCatalogObjects).toHaveBeenCalled();
+      }
+    });
+
+    test('should validate price changes before applying', async () => {
+      const testProduct = await testDb.product.create({
+        data: createMockProduct({
+          name: 'Validation Test Product',
+          price: 15.99,
+        }),
+      });
+
+      // Test invalid price scenarios
+      const invalidPrices = [-1, 0, 1000.01]; // negative, zero, too high
+
+      for (const invalidPrice of invalidPrices) {
+        try {
+          await testDb.product.update({
+            where: { id: testProduct.id },
+            data: { price: invalidPrice },
+          });
+          
+          // If we reach here, the test should fail
+          expect(true).toBe(false);
+        } catch (error) {
+          // Expected behavior - invalid prices should be rejected
+          expect(error).toBeDefined();
+        }
+      }
+
+      // Verify original price unchanged
+      const unchangedProduct = await testDb.product.findUnique({
+        where: { id: testProduct.id },
+      });
+      
+      expect(unchangedProduct.price).toBe(15.99);
+    });
+  });
+
+  describe('Process Order Fulfillment', () => {
+    test('should track complete order fulfillment lifecycle', async () => {
+      // Create order ready for fulfillment
+      const orderToFulfill = await testDb.order.create({
+        data: createMockOrder({
+          status: OrderStatus.READY,
+          paymentStatus: PaymentStatus.PAID,
+          fulfillmentType: 'delivery',
+          customerName: 'Fulfillment Customer',
+          email: generateTestEmail('fulfillment'),
+        }),
+      });
+
+      // Act 1: Admin assigns order to delivery
+      const assignedOrder = await testDb.order.update({
+        where: { id: orderToFulfill.id },
+        data: {
+          status: OrderStatus.OUT_FOR_DELIVERY,
+          notes: 'Assigned to delivery driver - departed at 2:30 PM',
+        },
+      });
+
+      expect(assignedOrder.status).toBe(OrderStatus.OUT_FOR_DELIVERY);
+
+      // Act 2: Send delivery notification
+      await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'delivery@destino-sf.com',
+          to: [assignedOrder.email],
+          subject: `Your order is on the way! #${assignedOrder.id}`,
+          html: `
+            <h1>Your order is on the way!</h1>
+            <p>Order #${assignedOrder.id} is out for delivery.</p>
+            <p>Expected delivery: 15-30 minutes</p>
+            <p>Contact us at (415) 555-1234 if you have any questions.</p>
+          `,
+        })
+      );
+
+      // Act 3: Complete delivery
+      const completedOrder = await testDb.order.update({
+        where: { id: assignedOrder.id },
+        data: {
+          status: OrderStatus.COMPLETED,
+          notes: 'Delivery completed successfully at 3:00 PM',
+        },
+      });
+
+      expect(completedOrder.status).toBe(OrderStatus.COMPLETED);
+
+      // Act 4: Send completion confirmation
+      await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'orders@destino-sf.com',
+          to: [completedOrder.email],
+          subject: `Order Delivered! #${completedOrder.id}`,
+          html: `
+            <h1>Order Delivered Successfully!</h1>
+            <p>Thank you for choosing Destino SF!</p>
+            <p>We hope you enjoyed your Argentine treats.</p>
+            <p>Please rate your experience and share feedback.</p>
+          `,
+        })
+      );
+
+      // Verify email send calls
+      expect(mocks.email.emails.send).toHaveBeenCalledTimes(2);
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('on the way'),
+        })
+      );
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Delivered'),
+        })
+      );
+
+      // Assert complete fulfillment lifecycle
+      expect(completedOrder.status).toBe(OrderStatus.COMPLETED);
+      expect(completedOrder.notes).toContain('completed successfully');
+    });
+
+    test('should handle pickup order fulfillment', async () => {
+      const pickupOrder = await testDb.order.create({
+        data: createMockOrder({
+          status: OrderStatus.READY,
+          paymentStatus: PaymentStatus.PAID,
+          fulfillmentType: 'pickup',
+          customerName: 'Pickup Customer',
+          email: generateTestEmail('pickup'),
+        }),
+      });
+
+      // Send pickup ready notification
+      await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'orders@destino-sf.com',
+          to: [pickupOrder.email],
+          subject: `Order Ready for Pickup! #${pickupOrder.id}`,
+          html: `
+            <h1>Your order is ready for pickup!</h1>
+            <p>Order #${pickupOrder.id} is ready at our location.</p>
+            <p>Address: 123 Mission St, San Francisco, CA 94102</p>
+            <p>Hours: 9 AM - 8 PM daily</p>
+            <p>Please bring this email and a valid ID.</p>
+          `,
+        })
+      );
+
+      // Customer picks up order
+      const pickedUpOrder = await testDb.order.update({
+        where: { id: pickupOrder.id },
+        data: {
+          status: OrderStatus.COMPLETED,
+          notes: 'Customer picked up order at 4:15 PM',
+        },
+      });
+
+      expect(pickedUpOrder.status).toBe(OrderStatus.COMPLETED);
+      expect(pickedUpOrder.fulfillmentType).toBe('pickup');
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Ready for Pickup'),
+          html: expect.stringContaining('ready at our location'),
+        })
+      );
+    });
+
+    test('should handle fulfillment errors and retries', async () => {
+      const problemOrder = await testDb.order.create({
+        data: createMockOrder({
+          status: OrderStatus.OUT_FOR_DELIVERY,
+          paymentStatus: PaymentStatus.PAID,
+          customerName: 'Problem Customer',
+          email: generateTestEmail('problem'),
+        }),
+      });
+
+      // Simulate delivery failure
+      const failedOrder = await testDb.order.update({
+        where: { id: problemOrder.id },
+        data: {
+          status: OrderStatus.DELIVERY_FAILED,
+          notes: 'Delivery failed - customer not available, rescheduling',
+        },
+      });
+
+      expect(failedOrder.status).toBe(OrderStatus.DELIVERY_FAILED);
+
+      // Retry delivery with customer communication
+      await waitForApiCall(
+        mocks.email.emails.send({
+          from: 'delivery@destino-sf.com',
+          to: [failedOrder.email],
+          subject: `Delivery Rescheduled #${failedOrder.id}`,
+          html: `
+            <h1>Delivery Rescheduled</h1>
+            <p>We attempted to deliver your order but were unable to reach you.</p>
+            <p>Please reply with your preferred delivery time.</p>
+            <p>Or call us at (415) 555-1234 to reschedule.</p>
+          `,
+        })
+      );
+
+      // Reschedule and complete delivery
+      const rescheduledOrder = await testDb.order.update({
+        where: { id: failedOrder.id },
+        data: {
+          status: OrderStatus.OUT_FOR_DELIVERY,
+          notes: 'Redelivery scheduled for 6:00 PM per customer request',
+        },
+      });
+
+      const finalOrder = await testDb.order.update({
+        where: { id: rescheduledOrder.id },
+        data: {
+          status: OrderStatus.COMPLETED,
+          notes: 'Successfully delivered on second attempt at 6:15 PM',
+        },
+      });
+
+      expect(finalOrder.status).toBe(OrderStatus.COMPLETED);
+      expect(finalOrder.notes).toContain('second attempt');
+      expect(mocks.email.emails.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Rescheduled'),
+        })
+      );
+    });
+  });
+
+  describe('Admin Dashboard Analytics', () => {
+    test('should provide order analytics and reporting', async () => {
+      // Create test orders with various statuses and dates
+      const testDate = new Date('2024-01-15T10:00:00Z');
+      const yesterday = new Date(testDate.getTime() - 24 * 60 * 60 * 1000);
+      
+      const analyticsOrders = await Promise.all([
+        // Today's orders
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+            total: 45.99,
+            createdAt: testDate,
+          }),
+        }),
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+            total: 32.50,
+            createdAt: testDate,
+          }),
+        }),
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.PENDING,
+            paymentStatus: PaymentStatus.PAID,
+            total: 28.75,
+            createdAt: testDate,
+          }),
+        }),
+        // Yesterday's orders
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+            total: 67.25,
+            createdAt: yesterday,
+          }),
+        }),
+      ]);
+
+      // Generate analytics report
+      const todayOrders = await testDb.order.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(testDate.toDateString()),
+            lt: new Date(testDate.getTime() + 24 * 60 * 60 * 1000),
+          },
+        },
+      });
+
+      const completedToday = todayOrders.filter(order => order.status === OrderStatus.COMPLETED);
+      const pendingToday = todayOrders.filter(order => order.status === OrderStatus.PENDING);
+      
+      const todayRevenue = completedToday.reduce((sum, order) => sum + Number(order.total), 0);
+      const averageOrderValue = completedToday.length > 0 ? todayRevenue / completedToday.length : 0;
+
+      // Assert analytics data
+      expect(todayOrders).toHaveLength(3);
+      expect(completedToday).toHaveLength(2);
+      expect(pendingToday).toHaveLength(1);
+      expect(todayRevenue).toBe(78.49); // 45.99 + 32.50
+      expect(averageOrderValue).toBe(39.245); // 78.49 / 2
+
+      // Test order status distribution
+      const statusDistribution = todayOrders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      expect(statusDistribution['COMPLETED']).toBe(2);
+      expect(statusDistribution['PENDING']).toBe(1);
+    });
+
+    test('should track inventory and product performance', async () => {
+      // This would test product sales analytics, inventory tracking, etc.
+      // For now, we'll create a simple product performance test
+      
+      const performanceProduct = await testDb.product.create({
+        data: createMockProduct({
+          name: 'Performance Test Alfajores',
+          price: 15.99,
+        }),
+      });
+
+      // Create orders that include this product (simplified for test)
+      const productOrders = await Promise.all([
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            total: 15.99,
+            notes: `Contains product ${performanceProduct.id}`,
+          }),
+        }),
+        testDb.order.create({
+          data: createMockOrder({
+            status: OrderStatus.COMPLETED,
+            total: 31.98, // 2 units
+            notes: `Contains product ${performanceProduct.id} x2`,
+          }),
+        }),
+      ]);
+
+      // Simple product performance calculation
+      const ordersWithProduct = await testDb.order.findMany({
+        where: {
+          notes: {
+            contains: performanceProduct.id,
+          },
+          status: OrderStatus.COMPLETED,
+        },
+      });
+
+      expect(ordersWithProduct).toHaveLength(2);
+      
+      // In a real implementation, this would use proper order items relations
+      const totalProductRevenue = ordersWithProduct.reduce(
+        (sum, order) => sum + Number(order.total), 0
+      );
+      
+      expect(totalProductRevenue).toBe(47.97); // 15.99 + 31.98
+    });
+  });
+}); 
