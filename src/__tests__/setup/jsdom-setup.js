@@ -1,7 +1,7 @@
 // jsdom specific setup for React component tests
 
 // Ensure DOM globals are available
-import { TextEncoder, TextDecoder } from 'util';
+const { TextEncoder, TextDecoder } = require('util');
 
 if (typeof global.TextEncoder === 'undefined') {
   global.TextEncoder = TextEncoder;

@@ -52,6 +52,10 @@
     "fix-images": "node src/scripts/update-missing-images.mjs",
     "square-sync": "curl -X POST http://localhost:3000/api/square/sync",
     "clean-products": "node src/scripts/clean-invalid-products.mjs",
+    "test-new-db": "node src/scripts/test-new-db.mjs",
+    "test-new-db-ts": "tsx src/scripts/test-new-db.ts",
+    "setup-test-db": "tsx src/scripts/setup-test-db.ts",
+    "diagnose-db": "tsx src/scripts/diagnose-db-connection.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

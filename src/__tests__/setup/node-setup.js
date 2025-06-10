@@ -28,9 +28,12 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 // Mock Sanity client for CMS-related tests
-jest.mock('@/lib/sanity/client', () => ({
-  sanityClient: {
+jest.mock('@/sanity/lib/client', () => ({
+  client: {
     fetch: jest.fn(),
+    create: jest.fn(),
+    createOrReplace: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
