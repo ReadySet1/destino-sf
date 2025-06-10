@@ -8,9 +8,6 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const config: Config = {
-  // Use js-dom for component testing
-  testEnvironment: 'jsdom',
-
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 
@@ -22,6 +19,34 @@ const config: Config = {
 
   // Specify test match pattern
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
+
+  // Test environment based on file location
+  testEnvironment: 'node', // Default to node for API and lib tests
+  
+  // Override test environment for specific files
+  testEnvironmentOptions: {
+    url: 'http://localhost',
+  },
+
+  // Global settings
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/__tests__/**',
+    '!src/__mocks__/**',
+    '!src/**/node_modules/**',
+  ],
+
+  coverageReporters: ['text', 'lcov', 'html'],
+  
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
 
   // Ignore these directories
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],

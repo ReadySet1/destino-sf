@@ -1,4 +1,4 @@
-import { TextEncoder, TextDecoder } from 'util';
+const { TextEncoder, TextDecoder } = require('util');
 const fetch = require('node-fetch');
 
 if (typeof global.TextEncoder === 'undefined') {
@@ -22,7 +22,7 @@ if (!global.Headers) {
 }
 
 // Import jest-dom for DOM testing extensions
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Setup test environment variables
 process.env.NODE_ENV = 'test';
@@ -56,6 +56,7 @@ jest.mock('@supabase/supabase-js', () => ({
     auth: {
       getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+      getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
     },
   }),
 }));
