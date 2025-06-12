@@ -26,7 +26,7 @@ export function HeroBanner() {
             {' '}
             <span>Delicious Latin American flavors,</span>
             <br />
-            <span>rooted in tradition</span>
+            <span>rooted in tradition,</span>
             <br />
             <span>savored in every bite!</span>
           </h1>

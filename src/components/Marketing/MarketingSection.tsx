@@ -44,9 +44,9 @@ const MarketingSection: React.FC = () => {
               className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
               style={{ fontStyle: 'italic' }}
             >
-              We bring the best of Latin American flavor to every
+              We bring the best of Latin American flavor to every bite —
               <br className="hidden md:inline" />
-              bite — made with love, tradition, and intention
+              made with love, tradition, and intention
             </p>
           </div>
 
