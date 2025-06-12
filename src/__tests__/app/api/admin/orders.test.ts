@@ -1016,10 +1016,19 @@ describe('/api/admin/orders', () => {
   describe('Authorization and error handling', () => {
     test('should require admin authorization', async () => {
       // Mock non-admin user
-      mockSupabaseClient.from().select().eq().single.mockResolvedValue({
-        data: { role: 'USER' },
-        error: null,
-      });
+      const mockChain = {
+        from: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { role: 'USER' },
+          error: null,
+        }),
+      };
+
+      // Set up the mock chain
+      mockSupabaseClient.from.mockReturnValue(mockChain);
+      mockChain.from.mockReturnValue(mockChain);
 
       const userProfile = await mockSupabaseClient.from().select().eq().single();
       const isAdmin = userProfile.data?.role === 'ADMIN';

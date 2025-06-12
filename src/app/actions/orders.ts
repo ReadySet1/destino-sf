@@ -699,7 +699,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                      schedule_type: 'SCHEDULED',
                      placed_at: new Date().toISOString(), // When the order is placed with us
                      // Combine date and time, ensuring valid RFC 3339 format
-                     deliver_at: formatISO(parseISO(`${fulfillment.deliveryDate}T${fulfillment.deliveryTime}:00`)), 
+                     deliver_at: fulfillment.deliveryTime.includes('T') 
+                         ? formatISO(parseISO(fulfillment.deliveryTime))
+                         : formatISO(parseISO(`${fulfillment.deliveryDate}T${fulfillment.deliveryTime}`)), 
                      delivery_instructions: fulfillment.deliveryInstructions,
                      carrier_code: 'CUSTOM', // Indicate local delivery
                  }

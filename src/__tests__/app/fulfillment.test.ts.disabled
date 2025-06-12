@@ -1,6 +1,12 @@
 import { createOrderAndGenerateCheckoutUrl } from '../../app/actions';
 import type { FulfillmentData } from '../../app/actions';
 
+// Define PaymentMethod enum to match what's in the actions file
+enum PaymentMethod {
+  SQUARE = "SQUARE",
+  CASH = "CASH"
+}
+
 // Mock next/cache to prevent revalidatePath errors in Jest
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
@@ -45,6 +51,20 @@ jest.mock('@/lib/prisma', () => ({
     profile: {
       findUnique: jest.fn().mockResolvedValue({ role: 'CUSTOMER' }),
     },
+    product: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    storeSettings: {
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'default-settings',
+        name: 'Test Store',
+        minOrderAmount: 25.00,
+        taxRate: 8.25,
+        serviceFeeRate: 3.5,
+        baseShippingRate: 5.99,
+        freeShippingThreshold: 75.00,
+      }),
+    },
   },
 }));
 
@@ -79,6 +99,7 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(true);
     expect(result.checkoutUrl).toBeDefined();
@@ -86,8 +107,10 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
   });
 
   it('creates a DELIVERY order with valid data', async () => {
-    const fulfillment: FulfillmentData = {
-      method: 'delivery',
+    const fulfillment = {
+      method: 'local_delivery' as const,
+      deliveryDate: '2024-07-01',
+      deliveryTime: '2024-07-01T14:00:00',
       deliveryAddress: {
         street: '123 Main St',
         city: 'San Francisco',
@@ -96,13 +119,13 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
         country: 'US',
         recipientName: 'Test User',
       },
-      deliveryTime: '2024-07-01T14:00:00',
       deliveryInstructions: 'Leave at door',
     };
     const result = await createOrderAndGenerateCheckoutUrl({
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(true);
     expect(result.checkoutUrl).toBeDefined();
@@ -110,8 +133,8 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
   });
 
   it('creates a SHIPPING order with valid data', async () => {
-    const fulfillment: FulfillmentData = {
-      method: 'shipping',
+    const fulfillment = {
+      method: 'nationwide_shipping' as const,
       shippingAddress: {
         street: '456 Market St',
         city: 'San Francisco',
@@ -121,11 +144,15 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
         recipientName: 'Test User',
       },
       shippingMethod: 'Standard',
+      shippingCarrier: 'USPS',
+      shippingCost: 599, // $5.99 in cents
+      rateId: 'rate_123',
     };
     const result = await createOrderAndGenerateCheckoutUrl({
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(true);
     expect(result.checkoutUrl).toBeDefined();
@@ -135,14 +162,15 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
   it('fails with missing required fulfillment fields', async () => {
     // Missing pickupTime for pickup (omit the field entirely)
     // @ts-expect-error: purposely missing pickupTime
-    const fulfillment: FulfillmentData = {
-      method: 'pickup',
+    const fulfillment = {
+      method: 'pickup' as const,
       // pickupTime is omitted
     };
     const result = await createOrderAndGenerateCheckoutUrl({
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -151,13 +179,15 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
   it('fails with missing address for delivery', async () => {
     // @ts-expect-error: purposely missing address
     const fulfillment: FulfillmentData = {
-      method: 'delivery',
+      method: 'local_delivery',
+      deliveryDate: '2024-07-01',
       deliveryTime: '2024-07-01T14:00:00',
     };
     const result = await createOrderAndGenerateCheckoutUrl({
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -172,6 +202,7 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
       items: [baseItem],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -186,6 +217,7 @@ describe('createOrderAndGenerateCheckoutUrl', () => {
       items: [],
       customerInfo: baseCustomerInfo,
       fulfillment,
+      paymentMethod: PaymentMethod.SQUARE,
     });
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();

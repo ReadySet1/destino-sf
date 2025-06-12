@@ -13,36 +13,29 @@
     "type-check-tests": "tsc --noEmit --project tsconfig.test.json",
     "ts-diagnostic": "tsx scripts/ts-diagnostic.ts",
     "start": "next start",
-    
     "test": "jest --no-cache",
     "test:watch": "jest --watch --no-cache",
     "test:coverage": "jest --coverage --no-cache",
     "test:clear": "jest --clearCache",
-    
     "test:node": "jest --selectProjects node --no-cache",
     "test:jsdom": "jest --selectProjects jsdom --no-cache",
     "test:node:watch": "jest --selectProjects node --watch --no-cache",
     "test:jsdom:watch": "jest --selectProjects jsdom --watch --no-cache",
-    
     "test:unit": "jest --selectProjects node src/__tests__/lib src/__tests__/utils --no-cache",
     "test:components": "jest --selectProjects jsdom src/__tests__/components --no-cache",
     "test:api": "jest --selectProjects node src/__tests__/app/api --no-cache",
     "test:integration": "jest --selectProjects node src/__tests__/integration --no-cache --runInBand",
     "test:e2e": "jest --selectProjects node src/__tests__/integration --no-cache --runInBand",
-    
     "test:unit:watch": "jest --selectProjects node --watch src/__tests__/lib src/__tests__/utils --no-cache",
     "test:components:watch": "jest --selectProjects jsdom --watch src/__tests__/components --no-cache",
-    
     "test:basic": "jest --selectProjects node src/__tests__/utils/basic.test.ts --no-cache",
     "test:shipping": "jest --selectProjects node src/__tests__/lib/shippingUtils.test.ts --no-cache",
     "test:delivery": "jest --selectProjects node src/__tests__/lib/deliveryUtils.test.ts --no-cache",
     "test:cart-summary": "jest --selectProjects jsdom src/__tests__/components/cart/CartSummary.test.tsx --no-cache",
-    
     "test:ci": "jest --coverage --watchAll=false --no-cache",
     "test:ci:unit": "jest --selectProjects node --coverage --watchAll=false --no-cache src/__tests__/lib src/__tests__/utils",
     "test:ci:components": "jest --selectProjects jsdom --coverage --watchAll=false --no-cache src/__tests__/components",
     "test:staging": "NODE_ENV=staging jest --selectProjects node src/__tests__/integration --no-cache --runInBand",
-    
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check:watch": "tsc --noEmit --watch",
@@ -125,7 +118,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/user-event": "14.6.1",
     "@types/google.maps": "^3.58.1",
     "@types/jest": "^29.5.14",
     "@types/node": "22.10.2",

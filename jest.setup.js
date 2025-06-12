@@ -1,6 +1,12 @@
 const { TextEncoder, TextDecoder } = require('util');
 const fetch = require('node-fetch');
 
+// Load test environment variables
+require('dotenv').config({ path: '.env.test' });
+
+// Ensure test environment
+process.env.NODE_ENV = 'test';
+
 if (typeof global.TextEncoder === 'undefined') {
   global.TextEncoder = TextEncoder;
 }
@@ -25,7 +31,6 @@ if (!global.Headers) {
 require('@testing-library/jest-dom');
 
 // Setup test environment variables
-process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
 
 // Mock next/navigation
@@ -59,6 +64,11 @@ jest.mock('@supabase/supabase-js', () => ({
       getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
     },
   }),
+}));
+
+// Mock Prisma for unit tests
+jest.mock('@/lib/prisma', () => ({
+  prisma: require('./__mocks__/prisma').mockPrismaClient,
 }));
 
 // This extends Jest's expect

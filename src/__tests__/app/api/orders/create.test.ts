@@ -81,6 +81,9 @@ const mockCreatedOrder = {
   userId: 'user-123',
   status: 'PENDING',
   ...validOrderData,
+  customerName: validOrderData.customerInfo.name,
+  customerEmail: validOrderData.customerInfo.email,
+  customerPhone: validOrderData.customerInfo.phone,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

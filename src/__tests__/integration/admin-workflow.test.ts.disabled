@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
-import { setupTestDatabase, resetTestDatabase, seedTestDatabase, teardownTestDatabase } from '../setup/test-db';
+import { setupTestDatabase, resetTestDatabase, seedTestDatabase, teardownTestDatabase, getTestDb } from '../setup/test-db';
 import { setupAllMocks } from '../setup/mocks';
 import { 
   createMockOrder,
@@ -24,13 +24,12 @@ import { OrderStatus, PaymentStatus } from '@prisma/client';
  */
 
 describe('Admin Management Workflow', () => {
-  let testDb: any;
   let mocks: any;
   let adminProfile: any;
 
   beforeAll(async () => {
     // Setup test database
-    testDb = await setupTestDatabase();
+    await setupTestDatabase();
     
     // Setup all service mocks
     mocks = setupAllMocks();
@@ -49,7 +48,7 @@ describe('Admin Management Workflow', () => {
     await seedTestDatabase();
     
     // Create admin profile for tests
-    adminProfile = await testDb.profile.create({
+    adminProfile = await getTestDb().profile.create({
       data: createMockProfile('ADMIN', {
         email: 'admin@destino-sf.com',
         name: 'Test Admin',
