@@ -1,6 +1,7 @@
 import CateringBanner from '@/components/CateringBanner';
 import React from 'react';
 import Image from 'next/image';
+import { Dancing_Script } from 'next/font/google';
 import { Card, CardContent } from '@/components/ui/card';
 import { CateringContactForm } from '@/components/Catering/CateringContactForm';
 import CateringFaqSection from '@/components/FAQ/CateringFaqSection';
@@ -17,8 +18,12 @@ import CateringCartButton from '@/components/Catering/CateringCartButton';
 import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
 import { ContactForm, ContactInfo, ContactInfoCatering } from '@/components/ContactForm';
 import { FormMessage } from '../../components/form-message';
-
 export const dynamic = 'force-dynamic';
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
 
 // Debug function to check image availability
 const debugImages = (items: CateringItem[]) => {
@@ -95,9 +100,9 @@ const CateringPage = async () => {
                   {/* Updated Text Formatting */}
                   <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 leading-tight">
                     <span className="block">Planning an event?</span>
-                    <span className="block">Let us assist</span>
-                    <span className="block">with vibrant Latin American</span>
-                    <span className="block"> flavors everyone will love!</span>
+                    <span className="block">Let us assist with vibrant</span>
+                    <span className="block">Latin American flavors</span>
+                    <span className="block">everyone will love!</span>
                   </div>
                   <div className="space-y-4">
                     <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
@@ -132,7 +137,9 @@ const CateringPage = async () => {
       {/* Dietary Options Section - Full-width accent */}
       <div className="bg-[#fdc32d] py-8 md:py-10">
         <div className="max-w-[1300px] mx-auto px-6 md:px-8">
-          <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-800 leading-tight md:leading-relaxed text-center">
+          <h3
+            className={`text-4xl font-bold tracking-tight text-black sm:text-5xl text-center ${dancingScript.className}`}
+          >
             Our menus are fully customizable and include a variety of <br />{' '}
             <b>
               <i>gluten free</i>

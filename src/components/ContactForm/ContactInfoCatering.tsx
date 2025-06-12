@@ -1,16 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import { Dancing_Script } from 'next/font/google';
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react';
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
 
 export function ContactInfoCatering() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-4xl font-bold text-white mb-4">Ready to plan your event?</h2>
-        <p className="text-white/90 text-lg">
-          Let us help you create an unforgettable experience with our Latin American catering
-          services!
+        <h2
+          className={`text-4xl font-bold tracking-tight text-white sm:text-5xl text-center ${dancingScript.className}`}
+        >
+          Ready to plan your event?
+        </h2>
+        <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
+          Let us help you create an unforgettable experience
+          <br />
+          with our Latin American catering services!
         </p>
       </div>
 

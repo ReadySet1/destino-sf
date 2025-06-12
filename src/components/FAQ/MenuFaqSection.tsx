@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import MapModal from '../Maps/MapModal';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({ subsets: ['latin'] });
 
 interface FaqItem {
   question: string;
@@ -175,7 +178,7 @@ const MenuFaqSection: React.FC = () => {
           duration: 0.6,
           ease: [0.22, 1, 0.36, 1],
         }}
-        className="font-quicksand text-3xl font-bold text-amber-900 mb-8 text-center sm:text-4xl"
+        className={`text-4xl font-bold tracking-tight text-amber-900 sm:text-5xl text-center ${dancingScript.className}`}
       >
         Menu: Frequently Asked Questions
         <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />

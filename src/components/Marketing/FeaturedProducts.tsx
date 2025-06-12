@@ -197,7 +197,7 @@ export function FeaturedProducts() {
       <div className="bg-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2
-            className={`text-center text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl mb-6 md:mb-12`}
+            className={`text-4xl font-bold tracking-tight text-black sm:text-5xl text-center ${dancingScript.className}`}
           >
             Spotlight Picks
           </h2>

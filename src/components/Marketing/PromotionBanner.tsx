@@ -1,19 +1,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({ subsets: ['latin'] });
 
 export function PromotionBanner() {
   return (
     <div className="relative bg-amber-300 overflow-hidden">
       <div className="mx-auto max-w-7xl">
-        {/* Añadimos 'text-center' a este div */}
         <div className="relative z-10 py-12 px-4 sm:px-6 lg:px-8 lg:py-16 text-center">
-          {/* El md:ml-auto y md:w-1/2 para pantallas medianas seguirán posicionando el contenido a la derecha,
-              pero el texto dentro de ese div estará centrado.
-              Si quieres que el bloque de texto completo se centre en todas las pantallas,
-              tendrías que eliminar md:ml-auto y md:w-1/2 del div contenedor.
-              Dejaremos que se adapte responsivamente para el diseño original. */}
           <div className="md:ml-auto md:w-1/2 md:pl-10">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <h2
+              className={`text-4xl font-bold tracking-tight text-black sm:text-5xl ${dancingScript.className}`}
+            >
               Summer Special Offer
             </h2>
             <p className="mt-3 text-xl text-gray-800" style={{ fontStyle: 'italic' }}>

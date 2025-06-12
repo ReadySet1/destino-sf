@@ -3,6 +3,9 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({ subsets: ['latin'] });
 
 interface Product {
   name: string;
@@ -41,8 +44,10 @@ const ProductList: React.FC = () => {
   return (
     <section className="w-full py-8 md:py-12 lg:py-16">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-amber-900 text-center mb-12 sm:text-4xl tracking-tight">
-          Explore Our Offerings Below:
+        <h2
+          className={`text-4xl font-bold tracking-tight text-amber-900  sm:text-5xl text-center mb-12 ${dancingScript.className}`}
+        >
+          Explore Our Offerings Below
           <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
         </h2>
 
@@ -66,7 +71,9 @@ const ProductList: React.FC = () => {
               </div>
 
               <div className="flex flex-1 flex-col p-6 text-center">
-                <h3 className="text-3xl font-bold  tracking-tight text-amber-900 sm:text-3xl">
+                <h3
+                  className={`text-3xl font-bold tracking-tight text-amber-900  sm:text-4xl ${dancingScript.className}`}
+                >
                   {product.name}
                 </h3>
 
@@ -79,7 +86,7 @@ const ProductList: React.FC = () => {
 
                 <div className="mt-6 flex items-center justify-center">
                   <span className="flex items-center text-sm font-medium text-yellow-600 transition-all duration-300 group-hover:translate-x-1">
-                    View details <ArrowRight className="ml-1 h-4 w-4" />
+                    Ver detalles <ArrowRight className="ml-1 h-4 w-4" />
                   </span>
                 </div>
               </div>

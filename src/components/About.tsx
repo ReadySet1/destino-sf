@@ -1,5 +1,11 @@
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
 
 interface AboutProps {
   title?: string;
@@ -38,7 +44,9 @@ export const About: React.FC<AboutProps> = ({
           </div>
 
           <div className="flex flex-col justify-center space-y-8 max-w-xl">
-            <h2 className={twMerge('font-bold', isLarge ? 'text-5xl md:text-6xl' : 'text-4xl')}>
+            <h2
+              className={`text-5xl font-bold tracking-tight text-black sm:text-5xl ${dancingScript.className}`}
+            >
               {title}
             </h2>
 
@@ -51,14 +59,12 @@ export const About: React.FC<AboutProps> = ({
               {description}
             </p>
 
-            {/* Texto en negritas */}
             <div className="text-lg md:text-xl font-bold space-y-2">
               <p>INSPIRED BY TRADITION</p>
               <p>CRAFTED WITH CARE</p>
               <p>SHARED WITH LOVE</p>
             </div>
 
-            {/* Firma de James Schenk */}
             <div className="relative h-20 w-64 mt-4">
               <Image
                 src="/images/about/signature.png"
@@ -73,7 +79,11 @@ export const About: React.FC<AboutProps> = ({
         </div>
 
         {/* Our History Section */}
-        <h2 className="font-bold text-5xl mb-8">Our History</h2>
+        <h2
+          className={`text-4xl font-bold tracking-tight text-black sm:text-5xl pb-8 text text-center ${dancingScript.className}`}
+        >
+          Our History
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           {/* Left Column - Text Content */}

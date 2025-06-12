@@ -36,7 +36,7 @@ const categories: CategoryType[] = [
     id: '3',
     name: 'Our Catering',
     description: 'Professional catering services for all your needs',
-    imageUrl: '/images/menu/catering1.png',
+    imageUrl: '/images/menu/catering.jpeg',
     slug: 'catering',
   },
 ];
@@ -72,7 +72,9 @@ export function ShopByCategory() {
       <div className={styles.content}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">
+            <h2
+              className={`text-4xl font-bold tracking-tight text-black sm:text-5xl ${dancingScript.className}`}
+            >
               Our Menus: What We Make
             </h2>
             <p

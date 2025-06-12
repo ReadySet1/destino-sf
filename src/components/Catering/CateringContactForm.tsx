@@ -22,6 +22,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Dancing_Script } from 'next/font/google'; // Import Dancing Script
+
+// Initialize Dancing Script font
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 // Form schema with validation
 const formSchema = z.object({
@@ -103,33 +110,31 @@ export function CateringContactForm({
   return (
     <div className="space-y-8 text-center">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h2
+          className={`text-4xl font-bold tracking-tight text-white sm:text-5xl text-center ${dancingScript.className}`}
+        >
           Ready to plan your event?
         </h2>
 
         <p className="mx-auto mt-3 text-xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
-          Let us help you create an unforgettable experience with our
+          Let us help you create an unforgettable experience
           <br />
-          Latin American catering services!
+          with our Latin American catering services!
         </p>
 
-        {/* Contact Information Section - Aquí también se centrarán los elementos flex */}
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-center gap-3">
             {' '}
-            {/* Aseguramos justify-center */}
             <span className="text-white text-lg">james@destinosf.com</span>
           </div>
 
           <div className="flex items-center justify-center gap-3">
             {' '}
-            {/* Aseguramos justify-center */}
             <span className="text-white text-lg">415.577.1677</span>
           </div>
 
           <div className="flex items-center justify-center gap-3">
             {' '}
-            {/* Aseguramos justify-center */}
             <span className="text-white text-lg">San Francisco, CA 94114</span>
           </div>
         </div>

@@ -1,6 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FC } from 'react';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({ subsets: ['latin'] });
 
 interface CateringSectionProps {
   className?: string;
@@ -36,7 +39,7 @@ export const CateringSection: FC<CateringSectionProps> = ({ className = '' }) =>
           <div className="space-y-6 max-w-full md:max-w-md lg:max-w-md xl:max-w-xl text-center">
             <h2
               id="catering-heading"
-              className="text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl"
+              className={`text-4xl font-bold tracking-tight text-white sm:text-5xl ${dancingScript.className}`}
             >
               Let Us Cater Your Next Event
             </h2>
