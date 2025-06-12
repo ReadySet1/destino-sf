@@ -2,6 +2,13 @@
 
 import React, { useState, ButtonHTMLAttributes } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dancing_Script } from 'next/font/google'; // Import Dancing Script
+
+// Initialize Dancing Script font
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 interface FaqItem {
   question: string;
@@ -146,10 +153,12 @@ const CateringFaqSection: React.FC = () => {
   return (
     <div className="mb-8">
       <div className="text-center mb-10">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+        <h2
+          className={`text-4xl font-bold tracking-tight text-black sm:text-5xl text-center pb-6 ${dancingScript.className}`}
+        >
           Frequently Asked Questions
         </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p className="mx-auto mt-3 text-2xl text-black sm:mt-4" style={{ fontStyle: 'italic' }}>
           Find answers to common questions about our catering services
         </p>
       </div>

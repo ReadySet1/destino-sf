@@ -2,6 +2,12 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
 
 const CateringBanner: React.FC = () => {
   return (
@@ -22,7 +28,11 @@ const CateringBanner: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="flex flex-col items-center text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Catering</h1>
+          <h1
+            className={`text-4xl font-bold tracking-tight text-white sm:text-5xl ${dancingScript.className}`}
+          >
+            Catering
+          </h1>
 
           <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
 
