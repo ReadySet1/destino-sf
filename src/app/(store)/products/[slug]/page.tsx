@@ -158,22 +158,20 @@ export default async function ProductPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[hsl(var(--header-orange))]">
-      <CategoryHeader title="" type="products" className="bg-[hsl(var(--header-orange))]">
-        <div className="py-8 mb-0">
-          <div className="max-w-4xl mx-auto">
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center py-20">
-                  <FoodLoader text="Preparing product details..." size="medium" />
-                </div>
-              }
-            >
-              <ProductDetails product={validProduct} />
-            </Suspense>
-          </div>
+    <div className="min-h-screen bg-[hsl(var(--header-orange))]">
+      <div className="py-8 mb-0">
+        <div className="max-w-4xl mx-auto px-4">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-20">
+                <FoodLoader text="Preparing product details..." size="medium" />
+              </div>
+            }
+          >
+            <ProductDetails product={validProduct} />
+          </Suspense>
         </div>
-      </CategoryHeader>
+      </div>
     </div>
   );
 }
