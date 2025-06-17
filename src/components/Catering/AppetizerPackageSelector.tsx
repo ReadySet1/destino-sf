@@ -23,7 +23,7 @@ interface SelectedItems {
 
 export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> = ({
   packages,
-  availableItems
+  availableItems,
 }) => {
   const { addItem } = useCateringCartStore();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
@@ -32,27 +32,35 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
 
   // Get the currently selected package data
   const currentPackage = packages.find(p => p.id === selectedPackage);
-  const requiredItemCount = currentPackage?.name.includes('5 Items') ? 5 :
-                           currentPackage?.name.includes('7 Items') ? 7 :
-                           currentPackage?.name.includes('9 Items') ? 9 : 0;
+  const requiredItemCount = currentPackage?.name.includes('5 Items')
+    ? 5
+    : currentPackage?.name.includes('7 Items')
+      ? 7
+      : currentPackage?.name.includes('9 Items')
+        ? 9
+        : 0;
 
   const currentSelectedItems = selectedItems[selectedPackage || ''] || [];
 
   // Function to get the correct image URL with fallback for missing appetizer package images
   const getImageUrl = (url: string | null | undefined): string => {
     if (!url) return '/images/catering/appetizer-selection.jpg';
-    
+
     // Check for problematic appetizer package URLs that don't exist
     if (url.includes('appetizer-package-') && url.includes('.jpg')) {
       return '/images/catering/appetizer-selection.jpg';
     }
-    
+
     // AWS S3 URLs already have proper format
-    if (url.includes('amazonaws.com') || url.includes('s3.') || 
-        url.startsWith('http://') || url.startsWith('https://')) {
+    if (
+      url.includes('amazonaws.com') ||
+      url.includes('s3.') ||
+      url.startsWith('http://') ||
+      url.startsWith('https://')
+    ) {
       return url;
     }
-    
+
     // For relative paths, ensure they start with a slash
     return url.startsWith('/') ? url : `/${url}`;
   };
@@ -63,7 +71,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     if (!selectedItems[packageId]) {
       setSelectedItems(prev => ({
         ...prev,
-        [packageId]: []
+        [packageId]: [],
       }));
     }
   };
@@ -74,19 +82,19 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     setSelectedItems(prev => {
       const currentItems = prev[selectedPackage] || [];
       const isSelected = currentItems.includes(itemId);
-      
+
       if (isSelected) {
         // Remove item
         return {
           ...prev,
-          [selectedPackage]: currentItems.filter(id => id !== itemId)
+          [selectedPackage]: currentItems.filter(id => id !== itemId),
         };
       } else {
         // Add item if under limit
         if (currentItems.length < requiredItemCount) {
           return {
             ...prev,
-            [selectedPackage]: [...currentItems, itemId]
+            [selectedPackage]: [...currentItems, itemId],
           };
         } else {
           toast.error(`You can only select ${requiredItemCount} items for this package`);
@@ -118,15 +126,17 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
         type: 'appetizer-package',
         packageId: currentPackage.id,
         selectedItems: currentSelectedItems,
-        selectedItemNames: selectedItemNames.map(name => name ? toTitleCase(name) : ''),
+        selectedItemNames: selectedItemNames.map(name => (name ? toTitleCase(name) : '')),
         peopleCount,
-        pricePerPerson: currentPackage.pricePerPerson
-      })
+        pricePerPerson: currentPackage.pricePerPerson,
+      }),
     };
 
     addItem(cartItem);
-    toast.success(`${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`);
-    
+    toast.success(
+      `${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`
+    );
+
     // Reset selection
     setSelectedPackage(null);
     setSelectedItems({});
@@ -136,21 +146,38 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
   // Add a custom formatted titleCase function to match other components
   const toTitleCase = (str: string | null | undefined): string => {
     if (!str) return '';
-    
+
     // Words that should not be capitalized (articles, conjunctions, prepositions)
-    const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'de'];
-    
+    const minorWords = [
+      'a',
+      'an',
+      'the',
+      'and',
+      'but',
+      'or',
+      'for',
+      'nor',
+      'on',
+      'at',
+      'to',
+      'from',
+      'by',
+      'de',
+    ];
+
     // Split the string into words
     const words = str.toLowerCase().split(' ');
-    
+
     // Always capitalize the first and last word
-    return words.map((word, index) => {
-      // Always capitalize first and last word, or if not a minor word
-      if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      }
-      return word;
-    }).join(' ');
+    return words
+      .map((word, index) => {
+        // Always capitalize first and last word, or if not a minor word
+        if (index === 0 || index === words.length - 1 || !minorWords.includes(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      })
+      .join(' ');
   };
 
   const getDietaryBadges = (item: CateringItem) => {
@@ -180,13 +207,11 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
       {/* 2025 Appetizer Menu Header */}
       <div className="text-center space-y-6">
         <div>
-          <h3 className="text-3xl font-bold text-gray-800 mb-4">
-            2025 Appetizer Menu
-          </h3>
+          <h3 className="text-3xl font-bold text-gray-800 mb-4">2025 Appetizer Menu</h3>
           <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed">
-            Create the perfect appetizer experience for your event. Choose from our signature packages
-            featuring authentic Latin American flavors with fresh, local ingredients. All packages are
-            fully customizable to accommodate dietary preferences.
+            Create the perfect appetizer experience for your event. Choose from our signature
+            packages featuring authentic Latin American flavors with fresh, local ingredients. All
+            packages are fully customizable to accommodate dietary preferences.
           </p>
         </div>
       </div>
@@ -202,17 +227,16 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
             <div className="text-gray-600 space-y-2">
               <p>Our appetizer packages are currently being configured.</p>
               <p className="text-sm">
-                {packages.length === 0 && availableItems.length === 0 
-                  ? "Both packages and package items are missing."
-                  : packages.length === 0 
-                    ? "Package options are missing." 
-                    : "Package-only items are missing."
-                }
+                {packages.length === 0 && availableItems.length === 0
+                  ? 'Both packages and package items are missing.'
+                  : packages.length === 0
+                    ? 'Package options are missing.'
+                    : 'Package-only items are missing.'}
               </p>
             </div>
             <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
               <p>Please contact us directly for appetizer catering at:</p>
-              <p className="font-medium">(415) 555-0123</p>
+              <p className="font-medium">james@destinosf.com</p>
             </div>
           </div>
         </div>
@@ -225,23 +249,27 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                 Choose Your Appetizer Package
               </h3>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Select from our curated appetizer packages. Each package is priced per person and includes 
-                your choice of appetizers from our 2025 menu.
+                Select from our curated appetizer packages. Each package is priced per person and
+                includes your choice of appetizers from our 2025 menu.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              {packages.map((pkg) => {
-                const itemCount = pkg.name.includes('5 Items') ? 5 :
-                                 pkg.name.includes('7 Items') ? 7 :
-                                 pkg.name.includes('9 Items') ? 9 : 0;
-                
+              {packages.map(pkg => {
+                const itemCount = pkg.name.includes('5 Items')
+                  ? 5
+                  : pkg.name.includes('7 Items')
+                    ? 7
+                    : pkg.name.includes('9 Items')
+                      ? 9
+                      : 0;
+
                 return (
-                  <Card 
+                  <Card
                     key={pkg.id}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:shadow-md",
-                      selectedPackage === pkg.id ? "ring-2 ring-amber-500 bg-amber-50" : ""
+                      'cursor-pointer transition-all duration-200 hover:shadow-md',
+                      selectedPackage === pkg.id ? 'ring-2 ring-amber-500 bg-amber-50' : ''
                     )}
                     onClick={() => handlePackageSelect(pkg.id)}
                   >
@@ -253,17 +281,15 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                           <Circle className="h-8 w-8 text-gray-400 mx-auto" />
                         )}
                       </div>
-                      
-                      <h4 className="text-lg font-semibold mb-2">
-                        {itemCount} Appetizers
-                      </h4>
-                      
+
+                      <h4 className="text-lg font-semibold mb-2">{itemCount} Appetizers</h4>
+
                       <div className="text-2xl font-bold text-amber-600 mb-2">
                         ${pkg.pricePerPerson.toFixed(2)}
                       </div>
-                      
+
                       <p className="text-sm text-gray-500">per person</p>
-                      
+
                       <Badge variant="outline" className="mt-3">
                         Min {pkg.minPeople} people
                       </Badge>
@@ -288,7 +314,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     <Users className="h-5 w-5" />
                     How many people?
                   </h4>
-                  
+
                   <div className="flex items-center justify-center space-x-4">
                     <Button
                       variant="outline"
@@ -298,11 +324,11 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     >
                       -
                     </Button>
-                    
+
                     <span className="text-xl font-semibold min-w-[3rem] text-center">
                       {peopleCount}
                     </span>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -311,7 +337,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                       +
                     </Button>
                   </div>
-                  
+
                   {currentPackage && (
                     <div className="text-center pt-2">
                       <p className="text-sm text-gray-600">
@@ -338,23 +364,23 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     Select {requiredItemCount} Appetizers
                   </h4>
                   <p className="text-gray-600">
-                    Choose {requiredItemCount} appetizers for your package 
-                    ({currentSelectedItems.length}/{requiredItemCount} selected)
+                    Choose {requiredItemCount} appetizers for your package (
+                    {currentSelectedItems.length}/{requiredItemCount} selected)
                   </p>
                 </div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {availableItems.map((item) => {
+                  {availableItems.map(item => {
                     const isSelected = currentSelectedItems.includes(item.id);
                     const canSelect = currentSelectedItems.length < requiredItemCount || isSelected;
-                    
+
                     return (
                       <Card
                         key={item.id}
                         className={cn(
-                          "cursor-pointer transition-all duration-200 overflow-hidden",
-                          isSelected ? "ring-2 ring-green-500 bg-green-50" : "",
-                          !canSelect ? "opacity-50 cursor-not-allowed" : "hover:shadow-md"
+                          'cursor-pointer transition-all duration-200 overflow-hidden',
+                          isSelected ? 'ring-2 ring-green-500 bg-green-50' : '',
+                          !canSelect ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
                         )}
                         onClick={() => canSelect && handleItemToggle(item.id)}
                       >
@@ -364,7 +390,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                             alt={toTitleCase(item.name)}
                             fill
                             className="object-cover"
-                            onError={(e) => {
+                            onError={e => {
                               const target = e.target as HTMLImageElement;
                               // Prevent infinite loops by only setting fallback once
                               if (!target.src.includes('/default-item.jpg')) {
@@ -385,22 +411,22 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                             </div>
                           )}
                         </div>
-                        
+
                         <CardContent className="p-4">
                           <h5 className="font-medium text-sm leading-tight mb-2">
                             {toTitleCase(item.name)}
                           </h5>
-                          
+
                           {item.description && (
                             <p className="text-xs text-gray-600 mb-3 line-clamp-2">
                               {item.description}
                             </p>
                           )}
-                          
+
                           <div className="flex flex-wrap gap-1">
-                            {getDietaryBadges(item).map((badge) => (
-                              <span 
-                                key={badge} 
+                            {getDietaryBadges(item).map(badge => (
+                              <span
+                                key={badge}
                                 className={`inline-flex items-center justify-center ${getDietaryBadgeStyle(badge)} text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm`}
                               >
                                 {badge}
@@ -448,4 +474,4 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
       )}
     </div>
   );
-}; 
+};
