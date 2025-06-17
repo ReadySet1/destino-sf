@@ -21,7 +21,8 @@ const categories: CategoryType[] = [
   {
     id: '1',
     name: 'Our Empanadas',
-    description: 'Our signature savory pastries with exquisite fillings',
+    description:
+      'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite.',
     imageUrl: '/images/assets/2Recurso 3.png',
     slug: 'empanadas',
   },
