@@ -292,4 +292,27 @@ export function generateShortDescription(productName: string, categoryName?: str
   
   // Generic fallback
   return 'Authentic Latin American specialty';
+}
+
+/**
+ * Capitalizes the first letter of each word in a string
+ * Useful for displaying product names properly
+ */
+export function toTitleCase(str: string): string {
+  if (!str) return '';
+  
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Capitalizes only the first letter of a string
+ * Useful for sentence-style capitalization
+ */
+export function capitalizeFirst(str: string): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
 } 

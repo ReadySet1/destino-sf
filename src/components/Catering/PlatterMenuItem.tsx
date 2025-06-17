@@ -106,7 +106,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
   const handleAddToCart = () => {
     const cartItem = {
       id: `${currentItem.id}`,
-      name: currentItem.name,
+      name: toTitleCase(currentItem.name),
       price: Number(currentItem.price),
       quantity: 1,
       image: getImageUrl(currentItem.imageUrl),
@@ -119,7 +119,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
     };
 
     addItem(cartItem);
-    toast.success(`${cartItem.name} added to your catering cart`);
+    toast.success(`${toTitleCase(cartItem.name)} added to your catering cart`);
   };
 
   return (

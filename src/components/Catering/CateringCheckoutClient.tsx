@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, toTitleCase } from '@/lib/utils';
 import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
@@ -681,27 +681,53 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 const metadata = JSON.parse(item.variantId || '{}');
                 const isPackage = metadata.type === 'package';
                 
+                // Function to get the correct image URL with better fallbacks
+                const getImageUrl = (imageUrl: string | undefined): string => {
+                  if (!imageUrl) {
+                    // Check if it's an appetizer package or item
+                    if (metadata.type === 'appetizer-package' || item.name.toLowerCase().includes('appetizer')) {
+                      return '/images/catering/appetizer-selection.jpg';
+                    }
+                    // Other fallbacks based on item type
+                    if (item.name.toLowerCase().includes('platter')) {
+                      return '/images/catering/default-item.jpg';
+                    }
+                    if (item.name.toLowerCase().includes('dessert') || item.name.toLowerCase().includes('alfajor')) {
+                      return '/images/catering/default-item.jpg';
+                    }
+                    return '/images/catering/default-item.jpg';
+                  }
+                  
+                  // If URL exists but doesn't start with http/https or /, make it absolute
+                  if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+                    return `/${imageUrl}`;
+                  }
+                  
+                  return imageUrl;
+                };
+                
                 return (
                   <div key={`${item.id}-${item.variantId}`} className="flex gap-3">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                      {item.image ? (
-                        <Image 
-                          src={item.image} 
-                          alt={item.name}
-                          width={64}
-                          height={64} 
-                          className="object-cover" 
-                        />
-                      ) : (
-                        <div className="bg-gray-200 w-full h-full flex items-center justify-center">
-                          <span className="text-xs text-gray-500">No image</span>
-                        </div>
-                      )}
+                      <Image 
+                        src={getImageUrl(item.image)} 
+                        alt={toTitleCase(item.name)}
+                        width={64}
+                        height={64} 
+                        className="object-cover"
+                                                  onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            // Prevent infinite loops by only setting fallback once
+                            if (!target.src.includes('/default-item.jpg')) {
+                              target.src = '/images/catering/default-item.jpg';
+                            }
+                          }}
+                      />
                     </div>
                     
                     <div className="flex-1">
                       <div className="flex justify-between">
-                        <h3 className="font-medium line-clamp-2">{item.name}</h3>
+                        <h3 className="font-medium line-clamp-2">{toTitleCase(item.name)}</h3>
                         <Button 
                           variant="ghost" 
                           size="icon" 

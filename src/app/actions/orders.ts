@@ -603,9 +603,15 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
     // --- Square API Interaction --- 
     const locationId = process.env.SQUARE_LOCATION_ID;
-    const accessToken = process.env.SQUARE_ACCESS_TOKEN;
-    const squareEnv = process.env.SQUARE_ENVIRONMENT || 'sandbox'; // Default to sandbox
+    const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
+    const accessToken = squareEnv === 'sandbox' 
+      ? process.env.SQUARE_SANDBOX_TOKEN 
+      : (process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
     const supportEmail = process.env.SUPPORT_EMAIL;
+
+    console.log(`Using Square ${squareEnv} environment with location ID: ${locationId}`);
+    console.log(`Token source: ${squareEnv === 'sandbox' ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_PRODUCTION_TOKEN/SQUARE_ACCESS_TOKEN'}`);
+    console.log(`Has token: ${!!accessToken}`);
 
     if (!locationId || !accessToken) {
         console.error('Server Action Config Error: Missing Square Location ID or Access Token.');

@@ -10,7 +10,7 @@ import { CateringPackage, CateringItem } from '@/types/catering';
 import { Users, CheckCircle, Circle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { cn } from '@/lib/utils';
+import { cn, toTitleCase } from '@/lib/utils';
 
 interface AppetizerPackageSelectorProps {
   packages: CateringPackage[];
@@ -38,9 +38,14 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
 
   const currentSelectedItems = selectedItems[selectedPackage || ''] || [];
 
-  // Function to get the correct image URL
+  // Function to get the correct image URL with fallback for missing appetizer package images
   const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return '/images/catering/default-item.jpg';  // Default fallback image
+    if (!url) return '/images/catering/appetizer-selection.jpg';
+    
+    // Check for problematic appetizer package URLs that don't exist
+    if (url.includes('appetizer-package-') && url.includes('.jpg')) {
+      return '/images/catering/appetizer-selection.jpg';
+    }
     
     // AWS S3 URLs already have proper format
     if (url.includes('amazonaws.com') || url.includes('s3.') || 
@@ -105,22 +110,22 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
 
     const cartItem = {
       id: currentPackage.id,
-      name: `${currentPackage.name} for ${peopleCount} people`,
+      name: `${toTitleCase(currentPackage.name)} for ${peopleCount} people`,
       price: totalPrice,
       quantity: 1,
-      image: currentPackage.imageUrl || '/images/catering/default-package.jpg',
+      image: getImageUrl(currentPackage.imageUrl),
       variantId: JSON.stringify({
         type: 'appetizer-package',
         packageId: currentPackage.id,
         selectedItems: currentSelectedItems,
-        selectedItemNames,
+        selectedItemNames: selectedItemNames.map(name => name ? toTitleCase(name) : ''),
         peopleCount,
         pricePerPerson: currentPackage.pricePerPerson
       })
     };
 
     addItem(cartItem);
-    toast.success(`${currentPackage.name} added to catering cart for ${peopleCount} people`);
+    toast.success(`${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`);
     
     // Reset selection
     setSelectedPackage(null);
@@ -361,7 +366,10 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                             className="object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = '/images/catering/default-item.jpg';
+                              // Prevent infinite loops by only setting fallback once
+                              if (!target.src.includes('/default-item.jpg')) {
+                                target.src = '/images/catering/default-item.jpg';
+                              }
                             }}
                             priority={false}
                             loading="lazy"

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toTitleCase } from '@/lib/utils';
 
 interface CateringOrderModalProps {
   item: CateringItem | CateringPackage;
@@ -56,7 +57,7 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
     
     const cartItem = {
       id: item.id,
-      name: item.name,
+      name: toTitleCase(item.name),
       price: itemPrice,
       quantity: quantity,
       image: getImageUrl(item.imageUrl),
@@ -68,7 +69,7 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
     };
     
     addItem(cartItem);
-    toast.success(`${quantity} ${item.name} added to your catering cart`);
+    toast.success(`${quantity} ${toTitleCase(item.name)} added to your catering cart`);
     onClose();
   };
   
@@ -76,7 +77,7 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Order {item.name}</DialogTitle>
+          <DialogTitle>Order {toTitleCase(item.name)}</DialogTitle>
         </DialogHeader>
         
         <div className="mt-4">
@@ -84,12 +85,15 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
           <div className="relative w-full aspect-square mb-6 rounded-md overflow-hidden bg-gray-50">
             <Image
               src={getImageUrl(item.imageUrl)}
-              alt={item.name}
+              alt={toTitleCase(item.name)}
               fill
               className="object-contain p-4"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/images/catering/default-item.jpg';
+                // Prevent infinite loops by only setting fallback once
+                if (!target.src.includes('/default-item.jpg')) {
+                  target.src = '/images/catering/default-item.jpg';
+                }
               }}
               priority={false}
               loading="lazy"
