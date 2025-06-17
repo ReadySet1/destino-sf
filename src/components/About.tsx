@@ -80,7 +80,7 @@ export const About: React.FC<AboutProps> = ({
 
         {/* Our History Section */}
         <h2
-          className={`text-4xl font-bold tracking-tight text-black sm:text-5xl pb-8 text text-center ${dancingScript.className}`}
+          className={`text-4xl font-bold tracking-tight text-black sm:text-5xl pb-8 text-left ${dancingScript.className}`}
         >
           Our History
         </h2>

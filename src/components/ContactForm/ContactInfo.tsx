@@ -11,8 +11,8 @@ const dancingScript = Dancing_Script({
 
 export function ContactInfo() {
   return (
-    <div className="space-y-8 text-center">
-      <div>
+    <div className="space-y-8">
+      <div className="text-center">
         <div className="mb-10">
           <h2
             className={`text-4xl font-bold tracking-tight text-white sm:text-5xl ${dancingScript.className}`}
@@ -27,7 +27,7 @@ export function ContactInfo() {
         </div>
       </div>
 
-      <div className="space-y-5 flex flex-col items-center">
+      <div className="space-y-5">
         <div className="flex items-center gap-4">
           <Mail className="h-6 w-6 text-white" />
           <Link
@@ -61,7 +61,7 @@ export function ContactInfo() {
         </div>
       </div>
 
-      <div className="flex gap-4 pt-4 justify-center">
+      <div className="flex gap-4 pt-4">
         <Link
           href="https://facebook.com"
           target="_blank"

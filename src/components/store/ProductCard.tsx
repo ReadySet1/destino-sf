@@ -13,6 +13,30 @@ interface ProductCardProps {
   product: Product;
 }
 
+// Smart fallback image selector based on product category
+const getFallbackImage = (productName: string, categoryName?: string): string => {
+  const name = productName.toLowerCase();
+  const category = categoryName?.toLowerCase() || '';
+  
+  // Check for alfajor products
+  if (name.includes('alfajor') || category.includes('alfajor')) {
+    return '/images/fallbacks/alfajores-default.svg';
+  }
+  
+  // Check for catering products
+  if (category.includes('catering') || name.includes('catering')) {
+    return '/images/fallbacks/catering-default.svg';
+  }
+  
+  // Check for cafe/drink products
+  if (category.includes('cafe') || category.includes('coffee') || category.includes('drink')) {
+    return '/images/fallbacks/cafe-default.svg';
+  }
+  
+  // Default empanada fallback for everything else
+  return '/images/menu/empanadas.png';
+};
+
 // Helper function to validate image URLs
 const validateImageUrl = async (url: string): Promise<boolean> => {
   if (!url) return false;
@@ -69,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
       setImageError(false);
       
       // Default/fallback image
-      const fallbackImage = '/images/menu/empanadas.png';
+      const fallbackImage = getFallbackImage(product.name, product.category?.name);
       
       // Get the first image from product.images if it exists
       const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
@@ -117,7 +141,7 @@ export function ProductCard({ product }: ProductCardProps) {
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
       price: priceToAdd,
       quantity: 1,
-      image: imageUrl || '/images/menu/empanadas.png', // Use our validated imageUrl or fallback
+      image: imageUrl || getFallbackImage(product.name, product.category?.name), // Use our validated imageUrl or smart fallback
       variantId: selectedVariant?.id, // Add variantId
     });
 
@@ -149,7 +173,7 @@ export function ProductCard({ product }: ProductCardProps) {
               onError={() => {
                 console.error("Image failed to load:", imageUrl);
                 setImageError(true);
-                setImageUrl('/images/menu/empanadas.png'); // Set to fallback on error
+                setImageUrl(getFallbackImage(product.name, product.category?.name)); // Set to smart fallback on error
               }}
             />
           ) : (

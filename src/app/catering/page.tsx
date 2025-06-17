@@ -96,7 +96,7 @@ const CateringPage = async () => {
                             and adjusted text/image containers to allow better centering effect */}
               <div className="flex flex-col lg:flex-row gap-8 md:gap-10 items-start lg:items-center">
                 {/* Combined Text Content */}
-                <div className="w-full lg:w-1/2 order-2 lg:order-1 space-y-8">
+                <div className="w-full lg:w-1/2 order-2 lg:order-1 space-y-8 text-center">
                   {/* Updated Text Formatting */}
                   <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 leading-tight">
                     <span className="block">Planning an event?</span>
@@ -108,7 +108,7 @@ const CateringPage = async () => {
                     <h3 className="text-2xl md:text-3xl font-semibold text-gray-800">We Cater:</h3>
                     <ul className="space-y-3">
                       {cateringServices.map((service, index) => (
-                        <li key={index} className="flex items-start gap-3 text-xl text-gray-600">
+                        <li key={index} className="flex items-start gap-3 text-xl text-gray-600 justify-center">
                           <span className="text-[#fdc32d] font-bold text-2xl">•</span>
                           <span>{service}</span>
                         </li>
@@ -118,13 +118,13 @@ const CateringPage = async () => {
                 </div>
 
                 {/* Image Container - Using flex to center the image itself within its half-width */}
-                <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center items-center overflow-hidden rounded-xl">
+                <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center items-stretch overflow-hidden rounded-xl p-2">
                   <Image
                     src="/images/catering/catering.png"
                     alt="Catering service"
                     width={800}
                     height={600}
-                    className="object-cover w-full h-auto hover:scale-105 transition-transform duration-500"
+                    className="object-cover w-full h-full hover:scale-105 transition-transform duration-500 rounded-lg"
                     priority
                   />
                 </div>

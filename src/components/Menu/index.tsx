@@ -29,7 +29,7 @@ const MenuBanner: React.FC = () => {
           <div className="mt-2 h-1 w-16 bg-white sm:w-20 lg:w-24" />
 
           <p className="mx-auto mt-3 text-4xl text-white sm:mt-4" style={{ fontStyle: 'italic' }}>
-            Please explore our menu of handcrafted Latin American favorites <br /> Available for
+            Please explore our menu of handcrafted Latin American favorites, <br /> available for
             retail and wholesale!
           </p>
         </div>

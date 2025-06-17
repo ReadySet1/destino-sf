@@ -86,7 +86,7 @@ const ProductList: React.FC = () => {
 
                 <div className="mt-6 flex items-center justify-center">
                   <span className="flex items-center text-sm font-medium text-yellow-600 transition-all duration-300 group-hover:translate-x-1">
-                    Ver detalles <ArrowRight className="ml-1 h-4 w-4" />
+                    View details <ArrowRight className="ml-1 h-4 w-4" />
                   </span>
                 </div>
               </div>

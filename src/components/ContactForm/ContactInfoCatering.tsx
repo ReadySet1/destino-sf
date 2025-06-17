@@ -12,9 +12,9 @@ const dancingScript = Dancing_Script({
 export function ContactInfoCatering() {
   return (
     <div className="space-y-8">
-      <div>
+      <div className="text-center">
         <h2
-          className={`text-4xl font-bold tracking-tight text-white sm:text-5xl text-center ${dancingScript.className}`}
+          className={`text-4xl font-bold tracking-tight text-white sm:text-5xl ${dancingScript.className}`}
         >
           Ready to plan your event?
         </h2>
