@@ -51,31 +51,64 @@ function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStat
   }
 }
 
-// Event handlers
+// Event handlers with enhanced duplicate prevention
 async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const squareOrderData = data.object.order_created as any;
-  console.log('Processing order.created event:', data.id);
+  
+  console.log('🆕 Processing order.created event:', data.id);
+
+  // Enhanced duplicate check with event ID tracking
+  const existingOrder = await prisma.order.findUnique({
+    where: { squareOrderId: data.id },
+    select: { id: true, rawData: true }
+  });
+
+  // Check if this specific event was already processed
+  const eventId = payload.event_id;
+  if (existingOrder?.rawData && typeof existingOrder.rawData === 'object') {
+    const rawData = existingOrder.rawData as any;
+    if (rawData?.lastProcessedEventId === eventId) {
+      console.log(`⚠️ Event ${eventId} for order ${data.id} already processed, skipping`);
+      return;
+    }
+  }
 
   const orderStatus = mapSquareStateToOrderStatus(squareOrderData?.state);
 
-  await prisma.order.upsert({
-    where: { squareOrderId: data.id },
-    update: {
-      status: orderStatus,
-      rawData: data.object as unknown as Prisma.InputJsonValue,
-    },
-    create: {
-      squareOrderId: data.id,
-      status: orderStatus,
-      total: 0, // Placeholder
-      customerName: 'Unknown', // Placeholder
-      email: 'unknown@example.com', // Placeholder
-      phone: 'unknown', // Placeholder
-      pickupTime: new Date(), // Placeholder
-      rawData: data.object as unknown as Prisma.InputJsonValue,
-    },
-  });
+  try {
+    await prisma.order.upsert({
+      where: { squareOrderId: data.id },
+      update: {
+        status: orderStatus,
+        rawData: {
+          ...data.object,
+          lastProcessedEventId: eventId,
+          lastProcessedAt: new Date().toISOString()
+        } as unknown as Prisma.InputJsonValue,
+        updatedAt: new Date()
+      },
+      create: {
+        squareOrderId: data.id,
+        status: orderStatus,
+        total: 0, // Will be updated by payment webhook
+        customerName: 'Pending', // Will be updated with real data
+        email: 'pending@example.com', // Will be updated with real data
+        phone: 'pending', // Will be updated with real data
+        pickupTime: new Date(),
+        rawData: {
+          ...data.object,
+          lastProcessedEventId: eventId,
+          lastProcessedAt: new Date().toISOString()
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    
+    console.log(`✅ Successfully processed order.created event for order ${data.id}`);
+  } catch (error) {
+    console.error(`❌ Error processing order.created for ${data.id}:`, error);
+    throw error; // Re-throw to trigger webhook retry
+  }
 }
 
 async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Promise<void> {
@@ -292,81 +325,146 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
 
 async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
+  const eventId = payload.event_id;
   const paymentData = data.object.payment as any;
-  console.log(`Processing payment.created event: ${data.id} for Square Order ID: ${paymentData?.order_id}`);
+  
+  console.log(`💳 Processing payment.created event: ${data.id} for Square Order ID: ${paymentData?.order_id} | Event ID: ${eventId}`);
 
   if (!paymentData?.order_id) {
-    console.warn(`Payment ${data.id} received without a Square order_id.`);
+    console.warn(`⚠️ Payment ${data.id} received without a Square order_id.`);
     return;
+  }
+
+  // Enhanced duplicate prevention - check if this event was already processed
+  const existingPayment = await prisma.payment.findUnique({
+    where: { squarePaymentId: data.id },
+    select: { id: true, rawData: true, orderId: true }
+  });
+
+  if (existingPayment?.rawData && typeof existingPayment.rawData === 'object') {
+    const rawData = existingPayment.rawData as any;
+    if (rawData?.lastProcessedEventId === eventId) {
+      console.log(`⚠️ Payment event ${eventId} for payment ${data.id} already processed, skipping`);
+      return;
+    }
   }
 
   const squareOrderId = paymentData.order_id;
   let order: { id: string } | null = null;
+  
   try {
     order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
-      select: { id: true },
+      select: { id: true, status: true, paymentStatus: true },
     });
   } catch (dbError) {
-    console.error(`Error finding order with squareOrderId ${squareOrderId}:`, dbError);
-    return; // Stop processing if DB query fails
-  }
-
-  if (!order) {
-    console.warn(`Order with squareOrderId ${squareOrderId} not found in DB for payment ${data.id}. Webhook might be early.`);
+    console.error(`❌ Error finding order with squareOrderId ${squareOrderId}:`, dbError);
     return;
   }
 
-  const internalOrderId = order.id; // Get the internal ID
+  if (!order) {
+    console.warn(`⚠️ Order with squareOrderId ${squareOrderId} not found in DB for payment ${data.id}. Creating order stub.`);
+    
+    // Create order stub if webhook arrives before order webhook
+    try {
+      const newOrder = await prisma.order.create({
+        data: {
+          squareOrderId: squareOrderId,
+          status: 'PROCESSING',
+          total: paymentData?.amount_money?.amount ? paymentData.amount_money.amount / 100 : 0,
+          customerName: 'Payment Processing',
+          email: 'processing@example.com',
+          phone: 'processing',
+          pickupTime: new Date(),
+          paymentStatus: 'PAID',
+          rawData: {
+            createdFromPayment: true,
+            paymentEventId: eventId,
+            squareOrderId: squareOrderId,
+            note: 'Order created from payment webhook - order webhook may arrive later'
+          } as unknown as Prisma.InputJsonValue
+        }
+      });
+      order = { id: newOrder.id };
+      console.log(`🆕 Created order stub ${newOrder.id} from payment ${data.id}`);
+    } catch (createError) {
+      console.error(`❌ Failed to create order stub for payment ${data.id}:`, createError);
+      return;
+    }
+  }
+
+  const internalOrderId = order.id;
   const paymentAmount = paymentData?.amount_money?.amount;
 
   if (paymentAmount === undefined || paymentAmount === null) {
-      console.warn(`Payment ${data.id} received without an amount.`);
-      return;
+    console.warn(`⚠️ Payment ${data.id} received without an amount.`);
+    return;
   }
 
-  // Log values just before the upsert call
-  console.log(`Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount}`);
+  console.log(`🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}`);
 
   try {
-      // Use upsert instead of create to handle duplicate webhooks
-      await prisma.payment.upsert({
-          where: { squarePaymentId: data.id }, // Unique identifier
-          update: { // What to update if it exists
-              amount: paymentAmount,
-              status: 'PENDING', // Or update based on paymentData.status?
-              rawData: data.object as unknown as Prisma.InputJsonValue,
-              // Ensure connection isn't attempted on update if already connected
-          },
-          create: { // What to create if it doesn't exist
-              squarePaymentId: data.id,
-              amount: paymentAmount,
-              status: 'PENDING', // Initial status
-              rawData: data.object as unknown as Prisma.InputJsonValue,
-              order: {
-                  connect: { id: internalOrderId }
-              }
-          }
-      });
-      console.log(`Successfully upserted payment record for internal order ${internalOrderId}`);
+    // Enhanced upsert with event tracking
+    await prisma.payment.upsert({
+      where: { squarePaymentId: data.id },
+      update: {
+        amount: paymentAmount / 100, // Convert from cents to dollars
+        status: 'PAID', // Payment created = paid
+        rawData: {
+          ...data.object,
+          lastProcessedEventId: eventId,
+          lastProcessedAt: new Date().toISOString(),
+          updatedViaWebhook: true
+        } as unknown as Prisma.InputJsonValue,
+        updatedAt: new Date()
+      },
+      create: {
+        squarePaymentId: data.id,
+        amount: paymentAmount / 100, // Convert from cents to dollars
+        status: 'PAID',
+        rawData: {
+          ...data.object,
+          lastProcessedEventId: eventId,
+          lastProcessedAt: new Date().toISOString(),
+          createdViaWebhook: true
+        } as unknown as Prisma.InputJsonValue,
+        order: {
+          connect: { id: internalOrderId }
+        }
+      }
+    });
+    console.log(`✅ Successfully upserted payment record for internal order ${internalOrderId}`);
   } catch (upsertError: any) {
-       console.error(`Error upserting payment record for internal order ${internalOrderId}:`, upsertError);
-       if (upsertError.code === 'P2025') { // Handle case where order to connect doesn't exist
-            console.error(`Order with internal ID ${internalOrderId} not found when trying to connect payment ${data.id}`);
-       }
-       throw upsertError; // Rethrow or handle as needed
+    console.error(`❌ Error upserting payment record for internal order ${internalOrderId}:`, upsertError);
+    if (upsertError.code === 'P2025') {
+      console.error(`❌ Order with internal ID ${internalOrderId} not found when connecting payment ${data.id}`);
+    }
+    throw upsertError;
   }
 
-  // Update order status
+  // Update order status only if not already paid/processed
   try {
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: internalOrderId },
+      select: { paymentStatus: true, status: true }
+    });
+
+    if (currentOrder && currentOrder.paymentStatus !== 'PAID') {
       await prisma.order.update({
-          where: { id: internalOrderId }, // Use internal ID
-          data: { status: OrderStatus.PROCESSING, paymentStatus: 'PAID' } // Use OrderStatus enum
+        where: { id: internalOrderId },
+        data: { 
+          status: 'PROCESSING',
+          paymentStatus: 'PAID',
+          updatedAt: new Date()
+        }
       });
-      console.log(`Successfully updated order ${internalOrderId} status to PROCESSING/PAID`);
+      console.log(`✅ Successfully updated order ${internalOrderId} status to PROCESSING/PAID`);
+    } else {
+      console.log(`ℹ️ Order ${internalOrderId} already marked as paid, skipping status update`);
+    }
   } catch (updateError) {
-      console.error(`Error updating order status for internal order ${internalOrderId}:`, updateError);
-      // Decide if this error should prevent success response
+    console.error(`❌ Error updating order status for internal order ${internalOrderId}:`, updateError);
+    // Don't throw here as payment was successfully recorded
   }
 }
 
