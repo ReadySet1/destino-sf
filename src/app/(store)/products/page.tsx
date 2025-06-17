@@ -72,8 +72,9 @@ export default async function ProductsPage() {
       variants: true, // Include variant data
     },
     orderBy: [
-      // Order by category order first, then by product name
+      // Order by category order first, then by Square ordinal (if available), then by product name
       { category: { order: 'asc' } },
+      { ordinal: 'asc' },
       { name: 'asc' },
     ],
   });

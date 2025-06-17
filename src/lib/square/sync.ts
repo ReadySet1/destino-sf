@@ -474,6 +474,14 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           // Determine the best images to use
           const finalImages = await determineProductImages(item, relatedObjects, existingProduct || undefined);
 
+          // Extract ordinal from Square categories for product ordering
+          let ordinal: bigint | null = null;
+          if (itemData.categories && itemData.categories.length > 0) {
+            // Use the ordinal from the first category for ordering
+            ordinal = BigInt(itemData.categories[0].ordinal || 0);
+            logger.info(`Product ${itemName} has ordinal: ${ordinal} from category`);
+          }
+
           let product;
           
           if (existingProduct) {
@@ -485,6 +493,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 description: updateDescription,
                 price: basePrice,
                 images: finalImages, // Use smart image selection
+                ordinal: ordinal, // Store Square's ordinal for proper ordering
                 variants: {
                   deleteMany: {},
                   create: variants
@@ -493,7 +502,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                 updatedAt: new Date()
               }
             });
-            logger.info(`Successfully updated product ${itemName}. Images: ${finalImages.length} (${finalImages.length === existingProduct.images.length ? 'preserved' : 'updated'})`);
+            logger.info(`Successfully updated product ${itemName}. Images: ${finalImages.length} (${finalImages.length === existingProduct.images.length ? 'preserved' : 'updated'}). Ordinal: ${ordinal}`);
           } else {
             const existingSlug = await prisma.product.findUnique({
               where: { slug: baseSlug },
@@ -511,6 +520,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                   description: createDescription,
                   price: basePrice,
                   images: finalImages, // Use smart image selection
+                  ordinal: ordinal, // Store Square's ordinal for proper ordering
                   categoryId: categoryId, // Use the appropriate category
                   featured: false,
                   active: true,
@@ -553,6 +563,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                           description: updateDescription,
                           price: basePrice,
                           images: variantFinalImages, // Use smart image selection
+                          ordinal: ordinal, // Store Square's ordinal for proper ordering
                           categoryId: categoryId, // Use the appropriate category
                           variants: {
                             deleteMany: {},
@@ -575,6 +586,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
                       description: createDescription,
                       price: basePrice,
                       images: finalImages, // Use smart image selection
+                      ordinal: ordinal, // Store Square's ordinal for proper ordering
                       categoryId: categoryId, // Use the appropriate category
                       featured: false,
                       active: true,
@@ -1381,4 +1393,109 @@ async function determineProductImages(
   // If no manual images, use Square images (even if empty)
   logger.info(`Product ${itemName}: using ${imageUrlsFromSquare.length} images from Square`);
   return imageUrlsFromSquare;
+}
+
+/**
+ * Función especial para sincronizar el ordenamiento de productos usando el MCP de Square
+ * Esta función actualiza el campo ordinal de los productos existentes basado en el ordenamiento de Square
+ */
+export async function syncProductOrderingFromSquare(): Promise<{ updated: number; skipped: number; errors: number }> {
+  const results = { updated: 0, skipped: 0, errors: 0 };
+  
+  try {
+    logger.info('Starting product ordering synchronization from Square...');
+    
+    // Get all products from our database that have a Square ID
+    const dbProducts = await prisma.product.findMany({
+      where: {
+        squareId: {
+          not: ""
+        }
+      },
+      select: {
+        id: true,
+        squareId: true,
+        name: true,
+        ordinal: true
+      }
+    });
+    
+    logger.info(`Found ${dbProducts.length} products with Square IDs in our database`);
+    
+    // Get all products from Square using our MCP function
+    // Note: This would need to be called from a server context with access to the MCP
+    // For now, we'll use our existing Square client
+    if (!squareClient.catalogApi) {
+      throw new Error('Square catalog API not available');
+    }
+    
+    const squareResponse = await squareClient.catalogApi.searchCatalogObjects({
+      object_types: ['ITEM'],
+      include_related_objects: true,
+      include_deleted_objects: false
+    });
+    
+    const squareItems = squareResponse.result?.objects || [];
+    logger.info(`Found ${squareItems.length} items in Square catalog`);
+    
+    // Create a map of Square ID to ordinal
+    const squareOrdinalsMap = new Map<string, bigint>();
+    
+    for (const item of squareItems) {
+      if (item.type === 'ITEM' && item.item_data?.categories && item.item_data.categories.length > 0) {
+        const ordinal = item.item_data.categories[0].ordinal;
+        if (ordinal !== undefined) {
+          squareOrdinalsMap.set(item.id, BigInt(ordinal));
+        }
+      }
+    }
+    
+    logger.info(`Created ordinal mapping for ${squareOrdinalsMap.size} Square items`);
+    
+    // Update each product with its Square ordinal
+    for (const product of dbProducts) {
+      try {
+        if (!product.squareId) {
+          results.skipped++;
+          continue;
+        }
+        
+        const squareOrdinal = squareOrdinalsMap.get(product.squareId);
+        
+        if (squareOrdinal === undefined) {
+          logger.warn(`No ordinal found in Square for product ${product.name} (${product.squareId})`);
+          results.skipped++;
+          continue;
+        }
+        
+        // Only update if the ordinal has changed
+        if (product.ordinal !== squareOrdinal) {
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              ordinal: squareOrdinal,
+              updatedAt: new Date()
+            }
+          });
+          
+          logger.info(`Updated ordinal for product ${product.name}: ${product.ordinal} -> ${squareOrdinal}`);
+          results.updated++;
+        } else {
+          results.skipped++;
+        }
+        
+      } catch (error) {
+        logger.error(`Error updating ordinal for product ${product.name}:`, error);
+        results.errors++;
+      }
+    }
+    
+    logger.info(`Product ordering sync complete. Updated: ${results.updated}, Skipped: ${results.skipped}, Errors: ${results.errors}`);
+    
+  } catch (error) {
+    logger.error('Error in syncProductOrderingFromSquare:', error);
+    results.errors++;
+  }
+  
+  return results;
 }

@@ -88,6 +88,16 @@ const CateringPage = async () => {
           </div>
         )}
 
+        {/* No data message if database is empty */}
+        {!errorMessage && cateringPackages.length === 0 && cateringItems.length === 0 && (
+          <div className="max-w-[1300px] mx-auto px-6 md:px-8 mt-8">
+            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6" role="alert">
+              <p className="font-bold">No Catering Data Available</p>
+              <p>The catering menu is currently being set up. Please check back soon or contact us directly for catering inquiries.</p>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         <section className="max-w-[1300px] mx-auto px-6 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
           <Card className="border-none shadow-none">

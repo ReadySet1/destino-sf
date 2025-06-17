@@ -9,15 +9,15 @@ datasource db {
 }
 
 model Profile {
-  id             String          @id @db.Uuid
-  email          String          @unique
-  name           String?
-  phone          String?
-  role           UserRole        @default(CUSTOMER)
-  created_at     DateTime        @default(now())
-  updated_at     DateTime        @updatedAt
-  cateringOrders CateringOrder[]
-  orders         Order[]
+  id              String          @id @db.Uuid
+  email           String          @unique
+  name            String?
+  phone           String?
+  role            UserRole        @default(CUSTOMER)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  orders          Order[]
+  cateringOrders  CateringOrder[]
 }
 
 model Product {
@@ -33,11 +33,13 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   slug        String?     @unique
+  ordinal     BigInt?
   orderItems  OrderItem[]
   category    Category    @relation(fields: [categoryId], references: [id])
   variants    Variant[]
 
   @@index([categoryId])
+  @@index([ordinal])
 }
 
 model Category {
@@ -187,20 +189,6 @@ model StoreSettings {
   cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
 }
 
-model ShippingConfiguration {
-  id                String   @id @default(uuid()) @db.Uuid
-  productName       String   @unique // e.g., "alfajores", "empanadas"
-  baseWeightLb      Decimal  @db.Decimal(10, 4) // Base weight for 1 unit in pounds
-  weightPerUnitLb   Decimal  @db.Decimal(10, 4) // Additional weight per extra unit
-  isActive          Boolean  @default(true)
-  applicableForNationwideOnly Boolean @default(true) // Only apply for nationwide shipping
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  @@index([productName])
-  @@index([isActive])
-}
-
 model Subscriber {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
@@ -222,146 +210,6 @@ model PromoCode {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-}
-
-model CateringPackage {
-  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String
-  description    String?
-  minPeople      Int                   @default(2)
-  pricePerPerson Decimal               @db.Decimal(10, 2)
-  type           CateringPackageType
-  imageUrl       String?
-  isActive       Boolean               @default(true)
-  featuredOrder  Int?                  @default(0)
-  dietaryOptions String[]              @default([])
-  squareCategory String?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @default(now()) @updatedAt
-  items          CateringPackageItem[]
-  ratings        CateringRating[]
-}
-
-model CateringItem {
-  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  description     String?
-  price           Decimal                 @db.Decimal(10, 2)
-  category        CateringItemCategory
-  isVegetarian    Boolean                 @default(false)
-  isVegan         Boolean                 @default(false)
-  isGlutenFree    Boolean                 @default(false)
-  servingSize     String?
-  imageUrl        String?
-  isActive        Boolean                 @default(true)
-  squareCategory  String?
-  squareProductId String?
-  // Square sync metadata
-  squareImageUrl  String?                 // Original Square image URL
-  lastSyncedAt    DateTime?               // Last time synced from Square
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @default(now()) @updatedAt
-  packageItems    CateringPackageItem[]
-  overrides       CateringItemOverrides?  // Local overrides for Square items
-}
-
-model CateringItemOverrides {
-  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  itemId               String      @unique @db.Uuid
-  // Override fields
-  localDescription     String?
-  localImageUrl        String?     // Supabase-stored image URL
-  localIsVegetarian    Boolean?
-  localIsVegan         Boolean?
-  localIsGlutenFree    Boolean?
-  localServingSize     String?
-  localDietaryOptions  String[]    @default([])
-  // Control flags - what gets overridden
-  overrideDescription  Boolean     @default(false)
-  overrideImage        Boolean     @default(false)
-  overrideDietary      Boolean     @default(false)
-  overrideServingSize  Boolean     @default(false)
-  // Meta
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @default(now()) @updatedAt
-  
-  // Relations
-  cateringItem         CateringItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  
-  @@index([itemId], map: "idx_catering_item_overrides_item_id")
-}
-
-model CateringPackageItem {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId       String          @db.Uuid
-  itemId          String          @db.Uuid
-  quantity        Int             @default(1)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @default(now()) @updatedAt
-  cateringItem    CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_item")
-  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_package")
-
-  @@index([itemId], map: "idx_catering_package_item_item_id")
-  @@index([packageId], map: "idx_catering_package_item_package_id")
-}
-
-model CateringRating {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId       String          @db.Uuid
-  rating          Int             @db.SmallInt
-  review          String?
-  reviewerName    String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @default(now()) @updatedAt
-  cateringPackage CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rating_package")
-
-  @@index([packageId], map: "idx_catering_rating_package_id")
-}
-
-model CateringOrder {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerId        String?             @db.Uuid
-  email             String
-  name              String
-  phone             String
-  eventDate         DateTime
-  numberOfPeople    Int
-  totalAmount       Decimal             @db.Decimal(10, 2)
-  status            CateringStatus      @default(PENDING)
-  paymentStatus     PaymentStatus       @default(PENDING)
-  paymentMethod     PaymentMethod?
-  squareOrderId     String?             @unique
-  squarePaymentId   String?             @unique
-  squareCheckoutUrl String?
-  notes             String?
-  specialRequests   String?
-  deliveryZone      String?
-  deliveryAddress   String?
-  deliveryFee       Decimal?            @db.Decimal(10, 2)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @default(now()) @updatedAt
-  profile           Profile?            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_customer")
-  items             CateringOrderItem[]
-
-  @@index([customerId], map: "idx_catering_order_customer_id")
-  @@index([squareOrderId], map: "idx_catering_order_square_order_id")
-}
-
-model CateringOrderItem {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId      String        @db.Uuid
-  itemType     String
-  itemId       String        @db.Uuid
-  name         String
-  quantity     Int
-  pricePerUnit Decimal       @db.Decimal(10, 2)
-  totalPrice   Decimal       @db.Decimal(10, 2)
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @default(now()) @updatedAt
-  order        CateringOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_order")
-
-  @@index([orderId], map: "idx_catering_order_item_order_id")
 }
 
 enum UserRole {
@@ -391,6 +239,7 @@ enum PaymentStatus {
 enum PaymentMethod {
   SQUARE
   CASH
+  VENMO
 }
 
 enum DiscountType {
@@ -398,10 +247,19 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
+// Catering-specific enums
+enum CateringStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
 enum CateringPackageType {
   INDIVIDUAL
-  BUFFET
   FAMILY_STYLE
+  BUFFET
   BOXED_LUNCH
 }
 
@@ -412,14 +270,161 @@ enum CateringItemCategory {
   SALAD
   DESSERT
   BEVERAGE
-  PROTEIN
-  ADD_ON
 }
 
-enum CateringStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  COMPLETED
-  CANCELLED
+// Catering models
+model CateringPackage {
+  id            String                  @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  minPeople     Int
+  pricePerPerson Decimal               @db.Decimal(10, 2)
+  type          CateringPackageType
+  imageUrl      String?
+  isActive      Boolean                 @default(true)
+  featuredOrder Int?
+  dietaryOptions String[]
+  squareCategory String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  
+  // Relations
+  ratings       CateringRating[]
+  items         CateringPackageItem[]
+  orderItems    CateringOrderItem[]
+}
+
+model CateringItem {
+  id            String                  @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  price         Decimal                 @db.Decimal(10, 2)
+  category      CateringItemCategory
+  isVegetarian  Boolean                 @default(false)
+  isVegan       Boolean                 @default(false)
+  isGlutenFree  Boolean                 @default(false)
+  servingSize   String?
+  imageUrl      String?
+  isActive      Boolean                 @default(true)
+  squareCategory String?
+  squareProductId String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  
+  // Relations
+  packageItems  CateringPackageItem[]
+  orderItems    CateringOrderItem[]
+  overrides     CateringItemOverrides[]
+}
+
+model CateringPackageItem {
+  id          String           @id @default(uuid()) @db.Uuid
+  packageId   String           @db.Uuid
+  itemId      String           @db.Uuid
+  quantity    Int
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  // Relations
+  package     CateringPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  cateringItem CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@unique([packageId, itemId])
+  @@index([packageId])
+  @@index([itemId])
+}
+
+model CateringRating {
+  id           String          @id @default(uuid()) @db.Uuid
+  packageId    String          @db.Uuid
+  rating       Int             @db.SmallInt
+  review       String?
+  reviewerName String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  // Relations
+  package      CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  
+  @@index([packageId])
+}
+
+model CateringOrder {
+  id                String               @id @default(uuid()) @db.Uuid
+  customerId        String?              @db.Uuid
+  email             String
+  name              String
+  phone             String
+  eventDate         DateTime
+  numberOfPeople    Int
+  totalAmount       Decimal              @db.Decimal(10, 2)
+  status            CateringStatus       @default(PENDING)
+  notes             String?
+  specialRequests   String?
+  deliveryZone      String?
+  deliveryAddress   String?
+  deliveryFee       Decimal?             @db.Decimal(10, 2)
+  paymentMethod     PaymentMethod        @default(SQUARE)
+  paymentStatus     PaymentStatus        @default(PENDING)
+  squareOrderId     String?              @unique
+  squareCheckoutUrl String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  
+  // Relations
+  customer        Profile?             @relation(fields: [customerId], references: [id])
+  items           CateringOrderItem[]
+  
+  @@index([customerId])
+  @@index([status])
+  @@index([eventDate])
+  @@index([createdAt])
+}
+
+model CateringOrderItem {
+  id            String           @id @default(uuid()) @db.Uuid
+  orderId       String           @db.Uuid
+  itemType      String           // "package" or "item"
+  itemId        String?          @db.Uuid
+  packageId     String?          @db.Uuid
+  name          String
+  quantity      Int
+  pricePerUnit  Decimal          @db.Decimal(10, 2)
+  totalPrice    Decimal          @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  // Relations
+  order         CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item          CateringItem?    @relation(fields: [itemId], references: [id])
+  package       CateringPackage? @relation(fields: [packageId], references: [id])
+  
+  @@index([orderId])
+  @@index([itemId])
+  @@index([packageId])
+}
+
+model CateringItemOverrides {
+  id                    String       @id @default(uuid()) @db.Uuid
+  itemId                String       @db.Uuid
+  localDescription      String?
+  localImageUrl         String?
+  localIsVegetarian     Boolean?
+  localIsVegan          Boolean?
+  localIsGlutenFree     Boolean?
+  localServingSize      String?
+  localDietaryOptions   String[]
+  overrideDescription   Boolean      @default(false)
+  overrideImage         Boolean      @default(false)
+  overrideDietary       Boolean      @default(false)
+  overrideServingSize   Boolean      @default(false)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  
+  // Relations
+  item                  CateringItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@unique([itemId])
+  @@index([itemId])
 }

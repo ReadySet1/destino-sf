@@ -23,6 +23,12 @@ import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
   try {
+    // Check if db is available
+    if (!db) {
+      console.error('Database connection not available');
+      return [];
+    }
+
     const packages = await db.cateringPackage.findMany({
       where: {
         isActive: true,
@@ -46,11 +52,19 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2021') {
         // Database table doesn't exist yet
-        throw new Error(`Catering package table does not exist. Error code: ${error.code}`);
+        console.warn('Catering package table does not exist yet - returning empty array');
+        return [];
+      }
+      if (error.code === 'P1001') {
+        // Database connection error
+        console.warn('Database connection error - returning empty array');
+        return [];
       }
     }
     
-    throw error; // Re-throw the error to be handled by the calling component
+    // For other errors, return empty array to prevent page crashes
+    console.warn('Returning empty catering packages array due to error:', error);
+    return [];
   }
 }
 
@@ -143,6 +157,12 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
+    // Check if db is available
+    if (!db) {
+      console.error('Database connection not available');
+      return [];
+    }
+
     // Fetch catering items
     const items = await db.cateringItem.findMany({
       where: {
