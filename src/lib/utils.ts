@@ -218,7 +218,7 @@ export function generateShortDescription(productName: string, categoryName?: str
     if (name.includes('peruvian')) {
       return 'Authentic Peruvian-style empanada';
     }
-    return 'Handcrafted empanada with authentic Latin flavors';
+    return 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite.';
   }
   
   // Alfajores descriptions
@@ -235,7 +235,7 @@ export function generateShortDescription(productName: string, categoryName?: str
     if (name.includes('classic') || name.includes('traditional')) {
       return 'Classic alfajor with buttery cookies and dulce de leche';
     }
-    return 'Traditional Argentine cookie with dulce de leche';
+    return 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way.';
   }
   
   // Catering and platters
@@ -278,7 +278,7 @@ export function generateShortDescription(productName: string, categoryName?: str
   
   // Default descriptions based on category
   if (category.includes('empanada')) {
-    return 'Authentic Latin American pastry with savory filling';
+    return 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite.';
   }
   if (category.includes('alfajor') || category.includes('cookie')) {
     return 'Traditional Latin American sweet treat';
