@@ -3,6 +3,8 @@
 import { logger } from '../../utils/logger';
 import * as Square from 'square';
 import { directCatalogApi } from './catalog-api';
+import { directLaborApi } from './labor-api';
+import { directPaymentsApi } from './payments-api';
 import type { SquareClient } from '../../types/square';
 
 /**
@@ -99,6 +101,18 @@ class SquareClientSingleton {
         this.instance.catalogApi = directCatalogApi;
       }
 
+      // Add new Labor API for 2025-05-21 scheduling and timecard features
+      if (!this.instance.laborApi) {
+        logger.info("Adding direct labor API implementation to Square client");
+        this.instance.laborApi = directLaborApi;
+      }
+
+      // Add enhanced Payments API for improved gift card error handling
+      if (!this.instance.paymentsApi) {
+        logger.info("Adding direct payments API implementation to Square client");
+        this.instance.paymentsApi = directPaymentsApi;
+      }
+
       // Check for locations API
       if (!this.instance.locationsApi || !this.instance.locationsApi.listLocations) {
         logger.warn("Square locations API not available or listLocations method not found");
@@ -107,6 +121,8 @@ class SquareClientSingleton {
 
       logger.info("Square client initialized with:", {
         hasDirectCatalogApi: !!this.instance.catalogApi,
+        hasDirectLaborApi: !!this.instance.laborApi,
+        hasDirectPaymentsApi: !!this.instance.paymentsApi,
         hasLocationsApi: !!this.instance.locationsApi,
         squareClientKeys: Object.keys(this.instance)
       });
@@ -139,11 +155,18 @@ export const squareClient = new Proxy({} as SquareClient, {
 
 export const client = squareClient;
 
-// Lazy getters for API endpoints
+// Lazy getters for API endpoints including new Labor API
 export const ordersApi = new Proxy({}, {
   get(target, prop) {
     const client = SquareClientSingleton.getInstance();
     return client?.ordersApi ? client.ordersApi[prop] : undefined;
+  }
+});
+
+export const laborApi = new Proxy({}, {
+  get(target, prop) {
+    const client = SquareClientSingleton.getInstance();
+    return client?.laborApi ? client.laborApi[prop] : undefined;
   }
 });
 

@@ -794,7 +794,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         const fetchResponse = await fetch(paymentLinkUrl, {
              method: 'POST',
              headers: {
-                 'Square-Version': '2024-01-18', // Use a recent API version
+                 'Square-Version': '2025-05-21', // Use the latest API version
                  'Authorization': `Bearer ${accessToken}`,
                  'Content-Type': 'application/json',
              },

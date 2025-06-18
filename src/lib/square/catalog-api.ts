@@ -121,7 +121,7 @@ export async function retrieveCatalogObject(objectId: string) {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2023-12-13',
+      'Square-Version': '2025-05-21',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -162,7 +162,7 @@ export async function searchCatalogObjects(requestBody: any) {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2023-12-13',
+      'Square-Version': '2025-05-21',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -220,7 +220,7 @@ export async function listCatalog(cursor?: string, objectTypes?: string) {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2023-12-13',
+      'Square-Version': '2025-05-21',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -258,7 +258,7 @@ export async function testApiConnection() {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${squareConfig.accessToken}`,
-        'Square-Version': '2023-12-13',
+        'Square-Version': '2025-05-21',
         'Content-Type': 'application/json'
       }
     };

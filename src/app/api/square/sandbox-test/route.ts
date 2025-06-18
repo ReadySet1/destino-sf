@@ -22,7 +22,7 @@ export async function GET() {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Square-Version': '2023-12-13',
+        'Square-Version': '2025-05-21',
         'Content-Type': 'application/json'
       }
     });
@@ -48,7 +48,7 @@ export async function GET() {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Square-Version': '2023-12-13',
+        'Square-Version': '2025-05-21',
         'Content-Type': 'application/json'
       },
       body: searchBody

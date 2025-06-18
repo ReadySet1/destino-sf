@@ -812,7 +812,7 @@ export async function createCateringOrderAndProcessPayment(
     const fetchResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
       method: 'POST',
       headers: {
-        'Square-Version': '2024-01-18',
+        'Square-Version': '2025-05-21',
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },

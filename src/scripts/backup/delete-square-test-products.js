@@ -14,7 +14,7 @@ if (!squareClient.catalogApi.deleteCatalogObject) {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
-        'Square-Version': '2023-12-13',
+        'Square-Version': '2025-05-21',
         'Content-Type': 'application/json'
       }
     };

@@ -31,7 +31,7 @@ if (!squareClient.locationsApi) {
       const response = await fetch(`https://connect${apiSuffix}.squareup.com/v2/locations`, {
         method: 'GET',
         headers: {
-          'Square-Version': '2023-12-13',
+          'Square-Version': '2025-05-21',
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
@@ -56,7 +56,7 @@ if (!squareClient.locationsApi) {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Square-Version': '2023-12-13',
+          'Square-Version': '2025-05-21',
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
@@ -74,7 +74,7 @@ if (!squareClient.locationsApi) {
       const response = await fetch(`https://connect${apiSuffix}.squareup.com/v2/catalog/search`, {
         method: 'POST',
         headers: {
-          'Square-Version': '2023-12-13',
+          'Square-Version': '2025-05-21',
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
@@ -93,7 +93,7 @@ if (!squareClient.locationsApi) {
       const response = await fetch(`https://connect${apiSuffix}.squareup.com/v2/catalog/object`, {
         method: 'POST',
         headers: {
-          'Square-Version': '2023-12-13',
+          'Square-Version': '2025-05-21',
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
