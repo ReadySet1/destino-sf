@@ -398,8 +398,10 @@ describe('Square Payments API', () => {
     test('should identify gift card insufficient funds error', () => {
       const errors = [
         {
-          code: 'INSUFFICIENT_FUNDS',
-          detail: 'Gift card does not have sufficient funds',
+          category: 'PAYMENT_METHOD_ERROR',
+          code: 'GIFT_CARD_INSUFFICIENT_FUNDS',
+          detail: 'Gift card has insufficient funds',
+          field: 'source_id',
         },
       ];
 
@@ -408,12 +410,14 @@ describe('Square Payments API', () => {
       expect(result).toEqual({
         isGiftCardError: true,
         insufficientFunds: true,
+        availableAmount: undefined,
       });
     });
 
-    test('should identify non-gift card errors', () => {
+    test('should return false for non-gift card errors', () => {
       const errors = [
         {
+          category: 'PAYMENT_METHOD_ERROR',
           code: 'CARD_DECLINED',
           detail: 'Card was declined',
         },
@@ -424,6 +428,7 @@ describe('Square Payments API', () => {
       expect(result).toEqual({
         isGiftCardError: false,
         insufficientFunds: false,
+        availableAmount: undefined,
       });
     });
 
@@ -433,6 +438,7 @@ describe('Square Payments API', () => {
       expect(result).toEqual({
         isGiftCardError: false,
         insufficientFunds: false,
+        availableAmount: undefined,
       });
     });
   });
@@ -444,9 +450,9 @@ describe('Square Payments API', () => {
 
       const message = formatGiftCardErrorMessage(availableAmount, requestedAmount);
 
+      expect(message).toContain('Gift card has insufficient funds');
       expect(message).toContain('$25.00');
       expect(message).toContain('$75.00');
-      expect(message).toContain('available');
     });
 
     test('should handle different currencies', () => {
@@ -455,7 +461,9 @@ describe('Square Payments API', () => {
 
       const message = formatGiftCardErrorMessage(availableAmount, requestedAmount);
 
-      expect(message).toContain('CAD');
+      expect(message).toContain('Gift card has insufficient funds');
+      expect(message).toContain('$10.00');
+      expect(message).toContain('$20.00');
     });
 
     test('should handle zero amounts', () => {

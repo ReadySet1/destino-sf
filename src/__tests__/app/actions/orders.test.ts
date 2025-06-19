@@ -7,6 +7,9 @@ import {
 } from '@/app/actions/orders';
 import { prisma } from '@/lib/prisma';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
+import { syncOrderWithSquare } from '@/lib/square/sync';
+import { mockPrismaClient as mockPrisma } from '@/__mocks__/prisma';
+import { PaymentMethod } from '@prisma/client';
 
 // Mock external dependencies
 jest.mock('@/lib/prisma', () => ({
@@ -67,17 +70,17 @@ const mockValidateOrderMinimums = validateOrderMinimums as jest.MockedFunction<t
 // Test fixtures
 const validCartItems = [
   {
-    id: 'prod-1',
+    id: 'product-1',
     name: 'Dulce de Leche Alfajores',
     price: 12.99,
     quantity: 2,
     variantId: 'variant-1',
   },
   {
-    id: 'prod-2',
-    name: 'Beef Empanadas',
-    price: 15.99,
-    quantity: 1,
+    id: 'product-2',
+    name: 'Empanada Beef',
+    price: 4.50,
+    quantity: 6,
   },
 ];
 
@@ -89,50 +92,63 @@ const validCustomerInfo = {
 
 const validPickupFulfillment = {
   method: 'pickup' as const,
-  pickupTime: '2024-01-16T14:00:00Z',
+  pickupTime: '2024-01-15T14:00:00.000Z',
 };
 
 const validLocalDeliveryFulfillment = {
   method: 'local_delivery' as const,
   deliveryDate: '2024-01-16',
-  deliveryTime: '14:00',
+  deliveryTime: '18:00',
   deliveryAddress: {
-    street: '123 Main St',
+    street: '123 Delivery St',
     city: 'San Francisco',
     state: 'CA',
     postalCode: '94105',
   },
-  deliveryInstructions: 'Leave at door',
+  deliveryInstructions: 'Ring doorbell',
 };
 
 const validNationwideShippingFulfillment = {
   method: 'nationwide_shipping' as const,
   shippingAddress: {
-    street: '456 Oak Ave',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10001',
+    street: '456 Ship St',
+    city: 'Los Angeles',
+    state: 'CA',
+    postalCode: '90210',
   },
-  shippingMethod: 'usps_priority',
+  shippingMethod: 'ground',
   shippingCarrier: 'USPS',
-  shippingCost: 1299, // $12.99 in cents
+  shippingCost: 1250, // $12.50 in cents
   rateId: 'rate-123',
 };
 
 const mockCreatedOrder = {
   id: 'order-123',
-  userId: null,
   status: 'PENDING',
+  total: 4543,
+  taxAmount: 346,
+  subtotal: 4197,
   customerName: 'John Doe',
   customerEmail: 'john@example.com',
   customerPhone: '+1234567890',
   fulfillmentMethod: 'pickup',
-  subtotal: 4197, // $41.97 in cents
-  taxAmount: 346,  // 8.25% tax
-  total: 4543,     // Subtotal + tax
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  userId: null,
+  createdAt: new Date('2025-06-19T16:55:08.495Z'),
+  updatedAt: new Date('2025-06-19T16:55:08.495Z'),
 };
+
+// Jest mocks
+jest.mock('@/lib/cart-helpers', () => ({
+  validateOrderMinimums: jest.fn(),
+}));
+
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+}));
+
+// Type the mocked functions
+const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
+const mockSyncOrderWithSquare = syncOrderWithSquare as jest.MockedFunction<typeof syncOrderWithSquare>;
 
 describe('Order Actions', () => {
   beforeEach(() => {
@@ -180,7 +196,7 @@ describe('Order Actions', () => {
             customerEmail: 'john@example.com',
             customerPhone: '+1234567890',
             fulfillmentMethod: 'pickup',
-            pickupTime: new Date('2024-01-16T14:00:00Z'),
+            pickupTime: new Date('2024-01-15T14:00:00.000Z'),
           }),
         });
       });
@@ -272,7 +288,7 @@ describe('Order Actions', () => {
         mockPrisma.order.create.mockResolvedValue({
           ...mockCreatedOrder,
           fulfillmentMethod: 'nationwide_shipping',
-          shippingCost: 1299,
+          shippingCost: 1250,
           total: 5842, // Including shipping
         });
 
@@ -284,8 +300,8 @@ describe('Order Actions', () => {
           data: expect.objectContaining({
             fulfillmentMethod: 'nationwide_shipping',
             shippingAddress: validNationwideShippingFulfillment.shippingAddress,
-            shippingCost: 1299,
-            shippingMethod: 'usps_priority',
+            shippingCost: 1250,
+            shippingMethod: 'ground',
             shippingCarrier: 'USPS',
             shippoRateId: 'rate-123',
           }),
