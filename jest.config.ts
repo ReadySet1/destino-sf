@@ -73,6 +73,25 @@ const config: Config = {
       lines: 3,        // as more tests are added
       statements: 3,   // Current actual coverage levels
     },
+    // Critical path specific thresholds for production-ready testing
+    'src/app/api/checkout/**/*.ts': {
+      branches: 85,
+      functions: 85,
+      lines: 85,
+      statements: 85,
+    },
+    'src/app/actions/orders.ts': {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+    'src/lib/square/**/*.ts': {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
   },
   projects: [
     // Node.js environment for API routes, lib, and utils
