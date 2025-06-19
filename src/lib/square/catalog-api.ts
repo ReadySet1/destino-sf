@@ -1,35 +1,46 @@
 import { logger } from '@/utils/logger';
 import https from 'https';
 
+// Configuration interface for consistency
+interface SquareConfig {
+  useSandbox: boolean;
+  accessToken: string;
+  apiHost: string;
+  tokenSource: string;
+}
+
 // Function to get the current access token and environment settings
-function getSquareConfig() {
+// This now uses direct environment variable access to avoid circular dependencies
+function getSquareConfig(): SquareConfig {
+  // Check for hybrid configuration
+  const forceCatalogProduction = process.env.SQUARE_CATALOG_USE_PRODUCTION === 'true';
+  const forceTransactionSandbox = process.env.SQUARE_TRANSACTIONS_USE_SANDBOX === 'true';
   const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-  
-  // First check for environment-specific tokens
-  let accessToken;
-  let tokenSource;
-  
-  if (useSandbox) {
-    accessToken = process.env.SQUARE_SANDBOX_TOKEN;
-    tokenSource = 'SQUARE_SANDBOX_TOKEN';
-  } else if (process.env.NODE_ENV === 'production') {
-    // In production, first try SQUARE_PRODUCTION_TOKEN, then fall back to SQUARE_ACCESS_TOKEN
+
+  // Determine catalog environment
+  let catalogEnvironment: 'sandbox' | 'production';
+  let accessToken: string | undefined;
+  let tokenSource: string;
+
+  if (forceCatalogProduction || (!useSandbox && !forceTransactionSandbox)) {
+    // Use production for catalog
+    catalogEnvironment = 'production';
     accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
     tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
   } else {
-    // In development (but not sandbox), use SQUARE_ACCESS_TOKEN
-    accessToken = process.env.SQUARE_ACCESS_TOKEN;
-    tokenSource = 'SQUARE_ACCESS_TOKEN';
+    // Use sandbox for catalog
+    catalogEnvironment = 'sandbox';
+    accessToken = process.env.SQUARE_SANDBOX_TOKEN;
+    tokenSource = 'SQUARE_SANDBOX_TOKEN';
   }
-  
-  // API host based on environment - use the correct hostnames for each environment
-  const apiHost = useSandbox
-    ? 'sandbox.squareup.com'  // Sandbox environment
-    : 'connect.squareup.com'; // Production environment
-    
+
+  const apiHost = catalogEnvironment === 'sandbox' 
+    ? 'connect.squareupsandbox.com' 
+    : 'connect.squareup.com';
+      
   return {
-    useSandbox,
-    accessToken,
+    useSandbox: catalogEnvironment === 'sandbox',
+    accessToken: accessToken || '',
     apiHost,
     tokenSource
   };
@@ -147,14 +158,14 @@ export async function retrieveCatalogObject(objectId: string) {
  * Direct implementation of Square's searchCatalogObjects API
  */
 export async function searchCatalogObjects(requestBody: any) {
-  // Refresh config for each request
+  // Refresh config for each request to ensure we have the latest
   squareConfig = getSquareConfig();
   
   if (!squareConfig.accessToken) {
     throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
   }
   
-  logger.info(`Searching catalog objects on ${squareConfig.apiHost}`);
+  logger.info(`Searching catalog objects on ${squareConfig.apiHost} using token from ${squareConfig.tokenSource} (sandbox: ${squareConfig.useSandbox})`);
   
   const options = {
     hostname: squareConfig.apiHost,
