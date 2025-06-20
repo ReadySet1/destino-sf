@@ -46,32 +46,40 @@ function getSquareConfig(): SquareConfig {
   };
 }
 
-// Get initial config
-let squareConfig = getSquareConfig();
+// Initialize config as null - will be loaded on first use
+let squareConfig: SquareConfig | null = null;
 
-// Log the token configuration on startup
-logger.info('Square API configuration:', {
-  environment: squareConfig.useSandbox ? 'sandbox' : 'production',
-  apiHost: squareConfig.apiHost,
-  tokenSource: squareConfig.tokenSource,
-  hasToken: !!squareConfig.accessToken
-});
+// Function to ensure config is loaded
+function ensureConfig(): SquareConfig {
+  if (!squareConfig) {
+    squareConfig = getSquareConfig();
+    
+    // Log the token configuration when first loaded
+    logger.info('Square API configuration:', {
+      environment: squareConfig.useSandbox ? 'sandbox' : 'production',
+      apiHost: squareConfig.apiHost,
+      tokenSource: squareConfig.tokenSource,
+      hasToken: !!squareConfig.accessToken
+    });
+  }
+  return squareConfig;
+}
 
 /**
  * Makes an HTTPS request to the Square API
  */
 async function httpsRequest(options: any, requestBody?: any): Promise<any> {
-  // Refresh config in case it was changed at runtime
-  squareConfig = getSquareConfig();
+  // Ensure config is loaded and get fresh config
+  const config = ensureConfig();
   
   // Ensure we have a token
-  if (!squareConfig.accessToken) {
-    throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
+  if (!config.accessToken) {
+    throw new Error(`Square access token not configured for ${config.tokenSource}`);
   }
   
   // Update Authorization header with current token
   if (options.headers) {
-    options.headers['Authorization'] = `Bearer ${squareConfig.accessToken}`;
+    options.headers['Authorization'] = `Bearer ${config.accessToken}`;
   }
   
   return new Promise((resolve, reject) => {
@@ -92,8 +100,8 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
         } else {
           // Add more context for authentication errors
           if (res.statusCode === 401) {
-            logger.error(`Authentication error with token from ${squareConfig.tokenSource}. Please check your Square API token.`);
-            logger.error(`Environment: ${squareConfig.useSandbox ? 'sandbox' : 'production'}`);
+            logger.error(`Authentication error with token from ${config.tokenSource}. Please check your Square API token.`);
+            logger.error(`Environment: ${config.useSandbox ? 'sandbox' : 'production'}`);
           }
           reject(new Error(`Request failed with status: ${res.statusCode}, body: ${data}`));
         }
@@ -117,22 +125,22 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
  * Works around issues with the Square SDK
  */
 export async function retrieveCatalogObject(objectId: string) {
-  // Refresh config for each request
-  squareConfig = getSquareConfig();
+  // Ensure config is loaded
+  const config = ensureConfig();
   
-  if (!squareConfig.accessToken) {
-    throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
+  if (!config.accessToken) {
+    throw new Error(`Square access token not configured for ${config.tokenSource}`);
   }
   
-  logger.info(`Retrieving catalog object with ID: ${objectId} from ${squareConfig.apiHost}`);
+  logger.info(`Retrieving catalog object with ID: ${objectId} from ${config.apiHost}`);
   
   const options = {
-    hostname: squareConfig.apiHost,
+    hostname: config.apiHost,
     path: `/v2/catalog/object/${objectId}`,
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2025-05-21',
+      'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -158,14 +166,14 @@ export async function retrieveCatalogObject(objectId: string) {
  * Direct implementation of Square's searchCatalogObjects API
  */
 export async function searchCatalogObjects(requestBody: any) {
-  // Refresh config for each request to ensure we have the latest
-  squareConfig = getSquareConfig();
+  // Ensure config is loaded
+  const config = ensureConfig();
   
-  if (!squareConfig.accessToken) {
-    throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
+  if (!config.accessToken) {
+    throw new Error(`Square access token not configured for ${config.tokenSource}`);
   }
   
-  logger.info(`Searching catalog objects on ${squareConfig.apiHost} using token from ${squareConfig.tokenSource} (sandbox: ${squareConfig.useSandbox})`);
+  logger.info(`Searching catalog objects on ${config.apiHost} using token from ${config.tokenSource} (sandbox: ${config.useSandbox})`);
   
   const options = {
     hostname: squareConfig.apiHost,
@@ -173,7 +181,7 @@ export async function searchCatalogObjects(requestBody: any) {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2025-05-21',
+      'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -231,7 +239,7 @@ export async function listCatalog(cursor?: string, objectTypes?: string) {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${squareConfig.accessToken}`,
-      'Square-Version': '2025-05-21',
+      'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
     }
@@ -269,7 +277,7 @@ export async function testApiConnection() {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${squareConfig.accessToken}`,
-        'Square-Version': '2025-05-21',
+        'Square-Version': '2024-10-17',
         'Content-Type': 'application/json'
       }
     };

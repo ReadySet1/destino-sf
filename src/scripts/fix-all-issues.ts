@@ -10,6 +10,14 @@
  * 4. Check auth configuration
  */
 
+// Load environment variables in the correct order
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env.local first (development), then .env (fallback)
+config({ path: resolve(process.cwd(), '.env.local') });
+config({ path: resolve(process.cwd(), '.env') });
+
 import { PrismaClient } from '@prisma/client';
 import { syncSquareProducts } from '../lib/square/sync';
 

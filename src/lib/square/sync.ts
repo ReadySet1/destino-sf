@@ -308,7 +308,9 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         include_deleted_objects: false
       };
       
-      const catalogResponse = await squareClient.catalogApi?.searchCatalogObjects(requestBody);
+      // Use the direct catalog API to avoid client configuration conflicts
+      const { searchCatalogObjects } = await import('./catalog-api');
+      const catalogResponse = await searchCatalogObjects(requestBody);
       
       if (!catalogResponse) {
         throw new Error('Square catalog API not available or returned no response');
