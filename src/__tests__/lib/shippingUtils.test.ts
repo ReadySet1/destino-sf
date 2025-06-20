@@ -8,29 +8,30 @@ import {
 } from '@/lib/shippingUtils';
 import { prisma } from '@/lib/prisma';
 
+// Import our new test utilities
+import { 
+  setupMockPrisma,
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+import { mockPrismaClient } from '@/__mocks__/prisma';
+
 // Mock Prisma
 jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    shippingConfiguration: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      upsert: jest.fn(),
-    },
-  },
+  prisma: mockPrismaClient,
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = mockPrismaClient;
 
 describe('ShippingUtils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset console methods
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockConsole(); // Use utility for console mocking
+    setupMockPrisma(mockPrisma); // Setup default mock responses
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    restoreConsole(); // Use utility for cleanup
   });
 
   // Unit Tests for getProductType (internal function - testing through calculateShippingWeight)

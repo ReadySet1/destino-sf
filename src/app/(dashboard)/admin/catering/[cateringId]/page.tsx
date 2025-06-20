@@ -164,8 +164,8 @@ type PageProps = {
  */
 const CateringOrderDetailsPage = async ({ params }: PageProps) => {
   try {
-    // Get cateringId from params
-    const { cateringId } = params;
+    // Get cateringId from params - await params as required by Next.js
+    const { cateringId } = await params;
 
     console.log("Catering ID:", cateringId);
 
@@ -181,7 +181,7 @@ const CateringOrderDetailsPage = async ({ params }: PageProps) => {
       where: { id: cateringId },
       include: {
         items: true,
-        profile: true
+        customer: true
       },
     });
 

@@ -154,91 +154,19 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
 
 /**
  * Fetches all active catering items
+ * DEPRECATED: Use getCateringItemsWithImages from utils/catering-optimized.ts instead
+ * This function is kept for backward compatibility but will use the optimized version
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
-    // Check if db is available
-    if (!db) {
-      console.error('Database connection not available');
-      return [];
-    }
-
-    // Fetch catering items
-    const items = await db.cateringItem.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        category: 'asc',
-      },
-    });
+    // Import the optimized function dynamically to avoid circular dependencies
+    const { getCateringItemsWithImages } = await import('@/utils/catering-optimized');
+    const { measurePerformance } = await import('@/utils/performance');
     
-    // Fetch products that might correspond to catering items
-    const productNames = items.map(item => item.name.toLowerCase());
-    const products = await db.product.findMany({
-      where: {
-        OR: [
-          { name: { in: productNames } },
-          ...productNames.map(name => ({ name: { contains: name, mode: 'insensitive' as const } }))
-        ]
-      },
-      select: {
-        name: true,
-        images: true
-      }
-    });
-    
-    // Create a mapping of product names to their images
-    const productImageMap = new Map<string, string[]>();
-    products.forEach(product => {
-      const normalizedName = product.name.toLowerCase();
-      productImageMap.set(normalizedName, product.images as string[]);
-      
-      // Also add without "catering-" prefix if it exists
-      if (normalizedName.startsWith('catering-')) {
-        productImageMap.set(normalizedName.replace('catering-', ''), product.images as string[]);
-      }
-    });
-    
-    // Attach product images to catering items where possible and serialize Decimal fields
-    const result = items.map(item => {
-      const normalizedName = item.name.toLowerCase();
-      let imageUrl = item.imageUrl;
-      
-      // If the item doesn't have an imageUrl, try to find a matching product
-      if (!imageUrl) {
-        // Look for exact match first
-        const images = productImageMap.get(normalizedName);
-        
-        if (images && images.length > 0) {
-          imageUrl = images[0];
-          console.log(`[DEBUG] Found image for "${item.name}": ${imageUrl}`);
-        } else {
-          // Look for partial matches
-          for (const [productName, productImages] of productImageMap.entries()) {
-            if (normalizedName.includes(productName) || productName.includes(normalizedName)) {
-              if (productImages && productImages.length > 0) {
-                imageUrl = productImages[0];
-                console.log(`[DEBUG] Found partial match image for "${item.name}" from "${productName}": ${imageUrl}`);
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      return {
-        ...item,
-        price: Number(item.price),
-        imageUrl
-      };
-    }) as unknown as CateringItem[];
-    
-    // Log overall statistics
-    const itemsWithImages = result.filter(item => item.imageUrl).length;
-    console.log(`[DEBUG] Catering items with images: ${itemsWithImages}/${result.length}`);
-    
-    return result;
+    return await measurePerformance(
+      'getCateringItems (legacy)',
+      () => getCateringItemsWithImages()
+    );
   } catch (error) {
     console.error('Error fetching catering items:', error);
     
@@ -571,11 +499,23 @@ const CateringOrderItemSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+// Phone number validation for catering orders
+const cateringPhoneSchema = z.string()
+  .min(7, 'Phone number must be at least 7 digits')
+  .max(20, 'Phone number is too long')
+  .refine((phone) => {
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+  }, {
+    message: 'Please enter a valid phone number (7-15 digits)'
+  });
+
 const CateringOrderSchema = z.object({
   customerInfo: z.object({
     name: z.string().min(2),
     email: z.string().email(),
-    phone: z.string().min(7),
+    phone: cateringPhoneSchema,
     customerId: z.string().uuid().optional().nullable(),
   }),
   eventDetails: z.object({
@@ -606,6 +546,139 @@ export type ServerActionResult<T = unknown> = Promise<
   | { success: true; data: T }
   | { success: false; error: string }
 >;
+
+/**
+ * Formats phone numbers for Square API compatibility (E.164 format)
+ * Square API requires phone numbers in E.164 format: +[country code][number]
+ * Maximum 15 digits total, no spaces or special characters except +
+ */
+function formatPhoneForSquare(phone: string): string {
+  if (!phone || typeof phone !== 'string') {
+    throw new Error('Phone number is required and must be a string');
+  }
+
+  // Remove all non-digit characters except + at the beginning
+  let cleanPhone = phone.trim();
+  
+  // If it already starts with +, validate and clean it
+  if (cleanPhone.startsWith('+')) {
+    const digitsOnly = cleanPhone.substring(1).replace(/\D/g, '');
+    
+    // Validate E.164 format: must be 7-15 digits after the +
+    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
+      throw new Error(`Invalid phone number length: ${digitsOnly.length} digits. E.164 format requires 7-15 digits after country code.`);
+    }
+    
+    // Must not start with 0 (no country codes start with 0)
+    if (digitsOnly.startsWith('0')) {
+      throw new Error('Invalid phone number: country codes cannot start with 0');
+    }
+    
+    const formattedPhone = `+${digitsOnly}`;
+    console.log(`Phone formatted from ${phone} to ${formattedPhone}`);
+    return formattedPhone;
+  }
+  
+  // Remove all non-digit characters
+  const digitsOnly = cleanPhone.replace(/\D/g, '');
+  
+  // Handle different US number formats
+  if (digitsOnly.length === 10) {
+    // 10-digit US number, add +1 prefix
+    const formattedPhone = `+1${digitsOnly}`;
+    console.log(`US phone formatted from ${phone} to ${formattedPhone}`);
+    return formattedPhone;
+  } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+    // 11-digit number starting with 1 (US), add + prefix
+    const formattedPhone = `+${digitsOnly}`;
+    console.log(`US phone formatted from ${phone} to ${formattedPhone}`);
+    return formattedPhone;
+  } else if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
+    // International number without + prefix
+    // Assume it's already properly formatted without country code prefix
+    // For safety, we'll need the caller to provide proper format
+    throw new Error(`Phone number format unclear: ${digitsOnly.length} digits. Please provide phone number with country code (e.g., +1 for US numbers).`);
+  } else {
+    // Invalid length
+    throw new Error(`Invalid phone number: ${digitsOnly.length} digits. Phone numbers must be 7-15 digits in E.164 format.`);
+  }
+}
+
+/**
+ * Saves contact information immediately to capture leads
+ * Creates or updates a profile with name and phone number
+ * Can be used for both catering and regular checkout
+ */
+export async function saveContactInfo(data: {
+  name: string;
+  email: string;
+  phone: string;
+}): Promise<ServerActionResult<{ profileId: string }>> {
+  try {
+    // Validate input data
+    if (!data.name?.trim() || !data.email?.trim() || !data.phone?.trim()) {
+      return { success: false, error: 'Name, email, and phone are required' };
+    }
+
+    // Check if a profile already exists with this email
+    const existingProfile = await db.profile.findUnique({
+      where: { email: data.email },
+    });
+
+    let profile;
+    
+    if (existingProfile) {
+      // Update existing profile with new information
+      profile = await db.profile.update({
+        where: { id: existingProfile.id },
+        data: {
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          updated_at: new Date(),
+        },
+      });
+      
+      console.log(`Updated existing profile for email: ${data.email}`);
+    } else {
+      // Create new profile
+      profile = await db.profile.create({
+        data: {
+          id: randomUUID(),
+          email: data.email.trim(),
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          role: 'CUSTOMER',
+        },
+      });
+      
+      console.log(`Created new profile for email: ${data.email}`);
+    }
+
+    return {
+      success: true,
+      data: { profileId: profile.id }
+    };
+  } catch (error) {
+    console.error('Error saving contact info:', error);
+    
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return { success: false, error: 'This email is already registered' };
+      }
+    }
+    
+    return { 
+      success: false, 
+      error: 'Failed to save contact information' 
+    };
+  }
+}
+
+/**
+ * Backwards compatibility alias for catering checkout
+ * @deprecated Use saveContactInfo instead
+ */
+export const saveCateringContactInfo = saveContactInfo;
 
 /**
  * Creates a catering order and generates a Square checkout URL
@@ -672,7 +745,8 @@ export async function createCateringOrderAndProcessPayment(
         items: {
           create: items.map(item => ({
             itemType: item.itemType,
-            itemId: item.itemId,
+            itemId: item.itemType === 'item' ? item.itemId : undefined,
+            packageId: item.itemType === 'package' ? item.itemId : undefined,
             name: item.name,
             quantity: item.quantity,
             pricePerUnit: item.pricePerUnit,
@@ -789,7 +863,29 @@ export async function createCateringOrderAndProcessPayment(
       tip_settings: createCateringOrderTipSettings()
     };
     
-    // 7. Build full Square request body
+    // 7. Format and validate phone number for Square API
+    let formattedPhone: string;
+    try {
+      formattedPhone = formatPhoneForSquare(customerInfo.phone);
+    } catch (phoneError) {
+      console.error('Phone number formatting error:', phoneError);
+      
+      await db.cateringOrder.update({
+        where: { id: cateringOrder.id },
+        data: { 
+          status: CateringStatus.CANCELLED,
+          paymentStatus: PaymentStatus.FAILED,
+          notes: `Phone number formatting error: ${phoneError instanceof Error ? phoneError.message : 'Invalid phone format'}`
+        }
+      });
+      
+      return { 
+        success: false, 
+        error: `Invalid phone number format: ${phoneError instanceof Error ? phoneError.message : 'Please provide a valid phone number with country code (e.g., +1 for US numbers)'}`,
+      };
+    }
+
+    // 8. Build full Square request body
     const squareRequestBody = {
       idempotency_key: randomUUID(),
       order: {
@@ -803,11 +899,11 @@ export async function createCateringOrderAndProcessPayment(
       checkout_options: squareCheckoutOptions,
       pre_populated_data: { 
         buyer_email: customerInfo.email,
-        buyer_phone_number: customerInfo.phone,
+        buyer_phone_number: formattedPhone,
       }
     };
     
-    // 8. Call Square API to create payment link
+    // 9. Call Square API to create payment link
     console.log("Calling Square Create Payment Link API for catering order...");
     const fetchResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
       method: 'POST',
@@ -821,7 +917,7 @@ export async function createCateringOrderAndProcessPayment(
     
     const responseData = await fetchResponse.json();
     
-    // 9. Handle Square API response
+    // 10. Handle Square API response
     if (!fetchResponse.ok || responseData.errors || !responseData.payment_link?.url || !responseData.payment_link?.order_id) {
       const errorDetail = responseData.errors?.[0]?.detail || 'Failed to create Square payment link';
       const squareErrorCode = responseData.errors?.[0]?.code;
@@ -843,7 +939,7 @@ export async function createCateringOrderAndProcessPayment(
       };
     }
     
-    // 10. Store Square checkout info and return success
+    // 11. Store Square checkout info and return success
     const checkoutUrl = responseData.payment_link.url;
     const squareOrderId = responseData.payment_link.order_id;
     

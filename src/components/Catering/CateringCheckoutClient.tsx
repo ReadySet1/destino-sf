@@ -39,6 +39,8 @@ interface CateringCheckoutClientProps {
 type CheckoutStep = 'customer-info' | 'fulfillment' | 'payment' | 'review';
 
 export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckoutClientProps) {
+  console.log('🔍 CateringCheckoutClient received:', { userData, isLoggedIn });
+  
   const router = useRouter();
   const { items, removeItem, clearCart } = useCateringCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,6 +53,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     phone: userData?.phone || '',
     specialRequests: '',
     eventDate: addDays(new Date(), 5),
+  });
+  
+  console.log('🔍 Customer info initialized with:', {
+    name: userData?.name || '',
+    email: userData?.email || '',
+    phone: userData?.phone || ''
   });
   
   // Fulfillment info state

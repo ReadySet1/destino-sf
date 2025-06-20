@@ -54,6 +54,7 @@ import {
 import { calculateDeliveryFee, getDeliveryFeeMessage, DeliveryFeeResult } from '@/lib/deliveryUtils';
 import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
+import { saveContactInfo } from '@/actions/catering';
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
@@ -76,11 +77,23 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
+// Phone number validation schema
+const phoneSchema = z.string()
+  .min(10, 'Phone number must be at least 10 digits')
+  .max(20, 'Phone number is too long')
+  .refine((phone) => {
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+  }, {
+    message: 'Please enter a valid phone number (10-15 digits)'
+  });
+
 const pickupSchema = z.object({
   fulfillmentMethod: z.literal('pickup'),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required'),
+  phone: phoneSchema,
   pickupDate: z.string().min(1, 'Pickup date is required'),
   pickupTime: z.string().min(1, 'Pickup time is required'),
   paymentMethod: z.nativeEnum(PaymentMethod),
@@ -90,7 +103,7 @@ const localDeliverySchema = z.object({
   fulfillmentMethod: z.literal('local_delivery'),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required'),
+  phone: phoneSchema,
   deliveryAddress: addressSchema,
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
@@ -102,7 +115,7 @@ const nationwideShippingSchema = z.object({
   fulfillmentMethod: z.literal('nationwide_shipping'),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required'),
+  phone: phoneSchema,
   shippingAddress: addressSchema,
   rateId: z.string().min(1, 'Please select a shipping method.'),
   paymentMethod: z.nativeEnum(PaymentMethod),
@@ -165,6 +178,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [shippingError, setShippingError] = useState<string | null>(null);
   // New state for delivery fee
   const [deliveryFee, setDeliveryFee] = useState<DeliveryFeeResult | null>(null);
+  // Contact info saving state
+  const [contactSaved, setContactSaved] = useState(false);
   // Client Supabase needed only if performing client-side auth actions, otherwise remove
   // const supabase = createClient(); 
 
@@ -191,6 +206,35 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   const currentMethod = watch('fulfillmentMethod');
   const currentPaymentMethod = watch('paymentMethod');
+
+  // Function to save contact info immediately
+  const saveContactInfoImmediately = async (name: string, email: string, phone: string) => {
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      return; // Don't save incomplete info
+    }
+
+    // Basic validation before saving
+    if (name.length < 2 || !email.includes('@') || phone.length < 10) {
+      return; // Don't save invalid info
+    }
+
+    try {
+      const result = await saveContactInfo({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+      });
+
+      if (result.success) {
+        setContactSaved(true);
+        console.log('✅ Contact info saved successfully with profile ID:', result.data.profileId);
+      } else {
+        console.error('❌ Failed to save contact info:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error saving contact info:', error);
+    }
+  };
 
   // --- Effect to Reset Form Based on Fulfillment Method ---
   // Keep this effect, but initialize based on potentially pre-filled common data
@@ -352,6 +396,27 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       }
     }
   }, [fulfillmentMethod, currentPaymentMethod, setValue, setPaymentMethod]);
+
+  // --- Effect to save contact information automatically ---
+  useEffect(() => {
+    const subscription = watch((value, { name: fieldName }) => {
+      // Only save when all contact fields are filled and not already saved
+      if (!contactSaved && fieldName && ['name', 'email', 'phone'].includes(fieldName)) {
+        const { name, email, phone } = value;
+        
+        // Debounce the save operation
+        const timeoutId = setTimeout(() => {
+          if (name && email && phone) {
+            saveContactInfoImmediately(name, email, phone);
+          }
+        }, 1000); // Wait 1 second after user stops typing
+
+        return () => clearTimeout(timeoutId);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, contactSaved, saveContactInfoImmediately]);
 
   // --- Keep onSubmit function ---
   const onSubmit = async (formData: CheckoutFormData) => {
@@ -540,7 +605,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         {/* Customer Information */}
         <div className="space-y-4 border-t pt-6">
-           <h2 className="text-xl font-semibold">Contact Information</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Contact Information</h2>
+            {contactSaved && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                Contact saved
+              </div>
+            )}
+          </div>
           <div>
             <Label htmlFor="name">Full Name</Label>
             <Input id="name" {...register('name')} placeholder="John Doe" />
@@ -553,7 +626,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           </div>
           <div>
             <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" type="tel" {...register('phone')} placeholder="555-123-4567" />
+            <Input id="phone" type="tel" {...register('phone')} placeholder="+1 (555) 123-4567 or 555-123-4567" />
             {getErrorMessage('phone') && <p className="text-sm text-red-600 mt-1">{getErrorMessage('phone')}</p>}
           </div>
         </div>

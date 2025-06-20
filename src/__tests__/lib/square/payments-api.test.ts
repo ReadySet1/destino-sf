@@ -65,11 +65,13 @@ const mockGiftCardInsufficientFundsError = {
 describe('Square Payments API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Setup default environment variables
-    process.env.USE_SQUARE_SANDBOX = 'true';
-    process.env.SQUARE_SANDBOX_TOKEN = 'sandbox-token-123';
-    process.env.SQUARE_ACCESS_TOKEN = 'access-token-456';
-    process.env.NODE_ENV = 'test';
+    // Setup default environment variables using Object.assign to avoid readonly issues
+    Object.assign(process.env, {
+      USE_SQUARE_SANDBOX: 'true',
+      SQUARE_SANDBOX_TOKEN: 'sandbox-token-123',
+      SQUARE_ACCESS_TOKEN: 'access-token-456',
+      NODE_ENV: 'test'
+    });
   });
 
   afterEach(() => {
@@ -343,9 +345,11 @@ describe('Square Payments API', () => {
     });
 
     test('should use production environment when USE_SQUARE_SANDBOX is false', async () => {
-      process.env.USE_SQUARE_SANDBOX = 'false';
-      process.env.NODE_ENV = 'production';
-      process.env.SQUARE_PRODUCTION_TOKEN = 'production-token-456';
+      Object.assign(process.env, {
+        USE_SQUARE_SANDBOX: 'false',
+        NODE_ENV: 'production',
+        SQUARE_PRODUCTION_TOKEN: 'production-token-456'
+      });
 
       mockHttps.request.mockImplementation((options, callback) => {
         const mockResponse = {

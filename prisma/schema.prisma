@@ -212,6 +212,20 @@ model PromoCode {
   updatedAt      DateTime     @updatedAt
 }
 
+model ShippingConfiguration {
+  id                          String   @id @default(uuid()) @db.Uuid
+  productName                 String   @unique
+  baseWeightLb                Decimal  @db.Decimal(10, 2)
+  weightPerUnitLb             Decimal  @db.Decimal(10, 2)
+  isActive                    Boolean  @default(true)
+  applicableForNationwideOnly Boolean  @default(false)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([productName])
+  @@index([isActive])
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN

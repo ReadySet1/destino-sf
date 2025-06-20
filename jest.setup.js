@@ -4,8 +4,10 @@ const fetch = require('node-fetch');
 // Load test environment variables
 require('dotenv').config({ path: '.env.test' });
 
-// Ensure test environment
-process.env.NODE_ENV = 'test';
+// Ensure test environment using Object.assign to avoid readonly issues
+Object.assign(process.env, {
+  NODE_ENV: 'test'
+});
 
 if (typeof global.TextEncoder === 'undefined') {
   global.TextEncoder = TextEncoder;

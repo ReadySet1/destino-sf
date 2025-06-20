@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -32,6 +32,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { saveCateringContactInfo } from '@/actions/catering';
+import { toast } from 'sonner';
 
 // Form schema using Zod for validation
 const formSchema = z.object({
@@ -69,29 +71,111 @@ export function CateringOrderForm({
   onSubmit,
   isSubmitting
 }: CateringOrderFormProps) {
+  console.log('🔍 CateringOrderForm received defaultValues:', defaultValues);
+  
   // Get current date for minimum date selection (5 days advance)
   const today = new Date();
   const minDate = addDays(today, 5);
   minDate.setHours(0, 0, 0, 0);
   
+  const formDefaults = {
+    name: defaultValues?.name || '',
+    email: defaultValues?.email || '',
+    phone: defaultValues?.phone || '',
+    eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
+    specialRequests: defaultValues?.specialRequests || '',
+  };
+  
+  console.log('🔍 Form initialized with:', formDefaults);
+  
   // Initialize form with defaultValues
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: defaultValues?.name || '',
-      email: defaultValues?.email || '',
-      phone: defaultValues?.phone || '',
-      eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
-      specialRequests: defaultValues?.specialRequests || '',
-    },
+    defaultValues: formDefaults,
   });
+
+  // State to track if contact info has been saved
+  const [contactSaved, setContactSaved] = useState(false);
+
+  // Function to save contact info immediately
+  const saveContactInfo = async (name: string, email: string, phone: string) => {
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      return; // Don't save incomplete info
+    }
+
+    // Basic validation before saving
+    if (name.length < 2 || !email.includes('@') || phone.length < 10) {
+      return; // Don't save invalid info
+    }
+
+    try {
+      const result = await saveCateringContactInfo({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+      });
+
+      if (result.success) {
+        setContactSaved(true);
+        console.log('✅ Contact info saved successfully with profile ID:', result.data.profileId);
+      } else {
+        console.error('❌ Failed to save contact info:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error saving contact info:', error);
+    }
+  };
+
+  // Fix hydration issue by resetting form values after mount
+  useEffect(() => {
+    if (defaultValues) {
+      console.log('🔄 Resetting form with defaultValues after mount:', defaultValues);
+      const resetValues = {
+        name: defaultValues.name || '',
+        email: defaultValues.email || '',
+        phone: defaultValues.phone || '',
+        eventDate: defaultValues.eventDate || addDays(new Date(), 5),
+        specialRequests: defaultValues.specialRequests || '',
+      };
+      form.reset(resetValues);
+    }
+  }, [defaultValues, form]);
+
+  // Watch for changes in contact fields and save automatically
+  useEffect(() => {
+    const subscription = form.watch((value, { name: fieldName }) => {
+      // Only save when all contact fields are filled and not already saved
+      if (!contactSaved && fieldName && ['name', 'email', 'phone'].includes(fieldName)) {
+        const { name, email, phone } = value;
+        
+        // Debounce the save operation
+        const timeoutId = setTimeout(() => {
+          if (name && email && phone) {
+            saveContactInfo(name, email, phone);
+          }
+        }, 1000); // Wait 1 second after user stops typing
+
+        return () => clearTimeout(timeoutId);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, contactSaved]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardContent className="pt-6">
-            <h3 className="text-lg font-medium mb-4">Contact Information</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium">Contact Information</h3>
+              {contactSaved && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Contact saved
+                </div>
+              )}
+            </div>
             
             <div className="grid gap-4">
               <FormField

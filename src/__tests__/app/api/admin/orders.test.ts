@@ -2,21 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 
+// Import our new test utilities
+import { 
+  TestData, 
+  createMockOrder, 
+  setupMockPrisma,
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+import { mockPrismaClient } from '@/__mocks__/prisma';
+
 // Mock the dependencies
 jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    order: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      count: jest.fn(),
-    },
-  },
+  prisma: mockPrismaClient,
 }));
 
 jest.mock('@/utils/supabase/server');
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = mockPrismaClient;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 // Mock Supabase client

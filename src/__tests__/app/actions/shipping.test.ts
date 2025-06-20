@@ -69,6 +69,9 @@ describe('Shipping Actions', () => {
     const mockShipmentInput = {
       shippingAddress: mockShippingAddress,
       cartItems: mockCartItems,
+      estimatedLengthIn: 10,
+      estimatedWidthIn: 8,
+      estimatedHeightIn: 4,
     };
 
     it('should return error when Shippo API key is not configured', async () => {

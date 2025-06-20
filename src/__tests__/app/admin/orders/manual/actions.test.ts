@@ -36,7 +36,23 @@ jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+// Properly type the mocked prisma with Jest mock methods
+const mockPrisma = {
+  order: {
+    findUnique: jest.fn() as jest.MockedFunction<any>,
+    create: jest.fn() as jest.MockedFunction<any>,
+    update: jest.fn() as jest.MockedFunction<any>,
+  },
+  orderItem: {
+    deleteMany: jest.fn() as jest.MockedFunction<any>,
+    create: jest.fn() as jest.MockedFunction<any>,
+  },
+} as any;
+
+// Override the imported prisma with our properly typed mock
+(prisma as any).order = mockPrisma.order;
+(prisma as any).orderItem = mockPrisma.orderItem;
+
 const mockLogger = logger as jest.Mocked<typeof logger>;
 const mockRevalidatePath = revalidatePath as jest.MockedFunction<typeof revalidatePath>;
 
@@ -319,7 +335,7 @@ describe('Admin Manual Order Actions', () => {
 
     describe('Payment Method Handling', () => {
       test('should handle SQUARE payment method', async () => {
-        const squareOrderData = { ...validOrderData, paymentMethod: 'SQUARE' as const };
+        const squareOrderData = { ...validOrderData, paymentMethod: PaymentMethod.SQUARE };
         const mockCreatedOrder = {
           id: 'order-square',
           ...squareOrderData,
@@ -338,7 +354,7 @@ describe('Admin Manual Order Actions', () => {
       });
 
       test('should handle CASH payment method', async () => {
-        const cashOrderData = { ...validOrderData, paymentMethod: 'CASH' as const };
+        const cashOrderData = { ...validOrderData, paymentMethod: PaymentMethod.CASH };
         const mockCreatedOrder = {
           id: 'order-cash',
           ...cashOrderData,

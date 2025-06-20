@@ -2,6 +2,12 @@ import { NextRequest } from 'next/server';
 import { calculateShippingWeight, CartItemForShipping } from '@/lib/shippingUtils';
 import { getShippingRates } from '@/app/actions/shipping';
 
+// Import our new test utilities
+import { 
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+
 // Mock the shipping utilities and actions
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/app/actions/shipping');
@@ -23,13 +29,11 @@ function createMockRequest(body: any, method: string = 'POST'): NextRequest {
 describe('/api/shipping/calculate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock console methods to suppress expected warnings/errors during tests
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockConsole(); // Use utility for console mocking
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    restoreConsole(); // Use utility for cleanup
   });
 
   describe('Weight-based shipping calculation', () => {

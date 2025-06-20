@@ -4,41 +4,39 @@ import { getDeliveryZone, calculateDeliveryFee } from '@/lib/deliveryUtils';
 import { calculateShippingWeight } from '@/lib/shippingUtils';
 import { prisma } from '@/lib/prisma';
 
+// Import our new test utilities
+import { 
+  TestData,
+  createValidationResult,
+  setupMockPrisma,
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+import { mockPrismaClient } from '@/__mocks__/prisma';
+
 // Mock the dependencies
 jest.mock('@/app/actions/orders');
 jest.mock('@/lib/deliveryUtils');
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    product: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    productVariant: {
-      findUnique: jest.fn(),
-    },
-    storeSettings: {
-      findFirst: jest.fn(),
-    },
-  },
+  prisma: mockPrismaClient,
 }));
 
 const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
 const mockGetDeliveryZone = getDeliveryZone as jest.MockedFunction<typeof getDeliveryZone>;
 const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<typeof calculateDeliveryFee>;
 const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = mockPrismaClient;
 
 describe('/api/orders/validate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock console methods to suppress expected warnings/errors during tests
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockConsole(); // Use utility for console mocking
+    setupMockPrisma(mockPrisma); // Setup default mock responses
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    restoreConsole(); // Use utility for cleanup
   });
 
   describe('Order minimum enforcement', () => {

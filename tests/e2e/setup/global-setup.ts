@@ -15,9 +15,11 @@ async function globalSetup(config: FullConfig) {
     console.warn(`⚠️ Missing environment variables: ${missingVars.join(', ')}`);
   }
 
-  // Set test-specific environment variables
-  process.env.NODE_ENV = 'test';
-  process.env.NEXT_TELEMETRY_DISABLED = '1';
+  // Set test-specific environment variables using Object.assign to avoid readonly issues
+  Object.assign(process.env, {
+    NODE_ENV: 'test',
+    NEXT_TELEMETRY_DISABLED: '1'
+  });
 
   console.log('✅ Global setup completed');
 }

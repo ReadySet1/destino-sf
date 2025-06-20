@@ -2,31 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { validateOrderMinimumsServer } from '@/app/actions/orders';
+import { PaymentMethod } from '@prisma/client';
+
+// Import our new test utilities
+import { 
+  TestData, 
+  createFormData, 
+  createValidationResult, 
+  createMockOrder, 
+  setupMockPrisma,
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+import { mockPrismaClient } from '@/__mocks__/prisma';
 
 // Mock the dependencies
 jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    order: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    product: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    productVariant: {
-      findUnique: jest.fn(),
-    },
-    storeSettings: {
-      findFirst: jest.fn(),
-    },
-  },
+  prisma: mockPrismaClient,
 }));
 
 jest.mock('@/utils/supabase/server');
 jest.mock('@/app/actions/orders');
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = mockPrismaClient;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
 
@@ -69,7 +67,7 @@ const validOrderData = {
   },
   deliveryTime: '2024-01-16T14:00:00Z',
   specialInstructions: 'Leave at door',
-  paymentMethod: 'card',
+  paymentMethod: PaymentMethod.SQUARE,
   subtotal: 95.00,
   taxAmount: 8.55,
   deliveryFee: 0, // Free delivery for SF orders over $75

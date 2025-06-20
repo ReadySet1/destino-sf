@@ -36,6 +36,27 @@ const nextConfig = {
         crypto: false,
       };
     }
+    
+    // Suppress the realtime-js warning and other performance warnings
+    config.ignoreWarnings = [
+      {
+        module: /node_modules\/@supabase\/realtime-js/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+      {
+        module: /node_modules\/ws/,
+        message: /Critical dependency/,
+      },
+      {
+        module: /node_modules\/bufferutil/,
+        message: /Critical dependency/,
+      },
+      {
+        module: /node_modules\/utf-8-validate/,
+        message: /Critical dependency/,
+      },
+    ];
+    
     return config;
   },
   images: {

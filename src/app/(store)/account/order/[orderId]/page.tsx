@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar, Users, MapPin } from 'lucide-react';
 
 // Types
 interface PageProps {
@@ -37,6 +38,8 @@ const getStatusVariant = (status: string | null | undefined): "default" | "prima
   const statusMap: Record<string, "default" | "primary" | "secondary" | "success" | "warning" | "danger" | "outline"> = {
     'PENDING': "warning",
     'PROCESSING': "secondary",
+    'CONFIRMED': "secondary",
+    'PREPARING': "secondary",
     'READY': "success",
     'COMPLETED': "success",
     'CANCELLED': "danger",
@@ -87,8 +90,8 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     notFound();
   }
   
-  // Fetch the order and ensure it belongs to the current user
-  const order = await prisma.order.findUnique({
+  // Try to fetch as a regular order first
+  const regularOrder = await prisma.order.findUnique({
     where: { 
       id: orderId,
       userId: user.id // Ensure the order belongs to the authenticated user
@@ -103,14 +106,74 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     },
   });
   
-  if (!order) {
-    notFound(); // 404 if order doesn't exist or doesn't belong to user
+  // If not found as regular order, try as catering order
+  const cateringOrder = !regularOrder ? await prisma.cateringOrder.findUnique({
+    where: { 
+      id: orderId,
+      customerId: user.id // Ensure the order belongs to the authenticated user
+    },
+    include: {
+      items: true,
+    },
+  }) : null;
+  
+  // If neither order type exists, show 404
+  if (!regularOrder && !cateringOrder) {
+    notFound();
   }
   
-  // Safely convert decimal values for display
-  const orderTotalNumber = order.total?.toNumber() ?? 0;
-  const itemPriceNumber = (itemPrice: any) => itemPrice?.toNumber() ?? 0;
-  const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  // Determine order type and format data accordingly
+  const isRegularOrder = !!regularOrder;
+  const isCateringOrder = !!cateringOrder;
+  
+  // Common order data structure
+  const orderData = isRegularOrder ? {
+    id: regularOrder.id,
+    status: regularOrder.status,
+    paymentStatus: regularOrder.paymentStatus,
+    total: regularOrder.total?.toNumber() ?? 0,
+    createdAt: regularOrder.createdAt,
+    customerName: regularOrder.customerName,
+    email: regularOrder.email,
+    phone: regularOrder.phone,
+    pickupTime: regularOrder.pickupTime,
+    fulfillmentType: regularOrder.fulfillmentType,
+    trackingNumber: regularOrder.trackingNumber,
+    shippingCarrier: regularOrder.shippingCarrier,
+    items: regularOrder.items.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: item.price?.toNumber() ?? 0,
+      productName: item.product?.name || 'N/A',
+      variantName: item.variant?.name || '-',
+    })),
+    type: 'regular' as const,
+  } : {
+    id: cateringOrder!.id,
+    status: cateringOrder!.status,
+    paymentStatus: cateringOrder!.paymentStatus,
+    total: cateringOrder!.totalAmount?.toNumber() ?? 0,
+    createdAt: cateringOrder!.createdAt,
+    customerName: cateringOrder!.name,
+    email: cateringOrder!.email,
+    phone: cateringOrder!.phone,
+    eventDate: cateringOrder!.eventDate,
+    numberOfPeople: cateringOrder!.numberOfPeople,
+    specialRequests: cateringOrder!.specialRequests,
+    deliveryAddress: cateringOrder!.deliveryAddress,
+    deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
+    items: cateringOrder!.items.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: item.pricePerUnit?.toNumber() ?? 0,
+      productName: item.name,
+      itemType: item.itemType,
+      totalPrice: item.totalPrice?.toNumber() ?? 0,
+    })),
+    type: 'catering' as const,
+  };
+  
+  const totalQuantity = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
   
   return (
     <main className="container mx-auto py-8 px-4">
@@ -120,59 +183,101 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         </Link>
       </div>
       
-      <h1 className="text-2xl font-bold mb-6">Order Details</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold">Order Details</h1>
+        <Badge variant="secondary" className={
+          orderData.type === 'catering' 
+            ? "bg-amber-100 text-amber-800 border-amber-200"
+            : "bg-blue-50 text-blue-700 border-blue-200"
+        }>
+          {orderData.type.toUpperCase()}
+        </Badge>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Order Summary */}
         <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="space-y-2 text-sm">
-            <p><strong>Order ID:</strong> {order.id}</p>
+            <p><strong>Order ID:</strong> {orderData.id}</p>
             <div>
               <strong>Status:</strong>{' '}
-              <Badge variant={getStatusVariant(order.status)}>
-                {order.status === 'READY' ? 'READY FOR PICKUP' : order.status}
+              <Badge variant={getStatusVariant(orderData.status)}>
+                {orderData.status === 'READY' ? 'READY FOR PICKUP' : orderData.status}
               </Badge>
             </div>
             <div>
               <strong>Payment Status:</strong>{' '}
-              <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
-                {order.paymentStatus}
+              <Badge variant={getPaymentStatusVariant(orderData.paymentStatus)}>
+                {orderData.paymentStatus}
               </Badge>
             </div>
-            <p><strong>Total Amount:</strong> {formatCurrency(orderTotalNumber)}</p>
+            <p><strong>Total Amount:</strong> {formatCurrency(orderData.total)}</p>
             <p><strong>Total Items:</strong> {totalQuantity}</p>
-            {order.pickupTime && (
-              <p><strong>Pickup Time:</strong> {formatDateTime(order.pickupTime)}</p>
-            )}
-            {order.fulfillmentType && order.fulfillmentType !== 'pickup' && (
-              <p><strong>Fulfillment Type:</strong> {order.fulfillmentType.replace('_', ' ')}</p>
-            )}
-            <p><strong>Order Placed:</strong> {formatDateTime(order.createdAt)} ({formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })})</p>
             
-            {/* Shipping information if applicable */}
-            {order.trackingNumber && (
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <h3 className="font-semibold mb-2">Shipping Information</h3>
-                <p><strong>Tracking Number:</strong> {order.trackingNumber}</p>
-                {order.shippingCarrier && (
-                  <p><strong>Carrier:</strong> {order.shippingCarrier}</p>
+            {/* Regular order specific fields */}
+            {isRegularOrder && (
+              <>
+                {orderData.pickupTime && (
+                  <p><strong>Pickup Time:</strong> {formatDateTime(orderData.pickupTime)}</p>
                 )}
-                {/* Add tracking link for major carriers */}
-                {order.trackingNumber && order.shippingCarrier && (
-                  <p className="mt-2">
-                    <a 
-                      href={getTrackingUrl(order.trackingNumber, order.shippingCarrier)}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800 underline"
-                    >
-                      Track Your Package
-                    </a>
-                  </p>
+                {orderData.fulfillmentType && orderData.fulfillmentType !== 'pickup' && (
+                  <p><strong>Fulfillment Type:</strong> {orderData.fulfillmentType.replace('_', ' ')}</p>
                 )}
-              </div>
+                {orderData.trackingNumber && (
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <h3 className="font-semibold mb-2">Shipping Information</h3>
+                    <p><strong>Tracking Number:</strong> {orderData.trackingNumber}</p>
+                    {orderData.shippingCarrier && (
+                      <p><strong>Carrier:</strong> {orderData.shippingCarrier}</p>
+                    )}
+                    {orderData.trackingNumber && orderData.shippingCarrier && (
+                      <p className="mt-2">
+                        <a 
+                          href={getTrackingUrl(orderData.trackingNumber, orderData.shippingCarrier)}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          Track Your Package
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
+            
+            {/* Catering order specific fields */}
+            {isCateringOrder && (
+              <>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <p><strong>Event Date:</strong> {formatDateTime(orderData.eventDate)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <p><strong>Number of People:</strong> {orderData.numberOfPeople}</p>
+                </div>
+                {orderData.deliveryAddress && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-1" />
+                    <p><strong>Delivery Address:</strong> {orderData.deliveryAddress}</p>
+                  </div>
+                )}
+                {orderData.deliveryFee && orderData.deliveryFee > 0 && (
+                  <p><strong>Delivery Fee:</strong> {formatCurrency(orderData.deliveryFee)}</p>
+                )}
+                {orderData.specialRequests && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p><strong>Special Requests:</strong></p>
+                    <p className="text-gray-700 mt-1">{orderData.specialRequests}</p>
+                  </div>
+                )}
+              </>
+            )}
+            
+            <p><strong>Order Placed:</strong> {formatDateTime(orderData.createdAt)} ({formatDistance(new Date(orderData.createdAt), new Date(), { addSuffix: true })})</p>
           </div>
         </div>
         
@@ -180,45 +285,54 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Your Information</h2>
           <div className="space-y-2 text-sm">
-            <p><strong>Name:</strong> {order.customerName}</p>
-            <p><strong>Email:</strong> {order.email}</p>
-            <p><strong>Phone:</strong> {order.phone}</p>
+            <p><strong>Name:</strong> {orderData.customerName}</p>
+            <p><strong>Email:</strong> {orderData.email}</p>
+            <p><strong>Phone:</strong> {orderData.phone}</p>
           </div>
         </div>
       </div>
       
       {/* Order Items */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">Items Ordered ({order.items.length})</h2>
+        <h2 className="text-xl font-semibold mb-4">Items Ordered ({orderData.items.length})</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                {isRegularOrder && <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Variant</th>}
+                {isCateringOrder && <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Type</th>}
                 <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                 <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Price/Item</th>
                 <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {order.items.map((item) => {
-                const priceNum = itemPriceNumber(item.price);
+              {orderData.items.map((item) => {
+                const itemTotal = isRegularOrder 
+                  ? item.price * item.quantity
+                  : (item as any).totalPrice;
+                
                 return (
                   <tr key={item.id}>
-                    <td className="px-4 py-3 whitespace-nowrap">{item.product?.name || 'N/A'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{item.variant?.name || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{item.productName}</td>
+                    {isRegularOrder && <td className="px-4 py-3 whitespace-nowrap">{(item as any).variantName}</td>}
+                    {isCateringOrder && <td className="px-4 py-3 whitespace-nowrap">
+                      <Badge variant="outline" className="text-xs">
+                        {((item as any).itemType || 'item').toUpperCase()}
+                      </Badge>
+                    </td>}
                     <td className="px-4 py-3 whitespace-nowrap text-right">{item.quantity}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(priceNum)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(priceNum * item.quantity)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(item.price)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(itemTotal)}</td>
                   </tr>
                 );
               })}
             </tbody>
             <tfoot>
               <tr className="font-semibold">
-                <td colSpan={4} className="px-4 py-3 text-right">Total:</td>
-                <td className="px-4 py-3 text-right">{formatCurrency(orderTotalNumber)}</td>
+                <td colSpan={isRegularOrder ? 4 : 4} className="px-4 py-3 text-right">Total:</td>
+                <td className="px-4 py-3 text-right">{formatCurrency(orderData.total)}</td>
               </tr>
             </tfoot>
           </table>

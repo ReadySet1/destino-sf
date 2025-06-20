@@ -104,19 +104,19 @@ describe('ProductCard', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    variants: null,
+    variants: undefined, // Fix: use undefined instead of null
     slug: 'test-empanada',
     isActive: true,
-    squareId: null,
-    squareVariationId: null,
+    squareId: undefined, // Fix: use undefined instead of null
+    squareVariationId: undefined, // Fix: use undefined instead of null
     categoryId: 'cat-1',
     createdAt: new Date(),
     updatedAt: new Date(),
-    servingSize: null,
+    servingSize: undefined, // Fix: use undefined instead of null
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    availability: null,
+    availability: undefined, // Fix: use undefined instead of null
     ...overrides,
   });
 
@@ -154,7 +154,7 @@ describe('ProductCard', () => {
 
     it('should render placeholder when image is not available', () => {
       (imageUtils.getProductImageConfig as jest.MockedFunction<typeof imageUtils.getProductImageConfig>)
-        .mockReturnValue({ src: '', placeholder: true });
+        .mockReturnValue({ src: '', alt: '', placeholder: true });
       
       const product = createMockProduct({ images: [] });
       render(<ProductCard product={product} />);

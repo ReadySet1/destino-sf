@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { updateShippingConfiguration, getAllShippingConfigurations } from '@/lib/shippingUtils';
 import { createClient } from '@/utils/supabase/server';
 
+// Import our new test utilities
+import { 
+  mockConsole,
+  restoreConsole 
+} from '@/__tests__/setup/test-utils';
+
 // Mock the dependencies
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/utils/supabase/server');
@@ -27,16 +33,14 @@ const mockSupabaseClient = {
 describe('/api/admin/shipping-config', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock console methods to suppress expected warnings/errors during tests
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockConsole(); // Use utility for console mocking
 
     // Setup default Supabase client mock
     mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    restoreConsole(); // Use utility for cleanup
   });
 
   describe('GET: retrieve all configurations', () => {

@@ -139,7 +139,7 @@ export async function retrieveCatalogObject(objectId: string) {
     path: `/v2/catalog/object/${objectId}`,
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      'Authorization': `Bearer ${config.accessToken}`,
       'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
@@ -176,11 +176,11 @@ export async function searchCatalogObjects(requestBody: any) {
   logger.info(`Searching catalog objects on ${config.apiHost} using token from ${config.tokenSource} (sandbox: ${config.useSandbox})`);
   
   const options = {
-    hostname: squareConfig.apiHost,
+    hostname: config.apiHost,
     path: '/v2/catalog/search',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      'Authorization': `Bearer ${config.accessToken}`,
       'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
@@ -210,13 +210,13 @@ export async function searchCatalogObjects(requestBody: any) {
  */
 export async function listCatalog(cursor?: string, objectTypes?: string) {
   // Refresh config for each request
-  squareConfig = getSquareConfig();
+  const config = getSquareConfig();
   
-  if (!squareConfig.accessToken) {
-    throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
+  if (!config.accessToken) {
+    throw new Error(`Square access token not configured for ${config.tokenSource}`);
   }
   
-  logger.info(`Listing catalog objects on ${squareConfig.apiHost} with objectTypes: ${objectTypes || 'all'}`);
+  logger.info(`Listing catalog objects on ${config.apiHost} with objectTypes: ${objectTypes || 'all'}`);
   
   let path = '/v2/catalog/list';
   let params = [];
@@ -234,11 +234,11 @@ export async function listCatalog(cursor?: string, objectTypes?: string) {
   }
   
   const options = {
-    hostname: squareConfig.apiHost,
+    hostname: config.apiHost,
     path,
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      'Authorization': `Bearer ${config.accessToken}`,
       'Square-Version': '2024-10-17',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store'
@@ -265,18 +265,18 @@ export async function listCatalog(cursor?: string, objectTypes?: string) {
  * Helper function to test API connectivity
  */
 export async function testApiConnection() {
+  // Refresh config
+  const config = getSquareConfig();
+  
   try {
-    // Refresh config
-    squareConfig = getSquareConfig();
-    
-    logger.info(`Testing connection to ${squareConfig.apiHost} with token from ${squareConfig.tokenSource}`);
+    logger.info(`Testing connection to ${config.apiHost} with token from ${config.tokenSource}`);
     
     const options = {
-      hostname: squareConfig.apiHost,
+      hostname: config.apiHost,
       path: '/v2/catalog/list',
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${squareConfig.accessToken}`,
+        'Authorization': `Bearer ${config.accessToken}`,
         'Square-Version': '2024-10-17',
         'Content-Type': 'application/json'
       }
@@ -284,18 +284,18 @@ export async function testApiConnection() {
     
     await httpsRequest(options);
     
-    logger.info(`Connection successful to ${squareConfig.apiHost}`);
+    logger.info(`Connection successful to ${config.apiHost}`);
     return { 
       success: true, 
-      environment: squareConfig.useSandbox ? 'sandbox' : 'production',
-      apiHost: squareConfig.apiHost 
+      environment: config.useSandbox ? 'sandbox' : 'production',
+      apiHost: config.apiHost 
     };
   } catch (error) {
     logger.error(`Connection test failed:`, error);
     return { 
       success: false, 
-      environment: squareConfig.useSandbox ? 'sandbox' : 'production',
-      apiHost: squareConfig.apiHost,
+      environment: config.useSandbox ? 'sandbox' : 'production',
+      apiHost: config.apiHost,
       error: error instanceof Error ? error.message : String(error)
     };
   }

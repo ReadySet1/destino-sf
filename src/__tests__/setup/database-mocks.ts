@@ -1,6 +1,8 @@
 // Comprehensive database mocking for business logic tests
 import { DeliveryZone } from '@/lib/deliveryUtils';
+import { jest } from '@jest/globals';
 
+// Updated interface to match current Prisma client structure
 export interface MockPrismaClient {
   shippingConfiguration: {
     findFirst: jest.MockedFunction<any>;
@@ -12,14 +14,53 @@ export interface MockPrismaClient {
   order: {
     findMany: jest.MockedFunction<any>;
     findFirst: jest.MockedFunction<any>;
+    findUnique: jest.MockedFunction<any>;
     create: jest.MockedFunction<any>;
     update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
+  };
+  orderItem: {
+    create: jest.MockedFunction<any>;
+    createMany: jest.MockedFunction<any>;
+    deleteMany: jest.MockedFunction<any>;
+    findMany: jest.MockedFunction<any>;
+    update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
   };
   product: {
     findMany: jest.MockedFunction<any>;
     findFirst: jest.MockedFunction<any>;
+    findUnique: jest.MockedFunction<any>;
+    create: jest.MockedFunction<any>;
+    update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
   };
+  category: {
+    findMany: jest.MockedFunction<any>;
+    findUnique: jest.MockedFunction<any>;
+    create: jest.MockedFunction<any>;
+    update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
+  };
+  profile: {
+    findUnique: jest.MockedFunction<any>;
+    findMany: jest.MockedFunction<any>;
+    create: jest.MockedFunction<any>;
+    update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
+  };
+  user: {
+    findUnique: jest.MockedFunction<any>;
+    findMany: jest.MockedFunction<any>;
+    create: jest.MockedFunction<any>;
+    update: jest.MockedFunction<any>;
+    delete: jest.MockedFunction<any>;
+  };
+  $connect: jest.MockedFunction<any>;
   $disconnect: jest.MockedFunction<any>;
+  $transaction: jest.MockedFunction<any>;
+  $executeRaw: jest.MockedFunction<any>;
+  $queryRaw: jest.MockedFunction<any>;
 }
 
 // Mock data for tests
@@ -99,34 +140,80 @@ export const mockOrders = [
   },
 ];
 
-// Create mock Prisma client factory
+// Create mock Prisma client factory with proper Jest mock functions
 export function createMockPrismaClient(): MockPrismaClient {
-  return {
+  const mockPrisma: MockPrismaClient = {
     shippingConfiguration: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      upsert: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
+      findFirst: jest.fn() as jest.MockedFunction<any>,
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      upsert: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
     },
     order: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      findFirst: jest.fn() as jest.MockedFunction<any>,
+      findUnique: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
+    },
+    orderItem: {
+      create: jest.fn() as jest.MockedFunction<any>,
+      createMany: jest.fn() as jest.MockedFunction<any>,
+      deleteMany: jest.fn() as jest.MockedFunction<any>,
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
     },
     product: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      findFirst: jest.fn() as jest.MockedFunction<any>,
+      findUnique: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
     },
-    $disconnect: jest.fn(),
+    category: {
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      findUnique: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
+    },
+    profile: {
+      findUnique: jest.fn() as jest.MockedFunction<any>,
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
+    },
+    user: {
+      findUnique: jest.fn() as jest.MockedFunction<any>,
+      findMany: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as jest.MockedFunction<any>,
+      update: jest.fn() as jest.MockedFunction<any>,
+      delete: jest.fn() as jest.MockedFunction<any>,
+    },
+    $connect: jest.fn() as jest.MockedFunction<any>,
+    $disconnect: jest.fn() as jest.MockedFunction<any>,
+    $transaction: jest.fn((callback: any): any => {
+      if (typeof callback === 'function') {
+        return callback(mockPrisma);
+      }
+      return Promise.resolve();
+    }) as jest.MockedFunction<any>,
+    $executeRaw: jest.fn() as jest.MockedFunction<any>,
+    $queryRaw: jest.fn() as jest.MockedFunction<any>,
   };
+  
+  return mockPrisma;
 }
 
 // Setup mock responses
 export function setupShippingConfigMocks(mockPrisma: MockPrismaClient) {
   // Mock successful shipping config retrieval
-  mockPrisma.shippingConfiguration.findFirst.mockImplementation(({ where }) => {
+  mockPrisma.shippingConfiguration.findFirst.mockImplementation(({ where }: any) => {
     const productName = where?.productName;
     return Promise.resolve(mockShippingConfigurations[productName as keyof typeof mockShippingConfigurations] || null);
   });
@@ -137,7 +224,7 @@ export function setupShippingConfigMocks(mockPrisma: MockPrismaClient) {
   );
 
   // Mock upsert operations
-  mockPrisma.shippingConfiguration.upsert.mockImplementation(({ where, create, update }) => {
+  mockPrisma.shippingConfiguration.upsert.mockImplementation(({ where, create, update }: any) => {
     const productName = where.productName;
     return Promise.resolve({
       productName,
@@ -149,11 +236,14 @@ export function setupShippingConfigMocks(mockPrisma: MockPrismaClient) {
 
 export function setupOrderMocks(mockPrisma: MockPrismaClient) {
   mockPrisma.order.findMany.mockResolvedValue(mockOrders);
-  mockPrisma.order.findFirst.mockImplementation(({ where }) => {
+  mockPrisma.order.findFirst.mockImplementation(({ where }: any) => {
+    return Promise.resolve(mockOrders.find(order => order.id === where?.id) || null);
+  });
+  mockPrisma.order.findUnique.mockImplementation(({ where }: any) => {
     return Promise.resolve(mockOrders.find(order => order.id === where?.id) || null);
   });
   
-  mockPrisma.order.create.mockImplementation(({ data }) => {
+  mockPrisma.order.create.mockImplementation(({ data }: any) => {
     const newOrder = {
       id: `order-${Date.now()}`,
       ...data,
@@ -171,6 +261,8 @@ export function resetAllMocks(mockPrisma: MockPrismaClient) {
           mockMethod.mockReset();
         }
       });
+    } else if (jest.isMockFunction(mockTable)) {
+      mockTable.mockReset();
     }
   });
 }

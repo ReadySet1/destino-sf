@@ -7,8 +7,8 @@ import {
 } from '@/app/actions/orders';
 import { prisma } from '@/lib/prisma';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
-import { syncOrderWithSquare } from '@/lib/square/sync';
-import { mockPrismaClient as mockPrisma } from '@/__mocks__/prisma';
+// import { syncOrderWithSquare } from '@/lib/square/sync'; // Not available yet
+import { mockPrismaClient } from '@/__mocks__/prisma';
 import { PaymentMethod } from '@prisma/client';
 
 // Mock external dependencies
@@ -147,8 +147,7 @@ jest.mock('next/cache', () => ({
 }));
 
 // Type the mocked functions
-const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
-const mockSyncOrderWithSquare = syncOrderWithSquare as jest.MockedFunction<typeof syncOrderWithSquare>;
+// const mockSyncOrderWithSquare = syncOrderWithSquare as jest.MockedFunction<typeof syncOrderWithSquare>; // Not available yet
 
 describe('Order Actions', () => {
   beforeEach(() => {
@@ -171,7 +170,7 @@ describe('Order Actions', () => {
     const baseFormData = {
       items: validCartItems,
       customerInfo: validCustomerInfo,
-      paymentMethod: 'SQUARE' as const,
+      paymentMethod: PaymentMethod.SQUARE,
     };
 
     describe('Pickup orders', () => {
