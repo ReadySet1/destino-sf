@@ -201,12 +201,31 @@ export function handleGiftCardPaymentError(errors: any[]): {
   availableAmount?: { amount: number; currency: string };
   insufficientFunds: boolean;
 } {
-  const insufficientFunds = errors.some(error => error.code === 'INSUFFICIENT_FUNDS');
-  const giftCardError = errors.find(error => error.code === 'GIFT_CARD_AVAILABLE_AMOUNT');
+  // Check for various gift card error codes
+  const giftCardErrorCodes = [
+    'GIFT_CARD_INSUFFICIENT_FUNDS',
+    'GIFT_CARD_AVAILABLE_AMOUNT',
+    'INSUFFICIENT_FUNDS' // When used with gift cards
+  ];
+  
+  const insufficientFunds = errors.some(error => 
+    error.code === 'INSUFFICIENT_FUNDS' || error.code === 'GIFT_CARD_INSUFFICIENT_FUNDS'
+  );
+  
+  // Look for any gift card specific error
+  const giftCardError = errors.find(error => 
+    giftCardErrorCodes.includes(error.code) || 
+    error.code?.includes('GIFT_CARD')
+  );
+  
+  // Check for available amount in gift card error or accompanying error
+  const availableAmountError = errors.find(error => 
+    error.code === 'GIFT_CARD_AVAILABLE_AMOUNT' || error.available_amount
+  );
   
   return {
     isGiftCardError: !!giftCardError,
-    availableAmount: giftCardError?.available_amount,
+    availableAmount: availableAmountError?.available_amount || giftCardError?.available_amount,
     insufficientFunds
   };
 }

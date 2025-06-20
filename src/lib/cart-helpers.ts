@@ -20,11 +20,20 @@ export async function validateOrderMinimums(
   items: CartItem[]
 ): Promise<{ isValid: boolean; errorMessage: string | null }> {
   try {
-    // Call the server action instead of using Prisma directly
-    return await validateOrderMinimumsServer(items);
+    // Call the server action and extract the validation result
+    const result = await validateOrderMinimumsServer(items);
+    
+    // Ensure we always return the expected format
+    return {
+      isValid: result?.isValid ?? false,
+      errorMessage: result?.errorMessage ?? 'Unknown validation error'
+    };
   } catch (error) {
     console.error('Error validating order minimums:', error);
-    // Fallback to allowing the order if there's an error with validation
-    return { isValid: true, errorMessage: null };
+    // Fallback to rejecting the order with a clear error message
+    return { 
+      isValid: false, 
+      errorMessage: 'Unable to validate order requirements. Please try again.' 
+    };
   }
 } 
