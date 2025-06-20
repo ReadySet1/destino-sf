@@ -1,5 +1,6 @@
 /**
  * Test data fixtures for Destino SF E2E tests
+ * Updated with real product data from the live website
  */
 
 export interface TestCustomer {
@@ -39,21 +40,39 @@ export const testAdmin: TestCustomer = {
   firstName: 'Admin',
   lastName: 'User',
   phone: '(555) 987-6543'
-};export const testProducts = {
+};
+
+// Real product data from the live website
+export const testProducts = {
   empanada: {
-    slug: 'beef-empanada',
-    name: 'Beef Empanada',
-    price: 4.50
+    slug: 'empanadas-argentine-beef-frozen-4-pack',
+    name: 'Empanadas- Argentine Beef (frozen- 4 pack)',
+    price: 17.00
   },
   alfajor: {
-    slug: 'dulce-de-leche-alfajor',
-    name: 'Dulce de Leche Alfajor',
-    price: 3.75
+    slug: 'alfajores-classic-1-dozen-packet',
+    name: 'Alfajores- Classic (1 dozen- packet)',
+    price: 14.00
   },
   vegetarian: {
-    slug: 'spinach-empanada',
-    name: 'Spinach & Cheese Empanada',
-    price: 4.25
+    slug: 'empanadas-vegetarian-frozen-4-pack',
+    name: 'Empanadas- Vegetarian (frozen- 4 pack)',
+    price: 17.00
+  },
+  chocolate_alfajor: {
+    slug: 'alfajores-chocolate-1-dozen-packet',
+    name: 'Alfajores- Chocolate (1 dozen- packet)',
+    price: 20.00
+  },
+  huacatay_chicken: {
+    slug: 'empanadas-huacatay-chicken-frozen-4-pack',
+    name: 'Empanadas- Huacatay Chicken (frozen- 4 pack)',
+    price: 18.00
+  },
+  combo_6pack: {
+    slug: 'alfajores-6-pack-combo',
+    name: 'Alfajores- 6-pack combo',
+    price: 10.00
   }
 };
 

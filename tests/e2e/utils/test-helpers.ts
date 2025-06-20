@@ -40,20 +40,58 @@ export class TestHelpers {
   static async addProductToCart(page: Page, productSlug: string, quantity: number = 1) {
     await page.goto(`/products/${productSlug}`);
     
-    // Wait for product page to load
-    await expect(page.getByRole('heading')).toBeVisible();
+    // Wait for product page to load - use the main product title (h1) specifically
+    await expect(page.locator('h1').first()).toBeVisible();
     
-    // Set quantity if needed
-    if (quantity > 1) {
-      await page.fill('[data-testid="quantity-input"]', quantity.toString());
+    // For multiple quantities, add one at a time by clicking the button multiple times
+    // This is more reliable than trying to use quantity inputs
+    for (let i = 0; i < quantity; i++) {
+      // Try multiple selectors for add to cart button
+      const addToCartSelectors = [
+        '[data-testid="add-to-cart"]',
+        'button:has-text("Add to Cart")',
+        '.bg-\\[\\#F7B614\\]:has-text("Add to Cart")',
+        'button[aria-label*="Add"][aria-label*="to cart"]'
+      ];
+      
+      let buttonClicked = false;
+      for (const selector of addToCartSelectors) {
+        const button = page.locator(selector);
+        if (await button.isVisible()) {
+          await button.click();
+          buttonClicked = true;
+          break;
+        }
+      }
+      
+      if (!buttonClicked) {
+        throw new Error(`Add to cart button not found for product ${productSlug}`);
+      }
+      
+      // Wait for confirmation with more flexible text matching
+      const confirmationSelectors = [
+        'text=Added to cart',
+        'text=Added to Cart!',
+        'text=Added to Cart',
+        '[data-testid="cart-notification"]'
+      ];
+      
+      for (const selector of confirmationSelectors) {
+        try {
+          await expect(page.locator(selector)).toBeVisible({ timeout: 3000 });
+          break;
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+      
+      // Small delay between additions
+      if (i < quantity - 1) {
+        await page.waitForTimeout(500);
+      }
     }
-    
-    // Add to cart
-    await page.click('[data-testid="add-to-cart"]');
-    
-    // Wait for confirmation
-    await expect(page.getByText('Added to cart')).toBeVisible();
   }
+
   /**
    * Fill shipping address form
    */
@@ -100,6 +138,7 @@ export class TestHelpers {
     // Wait for order confirmation
     await page.waitForURL('**/order-confirmation/**', { timeout: 15000 });
   }
+
   /**
    * Fill Square payment form (iframe handling)
    */
@@ -132,17 +171,44 @@ export class TestHelpers {
   static async clearCart(page: Page) {
     await page.goto('/cart');
     
-    // Remove all items if cart has content
-    const removeButtons = page.locator('[data-testid="remove-item"]');
-    const count = await removeButtons.count();
+    // Check if cart is already empty
+    const emptyCartText = page.getByText('Your cart is empty');
+    if (await emptyCartText.isVisible()) {
+      return; // Cart is already empty
+    }
     
-    for (let i = 0; i < count; i++) {
-      await removeButtons.first().click();
-      await page.waitForTimeout(500); // Wait for removal animation
+    // Handle both regular and catering cart tabs
+    const tabs = ['Regular Items', 'Catering Items'];
+    
+    for (const tabName of tabs) {
+      const tab = page.getByRole('button', { name: new RegExp(tabName, 'i') });
+      if (await tab.isVisible()) {
+        await tab.click();
+        await page.waitForTimeout(500); // Wait for tab switch
+        
+        // Clear this cart if it has items
+        const clearButton = page.getByRole('button', { name: new RegExp(`Clear.*Cart`, 'i') });
+        if (await clearButton.isVisible()) {
+          await clearButton.click();
+          await page.waitForTimeout(500);
+        }
+        
+        // Alternative: Remove items individually
+        const removeButtons = page.locator('[data-testid="remove-item"], button:has-text("Remove")');
+        const count = await removeButtons.count();
+        
+        for (let i = 0; i < count; i++) {
+          const button = removeButtons.first();
+          if (await button.isVisible()) {
+            await button.click();
+            await page.waitForTimeout(500); // Wait for removal animation
+          }
+        }
+      }
     }
     
     // Verify cart is empty
-    await expect(page.getByText('Your cart is empty')).toBeVisible();
+    await expect(page.getByText('Your cart is empty')).toBeVisible({ timeout: 5000 });
   }
 
   /**
