@@ -36,28 +36,31 @@ export async function getCateringItemWithOverrides(itemId: string) {
 
     const isFromSquare = !!(item as any).squareProductId;
     
+    // Get the first (and only) override since there's a unique constraint on itemId
+    const override = item.overrides?.[0];
+    
     return {
       ...item,
       price: Number(item.price),
       isSquareItem: isFromSquare,
       // Computed final values
-      finalDescription: (item.overrides?.overrideDescription && item.overrides?.localDescription) 
-        ? item.overrides.localDescription 
+      finalDescription: (override?.overrideDescription && override?.localDescription) 
+        ? override.localDescription 
         : item.description || '',
-      finalImageUrl: (item.overrides?.overrideImage && item.overrides?.localImageUrl)
-        ? item.overrides.localImageUrl
+      finalImageUrl: (override?.overrideImage && override?.localImageUrl)
+        ? override.localImageUrl
         : item.imageUrl || (item as any).squareImageUrl || undefined,
-      finalIsVegetarian: (item.overrides?.overrideDietary && item.overrides?.localIsVegetarian !== null)
-        ? item.overrides.localIsVegetarian
+      finalIsVegetarian: (override?.overrideDietary && override?.localIsVegetarian !== null)
+        ? override.localIsVegetarian
         : item.isVegetarian,
-      finalIsVegan: (item.overrides?.overrideDietary && item.overrides?.localIsVegan !== null)
-        ? item.overrides.localIsVegan
+      finalIsVegan: (override?.overrideDietary && override?.localIsVegan !== null)
+        ? override.localIsVegan
         : item.isVegan,
-      finalIsGlutenFree: (item.overrides?.overrideDietary && item.overrides?.localIsGlutenFree !== null)
-        ? item.overrides.localIsGlutenFree
+      finalIsGlutenFree: (override?.overrideDietary && override?.localIsGlutenFree !== null)
+        ? override.localIsGlutenFree
         : item.isGlutenFree,
-      finalServingSize: (item.overrides?.overrideServingSize && item.overrides?.localServingSize)
-        ? item.overrides.localServingSize
+      finalServingSize: (override?.overrideServingSize && override?.localServingSize)
+        ? override.localServingSize
         : item.servingSize || undefined
     };
   } catch (error) {

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock, UtensilsCrossed, Truck } from 'lucide-react'; // Added UtensilsCrossed and Truck icons
+import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock, UtensilsCrossed, Truck, Star } from 'lucide-react'; // Added UtensilsCrossed, Truck, and Star icons
 import { MobileMenu } from './components/MobileMenu'; // Ensure path is correct
 
 // Authentication and authorization checks (Supabase, Prisma) MUST be performed
@@ -139,6 +139,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin/hours"
               label="Business Hours"
               icon={<Clock size={18} />}
+              currentPath={pathname}
+            />
+            <NavItem
+              href="/admin/spotlight-picks"
+              label="Spotlight Picks"
+              icon={<Star size={18} />}
               currentPath={pathname}
             />
           </ul>

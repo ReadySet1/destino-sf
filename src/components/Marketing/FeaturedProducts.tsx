@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dancing_Script } from 'next/font/google';
+import { SpotlightPick } from '@/types/spotlight';
 
 // Configuramos la fuente al igual que en el otro componente
 const dancingScript = Dancing_Script({
@@ -12,45 +13,6 @@ const dancingScript = Dancing_Script({
   display: 'swap',
   weight: ['400', '500', '600', '700'],
 });
-
-interface ProductType {
-  id: string;
-  name: string;
-  price: string;
-  imageUrl: string;
-  slug: string;
-}
-
-const featuredProducts: ProductType[] = [
-  {
-    id: '1',
-    name: 'Pride Alfajores',
-    price: '$24.99',
-    imageUrl: '/images/assets/2Recurso 5.png',
-    slug: 'alfajores',
-  },
-  {
-    id: '2',
-    name: 'Huacatay Chicken Empanadas',
-    price: '$39.99',
-    imageUrl: '/images/assets/2Recurso 9.png',
-    slug: 'empanadas',
-  },
-  {
-    id: '3',
-    name: 'Aji Amarillo Salsa',
-    price: '$19.99',
-    imageUrl: '/images/assets/2Recurso 7.png',
-    slug: 'chimichurri-sauce',
-  },
-  {
-    id: '4',
-    name: 'Monthly Subscription',
-    price: '$15.99',
-    imageUrl: '/images/assets/2Recurso 20.png',
-    slug: 'dulce-de-leche',
-  },
-];
 
 interface ComingSoonModalProps {
   isOpen: boolean;
@@ -125,22 +87,112 @@ function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
 
 export function FeaturedProducts() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [spotlightPicks, setSpotlightPicks] = useState<SpotlightPick[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleProductClick = (e: React.MouseEvent, productId: string) => {
-    if (productId === '4') {
-      // Monthly Subscription
+  // Fetch spotlight picks from the database
+  useEffect(() => {
+    const fetchSpotlightPicks = async () => {
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch('/api/spotlight-picks');
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.length > 0) {
+            // Filter only active picks and sort by position
+            const activePicks = result.data
+              .filter((pick: SpotlightPick) => pick.isActive)
+              .sort((a: SpotlightPick, b: SpotlightPick) => a.position - b.position);
+            setSpotlightPicks(activePicks);
+          } else {
+            // Fallback to default hardcoded data
+            setSpotlightPicks(getDefaultPicks());
+          }
+        } else {
+          console.error('Failed to fetch spotlight picks, using fallback data');
+          // Fallback to default hardcoded data
+          setSpotlightPicks(getDefaultPicks());
+        }
+      } catch (error) {
+        console.error('Error fetching spotlight picks:', error);
+        // Fallback to default hardcoded data
+        setSpotlightPicks(getDefaultPicks());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSpotlightPicks();
+  }, []);
+
+  // Default hardcoded picks as fallback
+  const getDefaultPicks = (): SpotlightPick[] => [
+    {
+      position: 1,
+      isCustom: true,
+      isActive: true,
+      customTitle: 'Pride Alfajores',
+      customPrice: 24.99,
+      customImageUrl: '/images/assets/2Recurso 5.png',
+    },
+    {
+      position: 2,
+      isCustom: true,
+      isActive: true,
+      customTitle: 'Huacatay Chicken Empanadas',
+      customPrice: 39.99,
+      customImageUrl: '/images/assets/2Recurso 9.png',
+    },
+    {
+      position: 3,
+      isCustom: true,
+      isActive: true,
+      customTitle: 'Aji Amarillo Salsa',
+      customPrice: 19.99,
+      customImageUrl: '/images/assets/2Recurso 7.png',
+    },
+    {
+      position: 4,
+      isCustom: true,
+      isActive: true,
+      customTitle: 'Monthly Subscription',
+      customPrice: 15.99,
+      customImageUrl: '/images/assets/2Recurso 20.png',
+    },
+  ];
+
+  const handleProductClick = (e: React.MouseEvent, pick: SpotlightPick) => {
+    // Check if this is a subscription product (you can customize this logic)
+    if (pick.customTitle?.toLowerCase().includes('subscription') || 
+        pick.product?.name?.toLowerCase().includes('subscription')) {
       e.preventDefault();
       setIsModalOpen(true);
     }
   };
 
-  const ProductCard = ({ product, className }: { product: ProductType; className?: string }) => {
-    const isSubscription = product.id === '4';
+  const ProductCard = ({ pick, className }: { pick: SpotlightPick; className?: string }) => {
+    const isSubscription = pick.customTitle?.toLowerCase().includes('subscription') || 
+                          pick.product?.name?.toLowerCase().includes('subscription');
+    
+    // Determine product data
+    const productData = pick.isCustom ? {
+      name: pick.customTitle || 'Custom Product',
+      price: pick.customPrice ? `$${pick.customPrice.toFixed(2)}` : '$0.00',
+      imageUrl: pick.customImageUrl || '/images/placeholder-product.jpg',
+      slug: '#'
+    } : {
+      name: pick.product?.name || 'Product',
+      price: pick.product?.price ? `$${pick.product.price.toFixed(2)}` : '$0.00',
+      imageUrl: pick.product?.images?.[0] || '/images/placeholder-product.jpg',
+      slug: pick.product?.slug || '#'
+    };
 
     if (isSubscription) {
       return (
         <button
-          onClick={e => handleProductClick(e, product.id)}
+          onClick={e => handleProductClick(e, pick)}
           className={`${className} text-left w-full`}
         >
           <div
@@ -148,27 +200,32 @@ export function FeaturedProducts() {
             style={{ paddingBottom: '75%' }}
           >
             <Image
-              src={product.imageUrl}
-              alt={product.name}
+              src={productData.imageUrl}
+              alt={productData.name}
               fill
               className="object-cover transition-transform duration-500 hover:scale-105 absolute inset-0 rounded-3xl"
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw" // Keep this for larger screens
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
               priority
             />
           </div>
           <div className="mt-4">
-            <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-            <p className="font-medium text-amber-600">{product.price}</p>
+            <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
+            <p className="font-medium text-amber-600">{productData.price}</p>
           </div>
         </button>
       );
     }
 
+    // Determine the correct link
+    const linkHref = pick.isCustom 
+      ? '#' // Or whatever you want for custom items
+      : pick.product?.slug 
+        ? `/products/${pick.product.slug}`
+        : `/products/category/${productData.slug}`;
+
     return (
       <Link
-        href={
-          product.id === '3' ? '/products/chimichurri-sauce' : `/products/category/${product.slug}`
-        }
+        href={linkHref}
         className={className}
       >
         <div
@@ -176,21 +233,68 @@ export function FeaturedProducts() {
           style={{ paddingBottom: '75%' }}
         >
           <Image
-            src={product.imageUrl}
-            alt={product.name}
+            src={productData.imageUrl}
+            alt={productData.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105 absolute inset-0 rounded-3xl"
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw" // Keep this for larger screens
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
             priority
           />
         </div>
         <div className="mt-4">
-          <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-          <p className="font-medium text-amber-600">{product.price}</p>
+          <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
+          <p className="font-medium text-amber-600">{productData.price}</p>
         </div>
       </Link>
     );
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2
+            className={`text-4xl font-bold tracking-tight text-black sm:text-5xl text-center ${dancingScript.className}`}
+          >
+            Spotlight Picks
+          </h2>
+          <p className="mt-4 text-lg text-gray-600 text-center max-w-2xl mx-auto">
+            Loading our featured products...
+          </p>
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-300 rounded-3xl" style={{ paddingBottom: '75%' }}></div>
+                <div className="mt-4">
+                  <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-20"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no active picks
+  if (spotlightPicks.length === 0) {
+    return (
+      <div className="bg-gray-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2
+            className={`text-4xl font-bold tracking-tight text-black sm:text-5xl text-center ${dancingScript.className}`}
+          >
+            Spotlight Picks
+          </h2>
+          <p className="mt-4 text-lg text-gray-600 text-center max-w-2xl mx-auto">
+            Check back soon for our featured products!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -201,54 +305,22 @@ export function FeaturedProducts() {
           >
             Spotlight Picks
           </h2>
-
-          {/* Texto "Explore our current favorites..." con la nueva tipografía y tamaño - CENTERED */}
-          <p
-            className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4 mb-10 max-w-3xl px-2 sm:px-0 text-center"
-            style={{ fontStyle: 'italic' }}
-          >
-            Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
-            <br />
-            Inspired by tradition. Driven by creativity.
+          <p className="mt-4 text-lg text-gray-600 text-center max-w-2xl mx-auto">
+            Discover our carefully curated selection of premium Peruvian products
           </p>
 
-          <div className="mx-auto max-w-7xl overflow-hidden">
-            <div className="md:flex md:justify-center">
-              {/* Mobile Vertical Stack (formerly Carousel) */}
-              {/* Hidden for md and larger, visible for smaller screens */}
-              <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 px-4">
-                {' '}
-                {/* Changed to grid for vertical stacking */}
-                {featuredProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    className="block w-full transition-transform duration-300 hover:scale-[1.02]" // w-full for stacking
-                  />
-                ))}
-              </div>
-
-              {/* Desktop/Tablet Grid (This remains the same) */}
-              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {featuredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} className="group" />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              href="/products"
-              className="inline-block rounded-md bg-amber-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-            >
-              View All Products
-            </Link>
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {spotlightPicks.map((pick) => (
+              <ProductCard
+                key={pick.id || pick.position}
+                pick={pick}
+                className="group cursor-pointer"
+              />
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Coming Soon Modal */}
       <ComingSoonModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );

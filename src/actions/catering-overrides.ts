@@ -25,13 +25,15 @@ export async function getEnhancedCateringItem(itemId: string): Promise<EnhancedC
     if (!item) return null;
 
     const isSquareItem = !!item.squareProductId;
-    const overrides = item.overrides;
+    // Get the first (and only) override since there's a unique constraint on itemId
+    const overrides = item.overrides?.[0];
 
     // Compute final values based on overrides
     const enhanced: EnhancedCateringItem = {
       ...item,
       price: Number(item.price),
       category: item.category as CateringItemCategory, // Type assertion for enum compatibility
+      squareCategory: item.squareCategory || undefined, // Convert null to undefined
       isSquareItem,
       squareData: isSquareItem ? {
         originalDescription: item.description || undefined,
@@ -39,7 +41,7 @@ export async function getEnhancedCateringItem(itemId: string): Promise<EnhancedC
         originalPrice: Number(item.price),
         lastSyncedAt: (item as any).lastSyncedAt || new Date()
       } : undefined,
-      overrides: overrides as CateringItemOverrides | undefined,
+      overrides: overrides,
       // Computed final values
       finalDescription: (overrides?.overrideDescription && overrides?.localDescription) 
         ? overrides.localDescription 
@@ -366,6 +368,9 @@ export async function convertSquareItemToLocal(itemId: string): Promise<{ succes
       return { success: false, error: 'Item is already local' };
     }
 
+    // Get the first (and only) override since there's a unique constraint on itemId
+    const override = item.overrides?.[0];
+
     // Apply all current overrides as permanent values
     const updates: any = {
       squareProductId: null,
@@ -374,20 +379,20 @@ export async function convertSquareItemToLocal(itemId: string): Promise<{ succes
       lastSyncedAt: null
     };
 
-    if (item.overrides) {
-      if (item.overrides.overrideDescription && item.overrides.localDescription) {
-        updates.description = item.overrides.localDescription;
+    if (override) {
+      if (override.overrideDescription && override.localDescription) {
+        updates.description = override.localDescription;
       }
-      if (item.overrides.overrideImage && item.overrides.localImageUrl) {
-        updates.imageUrl = item.overrides.localImageUrl;
+      if (override.overrideImage && override.localImageUrl) {
+        updates.imageUrl = override.localImageUrl;
       }
-      if (item.overrides.overrideDietary) {
-        if (item.overrides.localIsVegetarian !== null) updates.isVegetarian = item.overrides.localIsVegetarian;
-        if (item.overrides.localIsVegan !== null) updates.isVegan = item.overrides.localIsVegan;
-        if (item.overrides.localIsGlutenFree !== null) updates.isGlutenFree = item.overrides.localIsGlutenFree;
+      if (override.overrideDietary) {
+        if (override.localIsVegetarian !== null) updates.isVegetarian = override.localIsVegetarian;
+        if (override.localIsVegan !== null) updates.isVegan = override.localIsVegan;
+        if (override.localIsGlutenFree !== null) updates.isGlutenFree = override.localIsGlutenFree;
       }
-      if (item.overrides.overrideServingSize && item.overrides.localServingSize) {
-        updates.servingSize = item.overrides.localServingSize;
+      if (override.overrideServingSize && override.localServingSize) {
+        updates.servingSize = override.localServingSize;
       }
     }
 

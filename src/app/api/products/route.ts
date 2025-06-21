@@ -35,6 +35,11 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
     const exclude = searchParams.get('exclude') || undefined; // Product ID to exclude
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    
+    // New parameters for pagination and search
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
+    const search = searchParams.get('search') || undefined;
+    const includePagination = searchParams.get('includePagination') === 'true';
 
     // Build the query based on parameters
     const whereCondition: any = {
@@ -42,6 +47,32 @@ export async function GET(request: NextRequest) {
       categoryId: categoryId,
       featured: featured,
     };
+
+    // Add search condition if provided
+    if (search) {
+      whereCondition.OR = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          category: {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
+    }
 
     // Add exclusion condition if provided
     if (exclude) {
@@ -54,6 +85,13 @@ export async function GET(request: NextRequest) {
     Object.keys(whereCondition).forEach(
       (key) => whereCondition[key] === undefined && delete whereCondition[key]
     );
+
+    // Calculate pagination
+    const itemsPerPage = limit || (includePagination ? 10 : undefined);
+    const skip = includePagination && itemsPerPage ? (page - 1) * itemsPerPage : undefined;
+
+    // Get total count if pagination is requested
+    const totalCount = includePagination ? await prisma.product.count({ where: whereCondition }) : undefined;
 
     // Get products with optional variants
     const products = await prisma.product.findMany({
@@ -86,7 +124,8 @@ export async function GET(request: NextRequest) {
       orderBy: {
         name: 'asc',
       },
-      take: limit, // Apply limit if provided
+      skip: skip,
+      take: itemsPerPage,
     });
 
     // Convert BigInt price to regular number for JSON serialization
@@ -100,6 +139,22 @@ export async function GET(request: NextRequest) {
           }))
         : [],
     }));
+
+    // Return with pagination metadata if requested
+    if (includePagination && totalCount !== undefined && itemsPerPage) {
+      const totalPages = Math.ceil(totalCount / itemsPerPage);
+      return NextResponse.json({
+        data: serializedProducts,
+        pagination: {
+          page,
+          limit: itemsPerPage,
+          total: totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      });
+    }
 
     return NextResponse.json(serializedProducts);
   } catch (error) {
