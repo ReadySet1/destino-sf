@@ -1,68 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
+import { prisma } from '@/lib/prisma';
 
 // GET: Fetch active spotlight picks for public display
 export async function GET(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
   try {
-    const supabase = await createClient();
-
-    // Fetch spotlight picks with product data using table queries
-    const { data: rawSpotlightPicks, error } = await supabase
-      .from('spotlight_picks')
-      .select(`
-        *,
-        Product (
-          id,
-          name,
-          description,
-          images,
-          price,
-          slug,
-          Category (
-            name,
-            slug
-          )
-        )
-      `)
-      .eq('is_active', true)
-      .order('position');
-
-    if (error) {
-      console.error('Error fetching spotlight picks:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Failed to fetch spotlight picks: ${error.message}` 
-      }, { status: 500 });
-    }
+    // Fetch spotlight picks with product data using Prisma
+    const rawSpotlightPicks = await prisma.spotlightPick.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        product: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
 
     // Transform the data to match our interface
-    const spotlightPicks: SpotlightPick[] = (rawSpotlightPicks || [])
-      .map((pick: any) => ({
-        id: pick.id,
-        position: pick.position,
-        productId: pick.product_id,
-        customTitle: pick.custom_title,
-        customDescription: pick.custom_description,
-        customImageUrl: pick.custom_image_url,
-        customPrice: pick.custom_price,
-        isCustom: pick.is_custom,
-        isActive: pick.is_active,
-        createdAt: new Date(pick.created_at),
-        updatedAt: new Date(pick.updated_at),
-        product: pick.Product ? {
-          id: pick.Product.id,
-          name: pick.Product.name,
-          description: pick.Product.description,
-          images: pick.Product.images || [],
-          price: pick.Product.price,
-          slug: pick.Product.slug,
-          category: pick.Product.Category ? {
-            name: pick.Product.Category.name,
-            slug: pick.Product.Category.slug,
-          } : undefined,
-        } : null,
-      }));
+    const spotlightPicks: SpotlightPick[] = rawSpotlightPicks.map((pick) => ({
+      id: pick.id,
+      position: pick.position as 1 | 2 | 3 | 4,
+      productId: pick.productId,
+      customTitle: pick.customTitle,
+      customDescription: pick.customDescription,
+      customImageUrl: pick.customImageUrl,
+      customPrice: pick.customPrice ? Number(pick.customPrice) : null,
+      isCustom: pick.isCustom,
+      isActive: pick.isActive,
+      createdAt: pick.createdAt,
+      updatedAt: pick.updatedAt,
+      product: pick.product ? {
+        id: pick.product.id,
+        name: pick.product.name,
+        description: pick.product.description,
+        images: pick.product.images || [],
+        price: Number(pick.product.price),
+        slug: pick.product.slug,
+        category: pick.product.category ? {
+          name: pick.product.category.name,
+          slug: pick.product.category.slug,
+        } : undefined,
+      } : null,
+    }));
 
     return NextResponse.json({ 
       success: true, 

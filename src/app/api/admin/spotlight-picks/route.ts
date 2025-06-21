@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
+import { prisma } from '@/lib/prisma';
 
 // Validation schema
 const spotlightPickSchema = z.object({
@@ -23,11 +24,10 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     return false;
   }
 
-  const { data: adminProfile } = await supabase
-    .from('Profile')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  const adminProfile = await prisma.profile.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  });
 
   return adminProfile?.role === 'ADMIN';
 }
@@ -45,59 +45,50 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
       }, { status: 401 });
     }
 
-    // Fetch spotlight picks with product data using table queries
-    const { data: rawSpotlightPicks, error } = await supabase
-      .from('spotlight_picks')
-      .select(`
-        *,
-        Product (
-          id,
-          name,
-          description,
-          images,
-          price,
-          slug,
-          Category (
-            name,
-            slug
-          )
-        )
-      `)
-      .order('position');
-
-    if (error) {
-      console.error('Error fetching spotlight picks:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Failed to fetch spotlight picks: ${error.message}` 
-      }, { status: 500 });
-    }
+    // Fetch spotlight picks with product data using Prisma
+    const rawSpotlightPicks = await prisma.spotlightPick.findMany({
+      include: {
+        product: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
 
     // Transform the data to match our interface
-    const spotlightPicks: SpotlightPick[] = (rawSpotlightPicks || []).map((pick: any) => ({
+    const spotlightPicks: SpotlightPick[] = rawSpotlightPicks.map((pick) => ({
       id: pick.id,
-      position: pick.position,
-      productId: pick.product_id,
-      customTitle: pick.custom_title,
-      customDescription: pick.custom_description,
-      customImageUrl: pick.custom_image_url,
-      customPrice: pick.custom_price,
-      isCustom: pick.is_custom,
-      isActive: pick.is_active,
-      createdAt: new Date(pick.created_at),
-      updatedAt: new Date(pick.updated_at),
-              product: pick.Product ? {
-          id: pick.Product.id,
-          name: pick.Product.name,
-          description: pick.Product.description,
-          images: pick.Product.images || [],
-          price: pick.Product.price,
-          slug: pick.Product.slug,
-          category: pick.Product.Category ? {
-            name: pick.Product.Category.name,
-            slug: pick.Product.Category.slug,
-          } : undefined,
-        } : null,
+      position: pick.position as 1 | 2 | 3 | 4,
+      productId: pick.productId,
+      customTitle: pick.customTitle,
+      customDescription: pick.customDescription,
+      customImageUrl: pick.customImageUrl,
+      customPrice: pick.customPrice ? Number(pick.customPrice) : null,
+      isCustom: pick.isCustom,
+      isActive: pick.isActive,
+      createdAt: pick.createdAt,
+      updatedAt: pick.updatedAt,
+      product: pick.product ? {
+        id: pick.product.id,
+        name: pick.product.name,
+        description: pick.product.description,
+        images: pick.product.images || [],
+        price: Number(pick.product.price),
+        slug: pick.product.slug,
+        category: pick.product.category ? {
+          name: pick.product.category.name,
+          slug: pick.product.category.slug,
+        } : undefined,
+      } : null,
     }));
 
     return NextResponse.json({ 
@@ -128,81 +119,83 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
     }
 
     const body = await request.json();
-    
-    // Validate the request body
     const validatedData = spotlightPickSchema.parse(body);
 
-    // Additional validation
-    if (validatedData.isCustom) {
-      if (!validatedData.customTitle) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Custom title is required for custom spotlight picks' 
-        }, { status: 400 });
-      }
-    } else {
-      if (!validatedData.productId) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Product ID is required for product-based spotlight picks' 
-        }, { status: 400 });
-      }
-    }
-
-    // Upsert the spotlight pick
-    const { data: spotlightPick, error } = await supabase
-      .from('spotlight_picks')
-      .upsert({
+    // Upsert the spotlight pick using Prisma
+    const spotlightPick = await prisma.spotlightPick.upsert({
+      where: {
         position: validatedData.position,
-        product_id: validatedData.isCustom ? null : validatedData.productId,
-        custom_title: validatedData.isCustom ? validatedData.customTitle : null,
-        custom_description: validatedData.isCustom ? validatedData.customDescription : null,
-        custom_image_url: validatedData.isCustom ? validatedData.customImageUrl : null,
-        custom_price: validatedData.isCustom ? validatedData.customPrice : null,
-        is_custom: validatedData.isCustom,
-        is_active: validatedData.isActive,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'position',
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single();
+      },
+      update: {
+        productId: validatedData.productId,
+        customTitle: validatedData.customTitle,
+        customDescription: validatedData.customDescription,
+        customImageUrl: validatedData.customImageUrl,
+        customPrice: validatedData.customPrice,
+        isCustom: validatedData.isCustom,
+        isActive: validatedData.isActive,
+      },
+      create: {
+        position: validatedData.position,
+        productId: validatedData.productId,
+        customTitle: validatedData.customTitle,
+        customDescription: validatedData.customDescription,
+        customImageUrl: validatedData.customImageUrl,
+        customPrice: validatedData.customPrice,
+        isCustom: validatedData.isCustom,
+        isActive: validatedData.isActive,
+      },
+      include: {
+        product: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    if (error) {
-      console.error('Error upserting spotlight pick:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Failed to save spotlight pick: ${error.message}` 
-      }, { status: 500 });
-    }
-
-    // Transform response
+    // Transform the data to match our interface
     const transformedPick: SpotlightPick = {
       id: spotlightPick.id,
-      position: spotlightPick.position,
-      productId: spotlightPick.product_id,
-      customTitle: spotlightPick.custom_title,
-      customDescription: spotlightPick.custom_description,
-      customImageUrl: spotlightPick.custom_image_url,
-      customPrice: spotlightPick.custom_price,
-      isCustom: spotlightPick.is_custom,
-      isActive: spotlightPick.is_active,
-      createdAt: new Date(spotlightPick.created_at),
-      updatedAt: new Date(spotlightPick.updated_at),
+      position: spotlightPick.position as 1 | 2 | 3 | 4,
+      productId: spotlightPick.productId,
+      customTitle: spotlightPick.customTitle,
+      customDescription: spotlightPick.customDescription,
+      customImageUrl: spotlightPick.customImageUrl,
+      customPrice: spotlightPick.customPrice ? Number(spotlightPick.customPrice) : null,
+      isCustom: spotlightPick.isCustom,
+      isActive: spotlightPick.isActive,
+      createdAt: spotlightPick.createdAt,
+      updatedAt: spotlightPick.updatedAt,
+      product: spotlightPick.product ? {
+        id: spotlightPick.product.id,
+        name: spotlightPick.product.name,
+        description: spotlightPick.product.description,
+        images: spotlightPick.product.images || [],
+        price: Number(spotlightPick.product.price),
+        slug: spotlightPick.product.slug,
+        category: spotlightPick.product.category ? {
+          name: spotlightPick.product.category.name,
+          slug: spotlightPick.product.category.slug,
+        } : undefined,
+      } : null,
     };
 
     return NextResponse.json({ 
       success: true, 
-      data: transformedPick,
-      message: 'Spotlight pick saved successfully' 
+      data: transformedPick 
     });
 
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
         success: false, 
-        error: `Validation error: ${error.errors.map(e => e.message).join(', ')}` 
+        error: 'Invalid data provided' 
       }, { status: 400 });
     }
 
@@ -214,8 +207,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
   }
 }
 
-// DELETE: Remove a spotlight pick (set to inactive)
-export async function DELETE(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse>> {
+// DELETE: Clear a spotlight pick at a specific position
+export async function DELETE(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<void>>> {
   try {
     const supabase = await createClient();
 
@@ -228,49 +221,33 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Spotlig
     }
 
     const { searchParams } = new URL(request.url);
-    const position = searchParams.get('position');
+    const position = parseInt(searchParams.get('position') || '');
 
-    if (!position) {
+    if (!position || position < 1 || position > 4) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Position parameter is required' 
+        error: 'Valid position (1-4) is required' 
       }, { status: 400 });
     }
 
-    const positionNumber = parseInt(position);
-    if (isNaN(positionNumber) || positionNumber < 1 || positionNumber > 4) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Position must be between 1 and 4' 
-      }, { status: 400 });
-    }
-
-    // Update spotlight pick to be inactive and reset custom fields
-    const { error } = await supabase
-      .from('spotlight_picks')
-      .update({
-        product_id: null,
-        custom_title: null,
-        custom_description: null,
-        custom_image_url: null,
-        custom_price: null,
-        is_custom: false,
-        is_active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('position', positionNumber);
-
-    if (error) {
-      console.error('Error clearing spotlight pick:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Failed to clear spotlight pick: ${error.message}` 
-      }, { status: 500 });
-    }
+    // Update the spotlight pick to inactive using Prisma
+    await prisma.spotlightPick.update({
+      where: {
+        position: position,
+      },
+      data: {
+        isActive: false,
+        productId: null,
+        customTitle: null,
+        customDescription: null,
+        customImageUrl: null,
+        customPrice: null,
+        isCustom: false,
+      },
+    });
 
     return NextResponse.json({ 
-      success: true, 
-      message: 'Spotlight pick cleared successfully' 
+      success: true 
     });
 
   } catch (error) {

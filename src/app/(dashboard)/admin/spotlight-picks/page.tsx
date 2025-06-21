@@ -1,7 +1,7 @@
 import React from 'react';
 import { SpotlightPicksManager } from '@/components/admin/SpotlightPicks/SpotlightPicksManager';
 import { SpotlightPick } from '@/types/spotlight';
-import { createClient } from '@/utils/supabase/server';
+import { prisma } from '@/lib/prisma';
 import { Toaster } from 'sonner';
 
 export const metadata = {
@@ -13,96 +13,53 @@ export const metadata = {
 
 // Fetch spotlight picks with product data
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
-  const supabase = await createClient();
-  
   try {
     console.log('[DEBUG] Fetching spotlight picks...');
 
-    // First try to get basic data without joins to see if table exists
-    const { data: basicPicks, error: basicError } = await supabase
-      .from('spotlight_picks')
-      .select('*')
-      .order('position');
+    // Fetch spotlight picks with product data using Prisma
+    const rawSpotlightPicks = await prisma.spotlightPick.findMany({
+      include: {
+        product: {
+          include: {
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        position: 'asc',
+      },
+    });
 
-    console.log('[DEBUG] Basic picks query error:', basicError);
-    console.log('[DEBUG] Basic picks count:', basicPicks?.length || 0);
-
-    if (basicError) {
-      console.error('Error fetching basic spotlight picks:', basicError);
-      // Return empty array with default positions
-      return [
-        { id: '1', position: 1, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-        { id: '2', position: 2, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-        { id: '3', position: 3, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-        { id: '4', position: 4, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null }
-      ];
-    }
-
-    // If basic query works, try with joins
-    const { data: rawSpotlightPicks, error } = await supabase
-      .from('spotlight_picks')
-      .select(`
-        *,
-        Product (
-          id,
-          name,
-          description,
-          images,
-          price,
-          slug,
-          Category (
-            name,
-            slug
-          )
-        )
-      `)
-      .order('position');
-
-    console.log('[DEBUG] Full picks query error:', error);
-    console.log('[DEBUG] Full picks count:', rawSpotlightPicks?.length || 0);
-
-    if (error) {
-      console.error('Error fetching spotlight picks:', error);
-      // Return the basic picks if join fails
-      return (basicPicks || []).map((pick: any) => ({
-        id: pick.id,
-        position: pick.position,
-        productId: pick.product_id,
-        customTitle: pick.custom_title,
-        customDescription: pick.custom_description,
-        customImageUrl: pick.custom_image_url,
-        customPrice: pick.custom_price,
-        isCustom: pick.is_custom,
-        isActive: pick.is_active,
-        createdAt: new Date(pick.created_at),
-        updatedAt: new Date(pick.updated_at),
-        product: null,
-      }));
-    }
+    console.log('[DEBUG] Raw picks count:', rawSpotlightPicks.length);
 
     // Transform the data to match our interface
-    const spotlightPicks: SpotlightPick[] = (rawSpotlightPicks || []).map((pick: any) => ({
+    const spotlightPicks: SpotlightPick[] = rawSpotlightPicks.map((pick) => ({
       id: pick.id,
-      position: pick.position,
-      productId: pick.product_id,
-      customTitle: pick.custom_title,
-      customDescription: pick.custom_description,
-      customImageUrl: pick.custom_image_url,
-      customPrice: pick.custom_price,
-      isCustom: pick.is_custom,
-      isActive: pick.is_active,
-      createdAt: new Date(pick.created_at),
-      updatedAt: new Date(pick.updated_at),
-      product: pick.Product ? {
-        id: pick.Product.id,
-        name: pick.Product.name,
-        description: pick.Product.description,
-        images: pick.Product.images || [],
-        price: parseFloat(pick.Product.price) || 0,
-        slug: pick.Product.slug,
-        category: pick.Product.Category ? {
-          name: pick.Product.Category.name,
-          slug: pick.Product.Category.slug,
+      position: pick.position as 1 | 2 | 3 | 4,
+      productId: pick.productId,
+      customTitle: pick.customTitle,
+      customDescription: pick.customDescription,
+      customImageUrl: pick.customImageUrl,
+      customPrice: pick.customPrice ? Number(pick.customPrice) : null,
+      isCustom: pick.isCustom,
+      isActive: pick.isActive,
+      createdAt: pick.createdAt,
+      updatedAt: pick.updatedAt,
+      product: pick.product ? {
+        id: pick.product.id,
+        name: pick.product.name,
+        description: pick.product.description,
+        images: pick.product.images || [],
+        price: Number(pick.product.price),
+        slug: pick.product.slug,
+        category: pick.product.category ? {
+          name: pick.product.category.name,
+          slug: pick.product.category.slug,
         } : undefined,
       } : null,
     }));

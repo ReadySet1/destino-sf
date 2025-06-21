@@ -37,6 +37,7 @@ model Product {
   orderItems  OrderItem[]
   category    Category    @relation(fields: [categoryId], references: [id])
   variants    Variant[]
+  spotlightPicks SpotlightPick[]
 
   @@index([categoryId])
   @@index([ordinal])
@@ -187,6 +188,28 @@ model StoreSettings {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
+}
+
+model SpotlightPick {
+  id                String   @id @default(uuid()) @db.Uuid
+  position          Int      @unique
+  productId         String?  @map("product_id") @db.Uuid
+  customTitle       String?  @map("custom_title")
+  customDescription String?  @map("custom_description")
+  customImageUrl    String?  @map("custom_image_url")
+  customPrice       Decimal? @map("custom_price") @db.Decimal(10, 2)
+  isCustom          Boolean  @default(false) @map("is_custom")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  product           Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  @@index([position])
+  @@index([isActive])
+  @@index([productId])
+  @@map("spotlight_picks")
 }
 
 model Subscriber {
