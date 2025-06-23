@@ -17,53 +17,39 @@ import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * Fetches all active catering packages with their ratings
+ * Fetches all active catering packages using Supabase directly
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
   try {
-    // Check if db is available
-    if (!db) {
-      console.error('Database connection not available');
+    console.log('🔧 [CATERING] Fetching catering packages via Supabase...');
+    
+    const { data: packages, error } = await supabase
+      .from('CateringPackage')
+      .select('*')
+      .eq('isActive', true)
+      .order('featuredOrder', { ascending: true });
+
+    if (error) {
+      console.error('❌ [CATERING] Supabase error fetching packages:', error);
       return [];
     }
 
-    const packages = await db.cateringPackage.findMany({
-      where: {
-        isActive: true,
-      },
-      include: {
-        ratings: true,
-      },
-      orderBy: {
-        featuredOrder: 'asc',
-      },
-    });
+    console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
     
-    return packages.map(pkg => ({
+    return packages?.map((pkg: any) => ({
       ...pkg,
-      pricePerPerson: Number(pkg.pricePerPerson)
-    })) as unknown as CateringPackage[];
+      pricePerPerson: Number(pkg.pricePerPerson),
+    })) as CateringPackage[] || [];
+
   } catch (error) {
-    console.error('Error fetching catering packages:', error);
-    
-    // More specific error handling
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2021') {
-        // Database table doesn't exist yet
-        console.warn('Catering package table does not exist yet - returning empty array');
-        return [];
-      }
-      if (error.code === 'P1001') {
-        // Database connection error
-        console.warn('Database connection error - returning empty array');
-        return [];
-      }
-    }
-    
-    // For other errors, return empty array to prevent page crashes
-    console.warn('Returning empty catering packages array due to error:', error);
+    console.error('❌ [CATERING] Unexpected error fetching catering packages:', error);
     return [];
   }
 }
@@ -94,7 +80,7 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
     return {
       ...cateringPackage,
       pricePerPerson: Number(cateringPackage.pricePerPerson),
-      items: cateringPackage.items.map(item => ({
+      items: cateringPackage.items.map((item: any) => ({
         ...item,
         cateringItem: item.cateringItem ? {
           ...item.cateringItem,
@@ -153,32 +139,33 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
 }
 
 /**
- * Fetches all active catering items
- * DEPRECATED: Use getCateringItemsWithImages from utils/catering-optimized.ts instead
- * This function is kept for backward compatibility but will use the optimized version
+ * Fetches all active catering items using Supabase directly
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
-    // Import the optimized function dynamically to avoid circular dependencies
-    const { getCateringItemsWithImages } = await import('@/utils/catering-optimized');
-    const { measurePerformance } = await import('@/utils/performance');
+    console.log('🔧 [CATERING] Fetching catering items via Supabase...');
     
-    return await measurePerformance(
-      'getCateringItems (legacy)',
-      () => getCateringItemsWithImages()
-    );
-  } catch (error) {
-    console.error('Error fetching catering items:', error);
-    
-    // More specific error handling
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2021') {
-        // Database table doesn't exist yet
-        throw new Error(`Catering items table does not exist. Error code: ${error.code}`);
-      }
+    const { data: items, error } = await supabase
+      .from('CateringItem')
+      .select('*')
+      .eq('isActive', true)
+      .order('category', { ascending: true });
+
+    if (error) {
+      console.error('❌ [CATERING] Supabase error fetching items:', error);
+      return [];
     }
+
+    console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items`);
     
-    throw error; // Re-throw the error to be handled by the calling component
+    return items?.map((item: any) => ({
+      ...item,
+      price: Number(item.price),
+    })) as CateringItem[] || [];
+
+  } catch (error) {
+    console.error('❌ [CATERING] Unexpected error fetching catering items:', error);
+    return [];
   }
 }
 
@@ -197,7 +184,7 @@ export async function getCateringItemsByCategory(category: CateringItemCategory)
       },
     });
     
-    return items.map(item => ({
+    return items.map((item: any) => ({
       ...item,
       price: Number(item.price)
     })) as unknown as CateringItem[];
@@ -454,7 +441,7 @@ export async function getProductsBySquareCategory(categoryName: string): Promise
       }
     });
     
-    return products.map(product => ({
+    return products.map((product: any) => ({
       ...product,
       price: Number(product.price)
     }));
@@ -1206,19 +1193,19 @@ export async function getBoxedLunchData(): Promise<{
     ]);
 
     return {
-      packages: packages.map(pkg => ({
+      packages: packages.map((pkg: any) => ({
         ...pkg,
         pricePerPerson: Number(pkg.pricePerPerson)
       })) as unknown as CateringPackage[],
-      salads: salads.map(item => ({
+      salads: salads.map((item: any) => ({
         ...item,
         price: Number(item.price)
       })) as unknown as CateringItem[],
-      addOns: addOns.map(item => ({
+      addOns: addOns.map((item: any) => ({
         ...item,
         price: Number(item.price)
       })) as unknown as CateringItem[],
-      proteins: proteins.map(item => ({
+      proteins: proteins.map((item: any) => ({
         ...item,
         price: Number(item.price)
       })) as unknown as CateringItem[]

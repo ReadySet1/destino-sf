@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import { CateringItem } from '@/types/catering';
 
 interface CateringItemWithImage extends CateringItem {
@@ -12,7 +12,7 @@ interface CateringItemWithImage extends CateringItem {
 export async function getCateringItemsWithImages(): Promise<CateringItemWithImage[]> {
   try {
     // First, get all active catering items
-    const cateringItems = await prisma.cateringItem.findMany({
+    const cateringItems = await db.cateringItem.findMany({
       where: { isActive: true },
       orderBy: { category: 'asc' },
     });
@@ -25,7 +25,7 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
     const itemNames = cateringItems.map(item => item.name.toLowerCase());
     
     // Use efficient PostgreSQL query with array operations instead of multiple ILIKE
-    const products = await prisma.$queryRaw<Array<{ id: string; name: string; images: string[] }>>`
+    const products = await db.$queryRaw<Array<{ id: string; name: string; images: string[] }>>`
       SELECT id, name, images 
       FROM "Product" 
       WHERE LOWER(name) = ANY(${itemNames}::text[])
@@ -91,7 +91,7 @@ function findPartialMatch(itemName: string, products: Array<{ name: string; imag
  */
 export async function getCateringItemsByCategory(category: string): Promise<CateringItemWithImage[]> {
   try {
-    const items = await prisma.cateringItem.findMany({
+    const items = await db.cateringItem.findMany({
       where: {
         isActive: true,
         category: category as any,
