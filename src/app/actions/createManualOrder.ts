@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 // Define our own PaymentMethod enum to match the Prisma schema

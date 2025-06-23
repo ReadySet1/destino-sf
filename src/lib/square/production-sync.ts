@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 import type { Prisma } from '@prisma/client';

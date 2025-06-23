@@ -1,4 +1,7 @@
-import { prisma } from '@/lib/prisma';
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
+import { prisma } from '@/lib/db';
 import BusinessHoursForm from '../settings/components/BusinessHoursForm';
 import { Separator } from '@/components/ui/separator';
 

@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
 
 // Define the structure for regular orders

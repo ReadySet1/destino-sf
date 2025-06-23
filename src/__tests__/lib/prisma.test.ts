@@ -65,7 +65,7 @@ describe('prisma.ts', () => {
 
   describe('Prisma Client Initialization', () => {
     test('should create a new PrismaClient instance', async () => {
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       expect(MockPrismaClient).toHaveBeenCalledTimes(1);
       expect(prisma).toBeDefined();
@@ -77,12 +77,12 @@ describe('prisma.ts', () => {
       setNodeEnv('development');
       
       // First import
-      delete require.cache[require.resolve('@/lib/prisma')];
-      const { prisma: firstPrisma } = await import('@/lib/prisma');
+      delete require.cache[require.resolve('@/lib/db')];
+      const { prisma: firstPrisma } = await import('@/lib/db');
       
       // Second import should reuse the same instance
-      delete require.cache[require.resolve('@/lib/prisma')];
-      const { prisma: secondPrisma } = await import('@/lib/prisma');
+      delete require.cache[require.resolve('@/lib/db')];
+      const { prisma: secondPrisma } = await import('@/lib/db');
       
       expect(MockPrismaClient).toHaveBeenCalledTimes(1);
       expect(firstPrisma).toBe(secondPrisma);
@@ -92,17 +92,17 @@ describe('prisma.ts', () => {
       setNodeEnv('production');
       
       // Clear module cache and global instance
-      delete require.cache[require.resolve('@/lib/prisma')];
+      delete require.cache[require.resolve('@/lib/db')];
       delete (globalThis as any).prisma;
       
       // First import
-      const { prisma: firstPrisma } = await import('@/lib/prisma');
+      const { prisma: firstPrisma } = await import('@/lib/db');
       
       // Clear module cache but not global (simulating production behavior)
-      delete require.cache[require.resolve('@/lib/prisma')];
+      delete require.cache[require.resolve('@/lib/db')];
       
       // Second import
-      const { prisma: secondPrisma } = await import('@/lib/prisma');
+      const { prisma: secondPrisma } = await import('@/lib/db');
       
       expect(MockPrismaClient).toHaveBeenCalledTimes(2);
       expect(firstPrisma).toBe(mockPrismaInstance);
@@ -112,14 +112,14 @@ describe('prisma.ts', () => {
 
   describe('Connection Management', () => {
     test('should handle connection successfully', async () => {
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$connect()).resolves.toBeUndefined();
       expect(mockPrismaInstance.$connect).toHaveBeenCalledTimes(1);
     });
 
     test('should handle disconnection successfully', async () => {
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$disconnect()).resolves.toBeUndefined();
       expect(mockPrismaInstance.$disconnect).toHaveBeenCalledTimes(1);
@@ -129,7 +129,7 @@ describe('prisma.ts', () => {
       const connectionError = new Error('Connection failed');
       mockPrismaInstance.$connect.mockRejectedValue(connectionError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$connect()).rejects.toThrow('Connection failed');
       expect(mockPrismaInstance.$connect).toHaveBeenCalledTimes(1);
@@ -139,7 +139,7 @@ describe('prisma.ts', () => {
       const disconnectionError = new Error('Disconnection failed');
       mockPrismaInstance.$disconnect.mockRejectedValue(disconnectionError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$disconnect()).rejects.toThrow('Disconnection failed');
       expect(mockPrismaInstance.$disconnect).toHaveBeenCalledTimes(1);
@@ -151,7 +151,7 @@ describe('prisma.ts', () => {
       const mockTransactionResult = { id: 'test-result' };
       mockPrismaInstance.$transaction.mockResolvedValue(mockTransactionResult);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       const transactionCallback = jest.fn().mockResolvedValue(mockTransactionResult);
       const result = await prisma.$transaction(transactionCallback);
@@ -164,7 +164,7 @@ describe('prisma.ts', () => {
       const transactionError = new Error('Transaction failed');
       mockPrismaInstance.$transaction.mockRejectedValue(transactionError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       const transactionCallback = jest.fn().mockRejectedValue(transactionError);
       
@@ -173,7 +173,7 @@ describe('prisma.ts', () => {
     });
 
     test('should handle transaction function calls', async () => {
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       // Mock a transaction function
       const mockTransactionFunction = jest.fn().mockResolvedValue({ success: true });
@@ -191,7 +191,7 @@ describe('prisma.ts', () => {
       const mockQueryResult = [{ count: 5 }];
       mockPrismaInstance.$queryRaw.mockResolvedValue(mockQueryResult);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       const result = await prisma.$queryRaw`SELECT COUNT(*) as count FROM users`;
       
@@ -203,7 +203,7 @@ describe('prisma.ts', () => {
       const mockExecuteResult = 1;
       mockPrismaInstance.$executeRaw.mockResolvedValue(mockExecuteResult);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       const result = await prisma.$executeRaw`UPDATE users SET active = true WHERE id = 1`;
       
@@ -215,7 +215,7 @@ describe('prisma.ts', () => {
       const queryError = new Error('Invalid SQL syntax');
       mockPrismaInstance.$queryRaw.mockRejectedValue(queryError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(
         prisma.$queryRaw`SELECT * FROM nonexistent_table`
@@ -230,8 +230,8 @@ describe('prisma.ts', () => {
       });
       
       expect(() => {
-        delete require.cache[require.resolve('@/lib/prisma')];
-        require('@/lib/prisma');
+        delete require.cache[require.resolve('@/lib/db')];
+        require('@/lib/db');
       }).toThrow('Failed to initialize Prisma client');
     });
 
@@ -240,7 +240,7 @@ describe('prisma.ts', () => {
       timeoutError.name = 'ConnectTimeoutError';
       mockPrismaInstance.$connect.mockRejectedValue(timeoutError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$connect()).rejects.toThrow('Connection timeout');
     });
@@ -250,7 +250,7 @@ describe('prisma.ts', () => {
       unavailableError.name = 'DatabaseUnavailableError';
       mockPrismaInstance.$connect.mockRejectedValue(unavailableError);
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       await expect(prisma.$connect()).rejects.toThrow('Database unavailable');
     });
@@ -260,10 +260,10 @@ describe('prisma.ts', () => {
     test('should properly set global prisma in development', async () => {
       setNodeEnv('development');
       
-      delete require.cache[require.resolve('@/lib/prisma')];
+      delete require.cache[require.resolve('@/lib/db')];
       delete (globalThis as any).prisma;
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       expect((globalThis as any).prisma).toBe(prisma);
     });
@@ -271,10 +271,10 @@ describe('prisma.ts', () => {
     test('should not set global prisma in production', async () => {
       setNodeEnv('production');
       
-      delete require.cache[require.resolve('@/lib/prisma')];
+      delete require.cache[require.resolve('@/lib/db')];
       delete (globalThis as any).prisma;
       
-      await import('@/lib/prisma');
+      await import('@/lib/db');
       
       expect((globalThis as any).prisma).toBeUndefined();
     });
@@ -282,10 +282,10 @@ describe('prisma.ts', () => {
     test('should handle test environment properly', async () => {
       setNodeEnv('test');
       
-      delete require.cache[require.resolve('@/lib/prisma')];
+      delete require.cache[require.resolve('@/lib/db')];
       delete (globalThis as any).prisma;
       
-      const { prisma } = await import('@/lib/prisma');
+      const { prisma } = await import('@/lib/db');
       
       expect((globalThis as any).prisma).toBe(prisma);
     });
@@ -295,8 +295,8 @@ describe('prisma.ts', () => {
     test('should use development configuration', async () => {
       setNodeEnv('development');
       
-      delete require.cache[require.resolve('@/lib/prisma')];
-      const { prisma } = await import('@/lib/prisma');
+      delete require.cache[require.resolve('@/lib/db')];
+      const { prisma } = await import('@/lib/db');
       
       expect(prisma).toBeDefined();
       expect(MockPrismaClient).toHaveBeenCalledWith();
@@ -305,8 +305,8 @@ describe('prisma.ts', () => {
     test('should use production configuration', async () => {
       setNodeEnv('production');
       
-      delete require.cache[require.resolve('@/lib/prisma')];
-      const { prisma } = await import('@/lib/prisma');
+      delete require.cache[require.resolve('@/lib/db')];
+      const { prisma } = await import('@/lib/db');
       
       expect(prisma).toBeDefined();
       expect(MockPrismaClient).toHaveBeenCalledWith();
@@ -320,8 +320,8 @@ describe('prisma.ts', () => {
         configurable: true,
       });
       
-      delete require.cache[require.resolve('@/lib/prisma')];
-      const { prisma } = await import('@/lib/prisma');
+      delete require.cache[require.resolve('@/lib/db')];
+      const { prisma } = await import('@/lib/db');
       
       expect(prisma).toBeDefined();
       expect(MockPrismaClient).toHaveBeenCalledWith();

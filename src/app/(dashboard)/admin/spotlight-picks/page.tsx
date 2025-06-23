@@ -1,7 +1,10 @@
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 import React from 'react';
 import { SpotlightPicksManager } from '@/components/admin/SpotlightPicks/SpotlightPicksManager';
 import { SpotlightPick } from '@/types/spotlight';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { Toaster } from 'sonner';
 
 export const metadata = {

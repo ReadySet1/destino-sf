@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Schema for validation
 const settingsSchema = z.object({

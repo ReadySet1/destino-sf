@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import { CashPaymentDetails } from '@/components/Payment/CashPaymentDetails';

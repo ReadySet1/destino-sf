@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Updated PageProps type for Next.js 15.3+
 type CheckoutSuccessProps = {

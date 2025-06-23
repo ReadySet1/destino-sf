@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 interface ImageProtectionResult {
   protected: number;

@@ -1,7 +1,7 @@
 // src/lib/square/sync.ts
 
 import { logger } from '@/utils/logger';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 // import { createSanityProduct } from '@/lib/sanity/createProduct'; // Removed Sanity import
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient, getCatalogClient } from './client';
@@ -53,9 +53,144 @@ interface SyncResult {
 // Define a helper type for variant creation
 type VariantCreate = Prisma.VariantCreateWithoutProductInput;
 
-// Batch processing constants
-const BATCH_SIZE = 10;
-const IMAGE_BATCH_SIZE = 5;
+// Enhanced batch processing constants with rate limiting
+const BATCH_SIZE = 5; // Reduced from 10 to be more conservative
+const IMAGE_BATCH_SIZE = 3; // Reduced from 5
+const MAX_CONCURRENT_REQUESTS = 3; // Limit concurrent API calls
+const RATE_LIMIT_DELAY = 250; // 250ms between requests
+const RETRY_DELAY_BASE = 1000; // Base delay for exponential backoff
+const MAX_RETRIES = 3;
+
+// Rate limiting utilities
+class RateLimiter {
+  private lastRequestTime = 0;
+  private requestQueue: Array<() => void> = [];
+  private processing = false;
+
+  async throttle(): Promise<void> {
+    return new Promise((resolve) => {
+      this.requestQueue.push(resolve);
+      this.processQueue();
+    });
+  }
+
+  private processQueue(): void {
+    if (this.processing || this.requestQueue.length === 0) return;
+    
+    this.processing = true;
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest >= RATE_LIMIT_DELAY) {
+      // Can make request immediately
+      this.executeNext();
+    } else {
+      // Need to wait
+      const delay = RATE_LIMIT_DELAY - timeSinceLastRequest;
+      setTimeout(() => this.executeNext(), delay);
+    }
+  }
+
+  private executeNext(): void {
+    const next = this.requestQueue.shift();
+    if (next) {
+      this.lastRequestTime = Date.now();
+      next();
+    }
+    
+    this.processing = false;
+    if (this.requestQueue.length > 0) {
+      this.processQueue();
+    }
+  }
+}
+
+// Database connection retry utility
+async function withDatabaseRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Check if it's a database connection error
+      if (errorMessage.includes('Can\'t reach database server') || 
+          errorMessage.includes('Connection terminated') ||
+          errorMessage.includes('Connection refused')) {
+        
+        if (attempt === maxRetries) {
+          logger.error(`Database operation failed after ${maxRetries} attempts:`, error);
+          throw error;
+        }
+        
+        const delay = RETRY_DELAY_BASE * Math.pow(2, attempt - 1);
+        logger.warn(`Database connection failed (attempt ${attempt}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // For non-connection errors, throw immediately
+      throw error;
+    }
+  }
+  
+  throw new Error(`Database operation failed after ${maxRetries} attempts`);
+}
+
+// Square API retry utility with exponential backoff
+async function withSquareRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Handle rate limiting specifically
+      if (errorMessage.includes('429') || errorMessage.includes('RATE_LIMITED')) {
+        if (attempt === maxRetries) {
+          logger.error(`Square API rate limited after ${maxRetries} attempts`);
+          throw error;
+        }
+        
+        // Exponential backoff with jitter for rate limiting
+        const baseDelay = RETRY_DELAY_BASE * Math.pow(2, attempt);
+        const jitter = Math.random() * 1000;
+        const delay = baseDelay + jitter;
+        
+        logger.warn(`Rate limited (attempt ${attempt}), waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Handle other API errors
+      if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+        if (attempt === maxRetries) {
+          logger.error(`Square API server error after ${maxRetries} attempts:`, error);
+          throw error;
+        }
+        
+        const delay = RETRY_DELAY_BASE * attempt;
+        logger.warn(`Square API server error (attempt ${attempt}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // For other errors, throw immediately
+      throw error;
+    }
+  }
+  
+  throw new Error(`Square API operation failed after ${maxRetries} attempts`);
+}
+
+// Initialize rate limiter
+const rateLimiter = new RateLimiter();
 
 async function getOrCreateDefaultCategory() {
   try {
@@ -252,16 +387,21 @@ export async function syncSquareProducts(): Promise<SyncResult> {
   const validSquareIds: string[] = [];
 
   try {
-    logger.info('Starting Square product sync...');
+    logger.info('Starting Square product sync with enhanced rate limiting...');
     
-    // Get the default category first
-    const defaultCategory = await getOrCreateDefaultCategory();
+    // Get the default category first with retry logic
+    const defaultCategory = await withDatabaseRetry(async () => {
+      return await getOrCreateDefaultCategory();
+    });
+    
     if (!defaultCategory) {
       throw new Error('Failed to get or create default category');
     }
 
-    // Create test catering category for debugging
-    await ensureTestCateringCategory();
+    // Create test catering category for debugging with retry
+    await withDatabaseRetry(async () => {
+      return await ensureTestCateringCategory();
+    });
 
     // Check available methods
     const clientProperties = Object.keys(squareClient);
@@ -283,10 +423,13 @@ export async function syncSquareProducts(): Promise<SyncResult> {
     logger.info('Catalog methods:', catalogMethods);
     debugInfo.catalogMethods = catalogMethods;
     
-    // Try to list locations as a test
+    // Try to list locations as a test with rate limiting
     try {
       if (squareClient.locationsApi && typeof squareClient.locationsApi.listLocations === 'function') {
-        const locationsResponse = await squareClient.locationsApi.listLocations();
+        await rateLimiter.throttle();
+        const locationsResponse = await withSquareRetry(async () => {
+          return await squareClient.locationsApi!.listLocations();
+        });
         logger.info('Square locations response:', locationsResponse);
         debugInfo.locationsResponse = locationsResponse;
       } else {
@@ -298,9 +441,9 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       debugInfo.locationError = locationError instanceof Error ? locationError.message : 'Unknown error';
     }
 
-    // Search catalog items using our direct implementation
+    // Search catalog items using our direct implementation with rate limiting
     try {
-      logger.info('Searching catalog items with batched approach...');
+      logger.info('Searching catalog items with enhanced rate limiting...');
       
       const requestBody = {
         object_types: ['ITEM', 'IMAGE', 'CATEGORY'],
@@ -310,7 +453,11 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       
       // Use the direct catalog API to avoid client configuration conflicts
       const { searchCatalogObjects } = await import('./catalog-api');
-      const catalogResponse = await searchCatalogObjects(requestBody);
+      
+      await rateLimiter.throttle();
+      const catalogResponse = await withSquareRetry(async () => {
+        return await searchCatalogObjects(requestBody);
+      });
       
       if (!catalogResponse) {
         throw new Error('Square catalog API not available or returned no response');
@@ -373,35 +520,44 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       // Collect all valid Square IDs for later cleanup
       validSquareIds.push(...items.map((item: SquareCatalogObject) => item.id));
       
-      // Process items in batches for better performance
+      // Process items in batches with controlled concurrency
       const itemBatches = chunkArray(items, BATCH_SIZE);
       
       for (let batchIndex = 0; batchIndex < itemBatches.length; batchIndex++) {
         const batch = itemBatches[batchIndex];
         logger.info(`Processing batch ${batchIndex + 1} of ${itemBatches.length} (${batch.length} items)`);
         
-        // Process items in parallel within each batch
+        // Process items with controlled concurrency and rate limiting
         const batchPromises = batch.map(async (item) => {
-          if (item.type !== 'ITEM' || !item.item_data) {
-            logger.warn(`Skipping invalid item: ${item.id}`);
+          const squareItem = item as SquareCatalogObject;
+          if (squareItem.type !== 'ITEM' || !squareItem.item_data) {
+            logger.warn(`Skipping invalid item: ${squareItem.id}`);
             return;
           }
 
           try {
-            await processSquareItem(item, relatedObjects, categoryMap, defaultCategory);
+            await rateLimiter.throttle(); // Rate limit each item processing
+            await processSquareItem(squareItem, relatedObjects, categoryMap, defaultCategory);
             syncedCount++;
+            logger.debug(`Processed item: ${squareItem.item_data.name}`);
           } catch (error) {
-            logger.error(`Error processing item ${item.id}:`, error);
+            logger.error(`Error processing item ${squareItem.id}:`, error);
             errors.push(error instanceof Error ? error.message : String(error));
           }
         });
-
-        // Wait for all items in this batch to complete
-        await Promise.allSettled(batchPromises);
         
-        // Small delay to prevent overwhelming the database
+        // Process with limited concurrency
+        const concurrentBatches = chunkArray(batchPromises, MAX_CONCURRENT_REQUESTS);
+        for (const concurrentBatch of concurrentBatches) {
+          await Promise.allSettled(concurrentBatch);
+          // Small delay between concurrent groups
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        // Longer delay between batches to prevent rate limiting
         if (batchIndex < itemBatches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          logger.debug(`Waiting ${RATE_LIMIT_DELAY}ms before next batch...`);
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
         }
       }
       
@@ -559,8 +715,10 @@ async function processSquareItem(
   
   logger.debug(`Processing item: ${itemName} (${item.id})`);
 
-  // Get images efficiently
-  const imageUrls = await getImageUrls(item, relatedObjects);
+  // Get images efficiently with rate limiting
+  const imageUrls = await withSquareRetry(async () => {
+    return await getImageUrls(item, relatedObjects);
+  });
   logger.debug(`Found ${imageUrls.length} image(s) for item ${itemName}`);
 
   const variations = itemData.variations || [];
@@ -572,7 +730,7 @@ async function processSquareItem(
 
   const baseSlug = createSlug(itemName);
   
-  // Determine category
+  // Determine category with database retry
   let categoryId = defaultCategory.id;
   let categoryName = defaultCategory.name;
   
@@ -588,7 +746,9 @@ async function processSquareItem(
       }
       
       try {
-        const category = await getOrCreateCategoryByName(categoryName);
+        const category = await withDatabaseRetry(async () => {
+          return await getOrCreateCategoryByName(categoryName);
+        });
         categoryId = category.id;
         logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId})`);
       } catch (categoryError) {
@@ -598,9 +758,12 @@ async function processSquareItem(
     }
   }
   
-  const existingProduct = await prisma.product.findUnique({
-    where: { squareId: item.id },
-    select: { id: true, slug: true, images: true, name: true }
+  // Database operations with retry logic
+  const existingProduct = await withDatabaseRetry(async () => {
+    return await prisma.product.findUnique({
+      where: { squareId: item.id },
+      select: { id: true, slug: true, images: true, name: true }
+    });
   });
 
   const finalImages = await determineProductImages(item, relatedObjects, existingProduct || undefined);
@@ -612,48 +775,54 @@ async function processSquareItem(
 
   if (existingProduct) {
     logger.debug(`Updating existing product: ${itemName} (${item.id})`);
-    await prisma.product.update({
-      where: { squareId: item.id },
-      data: {
-        name: itemName,
-        description: updateDescription,
-        price: basePrice,
-        images: finalImages,
-        ordinal: ordinal,
-        variants: {
-          deleteMany: {},
-          create: variants
-        },
-        categoryId: categoryId,
-        updatedAt: new Date()
-      }
+    await withDatabaseRetry(async () => {
+      return await prisma.product.update({
+        where: { squareId: item.id },
+        data: {
+          name: itemName,
+          description: updateDescription,
+          price: basePrice,
+          images: finalImages,
+          ordinal: ordinal,
+          variants: {
+            deleteMany: {},
+            create: variants
+          },
+          categoryId: categoryId,
+          updatedAt: new Date()
+        }
+      });
     });
     logger.debug(`Successfully updated product ${itemName}`);
   } else {
-    const existingSlug = await prisma.product.findUnique({
-      where: { slug: baseSlug },
-      select: { id: true }
+    const existingSlug = await withDatabaseRetry(async () => {
+      return await prisma.product.findUnique({
+        where: { slug: baseSlug },
+        select: { id: true }
+      });
     });
     const uniqueSlug = existingSlug ? `${baseSlug}-${item.id.toLowerCase().substring(0, 8)}` : baseSlug;
 
     try {
       logger.debug(`Creating new product: ${itemName} (${item.id})`);
-      await prisma.product.create({
-        data: {
-          squareId: item.id,
-          name: itemName,
-          slug: uniqueSlug,
-          description: createDescription,
-          price: basePrice,
-          images: finalImages,
-          ordinal: ordinal,
-          categoryId: categoryId,
-          featured: false,
-          active: true,
-          variants: {
-            create: variants
+      await withDatabaseRetry(async () => {
+        return await prisma.product.create({
+          data: {
+            squareId: item.id,
+            name: itemName,
+            slug: uniqueSlug,
+            description: createDescription,
+            price: basePrice,
+            images: finalImages,
+            ordinal: ordinal,
+            categoryId: categoryId,
+            featured: false,
+            active: true,
+            variants: {
+              create: variants
+            }
           }
-        }
+        });
       });
       logger.debug(`Successfully created product ${itemName}`);
     } catch (error) {
@@ -836,9 +1005,12 @@ async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCat
           imageUrl = imageObjectFromRelated.image_data.url;
           logger.debug(`Found image URL in related objects for ${imageId}`);
         } else if (squareClient.catalogApi) {
-          // Fallback to API retrieval
+          // Fallback to API retrieval with rate limiting
           try {
-            const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
+            await rateLimiter.throttle();
+            const imageResponse = await withSquareRetry(async () => {
+              return await squareClient.catalogApi!.retrieveCatalogObject(imageId);
+            });
             const imageData = imageResponse?.result?.object;
             
             if (imageData?.image_data?.url) {
@@ -861,14 +1033,23 @@ async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCat
       }
     });
 
-    const batchResults = await Promise.allSettled(batchPromises);
-    const validUrls = batchResults
-      .filter((result): result is PromiseFulfilledResult<string> => 
-        result.status === 'fulfilled' && result.value !== null
-      )
-      .map(result => result.value);
-    
-    imageUrls.push(...validUrls);
+    // Process images with limited concurrency
+    const concurrentImageBatches = chunkArray(batchPromises, MAX_CONCURRENT_REQUESTS);
+    for (const concurrentBatch of concurrentImageBatches) {
+      const batchResults = await Promise.allSettled(concurrentBatch);
+      const validUrls = batchResults
+        .filter((result): result is PromiseFulfilledResult<string> => 
+          result.status === 'fulfilled' && result.value !== null
+        )
+        .map(result => result.value);
+      
+      imageUrls.push(...validUrls);
+      
+      // Small delay between concurrent image batches
+      if (concurrentImageBatches.length > 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
   }
   
   logger.debug(`Final image URLs for item ${item.id}: ${imageUrls.length} images`);

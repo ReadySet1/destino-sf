@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
 import { OrderStatus, CateringStatus, PaymentStatus } from '@prisma/client';

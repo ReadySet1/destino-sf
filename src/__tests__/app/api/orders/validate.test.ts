@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateOrderMinimumsServer } from '@/app/actions/orders';
 import { getDeliveryZone, calculateDeliveryFee } from '@/lib/deliveryUtils';
 import { calculateShippingWeight } from '@/lib/shippingUtils';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Import our new test utilities
 import { 
@@ -18,7 +18,7 @@ import { mockPrismaClient } from '@/__mocks__/prisma';
 jest.mock('@/app/actions/orders');
 jest.mock('@/lib/deliveryUtils');
 jest.mock('@/lib/shippingUtils');
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: mockPrismaClient,
 }));
 

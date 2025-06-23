@@ -5,14 +5,14 @@ import {
   updateOrderPayment,
   getOrderById 
 } from '@/app/actions/orders';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 // import { syncOrderWithSquare } from '@/lib/square/sync'; // Not available yet
 import { mockPrismaClient } from '@/__mocks__/prisma';
 import { PaymentMethod } from '@prisma/client';
 
 // Mock external dependencies
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       create: jest.fn(),

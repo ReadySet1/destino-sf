@@ -3,6 +3,9 @@ import { getCategories } from './actions';
 import ToasterClient from '@/components/Toaster';
 import DeleteCategoryForm from './DeleteCategoryForm';
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 export default async function CategoriesPage() {
   const categories = await getCategories();
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 

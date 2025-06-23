@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';

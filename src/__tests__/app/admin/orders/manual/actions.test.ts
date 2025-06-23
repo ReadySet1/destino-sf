@@ -1,5 +1,5 @@
 import { createManualOrder, updateOrderStatus } from '@/app/(dashboard)/admin/orders/manual/actions';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';
@@ -11,7 +11,7 @@ enum PaymentMethod {
 }
 
 // Mock dependencies
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       findUnique: jest.fn(),

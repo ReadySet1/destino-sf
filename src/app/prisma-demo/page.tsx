@@ -2,6 +2,9 @@ import { db } from '@/lib/db';
 import ClientSidePrismaDemo from './client-component';
 import ServerActionDemo from './server-action-demo';
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 interface TestResult {
   test: number;
 }

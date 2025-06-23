@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { createPayment } from '@/lib/square/orders';
 import { POST } from '@/app/api/checkout/payment/route';
 
 // Mock external dependencies
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       findUnique: jest.fn(),

@@ -1,7 +1,7 @@
 // app/(store)/order-confirmation/page.tsx
 import { Suspense } from 'react';
 import OrderConfirmationContent from './OrderConfirmationContent';
-import { prisma } from '@/lib/prisma'; // Import Prisma client
+import { prisma } from '@/lib/db'; // Import Prisma client
 import type { Order, Prisma } from '@prisma/client'; // Import Order type and Prisma namespace
 
 // Type fetched directly from Prisma (might include Decimal)

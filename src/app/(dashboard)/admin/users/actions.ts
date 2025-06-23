@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
 import { supabaseAdmin } from '@/lib/supabase/admin'; // Import the admin client
 import { UserRole as PrismaUserRole } from '@prisma/client'; // Use generated Prisma types for roles

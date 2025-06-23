@@ -1,7 +1,7 @@
 'use server';
 
 import { Shippo } from 'shippo';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { OrderStatus } from '@prisma/client';
 
 // TODO: Add error handling and more robust return types

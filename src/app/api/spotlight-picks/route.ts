@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // GET: Fetch active spotlight picks for public display
 export async function GET(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {

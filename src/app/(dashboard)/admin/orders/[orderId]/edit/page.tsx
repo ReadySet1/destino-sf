@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { EditOrderForm } from './components/EditOrderForm';

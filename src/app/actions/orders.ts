@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';

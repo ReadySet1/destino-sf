@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { squareClient } from '@/lib/square/client';
 import { directCatalogApi } from '@/lib/square/catalog-api';
 import { logger } from '@/utils/logger';

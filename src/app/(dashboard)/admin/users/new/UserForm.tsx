@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createUserAction, updateUserAction } from '../actions';
 import { useRouter } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 type UserRole = Parameters<typeof prisma.profile.create>[0]['data']['role'];
 

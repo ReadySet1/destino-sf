@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { AccountProfile, AccountProfileProps } from '@/components/Store/AccountProfile';
 import { OrderHistory, OrderHistoryProps } from '@/components/Store/OrderHistory';
 import { Button } from '@/components/ui/button';

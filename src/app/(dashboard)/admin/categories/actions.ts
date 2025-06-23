@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { revalidatePath } from 'next/cache';
 

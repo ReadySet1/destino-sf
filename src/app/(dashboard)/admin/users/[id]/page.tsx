@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { redirect, notFound } from 'next/navigation';
 import UserForm from '../new/UserForm';
 

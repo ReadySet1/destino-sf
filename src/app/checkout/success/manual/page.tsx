@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 

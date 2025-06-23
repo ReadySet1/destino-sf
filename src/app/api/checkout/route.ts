@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {

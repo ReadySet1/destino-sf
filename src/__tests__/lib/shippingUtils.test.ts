@@ -6,7 +6,7 @@ import {
   CartItemForShipping,
   ShippingWeightConfig,
 } from '@/lib/shippingUtils';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Import our new test utilities
 import { 
@@ -17,7 +17,7 @@ import {
 import { mockPrismaClient } from '@/__mocks__/prisma';
 
 // Mock Prisma
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: mockPrismaClient,
 }));
 

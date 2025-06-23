@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createPayment } from '@/lib/square/orders';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {

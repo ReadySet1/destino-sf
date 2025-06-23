@@ -1,6 +1,9 @@
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { logger } from '@/utils/logger';
 

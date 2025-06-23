@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 
 // Validation schema
 const spotlightPickSchema = z.object({

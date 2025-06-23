@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { createClient } from '@/utils/supabase/server';
 
 // Import our new test utilities
@@ -13,7 +13,7 @@ import {
 import { mockPrismaClient } from '@/__mocks__/prisma';
 
 // Mock the dependencies
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: mockPrismaClient,
 }));
 

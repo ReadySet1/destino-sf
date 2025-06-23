@@ -1,6 +1,6 @@
 // src/app/admin/products/page.tsx
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -12,8 +12,9 @@ import CategorySelect from './components/CategorySelect';
 import ProductFilters from './components/ProductFilters';
 import Pagination from '@/components/ui/pagination';
 
-export const revalidate = 0; // Disable static generation
+// Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Disable static generation
 
 export const metadata = {
   title: 'Product Management',

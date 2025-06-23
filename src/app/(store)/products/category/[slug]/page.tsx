@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
-import { prisma } from '@/lib/prisma'; // Import Prisma client
+import { prisma } from '@/lib/db'; // Import Prisma client
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
 

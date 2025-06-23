@@ -1,6 +1,6 @@
 // src/app/(dashboard)/admin/products/[id]/page.tsx
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Category } from '@/types/product';

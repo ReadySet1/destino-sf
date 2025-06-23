@@ -42,7 +42,7 @@ jest.mock('@/utils/supabase/server', () => ({
 }));
 
 // Mock Prisma client
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       create: jest.fn().mockResolvedValue({ id: 'test-order-id' }),

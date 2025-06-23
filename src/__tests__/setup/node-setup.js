@@ -4,7 +4,7 @@
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
 
 // Mock external Node.js services that don't exist in test environment
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     shippingConfiguration: {
       findFirst: jest.fn(),

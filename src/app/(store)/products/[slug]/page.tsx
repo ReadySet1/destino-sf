@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import ProductDetails from '@/components/Products/ProductDetails';
 import CategoryHeader from '@/components/Products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';

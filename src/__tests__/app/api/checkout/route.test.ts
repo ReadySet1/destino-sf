@@ -1,12 +1,12 @@
 import { POST } from '@/app/api/checkout/route';
 import { createOrder } from '@/lib/square/orders';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 // Mock dependencies
 jest.mock('@/lib/square/orders');
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       create: jest.fn(),
