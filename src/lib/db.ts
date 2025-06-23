@@ -24,12 +24,153 @@ const globalForPrisma = globalThis as unknown as {
 // Check if we're in a build environment and create a mock if needed
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
 
+// Create a comprehensive mock Prisma client for build time
+const createMockPrismaClient = () => ({
+  // Connection methods
+  $disconnect: async () => {},
+  $connect: async () => {},
+  $queryRaw: async () => [],
+  $executeRaw: async () => 0,
+
+  // Category model methods
+  category: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // Product model methods
+  product: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // Order model methods
+  order: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // ShippingConfiguration model methods
+  shippingConfiguration: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // StoreSettings model methods
+  storeSettings: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // User model methods
+  user: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // SpotlightPick model methods
+  spotlightPick: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // BusinessHour model methods
+  businessHour: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // CateringOrder model methods
+  cateringOrder: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // CateringItem model methods
+  cateringItem: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // CateringPackage model methods
+  cateringPackage: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // Variant model methods
+  variant: {
+    findMany: async () => [],
+    findUnique: async () => null,
+    findFirst: async () => null,
+    create: async () => ({}),
+    update: async () => ({}),
+    delete: async () => ({}),
+    count: async () => 0,
+  },
+
+  // Add other models as needed...
+  // This mock ensures that all Prisma operations during build time return empty/default values
+  // instead of throwing "Cannot read properties of undefined" errors
+});
+
 export const prisma = isBuildTime 
-  ? ({
-      // Mock Prisma client for build time
-      $disconnect: async () => {},
-      $connect: async () => {},
-    } as any)
+  ? (createMockPrismaClient() as any)
   : (globalForPrisma.__globalPrisma ?? createPrismaClient());
 
 export const db = prisma;
