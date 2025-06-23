@@ -12,7 +12,17 @@ declare global {
 function createPrismaClient() {
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
-    // Reduce query logging to prevent build issues
+    // Add connection pooling configuration to prevent connection issues
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+    // Configure transaction settings to avoid conflicts
+    transactionOptions: {
+      maxWait: 5000, // 5 seconds
+      timeout: 10000, // 10 seconds
+    },
   });
 }
 
@@ -169,12 +179,32 @@ const createMockPrismaClient = () => ({
   // instead of throwing "Cannot read properties of undefined" errors
 });
 
+// Create the singleton instance
+let prismaInstance: PrismaClient | undefined;
+
 export const prisma = isBuildTime 
   ? (createMockPrismaClient() as any)
-  : (globalForPrisma.__globalPrisma ?? createPrismaClient());
+  : (() => {
+      if (!prismaInstance) {
+        if (globalForPrisma.__globalPrisma) {
+          prismaInstance = globalForPrisma.__globalPrisma;
+        } else {
+          prismaInstance = createPrismaClient();
+          if (process.env.NODE_ENV !== 'production') {
+            globalForPrisma.__globalPrisma = prismaInstance;
+          }
+        }
+      }
+      return prismaInstance;
+    })();
 
 export const db = prisma;
 
-if (process.env.NODE_ENV !== 'production' && !isBuildTime) {
-  globalForPrisma.__globalPrisma = prisma;
+// Cleanup function for graceful shutdown
+if (typeof process !== 'undefined') {
+  process.on('beforeExit', async () => {
+    if (prismaInstance && !isBuildTime) {
+      await prismaInstance.$disconnect();
+    }
+  });
 } 
