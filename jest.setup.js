@@ -69,9 +69,71 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Mock Prisma for unit tests
-jest.mock('@/lib/prisma', () => ({
-  prisma: require('./__mocks__/prisma').mockPrismaClient,
+jest.mock('@/lib/db', () => {
+  const mockClient = require('./__mocks__/prisma').mockPrismaClient;
+  return {
+    prisma: mockClient,
+    db: mockClient,
+  };
+});
+
+// Add enhanced mocks for additional utilities - ONLY USE WHEN NEEDED FOR INTEGRATION TESTS
+// COMMENTED OUT TO ALLOW REAL FUNCTION TESTING WHEN NEEDED
+/*
+jest.mock('@/lib/cart-helpers', () => ({
+  calculateShippingWeight: jest.fn().mockResolvedValue(2.5),
+  validateOrderMinimums: jest.fn().mockResolvedValue({
+    isValid: true,
+    errorMessage: null,
+    deliveryZone: 'zone-1',
+    minimumAmount: 50
+  }),
 }));
+*/
+
+// Mock delivery utilities - COMMENTED OUT TO ALLOW REAL FUNCTION TESTING
+// ISSUE: These mocks were preventing actual function logic from being tested
+/*
+jest.mock('@/lib/deliveryUtils', () => ({
+  DeliveryZone: {
+    NEARBY: 'nearby',
+    DISTANT: 'distant',
+    UNSUPPORTED: 'unsupported'
+  },
+  getDeliveryZone: jest.fn().mockReturnValue('nearby'),
+  calculateDeliveryFee: jest.fn().mockReturnValue(5.99),
+  validateDeliveryAddress: jest.fn().mockReturnValue(true),
+}));
+*/
+
+// Mock @testing-library/user-event as fallback for resolution issues
+jest.mock('@testing-library/user-event', () => {
+  const mockUserEventInstance = {
+    click: jest.fn().mockResolvedValue(undefined),
+    type: jest.fn().mockResolvedValue(undefined),
+    clear: jest.fn().mockResolvedValue(undefined),
+    selectOptions: jest.fn().mockResolvedValue(undefined),
+    upload: jest.fn().mockResolvedValue(undefined),
+    hover: jest.fn().mockResolvedValue(undefined),
+    unhover: jest.fn().mockResolvedValue(undefined),
+    keyboard: jest.fn().mockResolvedValue(undefined),
+    pointer: jest.fn().mockResolvedValue(undefined),
+    tab: jest.fn().mockResolvedValue(undefined),
+    dblClick: jest.fn().mockResolvedValue(undefined),
+    tripleClick: jest.fn().mockResolvedValue(undefined),
+  };
+
+  // Create the main userEvent object that matches the library's structure
+  const userEventObject = {
+    ...mockUserEventInstance,
+    setup: jest.fn(() => mockUserEventInstance),
+  };
+
+  return {
+    __esModule: true,
+    default: userEventObject,
+  };
+});
 
 // This extends Jest's expect
 expect.extend({

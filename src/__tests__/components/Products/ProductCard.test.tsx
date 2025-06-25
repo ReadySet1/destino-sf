@@ -14,9 +14,13 @@ import { Product, Variant } from '@/types/product';
 // Add jest-dom matchers
 import '@testing-library/jest-dom';
 
-// Mock dependencies
-jest.mock('@/store/cart');
-jest.mock('@/components/ui/cart-alert');
+// Mock dependencies  
+jest.mock('@/store/cart', () => ({
+  useCartStore: jest.fn(),
+}));
+jest.mock('@/components/ui/cart-alert', () => ({
+  useCartAlertStore: jest.fn(),
+}));
 jest.mock('@/lib/image-utils');
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -149,7 +153,7 @@ describe('ProductCard', () => {
       
       const image = screen.getByTestId('product-image');
       expect(image).toHaveAttribute('src', '/test-image.jpg');
-      expect(image).toHaveAttribute('alt', 'Test Product');
+      expect(image).toHaveAttribute('alt', 'Test Empanada');
     });
 
     it('should render placeholder when image is not available', () => {

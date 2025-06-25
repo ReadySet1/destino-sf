@@ -8,30 +8,16 @@ import {
 import { prisma } from '@/lib/db';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 // import { syncOrderWithSquare } from '@/lib/square/sync'; // Not available yet
-import { mockPrismaClient } from '@/__mocks__/prisma';
 import { PaymentMethod } from '@prisma/client';
 
 // Mock external dependencies
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    order: {
-      create: jest.fn(),
-      update: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    product: {
-      findMany: jest.fn(),
-    },
-    cateringProduct: {
-      findMany: jest.fn(),
-    },
-    storeSettings: {
-      findFirst: jest.fn(),
-    },
-  },
+// Note: @/lib/db is mocked globally in jest.setup.js
+
+jest.mock('@/lib/cart-helpers', () => ({
+  validateOrderMinimums: jest.fn(),
+  isCateringOrder: jest.fn(),
 }));
 
-jest.mock('@/lib/cart-helpers');
 jest.mock('@/lib/square/tip-settings');
 jest.mock('next/headers', () => ({
   cookies: jest.fn(() => Promise.resolve({
@@ -125,13 +111,26 @@ const validNationwideShippingFulfillment = {
 const mockCreatedOrder = {
   id: 'order-123',
   status: 'PENDING',
-  total: 4543,
-  taxAmount: 346,
-  subtotal: 4197,
+  paymentStatus: 'PENDING',
+  fulfillmentType: 'pickup',
+  paymentMethod: PaymentMethod.SQUARE,
+  total: { toNumber: () => 45.43 },
+  taxAmount: { toNumber: () => 3.46 },
+  subtotal: { toNumber: () => 41.97 },
   customerName: 'John Doe',
-  customerEmail: 'john@example.com',
-  customerPhone: '+1234567890',
+  email: 'john@example.com',
+  phone: '+1234567890',
   fulfillmentMethod: 'pickup',
+  pickupTime: new Date('2024-01-15T14:00:00.000Z'),
+  deliveryDate: null,
+  deliveryTime: null,
+  shippingCarrier: null,
+  shippingCostCents: null,
+  shippingMethodName: null,
+  shippingRateId: null,
+  shippingServiceLevelToken: null,
+  isCateringOrder: false,
+  notes: null,
   userId: null,
   createdAt: new Date('2025-06-19T16:55:08.495Z'),
   updatedAt: new Date('2025-06-19T16:55:08.495Z'),
@@ -160,6 +159,12 @@ describe('Order Actions', () => {
     mockPrisma.storeSettings.findFirst.mockResolvedValue({
       cateringMinimum: 15000, // $150 minimum for catering
     });
+
+    // Setup default validateOrderMinimums mock
+    mockValidateOrderMinimums.mockResolvedValue({
+      isValid: true,
+      errorMessage: undefined,
+    });
   });
 
   afterEach(() => {
@@ -167,11 +172,11 @@ describe('Order Actions', () => {
   });
 
   describe('createOrderAndGenerateCheckoutUrl', () => {
-    const baseFormData = {
-      items: validCartItems,
-      customerInfo: validCustomerInfo,
-      paymentMethod: PaymentMethod.SQUARE,
-    };
+      const baseFormData = {
+    items: validCartItems,
+    customerInfo: validCustomerInfo,
+    paymentMethod: PaymentMethod.SQUARE,
+  };
 
     describe('Pickup orders', () => {
       test('should create pickup order successfully', async () => {
@@ -225,7 +230,7 @@ describe('Order Actions', () => {
 
         mockValidateOrderMinimums.mockResolvedValue({
           isValid: true,
-          errorMessage: null,
+          errorMessage: undefined,
           deliveryZone: 'zone-1',
           minimumRequired: 5000, // $50 minimum
           currentAmount: 4197,   // Cart total
