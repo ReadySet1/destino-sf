@@ -4,28 +4,7 @@
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
 
 // Mock external Node.js services that don't exist in test environment
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    shippingConfiguration: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      upsert: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    order: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    product: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    $disconnect: jest.fn(),
-  },
-}));
+// Note: @/lib/db is mocked globally in jest.setup.js to avoid conflicts
 
 // Mock Sanity client for CMS-related tests
 jest.mock('@/sanity/lib/client', () => ({

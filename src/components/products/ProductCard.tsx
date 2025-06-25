@@ -20,12 +20,18 @@ interface ProductCardProps {
   product: Product;
 }
 
-// Helper function to safely format prices
-const formatPrice = (price: number | null | undefined): string => {
-  // Price should arrive as a number (or null/undefined) after parent transformation
+// Helper function to safely format prices (handles Decimal objects too)
+const formatPrice = (price: any): string => {
+  // Handle Decimal objects from Prisma
+  if (price && typeof price === 'object' && 'toNumber' in price) {
+    return price.toNumber().toFixed(2);
+  }
+  
+  // Handle regular numbers
   if (price === null || price === undefined || isNaN(Number(price))) {
      return "0.00";
   }
+  
   // Price is a valid number
   return Number(price).toFixed(2);
 };
@@ -60,12 +66,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { showAlert } = useCartAlertStore();
 
   const handleAddToCart = () => {
-    const priceToAdd = typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice 
-                         ? displayPrice.toNumber() 
-                         : Number(displayPrice);
+    // Extract numeric price from displayPrice (handles both Decimal objects and numbers)
+    let priceToAdd: number;
+    if (displayPrice && typeof displayPrice === 'object' && 'toNumber' in displayPrice) {
+      priceToAdd = displayPrice.toNumber();
+    } else {
+      priceToAdd = Number(displayPrice) || 0;
+    }
 
     addItem({
-      id: product.id, 
+      id: productId, 
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
       price: priceToAdd,
       quantity: 1,
@@ -97,7 +107,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 "group-hover:scale-105"
               )}
               sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-              priority={product.featured}
+              priority={product.featured ? true : undefined}
               quality={85}
               onError={() => setImageError(true)}
             />
@@ -139,9 +149,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {product.variants
                   .filter(variant => variant.id)
                   .map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.name} - ${formatPrice(variant.price ? Number(variant.price) : null) || formatPrice(Number(product.price))}
-                    </option>
+                                      <option key={variant.id} value={variant.id}>
+                    {variant.name} - ${formatPrice(variant.price || product.price)}
+                  </option>
                   ))}
               </select>
             </div>
@@ -149,7 +159,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-gray-900">
-              ${formatPrice(Number(displayPrice))}
+              ${formatPrice(displayPrice)}
             </span>
             
             <button 

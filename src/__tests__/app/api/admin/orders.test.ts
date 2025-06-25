@@ -10,16 +10,11 @@ import {
   mockConsole,
   restoreConsole 
 } from '@/__tests__/setup/test-utils';
-import { mockPrismaClient } from '@/__mocks__/prisma';
-
-// Mock the dependencies
-jest.mock('@/lib/db', () => ({
-  prisma: mockPrismaClient,
-}));
+// Note: @/lib/db is mocked globally in jest.setup.js
 
 jest.mock('@/utils/supabase/server');
 
-const mockPrisma = mockPrismaClient;
+const mockPrisma = prisma as any;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 // Mock Supabase client

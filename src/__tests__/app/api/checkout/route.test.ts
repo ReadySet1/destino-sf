@@ -6,14 +6,7 @@ import { NextResponse } from 'next/server';
 
 // Mock dependencies
 jest.mock('@/lib/square/orders');
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    order: {
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-  },
-}));
+// Note: @/lib/db is mocked globally in jest.setup.js
 jest.mock('@supabase/ssr');
 jest.mock('next/headers', () => ({
   cookies: jest.fn(() => Promise.resolve({
