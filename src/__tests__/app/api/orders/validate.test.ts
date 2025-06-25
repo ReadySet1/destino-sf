@@ -12,21 +12,18 @@ import {
   mockConsole,
   restoreConsole 
 } from '@/__tests__/setup/test-utils';
-import { mockPrismaClient } from '@/__mocks__/prisma';
+// Note: @/lib/db is mocked globally in jest.setup.js
 
 // Mock the dependencies
 jest.mock('@/app/actions/orders');
 jest.mock('@/lib/deliveryUtils');
 jest.mock('@/lib/shippingUtils');
-jest.mock('@/lib/db', () => ({
-  prisma: mockPrismaClient,
-}));
 
 const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
 const mockGetDeliveryZone = getDeliveryZone as jest.MockedFunction<typeof getDeliveryZone>;
 const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<typeof calculateDeliveryFee>;
 const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
-const mockPrisma = mockPrismaClient;
+const mockPrisma = prisma as any;
 
 describe('/api/orders/validate', () => {
   beforeEach(() => {

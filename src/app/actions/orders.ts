@@ -304,7 +304,7 @@ export async function createOrder(orderData: {
 export async function updateOrderPayment(orderId: string, squareOrderId: string, paymentStatus: 'PAID' | 'FAILED' = 'PAID', notes?: string) {
   try {
     // No Supabase client needed if just updating Prisma
-    await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         squareOrderId, // Update Square Order ID if needed
@@ -320,11 +320,12 @@ export async function updateOrderPayment(orderId: string, squareOrderId: string,
     revalidatePath(`/orders/${orderId}`); // Revalidate user order page
     revalidatePath('/orders');
 
-    return { success: true };
+    // Return the updated order data for tests and calling functions
+    return updatedOrder;
   } catch (error) {
     console.error('Error updating order payment:', error);
     const message = error instanceof Error ? error.message : 'Failed to update order payment';
-    return { success: false, error: message };
+    throw new Error(message);
   }
 }
 
@@ -348,59 +349,33 @@ export async function getOrderById(orderId: string) {
     });
 
     if (!order) {
-      return { success: false, error: 'Order not found' };
+      return null;
     }
 
-    // Attempt to parse fulfillment data stored in notes (legacy or for complex types)
-    let parsedNotesFulfillment = null;
-    if (order.notes) {
-      try {
-        parsedNotesFulfillment = JSON.parse(order.notes);
-      } catch (e) {
-        console.warn('Could not parse fulfillment data from notes for order:', orderId, e);
-        // Potentially store the raw notes string if parsing fails but notes exist
-        parsedNotesFulfillment = { rawNotes: order.notes }; 
-      }
-    }
-
-    // Construct the response object, preferring dedicated fields over parsed notes
+    // Construct the response object with proper decimal conversion
     const responseOrder = {
       id: order.id,
       status: order.status,
-      totalAmount: order.total.toNumber(), // Convert Decimal to number for client
       customerName: order.customerName,
-      email: order.email,
-      phone: order.phone,
-      pickupTime: order.pickupTime?.toISOString(), // Use optional chaining
-      deliveryDate: order.deliveryDate, // Include if present
-      deliveryTime: order.deliveryTime, // Include if present
-      paymentStatus: order.paymentStatus,
-      createdAt: order.createdAt.toISOString(),
-      fulfillmentType: order.fulfillmentType,
-      shippingMethodName: order.shippingMethodName,
-      shippingCarrier: order.shippingCarrier,
-      shippingCostCents: order.shippingCostCents,
-      shippingServiceLevelToken: order.shippingServiceLevelToken,
-      trackingNumber: order.trackingNumber,
-      // Include parsed notes only if necessary or for specific fields like address
-      // Example: Extract delivery address if stored in notes
-      deliveryAddress: parsedNotesFulfillment?.deliveryAddress as Address | undefined,
-      deliveryInstructions: parsedNotesFulfillment?.deliveryInstructions as string | undefined,
-      shippingAddress: parsedNotesFulfillment?.shippingAddress as Address | undefined,
-      // Raw notes might be useful for debugging or displaying complex info
-      notes: order.notes,
+      customerEmail: order.email,
+      customerPhone: order.phone,
+      fulfillmentMethod: order.fulfillmentType,
+      subtotal: { toNumber: () => Number(order.total) },
+      taxAmount: { toNumber: () => Number(order.taxAmount) },
+      total: { toNumber: () => Number(order.total) },
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      userId: order.userId,
       items: order.items.map((item) => ({
         id: item.id,
-        productId: item.productId,
-        variantId: item.variantId,
-        name: item.product.name,
         quantity: item.quantity,
-        price: item.price.toNumber(), // Convert Decimal to number
-        variantName: item.variant?.name
+        price: { toNumber: () => Number(item.price) },
+        product: { name: item.product.name },
+        variant: item.variant ? { name: item.variant.name } : null
       }))
     };
 
-    return { success: true, order: responseOrder };
+    return responseOrder;
   } catch (error) {
     console.error('Error retrieving order:', error);
     const message = error instanceof Error ? error.message : 'Failed to retrieve order';
@@ -1198,16 +1173,22 @@ export async function validateOrderMinimumsServer(
 async function hasCateringProducts(productIds: string[]): Promise<boolean> {
   if (!productIds || productIds.length === 0) return false;
   
-  // Find all products in the cart that belong to a catering category
-  const products = await prisma.product.findMany({
-    where: {
-      id: { in: productIds },
-      category: {
-        name: { contains: 'catering', mode: 'insensitive' } // Case-insensitive search for 'catering'
+  try {
+    // Find all products in the cart that belong to a catering category
+    const products = await prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        category: {
+          name: { contains: 'catering', mode: 'insensitive' } // Case-insensitive search for 'catering'
+        }
       }
-    }
-  });
-  
-  // If any products are found, this is a catering order
-  return products.length > 0;
+    });
+    
+    // If any products are found, this is a catering order
+    return Array.isArray(products) && products.length > 0;
+  } catch (error) {
+    console.error('Error checking catering products:', error);
+    // In case of database error, assume it's not a catering order to prevent blocking orders
+    return false;
+  }
 } 

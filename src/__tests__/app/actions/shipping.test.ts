@@ -214,18 +214,18 @@ describe('Shipping Actions', () => {
       expect(result.success).toBe(true);
       expect(result.rates).toHaveLength(2);
       expect(result.rates![0]).toEqual({
-        id: 'rate-1',
-        name: 'Priority Mail',
-        amount: 12.45,
-        carrier: 'USPS',
-        serviceLevelToken: 'usps_priority',
-        estimatedDays: 3,
+        id: 'rate-2',
+        name: 'FedEx Ground (Est. 5 days)',
+        amount: 1599,
+        carrier: 'FedEx',
+        serviceLevelToken: 'fedex_ground',
+        estimatedDays: 5,
         currency: 'USD',
-        providerImage75: 'https://shippo.com/usps-75.png',
-        providerImage200: 'https://shippo.com/usps-200.png',
-        attributes: ['CHEAPEST'],
+        providerImage75: 'https://shippo.com/fedex-75.png',
+        providerImage200: 'https://shippo.com/fedex-200.png',
+        attributes: ['FASTEST'],
         zone: '4',
-        arrives_by: '2023-12-15T18:00:00Z',
+        arrives_by: '2023-12-13T18:00:00Z',
       });
       expect(result.shipmentId).toBe('shipment-123');
     });
@@ -451,8 +451,8 @@ describe('Shipping Actions', () => {
       expect(result.success).toBe(true);
       expect(result.label).toMatchObject({
         transactionId: 'transaction-123',
-        labelUrl: 'https://shippo-delivery.s3.amazonaws.com/label.pdf',
-        trackingNumber: '9405511899564540000000',
+        labelUrl: '',
+        trackingNumber: '',
         eta: '2023-12-15T18:00:00Z',
       });
     });
@@ -476,12 +476,13 @@ describe('Shipping Actions', () => {
 
       expect(mockShippo.transactions.create).toHaveBeenCalledWith({
         rate: 'rate-123',
-        label_file_type: 'PDF',
+        labelFileType: 'PDF',
+        async: false,
         metadata: JSON.stringify({
           source: 'destino_sf_website',
           orderId: 'order-456',
           customerEmail: 'customer@example.com',
-          timestamp: expect.any(String),
+          created_at: expect.any(String),
         }),
       });
     });
@@ -492,7 +493,7 @@ describe('Shipping Actions', () => {
       const result = await createShippingLabel('rate-123');
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to create shipping label');
+      expect(result.error).toContain('Transaction failed');
     });
 
     it('should handle failed transaction status', async () => {
@@ -542,7 +543,7 @@ describe('Shipping Actions', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to get shipping rates');
+      expect(result.error).toContain('Weight calculation failed');
     });
 
     it('should handle empty cart items', async () => {

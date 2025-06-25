@@ -82,7 +82,7 @@ importers:
         specifier: latest
         version: 0.6.1(@supabase/supabase-js@2.50.0)
       '@supabase/supabase-js':
-        specifier: latest
+        specifier: ^2.50.0
         version: 2.50.0
       '@t3-oss/env-core':
         specifier: ^0.12.0

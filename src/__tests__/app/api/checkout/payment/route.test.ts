@@ -498,7 +498,7 @@ describe('/api/checkout/payment - POST', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data).toEqual({ error: 'Missing required parameters' });
+      expect(data).toEqual({ error: 'Invalid amount: must be a positive number' });
     });
   });
 

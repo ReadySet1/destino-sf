@@ -10,16 +10,11 @@ import {
   mockConsole,
   restoreConsole 
 } from '@/__tests__/setup/test-utils';
-import { mockPrismaClient } from '@/__mocks__/prisma';
-
-// Mock the dependencies
-jest.mock('@/lib/db', () => ({
-  prisma: mockPrismaClient,
-}));
+// Note: @/lib/db is mocked globally in jest.setup.js
 
 jest.mock('@/utils/supabase/server');
 
-const mockPrisma = mockPrismaClient;
+const mockPrisma = prisma as any;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 // Mock Supabase client
@@ -1180,6 +1175,393 @@ describe('/api/admin/orders', () => {
 
       expect(updatedOrders).toHaveLength(3);
       expect(updatedOrders.every(order => order.status === 'CONFIRMED')).toBe(true);
+    });
+  });
+});
+
+describe('Admin Orders API - Comprehensive Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Setup admin authentication mock
+    mockSupabaseClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: 'admin-user-123' } },
+      error: null,
+    });
+
+    // Setup admin orders mock data
+    mockPrisma.order.findMany.mockResolvedValue([
+      {
+        id: 'order-1',
+        status: 'PENDING',
+        customerName: 'John Doe',
+        email: 'john@example.com',
+        total: { toNumber: () => 45.43 },
+        createdAt: new Date('2024-01-15T16:55:08.495Z'),
+        fulfillmentType: 'pickup',
+        paymentStatus: 'PENDING',
+      },
+      {
+        id: 'order-2', 
+        status: 'COMPLETED',
+        customerName: 'Jane Smith',
+        email: 'jane@example.com',
+        total: { toNumber: () => 32.15 },
+        createdAt: new Date('2024-01-14T10:30:00.000Z'),
+        fulfillmentType: 'local_delivery',
+        paymentStatus: 'PAID',
+      }
+    ]);
+
+    mockPrisma.order.count.mockResolvedValue(25);
+  });
+
+  describe('GET /api/admin/orders - List orders', () => {
+    test('should return orders for authenticated admin', async () => {
+      const request = new NextRequest('http://localhost:3000/api/admin/orders?page=1&limit=10');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.orders).toHaveLength(2);
+      expect(data.orders[0].id).toBe('order-1');
+      expect(data.pagination).toEqual({
+        page: 1,
+        limit: 10,
+        total: 25,
+        totalPages: 3
+      });
+    });
+
+    test('should filter orders by status', async () => {
+      const request = new NextRequest('http://localhost:3000/api/admin/orders?status=PENDING');
+
+      mockPrisma.order.findMany.mockResolvedValue([
+        {
+          id: 'order-1',
+          status: 'PENDING',
+          customerName: 'John Doe',
+          email: 'john@example.com',
+          total: { toNumber: () => 45.43 },
+          createdAt: new Date(),
+          fulfillmentType: 'pickup',
+          paymentStatus: 'PENDING',
+        }
+      ]);
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.orders).toHaveLength(1);
+      expect(data.orders[0].status).toBe('PENDING');
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: 'PENDING'
+          })
+        })
+      );
+    });
+
+    test('should filter orders by date range', async () => {
+      const startDate = '2024-01-01';
+      const endDate = '2024-01-31';
+      const request = new NextRequest(`http://localhost:3000/api/admin/orders?startDate=${startDate}&endDate=${endDate}`);
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate + 'T23:59:59.999Z')
+            }
+          })
+        })
+      );
+    });
+
+    test('should return 401 for unauthenticated user', async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: null },
+        error: null,
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.error).toBe('Unauthorized');
+    });
+
+    test('should handle database errors gracefully', async () => {
+      mockPrisma.order.findMany.mockRejectedValue(new Error('Database connection failed'));
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Failed to fetch orders');
+    });
+  });
+
+  describe('PUT /api/admin/orders/:id - Update order', () => {
+    test('should update order status successfully', async () => {
+      const orderId = 'order-123';
+      const updateData = { status: 'PROCESSING' };
+
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: orderId,
+        status: 'PENDING',
+        customerName: 'John Doe',
+      });
+
+      mockPrisma.order.update.mockResolvedValue({
+        id: orderId,
+        status: 'PROCESSING',
+        customerName: 'John Doe',
+        updatedAt: new Date(),
+      });
+
+      const request = new NextRequest(`http://localhost:3000/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updateData),
+      });
+
+      const response = await PUT(request, { params: { id: orderId } });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.order.status).toBe('PROCESSING');
+      expect(mockPrisma.order.update).toHaveBeenCalledWith({
+        where: { id: orderId },
+        data: { status: 'PROCESSING', updatedAt: expect.any(Date) }
+      });
+    });
+
+    test('should return 404 for non-existent order', async () => {
+      const orderId = 'non-existent-order';
+      
+      mockPrisma.order.findUnique.mockResolvedValue(null);
+
+      const request = new NextRequest(`http://localhost:3000/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'PROCESSING' }),
+      });
+
+      const response = await PUT(request, { params: { id: orderId } });
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data.error).toBe('Order not found');
+      expect(mockPrisma.order.update).not.toHaveBeenCalled();
+    });
+
+    test('should validate status updates', async () => {
+      const orderId = 'order-123';
+      const invalidUpdateData = { status: 'INVALID_STATUS' };
+
+      const request = new NextRequest(`http://localhost:3000/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify(invalidUpdateData),
+      });
+
+      const response = await PUT(request, { params: { id: orderId } });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid order status');
+    });
+
+    test('should handle concurrent update attempts', async () => {
+      const orderId = 'order-123';
+      
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: orderId,
+        status: 'PENDING',
+        updatedAt: new Date('2024-01-15T10:00:00Z'),
+      });
+
+      mockPrisma.order.update.mockRejectedValue(new Error('Record updated by another process'));
+
+      const request = new NextRequest(`http://localhost:3000/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'PROCESSING' }),
+      });
+
+      const response = await PUT(request, { params: { id: orderId } });
+      const data = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(data.error).toContain('conflict');
+    });
+  });
+
+  describe('POST /api/admin/orders/bulk-update - Bulk operations', () => {
+    test('should update multiple orders successfully', async () => {
+      const bulkData = {
+        orderIds: ['order-1', 'order-2'],
+        updates: { status: 'PROCESSING' }
+      };
+
+      mockPrisma.order.updateMany.mockResolvedValue({ count: 2 });
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders/bulk-update', {
+        method: 'POST',
+        body: JSON.stringify(bulkData),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.updatedCount).toBe(2);
+      expect(mockPrisma.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['order-1', 'order-2'] } },
+        data: { status: 'PROCESSING', updatedAt: expect.any(Date) }
+      });
+    });
+
+    test('should validate bulk update limits', async () => {
+      const tooManyIds = Array.from({ length: 101 }, (_, i) => `order-${i}`);
+      const bulkData = {
+        orderIds: tooManyIds,
+        updates: { status: 'PROCESSING' }
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders/bulk-update', {
+        method: 'POST',
+        body: JSON.stringify(bulkData),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Too many orders');
+      expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /api/admin/orders/stats - Order statistics', () => {
+    test('should return comprehensive order statistics', async () => {
+      mockPrisma.order.groupBy.mockResolvedValue([
+        { status: 'PENDING', _count: { status: 5 } },
+        { status: 'PROCESSING', _count: { status: 3 } },
+        { status: 'COMPLETED', _count: { status: 15 } }
+      ]);
+
+      mockPrisma.order.aggregate.mockResolvedValue({
+        _sum: { total: { toNumber: () => 1250.75 } },
+        _avg: { total: { toNumber: () => 52.11 } },
+        _count: { id: 24 }
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders/stats');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.stats.statusCounts).toEqual({
+        PENDING: 5,
+        PROCESSING: 3,
+        COMPLETED: 15
+      });
+      expect(data.stats.totalRevenue).toBe(1250.75);
+      expect(data.stats.averageOrderValue).toBe(52.11);
+      expect(data.stats.totalOrders).toBe(24);
+    });
+
+    test('should handle empty statistics gracefully', async () => {
+      mockPrisma.order.groupBy.mockResolvedValue([]);
+      mockPrisma.order.aggregate.mockResolvedValue({
+        _sum: { total: null },
+        _avg: { total: null },
+        _count: { id: 0 }
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders/stats');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.stats.totalOrders).toBe(0);
+      expect(data.stats.totalRevenue).toBe(0);
+      expect(data.stats.averageOrderValue).toBe(0);
+    });
+  });
+
+  describe('Error handling and edge cases', () => {
+    test('should handle malformed JSON requests', async () => {
+      const request = new NextRequest('http://localhost:3000/api/admin/orders/bulk-update', {
+        method: 'POST',
+        body: 'invalid-json',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Invalid JSON payload');
+    });
+
+    test('should handle database connection failures', async () => {
+      mockPrisma.order.findMany.mockRejectedValue(new Error('ECONNREFUSED'));
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Failed to fetch orders');
+    });
+
+    test('should handle large result sets efficiently', async () => {
+      // Mock large result set
+      const largeOrderSet = Array.from({ length: 1000 }, (_, i) => ({
+        id: `order-${i}`,
+        status: 'PENDING',
+        customerName: `Customer ${i}`,
+        total: { toNumber: () => 45.43 },
+        createdAt: new Date(),
+      }));
+
+      mockPrisma.order.findMany.mockResolvedValue(largeOrderSet);
+      mockPrisma.order.count.mockResolvedValue(1000);
+
+      const request = new NextRequest('http://localhost:3000/api/admin/orders?limit=1000');
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.orders).toHaveLength(1000);
+      // Should use pagination even for large requests
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: expect.any(Number),
+          skip: expect.any(Number)
+        })
+      );
     });
   });
 }); 

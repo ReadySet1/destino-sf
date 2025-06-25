@@ -24,12 +24,19 @@ module.exports = (path, options) => {
         pkg.main = pkg.main || 'index.js';
       }
       
-      // Handle @testing-library packages
+      // Handle @testing-library packages - especially user-event
       if (pkg.name.startsWith('@testing-library')) {
+        // Delete exports field which is causing resolution issues with Jest
         delete pkg.exports;
         delete pkg.module;
         delete pkg.type;
-        pkg.main = pkg.main || 'index.js';
+        
+        // For user-event specifically, ensure we use the CJS build
+        if (pkg.name === '@testing-library/user-event') {
+          pkg.main = './dist/cjs/index.js';
+        } else {
+          pkg.main = pkg.main || 'index.js';
+        }
       }
       return pkg;
     },
