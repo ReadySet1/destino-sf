@@ -69,12 +69,12 @@ const ALFAJORES_ITEMS = [
 // Protein image mapping
 const getProteinImage = (protein: ProteinOption): string | null => {
   const imageMap: Record<ProteinOption, string | null> = {
-    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/carneasada.jpg',
-    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/pollo.jpg',
-    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.jpg',
-    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
-    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.jpg',
-    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
+    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.png',
+    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.png',
+    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
+    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.png',
+    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.png',
+    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.png',
   };
 
   return imageMap[protein] || null;
@@ -401,7 +401,7 @@ const TierCard: React.FC<TierCardProps> = ({
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         {getProteinImage(protein) ? (
-                          <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 border-2 border-blue-200">
+                          <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
                             <img
                               src={getProteinImage(protein)!}
                               alt={proteinInfo.name}
@@ -421,7 +421,7 @@ const TierCard: React.FC<TierCardProps> = ({
                             />
                           </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
                             <span className="text-xs text-gray-500">
                               No
                               <br />
