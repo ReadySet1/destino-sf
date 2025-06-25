@@ -93,6 +93,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'square-catalog-sandbox.s3.amazonaws.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

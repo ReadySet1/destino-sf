@@ -62,7 +62,7 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
     console.log('Attempting to update profile with data:', data);
 
     try {
-      const { error } = await supabase.from('profiles')
+      const { error } = await supabase.from('Profile')
         .update({
           name: data.name || null,
           phone: data.phone || null,

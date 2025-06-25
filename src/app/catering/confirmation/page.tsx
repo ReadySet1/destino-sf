@@ -56,7 +56,7 @@ function ConfirmationContent() {
         if (session?.user) {
           // Get user profile data from the profiles table
           const { data: profileData, error } = await supabase
-            .from('profiles')
+            .from('Profile')
             .select('full_name, email, phone')
             .eq('id', session.user.id)
             .single();

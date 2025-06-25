@@ -11,10 +11,35 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  // Fetch store settings from database
-  const storeSettings = await prisma.storeSettings.findFirst({
-    orderBy: { createdAt: 'asc' },
-  }) || {
+  // Fetch store settings from database with retry logic for prepared statement issues
+  let rawStoreSettings;
+  
+  try {
+    rawStoreSettings = await prisma.storeSettings.findFirst({
+      orderBy: { createdAt: 'asc' },
+    });
+  } catch (error) {
+    console.error('Error fetching store settings:', error);
+    // If there's a database error, try to reconnect and retry once
+    try {
+      await prisma.$disconnect();
+      await prisma.$connect();
+      rawStoreSettings = await prisma.storeSettings.findFirst({
+        orderBy: { createdAt: 'asc' },
+      });
+    } catch (retryError) {
+      console.error('Retry failed:', retryError);
+      rawStoreSettings = null;
+    }
+  }
+
+  // Convert Decimal objects to numbers for client component compatibility
+  const storeSettings = rawStoreSettings ? {
+    ...rawStoreSettings,
+    taxRate: Number(rawStoreSettings.taxRate),
+    minOrderAmount: Number(rawStoreSettings.minOrderAmount),
+    cateringMinimumAmount: Number(rawStoreSettings.cateringMinimumAmount),
+  } : {
     id: '',
     name: 'Destino SF',
     address: '',

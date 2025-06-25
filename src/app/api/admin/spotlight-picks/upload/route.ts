@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { prisma } from '@/lib/db';
 import { uploadSpotlightImage } from '@/lib/storage/spotlight-storage';
 import { SpotlightUploadResult } from '@/types/spotlight';
 
@@ -11,11 +12,10 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     return false;
   }
 
-  const { data: adminProfile } = await supabase
-    .from('Profile')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  const adminProfile = await prisma.profile.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  });
 
   return adminProfile?.role === 'ADMIN';
 }

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Decimal } from '@prisma/client/runtime/library';
+
 
 interface StoreSettingsProps {
   settings: {
@@ -17,10 +17,10 @@ interface StoreSettingsProps {
     zipCode?: string | null;
     phone?: string | null;
     email?: string | null;
-    taxRate: Decimal | number;
+    taxRate: number;
     minAdvanceHours: number;
-    minOrderAmount: Decimal | number;
-    cateringMinimumAmount: Decimal | number;
+    minOrderAmount: number;
+    cateringMinimumAmount: number;
     maxDaysInAdvance: number;
     isStoreOpen: boolean;
     temporaryClosureMsg?: string | null;
@@ -66,14 +66,6 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 export default function SettingsForm({ settings }: StoreSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Convert Decimal to number for form
-  const formValues = {
-    ...settings,
-    taxRate: Number(settings.taxRate),
-    minOrderAmount: Number(settings.minOrderAmount),
-    cateringMinimumAmount: Number(settings.cateringMinimumAmount),
-  };
-
   const { 
     register, 
     handleSubmit, 
@@ -81,7 +73,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
     watch,
   } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: formValues,
+    defaultValues: settings,
   });
 
   const isStoreOpen = watch('isStoreOpen');
