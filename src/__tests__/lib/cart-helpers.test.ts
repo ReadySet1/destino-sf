@@ -53,6 +53,9 @@ describe('cart-helpers', () => {
       expect(result).toEqual({
         isValid: true,
         errorMessage: undefined,
+        minimumRequired: 25,
+        currentAmount: 65,
+        deliveryZone: undefined,
       });
       expect(mockValidateOrderMinimumsServer).toHaveBeenCalledWith(validCartItems);
     });
@@ -71,6 +74,9 @@ describe('cart-helpers', () => {
       expect(result).toEqual({
         isValid: false,
         errorMessage,
+        minimumRequired: 50,
+        currentAmount: 25,
+        deliveryZone: undefined,
       });
     });
 
@@ -180,6 +186,9 @@ describe('cart-helpers', () => {
       expect(result).toEqual({
         isValid: false,
         errorMessage: specificError,
+        deliveryZone: 'SOUTH_BAY',
+        minimumRequired: 350,
+        currentAmount: 200,
       });
     });
 
@@ -197,6 +206,9 @@ describe('cart-helpers', () => {
       expect(result).toEqual({
         isValid: true,
         errorMessage: undefined,
+        deliveryZone: 'SAN_FRANCISCO',
+        minimumRequired: 25,
+        currentAmount: 65,
       });
     });
   });

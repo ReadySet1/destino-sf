@@ -24,13 +24,16 @@ jest.mock('@/components/ui/cart-alert', () => ({
 jest.mock('@/lib/image-utils');
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ src, alt, onError, ...props }: any) => (
+  default: ({ src, alt, onError, fill, priority, quality, sizes, className, ...props }: any) => (
     <img
       src={src}
       alt={alt}
       onError={onError}
       data-testid="product-image"
-      {...props}
+      className={className}
+      // Don't pass Next.js specific props to DOM element
+      {...(props.width && { width: props.width })}
+      {...(props.height && { height: props.height })}
     />
   ),
 }));
@@ -59,17 +62,20 @@ jest.mock('@/components/Products/ImagePlaceholder', () => ({
 }));
 
 const mockCartStore = {
+  items: [],
   addItem: jest.fn(),
   removeItem: jest.fn(),
   updateQuantity: jest.fn(),
   clearCart: jest.fn(),
-  items: [],
   totalItems: 0,
   totalPrice: 0,
 };
 
 const mockCartAlertStore = {
+  isVisible: false,
+  message: '',
   showAlert: jest.fn(),
+  hideAlert: jest.fn(),
 };
 
 const mockImageUtils = {
@@ -80,7 +86,10 @@ const mockImageUtils = {
 
 describe('ProductCard', () => {
   beforeEach(() => {
+    // Clear all mocks
     jest.clearAllMocks();
+    mockCartStore.addItem.mockClear();
+    mockCartAlertStore.showAlert.mockClear();
     
     (useCartStore as jest.MockedFunction<typeof useCartStore>).mockReturnValue(mockCartStore);
     (useCartAlertStore as jest.MockedFunction<typeof useCartAlertStore>).mockReturnValue(mockCartAlertStore);
@@ -285,7 +294,10 @@ describe('ProductCard', () => {
       const select = screen.getByRole('combobox');
       await user.selectOptions(select, 'var-2');
       
-      expect(screen.getByText('$12.99')).toBeInTheDocument();
+      // Wait for the price to update after variant selection
+      await waitFor(() => {
+        expect(screen.getByText('$12.99')).toBeInTheDocument();
+      });
     });
 
     it('should filter out variants without id', () => {

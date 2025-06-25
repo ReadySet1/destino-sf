@@ -1100,4 +1100,368 @@ describe('/api/orders/create', () => {
       })).rejects.toThrow('Insufficient inventory');
     });
   });
+});
+
+describe('Order Creation API Route - Comprehensive Coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Setup comprehensive mock responses
+    mockPrisma.storeSettings.findFirst.mockResolvedValue({
+      minOrderAmount: 2500, // $25
+      cateringMinimumAmount: 15000, // $150
+    });
+
+    mockPrisma.order.create.mockResolvedValue({
+      id: 'order-123',
+      status: 'PENDING',
+      total: { toNumber: () => 45.43 },
+      taxAmount: { toNumber: () => 3.46 },
+      subtotal: { toNumber: () => 41.97 },
+      squareOrderId: 'square-order-456',
+      checkoutUrl: 'https://square.link/test-checkout',
+    });
+  });
+
+  describe('Success scenarios', () => {
+    test('should create pickup order successfully', async () => {
+      const validRequest = {
+        items: validCartItems,
+        customerInfo: validCustomerInfo,
+        fulfillment: validPickupFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(validRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.orderId).toBe('order-123');
+      expect(data.checkoutUrl).toBe('https://square.link/test-checkout');
+      expect(mockPrisma.order.create).toHaveBeenCalled();
+    });
+
+    test('should create local delivery order successfully', async () => {
+      const deliveryRequest = {
+        items: validCartItems,
+        customerInfo: validCustomerInfo,
+        fulfillment: validLocalDeliveryFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(deliveryRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockPrisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fulfillmentType: 'local_delivery',
+            deliveryDate: expect.any(Date),
+            deliveryTime: '18:00',
+          })
+        })
+      );
+    });
+
+    test('should create nationwide shipping order successfully', async () => {
+      const shippingRequest = {
+        items: validCartItems,
+        customerInfo: validCustomerInfo,
+        fulfillment: validNationwideShippingFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(shippingRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockPrisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fulfillmentType: 'nationwide_shipping',
+            shippingCarrier: 'USPS',
+            shippingCostCents: 1250,
+          })
+        })
+      );
+    });
+  });
+
+  describe('Validation errors', () => {
+    test('should return 400 for missing items', async () => {
+      const invalidRequest = {
+        customerInfo: validCustomerInfo,
+        fulfillment: validPickupFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(invalidRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Missing required fields');
+      expect(mockPrisma.order.create).not.toHaveBeenCalled();
+    });
+
+    test('should return 400 for invalid customer info', async () => {
+      const invalidRequest = {
+        items: validCartItems,
+        customerInfo: { name: '', email: 'invalid-email' },
+        fulfillment: validPickupFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(invalidRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid customer information');
+      expect(mockPrisma.order.create).not.toHaveBeenCalled();
+    });
+
+    test('should return 400 for order below minimum', async () => {
+      const smallItems = [
+        { id: 'prod-1', name: 'Small Item', price: 10.00, quantity: 1 }
+      ];
+
+      const belowMinimumRequest = {
+        items: smallItems,
+        customerInfo: validCustomerInfo,
+        fulfillment: validPickupFulfillment,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(belowMinimumRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('minimum purchase');
+      expect(mockPrisma.order.create).not.toHaveBeenCalled();
+    });
+
+    test('should return 400 for invalid fulfillment method', async () => {
+      const invalidRequest = {
+        items: validCartItems,
+        customerInfo: validCustomerInfo,
+        fulfillment: { method: 'invalid_method' },
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(invalidRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid fulfillment method');
+    });
+  });
+
+  describe('Database error handling', () => {
+    test('should handle settings lookup failure', async () => {
+      mockPrisma.storeSettings.findFirst.mockRejectedValue(new Error('Database connection failed'));
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'SQUARE'
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Failed to create order');
+      expect(data.details).toBe('Database connection failed');
+    });
+
+    test('should handle order creation failure', async () => {
+      mockPrisma.order.create.mockRejectedValue(new Error('Order creation failed'));
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'SQUARE'
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Failed to create order');
+      expect(data.details).toBe('Order creation failed');
+    });
+  });
+
+  describe('Square integration error handling', () => {
+    test('should handle Square checkout URL generation failure', async () => {
+      // Mock successful order creation but failed Square integration
+      mockPrisma.order.create.mockResolvedValueOnce({
+        ...mockCreatedOrder,
+        squareOrderId: null,
+        checkoutUrl: null,
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'SQUARE'
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Failed to generate checkout URL');
+    });
+  });
+
+  describe('Edge cases and malformed requests', () => {
+    test('should handle malformed JSON', async () => {
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: 'invalid-json',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Invalid JSON payload');
+    });
+
+    test('should handle empty request body', async () => {
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Missing required fields');
+    });
+
+    test('should handle null/undefined values gracefully', async () => {
+      const nullRequest = {
+        items: null,
+        customerInfo: undefined,
+        fulfillment: null,
+        paymentMethod: 'SQUARE'
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify(nullRequest),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Missing required fields');
+    });
+  });
+
+  describe('Payment method validation', () => {
+    test('should accept SQUARE payment method', async () => {
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'SQUARE'
+        }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+    });
+
+    test('should accept CASH payment method', async () => {
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'CASH'
+        }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+    });
+
+    test('should reject invalid payment method', async () => {
+      const request = new NextRequest('http://localhost:3000/api/orders/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: validCartItems,
+          customerInfo: validCustomerInfo,
+          fulfillment: validPickupFulfillment,
+          paymentMethod: 'INVALID_METHOD'
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid payment method');
+    });
+  });
 }); 
