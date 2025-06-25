@@ -2,21 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Plus, ShoppingCart, Utensils, Users, Cookie } from 'lucide-react';
-import { 
-  BOXED_LUNCH_TIERS, 
-  BOXED_LUNCH_SALADS, 
+import {
+  BOXED_LUNCH_TIERS,
+  BOXED_LUNCH_SALADS,
   BOXED_LUNCH_ADD_ONS,
   PROTEIN_OPTIONS,
   BoxedLunchTier,
   SaladOption,
   AddOnOption,
   ProteinOption,
-  BoxedLunchTierConfig
+  BoxedLunchTierConfig,
 } from '@/types/catering';
 import { useCateringCartStore } from '@/store/catering-cart';
 import toast from 'react-hot-toast';
@@ -27,43 +28,57 @@ const ALFAJORES_ITEMS = [
     id: 'alfajores-classic',
     name: 'Alfajores - Classic',
     description: 'South american butter cookies: shortbread / dulce de leche',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    servingSize: '1 piece'
+    servingSize: '1 piece',
   },
   {
     id: 'alfajores-chocolate',
     name: 'Alfajores - Chocolate',
     description: 'Dulce de leche / dark chocolate / peruvian sea salt',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    servingSize: '1 piece'
+    servingSize: '1 piece',
   },
   {
     id: 'alfajores-lemon',
     name: 'Alfajores - Lemon',
     description: 'Shortbread / dulce de leche / lemon royal icing',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    servingSize: '1 piece'
+    servingSize: '1 piece',
   },
   {
     id: 'alfajores-gluten-free',
     name: 'Alfajores - Gluten-Free',
     description: 'Gluten-free dulce de leche butter cookies',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    servingSize: '1 piece'
-  }
+    servingSize: '1 piece',
+  },
 ];
+
+// Protein image mapping
+const getProteinImage = (protein: ProteinOption): string | null => {
+  const imageMap: Record<ProteinOption, string | null> = {
+    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/carneasada.jpg',
+    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/pollo.jpg',
+    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.jpg',
+    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
+    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.jpg',
+    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
+  };
+
+  return imageMap[protein] || null;
+};
 
 interface BoxedLunchMenuProps {
   className?: string;
@@ -71,7 +86,9 @@ interface BoxedLunchMenuProps {
 
 export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => {
   const [selectedTier, setSelectedTier] = useState<BoxedLunchTier | null>(null);
-  const [selectedProteins, setSelectedProteins] = useState<Record<BoxedLunchTier, ProteinOption | null>>({
+  const [selectedProteins, setSelectedProteins] = useState<
+    Record<BoxedLunchTier, ProteinOption | null>
+  >({
     [BoxedLunchTier.TIER_1]: null,
     [BoxedLunchTier.TIER_2]: null,
     [BoxedLunchTier.TIER_3]: null,
@@ -79,7 +96,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
   const [selectedSalads, setSelectedSalads] = useState<Set<SaladOption>>(new Set());
   const [selectedAddOns, setSelectedAddOns] = useState<Set<AddOnOption>>(new Set());
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  
+
   const { addItem } = useCateringCartStore();
 
   const handleTierSelect = (tier: BoxedLunchTier) => {
@@ -89,7 +106,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
   const handleProteinSelect = (tier: BoxedLunchTier, protein: ProteinOption) => {
     setSelectedProteins(prev => ({
       ...prev,
-      [tier]: prev[tier] === protein ? null : protein
+      [tier]: prev[tier] === protein ? null : protein,
     }));
   };
 
@@ -121,28 +138,28 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
 
   const addToCart = (type: 'tier' | 'salad' | 'addon' | 'alfajores', itemId: string, item: any) => {
     const quantity = getQuantity(itemId);
-    
+
     // For tier items, check if protein is selected
     if (type === 'tier') {
       const tier = itemId as BoxedLunchTier;
       const selectedProtein = selectedProteins[tier];
-      
+
       if (!selectedProtein) {
         toast.error('Please select a protein option first!');
         return;
       }
-      
+
       // Include protein information in the cart item
       const productId = `boxed-lunch-${type}-${itemId}-${selectedProtein}`;
       const proteinInfo = PROTEIN_OPTIONS[selectedProtein];
-      
+
       const metadata = {
         type: 'boxed-lunch',
         subType: type,
         itemId,
         tier: item.tier,
         selectedProtein,
-        proteinName: proteinInfo.name
+        proteinName: proteinInfo.name,
       };
 
       addItem({
@@ -151,23 +168,23 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         price: item.price,
         quantity,
         variantId: JSON.stringify(metadata),
-        image: undefined
+        image: undefined,
       });
 
       toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to catering cart!`);
       return;
     }
-    
+
     // For non-tier items (salads, add-ons, alfajores), use existing logic
     const productId = `boxed-lunch-${type}-${itemId}`;
-    
+
     const metadata = {
       type: 'boxed-lunch',
       subType: type,
       itemId,
       ...(type === 'salad' && { saladOption: itemId }),
       ...(type === 'addon' && { addOnOption: itemId }),
-      ...(type === 'alfajores' && { alfajoresOption: itemId })
+      ...(type === 'alfajores' && { alfajoresOption: itemId }),
     };
 
     addItem({
@@ -176,7 +193,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
       price: item.price,
       quantity,
       variantId: JSON.stringify(metadata),
-      image: undefined
+      image: undefined,
     });
 
     toast.success(`Added ${quantity}x ${item.name} to catering cart!`);
@@ -195,8 +212,9 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
             Individual Packaged Lunch Options - 2025
           </h2>
           <p className="text-lg text-gray-600 max-w-4xl mx-auto">
-            Choose from three delicious tiers of boxed lunches. Each box includes your choice of protein 
-            and carefully selected sides. Perfect for corporate events, meetings, and group gatherings.
+            Choose from three delicious tiers of boxed lunches. Each box includes your choice of
+            protein and carefully selected sides. Perfect for corporate events, meetings, and group
+            gatherings.
           </p>
         </motion.div>
       </div>
@@ -215,10 +233,10 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
               isSelected={selectedTier === tier.tier}
               selectedProtein={selectedProteins[tier.tier]}
               onSelect={() => handleTierSelect(tier.tier)}
-              onProteinSelect={(protein) => handleProteinSelect(tier.tier, protein)}
+              onProteinSelect={protein => handleProteinSelect(tier.tier, protein)}
               onAddToCart={() => addToCart('tier', tier.tier, tier)}
               quantity={getQuantity(tier.tier)}
-              onQuantityChange={(qty) => setQuantity(tier.tier, qty)}
+              onQuantityChange={qty => setQuantity(tier.tier, qty)}
               index={index}
             />
           ))}
@@ -241,7 +259,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
               onToggle={() => handleSaladToggle(key as SaladOption)}
               onAddToCart={() => addToCart('salad', key, salad)}
               quantity={getQuantity(key)}
-              onQuantityChange={(qty) => setQuantity(key, qty)}
+              onQuantityChange={qty => setQuantity(key, qty)}
             />
           ))}
         </div>
@@ -254,7 +272,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
           Service Add-Ons
         </h3>
         <div className="grid md:grid-cols-3 gap-6">
-          {Object.values(BOXED_LUNCH_ADD_ONS).map((addOn) => (
+          {Object.values(BOXED_LUNCH_ADD_ONS).map(addOn => (
             <AddOnCard
               key={addOn.id}
               addOn={addOn}
@@ -262,7 +280,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
               onToggle={() => handleAddOnToggle(addOn.type)}
               onAddToCart={() => addToCart('addon', addOn.id, addOn)}
               quantity={getQuantity(addOn.id)}
-              onQuantityChange={(qty) => setQuantity(addOn.id, qty)}
+              onQuantityChange={qty => setQuantity(addOn.id, qty)}
             />
           ))}
         </div>
@@ -275,13 +293,13 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
           Alfajores - $2.50 each
         </h3>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {ALFAJORES_ITEMS.map((alfajor) => (
+          {ALFAJORES_ITEMS.map(alfajor => (
             <AlfajorCard
               key={alfajor.id}
               alfajor={alfajor}
               onAddToCart={() => addToCart('alfajores', alfajor.id, alfajor)}
               quantity={getQuantity(alfajor.id)}
-              onQuantityChange={(qty) => setQuantity(alfajor.id, qty)}
+              onQuantityChange={qty => setQuantity(alfajor.id, qty)}
             />
           ))}
         </div>
@@ -296,9 +314,16 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
       >
         <h4 className="font-bold text-gray-800 mb-3">Important Notes:</h4>
         <ul className="space-y-2 text-gray-700">
-          <li>• All boxed lunches use the same starch and vegetable sides for the total headcount</li>
-          <li>• Each box includes entrée, starch, and vegetable with set pricing that includes product, packaging, and labor</li>
-          <li>• Side salads are priced, ordered, and packaged separately (3oz salad + 1oz dressing)</li>
+          <li>
+            • All boxed lunches use the same starch and vegetable sides for the total headcount
+          </li>
+          <li>
+            • Each box includes entrée, starch, and vegetable with set pricing that includes
+            product, packaging, and labor
+          </li>
+          <li>
+            • Side salads are priced, ordered, and packaged separately (3oz salad + 1oz dressing)
+          </li>
           <li>• Minimum quantities and advance notice may apply for large orders</li>
         </ul>
       </motion.div>
@@ -328,7 +353,7 @@ const TierCard: React.FC<TierCardProps> = ({
   onAddToCart,
   quantity,
   onQuantityChange,
-  index
+  index,
 }) => {
   return (
     <motion.div
@@ -336,18 +361,16 @@ const TierCard: React.FC<TierCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
     >
-      <Card className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-        isSelected ? 'ring-2 ring-amber-500 shadow-lg' : ''
-      }`}>
+      <Card
+        className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
+          isSelected ? 'ring-2 ring-amber-500 shadow-lg' : ''
+        }`}
+      >
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-bold text-gray-800">
-              {tier.name}
-            </CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-800">{tier.name}</CardTitle>
             <div className="text-right">
-              <div className="text-2xl font-bold text-amber-600">
-                ${tier.price.toFixed(2)}
-              </div>
+              <div className="text-2xl font-bold text-amber-600">${tier.price.toFixed(2)}</div>
               <Badge variant="secondary" className="mt-1">
                 {tier.proteinSize} protein
               </Badge>
@@ -356,44 +379,77 @@ const TierCard: React.FC<TierCardProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-gray-600">{tier.description}</p>
-          
+
           {/* Protein Selection */}
           <div className="space-y-3">
             <h4 className="font-medium text-sm text-gray-700">Choose Your Protein:</h4>
             <div className="grid gap-2">
-              {tier.availableProteins.map((protein) => {
+              {tier.availableProteins.map(protein => {
                 const proteinInfo = PROTEIN_OPTIONS[protein];
                 const isSelected = selectedProtein === protein;
-                
+
                 return (
                   <button
                     key={protein}
                     onClick={() => onProteinSelect(protein)}
                     className={`text-left p-3 rounded-lg border transition-all duration-200 ${
-                      isSelected 
-                        ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-200' 
+                      isSelected
+                        ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-200'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex justify-between items-center">
-                      <div>
-                        <div className={`font-medium ${isSelected ? 'text-amber-800' : 'text-gray-800'}`}>
-                          {proteinInfo.name}
-                        </div>
-                        <div className={`text-sm ${isSelected ? 'text-amber-600' : 'text-gray-600'}`}>
-                          {proteinInfo.description}
+                      <div className="flex items-center gap-3">
+                        {getProteinImage(protein) ? (
+                          <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 border-2 border-blue-200">
+                            <img
+                              src={getProteinImage(protein)!}
+                              alt={proteinInfo.name}
+                              className="w-full h-full object-cover"
+                              onError={e => {
+                                console.error(
+                                  `Failed to load image for ${proteinInfo.name}:`,
+                                  getProteinImage(protein)
+                                );
+                              }}
+                              onLoad={() => {
+                                console.log(
+                                  `Successfully loaded image for ${proteinInfo.name}:`,
+                                  getProteinImage(protein)
+                                );
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs text-gray-500">
+                              No
+                              <br />
+                              Pic
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div
+                            className={`font-medium ${isSelected ? 'text-amber-800' : 'text-gray-800'}`}
+                          >
+                            {proteinInfo.name}
+                          </div>
+                          <div
+                            className={`text-sm ${isSelected ? 'text-amber-600' : 'text-gray-600'}`}
+                          >
+                            {proteinInfo.description}
+                          </div>
                         </div>
                       </div>
-                      {isSelected && (
-                        <CheckCircle className="h-5 w-5 text-amber-600" />
-                      )}
+                      {isSelected && <CheckCircle className="h-5 w-5 text-amber-600" />}
                     </div>
                   </button>
                 );
               })}
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-2">
               <Button
@@ -405,20 +461,16 @@ const TierCard: React.FC<TierCardProps> = ({
                 -
               </Button>
               <span className="font-medium px-3">{quantity}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onQuantityChange(quantity + 1)}
-              >
+              <Button variant="outline" size="sm" onClick={() => onQuantityChange(quantity + 1)}>
                 +
               </Button>
             </div>
-            
+
             <Button
               onClick={onAddToCart}
               className={`transition-all duration-200 ${
-                selectedProtein 
-                  ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                selectedProtein
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
               disabled={!selectedProtein}
@@ -450,25 +502,23 @@ const SaladCard: React.FC<SaladCardProps> = ({
   onToggle,
   onAddToCart,
   quantity,
-  onQuantityChange
+  onQuantityChange,
 }) => {
   return (
-    <Card className={`transition-all duration-300 hover:shadow-md ${
-      isSelected ? 'ring-2 ring-green-500' : ''
-    }`}>
+    <Card
+      className={`transition-all duration-300 hover:shadow-md ${
+        isSelected ? 'ring-2 ring-green-500' : ''
+      }`}
+    >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-bold text-gray-800">
-            {salad.name}
-          </CardTitle>
-          <div className="text-xl font-bold text-green-600">
-            ${salad.price.toFixed(2)}
-          </div>
+          <CardTitle className="text-lg font-bold text-gray-800">{salad.name}</CardTitle>
+          <div className="text-xl font-bold text-green-600">${salad.price.toFixed(2)}</div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-gray-600 text-sm">{salad.description}</p>
-        
+
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
             <Button
@@ -480,15 +530,11 @@ const SaladCard: React.FC<SaladCardProps> = ({
               -
             </Button>
             <span className="font-medium px-3">{quantity}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onQuantityChange(quantity + 1)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onQuantityChange(quantity + 1)}>
               +
             </Button>
           </div>
-          
+
           <Button
             onClick={onAddToCart}
             variant="outline"
@@ -519,25 +565,23 @@ const AddOnCard: React.FC<AddOnCardProps> = ({
   onToggle,
   onAddToCart,
   quantity,
-  onQuantityChange
+  onQuantityChange,
 }) => {
   return (
-    <Card className={`transition-all duration-300 hover:shadow-md ${
-      isSelected ? 'ring-2 ring-blue-500' : ''
-    }`}>
+    <Card
+      className={`transition-all duration-300 hover:shadow-md ${
+        isSelected ? 'ring-2 ring-blue-500' : ''
+      }`}
+    >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-bold text-gray-800">
-            {addOn.name}
-          </CardTitle>
-          <div className="text-xl font-bold text-blue-600">
-            ${addOn.price.toFixed(2)}
-          </div>
+          <CardTitle className="text-lg font-bold text-gray-800">{addOn.name}</CardTitle>
+          <div className="text-xl font-bold text-blue-600">${addOn.price.toFixed(2)}</div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-gray-600 text-sm">{addOn.description}</p>
-        
+
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
             <Button
@@ -549,15 +593,11 @@ const AddOnCard: React.FC<AddOnCardProps> = ({
               -
             </Button>
             <span className="font-medium px-3">{quantity}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onQuantityChange(quantity + 1)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onQuantityChange(quantity + 1)}>
               +
             </Button>
           </div>
-          
+
           <Button
             onClick={onAddToCart}
             variant="outline"
@@ -593,7 +633,7 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
   alfajor,
   onAddToCart,
   quantity,
-  onQuantityChange
+  onQuantityChange,
 }) => {
   return (
     <Card className="transition-all duration-300 hover:shadow-md h-full flex flex-col">
@@ -603,33 +643,33 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
             {alfajor.name}
           </CardTitle>
           <div className="text-right flex-shrink-0">
-            <div className="text-xl font-bold text-orange-600">
-              ${alfajor.price.toFixed(2)}
-            </div>
+            <div className="text-xl font-bold text-orange-600">${alfajor.price.toFixed(2)}</div>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-600">
-            {alfajor.servingSize}
-          </span>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            Per piece
-          </span>
+          <span className="text-sm font-medium text-gray-600">{alfajor.servingSize}</span>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Per piece</span>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4 flex-1 flex flex-col">
         <p className="text-gray-600 text-sm flex-1">{alfajor.description}</p>
-        
+
         <div className="flex flex-wrap gap-1">
           {alfajor.isVegan && (
-            <Badge variant="outline" className="text-xs border-green-600 text-green-700 bg-green-50">
+            <Badge
+              variant="outline"
+              className="text-xs border-green-600 text-green-700 bg-green-50"
+            >
               Vegan
             </Badge>
           )}
           {alfajor.isVegetarian && !alfajor.isVegan && (
-            <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
+            <Badge
+              variant="outline"
+              className="text-xs border-green-500 text-green-700 bg-green-50"
+            >
               Vegetarian
             </Badge>
           )}
@@ -639,7 +679,7 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
             </Badge>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between pt-2 mt-auto">
           <div className="flex items-center gap-2">
             <Button
@@ -651,15 +691,11 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
               -
             </Button>
             <span className="font-medium px-3">{quantity}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onQuantityChange(quantity + 1)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onQuantityChange(quantity + 1)}>
               +
             </Button>
           </div>
-          
+
           <Button
             onClick={onAddToCart}
             className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium"
@@ -673,4 +709,4 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
   );
 };
 
-export default BoxedLunchMenu; 
+export default BoxedLunchMenu;
