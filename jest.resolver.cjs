@@ -1,44 +1,37 @@
 /**
- * Custom Jest resolver to handle path resolution
+ * Custom Jest resolver to handle path resolution - CRITICAL PHASE 2 FIX
  */
 module.exports = (path, options) => {
+  // CRITICAL FIX for zod v3/index.js error - force specific resolution
+  if (path === 'zod') {
+    const zodPath = require.resolve('zod');
+    return zodPath;
+  }
+  
+  // Handle zod internals - prevent v3/index.js errors
+  if (path.includes('zod') && path.includes('v3')) {
+    return options.defaultResolver('zod', options);
+  }
+
   // Special handling for @testing-library/user-event
   if (path === '@testing-library/user-event') {
     try {
       return options.defaultResolver('@testing-library/user-event/dist/cjs/index.js', options);
     } catch (error) {
       // Fallback to normal resolution
+      return options.defaultResolver(path, options);
     }
   }
 
-  // Call the default resolver
-  return options.defaultResolver(path, {
-    ...options,
-    // Add support for module path mapping
-    packageFilter: pkg => {
-      // Handle ESM packages
-      if (pkg.name === 'next' || pkg.name.startsWith('@next') || pkg.name.startsWith('@supabase')) {
-        delete pkg.exports;
-        delete pkg.module;
-        delete pkg.type;
-        pkg.main = pkg.main || 'index.js';
-      }
-      
-      // Handle @testing-library packages - especially user-event
-      if (pkg.name.startsWith('@testing-library')) {
-        // Delete exports field which is causing resolution issues with Jest
-        delete pkg.exports;
-        delete pkg.module;
-        delete pkg.type;
-        
-        // For user-event specifically, ensure we use the CJS build
-        if (pkg.name === '@testing-library/user-event') {
-          pkg.main = './dist/cjs/index.js';
-        } else {
-          pkg.main = pkg.main || 'index.js';
-        }
-      }
-      return pkg;
-    },
-  });
+  // Special handling for uuid
+  if (path === 'uuid') {
+    try {
+      return options.defaultResolver('uuid/dist/cjs/index.js', options);
+    } catch (error) {
+      return options.defaultResolver(path, options);
+    }
+  }
+
+  // Use default resolver for everything else
+  return options.defaultResolver(path, options);
 };

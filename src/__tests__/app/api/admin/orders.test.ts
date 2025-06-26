@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createClient } from '@/utils/supabase/server';
+import { GET, POST, PUT } from '@/app/api/admin/orders/route';
 
 // Import our new test utilities
 import { 

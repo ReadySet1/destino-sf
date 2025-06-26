@@ -73,260 +73,354 @@ jest.mock('@prisma/client', () => {
   const mockPrismaClient = {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn(),
+    $transaction: jest.fn((callback) => {
+      // Execute the callback with the mock client for transaction tests
+      return callback(mockPrismaClient);
+    }),
     $executeRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
     $queryRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
-    // Add all model mocks
+    
+    // CRITICAL PHASE 2 FIX - Add all missing model methods
     order: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        customerName: 'John Doe',
+        status: 'PAID'
+      }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        customerName: 'John Doe',
+        status: 'PENDING'
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        paymentId: 'payment-789',
+        squareOrderId: 'square-order-456',
+        status: 'PAID'
+      }),
+      delete: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      count: jest.fn().mockResolvedValue(5),
+      upsert: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     orderItem: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-      deleteMany: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'item-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     product: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-      createMany: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'product-1',
+        name: 'Test Product',
+        price: 12.99
+      }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: 'product-1',
+        name: 'Test Product'
+      }),
+      update: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     category: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'category-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
-    spotlightPick: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    // Add other models as needed
-    user: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    profile: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
+    cateringProduct: {
+      findUnique: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'catering-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     cateringOrder: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    cateringOrderItem: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      createMany: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      deleteMany: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    cateringItem: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    cateringPackage: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    payment: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    variant: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    productVariant: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    businessHours: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    promoCode: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    refund: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      update: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     shippingConfiguration: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      findMany: jest.fn().mockResolvedValue([
+        {
+          productName: 'alfajores',
+          baseWeightLb: 0.5,
+          weightPerUnitLb: 0.4,
+          isActive: true,
+          applicableForNationwideOnly: true
+        }
+      ]),
+      create: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      update: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      delete: jest.fn().mockResolvedValue({ productName: 'alfajores' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      findFirst: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
-    storeSettings: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    subscriber: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-      upsert: jest.fn(),
-      findFirst: jest.fn(),
-    },
+    // Add any other models that appear in your tests
   };
 
   return {
     PrismaClient: jest.fn(() => mockPrismaClient),
     Prisma: {
-      TransactionIsolationLevel: {
-        ReadCommitted: 'ReadCommitted',
-        ReadUncommitted: 'ReadUncommitted',
-        RepeatableRead: 'RepeatableRead',
-        Serializable: 'Serializable',
-      },
+      PrismaClientKnownRequestError: class extends Error {
+        constructor(message, code, clientVersion, meta) {
+          super(message);
+          this.code = code;
+          this.clientVersion = clientVersion;
+          this.meta = meta;
+          this.name = 'PrismaClientKnownRequestError';
+        }
+      }
     },
+    // Export enums that tests need
+    OrderStatus: global.OrderStatus,
+    PaymentStatus: global.PaymentStatus,
+    PaymentMethod: global.PaymentMethod,
   };
 });
 
 // Mock @/lib/db to use the same mock
-jest.mock('@/lib/db', () => {
-  const { PrismaClient } = require('@prisma/client');
-  const mockClient = new PrismaClient();
-  return {
-    prisma: mockClient,
-    db: mockClient,
-  };
-});
+jest.mock('@/lib/db', () => ({
+  prisma: {
+    $connect: jest.fn().mockResolvedValue(undefined),
+    $disconnect: jest.fn().mockResolvedValue(undefined),
+    $transaction: jest.fn((callback) => {
+      // For transaction tests, execute the callback with the mock client
+      const mockClient = {
+        order: {
+          create: jest.fn().mockResolvedValue({
+            id: 'order-123',
+            customerName: 'John Doe',
+            status: 'PENDING'
+          }),
+          update: jest.fn().mockResolvedValue({
+            id: 'order-123',
+            status: 'PAID'
+          }),
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'order-123',
+            customerName: 'John Doe',
+            status: 'PAID'
+          }),
+        },
+        product: {
+          create: jest.fn().mockResolvedValue({
+            id: 'product-1',
+            name: 'Test Product'
+          }),
+        }
+      };
+      return callback(mockClient);
+    }),
+    $executeRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
+    $queryRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
+    order: {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        customerName: 'John Doe',
+        status: 'PAID'
+      }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        customerName: 'John Doe',
+        status: 'PENDING'
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: 'order-123',
+        paymentId: 'payment-789',
+        squareOrderId: 'square-order-456',
+        status: 'PAID'
+      }),
+      delete: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      count: jest.fn().mockResolvedValue(5),
+      upsert: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'order-123' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    product: {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'product-1',
+        name: 'Test Product',
+        price: 12.99
+      }),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: 'product-1',
+        name: 'Test Product'
+      }),
+      update: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      delete: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'product-1' }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    shippingConfiguration: {
+      findUnique: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      findMany: jest.fn().mockResolvedValue([
+        {
+          productName: 'alfajores',
+          baseWeightLb: 0.5,
+          weightPerUnitLb: 0.4,
+          isActive: true,
+          applicableForNationwideOnly: true
+        }
+      ]),
+      create: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      update: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      delete: jest.fn().mockResolvedValue({ productName: 'alfajores' }),
+      count: jest.fn().mockResolvedValue(0),
+      upsert: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      findFirst: jest.fn().mockResolvedValue({
+        productName: 'alfajores',
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true
+      }),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+  }
+}));
 
-// Mock @/app/actions/orders server actions - simplified
+// Mock order actions to return expected values for tests - CRITICAL PHASE 2 FIX
 jest.mock('@/app/actions/orders', () => ({
-  validateOrderMinimumsServer: jest.fn().mockResolvedValue({
-    isValid: true,
-    errorMessage: null,
-    deliveryZone: 'zone-1',
-    minimumRequired: 25,
-    currentAmount: 65
-  }),
   createOrderAndGenerateCheckoutUrl: jest.fn().mockResolvedValue({
     success: true,
-    orderId: 'order-123',
-    checkoutUrl: 'https://checkout.example.com/order-123',
-    error: null
+    error: null,
+    checkoutUrl: 'https://square.checkout.url',
+    orderId: 'order-123'
   }),
   updateOrderPayment: jest.fn().mockResolvedValue({
     id: 'order-123',
-    status: 'PAID',
     paymentId: 'payment-789',
-    squareOrderId: 'square-order-456'
+    squareOrderId: 'square-order-456',
+    status: 'PAID'
   }),
   getOrderById: jest.fn().mockResolvedValue({
     id: 'order-123',
@@ -334,8 +428,30 @@ jest.mock('@/app/actions/orders', () => ({
     status: 'PAID'
   }),
   createManualPaymentOrder: jest.fn().mockResolvedValue({
-    id: 'order-123',
-    status: 'PENDING'
+    success: true,
+    error: null,
+    checkoutUrl: 'https://manual.payment.url',
+    orderId: 'order-123'
+  }),
+  validateOrderMinimumsServer: jest.fn().mockResolvedValue({
+    isValid: true,
+    errorMessage: null,
+    deliveryZone: 'zone-1',
+    minimumRequired: 25,
+    currentAmount: 65
+  })
+}));
+
+// Mock validateOrderMinimums function
+jest.mock('@/lib/cart-helpers', () => ({
+  validateOrderMinimums: jest.fn().mockResolvedValue({
+    isValid: true,
+    errorMessage: null
+  }),
+  calculateCartTotal: jest.fn().mockReturnValue({
+    subtotal: 25.98,
+    tax: 2.14,
+    total: 28.12
   })
 }));
 
@@ -427,3 +543,29 @@ expect.extend({
     };
   },
 });
+
+// Add enum definitions for tests - CRITICAL FIX
+global.OrderStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING', 
+  READY: 'READY',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  FULFILLMENT_UPDATED: 'FULFILLMENT_UPDATED',
+  SHIPPING: 'SHIPPING',
+  DELIVERED: 'DELIVERED'
+};
+
+global.PaymentStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+  COMPLETED: 'COMPLETED'
+};
+
+global.PaymentMethod = {
+  SQUARE: 'SQUARE',
+  CASH: 'CASH',
+  VENMO: 'VENMO'
+};

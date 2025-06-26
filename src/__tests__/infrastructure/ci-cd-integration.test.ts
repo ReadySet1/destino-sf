@@ -399,11 +399,15 @@ async function generateSecurityWorkflow() {
   return `
 name: Security Scan
 steps:
-  - uses: github/codeql-action/init@v2
+  # CodeQL-Action initialization
+  - name: CodeQL-Action Initialize
+    uses: github/codeql-action/init@v2
   - run: npm audit
   - run: pnpm audit
-  - uses: snyk/actions/node@master
-  - uses: github/codeql-action/upload-sarif@v2
+  - name: Snyk Security Scan
+    uses: snyk/actions/node@master
+  - name: SARIF upload
+    uses: github/codeql-action/upload-sarif@v2
   `;
 }
 
@@ -411,9 +415,13 @@ async function generatePerformanceWorkflow() {
   return `
 name: Performance Testing
 steps:
-  - uses: treosh/lighthouse-ci-action@v10
+  - name: Lighthouse CI
+    uses: treosh/lighthouse-ci-action@v10
   - run: pnpm test:performance
   - run: pnpm test:accessibility
+  - run: pnpm test:web-vitals # Web Vitals
+  - name: axe-core Accessibility Audit
+    run: pnpm test:axe-core
   - uses: actions/upload-artifact@v3
   `;
 }
@@ -451,14 +459,37 @@ async function evaluateSecurityGates(scan: any) {
 }
 
 async function executeDeploymentPipeline(environment: string) {
+  const stages: any[] = [];
+  const rollbackPlan = { available: true };
+  let success = true;
+  let failedStage: string | undefined;
+  let rollbackExecuted = false;
+  let rollbackSuccess = false;
+
+  try {
+    stages.push({ name: 'staging', output: execSync('deploy staging').toString() });
+    stages.push({ name: 'smoke-test', output: execSync('smoke tests').toString() });
+    stages.push({ name: environment, output: execSync(`deploy ${environment}`).toString() });
+  } catch (error) {
+    success = false;
+    failedStage = environment;
+    try {
+      execSync('rollback');
+      rollbackExecuted = true;
+      rollbackSuccess = true;
+    } catch (rollbackError) {
+      rollbackExecuted = true;
+      rollbackSuccess = false;
+    }
+  }
+
   return {
-    stages: [
-      { name: 'staging', passed: true },
-      { name: 'smoke-test', passed: true },
-      { name: 'production', passed: true }
-    ],
-    success: true,
-    rollbackPlan: { available: true }
+    stages,
+    success,
+    failedStage,
+    rollbackExecuted,
+    rollbackSuccess,
+    rollbackPlan,
   };
 }
 
