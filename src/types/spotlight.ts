@@ -6,6 +6,12 @@ export interface SpotlightPick {
   customDescription?: string | null;
   customImageUrl?: string | null;
   customPrice?: number | null;
+  personalizeText?: string | null;
+  customLink?: string | null;
+  showNewFeatureModal?: boolean;
+  newFeatureTitle?: string | null;
+  newFeatureDescription?: string | null;
+  newFeatureBadgeText?: string | null;
   isCustom: boolean;
   isActive: boolean;
   createdAt?: Date;
@@ -38,6 +44,12 @@ export interface SpotlightPickFormData {
   customDescription?: string;
   customImageUrl?: string;
   customPrice?: number;
+  personalizeText?: string;
+  customLink?: string;
+  showNewFeatureModal?: boolean;
+  newFeatureTitle?: string;
+  newFeatureDescription?: string;
+  newFeatureBadgeText?: string;
   isActive: boolean;
 }
 

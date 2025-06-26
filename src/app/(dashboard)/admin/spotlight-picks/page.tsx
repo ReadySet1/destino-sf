@@ -49,6 +49,7 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
       customDescription: pick.customDescription,
       customImageUrl: pick.customImageUrl,
       customPrice: pick.customPrice ? Number(pick.customPrice) : null,
+      personalizeText: pick.personalizeText,
       isCustom: pick.isCustom,
       isActive: pick.isActive,
       createdAt: pick.createdAt,
@@ -73,10 +74,10 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
     console.error('[DEBUG] Error in getSpotlightPicks:', error);
     // Return default empty positions
     return [
-      { id: '1', position: 1, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '2', position: 2, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '3', position: 3, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '4', position: 4, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null }
+      { id: '1', position: 1, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '2', position: 2, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '3', position: 3, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '4', position: 4, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null }
     ];
   }
 }
@@ -92,10 +93,10 @@ export default async function SpotlightPicksPage() {
     console.error('Failed to load spotlight picks:', error);
     // Provide fallback empty positions
     initialPicks = [
-      { id: '1', position: 1, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '2', position: 2, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '3', position: 3, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
-      { id: '4', position: 4, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null }
+      { id: '1', position: 1, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '2', position: 2, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '3', position: 3, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null },
+      { id: '4', position: 4, productId: null, customTitle: null, customDescription: null, customImageUrl: null, customPrice: null, personalizeText: null, isCustom: false, isActive: false, createdAt: new Date(), updatedAt: new Date(), product: null }
     ];
   }
 

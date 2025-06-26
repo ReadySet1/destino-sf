@@ -117,6 +117,13 @@ export function SpotlightPickCard({ pick, onEdit, onClear, isLoading }: Spotligh
                 </p>
               )}
 
+              {/* Personalize Text */}
+              {pick.personalizeText && (
+                <p className="text-xs text-purple-600 font-medium italic">
+                  &ldquo;{pick.personalizeText}&rdquo;
+                </p>
+              )}
+
               {price && (
                 <div className="flex items-center gap-1 text-sm font-medium text-green-600">
                   <DollarSign className="h-3 w-3" />
@@ -135,12 +142,6 @@ export function SpotlightPickCard({ pick, onEdit, onClear, isLoading }: Spotligh
                   </div>
                 )}
               </div>
-              
-              {pick.product?.slug && (
-                <Badge variant="outline" className="text-xs">
-                  {pick.product.slug}
-                </Badge>
-              )}
             </div>
           </>
         )}

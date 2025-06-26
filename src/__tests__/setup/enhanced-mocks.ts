@@ -56,11 +56,31 @@ export const createEnhancedPrismaMock = () => {
       count: jest.fn(),
     },
     
+    profile: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
+    
     shippingConfiguration: {
       create: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
+    
+    // SpotlightPick model for testing spotlight picks functionality
+    spotlightPick: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
     }
@@ -109,6 +129,81 @@ export const createMockProductWithPricing = (overrides: any = {}) => ({
   ...overrides
 });
 
+// Spotlight Pick Mock Factories
+export const createMockSpotlightPick = (overrides: any = {}) => ({
+  id: 'pick-123',
+  position: 1,
+  productId: 'product-123',
+  customTitle: null,
+  customDescription: null,
+  customImageUrl: null,
+  customPrice: null,
+  personalizeText: null,
+  isCustom: false,
+  isActive: true,
+  createdAt: new Date('2024-01-01T00:00:00Z'),
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
+  product: null,
+  ...overrides
+});
+
+export const createMockProductBasedSpotlightPick = (overrides: any = {}) => ({
+  ...createMockSpotlightPick(),
+  productId: 'product-123',
+  personalizeText: 'Perfect for your special occasion',
+  isCustom: false,
+  product: {
+    id: 'product-123',
+    name: 'Dulce de Leche Alfajores',
+    description: 'Traditional Argentine cookies',
+    images: ['https://example.com/alfajor.jpg'],
+    price: 12.99,
+    slug: 'alfajores-dulce-de-leche',
+    category: {
+      name: 'ALFAJORES',
+      slug: 'alfajores',
+    },
+  },
+  ...overrides
+});
+
+export const createMockCustomSpotlightPick = (overrides: any = {}) => ({
+  ...createMockSpotlightPick(),
+  position: 2,
+  productId: null,
+  customTitle: 'Custom Empanadas Special',
+  customDescription: 'Hand-made empanadas with premium fillings',
+  customImageUrl: 'https://example.com/custom-empanadas.jpg',
+  customPrice: 18.99,
+  personalizeText: 'Made fresh daily just for you!',
+  isCustom: true,
+  product: null,
+  ...overrides
+});
+
+export const createMockEmptySpotlightPick = (position: 1 | 2 | 3 | 4 = 1) => ({
+  id: `empty-pick-${position}`,
+  position,
+  productId: null,
+  customTitle: null,
+  customDescription: null,
+  customImageUrl: null,
+  customPrice: null,
+  personalizeText: null,
+  isCustom: false,
+  isActive: false,
+  createdAt: new Date('2024-01-01T00:00:00Z'),
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
+  product: null,
+});
+
+// Mock Categories for testing
+export const createMockCategories = () => [
+  { id: 'cat-1', name: 'Alfajores', slug: 'alfajores' },
+  { id: 'cat-2', name: 'Empanadas', slug: 'empanadas' },
+  { id: 'cat-3', name: 'Beverages', slug: 'beverages' },
+];
+
 // Enhanced order status mapping
 export const ORDER_STATUS_MAPPING = {
   PAID: 'PROCESSING',
@@ -131,4 +226,29 @@ export const createMockCartAlertStore = () => ({
   message: '',
   showAlert: jest.fn(),
   hideAlert: jest.fn()
+});
+
+// Mock Supabase client for authentication testing
+export const createMockSupabaseClient = (user: any = null, profile: any = null) => ({
+  auth: {
+    getUser: jest.fn().mockResolvedValue({
+      data: { user },
+      error: null,
+    }),
+  },
+  // Add other Supabase methods as needed for testing
+});
+
+// Mock admin profile
+export const createMockAdminProfile = () => ({
+  id: 'admin-123',
+  role: 'ADMIN',
+  email: 'admin@example.com',
+});
+
+// Mock customer profile
+export const createMockCustomerProfile = () => ({
+  id: 'customer-123',
+  role: 'CUSTOMER',
+  email: 'customer@example.com',
 }); 

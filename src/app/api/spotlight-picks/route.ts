@@ -36,6 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
       customDescription: pick.customDescription,
       customImageUrl: pick.customImageUrl,
       customPrice: pick.customPrice ? Number(pick.customPrice) : null,
+      personalizeText: pick.personalizeText,
       isCustom: pick.isCustom,
       isActive: pick.isActive,
       createdAt: pick.createdAt,
