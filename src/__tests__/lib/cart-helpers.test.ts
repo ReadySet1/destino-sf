@@ -2,10 +2,8 @@ import { validateOrderMinimums, isCateringOrder } from '@/lib/cart-helpers';
 import { validateOrderMinimumsServer } from '@/app/actions/orders';
 import { CartItem } from '@/types/cart';
 
-// Mock the server action
-jest.mock('@/app/actions/orders', () => ({
-  validateOrderMinimumsServer: jest.fn(),
-}));
+// Mock the server action - this should match the jest.setup.js mock
+jest.mock('@/app/actions/orders');
 
 const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
 

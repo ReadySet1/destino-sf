@@ -485,6 +485,7 @@ export function FeaturedProducts() {
                 className="object-cover transition-transform duration-500 hover:scale-105 absolute inset-0 rounded-3xl"
                 sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
                 priority
+                data-testid="spotlight-image"
               />
               {/* Badges */}
               <div className="absolute top-3 right-3 flex flex-col gap-1">
@@ -547,6 +548,7 @@ export function FeaturedProducts() {
             className="object-cover transition-transform duration-500 group-hover:scale-105 absolute inset-0 rounded-3xl"
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 85vw"
             priority
+            data-testid="spotlight-image"
           />
         </div>
         <div className="mt-4">

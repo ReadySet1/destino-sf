@@ -10,13 +10,21 @@ const baseConfig: Partial<Config> = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^~/(.*)$': '<rootDir>/$1',
+    '^@/components/(.*)$': '<rootDir>/src/components/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@/types/(.*)$': '<rootDir>/src/types/$1',
+    '^@/app/(.*)$': '<rootDir>/src/app/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
   },
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
     '<rootDir>/coverage/',
   ],
-  moduleDirectories: ['node_modules', '<rootDir>'],
+  moduleDirectories: ['node_modules', '<rootDir>', '<rootDir>/src'],
   resolver: '<rootDir>/jest.resolver.cjs',
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -60,6 +68,14 @@ const baseConfig: Partial<Config> = {
       ]
     }],
   },
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library))'
+  ],
 };
 
 // Main configuration that delegates to specific environments

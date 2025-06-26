@@ -107,9 +107,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                 "group-hover:scale-105"
               )}
               sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-              priority={product.featured ? true : undefined}
+              priority={product.featured || undefined}
               quality={85}
               onError={() => setImageError(true)}
+              data-testid="product-image"
             />
           )}
           {product.featured && (

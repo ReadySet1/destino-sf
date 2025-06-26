@@ -1,4 +1,12 @@
-import { PaymentMethod } from '@prisma/client';
+// Define PaymentMethod enum locally to avoid import issues with mocked Prisma
+const PaymentMethod = {
+  SQUARE: 'SQUARE' as const,
+  CASH: 'CASH' as const,
+  VENMO: 'VENMO' as const,
+} as const;
+
+type PaymentMethodType = typeof PaymentMethod[keyof typeof PaymentMethod];
+
 import type { MockPrismaClient } from './database-mocks';
 
 // Common test data with proper types
@@ -71,7 +79,7 @@ export const TestData = {
 // Helper to create properly typed form data
 export const createFormData = (overrides: {
   fulfillment?: any;
-  paymentMethod?: PaymentMethod;
+  paymentMethod?: PaymentMethodType;
   items?: any[];
   customerInfo?: any;
 } = {}) => ({

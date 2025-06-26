@@ -92,6 +92,7 @@ export function SpotlightPickCard({ pick, onEdit, onClear, isLoading }: Spotligh
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  data-testid="spotlight-image"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">

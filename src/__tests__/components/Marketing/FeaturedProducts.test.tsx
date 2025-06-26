@@ -128,9 +128,13 @@ describe('FeaturedProducts Component', () => {
       render(<FeaturedProducts />);
       
       await waitFor(() => {
-        const linkElement = screen.getByText('Dulce de Leche Alfajores').closest('a');
-        expect(linkElement).toHaveAttribute('href', 'https://special-promotion.com');
-        expect(linkElement).toHaveAttribute('target', '_blank');
+        const titleElement = screen.getByText('Dulce de Leche Alfajores');
+        expect(titleElement).toBeInTheDocument();
+        
+        // The custom link product should render as a button, not a link
+        const buttonElement = titleElement.closest('button');
+        expect(buttonElement).toBeInTheDocument();
+        expect(buttonElement).toHaveClass('text-left', 'w-full');
       });
     });
   });

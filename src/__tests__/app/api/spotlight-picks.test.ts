@@ -78,8 +78,8 @@ describe('/api/spotlight-picks API Route', () => {
         personalizeText: 'Perfect for your special occasion',
         isCustom: false,
         isActive: true,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
         product: {
           id: 'product-123',
           name: 'Dulce de Leche Alfajores',
@@ -106,8 +106,8 @@ describe('/api/spotlight-picks API Route', () => {
         personalizeText: 'Made fresh daily just for you!',
         isCustom: true,
         isActive: true,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
         product: null,
       });
 
@@ -155,10 +155,29 @@ describe('/api/spotlight-picks API Route', () => {
 
     it('should properly transform decimal prices to numbers', async () => {
       const mockPickWithDecimalPrice = {
-        ...mockActiveSpotlightPicks[0],
+        id: 'pick-1',
+        position: 1,
+        productId: 'product-123',
+        customTitle: null,
+        customDescription: null,
+        customImageUrl: null,
+        customPrice: null,
+        personalizeText: 'Perfect for your special occasion',
+        isCustom: false,
+        isActive: true,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z'),
         product: {
-          ...mockActiveSpotlightPicks[0].product!,
+          id: 'product-123',
+          name: 'Dulce de Leche Alfajores',
+          description: 'Traditional Argentine cookies',
+          images: ['https://example.com/alfajor.jpg'],
           price: { toNumber: () => 12.99 }, // Mock Prisma Decimal
+          slug: 'alfajores-dulce-de-leche',
+          category: {
+            name: 'ALFAJORES',
+            slug: 'alfajores',
+          },
         },
       };
 

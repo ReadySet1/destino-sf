@@ -28,17 +28,17 @@ if (typeof window !== 'undefined') {
   });
 
   // Mock ResizeObserver
-  global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  global.ResizeObserver = jest.fn(() => ({
+    disconnect: jest.fn(),
     observe: jest.fn(),
     unobserve: jest.fn(),
-    disconnect: jest.fn(),
   }));
 
   // Mock IntersectionObserver
-  global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  global.IntersectionObserver = jest.fn(() => ({
+    disconnect: jest.fn(),
     observe: jest.fn(),
     unobserve: jest.fn(),
-    disconnect: jest.fn(),
   }));
 
   // Mock scrollTo
@@ -61,6 +61,18 @@ if (typeof window !== 'undefined') {
   // Mock sessionStorage
   Object.defineProperty(window, 'sessionStorage', {
     value: localStorageMock,
+  });
+
+  // Configure JSDOM environment options
+  Object.defineProperty(window, 'location', {
+    value: {
+      href: 'http://localhost:3000',
+      origin: 'http://localhost:3000',
+      pathname: '/',
+      search: '',
+      hash: '',
+    },
+    writable: true,
   });
 
   console.log('jsdom test environment setup complete');

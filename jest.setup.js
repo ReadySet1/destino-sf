@@ -68,17 +68,299 @@ jest.mock('@supabase/supabase-js', () => ({
   }),
 }));
 
-// Mock Prisma for unit tests
+// Mock Prisma for unit tests - THIS MUST BE FIRST
+jest.mock('@prisma/client', () => {
+  const mockPrismaClient = {
+    $connect: jest.fn().mockResolvedValue(undefined),
+    $disconnect: jest.fn().mockResolvedValue(undefined),
+    $transaction: jest.fn(),
+    $executeRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
+    $queryRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
+    // Add all model mocks
+    order: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    orderItem: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    product: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+      createMany: jest.fn(),
+    },
+    category: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    spotlightPick: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    // Add other models as needed
+    user: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    profile: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    cateringOrder: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    cateringOrderItem: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      createMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    cateringItem: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    cateringPackage: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    payment: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    variant: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    productVariant: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    businessHours: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    promoCode: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    refund: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    shippingConfiguration: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    storeSettings: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    subscriber: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+    },
+  };
+
+  return {
+    PrismaClient: jest.fn(() => mockPrismaClient),
+    Prisma: {
+      TransactionIsolationLevel: {
+        ReadCommitted: 'ReadCommitted',
+        ReadUncommitted: 'ReadUncommitted',
+        RepeatableRead: 'RepeatableRead',
+        Serializable: 'Serializable',
+      },
+    },
+  };
+});
+
+// Mock @/lib/db to use the same mock
 jest.mock('@/lib/db', () => {
-  const mockClient = require('./__mocks__/prisma').mockPrismaClient;
+  const { PrismaClient } = require('@prisma/client');
+  const mockClient = new PrismaClient();
   return {
     prisma: mockClient,
     db: mockClient,
   };
 });
 
-// Add enhanced mocks for additional utilities - ONLY USE WHEN NEEDED FOR INTEGRATION TESTS
-// COMMENTED OUT TO ALLOW REAL FUNCTION TESTING WHEN NEEDED
+// Mock @/app/actions/orders server actions - simplified
+jest.mock('@/app/actions/orders', () => ({
+  validateOrderMinimumsServer: jest.fn().mockResolvedValue({
+    isValid: true,
+    errorMessage: null,
+    deliveryZone: 'zone-1',
+    minimumRequired: 25,
+    currentAmount: 65
+  }),
+  createOrderAndGenerateCheckoutUrl: jest.fn().mockResolvedValue({
+    success: true,
+    orderId: 'order-123',
+    checkoutUrl: 'https://checkout.example.com/order-123',
+    error: null
+  }),
+  updateOrderPayment: jest.fn().mockResolvedValue({
+    id: 'order-123',
+    status: 'PAID',
+    paymentId: 'payment-789',
+    squareOrderId: 'square-order-456'
+  }),
+  getOrderById: jest.fn().mockResolvedValue({
+    id: 'order-123',
+    customerName: 'John Doe',
+    status: 'PAID'
+  }),
+  createManualPaymentOrder: jest.fn().mockResolvedValue({
+    id: 'order-123',
+    status: 'PENDING'
+  })
+}));
+
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+  })),
+  usePathname: jest.fn(() => '/'),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}));
+
+// Add console mock for cleaner test output
+global.console = {
+  ...console,
+  warn: jest.fn(),
+  error: jest.fn(),
+  log: jest.fn(),
+};
+
 /*
 jest.mock('@/lib/cart-helpers', () => ({
   calculateShippingWeight: jest.fn().mockResolvedValue(2.5),

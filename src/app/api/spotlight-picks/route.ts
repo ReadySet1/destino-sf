@@ -46,7 +46,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
         name: pick.product.name,
         description: pick.product.description,
         images: pick.product.images || [],
-        price: Number(pick.product.price),
+        price: typeof pick.product.price === 'object' && pick.product.price && 'toNumber' in pick.product.price
+          ? pick.product.price.toNumber()
+          : Number(pick.product.price),
         slug: pick.product.slug,
         category: pick.product.category ? {
           name: pick.product.category.name,

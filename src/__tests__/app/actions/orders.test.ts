@@ -8,7 +8,6 @@ import {
 import { prisma } from '@/lib/db';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 // import { syncOrderWithSquare } from '@/lib/square/sync'; // Not available yet
-import { PaymentMethod } from '@prisma/client';
 
 // Mock external dependencies
 // Note: @/lib/db is mocked globally in jest.setup.js
@@ -20,10 +19,24 @@ jest.mock('@/lib/cart-helpers', () => ({
 
 jest.mock('@/lib/square/tip-settings');
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => Promise.resolve({
+  cookies: jest.fn(() => ({
     get: jest.fn(),
     set: jest.fn(),
     remove: jest.fn(),
+  })),
+}));
+
+// Mock Next.js cache
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+}));
+
+// Mock Supabase client creation
+jest.mock('@supabase/ssr', () => ({
+  createServerClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+    },
   })),
 }));
 
@@ -113,7 +126,7 @@ const mockCreatedOrder = {
   status: 'PENDING',
   paymentStatus: 'PENDING',
   fulfillmentType: 'pickup',
-  paymentMethod: PaymentMethod.SQUARE,
+  paymentMethod: 'SQUARE',
   total: { toNumber: () => 45.43 },
   taxAmount: { toNumber: () => 3.46 },
   subtotal: { toNumber: () => 41.97 },
@@ -175,7 +188,7 @@ describe('Order Actions', () => {
       const baseFormData = {
     items: validCartItems,
     customerInfo: validCustomerInfo,
-    paymentMethod: PaymentMethod.SQUARE,
+    paymentMethod: 'SQUARE' as any,
   };
 
     describe('Pickup orders', () => {
