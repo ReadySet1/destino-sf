@@ -179,9 +179,9 @@ function getPaymentStatusColor(status: string | null | undefined): string {
   }
 
 type PageProps = {
-  params: {
+  params: Promise<{
     orderId: string
-  }
+  }>
 };
 
 /**
@@ -189,8 +189,8 @@ type PageProps = {
  */
 const OrderDetailsPage = async ({ params }: PageProps) => {
   try {
-    // Get orderId from params
-    const { orderId } = params;
+    // Await params before accessing its properties (Next.js 15 requirement)
+    const { orderId } = await params;
 
     console.log("Order ID:", orderId);
 

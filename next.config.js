@@ -97,6 +97,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'destino-sf.square.site',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

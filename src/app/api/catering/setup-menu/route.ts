@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
-
-const prisma = new PrismaClient();
 
 // Define the appetizer items from the 2025 menu
 const APPETIZER_ITEMS = [

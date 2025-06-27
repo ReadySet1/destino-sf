@@ -6,10 +6,28 @@ import { formatPrice, formatDateTime, formatCurrency } from '@/utils/formatting'
 import { logger } from '@/utils/logger';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
+import Pagination from '@/components/ui/pagination';
+import OrderFilters from './components/OrderFilters';
+
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Define the shape of the resolved params
 type ResolvedParams = {
   [key: string]: string | string[] | undefined;
+};
+
+// Define page props type
+type OrderPageProps = {
+  params: Promise<ResolvedParams>;
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    type?: string;
+    status?: string;
+    payment?: string;
+  }>;
 };
 
 // Define our unified order type
@@ -107,47 +125,113 @@ function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
   });
 }
 
-export default async function OrdersPage({ params }: { params: Promise<ResolvedParams> }) {
+export default async function OrdersPage({ params, searchParams }: OrderPageProps) {
   await params; // We're not using the params, but we need to await the promise
+  
+  // Await the searchParams promise
+  const searchParamsResolved = await searchParams;
+  
+  // Parse search params
+  const currentPage = Number(searchParamsResolved?.page || 1);
+  const searchQuery = searchParamsResolved?.search || '';
+  const typeFilter = searchParamsResolved?.type || 'all';
+  const statusFilter = searchParamsResolved?.status || 'all';
+  const paymentFilter = searchParamsResolved?.payment || 'all';
+  
+  const itemsPerPage = 15;
+  const skip = (currentPage - 1) * itemsPerPage;
 
   try {
-    // Fetch regular orders with items included
-    const regularOrders = await prisma.order.findMany({
-      take: 20,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        items: true,
-      },
-    });
-
-    // Fetch catering orders with items included
-    const cateringOrders = await prisma.cateringOrder.findMany({
-      take: 20,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        items: true,
-      },
-    });
-
-    // Serialize both types of orders
-    const serializedRegularOrders = serializeRegularOrders(regularOrders);
-    const serializedCateringOrders = serializeCateringOrders(cateringOrders);
+    // Build where conditions for regular orders
+    const regularOrdersWhere: any = {};
     
-    // Combine and sort all orders by creation date
-    const allOrders = [...serializedRegularOrders, ...serializedCateringOrders]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 20); // Limit to 20 most recent orders
+    if (searchQuery) {
+      regularOrdersWhere.OR = [
+        { customerName: { contains: searchQuery, mode: 'insensitive' } },
+        { id: { contains: searchQuery, mode: 'insensitive' } },
+        { trackingNumber: { contains: searchQuery, mode: 'insensitive' } },
+      ];
+    }
     
-    logger.info(`Found ${serializedRegularOrders.length} regular orders and ${serializedCateringOrders.length} catering orders for display`);
+    if (statusFilter && statusFilter !== 'all') {
+      regularOrdersWhere.status = statusFilter;
+    }
+    
+    if (paymentFilter && paymentFilter !== 'all') {
+      regularOrdersWhere.paymentStatus = paymentFilter;
+    }
+
+    // Build where conditions for catering orders
+    const cateringOrdersWhere: any = {};
+    
+    if (searchQuery) {
+      cateringOrdersWhere.OR = [
+        { name: { contains: searchQuery, mode: 'insensitive' } },
+        { id: { contains: searchQuery, mode: 'insensitive' } },
+        { email: { contains: searchQuery, mode: 'insensitive' } },
+      ];
+    }
+    
+    if (statusFilter && statusFilter !== 'all') {
+      cateringOrdersWhere.status = statusFilter;
+    }
+    
+    if (paymentFilter && paymentFilter !== 'all') {
+      cateringOrdersWhere.paymentStatus = paymentFilter;
+    }
+
+    let allOrders: UnifiedOrder[] = [];
+    let totalCount = 0;
+
+    if (typeFilter === 'all' || typeFilter === 'regular') {
+      // Fetch regular orders
+      const regularOrders = await prisma.order.findMany({
+        where: regularOrdersWhere,
+        orderBy: { createdAt: 'desc' },
+        include: { items: true },
+        ...(typeFilter === 'regular' ? { skip, take: itemsPerPage } : {}),
+      });
+
+      const serializedRegularOrders = serializeRegularOrders(regularOrders);
+      allOrders.push(...serializedRegularOrders);
+
+      if (typeFilter === 'regular') {
+        totalCount = await prisma.order.count({ where: regularOrdersWhere });
+      }
+    }
+
+    if (typeFilter === 'all' || typeFilter === 'catering') {
+      // Fetch catering orders
+      const cateringOrders = await prisma.cateringOrder.findMany({
+        where: cateringOrdersWhere,
+        orderBy: { createdAt: 'desc' },
+        include: { items: true },
+        ...(typeFilter === 'catering' ? { skip, take: itemsPerPage } : {}),
+      });
+
+      const serializedCateringOrders = serializeCateringOrders(cateringOrders);
+      allOrders.push(...serializedCateringOrders);
+
+      if (typeFilter === 'catering') {
+        totalCount = await prisma.cateringOrder.count({ where: cateringOrdersWhere });
+      }
+    }
+
+    // If showing all orders, sort and paginate manually
+    if (typeFilter === 'all') {
+      allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      totalCount = allOrders.length;
+      allOrders = allOrders.slice(skip, skip + itemsPerPage);
+    }
+
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+    
+    logger.info(`Found ${allOrders.length} orders for display (page ${currentPage}/${totalPages})`);
 
     return (
-      <div>
+      <div className="p-4 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Order Management</h1>
+          <h1 className="text-2xl font-bold uppercase tracking-wide">Order Management</h1>
           <div className="flex gap-2">
             <Link
               href="/admin/orders/manual"
@@ -155,114 +239,132 @@ export default async function OrdersPage({ params }: { params: Promise<ResolvedP
             >
               Add Manual Order
             </Link>
-            <select className="border rounded p-2">
-              <option value="all">All Orders</option>
-              <option value="regular">Regular Orders</option>
-              <option value="catering">Catering Orders</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="READY">Ready</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-            <input type="text" placeholder="Search orders..." className="border rounded p-2" />
           </div>
         </div>
 
+        {/* Filters Section */}
+        <OrderFilters 
+          currentSearch={searchQuery}
+          currentType={typeFilter}
+          currentStatus={statusFilter}
+          currentPayment={paymentFilter}
+        />
+
         {allOrders.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">No orders found.</div>
-        ) : (
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Items
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {allOrders.map((order, index) => (
-                  <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.id ? `${order.id.substring(0, 8)}...` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.customerName || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}
-                      >
-                        {order.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.items?.length || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatCurrency(order.total)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.type === 'catering' 
-                        ? (order.eventDate ? formatDateTime(order.eventDate) : 'N/A')
-                        : (order.pickupTime ? formatDateTime(order.pickupTime) : 'N/A')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.createdAt ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true }) : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <Link
-                        href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
-                        className="text-indigo-600 hover:text-indigo-900 mr-2"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="text-center py-10 text-gray-500">
+            No orders found{searchQuery && ` matching "${searchQuery}"`}.
           </div>
+        ) : (
+          <>
+            <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Order ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Payment
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {allOrders.map((order, index) => (
+                      <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <Link
+                            href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 hover:underline font-mono"
+                            title={`View details for order ${order.id}`}
+                          >
+                            {order.id ? `${order.id.substring(0, 8)}...` : 'N/A'}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.customerName || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}
+                          >
+                            {order.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.items?.length || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatCurrency(order.total)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.type === 'catering' 
+                            ? (order.eventDate ? formatDateTime(order.eventDate) : 'N/A')
+                            : (order.pickupTime ? formatDateTime(order.pickupTime) : 'N/A')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order.createdAt ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true }) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <Link
+                            href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                          >
+                            View Details
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                searchParams={searchParamsResolved || {}} 
+              />
+            )}
+          </>
         )}
       </div>
     );

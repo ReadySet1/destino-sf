@@ -1,4 +1,5 @@
 import { FullConfig } from '@playwright/test';
+import { setupTestDatabase } from './database-setup';
 
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting global setup for Destino SF E2E tests...');
@@ -20,6 +21,14 @@ async function globalSetup(config: FullConfig) {
     NODE_ENV: 'test',
     NEXT_TELEMETRY_DISABLED: '1'
   });
+
+  // Setup test database
+  try {
+    await setupTestDatabase();
+  } catch (error) {
+    console.error('❌ Failed to setup test database:', error);
+    // Continue with tests even if database setup fails
+  }
 
   console.log('✅ Global setup completed');
 }

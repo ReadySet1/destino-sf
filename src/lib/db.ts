@@ -23,6 +23,12 @@ function getLogConfig(): Prisma.LogLevel[] {
 function createPrismaClient() {
   return new PrismaClient({
     log: getLogConfig(),
+    // Configure datasource for better development experience
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 }
 

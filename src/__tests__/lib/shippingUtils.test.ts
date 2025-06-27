@@ -14,7 +14,7 @@ import {
   mockConsole,
   restoreConsole 
 } from '@/__tests__/setup/test-utils';
-import { mockPrismaClient } from '../../../__mocks__/prisma';
+import { mockPrismaClient } from '../../__mocks__/prisma';
 
 // Note: @/lib/db is mocked globally in jest.setup.js
 
