@@ -4,11 +4,11 @@ describe('Protein Image Mapping', () => {
   // Mock the getProteinImage function since it's internal to the component
   const getProteinImage = (protein: ProteinOption): string | null => {
     const imageMap: Record<ProteinOption, string | null> = {
-      [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.png',
-      [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.png',
-      [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
+      [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.jpg',
+      [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.jpg',
+      [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.jpg',
       [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
-      [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.png',
+      [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.jpg',
       [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
     };
 
@@ -45,11 +45,11 @@ describe('Protein Image Mapping', () => {
   });
 
   test('specific protein mappings are correct', () => {
-    expect(getProteinImage(ProteinOption.CARNE_ASADA)).toBe('/images/boxedlunches/grilledbeef.png');
-    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe('/images/boxedlunches/grilledchicken.png');
-    expect(getProteinImage(ProteinOption.CARNITAS)).toBe('/images/boxedlunches/carnitas.png');
+    expect(getProteinImage(ProteinOption.CARNE_ASADA)).toBe('/images/boxedlunches/grilledbeef.jpg');
+    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe('/images/boxedlunches/grilledchicken.jpg');
+    expect(getProteinImage(ProteinOption.CARNITAS)).toBe('/images/boxedlunches/carnitas.jpg');
     expect(getProteinImage(ProteinOption.POLLO_ASADO)).toBe('/images/boxedlunches/roastedchicken.jpg');
-    expect(getProteinImage(ProteinOption.PESCADO)).toBe('/images/boxedlunches/grilledfish.png');
+    expect(getProteinImage(ProteinOption.PESCADO)).toBe('/images/boxedlunches/grilledfish.jpg');
     expect(getProteinImage(ProteinOption.VEGETARIAN_OPTION)).toBe('/images/boxedlunches/vegetarianprotein.jpg');
   });
 

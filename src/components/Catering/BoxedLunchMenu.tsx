@@ -69,11 +69,11 @@ const ALFAJORES_ITEMS = [
 // Protein image mapping
 const getProteinImage = (protein: ProteinOption): string | null => {
   const imageMap: Record<ProteinOption, string | null> = {
-    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.png',
-    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.png',
-    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
+    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.jpg',
+    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.jpg',
+    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.jpg',
     [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
-    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.png',
+    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.jpg',
     [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
   };
 
