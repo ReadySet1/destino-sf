@@ -72,11 +72,15 @@ const getProteinImage = (protein: ProteinOption): string | null => {
     [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.png',
     [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.png',
     [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
-    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.png',
+    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
     [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.png',
-    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.png',
+    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
   };
 
+  console.log('🔍 getProteinImage called with:', protein);
+  console.log('🗂️ Available images:', Object.keys(imageMap));
+  console.log('🎯 Mapped image:', imageMap[protein]);
+  
   return imageMap[protein] || null;
 };
 
