@@ -410,4 +410,7 @@ export const squarePaymentsApi = {
   handlePaymentWebhook,
   handleGiftCardPaymentError,
   formatGiftCardErrorMessage
-}; 
+};
+
+// Export as directPaymentsApi for backward compatibility
+export const directPaymentsApi = squarePaymentsApi; 

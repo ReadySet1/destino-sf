@@ -1,6 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import ShippingConfigurationForm from './components/ShippingConfigurationForm';
 import { getAllShippingConfigurations } from '@/lib/shippingUtils';
+import type { ShippingWeightConfig } from '@/lib/shippingUtils';
 
 export const metadata = {
   title: 'Shipping Configuration | Admin',
@@ -8,8 +9,16 @@ export const metadata = {
 };
 
 export default async function ShippingConfigurationPage() {
-  // Fetch shipping configurations
-  const configurations = await getAllShippingConfigurations();
+  // Fetch shipping configurations with build-time fallback
+  let configurations: ShippingWeightConfig[] = [];
+  
+  try {
+    configurations = await getAllShippingConfigurations();
+  } catch (error) {
+    console.error('Error fetching shipping configurations:', error);
+    // During build, use empty array to prevent build failure
+    configurations = [];
+  }
 
   return (
     <div className="container mx-auto py-6">

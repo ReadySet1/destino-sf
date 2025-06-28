@@ -1,0 +1,55 @@
+# Test and coverage files
+/coverage
+/test-results
+/playwright-report
+/__tests__
+/tests
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Build artifacts and cache
+*.tsbuildinfo
+.next/cache
+.swc/
+
+# Development and testing configs
+jest.config.ts
+jest.setup.js
+jest.resolver.cjs
+playwright.config.ts
+.lighthouserc.json
+tsconfig.test.json
+tsconfig.dev.json
+
+# Archive and backup files
+/archive
+*.backup
+*.bak
+
+# Documentation (if not needed for production)
+/docs
+
+# Lock files (keep only one)
+package-lock.json
+
+# IDE and editor files
+.vscode/
+.cursor/
+
+# Environment files (already in .gitignore but good to be explicit)
+.env*
+!.env.example
+
+# Scripts that aren't needed in production
+/scripts
+
+# Large config files that might not be needed
+/config/production-catalog-full.json
+
+# Git directory
+.git/
+
+# Node modules (should already be excluded but being explicit)
+node_modules/ 

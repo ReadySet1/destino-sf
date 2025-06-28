@@ -4,13 +4,13 @@ const nextConfig = {
     styledComponents: true,
   },
   reactStrictMode: true,
-  // Configure TypeScript checking only in production to prevent build failures
+  // Configure TypeScript checking
   typescript: {
     // Always ignore build errors to prevent deployments from failing on TS errors
     // We'll run type checking separately
     ignoreBuildErrors: true,
-    // Only check TypeScript in production
-    tsconfigPath: process.env.VERCEL_ENV === 'production' ? './tsconfig.json' : './tsconfig.dev.json',
+    // Use main tsconfig.json for builds to ensure proper path resolution
+    tsconfigPath: './tsconfig.json',
   },
   // Optionally ignore ESLint errors during build in non-production environments
   eslint: {
