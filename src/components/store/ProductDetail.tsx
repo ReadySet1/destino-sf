@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import Link from 'next/link';
 import { ChevronLeft, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,26 +34,7 @@ interface ProductDetailProps {
   product: Product;
 }
 
-// Same validateImageUrl function as in ProductCard
-const validateImageUrl = async (url: string): Promise<boolean> => {
-  if (!url) return false;
-  // Skip validation for relative URLs or already proxied URLs
-  if (url.startsWith('/') || url.includes('/api/proxy/image')) return true;
-  
-  try {
-    // Create a new Image object and try to load the image
-    return new Promise<boolean>((resolve) => {
-      const img = new window.Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      // Add cache busting to make sure we're not getting a cached image
-      img.src = `${url}${url.includes('?') ? '&' : '?'}cb=${new Date().getTime()}`;
-    });
-  } catch (error) {
-    console.error('Error validating image URL:', error);
-    return false;
-  }
-};
+// Image validation is now handled by SafeImage component
 
 export function ProductDetail({ product }: ProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
@@ -73,48 +54,25 @@ export function ProductDetail({ product }: ProductDetailProps) {
   // Calculate the current price based on selected variant
   const currentPrice = selectedVariant ? selectedVariant.price : product.price;
   
-  // Validate and set image URL on component mount and when product changes
+  // Set image URL on component mount and when product changes
   useEffect(() => {
-    const validateAndSetImage = async () => {
-      // Start with loading state
-      setImageLoading(true);
-      setImageError(false);
-      
-      // Get the first image from product.images if it exists
-      const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
-      
-      if (firstImage) {
-        try {
-          // Process the URL through our proxy if it's external
-          const processedUrl = getProxiedImageUrl(firstImage);
-          
-          // Check if the image is valid
-          const isValid = await validateImageUrl(processedUrl);
-          
-          if (isValid) {
-            setImageUrl(processedUrl);
-            setImageError(false);
-          } else {
-            console.warn(`Invalid image URL for product ${product.name}:`, firstImage);
-            setImageUrl(fallbackImage);
-            setImageError(true);
-          }
-        } catch (error) {
-          console.error(`Error processing image for ${product.name}:`, error);
-          setImageUrl(fallbackImage);
-          setImageError(true);
-        }
-      } else {
-        // No image available, use fallback
-        setImageUrl(fallbackImage);
-        setImageError(true);
-      }
-      
-      // Done loading
-      setImageLoading(false);
-    };
+    setImageLoading(true);
+    setImageError(false);
     
-    validateAndSetImage();
+    // Get the first image from product.images if it exists
+    const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
+    
+    if (firstImage) {
+      // Process the URL through our proxy if it's external
+      const processedUrl = getProxiedImageUrl(firstImage);
+      setImageUrl(processedUrl);
+    } else {
+      // No image available, use fallback
+      setImageUrl(fallbackImage);
+      setImageError(true);
+    }
+    
+    setImageLoading(false);
   }, [product._id, product.images, product.name]);
 
   const handleAddToCart = () => {
@@ -179,18 +137,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
           ) : imageUrl ? (
             <div className="relative aspect-square">
-              <Image
+              <SafeImage
                 src={imageUrl}
                 alt={product.name}
                 fill
                 className="object-cover"
                 priority
-                crossOrigin="anonymous"
-                onError={() => {
-                  console.error("Image failed to load:", imageUrl);
-                  setImageError(true);
-                  setImageUrl(fallbackImage); // Set to fallback on error
-                }}
+                fallbackSrc={fallbackImage}
+                maxRetries={0}
               />
             </div>
           ) : (

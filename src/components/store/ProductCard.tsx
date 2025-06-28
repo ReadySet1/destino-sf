@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
@@ -37,26 +37,7 @@ const getFallbackImage = (productName: string, categoryName?: string): string =>
   return '/images/menu/empanadas.png';
 };
 
-// Helper function to validate image URLs
-const validateImageUrl = async (url: string): Promise<boolean> => {
-  if (!url) return false;
-  // Skip validation for relative URLs or already proxied URLs
-  if (url.startsWith('/') || url.includes('/api/proxy/image')) return true;
-  
-  try {
-    // Create a new Image object and try to load the image
-    return new Promise<boolean>((resolve) => {
-      const img = new window.Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      // Add cache busting to make sure we're not getting a cached image
-      img.src = `${url}${url.includes('?') ? '&' : '?'}cb=${new Date().getTime()}`;
-    });
-  } catch (error) {
-    console.error('Error validating image URL:', error);
-    return false;
-  }
-};
+// Image validation is now handled by SafeImage component
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
@@ -85,51 +66,28 @@ export function ProductCard({ product }: ProductCardProps) {
     ? truncateText(product.description, 80)
     : generateShortDescription(product.name, product.category?.name);
 
-  // Validate and set image URL on component mount and when product changes
+  // Set image URL on component mount and when product changes
   useEffect(() => {
-    const validateAndSetImage = async () => {
-      // Start with loading state
-      setImageLoading(true);
-      setImageError(false);
-      
-      // Default/fallback image
-      const fallbackImage = getFallbackImage(product.name, product.category?.name);
-      
-      // Get the first image from product.images if it exists
-      const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
-      
-      if (firstImage) {
-        try {
-          // Process the URL through our proxy if it's external
-          const processedUrl = getProxiedImageUrl(firstImage);
-          
-          // Check if the image is valid
-          const isValid = await validateImageUrl(processedUrl);
-          
-          if (isValid) {
-            setImageUrl(processedUrl);
-            setImageError(false);
-          } else {
-            console.warn(`Invalid image URL for product ${product.name}:`, firstImage);
-            setImageUrl(fallbackImage);
-            setImageError(true);
-          }
-        } catch (error) {
-          console.error(`Error processing image for ${product.name}:`, error);
-          setImageUrl(fallbackImage);
-          setImageError(true);
-        }
-      } else {
-        // No image available, use fallback
-        setImageUrl(fallbackImage);
-        setImageError(true);
-      }
-      
-      // Done loading
-      setImageLoading(false);
-    };
+    setImageLoading(true);
+    setImageError(false);
     
-    validateAndSetImage();
+    // Default/fallback image
+    const fallbackImage = getFallbackImage(product.name, product.category?.name);
+    
+    // Get the first image from product.images if it exists
+    const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
+    
+    if (firstImage) {
+      // Process the URL through our proxy if it's external
+      const processedUrl = getProxiedImageUrl(firstImage);
+      setImageUrl(processedUrl);
+    } else {
+      // No image available, use fallback
+      setImageUrl(fallbackImage);
+      setImageError(true);
+    }
+    
+    setImageLoading(false);
   }, [product.id, product.images, product.name]);
 
   const handleAddToCart = () => {
@@ -162,19 +120,15 @@ export function ProductCard({ product }: ProductCardProps) {
               <div className="h-6 w-6 md:h-8 md:w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
             </div>
           ) : imageUrl ? (
-            <Image
+            <SafeImage
               src={imageUrl}
               alt={product.name}
               fill
               className="object-contain md:object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
               sizes="(min-width: 768px) 33vw, 100px"
               priority={product.featured}
-              crossOrigin="anonymous"
-              onError={() => {
-                console.error("Image failed to load:", imageUrl);
-                setImageError(true);
-                setImageUrl(getFallbackImage(product.name, product.category?.name)); // Set to smart fallback on error
-              }}
+              fallbackSrc={getFallbackImage(product.name, product.category?.name)}
+              maxRetries={0}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">

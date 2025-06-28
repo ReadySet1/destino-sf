@@ -7,7 +7,7 @@ import { CateringOrderForm } from '@/components/Catering/CateringOrderForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShoppingCart, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import Link from 'next/link';
 import { addDays, format } from 'date-fns';
 import { FulfillmentSelector } from '@/components/Store/FulfillmentSelector';
@@ -717,19 +717,14 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 return (
                   <div key={`${item.id}-${item.variantId}`} className="flex gap-3">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <Image 
+                      <SafeImage 
                         src={getImageUrl(item.image)} 
                         alt={toTitleCase(item.name)}
                         width={64}
                         height={64} 
                         className="object-cover"
-                                                  onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            // Prevent infinite loops by only setting fallback once
-                            if (!target.src.includes('/default-item.jpg')) {
-                              target.src = '/images/catering/default-item.jpg';
-                            }
-                          }}
+                        fallbackSrc="/images/catering/default-item.jpg"
+                        maxRetries={0}
                       />
                     </div>
                     

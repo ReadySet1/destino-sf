@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import {
   CateringItem,
   getItemsForTab,
@@ -348,17 +348,14 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     <>
       <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
         <div className="relative w-full h-48">
-          <Image
+          <SafeImage
             src={getImageUrl(imageUrl)}
             alt={toTitleCase(name)}
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
-            onError={e => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/images/catering/default-item.jpg';
-            }}
+            fallbackSrc="/images/catering/default-item.jpg"
+            maxRetries={0}
             priority={false}
-            loading="lazy"
           />
         </div>
 

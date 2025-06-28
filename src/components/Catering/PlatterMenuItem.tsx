@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import { CateringItem } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -126,17 +126,14 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
     <>
       <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
         <div className="relative w-full h-48">
-          <Image
+          <SafeImage
             src={getImageUrl(currentItem.imageUrl)}
             alt={toTitleCase(baseName)}
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/images/catering/default-item.jpg';
-            }}
+            fallbackSrc="/images/catering/default-item.jpg"
+            maxRetries={0}
             priority={false}
-            loading="lazy"
           />
         </div>
         

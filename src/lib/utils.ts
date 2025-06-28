@@ -84,6 +84,12 @@ export function getProxiedImageUrl(url: string): string {
       return url;
     }
     
+    // destino-sf.square.site images need to be proxied for CORS
+    if (parsedUrl.hostname === 'destino-sf.square.site') {
+      const encodedUrl = Buffer.from(url).toString('base64');
+      return `/api/proxy/image?url=${encodedUrl}`;
+    }
+    
     // If it's a Square S3 image, proxy it
     if (isSquareS3) {
       const filePathMatch = url.match(/\/files\/([^\/]+)\/([^\/\?]+)/);

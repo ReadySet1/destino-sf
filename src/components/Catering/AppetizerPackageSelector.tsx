@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -385,20 +385,14 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                         onClick={() => canSelect && handleItemToggle(item.id)}
                       >
                         <div className="relative w-full h-32">
-                          <Image
+                          <SafeImage
                             src={getImageUrl(item.imageUrl)}
                             alt={toTitleCase(item.name)}
                             fill
                             className="object-cover"
-                            onError={e => {
-                              const target = e.target as HTMLImageElement;
-                              // Prevent infinite loops by only setting fallback once
-                              if (!target.src.includes('/default-item.jpg')) {
-                                target.src = '/images/catering/default-item.jpg';
-                              }
-                            }}
+                            fallbackSrc="/images/catering/default-item.jpg"
+                            maxRetries={0}
                             priority={false}
-                            loading="lazy"
                           />
                           {isSelected && (
                             <div className="absolute top-2 right-2">

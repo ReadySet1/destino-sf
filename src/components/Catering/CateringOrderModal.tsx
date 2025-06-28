@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CateringItem, CateringPackage } from '@/types/catering';
 import { Button } from '@/components/ui/button';
@@ -83,20 +83,14 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
         <div className="mt-4">
           {/* Item Image */}
           <div className="relative w-full aspect-square mb-6 rounded-md overflow-hidden bg-gray-50">
-            <Image
+            <SafeImage
               src={getImageUrl(item.imageUrl)}
               alt={toTitleCase(item.name)}
               fill
               className="object-contain p-4"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                // Prevent infinite loops by only setting fallback once
-                if (!target.src.includes('/default-item.jpg')) {
-                  target.src = '/images/catering/default-item.jpg';
-                }
-              }}
+              fallbackSrc="/images/catering/default-item.jpg"
+              maxRetries={0}
               priority={false}
-              loading="lazy"
             />
           </div>
           

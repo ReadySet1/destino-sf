@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
         'square-marketplace.s3.amazonaws.com',
         'square-marketplace-sandbox.s3.amazonaws.com',
         'square-catalog-production.s3.amazonaws.com',
-        'square-catalog-sandbox.s3.amazonaws.com'
+        'square-catalog-sandbox.s3.amazonaws.com',
+        'destino-sf.square.site'
       ];
       
       const url = new URL(imageUrl);
@@ -52,6 +53,9 @@ export async function GET(request: NextRequest) {
                           imageUrl.includes('square-catalog-production.s3') ||
                           imageUrl.includes('square-catalog-sandbox.s3') ||
                           imageUrl.includes('square-marketplace.s3');
+    
+    // Handle destino-sf.square.site URLs separately
+    const isDestinoSquareSite = imageUrl.includes('destino-sf.square.site');
     
     if (isSquareS3Url) {
       // Extract key file information
@@ -81,6 +85,64 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Handle destino-sf.square.site URLs with simple fetch (they should be publicly accessible)
+    if (isDestinoSquareSite) {
+      const fetchOptions: RequestInit = {
+        headers: {
+          'Accept': 'image/*',
+          'User-Agent': 'Mozilla/5.0 (compatible; DestinoSFApp/1.0)',
+          'Referer': 'https://destino-sf.square.site/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      };
+      
+      try {
+        const response = await fetch(imageUrl, fetchOptions);
+        
+        if (!response.ok) {
+          logger.error(`Error fetching destino-sf.square.site image: ${response.status} ${response.statusText} for URL: ${imageUrl}`);
+          
+          // For 404 errors, return a cached response to prevent infinite retries
+          if (response.status === 404) {
+            return new NextResponse(`Image not found: ${imageUrl}`, { 
+              status: 404,
+              headers: {
+                'Cache-Control': `public, max-age=${CACHE_MAX_AGE}`, // Cache 404s to prevent retries
+                'Access-Control-Allow-Origin': '*'
+              }
+            });
+          }
+          
+          return new NextResponse(`Error fetching image: ${response.status} ${response.statusText}`, { 
+            status: response.status 
+          });
+        }
+        
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        if (!contentType.startsWith('image/')) {
+          logger.error(`The destino-sf.square.site resource isn't a valid image: received ${contentType}`);
+          return new NextResponse(`The requested resource isn't a valid image`, { 
+            status: 415 
+          });
+        }
+        
+        const imageData = await response.arrayBuffer();
+        
+        return new NextResponse(imageData, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Cache-Control': `public, max-age=${CACHE_MAX_AGE}`,
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      } catch (fetchError) {
+        logger.error(`Network error fetching destino-sf.square.site image: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+        return new NextResponse('Network error fetching image', { status: 502 });
+      }
+    }
+    
     // For non-Square images or if file path extraction failed, proceed with normal fetch
     const fetchOptions: RequestInit = {
       headers: {
@@ -107,6 +169,17 @@ export async function GET(request: NextRequest) {
       if (response.status === 403) {
         logger.error('Access denied (403) for S3 image. This might be due to missing permissions or expired URLs.');
         return new NextResponse('Access denied for image resource', { status: 403 });
+      }
+      
+      // Cache 404 errors to prevent infinite retries
+      if (response.status === 404) {
+        return new NextResponse(`Image not found: ${imageUrl}`, { 
+          status: 404,
+          headers: {
+            'Cache-Control': `public, max-age=${CACHE_MAX_AGE}`, // Cache 404s to prevent retries
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
       }
       
       return new NextResponse(`Error fetching image: ${response.status} ${response.statusText}`, { 

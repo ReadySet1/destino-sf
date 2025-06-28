@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/ui/safe-image';
 import Link from 'next/link';
 import { CateringPackage, CateringPackageType } from '@/types/catering';
 import { Star, StarHalf, ShoppingCart, Users, Coffee } from 'lucide-react';
@@ -208,15 +208,13 @@ const CateringPackageCard: React.FC<CateringPackageCardProps> = ({ cateringPacka
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 h-full flex flex-col">
         <div className="relative">
           <div className="w-full aspect-[16/9] relative">
-            <Image
+            <SafeImage
               src={imageUrl || '/images/catering/default-package.jpg'}
               alt={toTitleCase(name)}
               fill
               className="object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/images/catering/default-package.jpg';
-              }}
+              fallbackSrc="/images/catering/default-package.jpg"
+              maxRetries={0}
             />
           </div>
           <div className="absolute top-4 right-4 px-4 py-2 bg-white bg-opacity-90 rounded-full text-center shadow-sm">
