@@ -4,4 +4,66 @@
 
 .rotate-30 {
   transform: rotate(30deg);
+}
+
+/* Image Loading Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    background-color: rgb(229, 231, 235);
+  }
+  50% {
+    background-color: rgb(243, 244, 246);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite ease-in-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.animate-skeleton-pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+/* Image container improvements */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.image-skeleton {
+  background: linear-gradient(
+    135deg,
+    #f3f4f6 0%,
+    #e5e7eb 40%,
+    #f9fafb 50%,
+    #e5e7eb 60%,
+    #f3f4f6 100%
+  );
+  background-size: 400% 400%;
+  animation: skeletonPulse 2s ease-in-out infinite;
 } 

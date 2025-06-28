@@ -1,13 +1,15 @@
 'use client';
 
-import { SafeImage } from '@/components/ui/safe-image';
+import Image, { ImageProps } from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cart';
-import { toast } from 'sonner';
+import { useState, useEffect, Suspense } from 'react';
 import { Product, Variant } from '@/types/product';
-import { useState, useEffect } from 'react';
-import { formatPrice, getProxiedImageUrl, generateShortDescription, truncateText } from '@/lib/utils';
+import { useCartStore } from '@/store/cart';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Loader2 } from 'lucide-react';
+import { cn, getProxiedImageUrl } from '@/lib/utils';
+import { ProductImage } from '@/components/ui/product-image';
 
 interface ProductCardProps {
   product: Product;
@@ -37,15 +39,10 @@ const getFallbackImage = (productName: string, categoryName?: string): string =>
   return '/images/menu/empanadas.png';
 };
 
-// Image validation is now handled by SafeImage component
+// Image validation is now handled by ProductImage component
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
-  
-  // Add state to handle image loading failures
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
   
   // Check if product has valid variants
   const hasVariants = product.variants && Array.isArray(product.variants) && 
@@ -66,75 +63,43 @@ export function ProductCard({ product }: ProductCardProps) {
     ? truncateText(product.description, 80)
     : generateShortDescription(product.name, product.category?.name);
 
-  // Set image URL on component mount and when product changes
-  useEffect(() => {
-    setImageLoading(true);
-    setImageError(false);
-    
-    // Default/fallback image
-    const fallbackImage = getFallbackImage(product.name, product.category?.name);
-    
-    // Get the first image from product.images if it exists
-    const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
-    
-    if (firstImage) {
-      // Process the URL through our proxy if it's external
-      const processedUrl = getProxiedImageUrl(firstImage);
-      setImageUrl(processedUrl);
-    } else {
-      // No image available, use fallback
-      setImageUrl(fallbackImage);
-      setImageError(true);
-    }
-    
-    setImageLoading(false);
-  }, [product.id, product.images, product.name]);
+  // Get the first image from product.images if it exists
+  const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
+  const imageUrl = firstImage ? getProxiedImageUrl(firstImage) : null;
 
   const handleAddToCart = () => {
-    // Ensure priceToAdd is a number, defaulting to 0 if conversion fails
-    const priceToAdd = Number(displayPrice) || 0;
+    // Extract price as number
+    const priceToAdd = typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice 
+      ? (displayPrice as any).toNumber() 
+      : Number(displayPrice) || 0;
 
     addItem({
       id: product.id,
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
       price: priceToAdd,
       quantity: 1,
-      image: imageUrl || getFallbackImage(product.name, product.category?.name), // Use our validated imageUrl or smart fallback
-      variantId: selectedVariant?.id, // Add variantId
+      image: imageUrl || getFallbackImage(product.name, product.category?.name),
+      variantId: selectedVariant?.id,
     });
-
-    // Update toast message to include variant name if selected
-    toast.success(`${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} added to cart!`);
   };
 
   return (
-    <div className="group relative bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col rounded-lg overflow-hidden">
+    <div className="group relative h-full">
       <Link 
         href={`/products/${product.slug || product.id}`} // Use slug or fallback to id
         className="flex flex-row md:flex-col h-full" // Use flex-grow to allow content to expand
       >
         {/* Image Container - Mobile: Left side, Desktop: Top */}
-        <div className="w-[100px] h-[100px] md:w-full md:h-auto relative overflow-hidden md:rounded-t-lg flex-shrink-0 flex items-center justify-center bg-gray-50 m-2 md:m-0 rounded-lg md:aspect-[4/3]">
-          {imageLoading ? (
-            <div className="flex h-full w-full items-center justify-center">
-              <div className="h-6 w-6 md:h-8 md:w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-            </div>
-          ) : imageUrl ? (
-            <SafeImage
-              src={imageUrl}
-              alt={product.name}
-              fill
-              className="object-contain md:object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-              sizes="(min-width: 768px) 33vw, 100px"
-              priority={product.featured}
-              fallbackSrc={getFallbackImage(product.name, product.category?.name)}
-              maxRetries={0}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-xs text-gray-400">No image</span>
-            </div>
-          )}
+        <div className="w-[100px] h-[100px] md:w-full md:h-auto relative overflow-hidden md:rounded-t-lg flex-shrink-0 m-2 md:m-0 rounded-lg md:aspect-[4/3]">
+          <ProductImage
+            src={imageUrl}
+            alt={product.name}
+            className="object-contain md:object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+            sizes="(min-width: 768px) 33vw, 100px"
+            priority={product.featured}
+            fallbackSrc={getFallbackImage(product.name, product.category?.name)}
+            skeletonVariant="card"
+          />
           
           {product.featured && (
             <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 md:px-2 md:py-1 rounded-full z-10">
@@ -145,64 +110,61 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         
         {/* Content Container */}
-        <div className="flex-1 p-2 md:p-4 flex flex-col justify-between min-w-0">
-          {/* Top part: Name and Description */}
+        <div className="flex-1 p-3 md:p-4 flex flex-col">
           <div className="flex-1">
-            <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-1 line-clamp-2 md:mb-2 group-hover:text-indigo-600 transition-colors leading-tight">
+            <h3 className="font-semibold text-gray-900 text-sm md:text-base line-clamp-2 mb-1 md:mb-2">
               {product.name}
             </h3>
             
-            {/* Short description - always show on mobile, conditional on desktop */}
-            {shortDescription && (
-              <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2 leading-relaxed">
-                {shortDescription}
-              </p>
+            <p className="text-xs md:text-sm text-gray-600 line-clamp-2 md:line-clamp-3 mb-2">
+              {shortDescription}
+            </p>
+            
+            {/* Category Badge */}
+            {product.category?.name && (
+              <Badge variant="secondary" className="text-xs mb-2 md:mb-3">
+                {product.category.name}
+              </Badge>
             )}
           </div>
           
-          {/* Bottom part: Variants, Price, Button */}
-          <div className="mt-auto space-y-2"> 
-            {/* Variant Selector - Only show if multiple variants exist */}
-            {hasVariants && product.variants && product.variants.length > 1 && (
-              <div>
+          {/* Price and variants */}
+          <div className="mt-auto">
+            {hasVariants && product.variants && (
+              <div className="mb-2">
                 <select
-                  // Prevent link navigation when clicking the select
-                  onClick={(e) => e.preventDefault()} 
-                  className="w-full border rounded-md py-1 px-2 text-xs md:text-sm border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   value={selectedVariant?.id || ''}
                   onChange={(e) => {
                     const variant = product.variants?.find(v => v.id === e.target.value);
                     setSelectedVariant(variant || null);
                   }}
-                  aria-label={`Select ${product.name} option`}
+                  className="w-full text-xs p-1 border border-gray-300 rounded"
+                  onClick={(e) => e.preventDefault()}
                 >
-                  {product.variants
-                    .filter(variant => variant && variant.id) // Ensure variant has an ID
-                    .map((variant) => (
-                      <option key={variant.id} value={variant.id}>
-                        {variant.name} - ${formatPrice(variant.price !== null ? Number(variant.price) : Number(product.price))}
-                      </option>
+                  {product.variants.map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                      {variant.name} - ${Number(variant.price).toFixed(2)}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
-
-            {/* Price and Add to Cart Button */}
-            <div className="flex items-center justify-between pt-1 md:pt-3 md:border-t md:border-gray-100">
-              <span className="text-sm md:text-lg font-bold text-gray-900">
-                ${formatPrice(Number(displayPrice))}
+            
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-gray-900 text-sm md:text-lg">
+                ${Number(displayPrice).toFixed(2)}
               </span>
+              
               <Button
-                onClick={e => {
-                  e.preventDefault(); // Keep preventing link navigation
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
                   handleAddToCart();
                 }}
-                className="bg-[#F7B614] hover:bg-[#E5A912] text-white font-medium px-2 py-1 md:px-5 md:py-2 rounded-full transition-colors duration-300 text-xs md:text-sm"
-                variant="ghost"
-                aria-label={`Add ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} to cart`}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
               >
-                <span className="md:hidden">+Add</span>
-                <span className="hidden md:inline">Add to Cart</span>
+                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                Add
               </Button>
             </div>
           </div>
@@ -210,4 +172,24 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
     </div>
   );
+}
+
+// Helper functions remain the same
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+}
+
+function generateShortDescription(productName: string, categoryName?: string): string {
+  const category = categoryName?.toLowerCase() || '';
+  
+  if (category.includes('alfajor')) {
+    return 'Buttery shortbread cookies filled with rich dulce de leche';
+  }
+  
+  if (category.includes('empanada')) {
+    return 'Handcrafted savory pastries with flavorful fillings';
+  }
+  
+  return `Delicious ${productName.toLowerCase()} made with quality ingredients`;
 }

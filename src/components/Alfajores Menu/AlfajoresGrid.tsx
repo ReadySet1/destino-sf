@@ -1,7 +1,7 @@
 import React from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Star } from 'lucide-react';
+import { ProductImage } from '@/components/ui/product-image';
 
 export interface AlfajoresItemProps {
   id: string;
@@ -41,13 +41,14 @@ const AlfajoresCard: React.FC<{
     >
       {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-        <Image
+        <ProductImage
           src={item.image || '/images/menu/alfajores.png'}
           alt={item.name}
-          fill
           className="object-cover object-center transition-all duration-300 group-hover:scale-105"
           sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-          quality={85}
+          priority={item.featured || index < 4}
+          fallbackSrc="/images/menu/alfajores.png"
+          skeletonVariant="card"
         />
         {item.featured && (
           <div className="absolute top-2 right-2 z-10">
@@ -59,28 +60,25 @@ const AlfajoresCard: React.FC<{
         )}
         
         {/* Dietary badges */}
-        {(item.isVegetarian || item.isVegan || item.isGlutenFree) && (
-          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-            {item.isVegan && (
-              <span className="bg-green-600 text-white px-1.5 py-0.5 text-xs font-medium rounded">
-                Vegan
-              </span>
-            )}
-            {item.isVegetarian && !item.isVegan && (
-              <span className="bg-green-500 text-white px-1.5 py-0.5 text-xs font-medium rounded">
-                Vegetarian
-              </span>
-            )}
-            {item.isGlutenFree && (
-              <span className="bg-blue-500 text-white px-1.5 py-0.5 text-xs font-medium rounded">
-                GF
-              </span>
-            )}
-          </div>
-        )}
+        <div className="absolute bottom-2 left-2 flex gap-1">
+          {item.isVegetarian && (
+            <span className="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded-full font-medium">
+              V
+            </span>
+          )}
+          {item.isVegan && (
+            <span className="bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full font-medium">
+              VG
+            </span>
+          )}
+          {item.isGlutenFree && (
+            <span className="bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded-full font-medium">
+              GF
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Content */}
       <div className="p-4 flex flex-col h-full">
         {/* Header with name and price - Fixed alignment */}
         <div className="flex items-start justify-between mb-2">
