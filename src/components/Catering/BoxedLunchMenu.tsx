@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,20 @@ const ALFAJORES_ITEMS = [
     servingSize: '1 piece'
   }
 ];
+
+// Protein image mapping
+const getProteinImage = (protein: ProteinOption): string | null => {
+  const imageMap: Record<ProteinOption, string | null> = {
+    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.png',
+    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.png',
+    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
+    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.png',
+    [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.png',
+    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.png',
+  };
+
+  return imageMap[protein] || null;
+};
 
 interface BoxedLunchMenuProps {
   className?: string;
@@ -376,12 +391,43 @@ const TierCard: React.FC<TierCardProps> = ({
                     }`}
                   >
                     <div className="flex justify-between items-center">
-                      <div>
-                        <div className={`font-medium ${isSelected ? 'text-amber-800' : 'text-gray-800'}`}>
-                          {proteinInfo.name}
-                        </div>
-                        <div className={`text-sm ${isSelected ? 'text-amber-600' : 'text-gray-600'}`}>
-                          {proteinInfo.description}
+                      <div className="flex items-center gap-3">
+                        {getProteinImage(protein) ? (
+                          <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
+                            <img
+                              src={getProteinImage(protein)!}
+                              alt={proteinInfo.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error(
+                                  `Failed to load image for ${proteinInfo.name}:`,
+                                  getProteinImage(protein)
+                                );
+                              }}
+                              onLoad={() => {
+                                console.log(
+                                  `Successfully loaded image for ${proteinInfo.name}:`,
+                                  getProteinImage(protein)
+                                );
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs text-gray-500">
+                              No
+                              <br />
+                              Pic
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div className={`font-medium ${isSelected ? 'text-amber-800' : 'text-gray-800'}`}>
+                            {proteinInfo.name}
+                          </div>
+                          <div className={`text-sm ${isSelected ? 'text-amber-600' : 'text-gray-600'}`}>
+                            {proteinInfo.description}
+                          </div>
                         </div>
                       </div>
                       {isSelected && (
