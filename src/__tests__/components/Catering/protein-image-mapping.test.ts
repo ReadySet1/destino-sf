@@ -4,12 +4,12 @@ describe('Protein Image Mapping', () => {
   // Mock the getProteinImage function since it's internal to the component
   const getProteinImage = (protein: ProteinOption): string | null => {
     const imageMap: Record<ProteinOption, string | null> = {
-      [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/grilledbeef.jpg',
-      [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/grilledchicken.jpg',
-      [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.jpg',
-      [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/roastedchicken.jpg',
-      [ProteinOption.PESCADO]: '/images/boxedlunches/grilledfish.jpg',
-      [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarianprotein.jpg',
+      [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/carne-asada.png',
+      [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/pollo-carbon.png',
+      [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
+      [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/pollo-asado.png',
+      [ProteinOption.PESCADO]: '/images/boxedlunches/pescado.png',
+      [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarian-option.png',
     };
 
     return imageMap[protein] || null;
@@ -45,12 +45,12 @@ describe('Protein Image Mapping', () => {
   });
 
   test('specific protein mappings are correct', () => {
-    expect(getProteinImage(ProteinOption.CARNE_ASADA)).toBe('/images/boxedlunches/grilledbeef.jpg');
-    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe('/images/boxedlunches/grilledchicken.jpg');
-    expect(getProteinImage(ProteinOption.CARNITAS)).toBe('/images/boxedlunches/carnitas.jpg');
-    expect(getProteinImage(ProteinOption.POLLO_ASADO)).toBe('/images/boxedlunches/roastedchicken.jpg');
-    expect(getProteinImage(ProteinOption.PESCADO)).toBe('/images/boxedlunches/grilledfish.jpg');
-    expect(getProteinImage(ProteinOption.VEGETARIAN_OPTION)).toBe('/images/boxedlunches/vegetarianprotein.jpg');
+    expect(getProteinImage(ProteinOption.CARNE_ASADA)).toBe('/images/boxedlunches/carne-asada.png');
+    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe('/images/boxedlunches/pollo-carbon.png');
+    expect(getProteinImage(ProteinOption.CARNITAS)).toBe('/images/boxedlunches/carnitas.png');
+    expect(getProteinImage(ProteinOption.POLLO_ASADO)).toBe('/images/boxedlunches/pollo-asado.png');
+    expect(getProteinImage(ProteinOption.PESCADO)).toBe('/images/boxedlunches/pescado.png');
+    expect(getProteinImage(ProteinOption.VEGETARIAN_OPTION)).toBe('/images/boxedlunches/vegetarian-option.png');
   });
 
   test('all proteins have unique image files', () => {
