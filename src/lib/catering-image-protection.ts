@@ -8,22 +8,20 @@ interface ImageProtectionResult {
 }
 
 /**
- * Protects manually assigned catering images from being overwritten
- * This function should be called after Square sync to restore any manually assigned images
+ * NEW LOGIC: Updates CateringItems with real images from Product table
+ * This function now works in the opposite direction - Product → CateringItem
+ * This aligns with our new getCateringItems() implementation
  */
 export async function protectCateringImages(): Promise<ImageProtectionResult> {
   const result = { protected: 0, skipped: 0, errors: 0 };
   
   try {
-    logger.info('Starting catering image protection...');
+    logger.info('🔄 Starting catering image update from Product table...');
     
-    // Get all catering items that have manually assigned images that might have been overwritten
+    // Get all active catering items
     const cateringItems = await prisma.cateringItem.findMany({
       where: {
-        isActive: true,
-        imageUrl: {
-          not: null
-        }
+        isActive: true
       },
       select: {
         id: true,
@@ -33,64 +31,96 @@ export async function protectCateringImages(): Promise<ImageProtectionResult> {
       }
     });
     
-    logger.info(`Found ${cateringItems.length} catering items with images to protect`);
+    logger.info(`Found ${cateringItems.length} catering items to update`);
     
-    // For each catering item, find its corresponding product and restore the image if needed
+    // Get products with catering categories that have real images
+    const cateringProducts = await prisma.product.findMany({
+      where: {
+        active: true,
+        OR: [
+          {
+            category: {
+              name: {
+                contains: 'CATERING',
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            category: {
+              name: {
+                contains: 'PLATTER',
+                mode: 'insensitive'
+              }
+            }
+          }
+        ],
+        images: {
+          isEmpty: false
+        }
+      },
+      include: {
+        category: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+    
+    logger.info(`Found ${cateringProducts.length} products with real images`);
+    
+    // Create mapping of squareId → real image
+    const productImageMap = new Map();
+    cateringProducts.forEach(product => {
+      if (product.images && product.images.length > 0 && product.squareId) {
+        productImageMap.set(product.squareId, product.images[0]);
+      }
+    });
+    
+    // Update catering items with real images from products
     for (const item of cateringItems) {
       try {
         if (!item.squareProductId) {
-          logger.info(`Catering item ${item.name} has no Square product ID, skipping`);
           result.skipped++;
           continue;
         }
         
-        // Find the corresponding product by Square ID
-        const product = await prisma.product.findUnique({
-          where: { squareId: item.squareProductId },
-          select: { id: true, name: true, images: true }
-        });
-        
-        if (!product) {
-          logger.info(`No product found for catering item ${item.name} with Square ID ${item.squareProductId}`);
+        const realImageUrl = productImageMap.get(item.squareProductId);
+        if (!realImageUrl) {
           result.skipped++;
           continue;
         }
         
-        // Check if the product's images match the catering item's imageUrl
-        const cateringImageUrl = item.imageUrl;
-        const productImages = product.images || [];
+        // Check if the catering item needs updating
+        const isGenericImage = item.imageUrl?.includes('/images/catering/') && 
+                               (item.imageUrl.includes('appetizer-package') || 
+                                item.imageUrl.includes('default-item'));
         
-        // If the catering item's image is not in the product's images, add it
-        if (cateringImageUrl && !productImages.includes(cateringImageUrl)) {
-          logger.info(`Restoring image for product ${product.name}: ${cateringImageUrl}`);
-          
-          // Add the catering image to the beginning of the product's images array
-          const updatedImages = [cateringImageUrl, ...productImages];
-          
-          await prisma.product.update({
-            where: { id: product.id },
+        if (isGenericImage || !item.imageUrl || item.imageUrl !== realImageUrl) {
+          await prisma.cateringItem.update({
+            where: { id: item.id },
             data: {
-              images: updatedImages,
+              imageUrl: realImageUrl,
               updatedAt: new Date()
             }
           });
           
-          logger.info(`Protected image for ${product.name}: ${cateringImageUrl}`);
+          logger.info(`✅ Updated "${item.name}" with real image from Product table`);
           result.protected++;
         } else {
-          logger.info(`Product ${product.name} already has the correct image, no protection needed`);
           result.skipped++;
         }
       } catch (error) {
-        logger.error(`Error protecting image for catering item ${item.name}:`, error);
+        logger.error(`Error updating catering item ${item.name}:`, error);
         result.errors++;
       }
     }
     
-    logger.info(`Catering image protection complete: ${result.protected} protected, ${result.skipped} skipped, ${result.errors} errors`);
+    logger.info(`🔄 Catering image update complete: ${result.protected} updated, ${result.skipped} skipped, ${result.errors} errors`);
     return result;
   } catch (error) {
-    logger.error('Error in catering image protection:', error);
+    logger.error('Error in catering image update:', error);
     result.errors++;
     return result;
   }
@@ -133,57 +163,20 @@ export async function createCateringImageBackup(): Promise<Record<string, string
 }
 
 /**
- * Restores catering images from a backup
+ * NEW LOGIC: Uses the same approach as protectCateringImages
+ * Prioritizes real images from Product table over backup
  */
 export async function restoreCateringImagesFromBackup(backup: Record<string, string>): Promise<ImageProtectionResult> {
   const result = { protected: 0, skipped: 0, errors: 0 };
   
   try {
-    logger.info(`Restoring ${Object.keys(backup).length} catering images from backup...`);
+    logger.info(`🔄 Updating catering images (backup provided with ${Object.keys(backup).length} items, but using Product table as primary source)...`);
     
-    for (const [squareProductId, imageUrl] of Object.entries(backup)) {
-      try {
-        // Find the product by Square ID
-        const product = await prisma.product.findUnique({
-          where: { squareId: squareProductId },
-          select: { id: true, name: true, images: true }
-        });
-        
-        if (!product) {
-          logger.warn(`Product not found for Square ID ${squareProductId}, skipping`);
-          result.skipped++;
-          continue;
-        }
-        
-        const productImages = product.images || [];
-        
-        // If the image is not in the product's images, add it
-        if (!productImages.includes(imageUrl)) {
-          const updatedImages = [imageUrl, ...productImages];
-          
-          await prisma.product.update({
-            where: { id: product.id },
-            data: {
-              images: updatedImages,
-              updatedAt: new Date()
-            }
-          });
-          
-          logger.info(`Restored image for ${product.name}: ${imageUrl}`);
-          result.protected++;
-        } else {
-          result.skipped++;
-        }
-      } catch (error) {
-        logger.error(`Error restoring image for Square ID ${squareProductId}:`, error);
-        result.errors++;
-      }
-    }
+    // Use the same logic as protectCateringImages - prioritize Product table
+    return await protectCateringImages();
     
-    logger.info(`Image restoration complete: ${result.protected} restored, ${result.skipped} skipped, ${result.errors} errors`);
-    return result;
   } catch (error) {
-    logger.error('Error restoring catering images from backup:', error);
+    logger.error('Error in catering image backup restoration:', error);
     result.errors++;
     return result;
   }

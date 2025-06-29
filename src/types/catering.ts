@@ -140,6 +140,9 @@ export interface CateringItem {
   imageUrl?: string | null;
   isActive: boolean;
   squareCategory?: string; // Categoría de Square
+  squareProductId?: string | null; // Square Product ID for tracking
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CateringPackageItem {

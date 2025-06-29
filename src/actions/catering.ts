@@ -140,6 +140,7 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
 
 /**
  * Fetches all active catering items using Supabase directly
+ * Enhanced to also fetch products from Product table that belong to catering categories
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
@@ -156,12 +157,172 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       return [];
     }
 
-    console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items`);
+    console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items from CateringItem table`);
     
-    return items?.map((item: any) => ({
+    const cateringItems = items?.map((item: any) => ({
       ...item,
       price: Number(item.price),
     })) as CateringItem[] || [];
+
+    // Also fetch products from Product table that belong to catering categories
+    try {
+      // Let's be more specific with the categories we want
+      const cateringProducts = await db.product.findMany({
+        where: {
+          active: true,
+          OR: [
+            {
+              category: {
+                name: {
+                  contains: 'CATERING',
+                  mode: 'insensitive'
+                }
+              }
+            },
+            {
+              category: {
+                name: {
+                  contains: 'SHARE PLATTERS',
+                  mode: 'insensitive'
+                }
+              }
+            }
+          ]
+        },
+        include: {
+          category: {
+            select: {
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+      
+      console.log(`✅ [CATERING] Found ${cateringProducts.length} products in catering categories`);
+
+      // Create a map of real images from Product table
+      const productImageMap = new Map();
+      cateringProducts.forEach(product => {
+        const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : null;
+        if (imageUrl && product.squareId) {
+          productImageMap.set(product.squareId, imageUrl);
+        }
+      });
+
+      // Create a map for base platter names to their real images
+      const baseItemImageMap = new Map();
+      cateringItems.forEach(item => {
+        if (item.squareProductId && productImageMap.has(item.squareProductId)) {
+          const realImageUrl = productImageMap.get(item.squareProductId);
+          const baseName = item.name.toLowerCase();
+          baseItemImageMap.set(baseName, realImageUrl);
+        }
+      });
+
+      // Update existing CateringItems with real images from Product table
+      let updatedCount = 0;
+      const updatedCateringItems = cateringItems.map(cateringItem => {
+        let realImageUrl = null;
+        
+        // First try: Direct squareProductId match
+        if (cateringItem.squareProductId && productImageMap.has(cateringItem.squareProductId)) {
+          realImageUrl = productImageMap.get(cateringItem.squareProductId);
+        }
+        // Second try: For size variants (Small/Large), match with base item name
+        else if (cateringItem.name.includes(' - ')) {
+          const baseName = cateringItem.name.split(' - ')[0].toLowerCase();
+          if (baseItemImageMap.has(baseName)) {
+            realImageUrl = baseItemImageMap.get(baseName);
+          }
+        }
+        
+        if (realImageUrl) {
+          const isGenericImage = cateringItem.imageUrl?.includes('/images/catering/') && 
+                                 (cateringItem.imageUrl.includes('appetizer-package') || 
+                                  cateringItem.imageUrl.includes('default-item'));
+          
+          if (isGenericImage || !cateringItem.imageUrl) {
+            updatedCount++;
+            return {
+              ...cateringItem,
+              imageUrl: realImageUrl
+            };
+          }
+        }
+        
+        return cateringItem;
+      });
+      
+      if (updatedCount > 0) {
+        console.log(`🔄 [CATERING] Updated ${updatedCount} items with real images from Product table`);
+      }
+
+      // Convert remaining Product items that don't have CateringItem equivalents
+      const productAsCateringItems: CateringItem[] = cateringProducts
+        .filter(product => {
+          // Skip products that already have CateringItem equivalents  
+          const existsInCateringItems = cateringItems.some(cateringItem => 
+            cateringItem.squareProductId === product.squareId
+          );
+          
+          return !existsInCateringItems;
+        })
+        .map(product => {
+          // Determine category based on the Square category name
+          let category = 'STARTER'; // default
+          const categoryName = product.category?.name?.toUpperCase() || '';
+          
+          if (categoryName.includes('DESSERT')) {
+            category = 'DESSERT';
+          } else if (categoryName.includes('ENTREE') || categoryName.includes('BUFFET')) {
+            category = 'ENTREE';
+          } else if (categoryName.includes('SIDE')) {
+            category = 'SIDE';
+          } else if (categoryName.includes('SALAD')) {
+            category = 'SALAD';
+          } else if (categoryName.includes('BEVERAGE')) {
+            category = 'BEVERAGE';
+          }
+
+          // Same logic as admin: get first image if available
+          const firstImage = (product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : null;
+
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description || '',
+            price: Number(product.price),
+            category: category as any,
+            isVegetarian: false,
+            isVegan: false,
+            isGlutenFree: false,
+            servingSize: null,
+            imageUrl: firstImage,
+            isActive: true,
+            squareCategory: product.category?.name || null,
+            squareProductId: product.squareId,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt
+          } as CateringItem;
+        });
+
+      console.log(`✅ [CATERING] Converted ${productAsCateringItems.length} products to catering items`);
+
+      // Merge the results - updated catering items first, then new products
+      const allItems = [...updatedCateringItems, ...productAsCateringItems];
+      
+      console.log(`✅ [CATERING] Total items returned: ${allItems.length} (${updatedCateringItems.length} from CateringItem + ${productAsCateringItems.length} from Product)`);
+      
+      return allItems;
+
+    } catch (productError) {
+      console.error('❌ [CATERING] Error fetching products from Product table:', productError);
+      // Return just the catering items if product fetch fails
+      return cateringItems;
+    }
 
   } catch (error) {
     console.error('❌ [CATERING] Unexpected error fetching catering items:', error);

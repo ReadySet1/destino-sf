@@ -62,7 +62,7 @@ export function SyncSquareButton() {
       
       const imageResult = await imageResponse.json();
       
-      // Step 4: Protect/restore catering images
+      // Step 4: Update catering images with real images from Product table
       const protectionResponse = await fetch('/api/catering/protect-images', {
         method: 'POST',
         headers: {
@@ -74,7 +74,7 @@ export function SyncSquareButton() {
       let protectionResult = { protected: 0, skipped: 0, errors: 0 };
       if (protectionResponse.ok) {
         protectionResult = await protectionResponse.json();
-        console.log(`Protected ${protectionResult.protected} catering images`);
+        console.log(`Updated ${protectionResult.protected} catering items with real images`);
       }
       
       // Step 5: Restore appetizer packages and catering menu
@@ -116,7 +116,7 @@ export function SyncSquareButton() {
         const successMessage = [
           `Successfully synced ${result.syncedProducts} products`,
           `updated ${imageResult.results?.updated || 0} images`,
-          `protected ${protectionResult.protected} catering images`
+          `updated ${protectionResult.protected} catering items with real images`
         ];
         
         if (cateringSetupResult.success) {
@@ -143,7 +143,7 @@ export function SyncSquareButton() {
         className="gap-2 bg-green-600 hover:bg-green-700 text-white"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Sync Products, Images & Catering Menu
+        Sync Products, Images & Update Catering
       </Button>
       
       {stats && (
@@ -185,7 +185,7 @@ export function SyncSquareButton() {
             <p>Unchanged: {stats.imagesNoChange}</p>
             <p>Errors: {stats.imagesErrors}</p>
             {stats.cateringImagesProtected !== undefined && (
-              <p className="text-green-600">Catering images protected: {stats.cateringImagesProtected}</p>
+              <p className="text-green-600">Catering items updated with real images: {stats.cateringImagesProtected}</p>
             )}
           </div>
           
