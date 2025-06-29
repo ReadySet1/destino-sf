@@ -64,6 +64,7 @@ export const signUpAction = async (formData: FormData) => {
 export const signInAction = async (formData: FormData) => {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const redirectUrl = formData.get('redirect') as string;
   const supabase = await createClient();
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -134,12 +135,12 @@ export const signInAction = async (formData: FormData) => {
     }
   }
 
-  // Profile fetched or created successfully, perform redirect based on role
+  // Profile fetched or created successfully, perform redirect based on role and redirect parameter
   if (profile.role === UserRole.ADMIN) { // Use Prisma enum for role comparison
     return redirect('/admin');
   } else {
-    // Redirect non-admins to the menu page
-    return redirect('/menu'); // Changed from '/products'
+    // For non-admin users, use the redirect URL if provided, otherwise default to menu
+    return redirect(redirectUrl || '/menu');
   }
 };
 

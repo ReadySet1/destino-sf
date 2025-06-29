@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Product, Variant } from '@/types/product';
+import { Product } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -36,13 +36,49 @@ const formatPrice = (price: any): string => {
   return Number(price).toFixed(2);
 };
 
+// Helper function to create short, card-appropriate descriptions
+const getShortDescription = (productName: string, fullDescription?: string): string => {
+  const name = productName.toLowerCase();
+  
+  // Create concise descriptions based on product name
+  if (name.includes('argentine beef') || name.includes('carne asada')) {
+    return 'Traditional Argentine beef empanadas with ground beef, pimiento and spices.';
+  }
+  
+  if (name.includes('caribbean pork') || name.includes('pork')) {
+    return 'Flavorful Caribbean pork empanadas with ground pork and black beans.';
+  }
+  
+  if (name.includes('combo')) {
+    return 'Mix and match your favorite empanada flavors in one convenient pack.';
+  }
+  
+  if (name.includes('chicken') || name.includes('pollo')) {
+    return 'Tender chicken empanadas seasoned with Latin spices.';
+  }
+  
+  if (name.includes('vegetarian') || name.includes('veggie')) {
+    return 'Plant-based empanadas filled with fresh vegetables and herbs.';
+  }
+  
+  if (name.includes('alfajor')) {
+    return 'Buttery shortbread cookies filled with rich dulce de leche.';
+  }
+  
+  // If no specific match, truncate the original description or create a generic one
+  if (fullDescription && fullDescription.length > 0) {
+    const truncated = fullDescription.length > 60 
+      ? fullDescription.substring(0, 60).trim() + '...'
+      : fullDescription;
+    return truncated;
+  }
+  
+  return 'Handcrafted with premium ingredients and traditional recipes.';
+};
+
 export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
-    product.variants && product.variants.length > 0 ? product.variants[0] : null
-  );
-
-  const displayPrice = selectedVariant?.price || product.price;
+  const displayPrice = product.price;
   
   // Use image utilities to determine if we should show placeholder
   const imageConfig = getProductImageConfig(
@@ -76,14 +112,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     addItem({
       id: productId, 
-      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ''),
+      name: product.name,
       price: priceToAdd,
       quantity: 1,
       image: mainImage,
-      variantId: selectedVariant?.id,
+      variantId: undefined,
     });
     
-    showAlert(`1 ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""} has been added to your cart.`);
+    showAlert(`1 ${product.name} has been added to your cart.`);
   };
 
   return (
@@ -130,34 +166,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
         
-        {product.description && (
-          <p className="text-sm text-gray-600 line-clamp-3 flex-grow mb-4">
-            {product.description}
-          </p>
-        )}
+        <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">
+          {getShortDescription(product.name, product.description || undefined)}
+        </p>
 
         <div className="mt-auto">
-          {product.variants && product.variants.length > 0 && (
-            <div className="mb-3">
-              <select
-                className="w-full border border-gray-300 rounded-md py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                value={selectedVariant?.id || ''}
-                onChange={(e) => {
-                  const variant = product.variants?.find(v => v.id === e.target.value);
-                  setSelectedVariant(variant || null);
-                }}
-              >
-                {product.variants
-                  .filter(variant => variant.id)
-                  .map((variant) => (
-                                      <option key={variant.id} value={variant.id}>
-                    {variant.name} - ${formatPrice(variant.price || product.price)}
-                  </option>
-                  ))}
-              </select>
-            </div>
-          )}
-
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-gray-900">
               ${formatPrice(displayPrice)}

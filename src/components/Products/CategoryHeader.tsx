@@ -45,7 +45,7 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
       {description && (
         <div className="max-w-[1400px] mx-auto px-4 py-8">
           <p
-            className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4"
+            className="mx-auto mt-3 text-xl text-slate-700 sm:mt-4 text-center"
             style={{ fontStyle: 'italic' }}
           >
             {description}

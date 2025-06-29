@@ -5,9 +5,21 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, User, ShoppingBag, CalendarDays, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  CheckCircle2, 
+  User, 
+  ShoppingBag, 
+  CalendarDays, 
+  FileText, 
+  Eye,
+  ArrowRight,
+  Phone,
+  Mail,
+  Clock
+} from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, getBoxedLunchImage } from '@/lib/utils';
 
 interface OrderItem {
   id: string;
@@ -47,6 +59,7 @@ function ConfirmationContent() {
   const isSquareRedirect = searchParams.has('status') && searchParams.has('orderId');
   const squareStatus = searchParams.get('status');
   const squareOrderId = searchParams.get('orderId');
+  const orderId = searchParams.get('orderId'); // Get order ID for details link
 
   useEffect(() => {
     async function loadUserData() {
@@ -111,117 +124,224 @@ function ConfirmationContent() {
   if (isLoading) {
     return (
       <div className="container py-12 text-center">
-        <p>Loading confirmation...</p>
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="container py-12">
-      <div className="max-w-lg mx-auto text-center">
-        <Card className="border-2 border-green-100 shadow-md">
-          <CardHeader className="pb-2">
-            <div className="flex justify-center mb-4">
-              <CheckCircle2 className="h-16 w-16 text-green-500" />
+      <div className="max-w-4xl mx-auto">
+        {/* Success Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <CheckCircle2 className="h-16 w-16 text-green-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Thank You for Your Order!</h1>
+          <p className="text-gray-600">Your catering order has been received and is being processed.</p>
+        </div>
+
+        {/* Payment Success Alert */}
+        {isSquareRedirect && squareStatus === 'success' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <span className="font-semibold text-green-800">Your payment has been processed successfully!</span>
             </div>
-            <CardTitle className="text-2xl">Thank You for Your Order!</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            {userData && (
-              <div className="bg-blue-50 p-4 rounded-md mb-4 text-left">
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4 text-blue-500" />
-                  <h3 className="font-semibold text-blue-800">Order Placed By</h3>
-                </div>
-                <div className="text-sm text-blue-700 space-y-1">
-                  {userData.name && <p><span className="font-medium">Name:</span> {userData.name}</p>}
-                  {userData.email && <p><span className="font-medium">Email:</span> {userData.email}</p>}
-                  {userData.phone && <p><span className="font-medium">Phone:</span> {userData.phone}</p>}
-                </div>
-              </div>
+            {squareOrderId && (
+              <p className="text-sm text-green-700 mt-1">
+                Order ID: <code className="bg-green-200 px-2 py-1 rounded text-xs">{squareOrderId}</code>
+              </p>
             )}
-            
-            {orderData && (
-              <div className="bg-green-50 p-4 rounded-md mb-4 text-left">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShoppingBag className="h-4 w-4 text-green-600" />
-                  <h3 className="font-semibold text-green-800">Order Details</h3>
-                </div>
-                
-                <div className="text-sm text-green-700 space-y-1 mb-3">
-                  <div className="flex items-start">
-                    <div className="bg-green-100 p-1 rounded-full mr-2">
-                      <CalendarDays className="text-green-700 h-3 w-3" />
-                    </div>
-                    <p><span className="font-medium">Event Date:</span> {formatDate(new Date(orderData.eventDetails.eventDate))}</p>
-                  </div>
-                  
-                  {orderData.eventDetails.specialRequests && (
-                    <div className="flex items-start">
-                      <div className="bg-green-100 p-1 rounded-full mr-2">
-                        <FileText className="text-green-700 h-3 w-3" />
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {/* Order Summary */}
+          <div className="md:col-span-2">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5" />
+                  Order Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {orderData && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <CalendarDays className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-sm text-gray-600 font-medium">Event Date</p>
+                        <p className="text-gray-900">{formatDate(new Date(orderData.eventDetails.eventDate))}</p>
                       </div>
-                      <p><span className="font-medium">Special Requests:</span> {orderData.eventDetails.specialRequests}</p>
                     </div>
-                  )}
-                </div>
+                    
+                    {orderData.eventDetails.specialRequests && (
+                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FileText className="h-5 w-5 text-gray-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-600 font-medium">Special Requests</p>
+                          <p className="text-gray-900 text-sm">{orderData.eventDetails.specialRequests}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t border-gray-200 pt-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Items Ordered</h4>
+                      <div className="space-y-3">
+                        {orderData.items.map((item, index) => (
+                          <div key={index} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                            <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden">
+                              <img
+                                src={getBoxedLunchImage(item.name)}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/images/catering/default-item.jpg';
+                                }}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-medium text-gray-900 truncate">{item.name}</h5>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {item.metadata?.type === 'package' ? 'Package' : 'Item'}
+                                </Badge>
+                                <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-gray-900">
+                                {formatCurrency(item.finalPrice || (item.price * item.quantity))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="border-t border-gray-200 mt-4 pt-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-bold text-gray-900">Total:</span>
+                          <span className="text-lg font-bold text-gray-900">{formatCurrency(orderData.totalAmount)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Customer Info & Next Steps */}
+          <div className="space-y-6">
+            {/* Customer Information */}
+            {userData && (
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <User className="h-5 w-5" />
+                    Customer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {userData.name && (
+                      <div className="flex items-center gap-3">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-900">{userData.name}</span>
+                      </div>
+                    )}
+                    {userData.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-900">{userData.email}</span>
+                      </div>
+                    )}
+                    {userData.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-900">{userData.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+                         {/* What&apos;s Next */}
+            <Card className="shadow-sm">
+              <CardHeader>
+                                 <CardTitle className="flex items-center gap-2 text-lg">
+                   <Clock className="h-5 w-5" />
+                   What&apos;s Next?
+                 </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  A member of our team will reach out to you within 24 hours to confirm 
+                  all the details of your order and answer any questions you might have.
+                </p>
                 
-                <div className="border-t border-green-200 pt-2">
-                  <h4 className="font-medium text-green-800 mb-1">Items Ordered:</h4>
-                  <ul className="space-y-1">
-                    {orderData.items.map((item, index) => (
-                      <li key={index} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                        <span>{formatCurrency(item.finalPrice || (item.price * item.quantity))}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="border-t border-green-200 mt-2 pt-2 font-medium flex justify-between">
-                    <span>Total:</span>
-                    <span>{formatCurrency(orderData.totalAmount)}</span>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>Please check your email for a confirmation of your order.</p>
+                  <div className="pt-2 border-t border-gray-200">
+                    <p className="font-medium text-gray-700 mb-1">For urgent inquiries:</p>
+                    <div className="space-y-1">
+                      <a href="tel:415-525-4448" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
+                        <Phone className="h-3 w-3" />
+                        415-525-4448
+                      </a>
+                      <a href="mailto:catering@destinosf.com" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
+                        <Mail className="h-3 w-3" />
+                        catering@destinosf.com
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            {isSquareRedirect && squareStatus === 'success' && (
-              <div className="bg-green-50 p-4 rounded-md mb-4 text-left">
-                <p className="text-green-800 font-medium">Your payment has been processed successfully!</p>
-                <p className="text-sm text-green-700 mt-1">Order ID: {squareOrderId}</p>
-              </div>
-            )}
-            
-            <p className="text-gray-600 mb-4">
-              Your catering order has been received and is being processed.
-            </p>
-            
-            <div className="bg-gray-50 p-4 rounded-md mb-4">
-              <h3 className="font-semibold mb-1">What&apos;s Next?</h3>
-              <p className="text-sm text-gray-600">
-                A member of our team will reach out to you within 24 hours to confirm 
-                all the details of your order and answer any questions you might have.
-              </p>
-            </div>
-            
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>Please check your email for a confirmation of your order.</p>
-              <p>
-                For urgent inquiries, contact us at <span className="font-semibold">415-525-4448</span> or email us at{' '}
-                <a href="mailto:catering@destinosf.com" className="text-blue-600 hover:underline">
-                  catering@destinosf.com
-                </a>
-              </p>
-            </div>
-          </CardContent>
-          <CardFooter className="justify-center space-x-4 pt-2">
-            <Link href="/catering">
-              <Button variant="outline">Return to Catering Menu</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* View Order Details Button - only show if we have an orderId */}
+          {orderId && (
+            <Link href={`/account/order/${orderId}`}>
+              <Button 
+                size="lg" 
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Order Details
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
-            <Link href="/">
-              <Button className="bg-[#2d3538] hover:bg-[#2d3538]/90">Back to Home</Button>
-            </Link>
-          </CardFooter>
-        </Card>
+          )}
+          
+          <Link href="/catering">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            >
+              Return to Catering Menu
+            </Button>
+          </Link>
+          
+          <Link href="/">
+            <Button 
+              size="lg" 
+              className="w-full sm:w-auto bg-[#2d3538] hover:bg-[#2d3538]/90 text-white"
+            >
+              Back to Home
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -229,7 +349,15 @@ function ConfirmationContent() {
 
 export default function CateringConfirmation() {
   return (
-    <Suspense fallback={<div className="container py-12 text-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="container py-12 text-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-48 mx-auto mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
+        </div>
+      </div>
+    }>
       <ConfirmationContent />
     </Suspense>
   );

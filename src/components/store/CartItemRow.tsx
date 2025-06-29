@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { QuantityStepper } from './QuantityStepper';
 import { CartItem } from '@/store/cart';
 import { CateringCartItem } from '@/store/catering-cart';
+import { getBoxedLunchImage } from '@/lib/utils';
 
 interface CartItemRowProps {
   item: CartItem | CateringCartItem;
@@ -12,13 +13,43 @@ interface CartItemRowProps {
 }
 
 export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowProps) {
+  // Function to get the appropriate image for the item
+  const getItemImage = (): string | null => {
+    // If item already has an image, use it
+    if (item.image) {
+      return item.image;
+    }
+    
+    // Check if this is a boxed lunch item by examining variantId metadata
+    if (item.variantId) {
+      try {
+        const metadata = JSON.parse(item.variantId);
+        if (metadata.type === 'boxed-lunch') {
+          // Use getBoxedLunchImage to get the protein-specific image
+          return getBoxedLunchImage(item.name);
+        }
+      } catch (e) {
+        // If JSON parsing fails, continue with default logic
+      }
+    }
+    
+    // For non-boxed lunch items without images, check if name suggests it's a boxed lunch
+    if (item.name.toLowerCase().includes('tier')) {
+      return getBoxedLunchImage(item.name);
+    }
+    
+    return null;
+  };
+
+  const itemImage = getItemImage();
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center p-4">
       {/* Product Image */}
       <div className="mr-4 flex-shrink-0">
         <div className="relative h-16 w-16 overflow-hidden rounded-md bg-gray-200">
-          {item.image ? (
-            <Image src={item.image} alt={item.name} fill className="object-cover" />
+          {itemImage ? (
+            <Image src={itemImage} alt={item.name} fill className="object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span className="text-xs text-gray-500">No image</span>

@@ -11,6 +11,7 @@ import { AuthContainer } from '@/components/auth-container';
 type ResolvedSearchParams = {
   message?: string;
   error?: string;
+  redirect?: string;
 };
 
 export default async function Login({
@@ -23,6 +24,7 @@ export default async function Login({
   const message = resolvedSearchParams.message || resolvedSearchParams.error;
   // Determine message type based on which parameter is present
   const messageType = resolvedSearchParams.error ? 'error' : 'success';
+  const redirectUrl = resolvedSearchParams.redirect;
 
   return (
     <AuthContainer 
@@ -31,6 +33,9 @@ export default async function Login({
     >
       <div className="pt-2">
         <form action={signInAction} className="space-y-5">
+          {redirectUrl && (
+            <input type="hidden" name="redirect" value={redirectUrl} />
+          )}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">

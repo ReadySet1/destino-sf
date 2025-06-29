@@ -8,6 +8,7 @@ import { logger } from '@/utils/logger';
 import { CateringStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
+import { getBoxedLunchImage } from '@/lib/utils';
 
 // Define types for serialized data
 interface SerializedCateringOrderItem {
@@ -321,47 +322,53 @@ const CateringOrderDetailsPage = async ({ params }: PageProps) => {
         {/* Order Items */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4">Items Ordered ({serializedOrder?.items?.length || 0})</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Price/Unit</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {serializedOrder?.items && serializedOrder.items.length > 0 ? 
-                  serializedOrder.items.map((item: SerializedCateringOrderItem) => {
-                    return (
-                      <tr key={item.id || 'unknown'}>
-                        <td className="px-4 py-3 whitespace-nowrap">{item.name || 'N/A'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge className={`text-xs ${item.itemType === 'package' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {item.itemType === 'package' ? 'PACKAGE' : 'ITEM'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{item.quantity}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(item.pricePerUnit)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">{formatCurrency(item.totalPrice)}</td>
-                      </tr>
-                    );
-                  }) 
-                : <tr><td colSpan={5} className="px-4 py-3 text-center">No items found</td></tr>}
-              </tbody>
-              <tfoot>
-                <tr className="font-semibold">
-                  <td colSpan={4} className="px-4 py-3 text-right">Subtotal:</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
-                </tr>
-                <tr className="font-bold text-base">
-                  <td colSpan={4} className="px-4 py-3 text-right">Grand Total:</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
-                </tr>
-              </tfoot>
-            </table>
+          <div className="space-y-4">
+            {serializedOrder?.items && serializedOrder.items.length > 0 ? 
+              serializedOrder.items.map((item: SerializedCateringOrderItem) => {
+                return (
+                  <div key={item.id || 'unknown'} className="flex items-center gap-4 p-4 border rounded-lg">
+                    {/* Item Image */}
+                    <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
+                      <img
+                        src={getBoxedLunchImage(item.name || '')}
+                        alt={item.name || 'Catering item'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/images/catering/default-item.jpg';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Item Details */}
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{item.name || 'N/A'}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className={`text-xs ${item.itemType === 'package' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {item.itemType === 'package' ? 'PACKAGE' : 'ITEM'}
+                        </Badge>
+                        <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Pricing */}
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">{formatCurrency(item.pricePerUnit)} each</div>
+                      <div className="font-medium text-gray-900">{formatCurrency(item.totalPrice)}</div>
+                    </div>
+                  </div>
+                );
+              }) 
+            : (
+              <div className="text-center py-8 text-gray-500">No items found</div>
+            )}
+            
+            {/* Order Total */}
+            <div className="border-t pt-4 mt-6">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-bold text-gray-900">Grand Total:</span>
+                <span className="text-lg font-bold text-gray-900">{formatCurrency(orderTotal)}</span>
+              </div>
+            </div>
           </div>
         </div>
 

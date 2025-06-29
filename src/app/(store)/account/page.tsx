@@ -18,17 +18,17 @@ export default async function AccountPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto py-16 text-center">
           <div className="mx-auto max-w-md">
             <div className="mb-8 flex justify-center">
-              <div className="rounded-full bg-amber-100 p-6">
-                <User className="h-12 w-12 text-amber-600" />
+              <div className="rounded-full bg-gray-100 p-6">
+                <User className="h-12 w-12 text-gray-600" />
               </div>
             </div>
             <h1 className="mb-4 text-3xl font-bold text-gray-900">Welcome to Your Account</h1>
             <p className="mb-8 text-gray-600">Please sign in to access your account and order history.</p>
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+            <Button asChild size="lg" className="bg-[#2d3538] hover:bg-[#2d3538]/90">
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </div>
@@ -85,7 +85,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8 px-4">
         {/* Header Section */}
         <div className="mb-8">
@@ -99,7 +99,7 @@ export default async function AccountPage() {
             <Button
               onClick={handleSignOut}
               variant="outline"
-              className="self-start sm:self-auto border-gray-300 hover:bg-gray-50"
+              className="self-start sm:self-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             >
               <Settings className="h-4 w-4 mr-2" />
               Sign Out
@@ -109,10 +109,10 @@ export default async function AccountPage() {
 
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-amber-200 hover:shadow-lg transition-shadow">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Total Orders</CardTitle>
-              <Package className="h-4 w-4 text-amber-600" />
+              <Package className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{orderCount}</div>
@@ -120,10 +120,10 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-200 hover:shadow-lg transition-shadow">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Recent Orders</CardTitle>
-              <Clock className="h-4 w-4 text-orange-600" />
+              <Clock className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{recentOrders}</div>
@@ -131,10 +131,10 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-white/80 backdrop-blur-sm border-amber-200 hover:shadow-lg transition-shadow">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Account Status</CardTitle>
-              <User className="h-4 w-4 text-amber-600" />
+              <User className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">Active</div>
@@ -145,31 +145,31 @@ export default async function AccountPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Button asChild variant="outline" className="h-auto p-4 flex-col bg-white/80 backdrop-blur-sm border-amber-200 hover:bg-amber-50">
+          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
             <Link href="/menu">
-              <ShoppingBag className="h-6 w-6 mb-2 text-amber-600" />
+              <ShoppingBag className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Browse Menu</span>
               <span className="text-xs text-gray-500 mt-1">Order food</span>
             </Link>
           </Button>
           
-          <Button asChild variant="outline" className="h-auto p-4 flex-col bg-white/80 backdrop-blur-sm border-orange-200 hover:bg-orange-50">
+          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
             <Link href="/catering">
-              <Calendar className="h-6 w-6 mb-2 text-orange-600" />
+              <Calendar className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Catering</span>
               <span className="text-xs text-gray-500 mt-1">Plan events</span>
             </Link>
           </Button>
           
-          <Button asChild variant="outline" className="h-auto p-4 flex-col bg-white/80 backdrop-blur-sm border-amber-200 hover:bg-amber-50">
+          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
             <Link href="/account/orders">
-              <Package className="h-6 w-6 mb-2 text-amber-600" />
+              <Package className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">All Orders</span>
               <span className="text-xs text-gray-500 mt-1">Full history</span>
             </Link>
           </Button>
           
-          <Button asChild variant="outline" className="h-auto p-4 flex-col bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-gray-50">
+          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
             <Link href="/contact">
               <User className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Contact Us</span>
@@ -182,10 +182,10 @@ export default async function AccountPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Section */}
           <div className="lg:col-span-1">
-            <Card className="bg-white/90 backdrop-blur-sm border-amber-200 shadow-lg">
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <User className="h-5 w-5 text-amber-600" />
+                  <User className="h-5 w-5 text-gray-600" />
                   Profile Information
                 </CardTitle>
                 <CardDescription>
@@ -200,19 +200,19 @@ export default async function AccountPage() {
 
           {/* Order History Section */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/90 backdrop-blur-sm border-orange-200 shadow-lg">
+            <Card className="shadow-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <Package className="h-5 w-5 text-orange-600" />
+                      <Package className="h-5 w-5 text-gray-600" />
                       Recent Orders
                     </CardTitle>
                     <CardDescription>
                       Your recent orders and their status
                     </CardDescription>
                   </div>
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
                     <Link href="/account/orders">
                       View All
                     </Link>
@@ -229,7 +229,7 @@ export default async function AccountPage() {
         {/* Footer Section */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            Need help? <Link href="/contact" className="text-amber-600 hover:text-amber-700 font-medium">Contact our support team</Link>
+            Need help? <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">Contact our support team</Link>
           </p>
         </div>
       </div>

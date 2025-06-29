@@ -52,7 +52,7 @@ export default async function CateringCheckoutPage() {
             <Alert className="mb-6 bg-blue-50 border-blue-200">
               <UserIcon className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
-                <Link href="/auth/login?redirect=/catering/checkout" className="font-medium underline">
+                <Link href="/sign-in?redirect=/catering/checkout" className="font-medium underline">
                   Log in to your account
                 </Link> to pre-fill your contact information.
               </AlertDescription>

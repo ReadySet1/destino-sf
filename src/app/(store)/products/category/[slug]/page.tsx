@@ -204,16 +204,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
  * Assumes the Category model has a unique 'slug' field.
  */
 export async function generateStaticParams() {
-  // During build time, if database is not accessible, return fallback slugs
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    console.log('Build phase detected, using fallback category slugs');
-    return [
-      { slug: 'empanadas' },
-      { slug: 'alfajores' },
-      { slug: 'catering' }
-    ];
-  }
-
   try {
     const categories = await prisma.category.findMany({
       select: {
@@ -236,11 +226,8 @@ export async function generateStaticParams() {
       }));
   } catch (error) {
     console.error('Failed to generate static params for category pages:', error);
-    // Return fallback slugs in case of database connection error
-    return [
-      { slug: 'empanadas' },
-      { slug: 'alfajores' },
-      { slug: 'catering' }
-    ];
+    // Return an empty array in case of error to prevent build failure
+    // Or handle the error more gracefully depending on requirements
+    return [];
   }
 }

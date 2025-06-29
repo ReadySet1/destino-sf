@@ -170,7 +170,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         price: item.price,
         quantity,
         variantId: JSON.stringify(metadata),
-        image: undefined
+        image: getProteinImage(selectedProtein)
       });
 
       toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to catering cart!`);

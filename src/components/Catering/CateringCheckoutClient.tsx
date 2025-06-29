@@ -692,6 +692,23 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 // Function to get the correct image URL with better fallbacks
                 const getImageUrl = (imageUrl: string | undefined): string => {
                   if (!imageUrl) {
+                    // Handle boxed lunch items with protein selection
+                    if (metadata.type === 'boxed-lunch' && metadata.selectedProtein) {
+                      const proteinImageMap: Record<string, string> = {
+                        'CARNE_ASADA': '/images/boxedlunches/carne-asada.png',
+                        'POLLO_AL_CARBON': '/images/boxedlunches/pollo-carbon.png',
+                        'CARNITAS': '/images/boxedlunches/carnitas.png',
+                        'POLLO_ASADO': '/images/boxedlunches/pollo-asado.png',
+                        'PESCADO': '/images/boxedlunches/pescado.png',
+                        'VEGETARIAN_OPTION': '/images/boxedlunches/vegetarian-option.png',
+                      };
+                      
+                      const proteinImage = proteinImageMap[metadata.selectedProtein];
+                      if (proteinImage) {
+                        return proteinImage;
+                      }
+                    }
+                    
                     // Check if it's an appetizer package or item
                     if (metadata.type === 'appetizer-package' || item.name.toLowerCase().includes('appetizer')) {
                       return '/images/catering/appetizer-selection.jpg';

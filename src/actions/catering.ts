@@ -699,12 +699,51 @@ export type ServerActionResult<T = unknown> = Promise<
  * Formats phone numbers for Square API compatibility (E.164 format)
  * Square API requires phone numbers in E.164 format: +[country code][number]
  * Maximum 15 digits total, no spaces or special characters except +
+ * 
+ * For Sandbox environment, Square requires specific test phone numbers:
+ * Format: +1<valid-area-code>555<any-four-digits>
+ * Example: +14255551111
  */
 function formatPhoneForSquare(phone: string): string {
   if (!phone || typeof phone !== 'string') {
     throw new Error('Phone number is required and must be a string');
   }
 
+  // Check if we're in Sandbox environment
+  const isSquareSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
+  
+  if (isSquareSandbox) {
+    // For Sandbox, use Square's required test phone number format
+    // Extract area code from the phone number if possible, otherwise use a default
+    const cleanPhone = phone.replace(/\D/g, '');
+    let areaCode = '425'; // Default valid area code
+    
+    // Try to extract area code from 10 or 11 digit numbers
+    if (cleanPhone.length === 10) {
+      areaCode = cleanPhone.substring(0, 3);
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+      areaCode = cleanPhone.substring(1, 4);
+    }
+    
+    // Validate area code is reasonable (not starting with 0 or 1)
+    if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
+      areaCode = '425'; // Use default valid area code
+    }
+    
+    // Use last 4 digits if available, otherwise generate random
+    let lastFour = '1111'; // Default
+    if (cleanPhone.length >= 4) {
+      const digits = cleanPhone.slice(-4);
+      lastFour = digits.padStart(4, '1');
+    }
+    
+    // Format for Square Sandbox: +1<area-code>555<four-digits>
+    const formattedPhone = `+1${areaCode}555${lastFour}`;
+    console.log(`Sandbox: Phone formatted from ${phone} to ${formattedPhone}`);
+    return formattedPhone;
+  }
+
+  // Production environment - use standard E.164 formatting
   // Remove all non-digit characters except + at the beginning
   let cleanPhone = phone.trim();
   

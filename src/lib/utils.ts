@@ -321,4 +321,31 @@ export function toTitleCase(str: string): string {
 export function capitalizeFirst(str: string): string {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Get the appropriate image for a boxed lunch item based on its name or protein type
+ */
+export function getBoxedLunchImage(itemName: string): string {
+  const name = itemName.toLowerCase();
+  
+  // Map protein names to their images
+  const proteinImageMap: Record<string, string> = {
+    'carne asada': '/images/boxedlunches/carne-asada.png',
+    'pollo al carbón': '/images/boxedlunches/pollo-carbon.png',
+    'carnitas': '/images/boxedlunches/carnitas.png',
+    'pollo asado': '/images/boxedlunches/pollo-asado.png',
+    'pescado': '/images/boxedlunches/pescado.png',
+    'vegetarian': '/images/boxedlunches/vegetarian-option.png',
+  };
+  
+  // Check for matches in the item name
+  for (const [protein, imagePath] of Object.entries(proteinImageMap)) {
+    if (name.includes(protein)) {
+      return imagePath;
+    }
+  }
+  
+  // Fallback to default catering image
+  return '/images/catering/default-item.jpg';
 } 
