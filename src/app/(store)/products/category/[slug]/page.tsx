@@ -55,9 +55,9 @@ interface CategoryPageProps {
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   alfajores:
-    'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in- your-mouth texture. Whether you are gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+    "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
   empanadas:
-    'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
+    'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious.',
 };
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
@@ -146,8 +146,18 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <main className="flex-1 bg-white">
         {/* Use the fetched category data */}
         <CategoryHeader
-          title={category.name}
-          description={category.description || CATEGORY_DESCRIPTIONS[slug] || ''} // Use DB description or fallback
+          title={
+            slug === 'alfajores'
+              ? 'OUR ALFAJORES'
+              : slug === 'empanadas'
+                ? 'OUR EMPANADAS'
+                : category.name
+          }
+          description={
+            slug === 'alfajores' || slug === 'empanadas'
+              ? CATEGORY_DESCRIPTIONS[slug]
+              : category.description || CATEGORY_DESCRIPTIONS[slug] || ''
+          } // Use custom description for alfajores and empanadas
         />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
@@ -169,7 +179,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
               <div className="py-6 lg:py-10">
                 <ProductGrid
                   products={products}
-                  title={`${category.name} Products`}
+                  title={`${slug === 'alfajores' ? 'OUR ALFAJORES' : slug === 'empanadas' ? 'OUR EMPANADAS' : category.name} Products`}
                   showFilters={true}
                 />
               </div>
