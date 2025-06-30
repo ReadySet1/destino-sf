@@ -18,6 +18,15 @@ export async function GET(request: NextRequest) {
     // Get the action from query param
     const action = request.nextUrl.searchParams.get('action') || '3'; // Default to list only
     
+    // Check if Square client is available
+    if (!squareClient || !squareClient.catalogApi) {
+      logger.error('Square client or catalogApi not available');
+      return NextResponse.json(
+        { error: 'Square client not properly configured' },
+        { status: 500 }
+      );
+    }
+    
     // First get all Square catalog items to know what's valid
     logger.info('Fetching all Square catalog items...');
     const requestBody = {

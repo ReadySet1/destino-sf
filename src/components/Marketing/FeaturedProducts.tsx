@@ -114,7 +114,7 @@ function PersonalizeModal({ isOpen, onClose, pick }: PersonalizeModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
@@ -350,8 +350,10 @@ export function FeaturedProducts() {
             const activePicks = result.data
               .filter((pick: SpotlightPick) => pick.isActive)
               .sort((a: SpotlightPick, b: SpotlightPick) => a.position - b.position);
+            console.log('🎯 Loaded spotlight picks from API:', activePicks);
             setSpotlightPicks(activePicks);
           } else {
+            console.log('📋 Using fallback default picks');
             // Fallback to default hardcoded data
             setSpotlightPicks(getDefaultPicks());
           }
@@ -381,6 +383,7 @@ export function FeaturedProducts() {
       customTitle: 'Pride Alfajores',
       customPrice: 24.99,
       customImageUrl: '/images/assets/2Recurso 5.png',
+      personalizeText: 'Perfect for celebrating with pride! Add a personal message to make it extra special.',
     },
     {
       position: 2,
@@ -411,8 +414,14 @@ export function FeaturedProducts() {
   const handleProductClick = (e: React.MouseEvent, pick: SpotlightPick) => {
     e.preventDefault();
     
+    console.log('🔍 handleProductClick called with pick:', pick);
+    console.log('🔍 personalizeText:', pick.personalizeText);
+    console.log('🔍 showNewFeatureModal:', pick.showNewFeatureModal);
+    console.log('🔍 customTitle:', pick.customTitle);
+    
     // Check if this product should show new feature modal
     if (pick.showNewFeatureModal) {
+      console.log('🚀 Opening new feature modal');
       setSelectedNewFeaturePick(pick);
       setIsNewFeatureModalOpen(true);
       return;
@@ -421,12 +430,14 @@ export function FeaturedProducts() {
     // Check if this is a subscription product (you can customize this logic)
     if (pick.customTitle?.toLowerCase().includes('subscription') || 
         pick.product?.name?.toLowerCase().includes('subscription')) {
+      console.log('📅 Opening subscription modal');
       setIsModalOpen(true);
       return;
     }
     
     // Check if this product has personalize text and should open personalize modal
     if (pick.personalizeText) {
+      console.log('✨ Opening personalize modal with text:', pick.personalizeText);
       setSelectedPersonalizePick(pick);
       setIsPersonalizeModalOpen(true);
       return;
@@ -434,6 +445,7 @@ export function FeaturedProducts() {
     
     // Check if there's a custom link
     if (pick.customLink) {
+      console.log('🔗 Opening custom link:', pick.customLink);
       if (pick.customLink.startsWith('http')) {
         window.open(pick.customLink, '_blank');
       } else {
@@ -444,6 +456,7 @@ export function FeaturedProducts() {
     
     // For other custom items, we can add more logic here
     // For now, just show an alert
+    console.log('🚫 No special action, showing alert');
     alert(`Clicked on ${pick.isCustom ? pick.customTitle : pick.product?.name}`);
   };
 

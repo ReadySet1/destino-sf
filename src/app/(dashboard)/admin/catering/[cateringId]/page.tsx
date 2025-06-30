@@ -9,6 +9,7 @@ import { CateringStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import { getBoxedLunchImage } from '@/lib/utils';
+import { OrderItemImage } from '@/components/ui/order-item-image';
 
 // Define types for serialized data
 interface SerializedCateringOrderItem {
@@ -329,13 +330,10 @@ const CateringOrderDetailsPage = async ({ params }: PageProps) => {
                   <div key={item.id || 'unknown'} className="flex items-center gap-4 p-4 border rounded-lg">
                     {/* Item Image */}
                     <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <img
+                      <OrderItemImage
                         src={getBoxedLunchImage(item.name || '')}
                         alt={item.name || 'Catering item'}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = '/images/catering/default-item.jpg';
-                        }}
                       />
                     </div>
                     

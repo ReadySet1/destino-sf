@@ -72,11 +72,29 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         setIsModalOpen(false);
         toast.success('Spotlight pick saved successfully!');
       } else {
-        toast.error(result.error || 'Failed to save spotlight pick');
+        // Display detailed error messages from the API
+        const errorMessage = result.error || 'Failed to save spotlight pick';
+        
+        // If there are validation errors, show them in a more user-friendly way
+        if (result.validationErrors && Array.isArray(result.validationErrors)) {
+          console.log('Validation errors:', result.validationErrors);
+          toast.error(errorMessage, {
+            duration: 6000,
+            style: {
+              whiteSpace: 'pre-line',
+            },
+          });
+        } else {
+          toast.error(errorMessage);
+        }
       }
     } catch (error) {
       console.error('Error saving spotlight pick:', error);
-      toast.error('An error occurred while saving');
+      if (error instanceof Error) {
+        toast.error(`Network error: ${error.message}`);
+      } else {
+        toast.error('An error occurred while saving. Please check your connection and try again.');
+      }
     } finally {
       setIsLoading(false);
     }

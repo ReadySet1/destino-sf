@@ -15,14 +15,23 @@ export async function GET(
     
     const result = await getOrderById(orderId);
     
-    if (!result.success) {
+    // Handle the different return types from getOrderById
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if it's an error object
+    if (typeof result === 'object' && 'success' in result && !result.success) {
       return NextResponse.json(
         { success: false, error: result.error || 'Order not found' },
         { status: 404 }
       );
     }
     
-    return NextResponse.json({ success: true, order: result.order });
+    return NextResponse.json({ success: true, order: result });
   } catch (error) {
     logger.error('Error retrieving order details:', error);
     return NextResponse.json(

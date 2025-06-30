@@ -75,24 +75,71 @@ export function SpotlightPickModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    // Enhanced validation with better UX feedback
+    const errors: string[] = [];
+    
     if (formData.isCustom) {
       if (!formData.customTitle?.trim()) {
-        toast.error('Custom title is required');
-        return;
+        errors.push('Custom title is required');
+      }
+      if (formData.customImageUrl && formData.customImageUrl.trim() !== '') {
+        try {
+          new URL(formData.customImageUrl);
+        } catch {
+          errors.push('Please provide a valid image URL or leave empty');
+        }
+      }
+      if (formData.customPrice !== undefined && formData.customPrice !== null && formData.customPrice < 0) {
+        errors.push('Price must be 0 or greater');
       }
     } else {
       if (!formData.productId) {
-        toast.error('Please select a product');
-        return;
+        errors.push('Please select a product');
       }
+    }
+
+    if (formData.customLink && formData.customLink.trim() !== '') {
+      try {
+        new URL(formData.customLink);
+      } catch {
+        errors.push('Please provide a valid URL for custom link or leave empty');
+      }
+    }
+
+    if (errors.length > 0) {
+      toast.error(errors.join('\n'), {
+        duration: 5000,
+        style: {
+          whiteSpace: 'pre-line',
+        },
+      });
+      return;
     }
 
     setIsLoading(true);
     try {
-      await onSave(formData);
+      // Clean the data before sending
+      const cleanedFormData = {
+        ...formData,
+        customImageUrl: formData.customImageUrl?.trim() || undefined,
+        customLink: formData.customLink?.trim() || undefined,
+        customTitle: formData.customTitle?.trim() || undefined,
+        customDescription: formData.customDescription?.trim() || undefined,
+        personalizeText: formData.personalizeText?.trim() || undefined,
+        newFeatureTitle: formData.newFeatureTitle?.trim() || undefined,
+        newFeatureDescription: formData.newFeatureDescription?.trim() || undefined,
+        newFeatureBadgeText: formData.newFeatureBadgeText?.trim() || undefined,
+      };
+
+      await onSave(cleanedFormData);
+      toast.success('Spotlight pick saved successfully!');
     } catch (error) {
       console.error('Error saving spotlight pick:', error);
+      if (error instanceof Error) {
+        toast.error(`Failed to save: ${error.message}`);
+      } else {
+        toast.error('Failed to save spotlight pick. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -250,9 +297,14 @@ export function SpotlightPickModal({
                       ...prev,
                       customTitle: e.target.value
                     }))}
-                    className="mt-1"
+                    className={`mt-1 ${!formData.customTitle?.trim() ? 'border-red-300 focus:border-red-500' : ''}`}
                     required
                   />
+                  {!formData.customTitle?.trim() && (
+                    <p className="text-sm text-red-600 mt-1">
+                      ⚠️ Title is required for custom items
+                    </p>
+                  )}
                 </div>
 
                 {/* Custom Description */}
@@ -302,8 +354,31 @@ export function SpotlightPickModal({
                       ...prev,
                       customLink: e.target.value
                     }))}
-                    className="mt-1"
+                    className={`mt-1 ${
+                      formData.customLink && formData.customLink.trim() !== '' && 
+                      (() => {
+                        try {
+                          new URL(formData.customLink);
+                          return false;
+                        } catch {
+                          return true;
+                        }
+                      })() ? 'border-red-300 focus:border-red-500' : ''
+                    }`}
                   />
+                  {formData.customLink && formData.customLink.trim() !== '' && 
+                    (() => {
+                      try {
+                        new URL(formData.customLink);
+                        return false;
+                      } catch {
+                        return true;
+                      }
+                    })() && (
+                      <p className="text-sm text-red-600 mt-1">
+                        ⚠️ Please provide a valid URL (e.g., https://example.com)
+                      </p>
+                    )}
                   <p className="text-sm text-gray-500 mt-1">
                     Optional custom link (external URL or internal path). If not provided, will use default product link behavior.
                   </p>
@@ -323,8 +398,19 @@ export function SpotlightPickModal({
                       ...prev,
                       customPrice: e.target.value ? parseFloat(e.target.value) : undefined
                     }))}
-                    className="mt-1"
+                    className={`mt-1 ${
+                      formData.customPrice !== undefined && formData.customPrice !== null && formData.customPrice < 0
+                        ? 'border-red-300 focus:border-red-500' : ''
+                    }`}
                   />
+                  {formData.customPrice !== undefined && formData.customPrice !== null && formData.customPrice < 0 && (
+                    <p className="text-sm text-red-600 mt-1">
+                      ⚠️ Price must be 0 or greater
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Set the display price for this custom item
+                  </p>
                 </div>
 
                 {/* Image Upload */}

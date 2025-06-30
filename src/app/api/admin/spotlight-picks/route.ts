@@ -9,17 +9,29 @@ const spotlightPickSchema = z.object({
   position: z.number().int().min(1).max(4),
   isCustom: z.boolean(),
   productId: z.string().uuid().optional().nullable(),
-  customTitle: z.string().optional().nullable(),
-  customDescription: z.string().optional().nullable(),
-  customImageUrl: z.string().url().optional().nullable(),
-  customPrice: z.number().positive().optional().nullable(),
-  personalizeText: z.string().optional().nullable(),
-  customLink: z.string().optional().nullable(),
+  customTitle: z.string().min(1).optional().nullable().or(z.literal('')),
+  customDescription: z.string().optional().nullable().or(z.literal('')),
+  customImageUrl: z.string().url().optional().nullable().or(z.literal('').transform(() => null)),
+  customPrice: z.number().min(0).optional().nullable(),
+  personalizeText: z.string().optional().nullable().or(z.literal('')),
+  customLink: z.string().optional().nullable().or(z.literal('').transform(() => null)),
   showNewFeatureModal: z.boolean().optional(),
-  newFeatureTitle: z.string().optional().nullable(),
-  newFeatureDescription: z.string().optional().nullable(),
-  newFeatureBadgeText: z.string().optional().nullable(),
+  newFeatureTitle: z.string().optional().nullable().or(z.literal('')),
+  newFeatureDescription: z.string().optional().nullable().or(z.literal('')),
+  newFeatureBadgeText: z.string().optional().nullable().or(z.literal('')),
   isActive: z.boolean(),
+}).refine((data) => {
+  // If it's custom, require customTitle
+  if (data.isCustom && (!data.customTitle || data.customTitle.trim() === '')) {
+    return false;
+  }
+  // If it's not custom, require productId
+  if (!data.isCustom && !data.productId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Custom items must have a title, and product-based items must have a product selected",
 });
 
 // Check if user is admin
@@ -223,9 +235,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
 
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.errors);
+      
+      // Create a more user-friendly error message
+      const errorMessages = error.errors.map(err => {
+        const field = err.path.join('.');
+        switch (field) {
+          case 'customTitle':
+            return 'Custom title is required for custom items';
+          case 'customImageUrl':
+            return 'Please provide a valid image URL or leave empty';
+          case 'customPrice':
+            return 'Price must be a valid positive number';
+          case 'customLink':
+            return 'Please provide a valid URL for custom link or leave empty';
+          case 'productId':
+            return 'Please select a product for product-based items';
+          default:
+            return `${field}: ${err.message}`;
+        }
+      });
+      
       return NextResponse.json({ 
         success: false, 
-        error: 'Invalid data provided' 
+        error: errorMessages.join('; '),
+        validationErrors: error.errors
       }, { status: 400 });
     }
 

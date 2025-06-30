@@ -170,7 +170,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         price: item.price,
         quantity,
         variantId: JSON.stringify(metadata),
-        image: getProteinImage(selectedProtein)
+        image: getProteinImage(selectedProtein) ?? undefined
       });
 
       toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to catering cart!`);
@@ -293,7 +293,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
           <Cookie className="h-6 w-6 text-orange-600" />
           Alfajores - $2.50 each
         </h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ALFAJORES_ITEMS.map((alfajor) => (
             <AlfajorCard
               key={alfajor.id}

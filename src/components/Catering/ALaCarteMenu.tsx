@@ -16,6 +16,8 @@ import { ShoppingCart, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toTitleCase } from '@/lib/utils';
+import { useCateringCartStore } from '@/store/catering-cart';
+import toast from 'react-hot-toast';
 
 interface ALaCarteMenuProps {
   items: CateringItem[];
@@ -301,6 +303,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     item;
   const [showOrderModal, setShowOrderModal] = useState(false);
   const hasImage = !!imageUrl;
+  const { addItem } = useCateringCartStore();
 
   // Function to get the correct image URL
   const getImageUrl = (url: string | null | undefined): string => {
@@ -344,6 +347,24 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     return <p className="text-gray-600 text-sm md:text-base">{formattedDesc}</p>;
   };
 
+  const handleAddToCart = () => {
+    const cartItem = {
+      id: item.id,
+      name: toTitleCase(item.name),
+      price: Number(item.price),
+      quantity: 1,
+      image: getImageUrl(item.imageUrl),
+      variantId: JSON.stringify({
+        type: 'item',
+        itemId: item.id,
+        servingSize: item.servingSize
+      })
+    };
+
+    addItem(cartItem);
+    toast.success(`${toTitleCase(name)} added to catering cart!`);
+  };
+
   return (
     <>
       <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
@@ -383,14 +404,22 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
 
           {description && <div className="mb-4">{formatMenuItemDescription(description)}</div>}
 
-          <div className="mt-auto pt-2">
+          <div className="mt-auto pt-2 flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowOrderModal(true)}
-              className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
+              className="flex-1 border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
             >
               View Details
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleAddToCart}
+              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add to Cart
             </Button>
           </div>
         </div>
@@ -442,6 +471,7 @@ const DietaryBadge: React.FC<DietaryBadgeProps> = ({ label, tooltip }) => {
 const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCategory }) => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedAddOn, setSelectedAddOn] = useState<any>(null);
+  const { addItem } = useCateringCartStore();
 
   // Filter add-ons based on the active category
   const filteredAddOns = SERVICE_ADD_ONS.filter(addOn => addOn.categories.includes(activeCategory));
@@ -449,6 +479,23 @@ const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCate
   const handleViewDetails = (addOn: any) => {
     setSelectedAddOn(addOn);
     setShowOrderModal(true);
+  };
+
+  const handleAddToCart = (addOn: any) => {
+    const cartItem = {
+      id: `service-addon-${addOn.id}`,
+      name: addOn.name,
+      price: Number(addOn.price),
+      quantity: 1,
+      variantId: JSON.stringify({
+        type: 'service-addon',
+        addOnId: addOn.id,
+        categories: addOn.categories
+      })
+    };
+
+    addItem(cartItem);
+    toast.success(`${addOn.name} added to catering cart!`);
   };
 
   return (
@@ -479,14 +526,22 @@ const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCate
                     <p className="text-gray-600 text-sm">{addOn.description}</p>
                   </div>
 
-                  <div className="mt-auto pt-2">
+                  <div className="mt-auto pt-2 flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewDetails(addOn)}
-                      className="w-full border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
+                      className="flex-1 border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors"
                     >
                       View Details
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddToCart(addOn)}
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add to Cart
                     </Button>
                   </div>
                 </div>
