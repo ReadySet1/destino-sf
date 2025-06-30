@@ -13,6 +13,8 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
 import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
+import { AlertService } from '@/lib/alerts'; // Import the alert service
+import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -303,17 +305,76 @@ export async function createOrder(orderData: {
  */
 export async function updateOrderPayment(orderId: string, squareOrderId: string, paymentStatus: 'PAID' | 'FAILED' = 'PAID', notes?: string) {
   try {
-    // No Supabase client needed if just updating Prisma
+    // Get the current order status before updating
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true }
+    });
+
+    const previousStatus = currentOrder?.status;
+    const newStatus = paymentStatus === 'PAID' ? OrderStatus.PROCESSING : OrderStatus.CANCELLED;
+
+    // Update the order
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         squareOrderId, // Update Square Order ID if needed
         paymentStatus: paymentStatus,
         // Use PROCESSING status after payment confirmation
-        status: paymentStatus === 'PAID' ? OrderStatus.PROCESSING : OrderStatus.CANCELLED,
+        status: newStatus,
         notes: notes ? notes : undefined // Append or set notes if provided
       }
     });
+
+    // Send alerts for payment failures and status changes
+    try {
+      const alertService = new AlertService();
+
+      // Send payment failed alert if payment failed
+      if (paymentStatus === 'FAILED') {
+        // Fetch the complete order with items for the alert
+        const orderWithItems = await prisma.order.findUnique({
+          where: { id: orderId },
+          include: {
+            items: {
+              include: {
+                product: { select: { name: true } },
+                variant: { select: { name: true } }
+              }
+            }
+          }
+        });
+
+        if (orderWithItems) {
+          await alertService.sendPaymentFailedAlert(orderWithItems, notes || 'Payment processing failed');
+          console.log(`Payment failed alert sent for order ${orderId}`);
+        }
+      }
+
+      // Send status change alert if status actually changed
+      if (previousStatus && previousStatus !== newStatus) {
+        // Fetch the complete order with items for the alert
+        const orderWithItems = await prisma.order.findUnique({
+          where: { id: orderId },
+          include: {
+            items: {
+              include: {
+                product: { select: { name: true } },
+                variant: { select: { name: true } }
+              }
+            }
+          }
+        });
+
+        if (orderWithItems) {
+          await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+          console.log(`Status change alert sent for order ${orderId}: ${previousStatus} → ${newStatus}`);
+        }
+      }
+    } catch (alertError: any) {
+      console.error(`Failed to send alerts for order ${orderId}:`, alertError);
+      // Don't fail the payment update if alert fails
+    }
 
     revalidatePath(`/admin/orders/${orderId}`); // Revalidate specific order page
     revalidatePath('/admin/orders');
@@ -568,6 +629,31 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
             select: { id: true }, // Select only the ID
         });
         console.log(`Database order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`);
+
+        // Send new order alert to admin
+        try {
+            // Fetch the complete order with items for the alert
+            const orderWithItems = await prisma.order.findUnique({
+                where: { id: dbOrder.id },
+                include: {
+                    items: {
+                        include: {
+                            product: { select: { name: true } },
+                            variant: { select: { name: true } }
+                        }
+                    }
+                }
+            });
+
+            if (orderWithItems) {
+                const alertService = new AlertService();
+                await alertService.sendNewOrderAlert(orderWithItems);
+                console.log(`New order alert sent for order ${dbOrder.id}`);
+            }
+        } catch (alertError: any) {
+            console.error(`Failed to send new order alert for order ${dbOrder.id}:`, alertError);
+            // Don't fail the order creation if alert fails
+        }
     } catch (error: any) {
         console.error("Database Error creating order:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -1011,6 +1097,31 @@ export async function createManualPaymentOrder(formData: {
             select: { id: true },
         });
         console.log(`Manual payment order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`);
+
+        // Send new order alert to admin
+        try {
+            // Fetch the complete order with items for the alert
+            const orderWithItems = await prisma.order.findUnique({
+                where: { id: dbOrder.id },
+                include: {
+                    items: {
+                        include: {
+                            product: { select: { name: true } },
+                            variant: { select: { name: true } }
+                        }
+                    }
+                }
+            });
+
+            if (orderWithItems) {
+                const alertService = new AlertService();
+                await alertService.sendNewOrderAlert(orderWithItems);
+                console.log(`New order alert sent for manual payment order ${dbOrder.id}`);
+            }
+        } catch (alertError: any) {
+            console.error(`Failed to send new order alert for manual payment order ${dbOrder.id}:`, alertError);
+            // Don't fail the order creation if alert fails
+        }
     } catch (error: any) {
         console.error("Database Error creating manual payment order:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {

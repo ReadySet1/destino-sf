@@ -8,6 +8,8 @@ import type { Square } from 'square'; // Import the Square namespace for types
 import { purchaseShippingLabel } from '@/app/actions/labels'; // Import the new action
 import { headers } from 'next/headers';
 import crypto from 'crypto';
+import { AlertService } from '@/lib/alerts'; // Import the alert service
+import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 
 type SquareEventType =
   | 'order.created'
@@ -107,6 +109,12 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
     console.log(`✅ Successfully processed order.created event for order ${data.id}`);
   } catch (error) {
     console.error(`❌ Error processing order.created for ${data.id}:`, error);
+    await errorMonitor.captureWebhookError(
+      error,
+      'order.created',
+      { orderId: data.id },
+      payload.event_id
+    );
     throw error; // Re-throw to trigger webhook retry
   }
 }
@@ -158,6 +166,11 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
       }
   } catch (dbError: any) {
        console.error(`Error fetching order ${squareOrderId} to determine fulfillment type:`, dbError);
+       await errorMonitor.captureDatabaseError(
+         dbError,
+         'fetchOrderForFulfillmentUpdate',
+         { orderId: squareOrderId }
+       );
   }
 
   // --- Fetch latest tracking info from Square API for shipping orders ---
@@ -174,6 +187,11 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
           }
       } catch (apiError: any) {
           console.error(`Error fetching tracking details from Square API for order ${squareOrderId}:`, apiError);
+          await errorMonitor.captureAPIError(
+            apiError,
+            'GET',
+            `/square/orders/${squareOrderId}/tracking`
+          );
       }
   }
   // --- End Fetch tracking info ---
@@ -258,11 +276,45 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
           }
           
           if (applyUpdate && Object.keys(updatePayload).length > 2) {
+              // Get the previous status before updating
+              const currentOrder = await prisma.order.findUnique({
+                  where: { squareOrderId: squareOrderId },
+                  select: { status: true }
+              });
+              const previousStatus = currentOrder?.status;
+
               await prisma.order.update({
                   where: { squareOrderId: squareOrderId },
                   data: updatePayload,
               });
               console.log(`Successfully updated order ${squareOrderId}.`);
+
+              // Send status change alert if status actually changed
+              if (newStatus && previousStatus && previousStatus !== newStatus) {
+                  try {
+                      // Fetch the complete order with items for the alert
+                      const orderWithItems = await prisma.order.findUnique({
+                          where: { squareOrderId: squareOrderId },
+                          include: {
+                              items: {
+                                  include: {
+                                      product: { select: { name: true } },
+                                      variant: { select: { name: true } }
+                                  }
+                              }
+                          }
+                      });
+
+                      if (orderWithItems) {
+                          const alertService = new AlertService();
+                          await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+                          console.log(`Fulfillment status change alert sent for order ${squareOrderId}: ${previousStatus} → ${newStatus}`);
+                      }
+                  } catch (alertError: any) {
+                      console.error(`Failed to send fulfillment status change alert for order ${squareOrderId}:`, alertError);
+                      // Don't fail the webhook if alert fails
+                  }
+              }
           } else {
               console.log(`No applicable updates found for order ${squareOrderId} in this webhook.`);
           }
@@ -308,10 +360,47 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
   // allowing the fulfillment handler to correctly set READY.
 
   try {
+      // Get the previous status before updating if we're making a status change
+      let previousStatus = undefined;
+      if (updateData.status) {
+          const currentOrder = await prisma.order.findUnique({
+              where: { squareOrderId: data.id },
+              select: { status: true }
+          });
+          previousStatus = currentOrder?.status;
+      }
+
       await prisma.order.update({
           where: { squareOrderId: data.id },
           data: updateData, // Apply updates (only includes status if terminal)
       });
+
+      // Send status change alert for terminal states (COMPLETED, CANCELLED)
+      if (updateData.status && previousStatus && previousStatus !== updateData.status) {
+          try {
+              // Fetch the complete order with items for the alert
+              const orderWithItems = await prisma.order.findUnique({
+                  where: { squareOrderId: data.id },
+                  include: {
+                      items: {
+                          include: {
+                              product: { select: { name: true } },
+                              variant: { select: { name: true } }
+                          }
+                      }
+                  }
+              });
+
+              if (orderWithItems) {
+                  const alertService = new AlertService();
+                  await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+                  console.log(`Order status change alert sent for order ${data.id}: ${previousStatus} → ${updateData.status}`);
+              }
+          } catch (alertError: any) {
+              console.error(`Failed to send order status change alert for order ${data.id}:`, alertError);
+              // Don't fail the webhook if alert fails
+          }
+      }
    } catch (error: any) {
       if (error.code === 'P2025') {
           console.warn(`Order with squareOrderId ${data.id} not found for order update. It might be created later.`);
@@ -595,6 +684,72 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     });
     console.log(`Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`);
 
+    // Send payment failed alert if payment failed
+    if (updatedPaymentStatus === 'FAILED' && order.paymentStatus !== 'FAILED') {
+        try {
+            // Fetch the complete order with items for the alert
+            const orderWithItems = await prisma.order.findUnique({
+                where: { id: order.id },
+                include: {
+                    items: {
+                        include: {
+                            product: { select: { name: true } },
+                            variant: { select: { name: true } }
+                        }
+                    }
+                }
+            });
+
+            if (orderWithItems) {
+                const alertService = new AlertService();
+                const errorMessage = paymentData?.last_4 ? 
+                    `Payment failed via webhook for card ending in ${paymentData.last_4}` : 
+                    'Payment failed via webhook';
+                
+                // Capture the payment error for monitoring
+                await errorMonitor.capturePaymentError(
+                  new Error(errorMessage),
+                  order.id,
+                  data.id,
+                  { squareData: paymentData }
+                );
+                
+                await alertService.sendPaymentFailedAlert(orderWithItems, errorMessage);
+                console.log(`Payment failed alert sent for order ${order.id}`);
+            }
+        } catch (alertError: any) {
+            console.error(`Failed to send payment failed alert for order ${order.id}:`, alertError);
+            // Don't fail the webhook if alert fails
+        }
+    }
+
+    // Send status change alert if order status changed
+    if (order.status !== updatedOrderStatus) {
+        try {
+            // Fetch the complete order with items for the alert
+            const orderWithItems = await prisma.order.findUnique({
+                where: { id: order.id },
+                include: {
+                    items: {
+                        include: {
+                            product: { select: { name: true } },
+                            variant: { select: { name: true } }
+                        }
+                    }
+                }
+            });
+
+            if (orderWithItems) {
+                const alertService = new AlertService();
+                await alertService.sendOrderStatusChangeAlert(orderWithItems, order.status);
+                console.log(`Payment status change alert sent for order ${order.id}: ${order.status} → ${updatedOrderStatus}`);
+            }
+        } catch (alertError: any) {
+            console.error(`Failed to send payment status change alert for order ${order.id}:`, alertError);
+            // Don't fail the webhook if alert fails
+        }
+    }
+
     // --- Purchase Shipping Label if applicable --- 
     if (
         updatedPaymentStatus === 'PAID' && // Payment just completed
@@ -752,6 +907,16 @@ async function getOrderTracking(orderId: string) {
     } catch (error: any) {
       // Improve error handling with more specific logging
       console.error(`Error in getOrderTracking for ${orderId}. Raw Error:`, error); // Log the raw error object
+      
+      // Capture for monitoring
+      await errorMonitor.captureAPIError(
+        error,
+        'GET',
+        `/square/orders/${orderId}`,
+        undefined,
+        undefined
+      );
+      
       if (error instanceof Error) {
         console.error(`Error Name: ${error.name}, Message: ${error.message}`);
         if ('stack' in error) {
@@ -855,6 +1020,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   } catch (error: unknown) {
     console.error('Error processing Square webhook:', error);
+    
+    // Capture webhook processing error for monitoring
+    await errorMonitor.captureWebhookError(
+      error,
+      'webhook_processing',
+      undefined,
+      undefined
+    );
 
     let errorMessage = 'Internal Server Error';
     let statusCode = 500;
