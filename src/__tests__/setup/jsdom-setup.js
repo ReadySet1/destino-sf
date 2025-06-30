@@ -1,5 +1,8 @@
 // jsdom specific setup for React component tests
 
+// Add jest-dom matchers
+require('@testing-library/jest-dom');
+
 // Ensure DOM globals are available
 const { TextEncoder, TextDecoder } = require('util');
 

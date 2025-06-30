@@ -170,7 +170,9 @@ function PersonalizeModal({ isOpen, onClose, pick }: PersonalizeModalProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Personalize Your {productName}</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Personalize Your {productName}
+            </h3>
             <p className="text-gray-600 mb-4">
               {pick.personalizeText || 'Add a personal touch to make this order special!'}
             </p>
@@ -180,14 +182,17 @@ function PersonalizeModal({ isOpen, onClose, pick }: PersonalizeModalProps) {
 
             {/* Personalization Input */}
             <div className="text-left mb-6">
-              <label htmlFor="personalMessage" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="personalMessage"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Personal Message (Optional)
               </label>
               <textarea
                 id="personalMessage"
                 rows={3}
                 value={personalMessage}
-                onChange={(e) => setPersonalMessage(e.target.value)}
+                onChange={e => setPersonalMessage(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
                 placeholder="Add a special message for your order..."
                 maxLength={200}
@@ -301,7 +306,8 @@ function NewFeatureModal({ isOpen, onClose, pick }: NewFeatureModalProps) {
             </p>
             {productPrice && (
               <p className="text-lg font-semibold text-amber-600 mb-4">
-                Starting at ${typeof productPrice === 'number' ? productPrice.toFixed(2) : productPrice}
+                Starting at $
+                {typeof productPrice === 'number' ? productPrice.toFixed(2) : productPrice}
               </p>
             )}
           </div>
@@ -330,7 +336,9 @@ export function FeaturedProducts() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPersonalizeModalOpen, setIsPersonalizeModalOpen] = useState<boolean>(false);
   const [isNewFeatureModalOpen, setIsNewFeatureModalOpen] = useState<boolean>(false);
-  const [selectedPersonalizePick, setSelectedPersonalizePick] = useState<SpotlightPick | null>(null);
+  const [selectedPersonalizePick, setSelectedPersonalizePick] = useState<SpotlightPick | null>(
+    null
+  );
   const [selectedNewFeaturePick, setSelectedNewFeaturePick] = useState<SpotlightPick | null>(null);
   const [spotlightPicks, setSpotlightPicks] = useState<SpotlightPick[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -340,9 +348,9 @@ export function FeaturedProducts() {
     const fetchSpotlightPicks = async () => {
       try {
         setIsLoading(true);
-        
+
         const response = await fetch('/api/spotlight-picks');
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.length > 0) {
@@ -383,7 +391,8 @@ export function FeaturedProducts() {
       customTitle: 'Pride Alfajores',
       customPrice: 24.99,
       customImageUrl: '/images/assets/2Recurso 5.png',
-      personalizeText: 'Perfect for celebrating with pride! Add a personal message to make it extra special.',
+      personalizeText:
+        'Perfect for celebrating with pride! Add a personal message to make it extra special.',
     },
     {
       position: 2,
@@ -413,12 +422,12 @@ export function FeaturedProducts() {
 
   const handleProductClick = (e: React.MouseEvent, pick: SpotlightPick) => {
     e.preventDefault();
-    
+
     console.log('🔍 handleProductClick called with pick:', pick);
     console.log('🔍 personalizeText:', pick.personalizeText);
     console.log('🔍 showNewFeatureModal:', pick.showNewFeatureModal);
     console.log('🔍 customTitle:', pick.customTitle);
-    
+
     // Check if this product should show new feature modal
     if (pick.showNewFeatureModal) {
       console.log('🚀 Opening new feature modal');
@@ -426,15 +435,29 @@ export function FeaturedProducts() {
       setIsNewFeatureModalOpen(true);
       return;
     }
-    
+
+    // Check if this is a "coming soon" product
+    if (
+      pick.customTitle?.toLowerCase().includes('coming soon') ||
+      pick.product?.name?.toLowerCase().includes('coming soon') ||
+      pick.customTitle?.toLowerCase().includes('monthly subscription') ||
+      pick.product?.name?.toLowerCase().includes('monthly subscription')
+    ) {
+      console.log('⏰ Opening coming soon modal');
+      setIsModalOpen(true);
+      return;
+    }
+
     // Check if this is a subscription product (you can customize this logic)
-    if (pick.customTitle?.toLowerCase().includes('subscription') || 
-        pick.product?.name?.toLowerCase().includes('subscription')) {
+    if (
+      pick.customTitle?.toLowerCase().includes('subscription') ||
+      pick.product?.name?.toLowerCase().includes('subscription')
+    ) {
       console.log('📅 Opening subscription modal');
       setIsModalOpen(true);
       return;
     }
-    
+
     // Check if this product has personalize text and should open personalize modal
     if (pick.personalizeText) {
       console.log('✨ Opening personalize modal with text:', pick.personalizeText);
@@ -442,7 +465,7 @@ export function FeaturedProducts() {
       setIsPersonalizeModalOpen(true);
       return;
     }
-    
+
     // Check if there's a custom link
     if (pick.customLink) {
       console.log('🔗 Opening custom link:', pick.customLink);
@@ -453,7 +476,7 @@ export function FeaturedProducts() {
       }
       return;
     }
-    
+
     // For other custom items, we can add more logic here
     // For now, just show an alert
     console.log('🚫 No special action, showing alert');
@@ -461,32 +484,37 @@ export function FeaturedProducts() {
   };
 
   const ProductCard = ({ pick, className }: { pick: SpotlightPick; className?: string }) => {
-    const isSubscription = pick.customTitle?.toLowerCase().includes('subscription') || 
-                          pick.product?.name?.toLowerCase().includes('subscription');
+    const isSubscription =
+      pick.customTitle?.toLowerCase().includes('subscription') ||
+      pick.product?.name?.toLowerCase().includes('subscription');
+    const isComingSoon =
+      pick.customTitle?.toLowerCase().includes('coming soon') ||
+      pick.product?.name?.toLowerCase().includes('coming soon') ||
+      pick.customTitle?.toLowerCase().includes('monthly subscription') ||
+      pick.product?.name?.toLowerCase().includes('monthly subscription');
     const isPersonalizable = !!pick.personalizeText;
     const isNewFeature = !!pick.showNewFeatureModal;
     const hasCustomLink = !!pick.customLink;
-    
-    // Determine product data
-    const productData = pick.isCustom ? {
-      name: pick.customTitle || 'Custom Product',
-      price: pick.customPrice ? `$${pick.customPrice.toFixed(2)}` : '$0.00',
-      imageUrl: pick.customImageUrl || '/images/placeholder-product.jpg',
-      slug: '#'
-    } : {
-      name: pick.product?.name || 'Product',
-      price: pick.product?.price ? `$${pick.product.price.toFixed(2)}` : '$0.00',
-      imageUrl: pick.product?.images?.[0] || '/images/placeholder-product.jpg',
-      slug: pick.product?.slug || '#'
-    };
 
-    if (isSubscription || isPersonalizable || isNewFeature || hasCustomLink) {
+    // Determine product data
+    const productData = pick.isCustom
+      ? {
+          name: pick.customTitle || 'Custom Product',
+          price: pick.customPrice ? `$${pick.customPrice.toFixed(2)}` : '$0.00',
+          imageUrl: pick.customImageUrl || '/images/placeholder-product.jpg',
+          slug: '#',
+        }
+      : {
+          name: pick.product?.name || 'Product',
+          price: pick.product?.price ? `$${pick.product.price.toFixed(2)}` : '$0.00',
+          imageUrl: pick.product?.images?.[0] || '/images/placeholder-product.jpg',
+          slug: pick.product?.slug || '#',
+        };
+
+    if (isSubscription || isComingSoon || isPersonalizable || isNewFeature || hasCustomLink) {
       return (
         <div className={`${className} relative`}>
-          <button
-            onClick={e => handleProductClick(e, pick)}
-            className="text-left w-full"
-          >
+          <button onClick={e => handleProductClick(e, pick)} className="text-left w-full">
             <div
               className="relative rounded-3xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg"
               style={{ paddingBottom: '75%' }}
@@ -508,6 +536,12 @@ export function FeaturedProducts() {
                     {pick.newFeatureBadgeText || 'NEW'}
                   </div>
                 )}
+                {/* Coming Soon Badge */}
+                {isComingSoon && (
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">
+                    Coming Soon
+                  </div>
+                )}
                 {/* Customize Badge */}
                 {isPersonalizable && (
                   <div className="bg-purple-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">
@@ -518,11 +552,14 @@ export function FeaturedProducts() {
             </div>
             <div className="mt-4">
               <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
-              <p className="font-medium text-amber-600">{productData.price}</p>
-              {isPersonalizable && (
-                <p className="text-sm text-purple-600 italic mt-1">
-                  ✨ {pick.personalizeText}
+              {!isComingSoon && <p className="font-medium text-amber-600">{productData.price}</p>}
+              {isComingSoon && (
+                <p className="text-sm text-amber-600 italic mt-1">
+                  ⏰ Coming soon - Click to learn more!
                 </p>
+              )}
+              {isPersonalizable && (
+                <p className="text-sm text-purple-600 italic mt-1">✨ {pick.personalizeText}</p>
               )}
               {isNewFeature && (
                 <p className="text-sm text-blue-600 italic mt-1">
@@ -536,11 +573,11 @@ export function FeaturedProducts() {
     }
 
     // Determine the correct link
-    const linkHref = pick.customLink 
+    const linkHref = pick.customLink
       ? pick.customLink
-      : pick.isCustom 
+      : pick.isCustom
         ? '#' // Or whatever you want for custom items
-        : pick.product?.slug 
+        : pick.product?.slug
           ? `/products/${pick.product.slug}`
           : `/products/category/${productData.slug}`;
 
@@ -548,7 +585,9 @@ export function FeaturedProducts() {
       <Link
         href={linkHref}
         className={className}
-        {...(pick.customLink?.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        {...(pick.customLink?.startsWith('http')
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
       >
         <div
           className="relative rounded-3xl overflow-hidden shadow-md transition-all duration-300 group-hover:shadow-lg"
@@ -586,7 +625,7 @@ export function FeaturedProducts() {
             Loading our featured products...
           </p>
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="animate-pulse">
                 <div className="bg-gray-300 rounded-3xl" style={{ paddingBottom: '75%' }}></div>
                 <div className="mt-4">
@@ -633,7 +672,7 @@ export function FeaturedProducts() {
           </p>
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {spotlightPicks.map((pick) => (
+            {spotlightPicks.map(pick => (
               <ProductCard
                 key={pick.id || pick.position}
                 pick={pick}
@@ -645,20 +684,20 @@ export function FeaturedProducts() {
       </div>
 
       <ComingSoonModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <PersonalizeModal 
-        isOpen={isPersonalizeModalOpen} 
+      <PersonalizeModal
+        isOpen={isPersonalizeModalOpen}
         onClose={() => {
           setIsPersonalizeModalOpen(false);
           setSelectedPersonalizePick(null);
-        }} 
+        }}
         pick={selectedPersonalizePick}
       />
-      <NewFeatureModal 
-        isOpen={isNewFeatureModalOpen} 
+      <NewFeatureModal
+        isOpen={isNewFeatureModalOpen}
         onClose={() => {
           setIsNewFeatureModalOpen(false);
           setSelectedNewFeaturePick(null);
-        }} 
+        }}
         pick={selectedNewFeaturePick}
       />
     </>
