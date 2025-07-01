@@ -407,7 +407,7 @@ export function FeaturedProducts() {
       isCustom: true,
       isActive: true,
       customTitle: 'Aji Amarillo Salsa',
-      customPrice: 19.99,
+      customPrice: 8.0,
       customImageUrl: '/images/assets/2Recurso 7.png',
     },
     {
@@ -667,8 +667,10 @@ export function FeaturedProducts() {
           >
             Spotlight Picks
           </h2>
-          <p className="mt-4 text-lg text-gray-600 text-center max-w-2xl mx-auto">
-            Discover our carefully curated selection of premium Peruvian products
+          <p className="mt-4 text-lg text-gray-600 text-center max-w-4xl mx-auto">
+            Explore our current favorites — seasonal treats, new flavors, and limited-run specials!
+            <br />
+            Inspired by tradition. Driven by creativity.
           </p>
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
