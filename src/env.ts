@@ -14,6 +14,7 @@ export const env = createEnv({
     // Add other environment variables here
   },
   client: {
+    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
     // Add client-side environment variables here if needed
   },
   runtimeEnv: {
@@ -25,6 +26,7 @@ export const env = createEnv({
     FROM_EMAIL: process.env.FROM_EMAIL,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     SHOP_NAME: process.env.SHOP_NAME,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     // Add other environment variables here
   },
 }); 
