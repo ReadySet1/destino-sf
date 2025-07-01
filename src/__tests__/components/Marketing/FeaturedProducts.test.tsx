@@ -7,6 +7,7 @@ import { SpotlightPick } from '@/types/spotlight';
 // Mock next/image
 jest.mock('next/image', () => {
   return function MockImage({ src, alt, ...props }: any) {
+    // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt={alt} {...props} data-testid="next-image" />;
   };
 });
