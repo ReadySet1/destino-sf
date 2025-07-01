@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { AuthContainer } from '@/components/auth-container';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/password-strength-indicator';
+import { ToastHandler } from '@/components/auth/ToastHandler';
 
 // Updated PageProps type for Next.js 15.3+
 type PageProps = {
@@ -32,6 +33,7 @@ export default async function SetupPasswordPage({
       title="Set Up Your Password" 
       subtitle="Welcome! Please create a secure password for your account"
     >
+      <ToastHandler />
       <div className="pt-2">
         <form
           action={setupPasswordAction}

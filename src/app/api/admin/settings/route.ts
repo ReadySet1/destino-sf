@@ -40,6 +40,53 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   return adminProfile?.role === 'ADMIN';
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    // Get Supabase client
+    const supabase = await createClient();
+
+    // Check if user is admin
+    if (!(await isUserAdmin(supabase))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch store settings and delivery zones
+    const [storeSettings, deliveryZones] = await Promise.all([
+      prisma.storeSettings.findFirst({
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.cateringDeliveryZone.findMany({
+        orderBy: { displayOrder: 'asc' },
+      })
+    ]);
+
+    // Convert Decimal objects to numbers for client compatibility
+    const processedSettings = storeSettings ? {
+      ...storeSettings,
+      taxRate: Number(storeSettings.taxRate),
+      minOrderAmount: Number(storeSettings.minOrderAmount),
+      cateringMinimumAmount: Number(storeSettings.cateringMinimumAmount),
+    } : null;
+
+    const processedZones = deliveryZones.map(zone => ({
+      ...zone,
+      minimumAmount: Number(zone.minimumAmount),
+      deliveryFee: Number(zone.deliveryFee),
+    }));
+
+    return NextResponse.json({
+      storeSettings: processedSettings,
+      deliveryZones: processedZones,
+    });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get Supabase client

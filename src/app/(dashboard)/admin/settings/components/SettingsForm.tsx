@@ -246,7 +246,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
 
         <div>
           <label htmlFor="cateringMinimumAmount" className="block text-sm font-medium text-gray-700 mb-1">
-            Catering Minimum Order Amount ($)
+            General Catering Minimum Order Amount ($)
           </label>
           <input
             type="number"
@@ -260,7 +260,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
             <p className="mt-1 text-sm text-red-600">{errors.cateringMinimumAmount.message}</p>
           )}
           <p className="mt-1 text-xs text-gray-500">
-            Minimum order amount specifically for catering orders
+            Fallback minimum for catering orders (zone-specific minimums take precedence)
           </p>
         </div>
 

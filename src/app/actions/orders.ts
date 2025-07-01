@@ -1201,15 +1201,14 @@ export async function validateOrderMinimumsServer(
   
   // If it's a catering order and we have delivery address, use delivery zone validation
   if (hasCateringItems && deliveryAddress) {
-    // Import catering validation functions
+    // Import database-driven delivery zone functions
     const { 
       determineDeliveryZone, 
-      validateMinimumPurchase, 
-      DeliveryZone 
-    } = await import('@/types/catering');
+      validateMinimumPurchase
+    } = await import('@/lib/delivery-zones');
     
     // Determine delivery zone from address
-    const deliveryZone = determineDeliveryZone(
+    const deliveryZone = await determineDeliveryZone(
       deliveryAddress.postalCode || '', 
       deliveryAddress.city
     );
@@ -1222,7 +1221,7 @@ export async function validateOrderMinimumsServer(
     }
     
     // Validate minimum purchase for the zone
-    const validation = validateMinimumPurchase(cartTotal, deliveryZone);
+    const validation = await validateMinimumPurchase(cartTotal, deliveryZone);
     
     if (!validation.isValid) {
       return {

@@ -52,6 +52,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "validate": "pnpm run type-check && pnpm run lint",
     "fix-all": "pnpm run format && pnpm run lint:fix",
+    "seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "pnpm prisma migrate reset && pnpm db:seed",
+    "fix-admin-auth": "tsx scripts/fix-admin-auth.ts",
     "fix-images": "node src/scripts/update-missing-images.mjs",
     "sync-catering-images": "tsx src/scripts/sync-catering-images.ts",
     "monitor-catering": "tsx src/scripts/monitor-catering-images.ts",
@@ -193,5 +197,8 @@
       "@types/react": "19.1.2",
       "@types/react-dom": "19.1.2"
     }
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

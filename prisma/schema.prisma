@@ -20,6 +20,8 @@ model Profile {
   cateringOrders           CateringOrder[]
   emailAlerts              EmailAlert[]
   customerEmailPreferences CustomerEmailPreferences[]
+  
+  @@map("profiles")
 }
 
 model Product {
@@ -43,6 +45,7 @@ model Product {
 
   @@index([categoryId])
   @@index([ordinal])
+  @@map("products")
 }
 
 model Category {
@@ -58,6 +61,8 @@ model Category {
   updatedAt   DateTime  @updatedAt
   squareId    String?   @unique
   products    Product[]
+  
+  @@map("categories")
 }
 
 model Variant {
@@ -72,6 +77,7 @@ model Variant {
   product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  @@map("variants")
 }
 
 model Order {
@@ -128,6 +134,7 @@ model Payment {
 
   @@index([orderId])
   @@index([status])
+  @@map("payments")
 }
 
 model Refund {
@@ -143,6 +150,7 @@ model Refund {
   payment        Payment  @relation(fields: [paymentId], references: [id])
 
   @@index([paymentId])
+  @@map("refunds")
 }
 
 model OrderItem {
@@ -161,6 +169,7 @@ model OrderItem {
   @@index([productId])
   @@index([orderId])
   @@index([variantId])
+  @@map("order_items")
 }
 
 model BusinessHours {
@@ -171,6 +180,8 @@ model BusinessHours {
   isClosed  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@map("business_hours")
 }
 
 model StoreSettings {
@@ -191,6 +202,28 @@ model StoreSettings {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
+  
+  @@map("store_settings")
+}
+
+model CateringDeliveryZone {
+  id                    String   @id @default(uuid()) @db.Uuid
+  zone                  String   @unique // DeliveryZone enum value
+  name                  String   
+  description           String?
+  minimumAmount         Decimal  @db.Decimal(10, 2)
+  deliveryFee          Decimal  @db.Decimal(10, 2)
+  estimatedDeliveryTime String?
+  isActive             Boolean  @default(true)
+  postalCodes          String[] // Array of postal codes for this zone
+  cities               String[] // Array of cities for this zone
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  displayOrder         Int      @default(0)
+  
+  @@index([zone])
+  @@index([isActive])
+  @@map("catering_delivery_zones")
 }
 
 model SpotlightPick {
@@ -227,6 +260,8 @@ model Subscriber {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@map("subscribers")
 }
 
 model PromoCode {
@@ -242,6 +277,8 @@ model PromoCode {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  
+  @@map("promo_codes")
 }
 
 model ShippingConfiguration {
@@ -256,6 +293,7 @@ model ShippingConfiguration {
 
   @@index([productName])
   @@index([isActive])
+  @@map("shipping_configurations")
 }
 
 enum UserRole {
@@ -338,6 +376,8 @@ model CateringPackage {
   ratings    CateringRating[]
   items      CateringPackageItem[]
   orderItems CateringOrderItem[]
+  
+  @@map("catering_packages")
 }
 
 model CateringItem {
@@ -361,6 +401,8 @@ model CateringItem {
   packageItems CateringPackageItem[]
   orderItems   CateringOrderItem[]
   overrides    CateringItemOverrides[]
+  
+  @@map("catering_items")
 }
 
 model CateringPackageItem {
@@ -378,6 +420,7 @@ model CateringPackageItem {
   @@unique([packageId, itemId])
   @@index([packageId])
   @@index([itemId])
+  @@map("catering_package_items")
 }
 
 model CateringRating {
@@ -393,6 +436,7 @@ model CateringRating {
   package CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
   @@index([packageId])
+  @@map("catering_ratings")
 }
 
 model CateringOrder {
@@ -425,6 +469,7 @@ model CateringOrder {
   @@index([status])
   @@index([eventDate])
   @@index([createdAt])
+  @@map("catering_orders")
 }
 
 model CateringOrderItem {
@@ -449,6 +494,7 @@ model CateringOrderItem {
   @@index([orderId])
   @@index([itemId])
   @@index([packageId])
+  @@map("catering_order_items")
 }
 
 model CateringItemOverrides {
@@ -473,6 +519,7 @@ model CateringItemOverrides {
 
   @@unique([itemId])
   @@index([itemId])
+  @@map("catering_item_overrides")
 }
 
 // Email Alert tracking model
@@ -513,8 +560,8 @@ enum EmailFrequency {
 }
 
 model CustomerEmailPreferences {
-  id               String         @id @default(cuid())
-  userId           String?        @map("user_id")
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String?        @map("user_id") @db.Uuid
   email            String
   orderUpdates     EmailFrequency @default(IMMEDIATE) @map("order_updates")
   marketingEmails  EmailFrequency @default(WEEKLY_DIGEST) @map("marketing_emails")
@@ -532,7 +579,7 @@ model CustomerEmailPreferences {
 }
 
 model ContactSubmission {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid()) @db.Uuid
   name       String
   email      String
   subject    String?
@@ -550,7 +597,7 @@ model ContactSubmission {
 }
 
 model BusinessMetric {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   date      DateTime @db.Date
   metric    String // 'daily_orders', 'daily_revenue', etc.
   value     Decimal  @db.Decimal(10, 2)

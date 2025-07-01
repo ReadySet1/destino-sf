@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
 import SettingsForm from './components/SettingsForm';
+import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
 import { Separator } from '@/components/ui/separator';
 
 export const metadata = {
@@ -58,10 +59,12 @@ export default async function SettingsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Store Settings</h1>
       </div>
+      
+      {/* Basic Store Settings */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <p className="text-gray-500">
           Configure your store&apos;s basic information.
@@ -69,6 +72,9 @@ export default async function SettingsPage() {
         <Separator className="mb-6" />
         <SettingsForm settings={storeSettings} />
       </div>
+
+      {/* Delivery Zone Management */}
+      <DeliveryZoneManager />
     </div>
   );
 }

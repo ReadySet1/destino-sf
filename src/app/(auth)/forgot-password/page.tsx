@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { forgotPasswordAction } from '../../actions';
+import { forgotPasswordAction } from '../../actions/auth';
 import { Label } from '@/components/ui/label';
 import { SubmitButton } from '../../../components/submit-button';
 import { FormMessage } from '../../../components/form-message';
 import { Input } from '@/components/ui/input';
 import { Mail } from 'lucide-react';
 import { AuthContainer } from '@/components/auth-container';
+import { ToastHandler } from '@/components/auth/ToastHandler';
 
 // Updated PageProps type for Next.js 15.3+
 type PageProps = {
@@ -29,6 +30,7 @@ export default async function ForgotPassword({
       title="Reset Password" 
       subtitle="Enter your email to receive a password reset link"
     >
+      <ToastHandler />
       <div className="pt-2">
         <form action={forgotPasswordAction} className="space-y-5">
           <div className="space-y-4">

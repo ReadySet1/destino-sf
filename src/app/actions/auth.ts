@@ -19,6 +19,29 @@ export const signUpAction = async (formData: FormData) => {
     return { error: 'Email and password are required' };
   }
 
+  // Check if profile already exists (from seed or previous signup)
+  const existingProfile = await prisma.profile.findUnique({
+    where: { email },
+    select: { id: true, email: true, role: true },
+  });
+
+  // If profile exists, check if it's already linked to a Supabase user
+  if (existingProfile) {
+    // Try to sign in instead of signing up
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (!signInError) {
+      // Successfully signed in - user already exists and password was correct
+      return { success: 'Successfully signed in with existing account!' };
+    }
+
+    // If sign in failed, it might be because the Supabase user doesn't exist yet
+    // but the profile does (seeded admin case)
+  }
+
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -30,7 +53,7 @@ export const signUpAction = async (formData: FormData) => {
   if (signUpError) {
     console.error('Supabase SignUp Error:', signUpError);
     if (signUpError.message.includes('User already registered')) {
-      return { error: 'This email is already registered. Please sign in or use a different email.' };
+      return { error: 'This email is already registered. Please sign in instead.' };
     }
     return { error: `Sign up failed: ${signUpError.message}` };
   }
@@ -43,22 +66,57 @@ export const signUpAction = async (formData: FormData) => {
   const userId = signUpData.user.id;
 
   try {
-    await prisma.profile.create({
-      data: {
-        id: userId,
-        email: email,
-        name: name || null,
-        phone: phone,
-        role: UserRole.CUSTOMER,
-        updated_at: new Date(),
-      },
-    });
+    if (existingProfile) {
+      // Update existing profile to link it with the new Supabase user ID
+      await prisma.profile.update({
+        where: { email },
+        data: {
+          id: userId,
+          name: name || existingProfile.email.split('@')[0], // Use provided name or email prefix
+          phone: phone,
+          updated_at: new Date(),
+        },
+      });
+      console.log(`Linked existing profile for ${email} to Supabase user ${userId}`);
+    } else {
+      // Create new profile for regular users
+      await prisma.profile.create({
+        data: {
+          id: userId,
+          email: email,
+          name: name || null,
+          phone: phone,
+          role: UserRole.CUSTOMER,
+          updated_at: new Date(),
+        },
+      });
+      console.log(`Created new profile for ${email}`);
+    }
   } catch (profileError: any) {
-    console.error('Prisma profile creation error during sign up:', profileError);
-    return { error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.` };
+    console.error('Prisma profile creation/update error during sign up:', profileError);
+    
+    // If it's a unique constraint error on email, try to handle it
+    if (profileError.code === 'P2002' && profileError.meta?.target?.includes('email')) {
+      try {
+        // Try to update the existing profile with the new user ID
+        await prisma.profile.update({
+          where: { email },
+          data: {
+            id: userId,
+            updated_at: new Date(),
+          },
+        });
+        console.log(`Updated existing profile for ${email} with new user ID`);
+      } catch (updateError) {
+        console.error('Failed to update existing profile:', updateError);
+        return { error: `Account created, but profile linking failed. Please contact support.` };
+      }
+    } else {
+      return { error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.` };
+    }
   }
 
-  return {};
+  return { success: 'Sign up successful! Please check your email for verification.' };
 };
 
 export const signInAction = async (formData: FormData) => {
@@ -289,4 +347,62 @@ export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
   return redirect('/sign-in');
+};
+
+export const magicLinkSignInAction = async (formData: FormData) => {
+  const email = formData.get('email')?.toString();
+  const supabase = await createClient();
+  const origin = (await headers()).get('origin');
+  const redirectUrl = formData.get('redirect')?.toString();
+
+  if (!email) {
+    return encodedRedirect('error', '/sign-in', 'Email is required');
+  }
+
+  // Check if user exists in our database
+  let existingProfile;
+  try {
+    existingProfile = await prisma.profile.findUnique({
+      where: { email },
+      select: { id: true, email: true, role: true },
+    });
+  } catch (dbError) {
+    console.error('Database error during magic link profile lookup:', dbError);
+    return encodedRedirect('error', '/sign-in', 'Database error. Please try again.');
+  }
+
+  if (!existingProfile) {
+    return encodedRedirect(
+      'error', 
+      '/sign-in', 
+      'No account found with this email. Please sign up first or use a different email.'
+    );
+  }
+
+  // Determine redirect destination based on role and redirect parameter
+  let redirectTo = '/menu'; // default for customers
+  if (existingProfile.role === 'ADMIN') {
+    redirectTo = '/admin';
+  } else if (redirectUrl) {
+    redirectTo = redirectUrl;
+  }
+
+  // Send magic link
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?redirect_to=${redirectTo}`,
+    },
+  });
+
+  if (error) {
+    console.error('Magic link error:', error.message);
+    return encodedRedirect('error', '/sign-in', 'Could not send magic link. Please try again.');
+  }
+
+  return encodedRedirect(
+    'success',
+    '/sign-in',
+    'Check your email for a magic link to sign in!'
+  );
 }; 
