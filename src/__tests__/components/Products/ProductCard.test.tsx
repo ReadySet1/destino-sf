@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import '@testing-library/jest-dom/extend-expect';
 import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -10,16 +11,14 @@ import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import * as imageUtils from '@/lib/image-utils';
 import { Product, Variant } from '@/types/product';
+import { Decimal } from '@prisma/client/runtime/library';
 
-// Add jest-dom matchers
-import '@testing-library/jest-dom';
-
-// Mock dependencies  
+// Mock dependencies
 jest.mock('@/store/cart', () => ({
-  useCartStore: jest.fn()
+  useCartStore: jest.fn(),
 }));
 jest.mock('@/components/ui/cart-alert', () => ({
-  useCartAlertStore: jest.fn()
+  useCartAlertStore: jest.fn(),
 }));
 
 // Mock image utilities with proper return values
@@ -27,15 +26,16 @@ jest.mock('@/lib/image-utils', () => ({
   getProductImageConfig: jest.fn(() => ({
     src: '/test-image.jpg',
     placeholder: false,
-    alt: 'Test product image'
+    alt: 'Test product image',
   })),
   getPlaceholderCategory: jest.fn(() => 'empanadas'),
-  getDefaultImageForCategory: jest.fn(() => '/fallback-image.jpg')
+  getDefaultImageForCategory: jest.fn(() => '/fallback-image.jpg'),
 }));
 
 jest.mock('next/image', () => ({
   __esModule: true,
   default: ({ src, alt, onError, fill, priority, quality, sizes, className, ...props }: any) => (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}
@@ -61,7 +61,7 @@ jest.mock('next/link', () => ({
 // Mock ImagePlaceholder component
 jest.mock('@/components/Products/ImagePlaceholder', () => ({
   ImagePlaceholder: ({ productName, category, size, className }: any) => (
-    <div 
+    <div
       data-testid="image-placeholder"
       data-product-name={productName}
       data-category={category}
@@ -113,43 +113,49 @@ describe('ProductCard', () => {
     categoryId: 'cat-1',
     featured: false,
     active: true,
-    ordinal: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     category: {
       id: 'cat-1',
       name: 'Empanadas',
-      squareId: 'sq-cat-1',
       description: 'Delicious empanadas',
-      ordinal: 0,
-      products: []
+      order: 0,
+      products: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     variants: [
       {
         id: 'var-1',
         name: 'Small',
         price: 8.99,
-        productId: '1'
+        productId: '1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: 'var-2',
         name: 'Large',
         price: 12.99,
-        productId: '1'
-      }
-    ]
+        productId: '1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Ensure mocks return our mock objects
     mockUseCartStore.mockReturnValue(mockCartStore);
     mockUseCartAlertStore.mockReturnValue(mockCartAlertStore);
-    
+
     // Reset image utils mocks to default values
     (imageUtils.getProductImageConfig as jest.Mock).mockReturnValue({
       src: '/test-image.jpg',
       placeholder: false,
-      alt: 'Test product image'
+      alt: 'Test product image',
     });
     (imageUtils.getPlaceholderCategory as jest.Mock).mockReturnValue('empanadas');
     (imageUtils.getDefaultImageForCategory as jest.Mock).mockReturnValue('/fallback-image.jpg');
@@ -158,7 +164,7 @@ describe('ProductCard', () => {
   describe('Basic Rendering', () => {
     test('should render product information correctly', () => {
       render(<ProductCard product={mockProduct} />);
-      
+
       expect(screen.getByText('Test Empanada')).toBeInTheDocument();
       expect(screen.getByText('Delicious test empanada')).toBeInTheDocument();
       expect(screen.getByText('$8.99')).toBeInTheDocument();
@@ -168,7 +174,7 @@ describe('ProductCard', () => {
 
     test('should render product links correctly', () => {
       render(<ProductCard product={mockProduct} />);
-      
+
       const productLinks = screen.getAllByTestId('product-link');
       productLinks.forEach(link => {
         expect(link).toHaveAttribute('href', '/products/1');
@@ -177,7 +183,7 @@ describe('ProductCard', () => {
 
     test('should display add to cart button', () => {
       render(<ProductCard product={mockProduct} />);
-      
+
       const addButton = screen.getByRole('button', { name: /add to cart/i });
       expect(addButton).toBeInTheDocument();
     });
@@ -186,10 +192,10 @@ describe('ProductCard', () => {
   describe('Variants Handling', () => {
     test('should display variants in dropdown when available', () => {
       render(<ProductCard product={mockProduct} />);
-      
+
       const variantSelect = screen.getByRole('combobox');
       expect(variantSelect).toBeInTheDocument();
-      
+
       expect(screen.getByText('Small - $8.99')).toBeInTheDocument();
       expect(screen.getByText('Large - $12.99')).toBeInTheDocument();
     });
@@ -197,12 +203,12 @@ describe('ProductCard', () => {
     test('should update price when variant is selected', async () => {
       const user = userEvent.setup();
       render(<ProductCard product={mockProduct} />);
-      
+
       const variantSelect = screen.getByRole('combobox');
-      
+
       // Select the Large variant (var-2)
       await user.selectOptions(variantSelect, 'var-2');
-      
+
       // The price shown should be updated to the Large variant price
       // Note: The test was looking for the exact text "$12.99" but the DOM shows it's split
       // Let's look for it as separate text or use a more flexible matcher
@@ -214,11 +220,11 @@ describe('ProductCard', () => {
     test('should handle products without variants', () => {
       const productWithoutVariants = {
         ...mockProduct,
-        variants: []
+        variants: [],
       };
-      
+
       render(<ProductCard product={productWithoutVariants} />);
-      
+
       expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
       expect(screen.getByText('$8.99')).toBeInTheDocument();
     });
@@ -228,10 +234,10 @@ describe('ProductCard', () => {
     test('should add item to cart when button is clicked', async () => {
       const user = userEvent.setup();
       render(<ProductCard product={mockProduct} />);
-      
+
       const addButton = screen.getByRole('button', { name: /add to cart/i });
       await user.click(addButton);
-      
+
       expect(mockCartStore.addItem).toHaveBeenCalledTimes(1);
       expect(mockCartStore.addItem).toHaveBeenCalledWith({
         id: '1',
@@ -246,13 +252,13 @@ describe('ProductCard', () => {
     test('should add item with variant when variant is selected', async () => {
       const user = userEvent.setup();
       render(<ProductCard product={mockProduct} />);
-      
+
       const variantSelect = screen.getByRole('combobox');
       await user.selectOptions(variantSelect, 'var-2');
-      
+
       const addButton = screen.getByRole('button', { name: /add to cart/i });
       await user.click(addButton);
-      
+
       expect(mockCartStore.addItem).toHaveBeenCalledWith({
         id: '1',
         name: 'Test Empanada - Large',
@@ -266,10 +272,10 @@ describe('ProductCard', () => {
     test('should show cart alert after adding item', async () => {
       const user = userEvent.setup();
       render(<ProductCard product={mockProduct} />);
-      
+
       const addButton = screen.getByRole('button', { name: /add to cart/i });
       await user.click(addButton);
-      
+
       expect(mockCartAlertStore.showAlert).toHaveBeenCalledTimes(1);
       expect(mockCartAlertStore.showAlert).toHaveBeenCalledWith(
         '1 Test Empanada (Small) has been added to your cart.'
@@ -279,13 +285,13 @@ describe('ProductCard', () => {
     test('should show cart alert with variant name', async () => {
       const user = userEvent.setup();
       render(<ProductCard product={mockProduct} />);
-      
+
       const variantSelect = screen.getByRole('combobox');
       await user.selectOptions(variantSelect, 'var-2');
-      
+
       const addButton = screen.getByRole('button', { name: /add to cart/i });
       await user.click(addButton);
-      
+
       expect(mockCartAlertStore.showAlert).toHaveBeenCalledWith(
         '1 Test Empanada (Large) has been added to your cart.'
       );
@@ -294,23 +300,25 @@ describe('ProductCard', () => {
 
   describe('Price Display with Decimal Objects', () => {
     test('should handle Decimal price object', () => {
+      const mockDecimal = new Decimal(8.99);
+
       const productWithDecimalPrice = {
         ...mockProduct,
-        price: {
-          toNumber: () => 8.99
-        },
-        variants: [{
-          id: 'var-1',
-          name: 'Small',
-          price: {
-            toNumber: () => 8.99
+        price: mockDecimal,
+        variants: [
+          {
+            id: 'var-1',
+            name: 'Small',
+            price: mockDecimal,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
           },
-          productId: '1'
-        }]
+        ],
       };
-      
+
       render(<ProductCard product={productWithDecimalPrice} />);
-      
+
       expect(screen.getByText('$8.99')).toBeInTheDocument();
     });
   });
@@ -321,16 +329,16 @@ describe('ProductCard', () => {
       (imageUtils.getProductImageConfig as jest.Mock).mockReturnValue({
         src: null,
         placeholder: true,
-        alt: 'Test product image'
+        alt: 'Test product image',
       });
-      
+
       const productWithoutImage = {
         ...mockProduct,
-        images: []
+        images: [],
       };
-      
+
       render(<ProductCard product={productWithoutImage} />);
-      
+
       expect(screen.getByTestId('image-placeholder')).toBeInTheDocument();
       expect(screen.queryByTestId('product-image')).not.toBeInTheDocument();
     });
@@ -338,13 +346,13 @@ describe('ProductCard', () => {
     test('should handle empty description', () => {
       const productWithoutDescription = {
         ...mockProduct,
-        description: ''
+        description: '',
       };
-      
+
       render(<ProductCard product={productWithoutDescription} />);
-      
+
       expect(screen.getByText('Test Empanada')).toBeInTheDocument();
       expect(screen.queryByText('Delicious test empanada')).not.toBeInTheDocument();
     });
   });
-}); 
+});

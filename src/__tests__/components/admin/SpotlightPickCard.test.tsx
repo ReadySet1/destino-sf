@@ -15,6 +15,7 @@ jest.mock('lucide-react', () => ({
 // Mock Next.js Image component
 jest.mock('next/image', () => {
   return function MockImage({ src, alt, ...props }: any) {
+    // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt={alt} {...props} />;
   };
 });
@@ -99,25 +100,27 @@ describe('SpotlightPickCard', () => {
 
       // Check position badge
       expect(screen.getByText('Position 1')).toBeInTheDocument();
-      
+
       // Check product badge
       expect(screen.getByText('Product')).toBeInTheDocument();
-      
+
       // Check product name
       expect(screen.getByText('Dulce de Leche Alfajores')).toBeInTheDocument();
-      
+
       // Check category name
       expect(screen.getByText('ALFAJORES')).toBeInTheDocument();
-      
+
       // Check description
       expect(screen.getByText('Traditional Argentine cookies')).toBeInTheDocument();
-      
+
       // Check personalize text with quotes
-      expect(screen.getByText((content) => content.includes('Perfect for your special occasion'))).toBeInTheDocument();
-      
+      expect(
+        screen.getByText(content => content.includes('Perfect for your special occasion'))
+      ).toBeInTheDocument();
+
       // Check price
       expect(screen.getByText('12.99')).toBeInTheDocument();
-      
+
       // Check active status
       expect(screen.getByText('Active')).toBeInTheDocument();
     });
@@ -196,22 +199,24 @@ describe('SpotlightPickCard', () => {
 
       // Check position badge
       expect(screen.getByText('Position 2')).toBeInTheDocument();
-      
+
       // Check custom badge
       expect(screen.getByText('Custom')).toBeInTheDocument();
-      
+
       // Check custom title
       expect(screen.getByText('Custom Empanadas Special')).toBeInTheDocument();
-      
+
       // Check custom description
       expect(screen.getByText('Hand-made empanadas with premium fillings')).toBeInTheDocument();
-      
+
       // Check personalize text with quotes
-      expect(screen.getByText((content) => content.includes('Made fresh daily just for you!'))).toBeInTheDocument();
-      
+      expect(
+        screen.getByText(content => content.includes('Made fresh daily just for you!'))
+      ).toBeInTheDocument();
+
       // Check custom price
       expect(screen.getByText('18.99')).toBeInTheDocument();
-      
+
       // Check custom image
       const image = screen.getByTestId('spotlight-image');
       expect(image).toHaveAttribute('src', 'https://example.com/custom-empanadas.jpg');
@@ -246,17 +251,17 @@ describe('SpotlightPickCard', () => {
 
       // Check position badge
       expect(screen.getByText('Position 3')).toBeInTheDocument();
-      
+
       // Check empty state
       expect(screen.getByText('Empty Position')).toBeInTheDocument();
       expect(screen.getByText('Click edit to add content')).toBeInTheDocument();
-      
+
       // Check package icon for empty state
       expect(screen.getByTestId('package-icon')).toBeInTheDocument();
-      
+
       // Should not display clear button for empty pick
       expect(screen.queryByTestId('trash-icon')).not.toBeInTheDocument();
-      
+
       // Should still display edit button
       expect(screen.getByTestId('edit-icon')).toBeInTheDocument();
     });
@@ -386,4 +391,4 @@ describe('SpotlightPickCard', () => {
       expect(screen.getByText('Untitled')).toBeInTheDocument();
     });
   });
-}); 
+});
