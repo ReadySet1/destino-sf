@@ -17,29 +17,22 @@ import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * Fetches all active catering packages using Supabase directly
+ * Fetches all active catering packages using Prisma
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
   try {
-    console.log('🔧 [CATERING] Fetching catering packages via Supabase...');
+    console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
     
-    const { data: packages, error } = await supabase
-      .from('CateringPackage')
-      .select('*')
-      .eq('isActive', true)
-      .order('featuredOrder', { ascending: true });
-
-    if (error) {
-      console.error('❌ [CATERING] Supabase error fetching packages:', error);
-      return [];
-    }
+    const packages = await db.cateringPackage.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        featuredOrder: 'asc',
+      },
+    });
 
     console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
     
@@ -49,7 +42,7 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
     })) as CateringPackage[] || [];
 
   } catch (error) {
-    console.error('❌ [CATERING] Unexpected error fetching catering packages:', error);
+    console.error('❌ [CATERING] Error fetching catering packages:', error);
     return [];
   }
 }
@@ -139,23 +132,21 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
 }
 
 /**
- * Fetches all active catering items using Supabase directly
+ * Fetches all active catering items using Prisma
  * Enhanced to also fetch products from Product table that belong to catering categories
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
-    console.log('🔧 [CATERING] Fetching catering items via Supabase...');
+    console.log('🔧 [CATERING] Fetching catering items via Prisma...');
     
-    const { data: items, error } = await supabase
-      .from('CateringItem')
-      .select('*')
-      .eq('isActive', true)
-      .order('category', { ascending: true });
-
-    if (error) {
-      console.error('❌ [CATERING] Supabase error fetching items:', error);
-      return [];
-    }
+    const items = await db.cateringItem.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        category: 'asc',
+      },
+    });
 
     console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items from CateringItem table`);
     
