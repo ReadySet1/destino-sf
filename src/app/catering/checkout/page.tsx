@@ -12,7 +12,7 @@ export default async function CateringCheckoutPage() {
   const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('🔍 Catering Checkout - User from Supabase:', user ? { id: user.id, email: user.email } : 'No user found');
+
   
   let userData = null;
   let isLoggedIn = false;

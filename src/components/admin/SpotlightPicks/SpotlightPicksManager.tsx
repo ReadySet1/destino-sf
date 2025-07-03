@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, AlertCircle, Plus, Eye, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SpotlightPickCard } from './SpotlightPickCard';
 import { SpotlightPickModal } from './SpotlightPickModal';
+import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { toast } from 'sonner';
 
 export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerProps) {
   const [picks, setPicks] = useState<SpotlightPick[]>(initialPicks);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<1 | 2 | 3 | 4>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
@@ -56,8 +59,8 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
   const handleSavePick = async (formData: SpotlightPickFormData) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/spotlight-picks', {
-        method: 'POST',
+      const response = await fetch(`/api/admin/spotlight-picks`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -67,34 +70,21 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       const result = await response.json();
 
       if (result.success) {
-        // Refresh the picks data
-        await refreshPicks();
-        setIsModalOpen(false);
-        toast.success('Spotlight pick saved successfully!');
-      } else {
-        // Display detailed error messages from the API
-        const errorMessage = result.error || 'Failed to save spotlight pick';
+        toast.success('Spotlight pick updated successfully');
         
-        // If there are validation errors, show them in a more user-friendly way
-        if (result.validationErrors && Array.isArray(result.validationErrors)) {
-          console.log('Validation errors:', result.validationErrors);
-          toast.error(errorMessage, {
-            duration: 6000,
-            style: {
-              whiteSpace: 'pre-line',
-            },
-          });
+        // Refresh the picks data
+        refreshPicks();
+      } else {
+        console.error('Failed to update spotlight pick:', result.error);
+        if (result.validationErrors) {
+          toast.error(result.validationErrors.join('\n'));
         } else {
-          toast.error(errorMessage);
+          toast.error(result.error || 'Failed to update spotlight pick');
         }
       }
     } catch (error) {
-      console.error('Error saving spotlight pick:', error);
-      if (error instanceof Error) {
-        toast.error(`Network error: ${error.message}`);
-      } else {
-        toast.error('An error occurred while saving. Please check your connection and try again.');
-      }
+      console.error('Error updating spotlight pick:', error);
+      toast.error('Failed to update spotlight pick');
     } finally {
       setIsLoading(false);
     }
@@ -126,11 +116,10 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
   const refreshPicks = async () => {
     try {
       const response = await fetch('/api/admin/spotlight-picks');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setPicks(result.data);
-        }
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setPicks(result.data);
       }
     } catch (error) {
       console.error('Error refreshing picks:', error);
@@ -161,6 +150,14 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsPreviewOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Preview
           </Button>
           <Button
             asChild
@@ -274,7 +271,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         </CardContent>
       </Card>
 
-      {/* Modal */}
+      {/* Edit Modal */}
       <SpotlightPickModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -283,6 +280,21 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         position={currentPosition}
         categories={categories}
       />
+
+      {/* Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Spotlight Picks Preview</DialogTitle>
+            <p className="text-sm text-gray-600">
+              This is exactly how your spotlight picks will appear on the homepage
+            </p>
+          </DialogHeader>
+          <div className="mt-4">
+            <FeaturedProducts />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

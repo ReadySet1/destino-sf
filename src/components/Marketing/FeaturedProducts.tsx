@@ -220,21 +220,6 @@ function NewFeatureModal({ isOpen, onClose, pick }: NewFeatureModalProps) {
   if (!isOpen || !pick) return null;
 
   const productName = pick.isCustom ? pick.customTitle : pick.product?.name;
-  const productPrice = pick.isCustom ? pick.customPrice : pick.product?.price;
-  const productImage = pick.isCustom ? pick.customImageUrl : pick.product?.images?.[0];
-  const customLink = pick.customLink;
-
-  const handleExplore = () => {
-    if (customLink) {
-      // Handle custom link navigation
-      if (customLink.startsWith('http')) {
-        window.open(customLink, '_blank');
-      } else {
-        window.location.href = customLink;
-      }
-    }
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -263,63 +248,22 @@ function NewFeatureModal({ isOpen, onClose, pick }: NewFeatureModalProps) {
             </svg>
           </button>
 
-          {/* Product Image */}
-          {productImage && (
-            <div className="mb-6">
-              <Image
-                src={productImage}
-                alt={productName || 'Product'}
-                width={200}
-                height={200}
-                className="mx-auto rounded-lg object-cover"
-              />
-            </div>
-          )}
-
           {/* Content */}
-          <div className="mb-6">
-            <div className="mx-auto flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-4">
-              <svg
-                className="w-8 h-8 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {pick.newFeatureTitle || `Introducing ${productName}`}
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              {pick.newFeatureTitle || `Coming Soon!`}
             </h3>
-            <p className="text-gray-600 mb-4">
-              {pick.newFeatureDescription || 'Discover exciting new features and improvements!'}
+            <p className="text-gray-600 mb-6">
+              {pick.newFeatureDescription || 'Our Monthly Subscription service is currently in development. Stay tuned for delicious monthly deliveries!'}
             </p>
-            {productPrice && (
-              <p className="text-lg font-semibold text-amber-600 mb-4">
-                Starting at ${typeof productPrice === 'number' ? productPrice.toFixed(2) : productPrice}
-              </p>
-            )}
           </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-            >
-              Maybe Later
-            </button>
-            <button
-              onClick={handleExplore}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              {customLink ? 'Explore Now' : 'Learn More'}
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="w-full bg-orange-500 text-white px-8 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          >
+            Got it!
+          </button>
         </div>
       </div>
     </div>
@@ -335,9 +279,42 @@ export function FeaturedProducts() {
   const [spotlightPicks, setSpotlightPicks] = useState<SpotlightPick[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Smart fallback image function for custom spotlight picks
+  const getSmartFallbackImage = (pick: SpotlightPick): string => {
+    if (!pick.isCustom) {
+      return pick.product?.images?.[0] || '/images/fallbacks/product-default.svg';
+    }
+
+    // For custom picks, determine fallback based on content
+    const title = pick.customTitle?.toLowerCase() || '';
+    
+    // Check for specific keywords to provide contextual fallbacks
+    if (title.includes('subscription') || title.includes('monthly') || title.includes('weekly')) {
+      return '/images/fallbacks/product-default.svg'; // Generic for subscriptions
+    }
+    if (title.includes('alfajor') || title.includes('cookie') || title.includes('dessert')) {
+      return '/images/fallbacks/alfajores-default.svg';
+    }
+    if (title.includes('empanada') || title.includes('meat') || title.includes('chicken') || title.includes('beef')) {
+      return '/images/fallbacks/empanadas-default.svg';
+    }
+    if (title.includes('catering') || title.includes('event') || title.includes('party')) {
+      return '/images/fallbacks/catering-default.svg';
+    }
+    if (title.includes('drink') || title.includes('beverage') || title.includes('juice') || title.includes('coffee')) {
+      return '/images/fallbacks/drinks-default.svg';
+    }
+    if (title.includes('cafe') || title.includes('coffee')) {
+      return '/images/fallbacks/cafe-default.svg';
+    }
+    
+    // Default fallback for any other custom content
+    return '/images/fallbacks/product-default.svg';
+  };
+
   // Fetch spotlight picks from the database
   useEffect(() => {
-    const fetchSpotlightPicks = async () => {
+    const loadSpotlightPicks = async () => {
       try {
         setIsLoading(true);
         
@@ -350,10 +327,8 @@ export function FeaturedProducts() {
             const activePicks = result.data
               .filter((pick: SpotlightPick) => pick.isActive)
               .sort((a: SpotlightPick, b: SpotlightPick) => a.position - b.position);
-            console.log('🎯 Loaded spotlight picks from API:', activePicks);
             setSpotlightPicks(activePicks);
           } else {
-            console.log('📋 Using fallback default picks');
             // Fallback to default hardcoded data
             setSpotlightPicks(getDefaultPicks());
           }
@@ -363,7 +338,7 @@ export function FeaturedProducts() {
           setSpotlightPicks(getDefaultPicks());
         }
       } catch (error) {
-        console.error('Error fetching spotlight picks:', error);
+        console.error('Error loading spotlight picks:', error);
         // Fallback to default hardcoded data
         setSpotlightPicks(getDefaultPicks());
       } finally {
@@ -371,7 +346,7 @@ export function FeaturedProducts() {
       }
     };
 
-    fetchSpotlightPicks();
+    loadSpotlightPicks();
   }, []);
 
   // Default hardcoded picks as fallback
@@ -414,14 +389,8 @@ export function FeaturedProducts() {
   const handleProductClick = (e: React.MouseEvent, pick: SpotlightPick) => {
     e.preventDefault();
     
-    console.log('🔍 handleProductClick called with pick:', pick);
-    console.log('🔍 personalizeText:', pick.personalizeText);
-    console.log('🔍 showNewFeatureModal:', pick.showNewFeatureModal);
-    console.log('🔍 customTitle:', pick.customTitle);
-    
     // Check if this product should show new feature modal
     if (pick.showNewFeatureModal) {
-      console.log('🚀 Opening new feature modal');
       setSelectedNewFeaturePick(pick);
       setIsNewFeatureModalOpen(true);
       return;
@@ -430,14 +399,12 @@ export function FeaturedProducts() {
     // Check if this is a subscription product (you can customize this logic)
     if (pick.customTitle?.toLowerCase().includes('subscription') || 
         pick.product?.name?.toLowerCase().includes('subscription')) {
-      console.log('📅 Opening subscription modal');
       setIsModalOpen(true);
       return;
     }
     
     // Check if this product has personalize text and should open personalize modal
     if (pick.personalizeText) {
-      console.log('✨ Opening personalize modal with text:', pick.personalizeText);
       setSelectedPersonalizePick(pick);
       setIsPersonalizeModalOpen(true);
       return;
@@ -445,7 +412,6 @@ export function FeaturedProducts() {
     
     // Check if there's a custom link
     if (pick.customLink) {
-      console.log('🔗 Opening custom link:', pick.customLink);
       if (pick.customLink.startsWith('http')) {
         window.open(pick.customLink, '_blank');
       } else {
@@ -455,9 +421,8 @@ export function FeaturedProducts() {
     }
     
     // For other custom items, we can add more logic here
-    // For now, just show an alert
-    console.log('🚫 No special action, showing alert');
-    alert(`Clicked on ${pick.isCustom ? pick.customTitle : pick.product?.name}`);
+    // No special action configured
+    alert(`More info about ${pick.isCustom ? pick.customTitle : pick.product?.name} coming soon!`);
   };
 
   const ProductCard = ({ pick, className }: { pick: SpotlightPick; className?: string }) => {
@@ -470,13 +435,13 @@ export function FeaturedProducts() {
     // Determine product data
     const productData = pick.isCustom ? {
       name: pick.customTitle || 'Custom Product',
-      price: pick.customPrice ? `$${pick.customPrice.toFixed(2)}` : '$0.00',
-      imageUrl: pick.customImageUrl || '/images/placeholder-product.jpg',
+      price: pick.customPrice && pick.customPrice > 0 ? `$${pick.customPrice.toFixed(2)}` : '',
+      imageUrl: pick.customImageUrl || getSmartFallbackImage(pick),
       slug: '#'
     } : {
       name: pick.product?.name || 'Product',
-      price: pick.product?.price ? `$${pick.product.price.toFixed(2)}` : '$0.00',
-      imageUrl: pick.product?.images?.[0] || '/images/placeholder-product.jpg',
+      price: pick.product?.price && pick.product.price > 0 ? `$${pick.product.price.toFixed(2)}` : '',
+      imageUrl: pick.product?.images?.[0] || getSmartFallbackImage(pick),
       slug: pick.product?.slug || '#'
     };
 
@@ -508,17 +473,12 @@ export function FeaturedProducts() {
                     {pick.newFeatureBadgeText || 'NEW'}
                   </div>
                 )}
-                {/* Customize Badge */}
-                {isPersonalizable && (
-                  <div className="bg-purple-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">
-                    Customize
-                  </div>
-                )}
+
               </div>
             </div>
             <div className="mt-4">
               <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
-              <p className="font-medium text-amber-600">{productData.price}</p>
+              {productData.price && <p className="font-medium text-amber-600">{productData.price}</p>}
               {isPersonalizable && (
                 <p className="text-sm text-purple-600 italic mt-1">
                   ✨ {pick.personalizeText}
@@ -526,7 +486,7 @@ export function FeaturedProducts() {
               )}
               {isNewFeature && (
                 <p className="text-sm text-blue-600 italic mt-1">
-                  🚀 {pick.newFeatureDescription || 'New features available!'}
+                  {pick.newFeatureDescription || 'New features available!'}
                 </p>
               )}
             </div>
@@ -566,7 +526,7 @@ export function FeaturedProducts() {
         </div>
         <div className="mt-4">
           <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
-          <p className="font-medium text-amber-600">{productData.price}</p>
+          {productData.price && <p className="font-medium text-amber-600">{productData.price}</p>}
         </div>
       </Link>
     );
@@ -632,12 +592,20 @@ export function FeaturedProducts() {
             Discover our carefully curated selection of premium Peruvian products
           </p>
 
-          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`mt-12 ${
+            spotlightPicks.length <= 3 
+              ? 'flex justify-center gap-6 max-w-6xl mx-auto' // Single line for 1-3 items
+              : 'grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4' // Full grid for 4 items
+          }`}>
             {spotlightPicks.map((pick) => (
               <ProductCard
                 key={pick.id || pick.position}
                 pick={pick}
-                className="group cursor-pointer"
+                className={`group cursor-pointer ${
+                  spotlightPicks.length <= 3 
+                    ? 'flex-shrink-0 w-64 sm:w-72 lg:w-80' // Fixed width, no wrapping
+                    : '' // Let grid handle sizing
+                }`}
               />
             ))}
           </div>

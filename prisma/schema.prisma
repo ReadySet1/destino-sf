@@ -20,6 +20,7 @@ model Profile {
   cateringOrders           CateringOrder[]
   emailAlerts              EmailAlert[]
   customerEmailPreferences CustomerEmailPreferences[]
+  spotlightImageUploads    SpotlightImageUpload[]
   
   @@map("profiles")
 }
@@ -252,6 +253,24 @@ model SpotlightPick {
   @@index([isActive])
   @@index([productId])
   @@map("spotlight_picks")
+}
+
+model SpotlightImageUpload {
+  id        String   @id @default(uuid()) @db.Uuid
+  imageUrl  String   @map("image_url")
+  position  Int
+  uploadedBy String  @map("uploaded_by") @db.Uuid
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  uploader Profile @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([isUsed])
+  @@index([createdAt])
+  @@index([uploadedBy])
+  @@map("spotlight_image_uploads")
 }
 
 model Subscriber {

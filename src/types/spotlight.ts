@@ -44,12 +44,12 @@ export interface SpotlightPickFormData {
   customDescription?: string;
   customImageUrl?: string;
   customPrice?: number;
-  personalizeText?: string;
+  personalizeText?: string | null;
   customLink?: string;
   showNewFeatureModal?: boolean;
-  newFeatureTitle?: string;
-  newFeatureDescription?: string;
-  newFeatureBadgeText?: string;
+  newFeatureTitle?: string | null;
+  newFeatureDescription?: string | null;
+  newFeatureBadgeText?: string | null;
   isActive: boolean;
 }
 

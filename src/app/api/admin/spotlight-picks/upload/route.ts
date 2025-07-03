@@ -25,7 +25,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
   try {
     const supabase = await createClient();
 
-    // Check admin authentication
+    // Check admin authentication and get user
+    const { data: { user } } = await supabase.auth.getUser();
+
     if (!(await isUserAdmin(supabase))) {
       return NextResponse.json({ 
         success: false, 
@@ -59,7 +61,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
       }, { status: 400 });
     }
 
-    const result = await uploadSpotlightImage(file, positionNumber);
+    // Pass user ID for tracking
+    const result = await uploadSpotlightImage(file, positionNumber, user?.id);
     
     return NextResponse.json(result);
   } catch (error) {

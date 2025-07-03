@@ -77,9 +77,7 @@ const getProteinImage = (protein: ProteinOption): string | null => {
     [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarian-option.png',
   };
 
-  console.log('🔍 getProteinImage called with:', protein);
-  console.log('🗂️ Available images:', Object.keys(imageMap));
-  console.log('🎯 Mapped image:', imageMap[protein]);
+
   
   return imageMap[protein] || null;
 };

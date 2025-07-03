@@ -34,11 +34,7 @@ export function SpotlightPickCard({ pick, onEdit, onClear, isLoading }: Spotligh
             <Badge variant="outline" className="text-xs">
               Position {pick.position}
             </Badge>
-            {pick.isCustom && (
-              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
-                Custom
-              </Badge>
-            )}
+
             {!pick.isCustom && pick.product && (
               <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
                 Product
@@ -125,7 +121,7 @@ export function SpotlightPickCard({ pick, onEdit, onClear, isLoading }: Spotligh
                 </p>
               )}
 
-              {price && (
+              {price && price > 0 && (
                 <div className="flex items-center gap-1 text-sm font-medium text-green-600">
                   <DollarSign className="h-3 w-3" />
                   {typeof price === 'number' ? price.toFixed(2) : price}

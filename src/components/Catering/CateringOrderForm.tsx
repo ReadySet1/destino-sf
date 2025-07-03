@@ -71,7 +71,7 @@ export function CateringOrderForm({
   onSubmit,
   isSubmitting
 }: CateringOrderFormProps) {
-  console.log('🔍 CateringOrderForm received defaultValues:', defaultValues);
+  
   
   // Get current date for minimum date selection (5 days advance)
   const today = new Date();
@@ -86,7 +86,7 @@ export function CateringOrderForm({
     specialRequests: defaultValues?.specialRequests || '',
   };
   
-  console.log('🔍 Form initialized with:', formDefaults);
+  
   
   // Initialize form with defaultValues
   const form = useForm<FormValues>({

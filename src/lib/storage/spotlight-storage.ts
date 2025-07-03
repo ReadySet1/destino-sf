@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createClientSide } from '@/utils/supabase/client';
+import { prisma } from '@/lib/db';
 
 const BUCKET_NAME = 'spotlight-picks';
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -10,7 +11,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
  */
 export async function uploadSpotlightImage(
   file: File,
-  position: number
+  position: number,
+  userId?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     // Validate file
@@ -56,9 +58,29 @@ export async function uploadSpotlightImage(
       .from(BUCKET_NAME)
       .getPublicUrl(filePath);
 
+    const imageUrl = urlData.publicUrl;
+
+    // Track the upload in database if userId is provided
+    if (userId) {
+      try {
+        await prisma.spotlightImageUpload.create({
+          data: {
+            imageUrl: imageUrl,
+            position: position,
+            uploadedBy: userId,
+            isUsed: false,
+          },
+        });
+        console.log(`📸 Tracked spotlight image upload: ${imageUrl}`);
+      } catch (dbError) {
+        // Log but don't fail the upload
+        console.error('Failed to track upload in database:', dbError);
+      }
+    }
+
     return {
       success: true,
-      url: urlData.publicUrl
+      url: imageUrl
     };
 
   } catch (error) {
@@ -213,6 +235,169 @@ export async function initializeSpotlightBucketClientSide(): Promise<{ success: 
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown initialization error'
+    };
+  }
+}
+
+/**
+ * Mark an uploaded image as used (when spotlight pick is saved)
+ */
+export async function markSpotlightImageAsUsed(
+  imageUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.spotlightImageUpload.updateMany({
+      where: {
+        imageUrl: imageUrl,
+        isUsed: false,
+      },
+      data: {
+        isUsed: true,
+      },
+    });
+
+    console.log(`✅ Marked spotlight image as used: ${imageUrl}`);
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error marking image as used:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error marking image as used'
+    };
+  }
+}
+
+/**
+ * Clean up orphaned spotlight images
+ * @param olderThanMinutes - Clean up images uploaded more than this many minutes ago and not used
+ */
+export async function cleanupOrphanedSpotlightImages(
+  olderThanMinutes: number = 60
+): Promise<{ success: boolean; deletedCount?: number; errors?: string[]; error?: string }> {
+  try {
+    const cutoffTime = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+    
+    // Find orphaned images
+    const orphanedUploads = await prisma.spotlightImageUpload.findMany({
+      where: {
+        isUsed: false,
+        createdAt: {
+          lt: cutoffTime,
+        },
+      },
+    });
+
+    if (orphanedUploads.length === 0) {
+      console.log('🧹 No orphaned spotlight images found for cleanup');
+      return { success: true, deletedCount: 0 };
+    }
+
+    console.log(`🧹 Found ${orphanedUploads.length} orphaned spotlight images to clean up`);
+
+    const supabase = await createClient();
+    const errors: string[] = [];
+    let successCount = 0;
+
+    // Delete from storage and database
+    for (const upload of orphanedUploads) {
+      try {
+        // Extract file path from URL
+        const url = new URL(upload.imageUrl);
+        const pathParts = url.pathname.split('/');
+        const bucketIndex = pathParts.findIndex(part => part === BUCKET_NAME);
+        
+        if (bucketIndex !== -1) {
+          const filePath = pathParts.slice(bucketIndex + 1).join('/');
+
+          // Delete from storage
+          const { error: deleteError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove([filePath]);
+
+          if (deleteError) {
+            console.error(`Failed to delete ${filePath} from storage:`, deleteError);
+            errors.push(`Storage deletion failed for ${upload.imageUrl}: ${deleteError.message}`);
+          } else {
+            console.log(`🗑️ Deleted orphaned image from storage: ${filePath}`);
+          }
+        }
+
+        // Delete from database
+        await prisma.spotlightImageUpload.delete({
+          where: { id: upload.id },
+        });
+
+        successCount++;
+        console.log(`🗑️ Deleted orphaned image record: ${upload.imageUrl}`);
+
+      } catch (error) {
+        const errorMsg = `Failed to delete ${upload.imageUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+
+    return {
+      success: true,
+      deletedCount: successCount,
+      errors: errors.length > 0 ? errors : undefined
+    };
+
+  } catch (error) {
+    console.error('Error cleaning up orphaned spotlight images:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown cleanup error'
+    };
+  }
+}
+
+/**
+ * Get statistics about spotlight image uploads
+ */
+export async function getSpotlightImageStats(): Promise<{
+  success: boolean;
+  stats?: {
+    totalUploads: number;
+    usedImages: number;
+    orphanedImages: number;
+    oldOrphanedImages: number;
+  };
+  error?: string;
+}> {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const [totalUploads, usedImages, orphanedImages, oldOrphanedImages] = await Promise.all([
+      prisma.spotlightImageUpload.count(),
+      prisma.spotlightImageUpload.count({ where: { isUsed: true } }),
+      prisma.spotlightImageUpload.count({ where: { isUsed: false } }),
+      prisma.spotlightImageUpload.count({
+        where: {
+          isUsed: false,
+          createdAt: {
+            lt: oneHourAgo,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      stats: {
+        totalUploads,
+        usedImages,
+        orphanedImages,
+        oldOrphanedImages,
+      },
+    };
+
+  } catch (error) {
+    console.error('Error getting spotlight image stats:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown stats error'
     };
   }
 } 
