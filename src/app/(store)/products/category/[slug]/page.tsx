@@ -236,8 +236,14 @@ export async function generateStaticParams() {
       }));
   } catch (error) {
     console.error('Failed to generate static params for category pages:', error);
-    // Return an empty array in case of error to prevent build failure
-    // Or handle the error more gracefully depending on requirements
-    return [];
+    
+    // Return fallback static params for essential categories
+    // This ensures build doesn't fail and core pages are generated
+    return [
+      { slug: 'alfajores' },
+      { slug: 'empanadas' },
+      { slug: 'catering' },
+      { slug: 'default' },
+    ];
   }
 }
