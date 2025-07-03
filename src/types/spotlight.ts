@@ -1,24 +1,13 @@
 export interface SpotlightPick {
   id?: string;
   position: 1 | 2 | 3 | 4;
-  productId?: string | null;
-  customTitle?: string | null;
-  customDescription?: string | null;
-  customImageUrl?: string | null;
-  customPrice?: number | null;
-  personalizeText?: string | null;
-  customLink?: string | null;
-  showNewFeatureModal?: boolean;
-  newFeatureTitle?: string | null;
-  newFeatureDescription?: string | null;
-  newFeatureBadgeText?: string | null;
-  isCustom: boolean;
+  productId: string;
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   
-  // Joined product data when not custom
-  product?: {
+  // Product data (required)
+  product: {
     id: string;
     name: string;
     description?: string | null;
@@ -29,47 +18,17 @@ export interface SpotlightPick {
       name: string;
       slug?: string | null;
     };
-  } | null;
-}
-
-export interface SpotlightPicksManagerProps {
-  initialPicks: SpotlightPick[];
+  };
 }
 
 export interface SpotlightPickFormData {
   position: 1 | 2 | 3 | 4;
-  isCustom: boolean;
-  productId?: string;
-  customTitle?: string;
-  customDescription?: string;
-  customImageUrl?: string;
-  customPrice?: number;
-  personalizeText?: string | null;
-  customLink?: string;
-  showNewFeatureModal?: boolean;
-  newFeatureTitle?: string | null;
-  newFeatureDescription?: string | null;
-  newFeatureBadgeText?: string | null;
+  productId: string;
   isActive: boolean;
 }
 
-export interface SpotlightPickModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (pick: SpotlightPickFormData) => Promise<void>;
-  currentPick?: SpotlightPick | null;
-  position: 1 | 2 | 3 | 4;
-  categories: Array<{
-    id: string;
-    name: string;
-    slug?: string | null;
-  }>;
-}
-
-export interface SpotlightUploadResult {
-  success: boolean;
-  url?: string;
-  error?: string;
+export interface SpotlightPicksManagerProps {
+  initialPicks: SpotlightPick[];
 }
 
 export interface SpotlightAPIResponse<T = any> {

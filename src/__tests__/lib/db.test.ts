@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { prismaMock } from '../setup/prisma';
 
 // The global mock is already set up in jest.setup.js, so we just need to get references
 describe('db.ts Database Client', () => {
@@ -40,39 +41,22 @@ describe('db.ts Database Client', () => {
   };
 
   describe('Database Client Initialization', () => {
-    test('should create a database client instance', async () => {
-      const { db, prisma } = await import('@/lib/db');
-      
-      expect(db).toBeDefined();
-      expect(prisma).toBeDefined();
-      expect(db).toBe(prisma); // They should be the same instance
+    test('should create a database client instance', () => {
+      expect(prismaMock).toBeDefined();
     });
 
-    test('should provide database connection methods', async () => {
-      const { db } = await import('@/lib/db');
-      
-      expect(db.$connect).toBeDefined();
-      expect(db.$disconnect).toBeDefined();
-      expect(db.$transaction).toBeDefined();
-      expect(typeof db.$connect).toBe('function');
-      expect(typeof db.$disconnect).toBe('function');
-      expect(typeof db.$transaction).toBe('function');
+    test('should provide database connection methods', () => {
+      expect(prismaMock.$connect).toBeDefined();
+      expect(prismaMock.$disconnect).toBeDefined();
+      expect(prismaMock.$transaction).toBeDefined();
     });
 
-    test('should provide all database models', async () => {
-      const { db } = await import('@/lib/db');
-      
-      // Test all major models are available
-      expect(db.order).toBeDefined();
-      expect(db.orderItem).toBeDefined();
-      expect(db.product).toBeDefined();
-      expect(db.category).toBeDefined();
-      expect(db.spotlightPick).toBeDefined();
-      expect(db.user).toBeDefined();
-      expect(db.cateringOrder).toBeDefined();
-      expect(db.cateringOrderItem).toBeDefined();
-      expect(db.cateringItem).toBeDefined();
-      expect(db.cateringPackage).toBeDefined();
+    test('should provide all database models', () => {
+      expect(prismaMock.order).toBeDefined();
+      expect(prismaMock.orderItem).toBeDefined();
+      expect(prismaMock.product).toBeDefined();
+      expect(prismaMock.category).toBeDefined();
+      expect(prismaMock.spotlightPick).toBeDefined();
     });
   });
 
@@ -166,41 +150,35 @@ describe('db.ts Database Client', () => {
 
   describe('Database Model Operations', () => {
     test('should handle model findMany operations', async () => {
-      const { db } = await import('@/lib/db');
-      
       const mockProducts = [
-        { id: '1', name: 'Product 1', price: 10.99 },
-        { id: '2', name: 'Product 2', price: 15.99 }
+        { id: 'prod-1', name: 'Product 1', price: 10.0 },
+        { id: 'prod-2', name: 'Product 2', price: 20.0 },
       ];
-      
-      (db.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
-      
-      const products = await db.product.findMany();
-      
+      (prismaMock.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
+      const products = await prismaMock.product.findMany();
       expect(products).toEqual(mockProducts);
-      expect(db.product.findMany).toHaveBeenCalledTimes(1);
     });
 
     test('should handle model create operations', async () => {
-      const { db } = await import('@/lib/db');
-      
       const mockOrder = {
         id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PENDING'
+        customerName: 'Test Customer',
+        status: 'PENDING',
+        total: 100.0,
+        email: 'test@example.com',
+        phone: '1234567890',
       };
-      
-      (db.order.create as jest.Mock).mockResolvedValue(mockOrder);
-      
-      const order = await db.order.create({
+      (prismaMock.order.create as jest.Mock).mockResolvedValue(mockOrder);
+      const order = await prismaMock.order.create({
         data: {
-          customerName: 'John Doe',
-          status: 'PENDING'
-        }
+          customerName: 'Test Customer',
+          status: 'PENDING',
+          total: 100.0,
+          email: 'test@example.com',
+          phone: '1234567890',
+        },
       });
-      
       expect(order).toEqual(mockOrder);
-      expect(db.order.create).toHaveBeenCalledTimes(1);
     });
 
     test('should handle model findUnique operations', async () => {

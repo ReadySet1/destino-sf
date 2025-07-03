@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SafeImage } from '@/components/ui/safe-image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringPackage, CateringItem } from '@/types/catering';
-import { Users, CheckCircle, Circle, Info } from 'lucide-react';
+import { Users, CheckCircle, Circle, Info, ShoppingCart, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn, toTitleCase } from '@/lib/utils';
@@ -21,6 +21,161 @@ interface SelectedItems {
   [packageId: string]: string[]; // packageId -> array of selected item IDs
 }
 
+interface StickyButtonProps {
+  visible: boolean;
+  disabled: boolean;
+  onClick: () => void;
+  totalPrice: number;
+  itemCount: number;
+  isLoading: boolean;
+}
+
+interface SelectionProgress {
+  current: number;
+  required: number;
+  percentage: number;
+  isComplete: boolean;
+}
+
+// Utility function for throttling scroll events
+const useThrottledScroll = (callback: () => void, delay: number) => {
+  const throttleRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const throttledCallback = useCallback(() => {
+    if (throttleRef.current) return;
+    
+    throttleRef.current = setTimeout(() => {
+      callback();
+      throttleRef.current = null;
+    }, delay);
+  }, [callback, delay]);
+  
+  useEffect(() => {
+    return () => {
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
+      }
+    };
+  }, []);
+  
+  return throttledCallback;
+};
+
+// Enhanced Progress Component
+const SelectionProgressIndicator: React.FC<{
+  progress: SelectionProgress;
+  currentPackage: CateringPackage | null;
+  peopleCount: number;
+}> = ({ progress, currentPackage, peopleCount }) => {
+  const totalPrice = currentPackage ? currentPackage.pricePerPerson * peopleCount : 0;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4 mb-6"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-amber-600" />
+          <span className="text-sm font-medium text-gray-700">
+            Selection Progress
+          </span>
+        </div>
+        <div className="text-sm text-gray-600">
+          {progress.current} of {progress.required} selected
+        </div>
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+        <motion.div
+          className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress.percentage}%` }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        />
+      </div>
+      
+      {/* Price Information */}
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-gray-600">
+          {progress.isComplete ? 'Ready to add!' : `Need ${progress.required - progress.current} more`}
+        </span>
+        <span className="font-semibold text-amber-700">
+          Total: ${totalPrice.toFixed(2)}
+        </span>
+      </div>
+    </motion.div>
+  );
+};
+
+// Sticky Button Component
+const StickyAddToCartButton: React.FC<StickyButtonProps> = ({
+  visible,
+  disabled,
+  onClick,
+  totalPrice,
+  itemCount,
+  isLoading
+}) => {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: 100, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 100, scale: 0.9 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300, 
+            damping: 30,
+            opacity: { duration: 0.2 }
+          }}
+          className="fixed bottom-4 left-4 right-4 z-50 md:bottom-6 md:left-auto md:right-6 md:max-w-sm"
+        >
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-sm text-gray-600">
+                  {itemCount} appetizers selected
+                </div>
+                <div className="text-lg font-bold text-amber-600">
+                  ${totalPrice.toFixed(2)}
+                </div>
+              </div>
+              <ShoppingCart className="h-6 w-6 text-amber-600" />
+            </div>
+            
+            <Button
+              onClick={onClick}
+              disabled={disabled || isLoading}
+              className={cn(
+                "w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 text-base",
+                "transition-all duration-200 transform",
+                "hover:scale-105 active:scale-95",
+                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                "focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              )}
+              aria-label={`Add package to cart for $${totalPrice.toFixed(2)}`}
+            >
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                "Add Package to Cart"
+              )}
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> = ({
   packages,
   availableItems,
@@ -29,6 +184,11 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({});
   const [peopleCount, setPeopleCount] = useState<number>(2);
+  const [showStickyButton, setShowStickyButton] = useState<boolean>(false);
+  const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+  
+  // Refs for scroll detection
+  const originalButtonRef = useRef<HTMLDivElement>(null);
 
   // Get the currently selected package data
   const currentPackage = packages.find(p => p.id === selectedPackage);
@@ -41,6 +201,51 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
         : 0;
 
   const currentSelectedItems = selectedItems[selectedPackage || ''] || [];
+
+  // Calculate selection progress
+  const selectionProgress: SelectionProgress = {
+    current: currentSelectedItems.length,
+    required: requiredItemCount,
+    percentage: requiredItemCount > 0 ? (currentSelectedItems.length / requiredItemCount) * 100 : 0,
+    isComplete: currentSelectedItems.length === requiredItemCount
+  };
+
+  // Scroll detection for sticky button
+  const checkButtonVisibility = useCallback(() => {
+    if (!originalButtonRef.current || !selectedPackage) {
+      setShowStickyButton(false);
+      return;
+    }
+
+    const rect = originalButtonRef.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    
+    // Show sticky button when original button is below the viewport
+    const shouldShow = rect.top > windowHeight - 100;
+    setShowStickyButton(shouldShow);
+  }, [selectedPackage]);
+
+  const throttledScrollHandler = useThrottledScroll(checkButtonVisibility, 100);
+
+  // Setup scroll listeners
+  useEffect(() => {
+    if (!selectedPackage) {
+      setShowStickyButton(false);
+      return;
+    }
+
+    // Initial check
+    checkButtonVisibility();
+
+    // Add scroll listener
+    window.addEventListener('scroll', throttledScrollHandler);
+    window.addEventListener('resize', checkButtonVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', throttledScrollHandler);
+      window.removeEventListener('resize', checkButtonVisibility);
+    };
+  }, [selectedPackage, throttledScrollHandler, checkButtonVisibility]);
 
   // Function to get the correct image URL with fallback for missing appetizer package images
   const getImageUrl = (url: string | null | undefined): string => {
@@ -104,43 +309,59 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     });
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!currentPackage || currentSelectedItems.length !== requiredItemCount) {
       toast.error(`Please select exactly ${requiredItemCount} items`);
       return;
     }
 
-    const selectedItemNames = currentSelectedItems
-      .map(itemId => availableItems.find(item => item.id === itemId)?.name)
-      .filter(Boolean);
+    setIsAddingToCart(true);
 
-    const totalPrice = currentPackage.pricePerPerson * peopleCount;
+    try {
+      const selectedItemNames = currentSelectedItems
+        .map(itemId => availableItems.find(item => item.id === itemId)?.name)
+        .filter(Boolean);
 
-    const cartItem = {
-      id: currentPackage.id,
-      name: `${toTitleCase(currentPackage.name)} for ${peopleCount} people`,
-      price: totalPrice,
-      quantity: 1,
-      image: getImageUrl(currentPackage.imageUrl),
-      variantId: JSON.stringify({
-        type: 'appetizer-package',
-        packageId: currentPackage.id,
-        selectedItems: currentSelectedItems,
-        selectedItemNames: selectedItemNames.map(name => (name ? toTitleCase(name) : '')),
-        peopleCount,
-        pricePerPerson: currentPackage.pricePerPerson,
-      }),
-    };
+      const totalPrice = currentPackage.pricePerPerson * peopleCount;
 
-    addItem(cartItem);
-    toast.success(
-      `${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`
-    );
+      const cartItem = {
+        id: currentPackage.id,
+        name: `${toTitleCase(currentPackage.name)} for ${peopleCount} people`,
+        price: totalPrice,
+        quantity: 1,
+        image: getImageUrl(currentPackage.imageUrl),
+        variantId: JSON.stringify({
+          type: 'appetizer-package',
+          packageId: currentPackage.id,
+          selectedItems: currentSelectedItems,
+          selectedItemNames: selectedItemNames.map(name => (name ? toTitleCase(name) : '')),
+          peopleCount,
+        }),
+      };
 
-    // Reset selection
-    setSelectedPackage(null);
-    setSelectedItems({});
-    setPeopleCount(2);
+      addItem(cartItem);
+      
+      // Success feedback with animation delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      toast.success(
+        `${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`,
+        {
+          duration: 4000,
+          icon: '🎉',
+        }
+      );
+
+      // Reset selection
+      setSelectedPackage(null);
+      setSelectedItems({});
+      setPeopleCount(2);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add package to cart. Please try again.');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   // Add a custom formatted titleCase function to match other components
@@ -226,7 +447,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
             </h4>
             <div className="text-gray-600 space-y-2">
               <p>Our appetizer packages are currently being configured.</p>
-              <p className="text-sm">
+              <p>
                 {packages.length === 0 && availableItems.length === 0
                   ? 'Both packages and package items are missing.'
                   : packages.length === 0
@@ -358,15 +579,34 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
+                role="region"
+                aria-label="Appetizer selection"
               >
                 <div className="text-center">
                   <h4 className="text-xl font-semibold mb-2">
                     Select {requiredItemCount} Appetizers
                   </h4>
                   <p className="text-gray-600">
-                    Choose {requiredItemCount} appetizers for your package (
-                    {currentSelectedItems.length}/{requiredItemCount} selected)
+                    Choose {requiredItemCount} appetizers for your package
                   </p>
+                </div>
+
+                {/* Enhanced Progress Indicator */}
+                <SelectionProgressIndicator
+                  progress={selectionProgress}
+                  currentPackage={currentPackage}
+                  peopleCount={peopleCount}
+                />
+
+                {/* Live Region for Screen Readers */}
+                <div 
+                  aria-live="polite" 
+                  aria-atomic="true" 
+                  className="sr-only"
+                >
+                  {currentSelectedItems.length} of {requiredItemCount} appetizers selected. 
+                  {selectionProgress.isComplete ? 'Selection complete, ready to add to cart.' : 
+                   `Please select ${requiredItemCount - currentSelectedItems.length} more appetizers.`}
                 </div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -383,6 +623,16 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                           !canSelect ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
                         )}
                         onClick={() => canSelect && handleItemToggle(item.id)}
+                        role="button"
+                        tabIndex={canSelect ? 0 : -1}
+                        aria-pressed={isSelected}
+                        aria-label={`${isSelected ? 'Remove' : 'Add'} ${toTitleCase(item.name)} ${isSelected ? 'from' : 'to'} selection`}
+                        onKeyDown={(e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && canSelect) {
+                            e.preventDefault();
+                            handleItemToggle(item.id);
+                          }
+                        }}
                       >
                         <div className="relative w-full h-32">
                           <SafeImage
@@ -433,20 +683,44 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                   })}
                 </div>
 
-                {/* Add to Cart Button */}
-                <div className="text-center pt-6">
+                {/* Original Add to Cart Button */}
+                <div ref={originalButtonRef} className="text-center pt-6" id="original-add-to-cart">
                   <Button
                     onClick={handleAddToCart}
-                    disabled={currentSelectedItems.length !== requiredItemCount}
-                    className="bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg"
+                    disabled={!selectionProgress.isComplete || isAddingToCart}
+                    className={cn(
+                      "bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg",
+                      "transition-all duration-200 transform hover:scale-105",
+                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                      "focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                    )}
+                    aria-describedby="cart-button-description"
                   >
-                    Add Package to Cart
-                    {currentPackage && (
-                      <span className="ml-2">
-                        (${(currentPackage.pricePerPerson * peopleCount).toFixed(2)})
-                      </span>
+                    {isAddingToCart ? (
+                      <div className="flex items-center gap-2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                        />
+                        Adding to Cart...
+                      </div>
+                    ) : (
+                      <>
+                        Add Package to Cart
+                        {currentPackage && (
+                          <span className="ml-2">
+                            (${(currentPackage.pricePerPerson * peopleCount).toFixed(2)})
+                          </span>
+                        )}
+                      </>
                     )}
                   </Button>
+                  <div id="cart-button-description" className="sr-only">
+                    {selectionProgress.isComplete 
+                      ? `Add ${requiredItemCount} selected appetizers to cart for ${peopleCount} people` 
+                      : `Select ${requiredItemCount - currentSelectedItems.length} more appetizers to enable adding to cart`}
+                  </div>
                 </div>
 
                 {/* Info Note */}
@@ -464,6 +738,16 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Sticky Add to Cart Button */}
+          <StickyAddToCartButton
+            visible={showStickyButton && selectedPackage !== null}
+            disabled={!selectionProgress.isComplete}
+            onClick={handleAddToCart}
+            totalPrice={currentPackage ? currentPackage.pricePerPerson * peopleCount : 0}
+            itemCount={currentSelectedItems.length}
+            isLoading={isAddingToCart}
+          />
         </>
       )}
     </div>

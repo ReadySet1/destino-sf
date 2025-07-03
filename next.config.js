@@ -6,13 +6,13 @@ const nextConfig = {
   reactStrictMode: true,
   // Configure TypeScript checking
   typescript: {
-    // Always ignore build errors to prevent deployments from failing on TS errors
-    // We'll run type checking separately
+    // TEMPORARY: Ignore build errors for production deployment
+    // TODO: Fix TypeScript errors in test files before enabling
     ignoreBuildErrors: true,
     // Use main tsconfig.json for builds to ensure proper path resolution
     tsconfigPath: './tsconfig.json',
   },
-  // Optionally ignore ESLint errors during build in non-production environments
+  // TEMPORARY: Ignore ESLint errors during builds
   eslint: {
     dirs: ['src'],
     ignoreDuringBuilds: true,

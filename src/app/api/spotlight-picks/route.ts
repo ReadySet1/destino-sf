@@ -9,6 +9,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
     const rawSpotlightPicks = await prisma.spotlightPick.findMany({
       where: {
         isActive: true,
+        AND: [
+          {
+            productId: {
+              not: undefined,
+            },
+          },
+        ],
       },
       include: {
         product: {
@@ -28,39 +35,30 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
     });
 
     // Transform the data to match our interface
-    const spotlightPicks: SpotlightPick[] = rawSpotlightPicks.map((pick) => ({
-      id: pick.id,
-      position: pick.position as 1 | 2 | 3 | 4,
-      productId: pick.productId,
-      customTitle: pick.customTitle,
-      customDescription: pick.customDescription,
-      customImageUrl: pick.customImageUrl,
-      customPrice: pick.customPrice ? Number(pick.customPrice) : null,
-      personalizeText: pick.personalizeText,
-      customLink: pick.customLink,
-      showNewFeatureModal: pick.showNewFeatureModal,
-      newFeatureTitle: pick.newFeatureTitle,
-      newFeatureDescription: pick.newFeatureDescription,
-      newFeatureBadgeText: pick.newFeatureBadgeText,
-      isCustom: pick.isCustom,
-      isActive: pick.isActive,
-      createdAt: pick.createdAt,
-      updatedAt: pick.updatedAt,
-      product: pick.product ? {
-        id: pick.product.id,
-        name: pick.product.name,
-        description: pick.product.description,
-        images: pick.product.images || [],
-        price: typeof pick.product.price === 'object' && pick.product.price && 'toNumber' in pick.product.price
-          ? pick.product.price.toNumber()
-          : Number(pick.product.price),
-        slug: pick.product.slug,
-        category: pick.product.category ? {
-          name: pick.product.category.name,
-          slug: pick.product.category.slug,
-        } : undefined,
-      } : null,
-    }));
+    const spotlightPicks: SpotlightPick[] = rawSpotlightPicks
+      .filter((pick) => pick.product && pick.productId) // Extra safety filter
+      .map((pick) => ({
+        id: pick.id,
+        position: pick.position as 1 | 2 | 3 | 4,
+        productId: pick.productId!,
+        isActive: pick.isActive,
+        createdAt: pick.createdAt,
+        updatedAt: pick.updatedAt,
+        product: {
+          id: pick.product!.id,
+          name: pick.product!.name,
+          description: pick.product!.description,
+          images: pick.product!.images || [],
+          price: typeof pick.product!.price === 'object' && pick.product!.price && 'toNumber' in pick.product!.price
+            ? pick.product!.price.toNumber()
+            : Number(pick.product!.price),
+          slug: pick.product!.slug,
+          category: pick.product!.category ? {
+            name: pick.product!.category.name,
+            slug: pick.product!.category.slug,
+          } : undefined,
+        },
+      }));
 
     return NextResponse.json({ 
       success: true, 

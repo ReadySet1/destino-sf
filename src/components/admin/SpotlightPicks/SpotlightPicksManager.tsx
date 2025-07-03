@@ -3,22 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { SpotlightPick, SpotlightPickFormData, SpotlightPicksManagerProps } from '@/types/spotlight';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, Plus, Eye, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Eye, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SpotlightPickCard } from './SpotlightPickCard';
-import { SpotlightPickModal } from './SpotlightPickModal';
 import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { toast } from 'sonner';
 
 export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerProps) {
   const [picks, setPicks] = useState<SpotlightPick[]>(initialPicks);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<1 | 2 | 3 | 4>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
 
   // Ensure we have all 4 positions
   const normalizedPicks = React.useMemo(() => {
@@ -26,41 +22,39 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
     return positions.map(position => {
       const existingPick = picks.find(p => p.position === position);
       return existingPick || {
+        id: `empty-${position}`,
         position,
-        isCustom: false,
+        productId: '',
         isActive: false,
-      };
+        product: {
+          id: '',
+          name: 'No product selected',
+          description: null,
+          images: [],
+          price: 0,
+          slug: null,
+          category: undefined,
+        },
+      } as SpotlightPick;
     });
   }, [picks]);
 
-  // Fetch categories for the modal
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  // Load categories on mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const handleEditPick = (position: 1 | 2 | 3 | 4) => {
-    setCurrentPosition(position);
-    setIsModalOpen(true);
+  const handleProductSelect = async (position: number, productId: string) => {
+    if (!productId) return;
+    
+    const formData: SpotlightPickFormData = { 
+      position: position as 1 | 2 | 3 | 4, 
+      productId, 
+      isActive: true 
+    };
+    await handleSavePick(formData);
   };
 
   const handleSavePick = async (formData: SpotlightPickFormData) => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/admin/spotlight-picks`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -71,9 +65,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
 
       if (result.success) {
         toast.success('Spotlight pick updated successfully');
-        
-        // Refresh the picks data
-        refreshPicks();
+        await refreshPicks();
       } else {
         console.error('Failed to update spotlight pick:', result.error);
         if (result.validationErrors) {
@@ -127,26 +119,22 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
   };
 
   const activePicksCount = normalizedPicks.filter(pick => pick.isActive).length;
-  const customPicksCount = normalizedPicks.filter(pick => pick.isCustom && pick.isActive).length;
-  const productPicksCount = normalizedPicks.filter(pick => !pick.isCustom && pick.isActive).length;
-
-  const currentPick = normalizedPicks.find(p => p.position === currentPosition);
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-8xl">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8 lg:mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Spotlight Picks Management</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Spotlight Picks Management</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Manage the 4 featured products that appear in the &quot;Spotlight Picks&quot; section on the homepage
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={refreshPicks}
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -154,7 +142,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
           <Button
             variant="outline"
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm"
           >
             <Eye className="h-4 w-4" />
             Preview
@@ -162,7 +150,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
           <Button
             asChild
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm"
           >
             <a href="/" target="_blank" rel="noopener noreferrer">
               <Eye className="h-4 w-4" />
@@ -173,78 +161,58 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 lg:mb-10">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Active Picks</CardTitle>
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">Active Picks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{activePicksCount}</div>
-            <p className="text-sm text-gray-600">out of 4 positions</p>
+            <div className="text-2xl sm:text-3xl font-bold text-blue-600">{activePicksCount}</div>
+            <p className="text-xs sm:text-sm text-gray-600">out of 4 positions</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Product-Based</CardTitle>
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">Completion</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{productPicksCount}</div>
-            <p className="text-sm text-gray-600">using existing products</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Custom Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600">{customPicksCount}</div>
-            <p className="text-sm text-gray-600">with custom content</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Completion</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-amber-600">
+            <div className="text-2xl sm:text-3xl font-bold text-amber-600">
               {Math.round((activePicksCount / 4) * 100)}%
             </div>
-            <p className="text-sm text-gray-600">of positions filled</p>
+            <p className="text-xs sm:text-sm text-gray-600">of positions filled</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Status Alert */}
       {activePicksCount === 0 && (
-        <Alert className="mb-6 border-amber-200 bg-amber-50">
+        <Alert className="mb-6 sm:mb-8 border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
+          <AlertDescription className="text-amber-800 text-sm">
             No spotlight picks are currently active. Add some picks to showcase your featured products on the homepage.
           </AlertDescription>
         </Alert>
       )}
 
       {activePicksCount === 4 && (
-        <Alert className="mb-6 border-green-200 bg-green-50">
+        <Alert className="mb-6 sm:mb-8 border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+          <AlertDescription className="text-green-800 text-sm">
             All spotlight pick positions are filled! Your homepage is showcasing 4 featured items.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Spotlight Picks Grid */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Spotlight Pick Positions</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="mb-8 lg:mb-10">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Spotlight Pick Positions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {normalizedPicks.map((pick) => (
             <SpotlightPickCard
               key={pick.position}
               pick={pick}
-              onEdit={() => handleEditPick(pick.position)}
+              onProductSelect={(productId) => handleProductSelect(pick.position, productId)}
               onClear={() => handleClearPick(pick.position)}
               isLoading={isLoading}
             />
@@ -255,31 +223,20 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       {/* Instructions */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800">
-            <Plus className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-blue-800 text-base sm:text-lg">
+            <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
             How to Use Spotlight Picks
           </CardTitle>
         </CardHeader>
         <CardContent className="text-blue-700">
-          <ul className="space-y-2 text-sm">
-            <li>• <strong>Product-Based:</strong> Select an existing product to automatically use its title, description, image, and price</li>
-            <li>• <strong>Custom Content:</strong> Create completely custom spotlight picks with your own images and content</li>
-            <li>• <strong>Mix & Match:</strong> You can combine both approaches - some picks from products, others completely custom</li>
+          <ul className="space-y-2 text-xs sm:text-sm">
+            <li>• <strong>Product Selection:</strong> Choose an existing product to feature in each position</li>
+            <li>• <strong>Automatic Content:</strong> Product details (title, description, image, price) are automatically used</li>
             <li>• <strong>Flexible Positioning:</strong> Any position can be left empty if you want fewer than 4 picks</li>
             <li>• <strong>Live Updates:</strong> Changes are reflected immediately on your homepage</li>
           </ul>
         </CardContent>
       </Card>
-
-      {/* Edit Modal */}
-      <SpotlightPickModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSavePick}
-        currentPick={currentPick}
-        position={currentPosition}
-        categories={categories}
-      />
 
       {/* Preview Modal */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>

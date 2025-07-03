@@ -557,8 +557,6 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
   }
 }
 
-
-
 async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const paymentData = data.object.payment as any;
@@ -575,24 +573,19 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
   try {
     // First check for a catering order with this Square order ID using simpler query approach
     try {
-      // Check if a catering order with this Square order ID exists using raw SQL
-      const cateringOrderExists = await prisma.$queryRaw`
-        SELECT EXISTS (
-          SELECT 1 FROM "CateringOrder"
-          WHERE "squareOrderId" = ${squareOrderId}
-        );
-      `;
-      
-      // Convert the response properly to boolean
-      const isCateringOrder = (cateringOrderExists as any)?.[0]?.exists === true;
-      
-      if (isCateringOrder) {
+      // Check if a catering order with this Square order ID exists using Prisma
+      const cateringOrder = await prisma.cateringOrder.findUnique({
+        where: { squareOrderId },
+        select: { id: true, paymentStatus: true, status: true },
+      });
+
+      if (cateringOrder) {
         console.log(`Detected catering order with squareOrderId ${squareOrderId}`);
-        
+
         // Map Square payment status to our status values
-        let updatedPaymentStatus = 'PENDING';
-        let updatedOrderStatus = null;
-        
+        let updatedPaymentStatus: Prisma.CateringOrderUpdateInput['paymentStatus'] = 'PENDING';
+        let updatedOrderStatus: Prisma.CateringOrderUpdateInput['status'] | undefined;
+
         if (paymentStatus === 'COMPLETED') {
           updatedPaymentStatus = 'PAID';
           updatedOrderStatus = 'CONFIRMED';
@@ -608,24 +601,33 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
         } else {
           console.log(`Other payment status ${paymentStatus} for catering order ${squareOrderId}, keeping as PENDING`);
         }
-        
-        try {
-          // Use raw SQL to update the catering order without relying on schema validation
-          await prisma.$executeRaw`
-            UPDATE "CateringOrder" 
-            SET 
-              "paymentStatus" = ${updatedPaymentStatus}::text::"PaymentStatus", 
-              "status" = ${updatedOrderStatus ? `${updatedOrderStatus}::text::"CateringStatus"` : 'status'},
-              "squarePaymentId" = ${squarePaymentId},
-              "updatedAt" = NOW()
-            WHERE "squareOrderId" = ${squareOrderId}
-          `;
-          
-          console.log(`Successfully updated catering order with squareOrderId ${squareOrderId} to payment status ${updatedPaymentStatus}`);
-        } catch (updateError) {
-          console.error(`Error updating catering order ${squareOrderId}:`, updateError);
+
+        // Prevent downgrading payment status
+        if (
+          (cateringOrder.paymentStatus === 'PAID' && updatedPaymentStatus !== 'PAID' && updatedPaymentStatus !== 'REFUNDED') ||
+          (cateringOrder.paymentStatus === 'REFUNDED' && updatedPaymentStatus !== 'REFUNDED') ||
+          (cateringOrder.paymentStatus === 'FAILED' && updatedPaymentStatus !== 'FAILED')
+        ) {
+          console.log(`Preventing payment status downgrade for catering order ${cateringOrder.id}. Current: ${cateringOrder.paymentStatus}, Proposed: ${updatedPaymentStatus}`);
+          updatedPaymentStatus = cateringOrder.paymentStatus;
         }
-        
+
+        // Build update payload
+        const cateringUpdateData: Prisma.CateringOrderUpdateInput = {
+          paymentStatus: updatedPaymentStatus,
+          updatedAt: new Date(),
+        };
+        if (updatedOrderStatus) {
+          cateringUpdateData.status = updatedOrderStatus;
+        }
+
+        await prisma.cateringOrder.update({
+          where: { id: cateringOrder.id },
+          data: cateringUpdateData,
+        });
+
+        console.log(`Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`);
+
         return; // Exit after handling catering order
       }
     } catch (err) {
@@ -947,6 +949,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Read the body as text first to verify signature
     const bodyText = await request.text();
+    
+    // Early exit if body is empty – some webhook pings can come without a payload
+    if (!bodyText || bodyText.trim().length === 0) {
+      console.warn('Square webhook received with empty body – acknowledging without processing');
+      return NextResponse.json({ received: true, emptyBody: true }, { status: 200 });
+    }
     
     // Verify the webhook signature if a webhook secret is configured
     const signature = request.headers.get('x-square-hmacsha256-signature');

@@ -569,3 +569,24 @@ global.PaymentMethod = {
   CASH: 'CASH',
   VENMO: 'VENMO'
 };
+
+// Mock Square Client
+jest.mock('@/lib/square', () => ({
+  squareClient: {
+    catalogApi: {
+      searchCatalogItems: jest.fn(),
+    },
+  },
+}));
+
+// Mock Mixpanel
+jest.mock('mixpanel-browser', () => ({
+  init: jest.fn(),
+  track: jest.fn(),
+  identify: jest.fn(),
+  people: {
+    set: jest.fn(),
+  },
+}));
+
+require('./src/__tests__/setup/prisma');

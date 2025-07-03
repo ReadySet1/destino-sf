@@ -7,7 +7,6 @@ const createJestConfig = nextJest({
 
 // Base configuration shared across all test types
 const baseConfig: Partial<Config> = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '@testing-library/jest-dom/extend-expect'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^~/(.*)$': '<rootDir>/$1',
