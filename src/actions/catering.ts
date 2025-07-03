@@ -630,12 +630,19 @@ export async function getCateringCategories(): Promise<any[]> {
 // Schema for catering order validation
 const CateringOrderItemSchema = z.object({
   itemType: z.enum(['package', 'item']),
-  itemId: z.string().uuid(),
+  itemId: z.string().uuid().optional().nullable(),
+  packageId: z.string().uuid().optional().nullable(),
   name: z.string(),
   quantity: z.number().int().positive(),
   pricePerUnit: z.number().positive(),
   totalPrice: z.number().positive(),
   notes: z.string().optional().nullable(),
+}).refine((data) => {
+  // Either itemId or packageId should be present, or neither for synthetic items
+  return data.itemType === 'item' ? data.itemId !== null : 
+         data.itemType === 'package' ? data.packageId !== null : true;
+}, {
+  message: "itemId is required for items and packageId is required for packages"
 });
 
 // Phone number validation for catering orders
@@ -876,7 +883,7 @@ export async function createCateringOrderAndProcessPayment(
     if (fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress) {
       const validation = await validateCateringOrderWithDeliveryZone(
         items.map(item => ({
-          id: item.itemId,
+          id: item.itemId || item.packageId || `synthetic-${Date.now()}-${Math.random()}`,
           quantity: item.quantity,
           price: item.pricePerUnit
         })),
@@ -923,8 +930,8 @@ export async function createCateringOrderAndProcessPayment(
         items: {
           create: items.map(item => ({
             itemType: item.itemType,
-            itemId: item.itemType === 'item' ? item.itemId : undefined,
-            packageId: item.itemType === 'package' ? item.itemId : undefined,
+            itemId: item.itemId || undefined,
+            packageId: item.packageId || undefined,
             name: item.name,
             quantity: item.quantity,
             pricePerUnit: item.pricePerUnit,

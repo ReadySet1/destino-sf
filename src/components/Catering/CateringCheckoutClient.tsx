@@ -199,10 +199,35 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         },
         items: cateringItems.map(item => {
           const metadata = JSON.parse(item.variantId || '{}');
+          const pricePerUnit = item.price;
+          const totalPrice = item.price * item.quantity;
+
+          // Determine if this is a real CateringItem or a synthetic item
+          const isRealCateringItem = metadata.type === 'item' && metadata.itemId;
+          const isPackage = metadata.type === 'package';
+          
+          // Only set itemId for real CateringItems, use null for synthetic items
+          let itemId = null;
+          let packageId = null;
+          
+          if (isRealCateringItem) {
+            // For real catering items, use the itemId from metadata
+            itemId = metadata.itemId;
+          } else if (isPackage) {
+            // For packages, set packageId
+            packageId = item.id;
+          }
+          // For synthetic items (lunch packets, service add-ons, etc.), leave both as null
+
           return {
-            ...item,
-            metadata,
-            finalPrice: item.price * item.quantity
+            itemType: metadata.type || 'item',
+            itemId: itemId,
+            packageId: packageId,
+            name: item.name,
+            quantity: item.quantity,
+            pricePerUnit,
+            totalPrice,
+            notes: null
           };
         }),
         totalAmount: calculateTotal()
@@ -216,9 +241,27 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         const pricePerUnit = item.price;
         const totalPrice = item.price * item.quantity;
 
+        // Determine if this is a real CateringItem or a synthetic item
+        const isRealCateringItem = metadata.type === 'item' && metadata.itemId;
+        const isPackage = metadata.type === 'package';
+        
+        // Only set itemId for real CateringItems, use null for synthetic items
+        let itemId = null;
+        let packageId = null;
+        
+        if (isRealCateringItem) {
+          // For real catering items, use the itemId from metadata
+          itemId = metadata.itemId;
+        } else if (isPackage) {
+          // For packages, set packageId
+          packageId = item.id;
+        }
+        // For synthetic items (lunch packets, service add-ons, etc.), leave both as null
+
         return {
           itemType: metadata.type || 'item',
-          itemId: item.id,
+          itemId: itemId,
+          packageId: packageId,
           name: item.name,
           quantity: item.quantity,
           pricePerUnit,
