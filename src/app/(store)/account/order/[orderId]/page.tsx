@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, Users, MapPin, ArrowLeft, Package, User } from 'lucide-react';
 import { getBoxedLunchImage } from '@/lib/utils';
 import { OrderItemImage } from '@/components/ui/order-item-image';
+import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
 
 // Types
 interface PageProps {
@@ -158,6 +159,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
       price: item.price?.toNumber() ?? 0,
       productName: item.product?.name || 'N/A',
       variantName: item.variant?.name || '-',
+      imageUrl: item.product?.images && item.product.images.length > 0 ? item.product.images[0] : undefined,
     })),
     type: 'regular' as const,
   } : {
@@ -241,6 +243,18 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     <Badge variant={getPaymentStatusVariant(orderData.paymentStatus)} className="mt-1">
                       {orderData.paymentStatus}
                     </Badge>
+                    {/* Show retry payment button for eligible orders */}
+                    {isRegularOrder && 
+                     (orderData.status === 'PENDING' || orderData.status === 'PAYMENT_FAILED') && 
+                     (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+                      <div className="mt-2">
+                        <RetryPaymentButton 
+                          orderId={orderData.id} 
+                          retryCount={regularOrder.retryCount || 0}
+                          disabled={(regularOrder.retryCount || 0) >= 3}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -394,7 +408,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     {/* Item Image */}
                     <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
                       <OrderItemImage
-                        src={getBoxedLunchImage(item.productName)}
+                        src={(item as any).imageUrl ?? getBoxedLunchImage(item.productName)}
                         alt={item.productName}
                         className="w-full h-full object-cover"
                       />

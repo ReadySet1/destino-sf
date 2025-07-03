@@ -668,7 +668,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     const accessToken = squareEnv === 'sandbox' 
       ? process.env.SQUARE_SANDBOX_TOKEN 
       : (process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
-    const supportEmail = process.env.SUPPORT_EMAIL;
+    const supportEmail = process.env.SUPPORT_EMAIL || 'info@destinosf.com';
 
     console.log(`Using Square ${squareEnv} environment with location ID: ${locationId}`);
     console.log(`Token source: ${squareEnv === 'sandbox' ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_PRODUCTION_TOKEN/SQUARE_ACCESS_TOKEN'}`);
@@ -815,7 +815,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         const squareCheckoutOptions = {
             allow_tipping: true,
             redirect_url: redirectUrl.toString(),
-            merchant_support_email: supportEmail || customerInfo.email, // Fallback to customer email
+            merchant_support_email: supportEmail, // Now has proper fallback
             ask_for_shipping_address: false, // Provided via fulfillment
             accepted_payment_methods: {
                 apple_pay: true,
@@ -882,10 +882,17 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         const squareOrderId = responseData.payment_link.order_id; 
         console.log(`Square Checkout URL: ${checkoutUrl}, Square Order ID (from link): ${squareOrderId}`);
 
-        // Update our order with the Square Order ID from the payment link response
+        // Update our order with the Square Order ID and payment URL from the payment link response
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
+
         await prisma.order.update({
              where: { id: dbOrder.id },
-             data: { squareOrderId: squareOrderId } // Store the ID for reference
+             data: { 
+                 squareOrderId: squareOrderId, // Store the ID for reference
+                 paymentUrl: checkoutUrl,
+                 paymentUrlExpiresAt: expiresAt
+             }
         });
 
         console.log("Server Action finished successfully.");

@@ -109,6 +109,10 @@ model Order {
   taxAmount                 Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
   isCateringOrder           Boolean       @default(false)
   paymentMethod             PaymentMethod @default(SQUARE)
+  paymentUrl                String?       @map("payment_url")
+  paymentUrlExpiresAt       DateTime?     @map("payment_url_expires_at")
+  retryCount                Int           @default(0) @map("retry_count")
+  lastRetryAt               DateTime?     @map("last_retry_at")
   items                     OrderItem[]
   payments                  Payment[]
   profile                   Profile?      @relation(fields: [userId], references: [id])
@@ -322,6 +326,7 @@ enum UserRole {
 
 enum OrderStatus {
   PENDING
+  PAYMENT_FAILED
   PROCESSING
   READY
   COMPLETED
