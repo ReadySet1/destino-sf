@@ -1,4 +1,4 @@
-import { Client, Environment } from 'square';
+import * as Square from 'square';
 import { createPayment, processGiftCardPayment, handlePaymentWebhook } from '@/lib/square/payments-api';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,7 +7,7 @@ jest.mock('square');
 jest.mock('@/lib/db');
 jest.mock('@/lib/email');
 
-const MockSquareClient = Client as jest.MockedClass<typeof Client>;
+const MockSquare = Square as jest.Mocked<typeof Square>;
 
 describe('Square Payment Integration - E2E Testing', () => {
   let mockSquareClient: any;
@@ -44,7 +44,7 @@ describe('Square Payment Integration - E2E Testing', () => {
       customersApi: mockCustomersApi,
     };
 
-    MockSquareClient.mockImplementation(() => mockSquareClient);
+    MockSquare.SquareClient = jest.fn().mockImplementation(() => mockSquareClient);
 
     // Set up environment
     process.env.SQUARE_ACCESS_TOKEN = 'test-access-token';
@@ -61,23 +61,23 @@ describe('Square Payment Integration - E2E Testing', () => {
   describe('Credit Card Payment Processing', () => {
     it('should process complete credit card payment flow', async () => {
       const paymentRequest = {
-        sourceId: 'card-nonce-ok',
-        amountMoney: {
-          amount: BigInt(2500), // $25.00
+        source_id: 'card-nonce-ok',
+        amount_money: {
+          amount: 2500, // $25.00
           currency: 'USD',
         },
-        idempotencyKey: uuidv4(),
-        orderId: 'order-123',
-        customerDetails: {
+        idempotency_key: uuidv4(),
+        order_id: 'order-123',
+        customer_details: {
           email: 'customer@example.com',
           name: 'John Doe',
           phone: '555-0123',
         },
-        billingAddress: {
-          addressLine1: '123 Main St',
+        billing_address: {
+          address_line_1: '123 Main St',
           locality: 'San Francisco',
-          administrativeDistrictLevel1: 'CA',
-          postalCode: '94102',
+          administrative_district_level_1: 'CA',
+          postal_code: '94102',
           country: 'US',
         },
       };
@@ -122,26 +122,26 @@ describe('Square Payment Integration - E2E Testing', () => {
       expect(result.payment?.receiptUrl).toBeDefined();
       expect(mockPaymentsApi.createPayment).toHaveBeenCalledWith({
         body: expect.objectContaining({
-          sourceId: 'card-nonce-ok',
-          amountMoney: {
-            amount: BigInt(2500),
+          source_id: 'card-nonce-ok',
+          amount_money: {
+            amount: 2500,
             currency: 'USD',
           },
-          idempotencyKey: paymentRequest.idempotencyKey,
-          orderId: 'order-123',
+          idempotency_key: paymentRequest.idempotency_key,
+          order_id: 'order-123',
         }),
       });
     });
 
     it('should handle payment authorization and delayed capture', async () => {
       const authRequest = {
-        sourceId: 'card-nonce-ok',
-        amountMoney: {
-          amount: BigInt(5000), // $50.00
+        source_id: 'card-nonce-ok',
+        amount_money: {
+          amount: 5000, // $50.00
           currency: 'USD',
         },
-        idempotencyKey: uuidv4(),
-        orderId: 'order-456',
+        idempotency_key: uuidv4(),
+        order_id: 'order-456',
         autocomplete: false, // Authorization only
       };
 
@@ -204,13 +204,13 @@ describe('Square Payment Integration - E2E Testing', () => {
 
     it('should handle payment failures with detailed error information', async () => {
       const failedPaymentRequest = {
-        sourceId: 'card-nonce-declined',
-        amountMoney: {
-          amount: BigInt(1000),
+        source_id: 'card-nonce-declined',
+        amount_money: {
+          amount: 1000,
           currency: 'USD',
         },
-        idempotencyKey: uuidv4(),
-        orderId: 'order-789',
+        idempotency_key: uuidv4(),
+        order_id: 'order-789',
       };
 
       // Mock payment decline
@@ -249,14 +249,14 @@ describe('Square Payment Integration - E2E Testing', () => {
 
     it('should handle 3D Secure authentication flow', async () => {
       const securePaymentRequest = {
-        sourceId: 'card-nonce-requires-verification',
-        amountMoney: {
-          amount: BigInt(10000), // $100.00 - triggers 3DS
+        source_id: 'card-nonce-requires-verification',
+        amount_money: {
+          amount: 10000, // $100.00 - triggers 3DS
           currency: 'USD',
         },
-        idempotencyKey: uuidv4(),
-        orderId: 'order-3ds',
-        verificationToken: '3ds-verification-token',
+        idempotency_key: uuidv4(),
+        order_id: 'order-3ds',
+        verification_token: '3ds-verification-token',
       };
 
       // Mock 3DS challenge response
@@ -297,7 +297,7 @@ describe('Square Payment Integration - E2E Testing', () => {
       const giftCardRequest = {
         giftCardNonce: 'gift-card-nonce-ok',
         amountMoney: {
-          amount: BigInt(2500), // $25.00
+          amount: 2500, // $25.00
           currency: 'USD',
         },
         orderId: 'order-gc-123',
@@ -356,7 +356,7 @@ describe('Square Payment Integration - E2E Testing', () => {
       const insufficientGiftCardRequest = {
         giftCardNonce: 'gift-card-nonce-low-balance',
         amountMoney: {
-          amount: BigInt(7500), // $75.00 - more than balance
+          amount: 7500, // $75.00 - more than balance
           currency: 'USD',
         },
         orderId: 'order-gc-456',
@@ -839,10 +839,10 @@ describe('Square Payment Integration - E2E Testing', () => {
     it('should handle production vs sandbox environment differences', () => {
       const getSquareClient = (environment: 'sandbox' | 'production') => {
         const squareEnvironment = environment === 'production' 
-          ? Environment.Production 
-          : Environment.Sandbox;
+          ? Square.Environment.Production 
+          : Square.Environment.Sandbox;
 
-        return new Client({
+        return new Square.SquareClient({
           accessToken: process.env.SQUARE_ACCESS_TOKEN!,
           environment: squareEnvironment,
         });
@@ -851,14 +851,14 @@ describe('Square Payment Integration - E2E Testing', () => {
       const sandboxClient = getSquareClient('sandbox');
       const prodClient = getSquareClient('production');
 
-      expect(MockSquareClient).toHaveBeenCalledTimes(2);
-      expect(MockSquareClient).toHaveBeenCalledWith({
+      expect(MockSquare.SquareClient).toHaveBeenCalledTimes(2);
+      expect(MockSquare.SquareClient).toHaveBeenCalledWith({
         accessToken: 'test-access-token',
-        environment: Environment.Sandbox,
+        environment: Square.Environment.Sandbox,
       });
-      expect(MockSquareClient).toHaveBeenCalledWith({
+      expect(MockSquare.SquareClient).toHaveBeenCalledWith({
         accessToken: 'test-access-token',
-        environment: Environment.Production,
+        environment: Square.Environment.Production,
       });
     });
   });

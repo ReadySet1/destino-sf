@@ -105,6 +105,7 @@ export function SafeImage({
       <Image
         {...props}
         src={currentSrc}
+        alt={props.alt || 'Product image'}
         onError={handleError}
         onLoad={handleLoad}
         placeholder="blur"

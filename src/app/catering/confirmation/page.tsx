@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatCurrency, formatDate, getBoxedLunchImage } from '@/lib/utils';
+import Image from 'next/image';
 
 interface OrderItem {
   id: string;
@@ -196,9 +197,11 @@ function ConfirmationContent() {
                         {orderData.items.map((item, index) => (
                           <div key={index} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
                             <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden">
-                              <img
+                              <Image
                                 src={getBoxedLunchImage(item.name)}
-                                alt={item.name}
+                                alt={item.name || 'Catering item'}
+                                width={48}
+                                height={48}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.src = '/images/catering/default-item.jpg';

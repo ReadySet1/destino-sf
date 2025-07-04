@@ -413,11 +413,11 @@ describe('/api/admin/orders', () => {
 
     test('should handle multiple filters combined', async () => {
       const complexFilter = {
-        status: 'PENDING',
-        fulfillmentMethod: 'delivery',
+        status: 'PENDING' as const,
+        fulfillmentType: 'delivery',
         createdAt: {
-          gte: new Date('2024-01-01T00:00:00Z'),
-          lte: new Date('2024-01-31T23:59:59Z'),
+          gte: new Date('2024-01-01'),
+          lte: new Date('2024-01-31'),
         },
         total: {
           gte: 50,
@@ -453,7 +453,7 @@ describe('/api/admin/orders', () => {
 
       expect(orders).toHaveLength(1);
       expect(orders[0].status).toBe('PENDING');
-      expect(orders[0].fulfillmentMethod).toBe('delivery');
+      expect(orders[0].fulfillmentType).toBe('delivery');
       expect(orders[0].total).toBeGreaterThanOrEqual(50);
     });
   });
@@ -463,24 +463,17 @@ describe('/api/admin/orders', () => {
       id: 'order-1',
       userId: 'user-1',
       status: 'PENDING',
-      fulfillmentMethod: 'delivery',
+      fulfillmentType: 'local_delivery',
       total: 75.50,
-      subtotal: 65.50,
       taxAmount: 5.90,
-      deliveryFee: 4.10,
       createdAt: new Date('2024-01-15T10:00:00Z'),
       updatedAt: new Date('2024-01-15T10:00:00Z'),
       customerName: 'John Doe',
-      customerEmail: 'john@example.com',
-      customerPhone: '+1234567890',
-      deliveryAddress: {
-        street: '123 Main St',
-        city: 'San Francisco',
-        state: 'CA',
-        postalCode: '94105',
-      },
-      deliveryTime: new Date('2024-01-16T14:00:00Z'),
-      specialInstructions: 'Leave at door',
+      email: 'john@example.com',
+      phone: '+1234567890',
+      deliveryDate: '2024-01-16',
+      deliveryTime: '14:00',
+      notes: 'Leave at door',
       items: [
         {
           id: 'item-1',
@@ -517,11 +510,9 @@ describe('/api/admin/orders', () => {
           },
         },
       ],
-      paymentDetails: {
-        method: 'card',
-        status: 'pending',
-        transactionId: 'txn_123456',
-      },
+      paymentStatus: 'PENDING',
+      paymentMethod: 'SQUARE',
+      squareOrderId: 'sq_order_123',
     };
 
     test('should retrieve complete order details by ID', async () => {
@@ -634,8 +625,8 @@ describe('/api/admin/orders', () => {
         },
       });
 
-      expect(order?.deliveryAddress).toBeTruthy();
-      expect(order?.paymentDetails).toBeTruthy();
+      expect(order?.paymentStatus).toBe('PENDING');
+      expect(order?.paymentMethod).toBe('SQUARE');
       expect(order?.items[0].product).toBeTruthy();
       expect(order?.items[0].variant).toBeTruthy();
     });
@@ -748,7 +739,7 @@ describe('/api/admin/orders', () => {
 
       await expect(prisma.order.update({
         where: { id: 'non-existent-order' },
-        data: { status: 'CONFIRMED' },
+        data: { status: 'READY' },
       })).rejects.toThrow('Record not found');
     });
 
@@ -771,7 +762,7 @@ describe('/api/admin/orders', () => {
       const order = await prisma.order.update({
         where: { id: 'order-1' },
         data: { 
-          status: 'IN_PROGRESS',
+          status: 'PROCESSING',
           statusHistory,
           updatedAt: new Date(),
         },
@@ -904,7 +895,7 @@ describe('/api/admin/orders', () => {
 
       const orders = await prisma.order.findMany({
         where: {
-          customerPhone: {
+          phone: {
             contains: '1234567890',
           },
         },
@@ -926,7 +917,7 @@ describe('/api/admin/orders', () => {
       });
 
       expect(orders).toHaveLength(1);
-      expect(orders[0].customerPhone).toContain('1234567890');
+      expect(orders[0].phone).toContain('1234567890');
     });
 
     test('should handle empty search results', async () => {
@@ -979,7 +970,7 @@ describe('/api/admin/orders', () => {
               },
             },
             {
-              customerEmail: {
+              email: {
                 contains: searchTerm,
                 mode: 'insensitive',
               },
@@ -1142,12 +1133,12 @@ describe('/api/admin/orders', () => {
       const confirmedOrder = await prisma.order.update({
         where: { id: 'order-1' },
         data: { 
-          status: 'CONFIRMED',
+          status: 'READY',
           updatedAt: new Date(),
         },
       });
 
-      expect(confirmedOrder.status).toBe('CONFIRMED');
+      expect(confirmedOrder.status).toBe('READY');
     });
 
     test('should handle bulk order operations', async () => {

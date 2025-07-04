@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Package, Check, Loader2, RefreshCw } from 'lucide-react';
-// Removed unused import
+import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -277,9 +277,11 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
                   {/* Product Image */}
                   <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     {product.images?.[0] ? (
-                      <img
+                      <Image
                         src={product.images[0]}
                         alt={product.name}
+                        width={40}
+                        height={40}
                         className="w-full h-full object-cover"
                       />
                     ) : (

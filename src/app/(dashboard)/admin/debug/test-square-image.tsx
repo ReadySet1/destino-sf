@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface TestResult {
   url: string;
@@ -182,9 +183,11 @@ export function TestSquareImage() {
               {result.isSuccess && !result.url.startsWith('/api') && (
                 <div className="mt-2">
                   <p><strong>Preview:</strong></p>
-                  <img 
+                  <Image 
                     src={result.url} 
-                    alt="Test" 
+                    alt="Test image preview" 
+                    width={80}
+                    height={80}
                     className="h-20 w-20 object-cover border"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;

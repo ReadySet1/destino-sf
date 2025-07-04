@@ -396,9 +396,11 @@ const TierCard: React.FC<TierCardProps> = ({
                       <div className="flex items-center gap-3">
                         {getProteinImage(protein) ? (
                           <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
-                            <img
+                            <Image
                               src={getProteinImage(protein)!}
                               alt={proteinInfo.name}
+                              width={64}
+                              height={64}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 console.error(

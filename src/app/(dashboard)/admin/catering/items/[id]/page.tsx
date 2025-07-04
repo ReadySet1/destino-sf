@@ -4,9 +4,10 @@ import { getEnhancedCateringItem, getItemEditCapabilities } from '@/actions/cate
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Square, Database, Image, Clock } from 'lucide-react';
+import { ArrowLeft, Edit, Square, Database, Clock, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { ItemSource } from '@/types/catering';
+import Image from 'next/image';
 
 interface ViewCateringItemPageProps {
   params: Promise<{
@@ -178,16 +179,18 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" />
                 <span>Image</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {item.finalImageUrl ? (
                 <div className="space-y-2">
-                  <img
+                  <Image
                     src={item.finalImageUrl}
-                    alt={item.name}
+                    alt={item.name || 'Catering item image'}
+                    width={400}
+                    height={192}
                     className="w-full h-48 object-cover rounded-lg border"
                   />
                   {isSquareItem && item.overrides?.overrideImage && (
@@ -199,7 +202,7 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
               ) : (
                 <div className="w-full h-48 bg-gray-100 rounded-lg border flex items-center justify-center">
                   <div className="text-center text-gray-500">
-                    <Image className="h-8 w-8 mx-auto mb-2" />
+                    <ImageIcon className="h-8 w-8 mx-auto mb-2" />
                     <p className="text-sm">No image available</p>
                   </div>
                 </div>

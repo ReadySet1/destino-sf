@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Upload, X, AlertTriangle, Square, Database, Image } from 'lucide-react';
+import { Loader2, Upload, X, AlertTriangle, Square, Database, Image as ImageIcon } from 'lucide-react';
 import { 
   type EnhancedCateringItem, 
   type ItemEditCapabilities,
@@ -22,8 +22,8 @@ import {
   getItemEditCapabilities,
   updateCateringItemWithOverrides 
 } from '@/actions/catering-overrides';
-// Removed server-side import to fix build error
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface SmartCateringItemFormProps {
   itemId?: string;
@@ -65,15 +65,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
   });
 
   // Load item data
-  useEffect(() => {
-    if (itemId) {
-      loadItemData();
-    } else {
-      setLoading(false);
-    }
-  }, [itemId]);
-
-  const loadItemData = async () => {
+  const loadItemData = useCallback(async () => {
     if (!itemId) return;
     
     try {
@@ -116,7 +108,15 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemId]);
+
+  useEffect(() => {
+    if (itemId) {
+      loadItemData();
+    } else {
+      setLoading(false);
+    }
+  }, [itemId, loadItemData]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -411,9 +411,11 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
             {/* Current Image */}
             {formData.localImageUrl && (
               <div className="relative">
-                <img
+                <Image
                   src={formData.localImageUrl}
                   alt="Item image"
+                  width={128}
+                  height={128}
                   className="w-32 h-32 object-cover rounded-lg border"
                 />
                 <Button

@@ -1,4 +1,4 @@
-import { Section, Text, Hr } from '@react-email/components';
+import { Section, Text, Hr, Img } from '@react-email/components';
 import * as React from 'react';
 
 interface EmailHeaderProps {
@@ -39,7 +39,7 @@ export const EmailHeader: React.FC<EmailHeaderProps> = ({
   return (
     <Section style={{ ...headerSection, backgroundColor }}>
       {logoUrl ? (
-        <img
+        <Img
           src={logoUrl}
           alt={shopName}
           style={{

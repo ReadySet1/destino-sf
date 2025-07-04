@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { jest } from '@jest/globals';
-import CheckoutPage from '@/app/checkout/page';
-import { useCartStore } from '@/store/useCartStore';
+import CheckoutPage from '@/app/(store)/checkout/page';
+import { useCartStore } from '@/store/cart';
 import { createOrder } from '@/app/actions/orders';
 import { createPayment } from '@/lib/square/payments-api';
 import { getShippingRates, createShippingLabel } from '@/app/actions/shipping';

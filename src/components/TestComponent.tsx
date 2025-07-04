@@ -97,12 +97,12 @@ const TestComponent: React.FC<TestComponentProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [initialUsers.length, addUser]);
+  }, [initialUsers.length, addUser, setLoading]);
 
   const handleUserClick = useCallback((user: User) => {
     setSelectedUser(user);
     onUserSelect?.(user);
-  }, [onUserSelect]);
+  }, [setSelectedUser, onUserSelect]);
 
   const handleAddNewUser = useCallback(() => {
     const name = prompt('Enter user name:');

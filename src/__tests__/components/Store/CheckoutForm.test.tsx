@@ -7,6 +7,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CheckoutForm } from '@/components/Store/CheckoutForm';
 import { useCartStore } from '@/store/cart';
 import { useSmartCart } from '@/hooks/useSmartCart';
+import type { CartItem } from '@/store/cart';
+import type { CateringCartItem } from '@/store/catering-cart';
 
 // Add jest-dom matchers
 import '@testing-library/jest-dom';
@@ -95,6 +97,7 @@ jest.mock('@/components/Store/CheckoutSummary', () => ({
   CheckoutSummary: () => <div>Checkout Summary</div>,
 }));
 
+// Mock cart stores with all required properties
 const mockCartStore = {
   items: [
     { id: '1', name: 'Test Item', price: 10.99, quantity: 1 }
@@ -102,16 +105,29 @@ const mockCartStore = {
   totalItems: 1,
   totalPrice: 10.99,
   clearCart: jest.fn(),
-};
+  addItem: jest.fn(),
+  removeItem: jest.fn(),
+  updateQuantity: jest.fn(),
+} as any;
+
+const mockCateringCartStore = {
+  items: [],
+  totalItems: 0,
+  totalPrice: 0,
+  clearCart: jest.fn(),
+  addItem: jest.fn(),
+  removeItem: jest.fn(),
+  updateQuantity: jest.fn(),
+} as any;
 
 const mockSmartCart = {
   regularCart: mockCartStore,
-  cateringCart: { items: [], totalItems: 0, totalPrice: 0, clearCart: jest.fn() },
-  addToCart: jest.fn(),
+  cateringCart: mockCateringCartStore,
+  addToCart: jest.fn().mockReturnValue('regular'),
   removeFromAllCarts: jest.fn(),
-  getTotalItemCount: jest.fn(() => 1),
-  isInAnyCart: jest.fn(() => false),
-};
+  getTotalItemCount: jest.fn().mockReturnValue(1),
+  isInAnyCart: jest.fn().mockReturnValue(false),
+} as any;
 
 describe('CheckoutForm', () => {
   beforeEach(() => {

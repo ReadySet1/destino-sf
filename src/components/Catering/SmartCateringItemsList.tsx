@@ -46,7 +46,8 @@ import {
 import { CateringItem, CateringItemCategory } from '@/types/catering';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface SmartCateringItemsListProps {
   items: CateringItem[];
@@ -285,9 +286,11 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
       <TableCell>
         <div className="flex items-center space-x-3">
           {item.imageUrl && (
-            <img 
+            <Image 
               src={item.imageUrl} 
               alt={item.name}
+              width={48}
+              height={48}
               className="w-12 h-12 object-cover rounded-lg border"
             />
           )}

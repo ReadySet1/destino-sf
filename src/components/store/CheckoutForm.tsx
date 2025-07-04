@@ -208,7 +208,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const currentPaymentMethod = watch('paymentMethod');
 
   // Function to save contact info immediately
-  const saveContactInfoImmediately = async (name: string, email: string, phone: string) => {
+  const saveContactInfoImmediately = useCallback(async (name: string, email: string, phone: string) => {
     if (!name.trim() || !email.trim() || !phone.trim()) {
       return; // Don't save incomplete info
     }
@@ -234,7 +234,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     } catch (error) {
       console.error('❌ Error saving contact info:', error);
     }
-  };
+  }, []);
 
   // --- Effect to Reset Form Based on Fulfillment Method ---
   // Keep this effect, but initialize based on potentially pre-filled common data

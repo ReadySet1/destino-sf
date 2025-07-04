@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,19 +37,8 @@ export default function OrderFilters({
   const [status, setStatus] = useState(currentStatus || 'all');
   const [payment, setPayment] = useState(currentPayment || 'all');
 
-  // Update search term with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (search !== currentSearch) {
-        applyFilters({ search });
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [search]);
-
   // Function to create new URL with updated search params
-  const applyFilters = (
+  const applyFilters = useCallback((
     updates: { 
       search?: string; 
       type?: string; 
@@ -75,7 +64,18 @@ export default function OrderFilters({
     }
     
     router.push(`${pathname}?${params.toString()}`);
-  };
+  }, [router, pathname, searchParams]);
+
+  // Update search term with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (search !== currentSearch) {
+        applyFilters({ search });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search, currentSearch, applyFilters]);
 
   const resetFilters = () => {
     setSearch('');

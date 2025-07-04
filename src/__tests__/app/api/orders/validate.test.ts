@@ -436,7 +436,7 @@ describe('/api/orders/validate', () => {
       });
 
       expect(products).toHaveLength(2);
-      expect(products.every(product => product.isActive)).toBe(true);
+      expect(products.every(product => product.active)).toBe(true);
       
       // Check inventory availability
       const hasInventory = products.every(product => {

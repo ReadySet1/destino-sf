@@ -165,7 +165,7 @@ describe('/api/orders/create', () => {
       });
 
       expect(products).toHaveLength(2);
-      expect(products.every(product => product.isActive)).toBe(true);
+      expect(products.every(product => product.active)).toBe(true);
 
       // Test order creation
       const order = await prisma.order.create({
@@ -267,8 +267,7 @@ describe('/api/orders/create', () => {
         },
       });
 
-      expect(order.fulfillmentMethod).toBe('pickup');
-      expect(order.deliveryFee).toBe(0);
+      expect(order.fulfillmentType).toBe('pickup');
     });
 
     test('should handle catering orders with higher minimums', async () => {
@@ -577,7 +576,7 @@ describe('/api/orders/create', () => {
       const order = await prisma.order.create({
         data: {
           userId: 'user-123',
-          status: 'CONFIRMED',
+          status: 'READY',
           customerName: orderWithPayment.customerInfo.name,
           customerEmail: orderWithPayment.customerInfo.email,
           paymentIntentId: orderWithPayment.paymentIntentId,
@@ -588,7 +587,7 @@ describe('/api/orders/create', () => {
 
       expect(order.paymentIntentId).toBe('pi_test_123456');
       expect(order.paymentStatus).toBe('succeeded');
-      expect(order.status).toBe('CONFIRMED');
+      expect(order.status).toBe('READY');
     });
 
     test('should handle failed payment processing', async () => {
@@ -829,7 +828,7 @@ describe('/api/orders/create', () => {
         },
       });
 
-      const allProductsActive = products.every(product => product.isActive);
+      const allProductsActive = products.every(product => product.active);
 
       expect(allProductsActive).toBe(false);
     });

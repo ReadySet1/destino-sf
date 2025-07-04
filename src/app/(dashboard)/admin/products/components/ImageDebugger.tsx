@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface DebugResult {
   url: string;
@@ -217,9 +218,11 @@ export function ImageDebugger() {
                         <div className="flex gap-4">
                           <div>
                             <p className="text-xs">Direct:</p>
-                            <img 
+                            <Image 
                               src={image.originalUrl} 
-                              alt="Direct" 
+                              alt="Direct image preview" 
+                              width={80}
+                              height={80}
                               className="h-20 w-20 object-cover border"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -229,9 +232,11 @@ export function ImageDebugger() {
                           </div>
                           <div>
                             <p className="text-xs">Proxied:</p>
-                            <img 
+                            <Image 
                               src={image.proxiedUrl} 
-                              alt="Proxied" 
+                              alt="Proxied image preview" 
+                              width={80}
+                              height={80}
                               className="h-20 w-20 object-cover border"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
