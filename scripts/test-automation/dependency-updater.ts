@@ -250,7 +250,7 @@ class TestDependencyUpdater {
   }
 
   private async processBatchUpdates(updates: DependencyUpdate[], category: string): Promise<{ updated: string[], failed: string[] }> {
-    const result = { updated: [], failed: [] };
+    const result: { updated: string[], failed: string[] } = { updated: [], failed: [] };
 
     for (const update of updates) {
       try {
@@ -273,7 +273,7 @@ class TestDependencyUpdater {
   }
 
   private async processRiskyUpdates(updates: DependencyUpdate[]): Promise<{ updated: string[], failed: string[], rollbacks: string[] }> {
-    const result = { updated: [], failed: [], rollbacks: [] };
+    const result: { updated: string[], failed: string[], rollbacks: string[] } = { updated: [], failed: [], rollbacks: [] };
 
     for (const update of updates) {
       console.log(`\n🔄 Processing risky update: ${update.name}`);

@@ -11,7 +11,7 @@ export default async function PendingOrdersPage() {
     redirect('/sign-in?redirect=/orders/pending');
   }
 
-  const pendingOrders = await prisma.order.findMany({
+  const rawOrders = await prisma.order.findMany({
     where: {
       userId: user.id,
       status: { in: ['PENDING', 'PAYMENT_FAILED'] },
@@ -29,6 +29,17 @@ export default async function PendingOrdersPage() {
       updatedAt: 'desc'
     }
   });
+
+  // Convert Decimal types to numbers for client component
+  const pendingOrders = rawOrders.map(order => ({
+    ...order,
+    total: Number(order.total),
+    retryCount: order.retryCount || 0,
+    items: order.items.map(item => ({
+      ...item,
+      price: Number(item.price)
+    }))
+  }));
 
   return (
     <div className="container mx-auto px-4 py-8">

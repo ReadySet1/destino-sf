@@ -118,6 +118,8 @@
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.70.0",
     "@types/twilio": "^3.19.3",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.35.1",
     "@vercel/og": "^0.6.8",
     "autoprefixer": "10.4.20",
     "class-variance-authority": "^0.7.0",

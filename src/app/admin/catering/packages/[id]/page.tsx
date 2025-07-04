@@ -4,15 +4,15 @@ import { CateringPackageForm } from '@/components/Catering';
 import { getCateringPackageById } from '@/actions/catering';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export const dynamic = 'force-dynamic';
 
 export default async function EditCateringPackagePage({ params }: PageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   // Fetch the catering package
   const cateringPackage = await getCateringPackageById(id);

@@ -3,6 +3,7 @@ import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
+import { applyStrictRateLimit } from '@/middleware/rate-limit';
 
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {
@@ -44,6 +45,13 @@ interface CheckoutRequestBody {
 }
 
 export async function POST(request: Request) {
+  // Apply strict rate limiting for checkout endpoint (10 requests per minute per IP)
+  const rateLimitResponse = await applyStrictRateLimit(request as any, 10);
+  if (rateLimitResponse) {
+    console.warn('Checkout rate limit exceeded');
+    return rateLimitResponse;
+  }
+
   try {
     // Get the Supabase client
     const supabase = await getSupabaseClient();

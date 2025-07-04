@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { applyUserBasedRateLimit } from '@/middleware/rate-limit';
 
 const MAX_RETRY_ATTEMPTS = 3;
 const CHECKOUT_URL_EXPIRY_HOURS = 24;
@@ -16,6 +17,15 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Apply user-based rate limiting for order retry endpoint (3 requests per minute per user)
+    const rateLimitResponse = await applyUserBasedRateLimit(request, user.id, {
+      config: { id: 'order-retry', limit: 3, window: 60 * 1000, prefix: 'order_retry_rl' }
+    });
+    if (rateLimitResponse) {
+      console.warn(`Order retry rate limit exceeded for user ${user.id}`);
+      return rateLimitResponse;
     }
 
     const { orderId } = await params;

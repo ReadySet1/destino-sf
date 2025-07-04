@@ -28,6 +28,13 @@ export async function GET(request: NextRequest) {
     logger.info(`Found product: ${product.name} (${product.id})`);
     
     // Fetch the Square catalog item
+    if (!squareClient.catalogApi) {
+      return NextResponse.json({ 
+        error: 'Square catalog API not available',
+        product
+      }, { status: 500 });
+    }
+    
     const catalogResponse = await squareClient.catalogApi.retrieveCatalogObject(product.squareId);
     const item = catalogResponse.result?.object;
     
@@ -53,6 +60,11 @@ export async function GET(request: NextRequest) {
     
     for (const imageId of imageIds) {
       try {
+        if (!squareClient.catalogApi) {
+          logger.error('Square catalog API not available for image fetch');
+          continue;
+        }
+        
         const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
         const imageObject = imageResponse.result?.object;
         

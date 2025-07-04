@@ -8,13 +8,14 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 interface EditCateringItemPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditCateringItemPage({ params }: EditCateringItemPageProps) {
-  const item = await getEnhancedCateringItem(params.id);
+  const { id } = await params;
+  const item = await getEnhancedCateringItem(id);
 
   if (!item) {
     notFound();
@@ -43,7 +44,7 @@ export default async function EditCateringItemPage({ params }: EditCateringItemP
         </CardHeader>
         <CardContent>
           <SmartCateringItemForm 
-            itemId={params.id}
+            itemId={id}
           />
         </CardContent>
       </Card>

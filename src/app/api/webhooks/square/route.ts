@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
+import { applyWebhookRateLimit } from '@/middleware/rate-limit';
 
 type SquareEventType =
   | 'order.created'
@@ -945,6 +946,13 @@ async function getOrderTracking(orderId: string) {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Received Square webhook request');
+
+  // Apply webhook-specific rate limiting
+  const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
+  if (rateLimitResponse) {
+    console.warn('Square webhook rate limit exceeded');
+    return rateLimitResponse;
+  }
 
   try {
     // Read the body as text first to verify signature

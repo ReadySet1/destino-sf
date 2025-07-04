@@ -4,18 +4,19 @@ const nextConfig = {
     styledComponents: true,
   },
   reactStrictMode: true,
+  // Remove X-Powered-By header
+  poweredByHeader: false,
   // Configure TypeScript checking
   typescript: {
-    // TEMPORARY: Ignore build errors for production deployment
-    // TODO: Fix TypeScript errors in test files before enabling
-    ignoreBuildErrors: true,
+    // Enable strict TypeScript checking for production
+    ignoreBuildErrors: false,
     // Use main tsconfig.json for builds to ensure proper path resolution
     tsconfigPath: './tsconfig.json',
   },
-  // TEMPORARY: Ignore ESLint errors during builds
+  // Enable ESLint checking during builds
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Add Sanity to transpile modules to avoid issues with conflicting types
   transpilePackages: ['next-sanity', '@sanity/client'],
@@ -58,6 +59,101 @@ const nextConfig = {
     ];
     
     return config;
+  },
+  // Security headers configuration
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // Prevent clickjacking attacks
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          // Prevent MIME type sniffing
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          // Enable XSS protection
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          // Control referrer information
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          // Control browser features
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
+          },
+          // Enforce HTTPS in production
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
+          // Content Security Policy
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https://*.s3.us-west-2.amazonaws.com https://*.s3.amazonaws.com https://*.squarecdn.com https://*.supabase.co https://destino-sf.square.site https://maps.googleapis.com https://maps.gstatic.com",
+              "connect-src 'self' https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com",
+              "frame-src 'self' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com",
+              "media-src 'self' data: blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          }
+        ]
+      },
+      // API routes specific headers
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
+          }
+        ]
+      },
+      // Admin routes specific headers
+      {
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
+          }
+        ]
+      }
+    ]
   },
   images: {
     remotePatterns: [

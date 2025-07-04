@@ -9,15 +9,16 @@ import Link from 'next/link';
 import { ItemSource } from '@/types/catering';
 
 interface ViewCateringItemPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function ViewCateringItemPage({ params }: ViewCateringItemPageProps) {
+  const { id } = await params;
   const [item, capabilities] = await Promise.all([
-    getEnhancedCateringItem(params.id),
-    getItemEditCapabilities(params.id)
+    getEnhancedCateringItem(id),
+    getItemEditCapabilities(id)
   ]);
 
   if (!item) {
@@ -36,7 +37,7 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
           </Link>
         </Button>
         <Button asChild>
-          <Link href={`/admin/catering/items/${params.id}/edit`}>
+          <Link href={`/admin/catering/items/${id}/edit`}>
             <Edit className="h-4 w-4 mr-2" />
             {isSquareItem ? 'Edit Overrides' : 'Edit Item'}
           </Link>

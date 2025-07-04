@@ -9,9 +9,9 @@ import { getCateringPackageById } from '@/actions/catering';
 import { notFound } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditCateringPackagePage({ params }: PageProps) {
@@ -19,7 +19,8 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
   let errorMessage = '';
 
   try {
-    cateringPackage = await getCateringPackageById(params.id);
+    const { id } = await params;
+    cateringPackage = await getCateringPackageById(id);
     
     if (!cateringPackage) {
       notFound();

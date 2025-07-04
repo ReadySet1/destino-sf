@@ -71,6 +71,13 @@ export async function GET(request: NextRequest) {
       include_related_objects: true
     };
     
+    if (!squareClient.catalogApi) {
+      return NextResponse.json({ 
+        error: 'Square catalog API not available',
+        product
+      }, { status: 500 });
+    }
+    
     const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest);
     
     const items = (searchResponse.result?.objects || []) as SquareCatalogObject[];
@@ -118,6 +125,12 @@ export async function GET(request: NextRequest) {
           // Try to retrieve image directly
           try {
             logger.info(`Image not found in related objects, retrieving image ${imageId} directly`);
+            
+            if (!squareClient.catalogApi) {
+              logger.error('Square catalog API not available for image retrieval');
+              continue;
+            }
+            
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageData = imageResponse.result?.object as SquareCatalogObject;
             

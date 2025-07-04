@@ -156,9 +156,9 @@ function getPaymentStatusColor(status: string | null | undefined): string {
 }
 
 type PageProps = {
-  params: {
+  params: Promise<{
     cateringId: string
-  }
+  }>
 }
 
 /**

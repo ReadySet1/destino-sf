@@ -338,8 +338,8 @@ export async function updateOrderPayment(orderId: string, squareOrderId: string,
           include: {
             items: {
               include: {
-                product: { select: { name: true } },
-                variant: { select: { name: true } }
+                product: true,
+                variant: true
               }
             }
           }
@@ -359,8 +359,8 @@ export async function updateOrderPayment(orderId: string, squareOrderId: string,
           include: {
             items: {
               include: {
-                product: { select: { name: true } },
-                variant: { select: { name: true } }
+                product: true,
+                variant: true
               }
             }
           }
@@ -402,8 +402,8 @@ export async function getOrderById(orderId: string) {
       include: {
         items: {
           include: {
-            product: { select: { name: true } }, // Select only needed fields
-            variant: { select: { name: true } }  // Select only needed fields
+            product: true,
+            variant: true
           }
         }
       }
@@ -638,8 +638,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
                 include: {
                     items: {
                         include: {
-                            product: { select: { name: true } },
-                            variant: { select: { name: true } }
+                            product: true,
+                            variant: true
                         }
                     }
                 }
@@ -1113,8 +1113,8 @@ export async function createManualPaymentOrder(formData: {
                 include: {
                     items: {
                         include: {
-                            product: { select: { name: true } },
-                            variant: { select: { name: true } }
+                            product: true,
+                            variant: true
                         }
                     }
                 }

@@ -61,6 +61,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       include_deleted_objects: false
     };
     
+    if (!squareClient.catalogApi) {
+      return NextResponse.json({ 
+        error: 'Square catalog API not available'
+      }, { status: 500 });
+    }
+    
     const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
     const squareItems = (catalogResponse.result?.objects || []) as SquareCatalogObject[];
     
@@ -302,7 +308,7 @@ async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCat
       } else {
         // Try to retrieve image directly
         try {
-          if (squareClient.catalogApi.retrieveCatalogObject) {
+          if (squareClient.catalogApi && squareClient.catalogApi.retrieveCatalogObject) {
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageData = imageResponse.result?.object;
             

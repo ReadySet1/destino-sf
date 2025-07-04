@@ -1,5 +1,38 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { applyRateLimit, shouldBypassInDevelopment } from '@/middleware/rate-limit';
+
+/**
+ * Add enhanced security headers to response
+ */
+function addSecurityHeaders(response: NextResponse, pathname: string): void {
+  // Generate nonce for inline scripts if needed
+  const nonce = crypto.randomUUID();
+  
+  // Add security headers that complement those in next.config.js
+  response.headers.set('X-DNS-Prefetch-Control', 'off');
+  response.headers.set('X-Download-Options', 'noopen');
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
+  
+  // Add nonce for CSP if this is an HTML page
+  if (!pathname.startsWith('/api/') && !pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
+    response.headers.set('X-CSP-Nonce', nonce);
+  }
+  
+  // Add additional cache control for sensitive routes
+  if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+  }
+  
+  // Add CSRF protection header
+  response.headers.set('X-CSRF-Protection', '1');
+  
+  // Add request ID for tracing
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  response.headers.set('X-Request-ID', requestId);
+}
 
 // Lightweight middleware optimized for edge runtime
 export async function middleware(request: NextRequest) {
@@ -15,13 +48,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
+  // Apply rate limiting before authentication (only for API routes)
+  // This protects all API endpoints including webhooks, checkout, and admin routes
+  if (pathname.startsWith('/api/') && !shouldBypassInDevelopment()) {
+    const rateLimitResponse = await applyRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse; // Return rate limit response if exceeded
+    }
+  }
+  
   const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
-  // Initialize Supabase client with minimal operations
+  // Add enhanced security headers for all responses
+  addSecurityHeaders(response, pathname);
+
+  // Initialize Supabase client with minimal operations (after rate limiting)
   try {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

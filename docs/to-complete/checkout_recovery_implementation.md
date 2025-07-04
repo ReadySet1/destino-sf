@@ -2,6 +2,8 @@
 
 ## 📋 Overview
 
+Note: Phase 1 has been applied. 
+
 This guide addresses two critical issues in your e-commerce system:
 
 1. **Pending Orders Without Recovery**: When Square payment fails, orders remain in `PENDING` status with no way for customers to retry payment
