@@ -10,14 +10,15 @@ async function testSyncPreservation() {
   try {
     console.log('🔄 Testing Override Preservation During Sync...');
 
-    // 1. Find a Square item with overrides
-    const itemWithOverrides = await prisma.cateringItem.findFirst({
+    // 1. Find a Square item with overrides  
+    const allSquareItems = await prisma.cateringItem.findMany({
       where: {
-        squareProductId: { not: null },
-        overrides: { not: null }
+        squareProductId: { not: null }
       },
       include: { overrides: true }
     });
+    
+    const itemWithOverrides = allSquareItems.find(item => item.overrides);
 
     if (!itemWithOverrides || !itemWithOverrides.overrides) {
       console.log('❌ No Square items with overrides found. Please run the override test first.');
