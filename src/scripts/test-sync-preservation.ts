@@ -14,7 +14,7 @@ async function testSyncPreservation() {
     const itemWithOverrides = await prisma.cateringItem.findFirst({
       where: {
         squareProductId: { not: null },
-        overrides: { isNot: null }
+        overrides: { not: null }
       },
       include: { overrides: true }
     });

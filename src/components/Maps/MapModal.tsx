@@ -9,20 +9,31 @@ declare global {
   interface Window {
     google: {
       maps: {
-        Map: any;
-        Marker: any;
-        InfoWindow: any;
-        Geocoder: any;
+        Map: new (element: HTMLElement, options: any) => any;
+        Marker: new (options: any) => any;
+        InfoWindow: new () => any;
+        Geocoder: new () => any;
+        LatLngBounds: new () => any;
         Animation: {
           DROP: any;
         };
         GeocoderStatus: any;
-        GeocoderResult: any;
-        LatLngBounds: any;
       };
     };
   }
 }
+
+// Type definitions for Google Maps API responses
+type GoogleMapsGeocoderResult = {
+  geometry: {
+    location: {
+      lat(): number;
+      lng(): number;
+    };
+  };
+};
+
+type GoogleMapsGeocoderStatus = 'OK' | 'ZERO_RESULTS' | 'OVER_QUERY_LIMIT' | 'REQUEST_DENIED' | 'INVALID_REQUEST' | 'UNKNOWN_ERROR';
 
 interface StoreLocation {
   name: string;
@@ -55,9 +66,9 @@ const GoogleMapsComponent: React.FC<{
   selectedLocationIndex: number | null;
 }> = ({ apiKey, locations, selectedLocationIndex }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const mapInstance = useRef<any | null>(null);
+  const markersRef = useRef<any[]>([]);
+  const infoWindowRef = useRef<any | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Function to initialize the map and add all markers
@@ -95,7 +106,7 @@ const GoogleMapsComponent: React.FC<{
 
       geocoder.geocode(
         { address: location.address },
-        (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+        (results: GoogleMapsGeocoderResult[] | null, status: GoogleMapsGeocoderStatus) => {
           geocodeCount++;
           if (status === 'OK' && results && results[0]) {
             const position = results[0].geometry.location;

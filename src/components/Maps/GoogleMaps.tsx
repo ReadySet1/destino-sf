@@ -47,7 +47,7 @@ function GoogleMaps({ apiKey }: GoogleMapsProps) {
           lng: -122.368223217,
         };
 
-        const options: google.maps.MapOptions = {
+        const options = {
           center: location,
           zoom: 15,
           mapId: 'map',
@@ -61,9 +61,9 @@ function GoogleMaps({ apiKey }: GoogleMapsProps) {
         // Crear el mapa
         const map = new Map(mapRef.current, options);
 
-        const { AdvancedMarkerElement } = (await loader.importLibrary(
+        const { AdvancedMarkerElement } = await loader.importLibrary(
           'marker'
-        )) as google.maps.MarkerLibrary;
+        );
 
         new AdvancedMarkerElement({
           position: location,

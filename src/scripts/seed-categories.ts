@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '@/lib/db';
 
 async function seedCategories() {
   console.log('🌱 Seeding categories...');

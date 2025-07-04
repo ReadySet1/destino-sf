@@ -370,7 +370,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         console.log("Received rates:", result.rates);
         if (result.rates.length === 0) {
             setShippingError('No shipping rates found for this address.'); setShippingRates([]);
-        } else { setShippingRates(result.rates); }
+        } else { setShippingRates(result.rates as ShippingRate[]); }
       } else {
         console.error("Failed to fetch shipping rates:", result.error);
         setShippingError(result.error || 'Failed to fetch shipping rates.'); setShippingRates([]);

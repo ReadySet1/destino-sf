@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createClient } from '@/utils/supabase/server';
 import { GET, POST, PUT } from '@/app/api/admin/orders/route';
+import { OrderStatus } from '@prisma/client';
 
 // Import our new test utilities
 import { 
@@ -218,7 +219,7 @@ describe('/api/admin/orders', () => {
 
       const orders = await prisma.order.findMany({
         where: {
-          fulfillmentMethod: 'delivery',
+          fulfillmentType: 'delivery',
         },
         include: {
           items: {
@@ -238,7 +239,7 @@ describe('/api/admin/orders', () => {
       });
 
       expect(orders).toHaveLength(1);
-      expect(orders[0].fulfillmentMethod).toBe('delivery');
+      expect(orders[0].fulfillmentType).toBe('delivery');
     });
 
     test('should filter orders by date range', async () => {
@@ -287,7 +288,7 @@ describe('/api/admin/orders', () => {
 
       const orders = await prisma.order.findMany({
         where: {
-          customerEmail: {
+          email: {
             contains: 'john@example.com',
             mode: 'insensitive',
           },
@@ -310,7 +311,7 @@ describe('/api/admin/orders', () => {
       });
 
       expect(orders).toHaveLength(1);
-      expect(orders[0].customerEmail).toBe('john@example.com');
+      expect(orders[0].email).toBe('john@example.com');
     });
 
     test('should handle pagination', async () => {
@@ -653,7 +654,7 @@ describe('/api/admin/orders', () => {
       const order = await prisma.order.update({
         where: { id: 'order-1' },
         data: { 
-          status: 'CONFIRMED',
+          status: OrderStatus.PROCESSING,
           updatedAt: new Date(),
         },
         include: {

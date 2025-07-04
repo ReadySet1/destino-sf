@@ -90,7 +90,7 @@ const MenuFaqSection: React.FC = () => {
       opacity: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 300,
         damping: 24,
       },
@@ -110,7 +110,7 @@ const MenuFaqSection: React.FC = () => {
       transition: {
         height: {
           duration: 0.4,
-          ease: [0.04, 0.62, 0.23, 0.98],
+          ease: [0.04, 0.62, 0.23, 0.98] as const,
         },
         opacity: {
           duration: 0.25,
@@ -118,7 +118,7 @@ const MenuFaqSection: React.FC = () => {
         },
         translateY: {
           duration: 0.3,
-          ease: 'easeOut',
+          ease: 'easeOut' as const,
         },
       },
     },
@@ -129,7 +129,7 @@ const MenuFaqSection: React.FC = () => {
       transition: {
         height: {
           duration: 0.3,
-          ease: [0.04, 0.62, 0.23, 0.98],
+          ease: [0.04, 0.62, 0.23, 0.98] as const,
         },
         opacity: {
           duration: 0.2,
@@ -145,11 +145,11 @@ const MenuFaqSection: React.FC = () => {
   const buttonHoverVariants = {
     rest: {
       backgroundColor: 'rgba(255, 255, 255, 1)',
-      transition: { duration: 0.2, ease: 'easeInOut' },
+      transition: { duration: 0.2, ease: 'easeInOut' as const },
     },
     hover: {
       backgroundColor: 'rgba(254, 252, 232, 0.5)',
-      transition: { duration: 0.2, ease: 'easeInOut' },
+      transition: { duration: 0.2, ease: 'easeInOut' as const },
     },
   };
 
@@ -157,11 +157,11 @@ const MenuFaqSection: React.FC = () => {
   const arrowVariants = {
     up: {
       rotate: 180,
-      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] },
+      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] as const },
     },
     down: {
       rotate: 0,
-      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] },
+      transition: { duration: 0.3, ease: [0.3, 1.05, 0.5, 1.05] as const },
     },
   };
 

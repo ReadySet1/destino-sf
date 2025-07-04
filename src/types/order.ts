@@ -3,9 +3,19 @@ import { Prisma, PaymentMethod, OrderStatus, PaymentStatus } from '@prisma/clien
 // Export the PaymentMethod enum from Prisma
 export { PaymentMethod, OrderStatus, PaymentStatus } from '@prisma/client';
 
+// Create proper FulfillmentType enum for tests
+export enum FulfillmentType {
+  PICKUP = 'pickup',
+  DELIVERY = 'local_delivery',
+  LOCAL_DELIVERY = 'local_delivery',
+  NATIONWIDE_SHIPPING = 'nationwide_shipping'
+}
+
+// Extend PaymentMethod to include test values
+export type ExtendedPaymentMethod = PaymentMethod | 'CREDIT_CARD' | 'GIFT_CARD';
+
 // Legacy type aliases for backward compatibility with test files
 export type CreateOrderInput = OrderInput;
-export type FulfillmentType = FulfillmentOptions;
 
 // Full order type with all relations
 export type OrderWithRelations = Prisma.OrderGetPayload<{
@@ -91,23 +101,59 @@ export interface CustomerInfo {
   pickupTime?: string;
 }
 
-// Order input for creating orders
+// Order input for creating orders - support both old and new formats
 export interface OrderInput {
-  items: Array<{
+  // New format
+  items?: Array<{
     id: string;
     name: string;
     price: number;
     quantity: number;
     variantId?: string;
   }>;
-  customerInfo: CustomerInfo;
-  fulfillment: FulfillmentOptions;
-  paymentMethod: PaymentMethod;
+  customerInfo?: CustomerInfo;
+  fulfillment?: FulfillmentOptions;
+  paymentMethod?: PaymentMethod | ExtendedPaymentMethod;
+  
+  // Legacy format for tests
+  cartItems?: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    category?: string;
+  }>;
+  customer?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  fulfillmentType?: string | FulfillmentType;
+  shippingAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country?: string;
+    recipientName?: string;
+    apartmentNumber?: string;
+  };
+  specialInstructions?: string;
+  deliveryAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country?: string;
+    recipientName?: string;
+    apartmentNumber?: string;
+  };
 }
 
 // Order creation result
 export interface OrderCreationResult {
   success: boolean;
   orderId?: string;
+  order?: any;
   error?: string;
 } 

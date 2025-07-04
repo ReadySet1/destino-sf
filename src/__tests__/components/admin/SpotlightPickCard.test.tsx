@@ -226,6 +226,7 @@ describe('SpotlightPickCard', () => {
       render(
         <SpotlightPickCard
           pick={mockActivePick}
+          onProductSelect={jest.fn()}
           onClear={jest.fn()}
           isLoading
         />
@@ -262,7 +263,6 @@ describe('SpotlightPickCard', () => {
           onProductSelect={jest.fn()}
           onClear={jest.fn()}
           isLoading
-          isUpdating
         />
       );
 

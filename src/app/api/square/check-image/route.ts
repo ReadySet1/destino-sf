@@ -122,6 +122,13 @@ export async function GET(request: NextRequest) {
     if (imageId) {
       // If we have an image ID, get that specific image
       try {
+        if (!squareClient.catalogApi) {
+          return NextResponse.json(
+            { error: 'Square catalog API not available' },
+            { status: 500 }
+          );
+        }
+        
         const response = await squareClient.catalogApi.retrieveCatalogObject(imageId);
         
         if (!response.result?.object || response.result.object.type !== 'IMAGE') {
@@ -166,6 +173,13 @@ export async function GET(request: NextRequest) {
     } else if (objectId) {
       // If we have an object ID (item/product ID), get all its images
       try {
+        if (!squareClient.catalogApi) {
+          return NextResponse.json(
+            { error: 'Square catalog API not available' },
+            { status: 500 }
+          );
+        }
+        
         // First, retrieve the object (product)
         const objectResponse = await squareClient.catalogApi.retrieveCatalogObject(objectId);
         
@@ -214,6 +228,13 @@ export async function GET(request: NextRequest) {
             }
             
             // If not found in related objects, fetch directly
+            if (!squareClient.catalogApi) {
+              return {
+                id: imageId,
+                error: 'Square catalog API not available'
+              };
+            }
+            
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageObject = imageResponse.result?.object;
             

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { getShippingRates, createShippingLabel } from '@/app/actions/shipping';
 import { Shippo } from 'shippo';
 import * as shippingUtils from '@/lib/shippingUtils';
+import { createMockShippingResponse, createMockShippingTransaction } from '@/__tests__/utils/test-factories';
 
 // Mock dependencies
 jest.mock('shippo');
@@ -9,10 +10,10 @@ jest.mock('@/lib/shippingUtils');
 
 const mockShippo = {
   shipments: {
-    create: jest.fn(),
+    create: jest.fn().mockResolvedValue({}),
   },
   transactions: {
-    create: jest.fn(),
+    create: jest.fn().mockResolvedValue({}),
   },
 };
 
@@ -97,14 +98,9 @@ describe('Shipping Actions', () => {
     });
 
     it('should calculate shipping weight correctly', async () => {
-      mockShippo.shipments.create.mockResolvedValue({
-        objectId: 'shipment-123',
-        status: 'SUCCESS',
-        rates: [],
-        addressTo: {
-          validationResults: { isValid: true, messages: [] },
-        },
-      });
+      mockShippo.shipments.create.mockResolvedValue(createMockShippingResponse({
+        rates: []
+      }));
 
       await getShippingRates(mockShipmentInput);
 
@@ -115,14 +111,9 @@ describe('Shipping Actions', () => {
     });
 
     it('should create shipment with correct parameters', async () => {
-      mockShippo.shipments.create.mockResolvedValue({
-        objectId: 'shipment-123',
-        status: 'SUCCESS',
-        rates: [],
-        addressTo: {
-          validationResults: { isValid: true, messages: [] },
-        },
-      });
+      mockShippo.shipments.create.mockResolvedValue(createMockShippingResponse({
+        rates: []
+      }));
 
       await getShippingRates(mockShipmentInput);
 
@@ -200,14 +191,9 @@ describe('Shipping Actions', () => {
         },
       ];
 
-      mockShippo.shipments.create.mockResolvedValue({
-        objectId: 'shipment-123',
-        status: 'SUCCESS',
-        rates: mockRates,
-        addressTo: {
-          validationResults: { isValid: true, messages: [] },
-        },
-      });
+      mockShippo.shipments.create.mockResolvedValue(createMockShippingResponse({
+        rates: mockRates
+      }));
 
       const result = await getShippingRates(mockShipmentInput);
 

@@ -299,8 +299,8 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
                           include: {
                               items: {
                                   include: {
-                                      product: { select: { name: true } },
-                                      variant: { select: { name: true } }
+                                      product: true,
+                                      variant: true
                                   }
                               }
                           }
@@ -385,8 +385,8 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
                   include: {
                       items: {
                           include: {
-                              product: { select: { name: true } },
-                              variant: { select: { name: true } }
+                              product: true,
+                              variant: true
                           }
                       }
                   }
@@ -696,8 +696,8 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
                 include: {
                     items: {
                         include: {
-                            product: { select: { name: true } },
-                            variant: { select: { name: true } }
+                            product: true,
+                            variant: true
                         }
                     }
                 }
@@ -735,8 +735,8 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
                 include: {
                     items: {
                         include: {
-                            product: { select: { name: true } },
-                            variant: { select: { name: true } }
+                            product: true,
+                            variant: true
                         }
                     }
                 }

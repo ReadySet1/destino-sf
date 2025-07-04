@@ -66,6 +66,12 @@ export async function GET(request: NextRequest) {
 
       try {
         // Check if the Square ID is valid by attempting to fetch it
+        if (!squareClient.catalogApi) {
+          detail.status = 'error: Square catalog API not available';
+          result.details.push(detail);
+          continue;
+        }
+        
         const itemResponse = await squareClient.catalogApi.retrieveCatalogObject(product.squareId);
         const item = itemResponse.result?.object;
         

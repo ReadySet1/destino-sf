@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { Shippo } from 'shippo';
 import { calculateShippingWeight, type CartItemForShipping } from '@/lib/shippingUtils';
-import { getShippingRates as libGetShippingRates, createShippingLabel as libCreateLabel, trackShipment as libTrackShipment } from '@/lib/shipping';
+import { getShippingRates as libGetShippingRates, createShippingLabel as libCreateLabel, trackShipment as libTrackShipment, type ShippingRate as LibShippingRate } from '@/lib/shipping';
 
 // --- Enhanced Schemas for Shippo Integration --- 
 const addressSchema = z.object({
@@ -65,8 +65,30 @@ type ShippingRateRequestInput = z.infer<typeof shippingRateRequestSchema>;
 
 // --- Enhanced Shippo Integration with Full Feature Support ---
 export async function getShippingRates(request: any) {
-  // If request matches new shape, just forward
-  return libGetShippingRates(request);
+  // Call the lib function and transform the response to match our interface
+  const response = await libGetShippingRates(request);
+  
+  if (!response.success || !response.rates) {
+    return response;
+  }
+  
+  // Transform the rates from lib interface to actions interface
+  const transformedRates: ShippingRate[] = response.rates.map((rate: LibShippingRate) => ({
+    id: rate.id,
+    name: rate.name,
+    amount: rate.amount,
+    carrier: rate.carrier,
+    serviceLevelToken: rate.serviceLevel, // Map serviceLevel to serviceLevelToken
+    estimatedDays: rate.estimatedDays,
+    currency: rate.currency,
+    // Optional properties from enhanced interface
+    rateId: rate.rateId,
+  }));
+  
+  return {
+    ...response,
+    rates: transformedRates,
+  };
 }
 
 export const createShippingLabel = libCreateLabel;

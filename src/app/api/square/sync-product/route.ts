@@ -64,7 +64,7 @@ async function getImageUrls(item: SquareCatalogObject, relatedObjects: SquareCat
         // Try to retrieve image directly
         try {
           logger.info(`Calling Square catalog retrieve API for object ${imageId}`);
-          if (squareClient.catalogApi.retrieveCatalogObject) {
+          if (squareClient.catalogApi && squareClient.catalogApi.retrieveCatalogObject) {
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageData = imageResponse.result?.object;
             
@@ -138,6 +138,13 @@ export async function GET(request: NextRequest) {
         include_related_objects: true
       };
       
+      if (!squareClient.catalogApi) {
+        return NextResponse.json({ 
+          error: 'Square catalog API not available',
+          product
+        }, { status: 500 });
+      }
+      
       const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest);
       const items = searchResponse.result?.objects || [];
       
@@ -174,6 +181,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Call retrieveCatalogObject with just the objectId - the client implementation handles related objects
+    if (!squareClient.catalogApi) {
+      return NextResponse.json({ 
+        error: 'Square catalog API not available',
+        product
+      }, { status: 500 });
+    }
+    
     const itemResponse = await squareClient.catalogApi.retrieveCatalogObject(product.squareId);
     
     // Check for related objects in the response

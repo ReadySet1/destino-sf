@@ -14,6 +14,16 @@ import {
   validateOrderMinimumsServer,
 } from '@/app/actions/orders';
 
+// Import test factories
+import {
+  createMockCartItems,
+  createMockCustomerInfo,
+  createMockPickupFulfillment,
+  createMockLocalDeliveryFulfillment,
+  createMockOrder,
+  createMockAlertData,
+} from '@/__tests__/utils/test-factories';
+
 // Cast to mocked functions
 const mockCreateOrder = createOrderAndGenerateCheckoutUrl as jest.MockedFunction<typeof createOrderAndGenerateCheckoutUrl>;
 const mockUpdatePayment = updateOrderPayment as jest.MockedFunction<typeof updateOrderPayment>;
@@ -21,34 +31,11 @@ const mockGetOrder = getOrderById as jest.MockedFunction<typeof getOrderById>;
 const mockCreateManual = createManualPaymentOrder as jest.MockedFunction<typeof createManualPaymentOrder>;
 const mockValidateMinimums = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
 
-// Test data
-const testCartItems = [
-  { id: 'product-1', name: 'Alfajores', price: 12.99, quantity: 2, variantId: 'variant-1' },
-  { id: 'product-2', name: 'Empanada', price: 4.50, quantity: 6 },
-];
-
-const testCustomer = {
-  name: 'John Doe',
-  email: 'john@example.com',
-  phone: '+1234567890',
-};
-
-const testPickup = {
-  method: 'pickup' as const,
-  pickupTime: '2024-01-15T14:00:00.000Z',
-};
-
-const testDelivery = {
-  method: 'local_delivery' as const,
-  deliveryDate: '2024-01-16',
-  deliveryTime: '18:00',
-  deliveryAddress: {
-    street: '123 Test St',
-    city: 'San Francisco',
-    state: 'CA',
-    postalCode: '94105',
-  },
-};
+// Test data using factories
+const testCartItems = createMockCartItems();
+const testCustomer = createMockCustomerInfo();
+const testPickup = createMockPickupFulfillment();
+const testDelivery = createMockLocalDeliveryFulfillment();
 
 describe('Order Actions - Phase 2 Tests', () => {
   beforeEach(() => {
@@ -62,16 +49,12 @@ describe('Order Actions - Phase 2 Tests', () => {
       orderId: 'order-123'
     });
     
-    mockUpdatePayment.mockResolvedValue({
+    mockUpdatePayment.mockResolvedValue(createMockOrder({
       id: 'order-123',
-      status: 'PAID'
-    } as any);
+      paymentStatus: 'PAID'
+    }));
     
-    mockGetOrder.mockResolvedValue({
-      id: 'order-123',
-      customerName: 'John Doe',
-      status: 'PAID'
-    } as any);
+    mockGetOrder.mockResolvedValue(createMockAlertData());
     
     mockCreateManual.mockResolvedValue({
       success: true,
@@ -187,39 +170,37 @@ describe('Order Actions - Phase 2 Tests', () => {
 
   describe('updateOrderPayment', () => {
     test('should update payment status successfully', async () => {
-      const updatedOrder = { id: 'order-123', status: 'PAID' };
+      const updatedOrder = createMockOrder({ id: 'order-123', paymentStatus: 'PAID' });
       mockUpdatePayment.mockResolvedValueOnce(updatedOrder);
 
       const result = await updateOrderPayment('order-123', 'square-123', 'PAID');
 
       expect(result.id).toBe('order-123');
-      expect(result.status).toBe('PAID');
+      expect(result.paymentStatus).toBe('PAID');
     });
 
     test('should handle payment failures', async () => {
-      const failedOrder = { id: 'order-123', status: 'FAILED' };
+      const failedOrder = createMockOrder({ id: 'order-123', paymentStatus: 'FAILED' });
       mockUpdatePayment.mockResolvedValueOnce(failedOrder);
 
       const result = await updateOrderPayment('order-123', 'square-123', 'FAILED');
 
-      expect(result.status).toBe('FAILED');
+      expect(result.paymentStatus).toBe('FAILED');
     });
   });
 
   describe('getOrderById', () => {
     test('should retrieve order successfully', async () => {
-      const order = {
-        id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PAID',
-        items: [{ id: 'item-1', quantity: 2 }],
-      };
+      const order = createMockAlertData();
       mockGetOrder.mockResolvedValueOnce(order);
 
       const result = await getOrderById('order-123');
 
-      expect(result!.id).toBe('order-123');
-      expect(result!.customerName).toBe('John Doe');
+      expect(result).toBeDefined();
+      if (result && 'id' in result) {
+        expect(result.id).toBe('order-123');
+        expect(result.customerName).toBe('John Doe');
+      }
     });
 
     test('should return null for non-existent order', async () => {

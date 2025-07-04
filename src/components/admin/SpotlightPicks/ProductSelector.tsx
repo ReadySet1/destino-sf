@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Package, Check, Loader2, RefreshCw } from 'lucide-react';
-import { ProductSelectorPagination } from './ProductSelectorPagination';
+// Removed unused import
 
 interface Product {
   id: string;
@@ -337,13 +337,30 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
         )}
 
         {/* Pagination */}
-        {!isLoading && products.length > 0 && (
-          <ProductSelectorPagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-            isLoading={isLoading}
-          />
+        {!isLoading && products.length > 0 && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t">
+            <div className="text-sm text-gray-500">
+              Page {pagination.page} of {pagination.totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || isLoading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 

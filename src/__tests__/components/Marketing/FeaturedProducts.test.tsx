@@ -6,26 +6,23 @@ import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
-import { getSpotlightPicks } from '@/lib/api/spotlight';
 import { mockActiveSpotlightPicks } from '@/__tests__/mocks/spotlight';
 import { SpotlightPick } from '@/types/spotlight';
 
-// Mock the getSpotlightPicks function
-jest.mock('@/lib/api/spotlight');
-const mockedGetSpotlightPicks = getSpotlightPicks as jest.Mock<
-  Promise<SpotlightPick[]>
->;
+// Mock fetch globally
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+global.fetch = mockFetch;
 
 describe('FeaturedProducts Component', () => {
   beforeEach(() => {
     // Reset mocks before each test
-    mockedGetSpotlightPicks.mockClear();
+    mockFetch.mockClear();
   });
 
   it('should display loading state initially', () => {
-    mockedGetSpotlightPicks.mockResolvedValue(new Promise(() => {})); // Never resolves
+    mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
     render(<FeaturedProducts />);
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByText('Loading our featured products...')).toBeInTheDocument();
   });
 
   it('should display products after successful fetch', async () => {

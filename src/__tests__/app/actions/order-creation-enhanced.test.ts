@@ -19,7 +19,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
     },
     fulfillmentType: FulfillmentType.PICKUP,
     paymentMethod: 'CREDIT_CARD',
-    shippingAddress: null,
+    shippingAddress: undefined,
     specialInstructions: 'Extra napkins please',
   };
 
@@ -35,7 +35,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           name: string;
           quantity: number;
           price: number;
-          category: string;
+          category?: string;
         }>;
         fulfillmentType: FulfillmentType;
         deliveryAddress?: {
@@ -58,7 +58,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         
         // Add local tax for prepared food
         const hasPreparedFood = items.some(item => 
-          ['empanadas', 'alfajores'].includes(item.category)
+          item.category && ['empanadas', 'alfajores'].includes(item.category)
         );
         
         if (hasPreparedFood) {
@@ -84,7 +84,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       };
 
       const pickupTax = calculateTax({
-        items: mockCreateOrderInput.cartItems,
+        items: mockCreateOrderInput.cartItems!,
         fulfillmentType: FulfillmentType.PICKUP,
       });
 
@@ -162,11 +162,11 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         const taxExemptCategories = ['gift_card', 'donation'];
         
         const taxableItems = items.filter(item => 
-          !taxExemptCategories.includes(item.category)
+          !item.category || !taxExemptCategories.includes(item.category)
         );
         
         const exemptItems = items.filter(item => 
-          taxExemptCategories.includes(item.category)
+          item.category && taxExemptCategories.includes(item.category)
         );
         
         const taxableSubtotal = taxableItems.reduce((sum, item) => 
@@ -251,7 +251,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       expect(invalidResult.error).toBe('Invalid item prices or quantities');
 
       // Test with valid items
-      const validResult = calculateTaxSafely(mockCreateOrderInput.cartItems);
+      const validResult = calculateTaxSafely(mockCreateOrderInput.cartItems!);
       expect(validResult.success).toBe(true);
       expect(validResult.total).toBeGreaterThan(0);
     });
@@ -744,7 +744,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         // Mock successful order creation
         const mockOrder = {
           id: 'order-123',
-          customerEmail: input.customer.email,
+          customerEmail: input.customer?.email || 'unknown@example.com',
           total: 77.16,
           status: 'CONFIRMED',
           fulfillmentType: input.fulfillmentType,

@@ -6,7 +6,7 @@ import {
   getOrderById 
 } from '@/app/actions/orders';
 import { prisma } from '@/lib/db';
-import { PaymentMethod, OrderStatus } from '@prisma/client';
+import { PaymentMethod, OrderStatus } from '@/types/order';
 
 // Mock dependencies - using the global mock setup
 jest.mock('@/lib/cart-helpers', () => ({
@@ -263,7 +263,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     const baseFormData = {
       items: validCartItems,
       customerInfo: validCustomerInfo,
-      paymentMethod: 'SQUARE' as PaymentMethod,
+      paymentMethod: 'SQUARE' as const,
     };
 
     test('should create pickup order successfully', async () => {

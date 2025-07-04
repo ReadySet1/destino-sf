@@ -8,10 +8,22 @@ export async function GET() {
     
     // Test locations API first
     logger.info('Testing locations API...');
+    if (!squareClient.locationsApi) {
+      return NextResponse.json(
+        { error: 'Square locations API not available' },
+        { status: 500 }
+      );
+    }
     const locationsResponse = await squareClient.locationsApi.listLocations();
     
     // Test searchCatalogObjects method
     logger.info('Testing searchCatalogObjects method...');
+    if (!squareClient.catalogApi) {
+      return NextResponse.json(
+        { error: 'Square catalog API not available' },
+        { status: 500 }
+      );
+    }
     const searchRequestBody = {
       object_types: ['ITEM'],
       include_related_objects: true,
@@ -23,6 +35,12 @@ export async function GET() {
     
     // Test listCatalog method
     logger.info('Testing listCatalog method...');
+    if (!squareClient.catalogApi.listCatalog) {
+      return NextResponse.json(
+        { error: 'Square catalog listCatalog method not available' },
+        { status: 500 }
+      );
+    }
     const listResponse = await squareClient.catalogApi.listCatalog(undefined, 'ITEM');
     
     // Compile all results for analysis

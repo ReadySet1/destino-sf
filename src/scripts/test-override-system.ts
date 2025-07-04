@@ -67,19 +67,19 @@ async function testOverrideSystem() {
       console.log('\n📊 Enhanced Item Details:');
       console.log(`   Name: ${enhancedItem.name} (Protected - Square item)`);
       console.log(`   Price: $${enhancedItem.price} (Protected - Square item)`);
-      console.log(`   Description: ${enhancedItem.overrides?.localDescription || enhancedItem.description}`);
+      console.log(`   Description: ${(enhancedItem.overrides as any)?.localDescription || enhancedItem.description}`);
       console.log(`   Square Product ID: ${enhancedItem.squareProductId}`);
       console.log(`   Override Active: ${enhancedItem.overrides ? 'Yes' : 'No'}`);
       
       if (enhancedItem.overrides) {
         console.log('\n🔧 Override Controls:');
-        console.log(`   Override Description: ${enhancedItem.overrides.overrideDescription}`);
-        console.log(`   Override Image: ${enhancedItem.overrides.overrideImage}`);
-        console.log(`   Override Dietary: ${enhancedItem.overrides.overrideDietary}`);
-        console.log(`   Override Serving Size: ${enhancedItem.overrides.overrideServingSize}`);
+        console.log(`   Override Description: ${(enhancedItem.overrides as any).overrideDescription}`);
+        console.log(`   Override Image: ${(enhancedItem.overrides as any).overrideImage}`);
+        console.log(`   Override Dietary: ${(enhancedItem.overrides as any).overrideDietary}`);
+        console.log(`   Override Serving Size: ${(enhancedItem.overrides as any).overrideServingSize}`);
         
-        if (enhancedItem.overrides.localDietaryOptions.length > 0) {
-          console.log(`   Local Dietary Options: ${enhancedItem.overrides.localDietaryOptions.join(', ')}`);
+        if ((enhancedItem.overrides as any).localDietaryOptions?.length > 0) {
+          console.log(`   Local Dietary Options: ${(enhancedItem.overrides as any).localDietaryOptions.join(', ')}`);
         }
       }
     }

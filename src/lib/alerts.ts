@@ -27,6 +27,7 @@ import { OrderStatusChangeAlert } from '@/emails/alerts/OrderStatusChangeAlert';
 import { PaymentFailedAlert } from '@/emails/alerts/PaymentFailedAlert';
 import { SystemErrorAlert } from '@/emails/alerts/SystemErrorAlert';
 import DailySummaryAlert from '@/emails/alerts/DailySummaryAlert';
+import React from 'react';
 // Customer emails
 import { OrderConfirmationEmail } from '@/emails/customer/OrderConfirmationEmail';
 import { OrderStatusUpdateEmail } from '@/emails/customer/OrderStatusUpdateEmail';
@@ -92,7 +93,7 @@ export class AlertService {
         from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
         to: env.ADMIN_EMAIL,
         subject,
-        react: AdminNewOrderAlert(alertData),
+        react: React.createElement(AdminNewOrderAlert, alertData),
       });
 
       if (error) {
@@ -146,7 +147,7 @@ export class AlertService {
         from: `${env.SHOP_NAME} <${env.FROM_EMAIL}>`,
         to: order.email,
         subject,
-        react: OrderStatusChangeAlert({ ...alertData, isCustomer: true }),
+        react: React.createElement(OrderStatusChangeAlert, { ...alertData, isCustomer: true }),
       });
 
       if (customerError) {
@@ -173,7 +174,7 @@ export class AlertService {
           from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
           to: env.ADMIN_EMAIL,
           subject: `🔄 Admin Alert: ${subject}`,
-          react: OrderStatusChangeAlert({ ...alertData, isCustomer: false }),
+          react: React.createElement(OrderStatusChangeAlert, { ...alertData, isCustomer: false }),
         });
 
         if (adminError) {
@@ -227,7 +228,7 @@ export class AlertService {
         from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
         to: env.ADMIN_EMAIL,
         subject,
-        react: PaymentFailedAlert(alertData),
+        react: React.createElement(PaymentFailedAlert, alertData),
       });
 
       if (error) {
@@ -490,7 +491,7 @@ export class AlertService {
             email: data.order.email,
             phone: data.order.phone,
             total: Number(data.order.total),
-            fulfillmentType: data.order.fulfillmentType,
+            fulfillmentType: data.order.fulfillmentType ?? undefined,
             pickupTime: data.order.pickupTime,
             deliveryDate: data.order.deliveryDate,
             deliveryTime: data.order.deliveryTime,
@@ -499,7 +500,7 @@ export class AlertService {
               quantity: item.quantity,
               price: Number(item.price),
               product: { name: item.product.name },
-              variant: item.variant ? { name: item.variant.name } : null,
+              variant: item.variant ? { name: item.variant.name } : undefined,
             })),
             notes: data.order.notes,
           },
@@ -558,7 +559,7 @@ export class AlertService {
             email: data.order.email,
             total: Number(data.order.total),
             status: data.order.status,
-            fulfillmentType: data.order.fulfillmentType,
+            fulfillmentType: data.order.fulfillmentType ?? undefined,
             pickupTime: data.order.pickupTime,
             deliveryDate: data.order.deliveryDate,
             deliveryTime: data.order.deliveryTime,
@@ -568,7 +569,7 @@ export class AlertService {
               quantity: item.quantity,
               price: Number(item.price),
               product: { name: item.product.name },
-              variant: item.variant ? { name: item.variant.name } : null,
+              variant: item.variant ? { name: item.variant.name } : undefined,
             })),
           },
           previousStatus: data.previousStatus,
@@ -636,7 +637,7 @@ export class AlertService {
               quantity: item.quantity,
               price: Number(item.price),
               product: { name: item.product.name },
-              variant: item.variant ? { name: item.variant.name } : null,
+              variant: item.variant ? { name: item.variant.name } : undefined,
             })),
             pickupTime: data.order.pickupTime,
             notes: data.order.notes,
@@ -700,7 +701,7 @@ export class AlertService {
             email: data.order.email,
             total: Number(data.order.total),
             completedAt: data.order.updatedAt,
-            fulfillmentType: data.order.fulfillmentType,
+            fulfillmentType: data.order.fulfillmentType ?? undefined,
           },
           shopName,
           websiteUrl,
@@ -939,6 +940,7 @@ export class AlertService {
       FULFILLMENT_UPDATED: 'Fulfillment Updated',
       SHIPPING: 'Shipping',
       DELIVERED: 'Delivered',
+      PAYMENT_FAILED: 'Payment Failed',
     };
     return statusMap[status] || status;
   }

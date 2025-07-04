@@ -594,7 +594,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                 {/* Enhanced Progress Indicator */}
                 <SelectionProgressIndicator
                   progress={selectionProgress}
-                  currentPackage={currentPackage}
+                  currentPackage={currentPackage ?? null}
                   peopleCount={peopleCount}
                 />
 
