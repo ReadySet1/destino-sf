@@ -3,15 +3,15 @@ import MenuBanner from '@/components/Menu';
 import ProductList from '@/components/Products/ProductList';
 import MarketingSection from '@/components/Marketing/MarketingSection';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
+import { generatePageSEO } from '@/lib/seo';
+import { MenuStructuredData } from '@/components/seo/StructuredData';
 
-export const metadata = {
-  title: 'Our Menu | Destino SF',
-  description: 'Discover our delicious selection of traditional treats.',
-};
+export const metadata = generatePageSEO('menu');
 
 const MenuPage = () => {
   return (
     <>
+      <MenuStructuredData />
       <MenuBanner />
 
       <main className="relative overflow-hidden bg-gradient-to-b from-white to-amber-50/30">

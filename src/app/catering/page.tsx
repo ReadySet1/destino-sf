@@ -18,6 +18,10 @@ import CateringCartButton from '@/components/Catering/CateringCartButton';
 import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
 import { ContactForm, ContactInfo, ContactInfoCatering } from '@/components/ContactForm';
 import { FormMessage } from '../../components/form-message';
+import { generatePageSEO } from '@/lib/seo';
+import { CateringStructuredData } from '@/components/seo/StructuredData';
+
+export const metadata = generatePageSEO('catering');
 export const dynamic = 'force-dynamic';
 
 const dancingScript = Dancing_Script({
@@ -69,12 +73,14 @@ const CateringPage = async () => {
   }
 
   return (
-    <div className="bg-white">
-      {/* Add the CateringCartButton component */}
-      <CateringCartButton />
+    <>
+      <CateringStructuredData />
+      <div className="bg-white">
+        {/* Add the CateringCartButton component */}
+        <CateringCartButton />
 
-      {/* Catering Banner */}
-      <CateringBanner />
+        {/* Catering Banner */}
+        <CateringBanner />
 
       {/* Main Content Container */}
       <div>
@@ -218,6 +224,7 @@ const CateringPage = async () => {
         </Card>
       </section>
     </div>
+    </>
   );
 };
 
