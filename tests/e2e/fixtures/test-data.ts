@@ -104,12 +104,65 @@ export const cateringTestData = {
     date: '2025-07-15',
     time: '12:00',
     guestCount: 25,
-    budget: 500
+    budget: 500,
+    type: 'Corporate Event',
+    specialRequests: 'Sample special request - need vegetarian options for 10 guests'
   },
   contact: {
     name: 'Event Organizer',
     email: 'organizer@company.com',
     phone: '(555) 999-0000',
     company: 'Test Company Inc.'
+  },
+  // Enhanced test scenarios
+  scenarios: {
+    corporateEvent: {
+      contact: {
+        name: 'Sarah Wilson',
+        email: 'catering@company.com',
+        phone: '(555) 246-8135',
+        company: 'Tech Startup Inc'
+      },
+      event: {
+        type: 'Corporate Event',
+        date: '2025-07-15',
+        time: '12:00 PM',
+        guestCount: 25,
+        location: '123 Business St, San Francisco, CA 94105',
+        specialRequests: 'Vegetarian options needed for 15 guests'
+      }
+    },
+    weddingEvent: {
+      contact: {
+        name: 'Maria Rodriguez',
+        email: 'maria@weddingparty.com',
+        phone: '(555) 789-0123',
+        company: 'Wedding Party'
+      },
+      event: {
+        type: 'Wedding Reception',
+        date: '2025-08-20',
+        time: '6:00 PM',
+        guestCount: 75,
+        location: 'Golden Gate Park, San Francisco, CA',
+        specialRequests: 'Mix of traditional and vegetarian empanadas for diverse guests'
+      }
+    },
+    birthdayParty: {
+      contact: {
+        name: 'John Smith',
+        email: 'john@familyparty.com',
+        phone: '(555) 321-9876',
+        company: 'Family Event'
+      },
+      event: {
+        type: 'Birthday Party',
+        date: '2025-06-30',
+        time: '2:00 PM',
+        guestCount: 40,
+        location: 'Private residence in Mission District',
+        specialRequests: 'Kid-friendly options and some gluten-free alfajores'
+      }
+    }
   }
 };

@@ -3,7 +3,6 @@ import { CreateOrderInput, FulfillmentType } from '@/types/order';
 // Mock dependencies
 jest.mock('@/lib/square/payments-api');
 jest.mock('@/lib/db');
-jest.mock('@/lib/tax-calculator');
 jest.mock('@/lib/email');
 
 describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
@@ -504,18 +503,26 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         };
       };
 
+      // Create a valid pickup time that's 2 hours from now but ensure it's within business hours
+      const now = new Date();
+      const pickupDate = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+      
+      // If the pickup time is outside business hours, set it to tomorrow at 2 PM
+      const pickupHour = pickupDate.getHours();
+      if (pickupHour < 9 || pickupHour >= 20) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(14, 0, 0, 0); // 2 PM tomorrow
+        pickupDate.setTime(tomorrow.getTime());
+      }
+
       const validPickup: PickupFulfillment = {
         type: FulfillmentType.PICKUP,
-        pickupTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
+        pickupTime: pickupDate.toISOString(),
         customerName: 'John Doe',
-        customerPhone: '555-0123',
+        customerPhone: '555-012-3456',
         specialInstructions: 'Extra napkins',
       };
-
-      // Adjust pickup time to be within business hours
-      const pickupDate = new Date(validPickup.pickupTime);
-      pickupDate.setHours(14, 0, 0, 0); // 2 PM
-      validPickup.pickupTime = pickupDate.toISOString();
 
       const result = validatePickupFulfillment(validPickup);
       expect(result.valid).toBe(true);
