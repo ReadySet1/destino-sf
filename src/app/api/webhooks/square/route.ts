@@ -951,11 +951,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Content-Length:', request.headers.get('content-length'));
 
   try {
+    // Read the body once at the start to avoid ReadableStream locked errors
+    let bodyText = '';
+    try {
+      bodyText = await request.text();
+      console.log('Successfully read body - length:', bodyText?.length || 0);
+    } catch (error) {
+      console.error('Failed to read request body:', error);
+      bodyText = '';
+    }
+
     // Step 1: Quick acknowledgment to Square (within 1 second)
-    const acknowledgmentPromise = quickAcknowledgment(request);
+    const acknowledgmentPromise = quickAcknowledgment(request, bodyText);
     
     // Step 2: Process webhook asynchronously (don't await - let it run in background)
-    processWebhookAsync(request).catch(error => {
+    processWebhookAsync(request, bodyText).catch(error => {
       console.error('Async webhook processing failed:', error);
       // Log error but don't affect the response to Square
     });
@@ -976,7 +986,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 /**
  * Quick acknowledgment function - must complete within 1 second
  */
-async function quickAcknowledgment(request: NextRequest): Promise<NextResponse> {
+async function quickAcknowledgment(request: NextRequest, bodyText: string): Promise<NextResponse> {
   try {
     // Apply webhook-specific rate limiting first (doesn't consume body)
     const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
@@ -987,26 +997,20 @@ async function quickAcknowledgment(request: NextRequest): Promise<NextResponse> 
     
     console.log('Quick acknowledgment - webhook rate limiting passed');
 
-    // Try to quickly read just enough to validate this is a real webhook
+    // Validate this is a real webhook using the pre-read body
     let isValidWebhook = false;
     let webhookType = 'unknown';
     
     try {
-      // Quick body peek to validate format
-      const body = request.body;
-      if (body) {
-        const reader = body.getReader();
-        const { value } = await reader.read();
-        if (value) {
-          const preview = new TextDecoder().decode(value.slice(0, 200)); // Just peek at first 200 bytes
-          console.log('Quick preview:', preview.substring(0, 100));
-          
-          if (preview.includes('"type":') && preview.includes('"event_id":')) {
-            isValidWebhook = true;
-            const typeMatch = preview.match(/"type"\s*:\s*"([^"]+)"/);
-            if (typeMatch) {
-              webhookType = typeMatch[1];
-            }
+      if (bodyText && bodyText.trim().length > 0) {
+        const preview = bodyText.substring(0, 200); // Just peek at first 200 characters
+        console.log('Quick preview:', preview.substring(0, 100));
+        
+        if (preview.includes('"type":') && preview.includes('"event_id":')) {
+          isValidWebhook = true;
+          const typeMatch = preview.match(/"type"\s*:\s*"([^"]+)"/);
+          if (typeMatch) {
+            webhookType = typeMatch[1];
           }
         }
       }
@@ -1040,12 +1044,12 @@ async function quickAcknowledgment(request: NextRequest): Promise<NextResponse> 
 /**
  * Async processing function - can take as long as needed
  */
-async function processWebhookAsync(originalRequest: NextRequest): Promise<void> {
+async function processWebhookAsync(request: NextRequest, bodyText: string): Promise<void> {
   try {
     console.log('Starting async webhook processing...');
     
-    // Process the original request directly (no cloning needed)
-    await processWebhookWithBody(originalRequest);
+    // Process the pre-read body content
+    await processWebhookWithBody(request, bodyText);
     
     console.log('Async webhook processing completed successfully');
   } catch (error) {
@@ -1061,7 +1065,7 @@ async function processWebhookAsync(originalRequest: NextRequest): Promise<void> 
   }
 }
 
-async function processWebhookWithBody(request: NextRequest): Promise<void> {
+async function processWebhookWithBody(request: NextRequest, bodyText: string): Promise<void> {
   try {
     // Apply webhook-specific rate limiting first (doesn't consume body)
     const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
@@ -1072,61 +1076,21 @@ async function processWebhookWithBody(request: NextRequest): Promise<void> {
     
     console.log('Async processing - webhook rate limiting passed, proceeding with processing');
 
-    // Try to read the raw body using ReadableStream to avoid consumption issues
-    let bodyText: string = '';
+    // Use the pre-read body content
     let payload: SquareWebhookPayload | null = null;
 
     try {
-      // Method 1: Read raw body from ReadableStream
-      console.log('Attempting to read raw body from stream...');
-      const body = request.body;
-      if (body) {
-        const reader = body.getReader();
-        const chunks: Uint8Array[] = [];
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-        
-        // Combine chunks into single buffer
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const buffer = new Uint8Array(totalLength);
-        let offset = 0;
-        for (const chunk of chunks) {
-          buffer.set(chunk, offset);
-          offset += chunk.length;
-        }
-        
-        // Convert to string
-        bodyText = new TextDecoder().decode(buffer);
-        console.log('Successfully read from stream - length:', bodyText?.length || 0);
-        console.log('Stream preview:', bodyText?.substring(0, 100) || 'NO STREAM BODY');
-        
-        if (bodyText && bodyText.trim().length > 0) {
-          payload = JSON.parse(bodyText);
-        }
-      } else {
-        console.log('No body stream available');
-      }
-    } catch (streamError) {
-      console.log('Failed to read from stream, trying request.text()...', streamError);
+      console.log('Using pre-read body - length:', bodyText?.length || 0);
+      console.log('Body preview:', bodyText?.substring(0, 100) || 'NO BODY');
       
-      try {
-        // Fallback: Try the text method
-        bodyText = await request.text();
-        console.log('Fallback text read - length:', bodyText?.length || 0);
-        console.log('Fallback preview:', bodyText?.substring(0, 100) || 'NO FALLBACK BODY');
-        
-        if (bodyText && bodyText.trim().length > 0) {
-          payload = JSON.parse(bodyText);
-        }
-      } catch (fallbackError) {
-        console.log('All body reading methods failed, handling as empty body...', fallbackError);
-        bodyText = '';
-        payload = null;
+      if (bodyText && bodyText.trim().length > 0) {
+        payload = JSON.parse(bodyText);
+        console.log('Successfully parsed JSON payload');
       }
+    } catch (parseError) {
+      console.error('Failed to parse JSON payload:', parseError);
+      console.error('Raw body:', bodyText);
+      return;
     }
     
     // Early exit if body is empty – some webhook pings can come without a payload
