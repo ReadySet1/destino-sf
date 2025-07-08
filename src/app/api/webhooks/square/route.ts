@@ -950,7 +950,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Content-Type:', request.headers.get('content-type'));
   console.log('Content-Length:', request.headers.get('content-length'));
 
-  // Apply webhook-specific rate limiting
+  // Read the body BEFORE rate limiting to avoid body consumption issues
+  let bodyText: string;
+  try {
+    bodyText = await request.text();
+    console.log('Body read before rate limiting - length:', bodyText?.length || 0);
+    console.log('Body preview:', bodyText?.substring(0, 100) || 'NO BODY');
+  } catch (error) {
+    console.error('Error reading request body:', error);
+    return NextResponse.json({ error: 'Could not read request body' }, { status: 400 });
+  }
+
+  // Apply webhook-specific rate limiting with a cloned request (to avoid body consumption issues)
   const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
   if (rateLimitResponse) {
     console.warn('Square webhook rate limit exceeded');
@@ -964,7 +975,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     setTimeout(() => reject(new Error('Webhook processing timeout')), 25000); // 25 second timeout
   });
 
-  const processingPromise = processWebhook(request);
+  const processingPromise = processWebhookWithBody(request, bodyText);
   
   try {
     return await Promise.race([processingPromise, timeoutPromise]);
@@ -977,14 +988,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-async function processWebhook(request: NextRequest): Promise<NextResponse> {
+async function processWebhookWithBody(request: NextRequest, bodyText: string): Promise<NextResponse> {
 
   try {
-    // Read the body as text first to verify signature
-    const bodyText = await request.text();
-    
     // Debug logging for body content
-    console.log('Body length:', bodyText?.length || 0);
+    console.log('Processing webhook with body length:', bodyText?.length || 0);
     console.log('Body content preview:', bodyText?.substring(0, 100) || 'NO BODY');
     
     // Early exit if body is empty – some webhook pings can come without a payload
