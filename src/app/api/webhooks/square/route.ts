@@ -950,27 +950,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Content-Type:', request.headers.get('content-type'));
   console.log('Content-Length:', request.headers.get('content-length'));
 
-  // Add timeout wrapper to prevent 504 errors - Square expects quick responses
-  const timeoutPromise = new Promise<NextResponse>((_, reject) => {
-    setTimeout(() => reject(new Error('Webhook processing timeout')), 5000); // 5 second timeout for faster response
-  });
-
-  const processingPromise = processWebhookWithBody(request);
-  
   try {
-    return await Promise.race([processingPromise, timeoutPromise]);
+    // Step 1: Quick acknowledgment to Square (within 1 second)
+    const acknowledgmentPromise = quickAcknowledgment(request);
+    
+    // Step 2: Process webhook asynchronously (don't await - let it run in background)
+    processWebhookAsync(request).catch(error => {
+      console.error('Async webhook processing failed:', error);
+      // Log error but don't affect the response to Square
+    });
+    
+    // Return immediate acknowledgment to Square
+    return await acknowledgmentPromise;
+    
   } catch (error) {
-    console.error('Webhook processing failed or timed out:', error);
-    // Always return 200 to Square to prevent retries, even on timeout
+    console.error('Webhook acknowledgment failed:', error);
+    // Always return 200 to Square to prevent retries
     return NextResponse.json({ 
-      error: 'Webhook processing failed', 
-      received: true,
-      timeout: true
+      error: 'Webhook acknowledgment failed', 
+      received: true
     }, { status: 200 });
   }
 }
 
-async function processWebhookWithBody(request: NextRequest): Promise<NextResponse> {
+/**
+ * Quick acknowledgment function - must complete within 1 second
+ */
+async function quickAcknowledgment(request: NextRequest): Promise<NextResponse> {
   try {
     // Apply webhook-specific rate limiting first (doesn't consume body)
     const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
@@ -979,7 +985,92 @@ async function processWebhookWithBody(request: NextRequest): Promise<NextRespons
       return rateLimitResponse;
     }
     
-    console.log('Webhook rate limiting passed, proceeding with processing');
+    console.log('Quick acknowledgment - webhook rate limiting passed');
+
+    // Try to quickly read just enough to validate this is a real webhook
+    let isValidWebhook = false;
+    let webhookType = 'unknown';
+    
+    try {
+      // Quick body peek to validate format
+      const body = request.body;
+      if (body) {
+        const reader = body.getReader();
+        const { value } = await reader.read();
+        if (value) {
+          const preview = new TextDecoder().decode(value.slice(0, 200)); // Just peek at first 200 bytes
+          console.log('Quick preview:', preview.substring(0, 100));
+          
+          if (preview.includes('"type":') && preview.includes('"event_id":')) {
+            isValidWebhook = true;
+            const typeMatch = preview.match(/"type"\s*:\s*"([^"]+)"/);
+            if (typeMatch) {
+              webhookType = typeMatch[1];
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Quick validation failed, acknowledging anyway:', error);
+      isValidWebhook = true; // Assume valid to avoid false negatives
+    }
+
+    // Return immediate acknowledgment
+    const response = NextResponse.json({ 
+      received: true, 
+      processing: 'async',
+      timestamp: new Date().toISOString()
+    }, { status: 200 });
+    
+    response.headers.set('X-Webhook-Processed', 'async');
+    response.headers.set('X-Webhook-Type', webhookType);
+    
+    console.log(`Square webhook acknowledged immediately - type: ${webhookType}`);
+    return response;
+
+  } catch (error) {
+    console.error('Quick acknowledgment failed:', error);
+    return NextResponse.json({ 
+      received: true, 
+      error: 'acknowledgment_failed' 
+    }, { status: 200 });
+  }
+}
+
+/**
+ * Async processing function - can take as long as needed
+ */
+async function processWebhookAsync(originalRequest: NextRequest): Promise<void> {
+  try {
+    console.log('Starting async webhook processing...');
+    
+    // Process the original request directly (no cloning needed)
+    await processWebhookWithBody(originalRequest);
+    
+    console.log('Async webhook processing completed successfully');
+  } catch (error) {
+    console.error('Async webhook processing failed:', error);
+    
+    // Capture webhook processing error for monitoring
+    await errorMonitor.captureWebhookError(
+      error,
+      'async_webhook_processing',
+      undefined,
+      undefined
+    );
+  }
+}
+
+async function processWebhookWithBody(request: NextRequest): Promise<void> {
+  try {
+    // Apply webhook-specific rate limiting first (doesn't consume body)
+    const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
+    if (rateLimitResponse) {
+      console.warn('Square webhook rate limit exceeded in async processing');
+      return;
+    }
+    
+    console.log('Async processing - webhook rate limiting passed, proceeding with processing');
 
     // Try to read the raw body using ReadableStream to avoid consumption issues
     let bodyText: string = '';
@@ -1040,11 +1131,8 @@ async function processWebhookWithBody(request: NextRequest): Promise<NextRespons
     
     // Early exit if body is empty – some webhook pings can come without a payload
     if (!bodyText || bodyText.trim().length === 0 || !payload) {
-      console.warn('Square webhook received with empty body – acknowledging without processing');
-      const response = NextResponse.json({ received: true, emptyBody: true }, { status: 200 });
-      response.headers.set('X-Webhook-Processed', 'false');
-      response.headers.set('X-Webhook-Reason', 'empty-body');
-      return response;
+      console.warn('Square webhook received with empty body in async processing – skipping');
+      return;
     }
     
     // Verify the webhook signature if a webhook secret is configured
@@ -1061,17 +1149,17 @@ async function processWebhookWithBody(request: NextRequest): Promise<NextRespons
         const expectedSignature = hmac.digest('hex');
         
         if (expectedSignature !== signature) {
-          console.warn('Square webhook signature validation failed');
-          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+          console.warn('Square webhook signature validation failed in async processing');
+          return;
         }
         
-        console.log('Square webhook signature validated successfully');
+        console.log('Square webhook signature validated successfully in async processing');
       } catch (signatureError) {
-        console.error('Error validating Square webhook signature:', signatureError);
+        console.error('Error validating Square webhook signature in async processing:', signatureError);
         // Continue processing even if signature validation fails, but log it
       }
     } else if (webhookSecret) {
-      console.warn('Square webhook signature validation skipped: missing headers');
+      console.warn('Square webhook signature validation skipped in async processing: missing headers');
     }
 
     // Log the received payload for debugging
@@ -1102,44 +1190,26 @@ async function processWebhookWithBody(request: NextRequest): Promise<NextRespons
         await handleRefundUpdated(payload);
         break;
       default:
-        console.warn(`Unhandled event type: ${payload.type}`);
+        console.warn(`Unhandled event type in async processing: ${payload.type}`);
     }
 
-    // Acknowledge receipt to Square immediately with rate limit headers
-    const response = NextResponse.json({ received: true }, { status: 200 });
-    
-    // Add basic rate limit headers for observability
-    response.headers.set('X-Webhook-Processed', 'true');
-    response.headers.set('X-Webhook-Type', payload.type);
-    
-    return response;
+    console.log(`Successfully processed ${payload.type} event for ${payload.event_id} in async processing`);
 
   } catch (error: unknown) {
-    console.error('Error processing Square webhook:', error);
+    console.error('Error in async webhook processing:', error);
     
     // Capture webhook processing error for monitoring
     await errorMonitor.captureWebhookError(
       error,
-      'webhook_processing',
+      'async_webhook_processing_detailed',
       undefined,
       undefined
     );
 
-    let errorMessage = 'Internal Server Error';
-    let statusCode = 500;
-
     if (error instanceof SyntaxError) {
-      errorMessage = 'Invalid JSON payload';
-      statusCode = 400;
+      console.error('Invalid JSON payload in async processing');
     } else if (error instanceof Error) {
-      errorMessage = error.message;
+      console.error('Processing error in async processing:', error.message);
     }
-
-    // Even in case of processing errors, try to return a success status if the request itself was received.
-    // However, if parsing failed (like invalid JSON), return an error status.
-    // Square prefers a 2xx response to stop retries. If processing fails reliably,
-    // consider returning 2xx but logging the error thoroughly for investigation.
-    // For now, we'll return an error status code if processing fails.
-    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 } 
