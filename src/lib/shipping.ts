@@ -135,10 +135,47 @@ const rateCache = new Map<string, ShippingRate[]>();
 /** Helper to create or reuse Shippo client */
 function getShippoClient(apiKey: string): any {
   if (mockShippoClient) return mockShippoClient;
+  
+  console.log('Initializing Shippo client with API key:', apiKey ? `${apiKey.substring(0, 15)}...` : 'MISSING');
+  
+  if (!apiKey) {
+    throw new Error('Shippo API key is required');
+  }
+  
   // Dynamically require shippo to avoid compile-time dependency issues in tests.
   const { Shippo } = require('shippo') as any;
-  const ShippoClass = Shippo ?? require('shippo');
-  return new ShippoClass(apiKey);
+  
+  // For Shippo SDK v2.15.0+, use the correct initialization pattern
+  try {
+    console.log('Trying Shippo v2.15+ initialization pattern...');
+    const client = new Shippo({
+      apiKeyHeader: apiKey,
+      serverURL: "https://api.goshippo.com",
+    });
+    
+    console.log('Shippo client initialized successfully');
+    return client;
+  } catch (error) {
+    console.error('Modern Shippo initialization failed:', error);
+    
+    // Fallback to older patterns
+    try {
+      console.log('Trying simple API key constructor...');
+      return new Shippo(apiKey);
+    } catch (error2) {
+      console.error('Simple constructor failed:', error2);
+      
+      try {
+        console.log('Trying configuration object with apiKey...');
+        return new Shippo({
+          apiKey: apiKey,
+        });
+      } catch (error3) {
+                 console.error('All initialization methods failed:', error3);
+         throw new Error(`Failed to initialize Shippo client: ${error3 instanceof Error ? error3.message : 'Unknown error'}`);
+      }
+    }
+  }
 }
 
 // Utility to build cache key from request
@@ -158,6 +195,22 @@ function buildCacheKey(request: any): string {
 export async function getShippingRates(request: any): Promise<ShippingRateResponse> {
   try {
     const config = getShippoConfig();
+
+    // Debug environment variable loading
+    console.log('Environment check:', {
+      hasShippoKey: !!process.env.SHIPPO_API_KEY,
+      shippoKeyPrefix: process.env.SHIPPO_API_KEY ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...' : 'MISSING',
+      configApiKey: config.apiKey ? config.apiKey.substring(0, 15) + '...' : 'MISSING',
+    });
+
+    // Validate configuration
+    if (!config.apiKey) {
+      return { success: false, error: 'Shipping provider configuration error.' };
+    }
+
+    if (!config.fromAddress.street1 || !config.fromAddress.city || !config.fromAddress.state || !config.fromAddress.zip) {
+      return { success: false, error: 'Shipping origin configuration error.' };
+    }
 
     // Normalize input shapes
     const shippingAddress = request.shippingAddress ?? request.toAddress;
@@ -182,32 +235,69 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       })),
       'nationwide_shipping'
     );
+    
+    console.log('📦 Shipping calculation details:', {
+      cartItems: cartItems.map((item: any) => ({ name: item.name, quantity: item.quantity })),
+      calculatedWeight: weightLbs,
+      fulfillmentMethod: 'nationwide_shipping'
+    });
 
-    // Build parcel dimensions (Shippo expects strings)
+    // Build parcel dimensions with required units (Shippo expects camelCase field names)
     const parcel = {
       length: String(request.estimatedLengthIn ?? 10),
       width: String(request.estimatedWidthIn ?? 8),
       height: String(request.estimatedHeightIn ?? 6),
+      distanceUnit: 'in',
       weight: String(weightLbs),
+      massUnit: 'lb',
+      // Don't include template when using custom dimensions
+      metadata: `Destino SF shipment - ${cartItems.length} items`,
     };
+    
+    console.log('📦 Parcel being sent to Shippo:', parcel);
+
+    // Calculate estimated value for insurance/customs
+    const estimatedValue = cartItems.reduce((total: number, item: any) => {
+      const itemPrice = item.price ?? 25; // Default price if not provided
+      return total + (itemPrice * item.quantity);
+    }, 0);
 
     const shipmentPayload = {
-      address_from: config.fromAddress,
-      address_to: {
-        name: shippingAddress.recipientName ?? shippingAddress.name,
-        street1: shippingAddress.street ?? shippingAddress.street1 ?? shippingAddress.street_1 ?? shippingAddress.street1,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-        zip: shippingAddress.postalCode ?? shippingAddress.zip,
+      addressFrom: {
+        name: config.fromAddress.name,
+        company: config.fromAddress.company,
+        street1: config.fromAddress.street1,
+        street2: undefined,
+        city: config.fromAddress.city,
+        state: config.fromAddress.state,
+        zip: config.fromAddress.zip,
+        country: config.fromAddress.country,
+        phone: config.fromAddress.phone,
+        email: config.fromAddress.email,
+        validate: true,
+      },
+      addressTo: {
+        name: shippingAddress.recipientName ?? shippingAddress.name ?? '',
+        company: '',
+        street1: shippingAddress.street ?? shippingAddress.street1 ?? shippingAddress.street_1 ?? '',
+        street2: shippingAddress.street2 ?? '',
+        city: shippingAddress.city ?? '',
+        state: shippingAddress.state ?? '',
+        zip: shippingAddress.postalCode ?? shippingAddress.zip ?? '',
         country: shippingAddress.country ?? 'US',
         phone: shippingAddress.phone ?? '',
         email: shippingAddress.email ?? '',
+        validate: true,
       },
       parcels: [parcel],
       async: false,
+      metadata: `destino_sf_website_order_${Date.now()}_value_${estimatedValue}`,
     };
 
     const client = getShippoClient(config.apiKey);
+
+    // Log API key being used for debugging
+    console.log('🔑 Using Shippo API key:', config.apiKey.substring(0, 15) + '...');
 
     let attempt = 0;
     const maxAttempts = 2;

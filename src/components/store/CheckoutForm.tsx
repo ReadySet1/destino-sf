@@ -370,7 +370,16 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         console.log("Received rates:", result.rates);
         if (result.rates.length === 0) {
             setShippingError('No shipping rates found for this address.'); setShippingRates([]);
-        } else { setShippingRates(result.rates as ShippingRate[]); }
+        } else { 
+          // Filter rates to ensure they have valid IDs for React keys
+          const validRates = (result.rates as ShippingRate[]).filter(rate => rate.id && rate.id.trim() !== '');
+          console.log('Valid rates with IDs:', validRates.map(r => ({ id: r.id, name: r.name })));
+          if (validRates.length === 0) {
+            setShippingError('No valid shipping rates found.'); setShippingRates([]);
+          } else {
+            setShippingRates(validRates);
+          }
+        }
       } else {
         console.error("Failed to fetch shipping rates:", result.error);
         setShippingError(result.error || 'Failed to fetch shipping rates.'); setShippingRates([]);

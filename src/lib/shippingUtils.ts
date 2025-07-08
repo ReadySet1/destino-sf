@@ -78,21 +78,27 @@ export async function getShippingWeightConfig(productType: string): Promise<Ship
     });
 
     if (dbConfig) {
-      return {
+      const config = {
         productName: dbConfig.productName,
         baseWeightLb: Number(dbConfig.baseWeightLb),
         weightPerUnitLb: Number(dbConfig.weightPerUnitLb),
         isActive: dbConfig.isActive,
         applicableForNationwideOnly: dbConfig.applicableForNationwideOnly,
       };
+      console.log(`📊 Found DB config for ${productType}:`, config);
+      return config;
     }
 
     // Fall back to default configurations
-    return DEFAULT_WEIGHT_CONFIGS[productType] || null;
+    const defaultConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
+    console.log(`📊 Using default config for ${productType}:`, defaultConfig);
+    return defaultConfig;
   } catch (error) {
     console.error('Error fetching shipping weight config:', error);
     // Fall back to default configurations
-    return DEFAULT_WEIGHT_CONFIGS[productType] || null;
+    const fallbackConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
+    console.log(`📊 Using fallback config for ${productType}:`, fallbackConfig);
+    return fallbackConfig;
   }
 }
 
@@ -128,7 +134,9 @@ export async function calculateShippingWeight(
       // Check if this configuration applies to the fulfillment method
       if (weightConfig.applicableForNationwideOnly && fulfillmentMethod !== 'nationwide_shipping') {
         // Use default weight for non-nationwide shipping
-        totalWeight += totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
+        const defaultWeight = totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
+        console.log(`⚖️ ${productType}: Using default weight for ${fulfillmentMethod} (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`);
+        totalWeight += defaultWeight;
         continue;
       }
       
@@ -137,16 +145,21 @@ export async function calculateShippingWeight(
         // Base weight for first unit + additional weight for extra units
         const additionalUnits = Math.max(0, totalQuantity - 1);
         const productWeight = weightConfig.baseWeightLb + (additionalUnits * weightConfig.weightPerUnitLb);
+        console.log(`⚖️ ${productType}: Configured weight calculation (${weightConfig.baseWeightLb} + ${additionalUnits} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`);
         totalWeight += productWeight;
       }
     } else {
       // Use default weight for products without specific configuration
-      totalWeight += totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
+      const defaultWeight = totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
+      console.log(`⚖️ ${productType}: No active config, using default (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`);
+      totalWeight += defaultWeight;
     }
   }
 
   // Ensure minimum weight for shipping (most carriers require at least 0.5 lb for small packages)
-  return Math.max(totalWeight, 0.5);
+  const finalWeight = Math.max(totalWeight, 0.5);
+  console.log(`📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb (minimum applied: ${finalWeight > totalWeight})`);
+  return finalWeight;
 }
 
 /**

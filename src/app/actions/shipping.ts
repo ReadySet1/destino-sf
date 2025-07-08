@@ -5,6 +5,13 @@ import { Shippo } from 'shippo';
 import { calculateShippingWeight, type CartItemForShipping } from '@/lib/shippingUtils';
 import { getShippingRates as libGetShippingRates, createShippingLabel as libCreateLabel, trackShipment as libTrackShipment, type ShippingRate as LibShippingRate } from '@/lib/shipping';
 
+// Debug environment variables in server action
+console.log('Server action environment check:', {
+  hasShippoKey: !!process.env.SHIPPO_API_KEY,
+  nodeEnv: process.env.NODE_ENV,
+  shippoKeyPrefix: process.env.SHIPPO_API_KEY ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...' : 'MISSING',
+});
+
 // --- Enhanced Schemas for Shippo Integration --- 
 const addressSchema = z.object({
   recipientName: z.string().optional(),
@@ -73,17 +80,18 @@ export async function getShippingRates(request: any) {
   }
   
   // Transform the rates from lib interface to actions interface
-  const transformedRates: ShippingRate[] = response.rates.map((rate: LibShippingRate) => ({
-    id: rate.id,
+  const transformedRates: ShippingRate[] = response.rates.map((rate: LibShippingRate, index: number) => ({
+    id: rate.id || `rate_${index}_${Date.now()}`, // Ensure unique ID with fallback
     name: rate.name,
     amount: rate.amount,
     carrier: rate.carrier,
     serviceLevelToken: rate.serviceLevel, // Map serviceLevel to serviceLevelToken
     estimatedDays: rate.estimatedDays,
     currency: rate.currency,
-    // Optional properties from enhanced interface
-    rateId: rate.rateId,
   }));
+
+  // Debug log to verify unique IDs
+  console.log('Transformed shipping rates with IDs:', transformedRates.map(r => ({ id: r.id, name: r.name })));
   
   return {
     ...response,
