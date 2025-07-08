@@ -48,9 +48,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // Apply rate limiting before authentication (only for API routes)
-  // This protects all API endpoints including webhooks, checkout, and admin routes
-  if (pathname.startsWith('/api/') && !shouldBypassInDevelopment()) {
+  // Apply rate limiting before authentication (only for API routes, excluding webhooks)
+  // This protects all API endpoints except webhooks which have their own specific rate limiting
+  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/webhooks/') && !shouldBypassInDevelopment()) {
     const rateLimitResponse = await applyRateLimit(request);
     if (rateLimitResponse) {
       return rateLimitResponse; // Return rate limit response if exceeded

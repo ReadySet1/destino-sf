@@ -950,53 +950,96 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Content-Type:', request.headers.get('content-type'));
   console.log('Content-Length:', request.headers.get('content-length'));
 
-  // Read the body BEFORE rate limiting to avoid body consumption issues
-  let bodyText: string;
-  try {
-    bodyText = await request.text();
-    console.log('Body read before rate limiting - length:', bodyText?.length || 0);
-    console.log('Body preview:', bodyText?.substring(0, 100) || 'NO BODY');
-  } catch (error) {
-    console.error('Error reading request body:', error);
-    return NextResponse.json({ error: 'Could not read request body' }, { status: 400 });
-  }
-
-  // Apply webhook-specific rate limiting with a cloned request (to avoid body consumption issues)
-  const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
-  if (rateLimitResponse) {
-    console.warn('Square webhook rate limit exceeded');
-    return rateLimitResponse;
-  }
-  
-  console.log('Rate limiting passed, proceeding with webhook processing');
-
-  // Add timeout wrapper to prevent 504 errors
+  // Add timeout wrapper to prevent 504 errors - Square expects quick responses
   const timeoutPromise = new Promise<NextResponse>((_, reject) => {
-    setTimeout(() => reject(new Error('Webhook processing timeout')), 25000); // 25 second timeout
+    setTimeout(() => reject(new Error('Webhook processing timeout')), 5000); // 5 second timeout for faster response
   });
 
-  const processingPromise = processWebhookWithBody(request, bodyText);
+  const processingPromise = processWebhookWithBody(request);
   
   try {
     return await Promise.race([processingPromise, timeoutPromise]);
   } catch (error) {
     console.error('Webhook processing failed or timed out:', error);
+    // Always return 200 to Square to prevent retries, even on timeout
     return NextResponse.json({ 
       error: 'Webhook processing failed', 
-      received: true 
-    }, { status: 200 }); // Return 200 to stop Square retries
+      received: true,
+      timeout: true
+    }, { status: 200 });
   }
 }
 
-async function processWebhookWithBody(request: NextRequest, bodyText: string): Promise<NextResponse> {
-
+async function processWebhookWithBody(request: NextRequest): Promise<NextResponse> {
   try {
-    // Debug logging for body content
-    console.log('Processing webhook with body length:', bodyText?.length || 0);
-    console.log('Body content preview:', bodyText?.substring(0, 100) || 'NO BODY');
+    // Apply webhook-specific rate limiting first (doesn't consume body)
+    const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
+    if (rateLimitResponse) {
+      console.warn('Square webhook rate limit exceeded');
+      return rateLimitResponse;
+    }
+    
+    console.log('Webhook rate limiting passed, proceeding with processing');
+
+    // Try to read the raw body using ReadableStream to avoid consumption issues
+    let bodyText: string = '';
+    let payload: SquareWebhookPayload | null = null;
+
+    try {
+      // Method 1: Read raw body from ReadableStream
+      console.log('Attempting to read raw body from stream...');
+      const body = request.body;
+      if (body) {
+        const reader = body.getReader();
+        const chunks: Uint8Array[] = [];
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+        
+        // Combine chunks into single buffer
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const buffer = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          buffer.set(chunk, offset);
+          offset += chunk.length;
+        }
+        
+        // Convert to string
+        bodyText = new TextDecoder().decode(buffer);
+        console.log('Successfully read from stream - length:', bodyText?.length || 0);
+        console.log('Stream preview:', bodyText?.substring(0, 100) || 'NO STREAM BODY');
+        
+        if (bodyText && bodyText.trim().length > 0) {
+          payload = JSON.parse(bodyText);
+        }
+      } else {
+        console.log('No body stream available');
+      }
+    } catch (streamError) {
+      console.log('Failed to read from stream, trying request.text()...', streamError);
+      
+      try {
+        // Fallback: Try the text method
+        bodyText = await request.text();
+        console.log('Fallback text read - length:', bodyText?.length || 0);
+        console.log('Fallback preview:', bodyText?.substring(0, 100) || 'NO FALLBACK BODY');
+        
+        if (bodyText && bodyText.trim().length > 0) {
+          payload = JSON.parse(bodyText);
+        }
+      } catch (fallbackError) {
+        console.log('All body reading methods failed, handling as empty body...', fallbackError);
+        bodyText = '';
+        payload = null;
+      }
+    }
     
     // Early exit if body is empty – some webhook pings can come without a payload
-    if (!bodyText || bodyText.trim().length === 0) {
+    if (!bodyText || bodyText.trim().length === 0 || !payload) {
       console.warn('Square webhook received with empty body – acknowledging without processing');
       const response = NextResponse.json({ received: true, emptyBody: true }, { status: 200 });
       response.headers.set('X-Webhook-Processed', 'false');
@@ -1030,19 +1073,10 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
     } else if (webhookSecret) {
       console.warn('Square webhook signature validation skipped: missing headers');
     }
-    
-    // Parse the JSON payload
-    let payload: SquareWebhookPayload;
-    try {
-      payload = JSON.parse(bodyText);
-    } catch (parseError) {
-      console.error('Error parsing Square webhook JSON:', parseError);
-      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
-    }
 
     // Log the received payload for debugging
-    // In a production environment, you might process this asynchronously
     console.log('Square Webhook Payload Type:', payload.type);
+    console.log('Square Webhook Event ID:', payload.event_id);
 
     // Handle different event types
     switch (payload.type) {
