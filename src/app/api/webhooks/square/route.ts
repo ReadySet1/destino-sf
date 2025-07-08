@@ -946,6 +946,9 @@ async function getOrderTracking(orderId: string) {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Received Square webhook request');
+  console.log('Request method:', request.method);
+  console.log('Content-Type:', request.headers.get('content-type'));
+  console.log('Content-Length:', request.headers.get('content-length'));
 
   // Apply webhook-specific rate limiting
   const rateLimitResponse = await applyWebhookRateLimit(request, 'square');
@@ -953,10 +956,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.warn('Square webhook rate limit exceeded');
     return rateLimitResponse;
   }
+  
+  console.log('Rate limiting passed, proceeding with webhook processing');
+
+  // Add timeout wrapper to prevent 504 errors
+  const timeoutPromise = new Promise<NextResponse>((_, reject) => {
+    setTimeout(() => reject(new Error('Webhook processing timeout')), 25000); // 25 second timeout
+  });
+
+  const processingPromise = processWebhook(request);
+  
+  try {
+    return await Promise.race([processingPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('Webhook processing failed or timed out:', error);
+    return NextResponse.json({ 
+      error: 'Webhook processing failed', 
+      received: true 
+    }, { status: 200 }); // Return 200 to stop Square retries
+  }
+}
+
+async function processWebhook(request: NextRequest): Promise<NextResponse> {
 
   try {
     // Read the body as text first to verify signature
     const bodyText = await request.text();
+    
+    // Debug logging for body content
+    console.log('Body length:', bodyText?.length || 0);
+    console.log('Body content preview:', bodyText?.substring(0, 100) || 'NO BODY');
     
     // Early exit if body is empty – some webhook pings can come without a payload
     if (!bodyText || bodyText.trim().length === 0) {
