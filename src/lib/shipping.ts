@@ -248,7 +248,7 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       width: String(request.estimatedWidthIn ?? 8),
       height: String(request.estimatedHeightIn ?? 6),
       distanceUnit: 'in',
-      weight: String(weightLbs),
+      weight: String(Number(weightLbs.toFixed(2))), // Ensure clean weight format for Shippo
       massUnit: 'lb',
       // Don't include template when using custom dimensions
       metadata: `Destino SF shipment - ${cartItems.length} items`,

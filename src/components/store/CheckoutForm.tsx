@@ -474,7 +474,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           const selectedRate = shippingRates.find(rate => rate.id === formData.rateId);
           if (!selectedRate) { setError("Selected shipping rate not found."); toast.error("Selected shipping rate not found."); setShippingRates([]); setIsSubmitting(false); return; }
           if (!formData.shippingAddress) throw new Error("Missing shipping address.");
-          fulfillmentData = { method: 'nationwide_shipping', shippingAddress: {...formData.shippingAddress, country: 'US'}, rateId: selectedRate.id, shippingMethod: selectedRate.serviceLevelToken, shippingCarrier: selectedRate.carrier, shippingCost: selectedRate.amount };
+          // Convert shipping cost from dollars to cents (as integer) for Square API compatibility
+          const shippingCostCents = Math.round(selectedRate.amount * 100);
+          fulfillmentData = { method: 'nationwide_shipping', shippingAddress: {...formData.shippingAddress, country: 'US'}, rateId: selectedRate.id, shippingMethod: selectedRate.serviceLevelToken, shippingCarrier: selectedRate.carrier, shippingCost: shippingCostCents };
       } else { throw new Error('Invalid fulfillment method.'); }
 
       if (!fulfillmentData) throw new Error("Failed to determine fulfillment details.");

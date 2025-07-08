@@ -17,7 +17,7 @@ import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
-import { formatPhoneForSquare, formatEmailForSquare } from '@/lib/square/formatting';
+import { formatPhoneForSquare, formatEmailForSquare, formatCustomerDataForSquarePaymentLink } from '@/lib/square/formatting';
 
 /**
  * Fetches all active catering packages using Prisma
@@ -955,32 +955,21 @@ export async function createCateringOrderAndProcessPayment(
       tip_settings: createCateringOrderTipSettings()
     };
     
-    // 7. Format and validate phone number for Square API
-    let formattedPhone: string;
+    // 7. Format and validate customer data for Square Payment Link API
+    let formattedCustomerData: { buyer_email: string; buyer_phone_number?: string };
     try {
-      formattedPhone = formatPhoneForSquare(customerInfo.phone);
-    } catch (phoneError) {
-      console.error('Phone number formatting error:', phoneError);
-      
-      await db.cateringOrder.update({
-        where: { id: cateringOrder.id },
-        data: { 
-          status: CateringStatus.CANCELLED,
-          paymentStatus: PaymentStatus.FAILED,
-          notes: `Phone number formatting error: ${phoneError instanceof Error ? phoneError.message : 'Invalid phone format'}`
-        }
+      formattedCustomerData = formatCustomerDataForSquarePaymentLink({
+        email: customerInfo.email,
+        phone: customerInfo.phone,
+        name: customerInfo.name
       });
       
-      return { 
-        success: false, 
-        error: `Invalid phone number format: ${phoneError instanceof Error ? phoneError.message : 'Please provide a valid phone number with country code (e.g., +1 for US numbers)'}`,
-      };
-    }
-
-    // 8. Format and validate email address for Square API
-    let formattedEmail: string;
-    try {
-      formattedEmail = formatEmailForSquare(customerInfo.email);
+      console.log('Formatted customer data for Square Payment Link:', {
+        buyer_email: formattedCustomerData.buyer_email,
+        buyer_phone_number: formattedCustomerData.buyer_phone_number || 'null (optional due to validation)',
+        originalPhone: customerInfo.phone
+      });
+      
     } catch (emailError) {
       console.error('Email address formatting error:', emailError);
       
@@ -1011,10 +1000,7 @@ export async function createCateringOrderAndProcessPayment(
           : undefined,
       },
       checkout_options: squareCheckoutOptions,
-      pre_populated_data: { 
-        buyer_email: formattedEmail,
-        buyer_phone_number: formattedPhone,
-      }
+      pre_populated_data: formattedCustomerData
     };
     
     // 10. Call Square API to create payment link

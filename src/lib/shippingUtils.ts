@@ -158,8 +158,12 @@ export async function calculateShippingWeight(
 
   // Ensure minimum weight for shipping (most carriers require at least 0.5 lb for small packages)
   const finalWeight = Math.max(totalWeight, 0.5);
-  console.log(`📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb (minimum applied: ${finalWeight > totalWeight})`);
-  return finalWeight;
+  
+  // Round to 2 decimal places to avoid floating point precision issues
+  const roundedWeight = Math.round(finalWeight * 100) / 100;
+  
+  console.log(`📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb → ${roundedWeight}lb (rounded for API)`);
+  return roundedWeight;
 }
 
 /**

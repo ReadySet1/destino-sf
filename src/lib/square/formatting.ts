@@ -102,6 +102,30 @@ export function formatPhoneForSquare(phone: string): string {
 }
 
 /**
+ * Formats phone numbers specifically for Square CreatePaymentLink API
+ * This API seems to have stricter validation than other Square APIs
+ * Falls back to null if formatting fails, allowing optional phone numbers
+ */
+export function formatPhoneForSquarePaymentLink(phone: string): string | null {
+  try {
+    // First try the standard formatting
+    const formattedPhone = formatPhoneForSquare(phone);
+    
+    // Additional validation for payment links - ensure it's between 10-15 digits
+    const digitsOnly = formattedPhone.substring(1); // Remove the +
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      console.warn(`Phone number ${formattedPhone} may not be valid for Square payment links (${digitsOnly.length} digits)`);
+      return null;
+    }
+    
+    return formattedPhone;
+  } catch (error) {
+    console.warn('Failed to format phone number for Square payment link:', error);
+    return null;
+  }
+}
+
+/**
  * Formats email addresses for Square API compatibility
  * Square's sandbox environment requires specific test email formats
  * For sandbox, we need to use test email addresses that Square accepts
@@ -157,4 +181,29 @@ export function formatCustomerDataForSquare(customerData: {
     buyer_email: formatEmailForSquare(customerData.email),
     buyer_phone_number: formatPhoneForSquare(customerData.phone),
   };
+}
+
+/**
+ * Validates and formats customer data specifically for Square Payment Links
+ * This handles the stricter validation requirements of the CreatePaymentLink API
+ */
+export function formatCustomerDataForSquarePaymentLink(customerData: {
+  email: string;
+  phone: string;
+  name: string;
+}): {
+  buyer_email: string;
+  buyer_phone_number?: string;
+} {
+  const result: { buyer_email: string; buyer_phone_number?: string } = {
+    buyer_email: formatEmailForSquare(customerData.email),
+  };
+  
+  // Try to format phone number, but make it optional if it fails
+  const formattedPhone = formatPhoneForSquarePaymentLink(customerData.phone);
+  if (formattedPhone) {
+    result.buyer_phone_number = formattedPhone;
+  }
+  
+  return result;
 } 
