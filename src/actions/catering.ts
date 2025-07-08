@@ -17,6 +17,7 @@ import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
+import { formatPhoneForSquare, formatEmailForSquare } from '@/lib/square/formatting';
 
 /**
  * Fetches all active catering packages using Prisma
@@ -693,101 +694,7 @@ export type ServerActionResult<T = unknown> = Promise<
   | { success: false; error: string }
 >;
 
-/**
- * Formats phone numbers for Square API compatibility (E.164 format)
- * Square API requires phone numbers in E.164 format: +[country code][number]
- * Maximum 15 digits total, no spaces or special characters except +
- * 
- * For Sandbox environment, Square requires specific test phone numbers:
- * Format: +1<valid-area-code>555<any-four-digits>
- * Example: +14255551111
- */
-function formatPhoneForSquare(phone: string): string {
-  if (!phone || typeof phone !== 'string') {
-    throw new Error('Phone number is required and must be a string');
-  }
 
-  // Check if we're in Sandbox environment
-  const isSquareSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-  
-  if (isSquareSandbox) {
-    // For Sandbox, use Square's required test phone number format
-    // Extract area code from the phone number if possible, otherwise use a default
-    const cleanPhone = phone.replace(/\D/g, '');
-    let areaCode = '425'; // Default valid area code
-    
-    // Try to extract area code from 10 or 11 digit numbers
-    if (cleanPhone.length === 10) {
-      areaCode = cleanPhone.substring(0, 3);
-    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
-      areaCode = cleanPhone.substring(1, 4);
-    }
-    
-    // Validate area code is reasonable (not starting with 0 or 1)
-    if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
-      areaCode = '425'; // Use default valid area code
-    }
-    
-    // Use last 4 digits if available, otherwise generate random
-    let lastFour = '1111'; // Default
-    if (cleanPhone.length >= 4) {
-      const digits = cleanPhone.slice(-4);
-      lastFour = digits.padStart(4, '1');
-    }
-    
-    // Format for Square Sandbox: +1<area-code>555<four-digits>
-    const formattedPhone = `+1${areaCode}555${lastFour}`;
-    console.log(`Sandbox: Phone formatted from ${phone} to ${formattedPhone}`);
-    return formattedPhone;
-  }
-
-  // Production environment - use standard E.164 formatting
-  // Remove all non-digit characters except + at the beginning
-  let cleanPhone = phone.trim();
-  
-  // If it already starts with +, validate and clean it
-  if (cleanPhone.startsWith('+')) {
-    const digitsOnly = cleanPhone.substring(1).replace(/\D/g, '');
-    
-    // Validate E.164 format: must be 7-15 digits after the +
-    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
-      throw new Error(`Invalid phone number length: ${digitsOnly.length} digits. E.164 format requires 7-15 digits after country code.`);
-    }
-    
-    // Must not start with 0 (no country codes start with 0)
-    if (digitsOnly.startsWith('0')) {
-      throw new Error('Invalid phone number: country codes cannot start with 0');
-    }
-    
-    const formattedPhone = `+${digitsOnly}`;
-    console.log(`Phone formatted from ${phone} to ${formattedPhone}`);
-    return formattedPhone;
-  }
-  
-  // Remove all non-digit characters
-  const digitsOnly = cleanPhone.replace(/\D/g, '');
-  
-  // Handle different US number formats
-  if (digitsOnly.length === 10) {
-    // 10-digit US number, add +1 prefix
-    const formattedPhone = `+1${digitsOnly}`;
-    console.log(`US phone formatted from ${phone} to ${formattedPhone}`);
-    return formattedPhone;
-  } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-    // 11-digit number starting with 1 (US), add + prefix
-    const formattedPhone = `+${digitsOnly}`;
-    console.log(`US phone formatted from ${phone} to ${formattedPhone}`);
-    return formattedPhone;
-  } else if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
-    // International number without + prefix
-    // Assume it's already properly formatted without country code prefix
-    // For safety, we'll need the caller to provide proper format
-    throw new Error(`Phone number format unclear: ${digitsOnly.length} digits. Please provide phone number with country code (e.g., +1 for US numbers).`);
-  } else {
-    // Invalid length
-    throw new Error(`Invalid phone number: ${digitsOnly.length} digits. Phone numbers must be 7-15 digits in E.164 format.`);
-  }
-}
 
 /**
  * Saves contact information immediately to capture leads
@@ -1070,7 +977,29 @@ export async function createCateringOrderAndProcessPayment(
       };
     }
 
-    // 8. Build full Square request body
+    // 8. Format and validate email address for Square API
+    let formattedEmail: string;
+    try {
+      formattedEmail = formatEmailForSquare(customerInfo.email);
+    } catch (emailError) {
+      console.error('Email address formatting error:', emailError);
+      
+      await db.cateringOrder.update({
+        where: { id: cateringOrder.id },
+        data: { 
+          status: CateringStatus.CANCELLED,
+          paymentStatus: PaymentStatus.FAILED,
+          notes: `Email address formatting error: ${emailError instanceof Error ? emailError.message : 'Invalid email format'}`
+        }
+      });
+      
+      return { 
+        success: false, 
+        error: `Invalid email address format: ${emailError instanceof Error ? emailError.message : 'Please provide a valid email address'}`,
+      };
+    }
+
+    // 9. Build full Square request body
     const squareRequestBody = {
       idempotency_key: randomUUID(),
       order: {
@@ -1083,12 +1012,12 @@ export async function createCateringOrderAndProcessPayment(
       },
       checkout_options: squareCheckoutOptions,
       pre_populated_data: { 
-        buyer_email: customerInfo.email,
+        buyer_email: formattedEmail,
         buyer_phone_number: formattedPhone,
       }
     };
     
-    // 9. Call Square API to create payment link
+    // 10. Call Square API to create payment link
     console.log("Calling Square Create Payment Link API for catering order...");
     const fetchResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
       method: 'POST',
@@ -1102,7 +1031,7 @@ export async function createCateringOrderAndProcessPayment(
     
     const responseData = await fetchResponse.json();
     
-    // 10. Handle Square API response
+    // 11. Handle Square API response
     if (!fetchResponse.ok || responseData.errors || !responseData.payment_link?.url || !responseData.payment_link?.order_id) {
       const errorDetail = responseData.errors?.[0]?.detail || 'Failed to create Square payment link';
       const squareErrorCode = responseData.errors?.[0]?.code;
@@ -1124,7 +1053,7 @@ export async function createCateringOrderAndProcessPayment(
       };
     }
     
-    // 11. Store Square checkout info and return success
+    // 12. Store Square checkout info and return success
     const checkoutUrl = responseData.payment_link.url;
     const squareOrderId = responseData.payment_link.order_id;
     

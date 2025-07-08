@@ -19,8 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { formatCurrency, formatDate, getBoxedLunchImage } from '@/lib/utils';
-import Image from 'next/image';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface OrderItem {
   id: string;
@@ -28,6 +27,9 @@ interface OrderItem {
   price: number;
   quantity: number;
   finalPrice?: number;
+  image?: string; // Add image field
+  pricePerUnit?: number; // Added for price per unit display
+  totalPrice?: number; // Added for total price display
   metadata?: {
     type: 'item' | 'package';
     minPeople?: number;
@@ -194,36 +196,36 @@ function ConfirmationContent() {
                     <div className="border-t border-gray-200 pt-4">
                       <h4 className="font-semibold text-gray-900 mb-3">Items Ordered</h4>
                       <div className="space-y-3">
-                        {orderData.items.map((item, index) => (
-                          <div key={index} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-                            <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden">
-                              <Image
-                                src={getBoxedLunchImage(item.name)}
-                                alt={item.name || 'Catering item'}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = '/images/catering/default-item.jpg';
-                                }}
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-medium text-gray-900 truncate">{item.name}</h5>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {item.metadata?.type === 'package' ? 'Package' : 'Item'}
-                                </Badge>
-                                <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                        {orderData.items.map((item, index) => {
+                          // Debug: log the item to see what fields are available
+                          console.log('Order item:', item);
+                          
+                          // Try different field names for price per unit and total
+                          const pricePerUnit = item.pricePerUnit || item.price || 0;
+                          const totalPrice = item.totalPrice || item.finalPrice || (pricePerUnit * item.quantity);
+                          
+                          return (
+                            <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900">{item.name}</h5>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.metadata?.type === 'package' ? 'Package' : 'Item'}
+                                  </Badge>
+                                  <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="text-sm text-gray-500">
+                                  {formatCurrency(pricePerUnit)} each
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  {formatCurrency(totalPrice)}
+                                </div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="font-semibold text-gray-900">
-                                {formatCurrency(item.finalPrice || (item.price * item.quantity))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                       
                       <div className="border-t border-gray-200 mt-4 pt-4">

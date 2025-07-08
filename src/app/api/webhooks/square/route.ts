@@ -961,7 +961,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Early exit if body is empty – some webhook pings can come without a payload
     if (!bodyText || bodyText.trim().length === 0) {
       console.warn('Square webhook received with empty body – acknowledging without processing');
-      return NextResponse.json({ received: true, emptyBody: true }, { status: 200 });
+      const response = NextResponse.json({ received: true, emptyBody: true }, { status: 200 });
+      response.headers.set('X-Webhook-Processed', 'false');
+      response.headers.set('X-Webhook-Reason', 'empty-body');
+      return response;
     }
     
     // Verify the webhook signature if a webhook secret is configured
@@ -1031,8 +1034,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         console.warn(`Unhandled event type: ${payload.type}`);
     }
 
-    // Acknowledge receipt to Square immediately
-    return NextResponse.json({ received: true }, { status: 200 });
+    // Acknowledge receipt to Square immediately with rate limit headers
+    const response = NextResponse.json({ received: true }, { status: 200 });
+    
+    // Add basic rate limit headers for observability
+    response.headers.set('X-Webhook-Processed', 'true');
+    response.headers.set('X-Webhook-Type', payload.type);
+    
+    return response;
 
   } catch (error: unknown) {
     console.error('Error processing Square webhook:', error);

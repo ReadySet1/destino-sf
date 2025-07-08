@@ -348,4 +348,82 @@ export function getBoxedLunchImage(itemName: string): string {
   
   // Fallback to default catering image
   return '/images/catering/default-item.jpg';
+}
+
+/**
+ * Comprehensive catering image handler for all types of catering items
+ * Handles packages, appetizers, platters, boxed lunches, desserts, etc.
+ */
+export function getCateringItemImage(
+  itemName: string, 
+  imageUrl?: string | null | undefined, 
+  metadata?: any
+): string {
+  // If we have a provided image URL, use it (this is the most important!)
+  if (imageUrl) {
+    // AWS S3 URLs already have proper format
+    if (imageUrl.includes('amazonaws.com') || imageUrl.includes('s3.') || 
+        imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    // For relative paths, ensure they start with a slash
+    return imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+  }
+
+  const name = itemName.toLowerCase();
+
+  // Handle appetizer items - return fallback as requested by user
+  if (metadata?.type === 'appetizer-package' || name.includes('appetizer')) {
+    return '/images/catering/default-item.jpg';
+  }
+
+  // Handle boxed lunch items with protein selection
+  if (metadata?.type === 'boxed-lunch' && metadata?.selectedProtein) {
+    const proteinImageMap: Record<string, string> = {
+      'CARNE_ASADA': '/images/boxedlunches/carne-asada.png',
+      'POLLO_AL_CARBON': '/images/boxedlunches/pollo-carbon.png',
+      'CARNITAS': '/images/boxedlunches/carnitas.png',
+      'POLLO_ASADO': '/images/boxedlunches/pollo-asado.png',
+      'PESCADO': '/images/boxedlunches/pescado.png',
+      'VEGETARIAN_OPTION': '/images/boxedlunches/vegetarian-option.png',
+    };
+    
+    const proteinImage = proteinImageMap[metadata.selectedProtein];
+    if (proteinImage) {
+      return proteinImage;
+    }
+  }
+
+  // Handle boxed lunch tiers with specific images
+  if (name.includes('tier') || name.includes('boxed lunch') || name.includes('lunch box')) {
+    if (name.includes('tier 1') || name.includes('tier #1')) {
+      return '/images/catering/tier-1-lunch.jpg';
+    }
+    if (name.includes('tier 2') || name.includes('tier #2')) {
+      return '/images/catering/tier-2-lunch.jpg';
+    }
+    if (name.includes('tier 3') || name.includes('tier #3')) {
+      return '/images/catering/tier-3-lunch.jpg';
+    }
+    // Fallback for boxed lunch items
+    return '/images/catering/default-boxed-lunch.jpg';
+  }
+
+  // Check for specific protein names (for loose items)
+  const proteinImageMap: Record<string, string> = {
+    'carne asada': '/images/boxedlunches/carne-asada.png',
+    'pollo al carbón': '/images/boxedlunches/pollo-carbon.png',
+    'carnitas': '/images/boxedlunches/carnitas.png',
+    'pollo asado': '/images/boxedlunches/pollo-asado.png',
+    'pescado': '/images/boxedlunches/pescado.png',
+  };
+  
+  for (const [protein, imagePath] of Object.entries(proteinImageMap)) {
+    if (name.includes(protein)) {
+      return imagePath;
+    }
+  }
+
+  // Final fallback to default catering image
+  return '/images/catering/default-item.jpg';
 } 

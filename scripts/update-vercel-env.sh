@@ -9,8 +9,8 @@ echo "🚀 Updating Vercel Environment Variables..."
 
 # First, let's update the production URLs for the live site
 echo "📝 Setting production URLs..."
-vercel env add NEXT_PUBLIC_SITE_URL production <<< "https://destinosf.readysetllc.com"
-vercel env add NEXT_PUBLIC_APP_URL production <<< "https://destinosf.readysetllc.com"
+vercel env add NEXT_PUBLIC_SITE_URL production <<< "https://development.destinosf.com"
+vercel env add NEXT_PUBLIC_APP_URL production <<< "https://development.destinosf.com"
 
 # Read .env.local and update each variable
 echo "📦 Updating environment variables from .env.local..."

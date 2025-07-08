@@ -227,7 +227,8 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             quantity: item.quantity,
             pricePerUnit,
             totalPrice,
-            notes: null
+            notes: null,
+            image: item.image // AÑADIR LA IMAGEN!
           };
         }),
         totalAmount: calculateTotal()
@@ -513,6 +514,17 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                                       Required: ${deliveryValidation.minimumRequired.toFixed(2)}
                                     </p>
                                   )}
+                                  <div className="mt-3">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+                                      onClick={() => window.location.href = '/catering'}
+                                    >
+                                      Add More Items
+                                    </Button>
+                                  </div>
                                 </div>
                               )}
                             </div>

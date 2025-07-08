@@ -52,15 +52,9 @@ export async function applyRateLimit(
       );
     }
     
-    // Rate limit passed - continue with rate limit headers attached
-    const response = NextResponse.next();
-    
-    // Add rate limit headers to successful response
-    response.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
-    response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
-    response.headers.set('X-RateLimit-Reset', Math.floor(rateLimitResult.reset.getTime() / 1000).toString());
-    
-    return response;
+    // Rate limit passed - return null to allow route handler to continue
+    // Note: NextResponse.next() is not allowed in route handlers, only in middleware
+    return null;
     
   } catch (error) {
     console.error('Rate limiting middleware error:', error);
