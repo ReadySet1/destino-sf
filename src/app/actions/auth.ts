@@ -387,18 +387,37 @@ export const magicLinkSignInAction = async (formData: FormData) => {
     redirectTo = redirectUrl;
   }
 
-  // Send magic link
+  console.log('🪄 Sending magic link:', {
+    email,
+    origin,
+    redirectTo,
+    fullRedirectUrl: `${origin}/auth/callback?redirect_to=${redirectTo}`
+  });
+
+  // Send magic link using OTP flow
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${origin}/auth/callback?redirect_to=${redirectTo}`,
+      // Ensure this is treated as a magic link OTP, not PKCE
+      shouldCreateUser: false, // Don't create new users through magic link
     },
   });
 
   if (error) {
     console.error('Magic link error:', error.message);
-    return encodedRedirect('error', '/sign-in', 'Could not send magic link. Please try again.');
+    
+    // Provide more specific error messages
+    if (error.message.includes('email not confirmed')) {
+      return encodedRedirect('error', '/sign-in', 'Please verify your email address first.');
+    } else if (error.message.includes('signup')) {
+      return encodedRedirect('error', '/sign-in', 'Account not found. Please sign up first.');
+    } else {
+      return encodedRedirect('error', '/sign-in', 'Could not send magic link. Please try again.');
+    }
   }
+
+  console.log('✅ Magic link sent successfully to:', email);
 
   return encodedRedirect(
     'success',

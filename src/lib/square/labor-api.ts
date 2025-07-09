@@ -2,6 +2,23 @@ import { logger } from '@/utils/logger';
 import https from 'https';
 import type { ScheduledShift, Timecard } from '@/types/square';
 
+/**
+ * Sanitizes a Square API token by removing whitespace and invalid characters
+ */
+function sanitizeToken(token: string): string {
+  if (!token) return '';
+  return token.trim().replace(/[\r\n\t\s]/g, '');
+}
+
+/**
+ * Validates that a token has the correct format for Square API
+ */
+function validateToken(token: string): boolean {
+  if (!token) return false;
+  const tokenPattern = /^[A-Za-z0-9_-]+$/;
+  return tokenPattern.test(token);
+}
+
 // Function to get the current Square configuration
 function getSquareConfig() {
   const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
@@ -18,6 +35,18 @@ function getSquareConfig() {
   } else {
     accessToken = process.env.SQUARE_ACCESS_TOKEN;
     tokenSource = 'SQUARE_ACCESS_TOKEN';
+  }
+  
+  // Validate and sanitize the token
+  if (accessToken) {
+    const sanitizedToken = sanitizeToken(accessToken);
+    
+    if (!validateToken(sanitizedToken)) {
+      logger.error(`Invalid token format from ${tokenSource}. Token length: ${accessToken.length}`);
+      throw new Error(`Invalid Square token format from ${tokenSource}. Please check your environment variables.`);
+    }
+    
+    accessToken = sanitizedToken;
   }
   
   const apiHost = useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com';

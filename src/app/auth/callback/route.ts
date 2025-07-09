@@ -18,23 +18,13 @@ export async function GET(request: Request) {
     token_hash: token_hash ? 'present' : 'missing',
     type,
     redirectTo,
-    origin
+    origin,
+    fullUrl: requestUrl.toString()
   });
 
   const supabase = await createClient();
 
-  // Handle PKCE flow (authorization code)
-  if (code) {
-    console.log('🔄 Processing PKCE code exchange...');
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      console.error('❌ Error exchanging code for session:', error);
-      return NextResponse.redirect(`${origin}/auth/auth-code-error`);
-    }
-    console.log('✅ PKCE code exchange successful');
-  }
-
-  // Handle magic link / email verification (OTP)
+  // Handle magic link / email verification (OTP) - Check this first
   if (token_hash && type) {
     console.log('🪄 Processing magic link OTP verification...');
     const { error } = await supabase.auth.verifyOtp({
@@ -46,6 +36,51 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/auth/auth-code-error`);
     }
     console.log('✅ Magic link OTP verification successful');
+  }
+  // Handle PKCE flow (authorization code) - Only if no OTP tokens
+  else if (code) {
+    console.log('🔄 Processing PKCE code exchange...');
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error('❌ Error exchanging code for session:', error);
+      
+      // Check if this might be a magic link incorrectly sent as PKCE
+      if (error.message?.includes('code challenge') || error.message?.includes('code verifier')) {
+        console.log('🔍 PKCE error detected - this might be a magic link sent as PKCE flow');
+        console.log('🔧 Attempting to handle as magic link...');
+        
+        // Try to extract potential magic link parameters from the URL
+        const urlFragment = requestUrl.hash;
+        if (urlFragment) {
+          const hashParams = new URLSearchParams(urlFragment.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            console.log('🔄 Found tokens in URL fragment, attempting to set session...');
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (!sessionError) {
+              console.log('✅ Successfully set session from URL fragment tokens');
+            } else {
+              console.error('❌ Failed to set session from URL fragment:', sessionError);
+              return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+            }
+          } else {
+            return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+          }
+        } else {
+          return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+        }
+      } else {
+        return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+      }
+    } else {
+      console.log('✅ PKCE code exchange successful');
+    }
   }
 
   // Verify session was created

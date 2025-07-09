@@ -9,6 +9,27 @@ interface SquareConfig {
   tokenSource: string;
 }
 
+/**
+ * Sanitizes a Square API token by removing whitespace and invalid characters
+ */
+function sanitizeToken(token: string): string {
+  if (!token) return '';
+  
+  // Remove any whitespace, newlines, or invisible characters
+  return token.trim().replace(/[\r\n\t\s]/g, '');
+}
+
+/**
+ * Validates that a token has the correct format for Square API
+ */
+function validateToken(token: string): boolean {
+  if (!token) return false;
+  
+  // Square tokens should be alphanumeric with hyphens and underscores
+  const tokenPattern = /^[A-Za-z0-9_-]+$/;
+  return tokenPattern.test(token);
+}
+
 // Function to get the current access token and environment settings
 // This now uses direct environment variable access to avoid circular dependencies
 function getSquareConfig(): SquareConfig {
@@ -32,6 +53,22 @@ function getSquareConfig(): SquareConfig {
     catalogEnvironment = 'sandbox';
     accessToken = process.env.SQUARE_SANDBOX_TOKEN;
     tokenSource = 'SQUARE_SANDBOX_TOKEN';
+  }
+
+  // Validate and sanitize the token
+  if (accessToken) {
+    const sanitizedToken = sanitizeToken(accessToken);
+    
+    if (!validateToken(sanitizedToken)) {
+      logger.error(`Invalid token format from ${tokenSource}. Token length: ${accessToken.length}`);
+      logger.error(`Token preview: ${accessToken.substring(0, 10)}...`);
+      throw new Error(`Invalid Square token format from ${tokenSource}. Please check your environment variables.`);
+    }
+    
+    accessToken = sanitizedToken;
+    
+    // Log token validation success (without exposing the token)
+    logger.info(`Square token validated successfully from ${tokenSource}`);
   }
 
   const apiHost = catalogEnvironment === 'sandbox' 
@@ -77,9 +114,20 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
     throw new Error(`Square access token not configured for ${config.tokenSource}`);
   }
   
-  // Update Authorization header with current token
+  // Additional token validation before making the request
+  const sanitizedToken = sanitizeToken(config.accessToken);
+  if (!validateToken(sanitizedToken)) {
+    throw new Error(`Invalid token format detected in ${config.tokenSource}. Please regenerate your Square API token.`);
+  }
+  
+  // Update Authorization header with sanitized token
   if (options.headers) {
-    options.headers['Authorization'] = `Bearer ${config.accessToken}`;
+    try {
+      options.headers['Authorization'] = `Bearer ${sanitizedToken}`;
+    } catch (error) {
+      logger.error(`Failed to set Authorization header with token from ${config.tokenSource}:`, error);
+      throw new Error(`Authorization header error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
   
   return new Promise((resolve, reject) => {

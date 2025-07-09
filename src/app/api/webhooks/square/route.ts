@@ -108,8 +108,21 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
     });
     
     console.log(`✅ Successfully processed order.created event for order ${data.id}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`❌ Error processing order.created for ${data.id}:`, error);
+    
+    // Enhanced error logging for database connection issues
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+      console.error('🚨 Database connection error in order.created:', {
+        errorCode: error.code,
+        message: error.message,
+        orderId: data.id,
+        eventId: eventId,
+        timestamp: new Date().toISOString(),
+        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@')
+      });
+    }
+    
     await errorMonitor.captureWebhookError(
       error,
       'order.created',
