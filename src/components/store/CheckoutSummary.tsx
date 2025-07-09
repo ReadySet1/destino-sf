@@ -1,28 +1,36 @@
-import Image from 'next/image';
-import { CartItem } from '@/store/cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DeliveryFeeResult } from '@/lib/deliveryUtils';
+import { Truck, Package, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CheckoutSummaryProps {
-  items: CartItem[];
-  /** Determines if the 3.5% service fee should be calculated and displayed. */
+  items: Array<{ id: string; name: string; price: number; quantity: number }>;
   includeServiceFee?: boolean;
-  /** Optional delivery fee information to display */
-  deliveryFee?: DeliveryFeeResult | null;
+  deliveryFee?: { fee: number; isFreeDelivery?: boolean; zone?: string; minOrderForFreeDelivery?: number } | null;
+  shippingRate?: { amount: number; carrier: string; name: string; estimatedDays?: number } | null;
+  fulfillmentMethod?: 'pickup' | 'local_delivery' | 'nationwide_shipping';
 }
 
 // Define the service fee rate
 const SERVICE_FEE_RATE = 0.035; // 3.5%
 
-export function CheckoutSummary({ items, includeServiceFee = false, deliveryFee }: CheckoutSummaryProps) {
+export function CheckoutSummary({ 
+  items, 
+  includeServiceFee = false, 
+  deliveryFee, 
+  shippingRate,
+  fulfillmentMethod 
+}: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0825; // 8.25% tax
 
   // Calculate the delivery fee amount
   const deliveryFeeAmount = deliveryFee ? deliveryFee.fee : 0;
+  
+  // Calculate shipping cost
+  const shippingCost = shippingRate ? shippingRate.amount : 0;
 
   // Calculate the base total before service fee
-  const totalBeforeFee = subtotal + tax + deliveryFeeAmount;
+  const totalBeforeFee = subtotal + tax + deliveryFeeAmount + shippingCost;
 
   // Calculate service fee only if includeServiceFee is true
   const serviceFee = includeServiceFee ? totalBeforeFee * SERVICE_FEE_RATE : 0;
@@ -35,39 +43,17 @@ export function CheckoutSummary({ items, includeServiceFee = false, deliveryFee 
       <CardHeader>
         <CardTitle>Order Summary</CardTitle>
       </CardHeader>
-
       <CardContent>
-        <div className="max-h-96 overflow-y-auto">
-          <div className="divide-y">
-            {items.map(item => (
-              <div key={`${item.id}-${item.variantId || ''}`} className="flex py-3">
-                <div className="relative mr-3 h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gray-100">
-                  {item.image ? (
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="text-xs text-gray-500">No image</span>
-                    </div>
-                  )}
-
-                  <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-xs text-white">
-                    {item.quantity}
-                  </div>
-                </div>
-
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium">{item.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    ${item.price.toFixed(2)} × {item.quantity}
-                  </p>
-                </div>
-
-                <div className="text-right font-medium">
-                  ${(item.price * item.quantity).toFixed(2)}
-                </div>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-gray-400" />
+                <span>{item.quantity} × {item.name}</span>
               </div>
-            ))}
-          </div>
+              <span>${(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
         </div>
 
         <div className="mt-4 space-y-2 border-t pt-4">
@@ -77,16 +63,50 @@ export function CheckoutSummary({ items, includeServiceFee = false, deliveryFee 
           </div>
 
           {/* Delivery Fee row */}
-          {deliveryFee !== undefined && (
+          {deliveryFee !== undefined && fulfillmentMethod === 'local_delivery' && (
             <div className="flex justify-between text-sm">
-              <span>
-                Delivery{' '}
-                {deliveryFee && deliveryFee.isFreeDelivery && (
-                  <span className="text-green-600 font-medium">(Free)</span>
-                )}
-              </span>
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-blue-500" />
+                <span>
+                  Delivery{' '}
+                  {deliveryFee && deliveryFee.isFreeDelivery && (
+                    <span className="text-green-600 font-medium">(Free)</span>
+                  )}
+                </span>
+              </div>
               <span>${deliveryFeeAmount.toFixed(2)}</span>
             </div>
+          )}
+
+          {/* Shipping Cost row - Enhanced visibility */}
+          {shippingRate && fulfillmentMethod === 'nationwide_shipping' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 my-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <span className="font-medium text-sm">Shipping ({shippingRate.carrier})</span>
+                    <div className="text-xs text-gray-600">
+                      {shippingRate.name}
+                      {shippingRate.estimatedDays && (
+                        <span> • {shippingRate.estimatedDays} days</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <span className="font-medium">${shippingCost.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Alert when shipping is required but not selected */}
+          {fulfillmentMethod === 'nationwide_shipping' && !shippingRate && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Please select a shipping method to see the total cost.
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="flex justify-between text-sm">
@@ -106,6 +126,15 @@ export function CheckoutSummary({ items, includeServiceFee = false, deliveryFee 
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
+          
+          {/* Enhanced messaging for different fulfillment methods */}
+          {fulfillmentMethod === 'nationwide_shipping' && shippingRate && (
+            <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+              <Truck className="inline h-3 w-3 mr-1" />
+              Shipping included: {shippingRate.carrier} {shippingRate.name}
+              {shippingRate.estimatedDays && ` (${shippingRate.estimatedDays} business days)`}
+            </div>
+          )}
           
           {/* Delivery fee message */}
           {deliveryFee && deliveryFee.zone === 'nearby' && !deliveryFee.isFreeDelivery && (

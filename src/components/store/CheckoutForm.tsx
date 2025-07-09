@@ -803,7 +803,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                                   <SelectContent>
                                       {shippingRates.map(rate => (
                                           <SelectItem key={rate.id} value={rate.id}>
-                                              {rate.name} - ${ (rate.amount / 100).toFixed(2)} 
+                                              {rate.name} - ${rate.amount.toFixed(2)} 
                                           </SelectItem>
                                       ))}
                                   </SelectContent>
@@ -852,6 +852,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             items={items} 
             includeServiceFee={currentPaymentMethod === PaymentMethod.SQUARE}
             deliveryFee={currentMethod === 'local_delivery' ? deliveryFee : undefined}
+            shippingRate={currentMethod === 'nationwide_shipping' && watch('rateId') ? 
+              shippingRates.find(rate => rate.id === watch('rateId')) : undefined}
+            fulfillmentMethod={currentMethod}
           />
         ) : (
           <p>Loading cart summary...</p>

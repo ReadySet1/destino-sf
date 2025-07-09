@@ -19,7 +19,9 @@ import {
   Clock,
   MapPin,
   Truck,
-  Package
+  Package,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -60,131 +62,34 @@ export function OrderConfirmationLayout({
     }
   };
 
-  // Helper function to get next steps content
-  const getNextStepsContent = () => {
-    if (orderType === 'catering') {
-      return (
-        <div>
-          <p className="text-sm text-gray-600 mb-4">
-            A member of our team will reach out to you within 24 hours to confirm 
-            all the details of your order and answer any questions you might have.
-          </p>
-          
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>Please check your email for a confirmation of your order.</p>
-            <div className="pt-2 border-t border-gray-200">
-              <p className="font-medium text-gray-700 mb-1">For urgent inquiries:</p>
-              <div className="space-y-1">
-                <a href="tel:415-525-4448" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
-                  <Phone className="h-3 w-3" />
-                  415-525-4448
-                </a>
-                <a href="mailto:catering@destinosf.com" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
-                  <Mail className="h-3 w-3" />
-                  catering@destinosf.com
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+  // Helper function to copy tracking number to clipboard
+  const copyTrackingNumber = async (trackingNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingNumber);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy tracking number:', err);
     }
-
-    // Store order next steps
-    if (orderData && isStoreOrder(orderData) && orderData.fulfillment) {
-      const fulfillment = orderData.fulfillment;
-      
-      if (fulfillment.type === 'pickup') {
-        return (
-          <p className="text-sm text-gray-600">
-            Please bring your ID and order confirmation when picking up your order.
-            We&apos;ll notify you when your order is ready for pickup.
-          </p>
-        );
-      } else if (fulfillment.type === 'delivery') {
-        return (
-          <p className="text-sm text-gray-600">
-            We&apos;ll notify you when your order is out for delivery.
-            Make sure someone is available at the delivery address during the selected time slot.
-          </p>
-        );
-      } else if (fulfillment.type === 'shipment') {
-        return (
-          <p className="text-sm text-gray-600">
-            We&apos;ll send you tracking information once your order ships.
-            You can track your order status using the order ID above.
-          </p>
-        );
-      }
-    }
-
-    return (
-      <p className="text-sm text-gray-600">
-        Your order details are being processed. We&apos;ll update you soon.
-      </p>
-    );
   };
 
-  // Helper function to get action buttons
-  const getActionButtons = () => {
-    const buttons = [];
-
-    // View Order Details button (if we have an orderId)
-    if (orderData?.id) {
-      buttons.push(
-        <Link key="view-details" href={`/account/order/${orderData.id}`}>
-          <Button 
-            size="lg" 
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View Order Details
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      );
+  // Helper function to get tracking URL
+  const getTrackingUrl = (trackingNumber: string, carrier?: string) => {
+    if (!trackingNumber) return null;
+    
+    const lowerCarrier = carrier?.toLowerCase() || '';
+    
+    if (lowerCarrier.includes('usps')) {
+      return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`;
+    } else if (lowerCarrier.includes('ups')) {
+      return `https://www.ups.com/track?tracknum=${trackingNumber}`;
+    } else if (lowerCarrier.includes('fedex')) {
+      return `https://www.fedex.com/fedextrack/?tracknumbers=${trackingNumber}`;
+    } else if (lowerCarrier.includes('dhl')) {
+      return `https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=${trackingNumber}`;
     }
-
-    // Type-specific navigation buttons
-    if (orderType === 'catering') {
-      buttons.push(
-        <Link key="catering-menu" href="/catering">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-          >
-            Return to Catering Menu
-          </Button>
-        </Link>
-      );
-    } else {
-      buttons.push(
-        <Link key="continue-shopping" href="/">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-          >
-            Continue Shopping
-          </Button>
-        </Link>
-      );
-    }
-
-    // Home button
-    buttons.push(
-      <Link key="home" href="/">
-        <Button 
-          size="lg" 
-          className="w-full sm:w-auto bg-[#2d3538] hover:bg-[#2d3538]/90 text-white"
-        >
-          Back to Home
-        </Button>
-      </Link>
-    );
-
-    return buttons;
+    
+    // Generic tracking search if carrier not recognized
+    return `https://www.google.com/search?q=track+package+${trackingNumber}`;
   };
 
   return (
@@ -218,6 +123,63 @@ export function OrderConfirmationLayout({
                 Order ID: <code className="bg-green-200 px-2 py-1 rounded text-xs">{paymentDetails.squareOrderId}</code>
               </p>
             )}
+          </div>
+        )}
+
+        {/* Tracking Information - Prominent display for shipped orders */}
+        {orderData && isStoreOrder(orderData) && orderData.fulfillment?.type === 'shipment' && orderData.fulfillment.trackingNumber && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <Truck className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                  Your Order Has Shipped!
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-blue-800">Tracking Number:</span>
+                    <code className="bg-blue-100 px-3 py-1 rounded text-sm font-mono">
+                      {orderData.fulfillment.trackingNumber}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyTrackingNumber(orderData.fulfillment!.trackingNumber!)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {orderData.fulfillment.shippingCarrier && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-blue-800">Carrier:</span>
+                      <span className="text-sm text-blue-700">{orderData.fulfillment.shippingCarrier}</span>
+                    </div>
+                  )}
+                  {getTrackingUrl(orderData.fulfillment.trackingNumber, orderData.fulfillment.shippingCarrier) && (
+                    <div className="mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                      >
+                        <a
+                          href={getTrackingUrl(orderData.fulfillment.trackingNumber, orderData.fulfillment.shippingCarrier)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Track Your Package
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -371,32 +333,91 @@ export function OrderConfirmationLayout({
             {/* Customer Info & Next Steps - Right Column (1/3 width) */}
             <div className="space-y-6">
               {/* Customer Information */}
-              {customerData && (
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Customer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {customerData?.name && (
+                      <div>
+                        <p className="text-sm text-gray-600 font-medium">Name</p>
+                        <p className="text-gray-900">{customerData.name}</p>
+                      </div>
+                    )}
+                    {customerData?.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-600" />
+                        <p className="text-gray-900">{customerData.email}</p>
+                      </div>
+                    )}
+                    {customerData?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-600" />
+                        <p className="text-gray-900">{customerData.phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Fulfillment Details */}
+              {isStoreOrder(orderData) && orderData.fulfillment && (
                 <Card className="shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <User className="h-5 w-5" />
-                      Customer Information
+                    <CardTitle className="flex items-center gap-2">
+                      {orderData.fulfillment.type === 'pickup' && <Clock className="h-5 w-5" />}
+                      {orderData.fulfillment.type === 'delivery' && <MapPin className="h-5 w-5" />}
+                      {orderData.fulfillment.type === 'shipment' && <Truck className="h-5 w-5" />}
+                      {getFulfillmentTitle(orderData.fulfillment)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {customerData.name && (
-                        <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{customerData.name}</span>
+                      {orderData.fulfillment.type === 'pickup' && orderData.fulfillment.pickupTime && (
+                        <div>
+                          <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
+                          <p className="text-gray-900">{safeFormat(orderData.fulfillment.pickupTime, 'PPP p')}</p>
                         </div>
                       )}
-                      {customerData.email && (
-                        <div className="flex items-center gap-3">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{customerData.email}</span>
-                        </div>
-                      )}
-                      {customerData.phone && (
-                        <div className="flex items-center gap-3">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-900">{customerData.phone}</span>
+                      
+                      {orderData.fulfillment.type === 'shipment' && (
+                        <div className="space-y-3">
+                          {orderData.fulfillment.trackingNumber ? (
+                            <>
+                              <div>
+                                <p className="text-sm text-gray-600 font-medium">Status</p>
+                                <Badge variant="outline" className="text-green-700 border-green-300">
+                                  Shipped
+                                </Badge>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 font-medium">Tracking Number</p>
+                                <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                                  {orderData.fulfillment.trackingNumber}
+                                </code>
+                              </div>
+                              {orderData.fulfillment.shippingCarrier && (
+                                <div>
+                                  <p className="text-sm text-gray-600 font-medium">Carrier</p>
+                                  <p className="text-gray-900">{orderData.fulfillment.shippingCarrier}</p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div>
+                              <p className="text-sm text-gray-600 font-medium">Status</p>
+                              <Badge variant="outline" className="text-blue-700 border-blue-300">
+                                Processing
+                              </Badge>
+                              <p className="text-sm text-gray-600 mt-1">
+                                We&apos;ll send you tracking information once your order ships.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -404,18 +425,56 @@ export function OrderConfirmationLayout({
                 </Card>
               )}
 
-              {/* What's Next */}
+              {/* Next Steps */}
               <Card className="shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
+                  <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
                     What&apos;s Next?
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {getNextStepsContent()}
+                  <div className="space-y-3">
+                    {isStoreOrder(orderData) && orderData.fulfillment?.type === 'shipment' ? (
+                      orderData.fulfillment.trackingNumber ? (
+                        <p className="text-sm text-gray-600">
+                          Your order has shipped! Use the tracking information above to monitor your package&apos;s progress.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          We&apos;re preparing your order for shipment. You&apos;ll receive tracking information via email once it ships.
+                        </p>
+                      )
+                    ) : isStoreOrder(orderData) && orderData.fulfillment?.type === 'pickup' ? (
+                      <p className="text-sm text-gray-600">
+                        Please bring your ID and order confirmation when picking up your order. 
+                        We&apos;ll notify you when your order is ready for pickup.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        We&apos;ll keep you updated on your order status via email and SMS.
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <Button asChild className="w-full">
+                  <Link href="/">
+                    Continue Shopping
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/contact">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Contact Support
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -431,7 +490,7 @@ export function OrderConfirmationLayout({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {getActionButtons()}
+          {/* The getActionButtons function was removed, so this block is now empty */}
         </div>
       </div>
     </div>

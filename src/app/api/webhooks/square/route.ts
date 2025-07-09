@@ -876,16 +876,40 @@ async function handleRefundUpdated(payload: SquareWebhookPayload): Promise<void>
 // Initialize Square Client with proper configuration
 const squareEnvString = process.env.SQUARE_ENVIRONMENT?.toLowerCase() ?? 'production';
 
+// Get the correct access token based on environment
+const getSquareAccessToken = () => {
+  const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
+  
+  if (useSandbox) {
+    return process.env.SQUARE_SANDBOX_TOKEN;
+  } else {
+    return process.env.SQUARE_ACCESS_TOKEN || process.env.SQUARE_PRODUCTION_TOKEN;
+  }
+};
+
+const accessToken = getSquareAccessToken();
+
+if (!accessToken) {
+  console.error('Square access token not found. Available env vars:', {
+    USE_SQUARE_SANDBOX: process.env.USE_SQUARE_SANDBOX,
+    SQUARE_ENVIRONMENT: process.env.SQUARE_ENVIRONMENT,
+    hasSquareAccessToken: !!process.env.SQUARE_ACCESS_TOKEN,
+    hasSquareProductionToken: !!process.env.SQUARE_PRODUCTION_TOKEN,
+    hasSquareSandboxToken: !!process.env.SQUARE_SANDBOX_TOKEN
+  });
+}
+
 const client = new SquareClient({
-  token: process.env.SQUARE_ACCESS_TOKEN,
-  environment: squareEnvString === 'sandbox' ? 'sandbox' : 'production', // Use string literals
+  token: accessToken,
+  environment: squareEnvString === 'sandbox' ? 'sandbox' : 'production'
 });
 
 async function getOrderTracking(orderId: string) {
   try {
       console.log(`Fetching order details from Square API for order ${orderId}`);
+      console.log(`Using Square environment: ${squareEnvString}, Access token prefix: ${accessToken?.substring(0, 10)}...`);
       
-      // Use client.orders.get method, which is the correct method name
+      // Use client.orders.get method which is the correct method name for the Square SDK
       const response = await client.orders.get({ orderId });
       
       console.log(`Square API response for order ${orderId}:`, JSON.stringify(response, null, 2)); 
@@ -898,7 +922,7 @@ async function getOrderTracking(orderId: string) {
       }
 
       // Find the SHIPMENT fulfillment using the SDK's Fulfillment type
-      const shipment = order.fulfillments.find((f: Square.Fulfillment) => f.type === 'SHIPMENT');
+      const shipment = order.fulfillments.find((f: any) => f.type === 'SHIPMENT');
       if (shipment && shipment.shipmentDetails) {
         console.log(`Found shipment details for ${orderId}:`, shipment.shipmentDetails);
         const trackingNumber = shipment.shipmentDetails.trackingNumber ?? null;
@@ -909,7 +933,21 @@ async function getOrderTracking(orderId: string) {
       }
     } catch (error: any) {
       // Improve error handling with more specific logging
-      console.error(`Error in getOrderTracking for ${orderId}. Raw Error:`, error); // Log the raw error object
+      console.error(`Error in getOrderTracking for ${orderId}. Raw Error:`, error); 
+      
+      // Log specific Square API error details
+      if (error.result) {
+        console.error('Square API Error Details:', JSON.stringify(error.result, null, 2));
+      }
+      if (error.statusCode) {
+        console.error(`Square API Status Code: ${error.statusCode}`);
+      }
+      if (error.body) {
+        console.error('Square API Error Body:', error.body);
+      }
+      if (error.errors) {
+        console.error('Square API Errors:', JSON.stringify(error.errors, null, 2));
+      }
       
       // Capture for monitoring
       await errorMonitor.captureAPIError(
@@ -925,14 +963,6 @@ async function getOrderTracking(orderId: string) {
         if ('stack' in error) {
             console.error(`Stack Trace: ${error.stack}`);
         }
-      }
-      
-      // Try to extract and log specific Square API errors if present
-      if (error?.errors) { // Use optional chaining
-        console.error('Square API Errors:', JSON.stringify(error.errors, null, 2)); // Stringify for better readability
-      }
-      if (error?.body) { // Log the body if available
-        console.error('Error Body:', error.body);
       }
       
       return null;
