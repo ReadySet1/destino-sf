@@ -1,37 +1,34 @@
-// app/(store)/order-confirmation/OrderConfirmationContent.tsx
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
-import { Button } from '@/components/ui/button';
-import { format } from 'date-fns'; // Import date-fns for formatting
-// Import the serializable type
+import { format } from 'date-fns';
+import { OrderConfirmationLayout } from '@/components/shared/OrderConfirmationLayout';
 import type { SerializableFetchedOrderData } from './page';
+import type { StoreOrderData, CustomerInfo } from '@/types/confirmation';
+
+interface Props {
+  status: string;
+  orderData: SerializableFetchedOrderData;
+}
 
 // Helper function to format currency (now expects number)
 const formatCurrency = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return '$0.00';
-    // No longer need to convert from Decimal
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 };
 
-// Helper function to format date/time
-const formatDateTime = (date: Date | string | null | undefined) => {
-  if (!date) return 'N/A';
+// Helper function to format date-time
+const formatDateTime = (dateTime: string | Date | null | undefined): string => {
+  if (!dateTime) return 'Not specified';
   try {
-    // Use date-fns format for consistent output
-    return format(new Date(date), 'PP, p'); // e.g., May 1, 2025, 2:00 PM
+    return format(new Date(dateTime), 'PPP p');
   } catch (error) {
-    console.error("Error formatting date:", error);
-    return 'Invalid Date';
+    console.error("Error formatting date-time:", error);
+    return 'Invalid date';
   }
 };
-
-interface Props {
-  status: string;
-  orderData: SerializableFetchedOrderData; // Use the serializable type
-}
 
 export default function OrderConfirmationContent({ status, orderData }: Props) {
   const router = useRouter();
@@ -43,117 +40,90 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
       clearCart();
     }
   }, [status, clearCart]);
-  
-  // Determine content based on status and orderData
-  let title: string;
-  let message: string | React.ReactNode;
-  let icon: string;
 
-  if (status === 'success') {
-    if (orderData) {
-      title = 'Thank You for Your Order!';
-      message = `Your payment was successful and order #${orderData.id.substring(0, 8)}... has been placed.`;
-      icon = '✅';
-    } else {
-      title = 'Thank You for Your Order!';
-      message = 'Your payment was successful. We are processing your order details.';
-      icon = '✅';
-      // Optionally show an error if orderData is null when status is success
-      // message = 'Your payment was successful, but we encountered an issue retrieving the full order details. Please check your email.';
-      // icon = '⚠️';
-    }
-  } else if (status === 'cancelled') {
-    title = 'Order Cancelled';
-    message = 'You cancelled the checkout process. Your cart items are still saved.';
-    icon = '❌';
-  } else {
-    title = 'Order Status Unknown';
-    message = 'There was an issue determining your order status. Please contact support.';
-    icon = '❓';
-  }
-  
-  return (
-    <main className="container mx-auto px-4 py-16">
-      <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
-        <div className="mb-8 text-center">
-          <div className="mb-4 text-5xl">{icon}</div>
-          <h1 className="mb-4 text-2xl font-bold">{title}</h1>
-          <p className="text-gray-600">{message}</p>
-        </div>
-
-        {/* Display Order Details if successful and data exists */}
-        {status === 'success' && orderData && (
-          <div className="mb-8 space-y-4 border-t pt-6 text-sm">
-            <h2 className="text-lg font-semibold">Order Summary</h2>
-            <p><strong>Order ID:</strong> {orderData.id}</p>
-            <p><strong>Customer:</strong> {orderData.customerName || 'N/A'}</p>
-            <p><strong>Pickup Time:</strong> {formatDateTime(orderData.pickupTime)}</p>
-            <p><strong>Total Paid:</strong> {formatCurrency(orderData.total)}</p>
-
-            {/* Tracking Number Section */}
-            {orderData.trackingNumber && (
-              <div aria-live="polite" className="bg-blue-50 border border-blue-200 rounded p-3 mt-2" role="region" aria-label="Shipping Tracking Information">
-                <strong>Tracking Number:</strong> {orderData.trackingNumber}
-                {orderData.shippingCarrier && (
-                  <>
-                    {' '}<span>({orderData.shippingCarrier})</span>
-                    {/* Optionally, add a tracking link for common carriers */}
-                    {(() => {
-                      const carrier = orderData.shippingCarrier?.toLowerCase();
-                      let url: string | null = null;
-                      if (carrier?.includes('ups')) url = `https://www.ups.com/track?tracknum=${orderData.trackingNumber}`;
-                      else if (carrier?.includes('fedex')) url = `https://www.fedex.com/apps/fedextrack/?tracknumbers=${orderData.trackingNumber}`;
-                      else if (carrier?.includes('usps')) url = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${orderData.trackingNumber}`;
-                      if (url) {
-                        return (
-                          <>
-                            {' '}<a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 focus:outline focus:outline-2 focus:outline-blue-400" aria-label={`Track your package on ${orderData.shippingCarrier}`}>Track Package</a>
-                          </>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </>
-                )}
-              </div>
-            )}
-
-            <h3 className="font-semibold pt-2">Items:</h3>
-            {orderData.items.length > 0 ? (
-              <ul className="list-disc pl-5 space-y-1">
-                {orderData.items.map((item) => (
-                  <li key={item.id}>
-                    {item.quantity} × {item.product?.name || 'Unknown Product'}
-                    {item.variant?.name && ` (${item.variant.name})`}
-                    {' - '}{formatCurrency(item.price)}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500">No items found for this order.</p>
-            )}
+  // Handle error states with simple fallback UI
+  if (status === 'cancelled') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">❌</div>
+            <h1 className="mb-4 text-2xl font-bold">Order Cancelled</h1>
+            <p className="text-gray-600">You cancelled the checkout process. Your cart items are still saved.</p>
           </div>
-        )}
-
-        {/* Error message if success but no data */}
-        {status === 'success' && !orderData && (
-            <p className="text-center text-red-600 mb-6">Could not retrieve order details at this time.</p>
-        )}
-        
-        <div className="flex flex-col gap-4 border-t pt-6">
-          <Button 
-            onClick={() => router.push('/')}
-            className="w-full"
-          >
-            Continue Shopping
-          </Button>
-          
-          {/* Link to account/orders page if applicable */}
-          {/* <Button variant="outline" onClick={() => router.push('/account/orders')} className="w-full">
-            View My Orders
-          </Button> */} 
+          <div className="flex justify-center">
+            <button 
+              onClick={() => router.push('/')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Continue Shopping
+            </button>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    );
+  }
+
+  if (status !== 'success') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">❓</div>
+            <h1 className="mb-4 text-2xl font-bold">Order Status Unknown</h1>
+            <p className="text-gray-600">There was an issue determining your order status. Please contact support.</p>
+          </div>
+          <div className="flex justify-center">
+            <button 
+              onClick={() => router.push('/')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Transform orderData to match StoreOrderData interface
+  const transformedOrderData: StoreOrderData | null = orderData ? {
+    id: orderData.id,
+    status: orderData.status,
+    total: orderData.total || 0,
+    customerName: orderData.customerName || '',
+    createdAt: new Date().toISOString(), // Default to current time if not available
+    pickupTime: orderData.pickupTime ? orderData.pickupTime.toString() : undefined,
+    paymentStatus: orderData.paymentStatus,
+    items: orderData.items.map(item => ({
+      id: item.id,
+      name: item.product?.name || 'Unknown Product',
+      price: item.price,
+      quantity: item.quantity,
+      product: item.product,
+      variant: item.variant
+    })),
+    fulfillment: orderData.trackingNumber ? {
+      type: 'shipment' as const,
+      trackingNumber: orderData.trackingNumber,
+      shippingCarrier: orderData.shippingCarrier || undefined
+    } : {
+      type: 'pickup' as const,
+      pickupTime: orderData.pickupTime ? orderData.pickupTime.toString() : undefined
+    }
+  } : null;
+
+  // Extract customer info
+  const customerData: CustomerInfo = transformedOrderData ? {
+    name: transformedOrderData.customerName
+  } : {};
+
+  return (
+    <OrderConfirmationLayout
+      orderType="store"
+      status={status}
+      orderData={transformedOrderData}
+      customerData={customerData}
+    />
   );
 }
