@@ -33,18 +33,24 @@ Run these commands one by one:
 ```bash
 cd /Users/ealanis/Development/current-projects/destino-sf
 
-# Remove old DATABASE_URL (answer 'y' when prompted)
+# Remove old DATABASE_URL
 npx vercel env rm DATABASE_URL production
 
-# Add new pooled DATABASE_URL
-echo 'postgresql://postgres:83Ny4skXhAPxp3jL@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true' | npx vercel env add DATABASE_URL production
+# Add correct pooled DATABASE_URL (use YOUR actual connection string)
+npx vercel env add DATABASE_URL production
 
-# Update DIRECT_URL (if needed)
+# When prompted, paste: postgresql://postgres.[YOUR-REF]:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+# Remove old DIRECT_URL  
 npx vercel env rm DIRECT_URL production
-echo 'postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres' | npx vercel env add DIRECT_URL production
+
+# Add correct DIRECT_URL
+npx vercel env add DIRECT_URL production
+
+# When prompted, paste: postgresql://postgres.[YOUR-REF]:[YOUR-PASSWORD]@db.[YOUR-REF].supabase.co:5432/postgres
 
 # Deploy
-npx vercel deploy --prod
+vercel --prod
 ```
 
 ## Why This Fixes The Issue
@@ -92,3 +98,12 @@ The pooled connection handles high traffic and concurrent requests better, which
 **Priority**: 🔴 CRITICAL - Fix immediately to restore webhook functionality
 **Impact**: All Square payment webhooks are currently failing
 **ETA**: 5-10 minutes to implement the fix
+
+
+
+
+
+
+
+
+

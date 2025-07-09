@@ -189,6 +189,7 @@
     "jest-mock-extended": "^4.0.0",
     "mixpanel-browser": "^2.65.0",
     "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
     "postcss": "8.4.49",
     "prisma": "^6.8.2",
     "react-remove-scroll-bar": "^2.3.8",

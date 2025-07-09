@@ -1,57 +1,46 @@
 import { PrismaClient } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
 
 // Prevent multiple instances of Prisma Client in development
 declare global {
   var prisma: PrismaClient | undefined;
 }
 
-// Configure logging based on environment
-function getLogConfig(): Prisma.LogLevel[] {
-  switch (process.env.NODE_ENV) {
-    case 'development':
-      return ['query', 'error', 'warn'];
-    case 'production':
-      return ['error'];
-    case 'test':
-    default:
-      return ['error'];
-  }
-}
-
-// Enhanced connection configuration for production resilience
+// Optimized connection configuration for serverless
 function createPrismaClient() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return new PrismaClient({
-    log: getLogConfig(),
+    log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     errorFormat: 'pretty',
+    // Connection timeout optimizations via URL parameters
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 }
 
-// Enhanced connection health monitoring
-async function validateConnection(client: PrismaClient): Promise<boolean> {
-  try {
-    await client.$queryRaw`SELECT 1`;
-    return true;
-  } catch (error) {
-    console.error('Database connection validation failed:', error);
-    return false;
-  }
-}
-
-// Use singleton pattern for non-production environments
+// Connection management for serverless
 let db: PrismaClient;
+let disconnectTimer: NodeJS.Timeout | null = null;
+
+// Auto-disconnect function
+const scheduleDisconnect = () => {
+  if (disconnectTimer) clearTimeout(disconnectTimer);
+  
+  disconnectTimer = setTimeout(async () => {
+    try {
+      await db.$disconnect();
+      console.log('🔄 Auto-disconnected from database due to inactivity');
+    } catch (error) {
+      console.error('Error during auto-disconnect:', error);
+    }
+  }, 30000); // 30 seconds
+};
 
 if (process.env.NODE_ENV === 'production') {
   db = createPrismaClient();
-  
-  // Validate connection on startup in production
-  validateConnection(db).then(isValid => {
-    if (isValid) {
-      console.log('✅ Production database connection validated');
-    } else {
-      console.error('🚨 Production database connection failed validation');
-    }
-  });
 } else {
   if (!global.prisma) {
     global.prisma = createPrismaClient();
@@ -59,27 +48,43 @@ if (process.env.NODE_ENV === 'production') {
   db = global.prisma;
 }
 
-// Remove the problematic $on event handler to avoid TypeScript errors
-// Instead, we'll handle errors directly in try/catch blocks where operations are performed
+// Helper function to execute queries with connection management
+export async function executeWithConnectionManagement<T>(
+  operation: () => Promise<T>
+): Promise<T> {
+  try {
+    const result = await operation();
+    
+    // Schedule auto-disconnect for serverless
+    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+      scheduleDisconnect();
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Database operation failed:', error);
+    throw error;
+  }
+}
 
 export { db };
 export const prisma = db;
 
-// Enhanced cleanup function for graceful shutdown
+// Enhanced cleanup for serverless
 if (typeof process !== 'undefined') {
   process.on('beforeExit', async () => {
-    console.log('🔄 Disconnecting from database...');
+    if (disconnectTimer) clearTimeout(disconnectTimer);
     await db.$disconnect();
   });
 
   process.on('SIGINT', async () => {
-    console.log('🔄 SIGINT received, gracefully shutting down...');
+    if (disconnectTimer) clearTimeout(disconnectTimer);
     await db.$disconnect();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
-    console.log('🔄 SIGTERM received, gracefully shutting down...');
+    if (disconnectTimer) clearTimeout(disconnectTimer);
     await db.$disconnect();
     process.exit(0);
   });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
+import { safeQuery, safeTransaction } from '@/lib/db-utils';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
@@ -61,11 +62,13 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   
   console.log('🆕 Processing order.created event:', data.id);
 
-  // Enhanced duplicate check with event ID tracking
-  const existingOrder = await prisma.order.findUnique({
-    where: { squareOrderId: data.id },
-    select: { id: true, rawData: true }
-  });
+  // Enhanced duplicate check with event ID tracking using safe query
+  const existingOrder = await safeQuery(() => 
+    prisma.order.findUnique({
+      where: { squareOrderId: data.id },
+      select: { id: true, rawData: true }
+    })
+  );
 
   // Check if this specific event was already processed
   const eventId = payload.event_id;
@@ -80,32 +83,34 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   const orderStatus = mapSquareStateToOrderStatus(squareOrderData?.state);
 
   try {
-    await prisma.order.upsert({
-      where: { squareOrderId: data.id },
-      update: {
-        status: orderStatus,
-        rawData: {
-          ...data.object,
-          lastProcessedEventId: eventId,
-          lastProcessedAt: new Date().toISOString()
-        } as unknown as Prisma.InputJsonValue,
-        updatedAt: new Date()
-      },
-      create: {
-        squareOrderId: data.id,
-        status: orderStatus,
-        total: 0, // Will be updated by payment webhook
-        customerName: 'Pending', // Will be updated with real data
-        email: 'pending@example.com', // Will be updated with real data
-        phone: 'pending', // Will be updated with real data
-        pickupTime: new Date(),
-        rawData: {
-          ...data.object,
-          lastProcessedEventId: eventId,
-          lastProcessedAt: new Date().toISOString()
-        } as unknown as Prisma.InputJsonValue,
-      },
-    });
+    await safeQuery(() =>
+      prisma.order.upsert({
+        where: { squareOrderId: data.id },
+        update: {
+          status: orderStatus,
+          rawData: {
+            ...data.object,
+            lastProcessedEventId: eventId,
+            lastProcessedAt: new Date().toISOString()
+          } as unknown as Prisma.InputJsonValue,
+          updatedAt: new Date()
+        },
+        create: {
+          squareOrderId: data.id,
+          status: orderStatus,
+          total: 0, // Will be updated by payment webhook
+          customerName: 'Pending', // Will be updated with real data
+          email: 'pending@example.com', // Will be updated with real data
+          phone: 'pending', // Will be updated with real data
+          pickupTime: new Date(),
+          rawData: {
+            ...data.object,
+            lastProcessedEventId: eventId,
+            lastProcessedAt: new Date().toISOString()
+          } as unknown as Prisma.InputJsonValue,
+        },
+      })
+    );
     
     console.log(`✅ Successfully processed order.created event for order ${data.id}`);
   } catch (error: any) {
