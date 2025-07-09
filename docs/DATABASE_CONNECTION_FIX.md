@@ -1,109 +1,38 @@
-# 🚨 URGENT: Database Connection Fix for Destino SF
+Based on the investigation, here are the exact values you need to manually set in Vercel:
 
-## Problem
-Your production webhook is failing with this error:
+## DATABASE_URL (Transaction Pooler - for webhooks and serverless functions):
 ```
-Can't reach database server at `aws-0-us-east-1.pooler.supabase.com:6543`
+postgresql://postgres.avfiuivgvkgaovkqjnup:83Ny4skXhAPxp3jL@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 ```
 
-## Root Cause
-- Your code expects a **pooled connection** (aws-0-us-east-1.pooler.supabase.com:6543)
-- Your environment variables have a **direct connection** (db.avfiuivgvkgaovkqjnup.supabase.co:5432)
+## DIRECT_URL (Direct connection - for migrations and admin tasks):
+```
+postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres
+```
 
-## IMMEDIATE FIX (Choose One Method)
+## To set these manually in Vercel:
 
-### Method 1: Vercel Dashboard (Recommended)
-1. Go to: https://vercel.com/ready-sets-projects/destino-sf/settings/environment-variables
-2. Find `DATABASE_URL` and click Edit
-3. Update Production value to:
-   ```
-   postgresql://postgres:83Ny4skXhAPxp3jL@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-   ```
-4. Find `DIRECT_URL` and click Edit (or Add if missing)
-5. Update Production value to:
-   ```
-   postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres
-   ```
-6. Click "Save"
-7. Redeploy your app
+1. Go to your Vercel dashboard
+2. Navigate to your `destino-sf` project
+3. Go to Settings → Environment Variables
+4. Add/update these environment variables for **Production**:
 
-### Method 2: Vercel CLI Commands
-Run these commands one by one:
+- **Variable Name:** `DATABASE_URL`
+- **Value:** `postgresql://postgres.avfiuivgvkgaovkqjnup:83Ny4skXhAPxp3jL@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
 
+- **Variable Name:** `DIRECT_URL` 
+- **Value:** `postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres`
+
+After setting these, deploy your project again with:
 ```bash
-cd /Users/ealanis/Development/current-projects/destino-sf
-
-# Remove old DATABASE_URL
-npx vercel env rm DATABASE_URL production
-
-# Add correct pooled DATABASE_URL (use YOUR actual connection string)
-npx vercel env add DATABASE_URL production
-
-# When prompted, paste: postgresql://postgres.[YOUR-REF]:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-
-# Remove old DIRECT_URL  
-npx vercel env rm DIRECT_URL production
-
-# Add correct DIRECT_URL
-npx vercel env add DIRECT_URL production
-
-# When prompted, paste: postgresql://postgres.[YOUR-REF]:[YOUR-PASSWORD]@db.[YOUR-REF].supabase.co:5432/postgres
-
-# Deploy
 vercel --prod
 ```
 
-## Why This Fixes The Issue
+The key differences in the correct format:
+- **PROJECT_REF:** `avfiuivgvkgaovkqjnup` (your actual project ID)
+- **REGION:** `us-east-1` (your project's region)
+- **PASSWORD:** `83Ny4skXhAPxp3jL` (your database password)
+- **PORT 6543:** For the pooled connection (webhooks/serverless)
+- **PORT 5432:** For direct connection (migrations)
 
-### Before (❌ Broken)
-- **Environment**: `DATABASE_URL="postgresql://...@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres"`
-- **Code Expects**: Connection to pooler at `aws-0-us-east-1.pooler.supabase.com:6543`
-- **Result**: "Can't reach database server" error
-
-### After (✅ Fixed)
-- **Environment**: `DATABASE_URL="postgresql://...@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"`
-- **Code Gets**: Correct pooled connection
-- **Result**: Webhook works properly
-
-## Additional Improvements Made
-
-1. **Enhanced Prisma Schema**: Added `directUrl` support for better connection handling
-2. **Improved Error Handling**: Better logging for connection issues in webhooks
-3. **Health Check Endpoint**: Added `/api/health` to monitor database connectivity
-4. **Connection Resilience**: Enhanced database client with retry logic
-
-## Testing After Fix
-
-1. **Health Check**: Visit `https://your-domain.vercel.app/api/health`
-2. **Webhook Test**: Trigger a Square webhook and check logs
-3. **Monitor Logs**: Check Vercel function logs for any remaining issues
-
-## Connection Types Explained
-
-| Connection Type | Use Case | URL Format |
-|----------------|----------|------------|
-| **Pooled** | Production apps, webhooks | `aws-0-us-east-1.pooler.supabase.com:6543` |
-| **Direct** | Migrations, admin tasks | `db.avfiuivgvkgaovkqjnup.supabase.co:5432` |
-
-The pooled connection handles high traffic and concurrent requests better, which is perfect for your webhook processing.
-
-## Next Steps After Fix
-
-1. **Monitor**: Watch your webhook logs for 24 hours
-2. **Performance**: The pooled connection should improve response times
-3. **Scale**: This setup can handle more concurrent webhook requests
-
----
-
-**Priority**: 🔴 CRITICAL - Fix immediately to restore webhook functionality
-**Impact**: All Square payment webhooks are currently failing
-**ETA**: 5-10 minutes to implement the fix
-
-
-
-
-
-
-
-
-
+These should resolve the "FATAL: Tenant or user not found" error you're experiencing.

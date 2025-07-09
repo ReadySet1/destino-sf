@@ -6,12 +6,15 @@ import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
 import type { Square } from 'square'; // Import the Square namespace for types
+import https from 'https';
 import { purchaseShippingLabel } from '@/app/actions/labels'; // Import the new action
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { applyWebhookRateLimit } from '@/middleware/rate-limit';
+import { handleWebhookWithQueue } from '@/lib/webhook-queue';
+import { patchSquareApiClient } from '@/lib/square/square-api-fix';
 
 type SquareEventType =
   | 'order.created'
@@ -891,14 +894,36 @@ async function handleRefundUpdated(payload: SquareWebhookPayload): Promise<void>
     }
 }
 
+// Determine Square environment consistently
+function determineSquareEnvironment(): { environment: 'sandbox' | 'production'; useSandbox: boolean } {
+  // Check for explicit environment override
+  const squareEnv = process.env.SQUARE_ENVIRONMENT?.toLowerCase();
+  const useSandboxFlag = process.env.USE_SQUARE_SANDBOX === 'true';
+  
+  // Webhooks should follow the same environment logic as transactions
+  const forceTransactionSandbox = process.env.SQUARE_TRANSACTIONS_USE_SANDBOX === 'true';
+  
+  let useSandbox: boolean;
+  
+  if (squareEnv === 'sandbox' || forceTransactionSandbox || useSandboxFlag) {
+    useSandbox = true;
+  } else {
+    useSandbox = false;
+  }
+  
+  return {
+    environment: useSandbox ? 'sandbox' : 'production',
+    useSandbox
+  };
+}
+
 // Initialize Square Client with proper configuration
-const squareEnvString = process.env.SQUARE_ENVIRONMENT?.toLowerCase() ?? 'production';
+const squareConfig = determineSquareEnvironment();
+const squareEnvString = squareConfig.environment;
 
 // Get the correct access token based on environment
 const getSquareAccessToken = () => {
-  const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-  
-  if (useSandbox) {
+  if (squareConfig.useSandbox) {
     return process.env.SQUARE_SANDBOX_TOKEN;
   } else {
     return process.env.SQUARE_ACCESS_TOKEN || process.env.SQUARE_PRODUCTION_TOKEN;
@@ -917,18 +942,66 @@ if (!accessToken) {
   });
 }
 
-const client = new SquareClient({
-  token: accessToken,
-  environment: squareEnvString === 'sandbox' ? 'sandbox' : 'production'
-});
+/**
+ * Makes a direct HTTPS request to the Square API
+ */
+async function makeSquareApiRequest(path: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<any> {
+  const apiHost = squareEnvString === 'sandbox' ? 'connect.squareupsandbox.com' : 'connect.squareup.com';
+  
+  const options = {
+    hostname: apiHost,
+    path: path,
+    method: method,
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Square-Version': '2025-05-21',
+      'Content-Type': 'application/json'
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(data));
+          } catch (error) {
+            reject(new Error(`Failed to parse response: ${data}`));
+          }
+        } else {
+          if (res.statusCode === 401) {
+            console.error(`Authentication error with Square API. Environment: ${squareEnvString}`);
+          }
+          reject(new Error(`Request failed with status: ${res.statusCode}, body: ${data}`));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject(error);
+    });
+    
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+    
+    req.end();
+  });
+}
 
 async function getOrderTracking(orderId: string) {
   try {
       console.log(`Fetching order details from Square API for order ${orderId}`);
       console.log(`Using Square environment: ${squareEnvString}, Access token prefix: ${accessToken?.substring(0, 10)}...`);
       
-      // Use client.orders.get method which is the correct method name for the Square SDK
-      const response = await client.orders.get({ orderId });
+      // Use direct HTTPS request instead of the problematic Square SDK
+      const response = await makeSquareApiRequest(`/v2/orders/${orderId}`);
       
       console.log(`Square API response for order ${orderId}:`, JSON.stringify(response, null, 2)); 
       
@@ -939,15 +1012,15 @@ async function getOrderTracking(orderId: string) {
         return null;
       }
 
-      // Find the SHIPMENT fulfillment using the SDK's Fulfillment type
+      // Find the SHIPMENT fulfillment
       const shipment = order.fulfillments.find((f: any) => f.type === 'SHIPMENT');
-      if (shipment && shipment.shipmentDetails) {
-        console.log(`Found shipment details for ${orderId}:`, shipment.shipmentDetails);
-        const trackingNumber = shipment.shipmentDetails.trackingNumber ?? null;
-        const shippingCarrier = shipment.shipmentDetails.carrier ?? null;
+      if (shipment && shipment.shipment_details) {
+        console.log(`Found shipment details for ${orderId}:`, shipment.shipment_details);
+        const trackingNumber = shipment.shipment_details.tracking_number ?? null;
+        const shippingCarrier = shipment.shipment_details.carrier ?? null;
         return { trackingNumber, shippingCarrier };
       } else {
-        console.log(`No SHIPMENT fulfillment or shipmentDetails found for ${orderId}`);
+        console.log(`No SHIPMENT fulfillment or shipment_details found for ${orderId}`);
       }
     } catch (error: any) {
       // Improve error handling with more specific logging
@@ -1178,31 +1251,42 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
     console.log('Square Webhook Payload Type:', payload.type);
     console.log('Square Webhook Event ID:', payload.event_id);
 
-    // Handle different event types
-    switch (payload.type) {
-      case 'order.created':
-        await handleOrderCreated(payload);
-        break;
-      case 'order.fulfillment.updated':
-        await handleOrderFulfillmentUpdated(payload);
-        break;
-      case 'order.updated':
-        await handleOrderUpdated(payload);
-        break;
-      case 'payment.created':
-        await handlePaymentCreated(payload);
-        break;
-      case 'payment.updated':
-        await handlePaymentUpdated(payload);
-        break;
-      case 'refund.created':
-        await handleRefundCreated(payload);
-        break;
-      case 'refund.updated':
-        await handleRefundUpdated(payload);
-        break;
-      default:
-        console.warn(`Unhandled event type in async processing: ${payload.type}`);
+    // Handle different event types with race condition protection
+    try {
+      await handleWebhookWithQueue(payload, payload.type);
+    } catch (error: any) {
+      console.error(`Failed to process webhook ${payload.type} (${payload.event_id}):`, error);
+      
+      // For non-race-condition errors, still try direct processing for now
+      // This provides a fallback while the queue system stabilizes
+      if (error.code !== 'P2025') {
+        console.warn(`Attempting direct processing for ${payload.type} as fallback...`);
+        switch (payload.type) {
+          case 'order.created':
+            await handleOrderCreated(payload);
+            break;
+          case 'order.fulfillment.updated':
+            await handleOrderFulfillmentUpdated(payload);
+            break;
+          case 'order.updated':
+            await handleOrderUpdated(payload);
+            break;
+          case 'payment.created':
+            await handlePaymentCreated(payload);
+            break;
+          case 'payment.updated':
+            await handlePaymentUpdated(payload);
+            break;
+          case 'refund.created':
+            await handleRefundCreated(payload);
+            break;
+          case 'refund.updated':
+            await handleRefundUpdated(payload);
+            break;
+          default:
+            console.warn(`Unhandled event type in async processing: ${payload.type}`);
+        }
+      }
     }
 
     console.log(`Successfully processed ${payload.type} event for ${payload.event_id} in async processing`);

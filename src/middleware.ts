@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
   // Add enhanced security headers for all responses
   addSecurityHeaders(response, pathname);
 
-  // Initialize Supabase client with minimal operations (after rate limiting)
+  // Initialize Supabase client with enhanced error handling (after rate limiting)
   try {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -94,11 +94,47 @@ export async function middleware(request: NextRequest) {
       }
     );
 
-    // Minimal auth check - just get the user, don't perform additional operations
-    await supabase.auth.getUser();
+    // Enhanced auth check with session refresh handling
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      // Handle specific auth errors
+      if (error.message?.includes('refresh_token_not_found') || error.message?.includes('Invalid Refresh Token')) {
+        console.warn('Auth token refresh failed in middleware:', {
+          error: error.message,
+          pathname,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Clear invalid session cookies
+        response.cookies.set('sb-access-token', '', { maxAge: 0 });
+        response.cookies.set('sb-refresh-token', '', { maxAge: 0 });
+        
+        // For admin routes, redirect to sign-in
+        if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
+          return NextResponse.redirect(new URL('/sign-in', request.url));
+        }
+      } else {
+        console.error('Auth error in middleware:', error);
+      }
+    }
+    
+    // If session exists, attempt to refresh it if needed
+    if (session) {
+      try {
+        await supabase.auth.getUser();
+      } catch (userError) {
+        console.warn('Failed to refresh user session:', userError);
+        // Don't block the request, but log the issue
+      }
+    }
+    
   } catch (error) {
     // Log error but don't block the request
     console.error('Middleware error:', error);
+    
+    // Add error context to response headers for debugging
+    response.headers.set('X-Auth-Error', 'true');
   }
 
   return response;

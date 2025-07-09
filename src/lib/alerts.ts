@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
 import { env } from '@/env';
+import { sendEmailWithQueue } from '@/lib/webhook-queue';
 import { 
   AlertType, 
   AlertPriority, 
@@ -88,23 +89,24 @@ export class AlertService {
         relatedUserId: order.userId || undefined,
       });
 
-      // Send email using React Email component
-      const { data, error } = await resend.emails.send({
-        from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
-        to: env.ADMIN_EMAIL,
-        subject,
-        react: React.createElement(AdminNewOrderAlert, alertData),
-      });
+      // Queue email with rate limiting protection
+      try {
+        await sendEmailWithQueue({
+          from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
+          to: env.ADMIN_EMAIL,
+          subject,
+          react: React.createElement(AdminNewOrderAlert, alertData),
+          priority: 'high'
+        });
 
-      if (error) {
+        await this.markAlertAsSent(alertRecord.id, 'queued');
+        console.log(`✅ New order alert queued for order ${order.id}`);
+        
+        return { success: true, messageId: 'queued' };
+      } catch (error: any) {
         await this.markAlertAsFailed(alertRecord.id, error.message);
         return { success: false, error: error.message, retryable: true };
       }
-
-      await this.markAlertAsSent(alertRecord.id, data?.id);
-      console.log(`✅ New order alert sent for order ${order.id} with email ID: ${data?.id}`);
-      
-      return { success: true, messageId: data?.id };
     } catch (error) {
       console.error('❌ Error sending new order alert:', error);
       return { 

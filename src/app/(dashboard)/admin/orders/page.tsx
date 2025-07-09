@@ -8,6 +8,7 @@ import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import Pagination from '@/components/ui/pagination';
 import OrderFilters from './components/OrderFilters';
+import OrdersTable from './components/OrdersTable';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,8 @@ type OrderPageProps = {
     type?: string;
     status?: string;
     payment?: string;
+    sort?: string;
+    direction?: 'asc' | 'desc';
   }>;
 };
 
@@ -125,6 +128,36 @@ function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
   });
 }
 
+// Helper function to get the correct orderBy clause for database queries
+function getOrderByClause(sortField: string, sortDirection: 'asc' | 'desc', orderType: 'regular' | 'catering') {
+  const direction = sortDirection;
+  
+  // Map sort fields to actual database fields
+  switch (sortField) {
+    case 'customerName':
+      return orderType === 'regular' 
+        ? { customerName: direction }
+        : { name: direction };
+    case 'total':
+      return orderType === 'regular'
+        ? { total: direction }
+        : { totalAmount: direction };
+    case 'status':
+      return { status: direction };
+    case 'paymentStatus':
+      return { paymentStatus: direction };
+    case 'createdAt':
+      return { createdAt: direction };
+    case 'date':
+      // For 'date', use pickupTime for regular orders and eventDate for catering
+      return orderType === 'regular'
+        ? { pickupTime: direction }
+        : { eventDate: direction };
+    default:
+      return { createdAt: 'desc' as const };
+  }
+}
+
 export default async function OrdersPage({ params, searchParams }: OrderPageProps) {
   await params; // We're not using the params, but we need to await the promise
   
@@ -137,6 +170,8 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
   const typeFilter = searchParamsResolved?.type || 'all';
   const statusFilter = searchParamsResolved?.status || 'all';
   const paymentFilter = searchParamsResolved?.payment || 'all';
+  const sortField = searchParamsResolved?.sort || 'createdAt';
+  const sortDirection = searchParamsResolved?.direction || 'desc';
   
   const itemsPerPage = 15;
   const skip = (currentPage - 1) * itemsPerPage;
@@ -187,7 +222,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       // Fetch regular orders
       const regularOrders = await prisma.order.findMany({
         where: regularOrdersWhere,
-        orderBy: { createdAt: 'desc' },
+        orderBy: getOrderByClause(sortField, sortDirection, 'regular'),
         include: { items: true },
         ...(typeFilter === 'regular' ? { skip, take: itemsPerPage } : {}),
       });
@@ -204,7 +239,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       // Fetch catering orders
       const cateringOrders = await prisma.cateringOrder.findMany({
         where: cateringOrdersWhere,
-        orderBy: { createdAt: 'desc' },
+        orderBy: getOrderByClause(sortField, sortDirection, 'catering'),
         include: { items: true },
         ...(typeFilter === 'catering' ? { skip, take: itemsPerPage } : {}),
       });
@@ -219,7 +254,51 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
 
     // If showing all orders, sort and paginate manually
     if (typeFilter === 'all') {
-      allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      // Sort based on the selected field and direction
+      allOrders.sort((a, b) => {
+        let aValue: any, bValue: any;
+        
+        switch (sortField) {
+          case 'customerName':
+            aValue = a.customerName || '';
+            bValue = b.customerName || '';
+            break;
+          case 'total':
+            aValue = a.total;
+            bValue = b.total;
+            break;
+          case 'status':
+            aValue = a.status;
+            bValue = b.status;
+            break;
+          case 'paymentStatus':
+            aValue = a.paymentStatus;
+            bValue = b.paymentStatus;
+            break;
+          case 'date':
+            // Use eventDate for catering orders, pickupTime for regular orders
+            aValue = a.type === 'catering' ? (a.eventDate || '') : (a.pickupTime || '');
+            bValue = b.type === 'catering' ? (b.eventDate || '') : (b.pickupTime || '');
+            break;
+          case 'createdAt':
+          default:
+            aValue = a.createdAt;
+            bValue = b.createdAt;
+            break;
+        }
+        
+        // Handle string comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          const result = aValue.localeCompare(bValue);
+          return sortDirection === 'asc' ? result : -result;
+        }
+        
+        // Handle number/date comparison
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
       totalCount = allOrders.length;
       allOrders = allOrders.slice(skip, skip + itemsPerPage);
     }
@@ -256,105 +335,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
           </div>
         ) : (
           <>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Order ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Payment
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Items
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {allOrders.map((order, index) => (
-                      <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <Link
-                            href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
-                            className="text-indigo-600 hover:text-indigo-900 hover:underline font-mono"
-                            title={`View details for order ${order.id}`}
-                          >
-                            {order.id ? `${order.id.substring(0, 8)}...` : 'N/A'}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.customerName || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}
-                          >
-                            {order.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.items?.length || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatCurrency(order.total)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.type === 'catering' 
-                            ? (order.eventDate ? formatDateTime(order.eventDate) : 'N/A')
-                            : (order.pickupTime ? formatDateTime(order.pickupTime) : 'N/A')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.createdAt ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true }) : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <Link
-                            href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                          >
-                            View Details
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <OrdersTable orders={allOrders} />
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -383,38 +364,4 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
   }
 }
 
-function getStatusColor(status: OrderStatus | CateringStatus) {
-  switch (status) {
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'PROCESSING':
-    case 'PREPARING':
-      return 'bg-blue-100 text-blue-800';
-    case 'READY':
-    case 'CONFIRMED':
-      return 'bg-green-100 text-green-800';
-    case 'COMPLETED':
-      return 'bg-gray-100 text-gray-800';
-    case 'CANCELLED':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-}
 
-function getPaymentStatusColor(status: PaymentStatus) {
-  switch (status) {
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'PAID':
-      return 'bg-green-100 text-green-800';
-    case 'FAILED':
-      return 'bg-red-100 text-red-800';
-    case 'REFUNDED':
-      return 'bg-purple-100 text-purple-800';
-    case 'COMPLETED':
-      return 'bg-blue-100 text-blue-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-}
