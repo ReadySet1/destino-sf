@@ -9,6 +9,8 @@ import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 import { prisma } from '@/lib/db'; // Import Prisma client
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
+import { Metadata } from 'next';
+import { generateSEO } from '@/lib/seo';
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -59,6 +61,63 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   empanadas:
     'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious.',
 };
+
+// Generate dynamic metadata for category pages
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    // Fetch the category from the database
+    const category = await prisma.category.findUnique({
+      where: { slug: slug },
+    });
+
+    if (!category) {
+      return generateSEO({
+        title: 'Category Not Found | Destino SF',
+        description: 'The requested category could not be found.',
+        type: 'website',
+        url: `/products/category/${slug}`,
+      });
+    }
+
+    // Get the category-specific description and title
+    const categoryDescription = CATEGORY_DESCRIPTIONS[slug] || category.description || `Discover our delicious ${category.name} collection.`;
+    const categoryTitle = slug === 'alfajores' 
+      ? 'Alfajores - Traditional Latin Cookies' 
+      : slug === 'empanadas' 
+        ? 'Empanadas - Handcrafted Latin Pastries'
+        : category.name;
+
+    return generateSEO({
+      title: `${categoryTitle} | Destino SF`,
+      description: categoryDescription,
+      keywords: [
+        category.name.toLowerCase(),
+        slug,
+        'authentic',
+        'handcrafted',
+        'latin food',
+        'san francisco',
+        'traditional',
+        'premium ingredients'
+      ],
+      type: 'website',
+      url: `/products/category/${slug}`,
+      category: category.name,
+    });
+
+  } catch (error) {
+    console.error('Error generating category metadata:', error);
+    
+    return generateSEO({
+      title: `${slug} | Destino SF`,
+      description: 'Discover our handcrafted Latin cuisine collection.',
+      type: 'website',
+      url: `/products/category/${slug}`,
+    });
+  }
+}
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   // Need to await params now since it's a Promise

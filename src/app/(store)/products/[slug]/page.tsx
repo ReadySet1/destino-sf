@@ -6,6 +6,8 @@ import { Product, Variant } from '@/types/product';
 import { redirect, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import FoodLoader from '@/components/ui/FoodLoader';
+import { Metadata } from 'next';
+import { generateSEO } from '@/lib/seo';
 
 // Helper function to convert product name to URL-friendly slug
 function slugify(text: string): string {
@@ -70,6 +72,82 @@ type PageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+// Generate dynamic metadata for product pages
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+
+  try {
+    // Basic UUID check (adjust regex if using different UUID format)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+
+    // Fetch product for metadata
+    const dbProduct = await prisma.product.findFirst({
+      where: {
+        OR: [
+          { slug: slug },
+          ...(isUUID ? [{ id: slug }] : []),
+        ],
+        active: true,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!dbProduct) {
+      // Return default metadata if product not found
+      return generateSEO({
+        title: 'Product Not Found | Destino SF',
+        description: 'The requested product could not be found.',
+        type: 'website',
+        url: `/products/${slug}`,
+      });
+    }
+
+    // Get the primary product image
+    const productImage = dbProduct.images && dbProduct.images.length > 0 
+      ? Array.isArray(dbProduct.images) 
+        ? dbProduct.images[0] 
+        : dbProduct.images
+      : '/opengraph-image';
+
+    // Generate product-specific metadata
+    return generateSEO({
+      title: `${dbProduct.name} | Destino SF`,
+      description: dbProduct.description || `Discover our delicious ${dbProduct.name}. Handcrafted with authentic flavors and premium ingredients.`,
+      keywords: [
+        dbProduct.name.toLowerCase(),
+        dbProduct.category?.name.toLowerCase() || 'food',
+        'empanadas',
+        'alfajores',
+        'latin food',
+        'san francisco',
+        'handcrafted',
+        'authentic'
+      ],
+      type: 'product',
+      image: productImage,
+      imageAlt: `${dbProduct.name} - Destino SF`,
+      url: `/products/${slug}`,
+      price: dbProduct.price ? dbProduct.price.toString() : undefined,
+      availability: 'in_stock',
+      category: dbProduct.category?.name,
+    });
+
+  } catch (error) {
+    console.error('Error generating product metadata:', error);
+    
+    // Return fallback metadata
+    return generateSEO({
+      title: 'Product | Destino SF',
+      description: 'Discover our handcrafted empanadas and alfajores made with authentic flavors.',
+      type: 'product',
+      url: `/products/${slug}`,
+    });
+  }
+}
 
 export default async function ProductPage({ params }: PageProps) {
   // Await the params Promise to get the actual values

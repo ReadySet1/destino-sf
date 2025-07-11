@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
           description="Manage shipping weight calculations" 
         />
         <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
-        <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" />
+        {/* <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" /> */}
       </div>
 
       <div className="mt-6 md:mt-10 p-3 md:p-4 bg-gray-100 rounded-lg">

@@ -24,7 +24,7 @@ export interface SEOConfig {
 
 const baseUrl = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:3000' 
-  : 'https://destino-sf-ready-set.vercel.app';
+  : 'https://development.destinosf.com';
 
 export const defaultSEO: SEOConfig = {
   title: 'Destino SF - Authentic Handcrafted Empanadas & Alfajores',
@@ -32,7 +32,7 @@ export const defaultSEO: SEOConfig = {
   keywords: ['empanadas', 'alfajores', 'latin food', 'catering', 'san francisco', 'handcrafted', 'authentic'],
   author: 'Destino SF',
   type: 'restaurant',
-  image: '/opengraph-image.jpg',
+  image: '/opengraph-image',
   imageAlt: 'Destino SF - Handcrafted Empanadas & Alfajores',
   cuisine: ['Latin American', 'South American', 'Argentine'],
   rating: 4.8,

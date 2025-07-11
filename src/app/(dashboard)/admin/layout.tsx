@@ -135,12 +135,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               icon={<Truck size={18} />}
               currentPath={pathname}
             />
-            <NavItem
+            {/* <NavItem
               href="/admin/hours"
               label="Business Hours"
               icon={<Clock size={18} />}
               currentPath={pathname}
-            />
+            /> */}
             <NavItem
               href="/admin/spotlight-picks"
               label="Spotlight Picks"

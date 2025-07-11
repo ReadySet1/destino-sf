@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next'
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:3000' 
-    : 'https://destino-sf-ready-set.vercel.app'
+    : 'https://development.destinosf.com'
 
   return {
     rules: [

@@ -104,7 +104,7 @@ export function CateringStructuredData() {
 export function LocalBusinessStructuredData() {
   const baseUrl = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:3000' 
-    : 'https://destino-sf-ready-set.vercel.app';
+    : 'https://development.destinosf.com';
 
   const structuredData = {
     '@context': 'https://schema.org',

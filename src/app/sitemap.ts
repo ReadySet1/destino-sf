@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:3000' 
-    : 'https://destino-sf-ready-set.vercel.app'
+    : 'https://development.destinosf.com'
 
   // Static pages
   const staticPages = [

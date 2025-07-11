@@ -25,7 +25,7 @@ const greatVibes = Great_Vibes({
 const baseUrl =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:3000'
-    : 'https://destino-sf-ready-set.vercel.app';
+    : 'https://development.destinosf.com';
 
 // Add viewport configuration
 export const viewport: Viewport = {
@@ -41,18 +41,30 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
-  title: 'Destino SF',
-  description: 'Handcrafted Empanadas & Alfajores',
+  title: {
+    default: 'Destino SF - Handcrafted Empanadas & Alfajores',
+    template: '%s | Destino SF'
+  },
+  description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco. Order online for pickup or delivery.',
+  keywords: ['empanadas', 'alfajores', 'argentine food', 'san francisco', 'catering', 'delivery'],
+  authors: [{ name: 'Destino SF' }],
+  creator: 'Destino SF',
+  publisher: 'Destino SF',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: '/',
+    url: baseUrl,
     siteName: 'Destino SF',
-    title: 'Destino SF',
-    description: 'Handcrafted Empanadas & Alfajores',
+    title: 'Destino SF - Handcrafted Empanadas & Alfajores',
+    description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
     images: [
       {
-        url: '/opengraph-image.jpg',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
@@ -61,33 +73,35 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Destino SF',
-    description: 'Handcrafted Empanadas & Alfajores',
+    title: 'Destino SF - Handcrafted Empanadas & Alfajores',
+    description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
     creator: '@destinosf',
-    images: [
-      {
-        url: '/twitter-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Destino SF - Handcrafted Empanadas & Alfajores',
-      },
+    images: ['/twitter-image'],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon0.svg', type: 'image/svg+xml' },
+      { url: '/icon1.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png' },
     ],
   },
-  other: {
-    'og:site_name': 'Destino SF',
-    'og:locale': 'en_US',
-    'og:type': 'website',
-    'theme-color': '#ffffff', // Updated from #004225 to match background
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
-    'og:image': `${baseUrl}/opengraph-image.jpg`,
-    'og:image:secure_url': `${baseUrl}/opengraph-image.jpg`,
-    'og:image:width': '1200',
-    'og:image:height': '630',
-    'og:image:type': 'image/jpeg',
-    'og:image:alt': 'Destino SF - Handcrafted Empanadas & Alfajores',
-    'og:title': 'Destino SF',
-    'og:description': 'Handcrafted Empanadas & Alfajores',
+  manifest: '/manifest.json',
+  alternates: {
+    canonical: baseUrl,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   verification: {
     other: {
