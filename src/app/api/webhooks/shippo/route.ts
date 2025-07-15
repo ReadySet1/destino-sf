@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { OrderStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import { WebhookValidator } from '@/lib/square/webhook-validator';
+import { errorMonitor } from '@/lib/error-monitoring';
 
 interface ShippoWebhookPayload {
   event: 'transaction_created' | 'transaction_updated' | 'track_updated' | 'batch_created' | 'batch_purchased' | 'all';
@@ -129,12 +131,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const payload: ShippoWebhookPayload = await request.json();
     console.log('Shippo Webhook Payload:', JSON.stringify(payload, null, 2));
 
-    // --- TODO: Verify Shippo Signature --- 
-    // const signature = request.headers.get('X-Shippo-Signature');
-    // if (!isValidSignature(payload, signature)) {
-    //    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    // }
-    // --- End TODO ---
+    // Enhanced Shippo webhook signature validation
+    const signature = request.headers.get('X-Shippo-Signature');
+    const shippoSecret = process.env.SHIPPO_WEBHOOK_SECRET;
+    
+    if (shippoSecret && signature) {
+      const validator = new WebhookValidator(shippoSecret);
+      
+      const isValid = await validator.validateShippoSignature(
+        signature,
+        JSON.stringify(payload),
+        payload.data?.object_id || `shippo-${Date.now()}`
+      );
+      
+      if (!isValid) {
+        console.error('🔒 Invalid Shippo webhook signature - request rejected');
+        await errorMonitor.captureWebhookError(
+          new Error('Invalid Shippo webhook signature'),
+          'signature_validation',
+          payload.data?.object_id,
+          payload.event
+        );
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+      
+      console.log('✅ Shippo webhook signature verified with enhanced security');
+    } else {
+      console.warn('⚠️ Shippo webhook signature verification skipped - missing secret or headers');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('🔒 Shippo webhook signature verification is required in production');
+        return NextResponse.json({ error: 'Signature verification required' }, { status: 401 });
+      }
+    }
 
     // Respond quickly before processing
     // Defer actual processing to avoid Shippo timeouts

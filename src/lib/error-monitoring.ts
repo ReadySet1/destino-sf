@@ -1,5 +1,6 @@
 import { AlertService } from '@/lib/alerts';
 import { env } from '@/env';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * Error severity levels
@@ -47,7 +48,7 @@ export interface MonitoringConfig {
 const DEFAULT_CONFIG: MonitoringConfig = {
   enableAlerts: true,
   enableConsoleLogging: true,
-  enableExtrenalLogging: false,
+  enableExtrenalLogging: !!process.env.NEXT_PUBLIC_SENTRY_DSN, // Enable if Sentry is configured
   criticalErrorThreshold: 5,
 };
 
@@ -305,15 +306,95 @@ export class ErrorMonitor {
   }
 
   /**
-   * Log to external service (placeholder for future integration)
+   * Log to external service (Sentry integration)
    */
   private async logToExternalService(
     error: Error, 
     context: ErrorContext, 
     severity: ErrorSeverity
   ): Promise<void> {
-    // Placeholder for services like Sentry, LogRocket, etc.
-    // await sentry.captureException(error, { contexts: { custom: context }, level: severity });
+    try {
+      // Map our severity to Sentry levels
+      const sentryLevel = this.mapSeverityToSentryLevel(severity);
+      
+      // Set user context if available
+      if (context.userId) {
+        Sentry.setUser({
+          id: context.userId,
+          email: context.additionalData?.userEmail || undefined,
+        });
+      }
+      
+      // Set additional context
+      Sentry.setContext('error_context', {
+        component: context.component,
+        action: context.action,
+        orderId: context.orderId,
+        additionalData: context.additionalData,
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Set tags for better filtering
+      Sentry.setTag('component', context.component || 'unknown');
+      Sentry.setTag('action', context.action || 'unknown');
+      Sentry.setTag('severity', severity);
+      
+      if (context.orderId) {
+        Sentry.setTag('order_id', context.orderId);
+      }
+      
+      // Capture the exception
+      Sentry.captureException(error, {
+        level: sentryLevel,
+        fingerprint: this.generateFingerprint(error, context),
+        extra: {
+          context: context.additionalData,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      
+    } catch (sentryError) {
+      console.error('Failed to log to Sentry:', sentryError);
+    }
+  }
+  
+  /**
+   * Map our severity levels to Sentry severity levels
+   */
+  private mapSeverityToSentryLevel(severity: ErrorSeverity): Sentry.SeverityLevel {
+    switch (severity) {
+      case ErrorSeverity.LOW:
+        return 'debug';
+      case ErrorSeverity.MEDIUM:
+        return 'info';
+      case ErrorSeverity.HIGH:
+        return 'warning';
+      case ErrorSeverity.CRITICAL:
+        return 'error';
+      default:
+        return 'error';
+    }
+  }
+  
+  /**
+   * Generate fingerprint for error grouping in Sentry
+   */
+  private generateFingerprint(error: Error, context: ErrorContext): string[] {
+    const fingerprint = [error.name || 'Error'];
+    
+    if (context.component) {
+      fingerprint.push(context.component);
+    }
+    
+    if (context.action) {
+      fingerprint.push(context.action);
+    }
+    
+    // Add a portion of the error message for better grouping
+    const messagePrefix = error.message.substring(0, 50);
+    fingerprint.push(messagePrefix);
+    
+    return fingerprint;
   }
 
   /**

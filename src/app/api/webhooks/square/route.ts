@@ -15,6 +15,7 @@ import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitorin
 import { applyWebhookRateLimit } from '@/middleware/rate-limit';
 import { handleWebhookWithQueue } from '@/lib/webhook-queue';
 import { patchSquareApiClient } from '@/lib/square/square-api-fix';
+import { WebhookValidator } from '@/lib/square/webhook-validator';
 
 type SquareEventType =
   | 'order.created'
@@ -1220,31 +1221,39 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
       return;
     }
     
-    // Verify the webhook signature if a webhook secret is configured
+    // Enhanced webhook signature validation with comprehensive security checks
     const signature = request.headers.get('x-square-hmacsha256-signature');
     const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
     
-    if (webhookSecret && signature && timestamp) {
-      try {
-        // Compute expected signature: HMAC-SHA256(CONCAT(|timestamp|, |notification body|), |SignatureKey|)
-        const message = `${timestamp}${bodyText}`;
-        const hmac = crypto.createHmac('sha256', webhookSecret);
-        hmac.update(message);
-        const expectedSignature = hmac.digest('hex');
-        
-        if (expectedSignature !== signature) {
-          console.warn('Square webhook signature validation failed in async processing');
-          return;
-        }
-        
-        console.log('Square webhook signature validated successfully in async processing');
-      } catch (signatureError) {
-        console.error('Error validating Square webhook signature in async processing:', signatureError);
-        // Continue processing even if signature validation fails, but log it
+    if (webhookSecret && signature && timestamp && payload) {
+      const validator = new WebhookValidator(webhookSecret);
+      
+      const isValid = await validator.validateSquareSignature(
+        signature,
+        bodyText,
+        timestamp,
+        payload.event_id
+      );
+      
+      if (!isValid) {
+        console.error('🔒 Invalid webhook signature - request rejected');
+        await errorMonitor.captureWebhookError(
+          new Error('Invalid webhook signature'),
+          'signature_validation',
+          payload.event_id,
+          payload.type
+        );
+        return;
       }
-    } else if (webhookSecret) {
-      console.warn('Square webhook signature validation skipped in async processing: missing headers');
+      
+      console.log('✅ Webhook signature verified with enhanced security');
+    } else {
+      console.warn('⚠️ Webhook signature verification skipped - missing secret or headers');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('🔒 Webhook signature verification is required in production');
+        return;
+      }
     }
 
     // Log the received payload for debugging
