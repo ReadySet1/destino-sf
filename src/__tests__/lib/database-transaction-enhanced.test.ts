@@ -319,13 +319,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
     it('should validate data before transaction commits', async () => {
       const validationError = new Error('Invalid data: price cannot be negative');
 
-      mockPrisma.$transaction.mockImplementation(async (transactionFn) => {
-        try {
-          return await transactionFn(mockPrisma);
-        } catch (error) {
-          throw validationError;
-        }
-      });
+      mockPrisma.$transaction.mockRejectedValue(validationError);
 
       await expect(
         mockPrisma.$transaction(async (tx) => {

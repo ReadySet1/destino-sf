@@ -1,14 +1,18 @@
+// First, clear any existing mocks on the cart-helpers module
+jest.unmock('@/lib/cart-helpers');
+
 import { validateOrderMinimums, isCateringOrder } from '@/lib/cart-helpers';
 import { CartItem } from '@/types/cart';
 
 // Mock the server action
+const mockValidateOrderMinimumsServer = jest.fn();
 jest.mock('@/app/actions/orders', () => ({
-  validateOrderMinimumsServer: jest.fn(),
+  validateOrderMinimumsServer: mockValidateOrderMinimumsServer,
 }));
 
 import { validateOrderMinimumsServer } from '@/app/actions/orders';
 
-const mockedValidateOrderMinimumsServer = require('@/app/actions/orders').validateOrderMinimumsServer as jest.Mock;
+const mockedValidateOrderMinimumsServer = mockValidateOrderMinimumsServer;
 
 // Shared test data
 const validCartItems: CartItem[] = [
@@ -30,6 +34,12 @@ const validCartItems: CartItem[] = [
 describe('cart-helpers', () => {
   beforeEach(() => {
     mockedValidateOrderMinimumsServer.mockClear();
+    // Set up default mock response to avoid undefined behavior
+    mockedValidateOrderMinimumsServer.mockResolvedValue({
+      isValid: true,
+      minimumRequired: 25,
+      currentAmount: 65,
+    });
     // Suppress console.warn for isCateringOrder tests
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -53,6 +63,7 @@ describe('cart-helpers', () => {
       });
 
       const result = await validateOrderMinimums(validCartItems);
+      
       expect(result).toEqual({
         isValid: true,
         errorMessage: undefined,

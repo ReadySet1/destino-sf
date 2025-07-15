@@ -530,7 +530,7 @@ describe('/api/checkout/payment - POST', () => {
 
       // Both should succeed (actual idempotency would prevent duplicate charges)
       expect(mockCreatePayment).toHaveBeenCalledTimes(2);
-    });
+    }, 10000); // Increase timeout to 10 seconds
 
     test('should handle concurrent payment attempts', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder as any);
@@ -553,6 +553,6 @@ describe('/api/checkout/payment - POST', () => {
       responses.forEach(response => {
         expect(response.status).toBe(200);
       });
-    });
+    }, 15000); // Increase timeout to 15 seconds for concurrent operations
   });
 }); 

@@ -10,21 +10,18 @@ import { prisma } from '@/lib/db';
 
 // Import our new test utilities
 import { 
-  setupMockPrisma,
   mockConsole,
   restoreConsole 
 } from '@/__tests__/setup/test-utils';
-import { mockPrismaClient } from '../../__mocks__/prisma';
 
 // Note: @/lib/db is mocked globally in jest.setup.js
-
-const mockPrisma = mockPrismaClient;
+// Cast the prisma object to access jest mock functions
+const mockPrisma = prisma as any;
 
 describe('ShippingUtils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockConsole(); // Use utility for console mocking
-    setupMockPrisma(mockPrisma); // Setup default mock responses
   });
 
   afterEach(() => {
@@ -42,8 +39,8 @@ describe('ShippingUtils', () => {
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: '0.5',
+        weightPerUnitLb: '0.4',
         isActive: true,
         applicableForNationwideOnly: true,
       });

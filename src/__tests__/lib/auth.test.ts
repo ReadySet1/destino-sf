@@ -268,12 +268,36 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     });
 
     it('should handle invalid user IDs gracefully', async () => {
+      // Override the default mock to return no data for invalid user ID
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'No user found' },
+        }),
+      };
+      
+      mockSupabase.from.mockReturnValue(mockQueryChain);
+
       const isAdmin = await checkIsAdmin('');
 
       expect(isAdmin).toBe(false);
     });
 
     it('should handle null user ID gracefully', async () => {
+      // Override the default mock to return no data for null user ID
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'No user found' },
+        }),
+      };
+      
+      mockSupabase.from.mockReturnValue(mockQueryChain);
+
       const isAdmin = await checkIsAdmin(null as any);
 
       expect(isAdmin).toBe(false);
@@ -435,8 +459,12 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
       await requireAdmin();
       await checkIsAdmin('user-123');
 
-      // Each function should create its own client
-      expect(mockCreateClient).toHaveBeenCalledTimes(3);
+      // Each function creates its own client, requireAdmin calls getCurrentUser internally
+      // 1. getCurrentUser() - 1 call
+      // 2. requireAdmin() calls getCurrentUser() - 1 call
+      // 3. requireAdmin() creates its own client - 1 call
+      // 4. checkIsAdmin() - 1 call
+      expect(mockCreateClient).toHaveBeenCalledTimes(4);
     });
   });
 
@@ -506,6 +534,18 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle SQL injection attempts in user ID', async () => {
       const maliciousUserId = "'; DROP TABLE profiles; --";
       
+      // Override the default mock to return no data for malicious user ID
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'No user found' },
+        }),
+      };
+      
+      mockSupabase.from.mockReturnValue(mockQueryChain);
+      
       // Should not cause SQL injection (parameterized queries should protect)
       const isAdmin = await checkIsAdmin(maliciousUserId);
 
@@ -516,6 +556,18 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle extremely long user IDs', async () => {
       const longUserId = 'a'.repeat(10000);
       
+      // Override the default mock to return no data for long user ID
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'No user found' },
+        }),
+      };
+      
+      mockSupabase.from.mockReturnValue(mockQueryChain);
+      
       const isAdmin = await checkIsAdmin(longUserId);
 
       expect(isAdmin).toBe(false);
@@ -523,6 +575,18 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
 
     it('should handle unicode characters in user IDs', async () => {
       const unicodeUserId = '用户-123-🚀';
+      
+      // Override the default mock to return no data for unicode user ID
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'No user found' },
+        }),
+      };
+      
+      mockSupabase.from.mockReturnValue(mockQueryChain);
       
       const isAdmin = await checkIsAdmin(unicodeUserId);
 
