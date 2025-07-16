@@ -118,6 +118,39 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
       return null;
     }
     
+    // Additional Square Payment Link specific validation
+    // Square CreatePaymentLink API is very strict about phone format
+    if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      // US number with country code - this is the format Square expects
+      // But let's validate the area code is not invalid
+      const areaCode = digitsOnly.substring(1, 4);
+      
+      // Check for invalid area codes that Square might reject
+      const invalidAreaCodes = [
+        '000', '001', '002', '003', '004', '005', '006', '007', '008', '009',
+        '911', '555', '800', '888', '877', '866', '855', '844', '833', '822'
+      ];
+      
+      if (invalidAreaCodes.includes(areaCode)) {
+        console.warn(`Phone number ${formattedPhone} has potentially invalid area code ${areaCode} for Square payment links`);
+        return null;
+      }
+    } else if (digitsOnly.length === 10) {
+      // US number without country code - need to add +1
+      const areaCode = digitsOnly.substring(0, 3);
+      
+      // Check for invalid area codes
+      const invalidAreaCodes = [
+        '000', '001', '002', '003', '004', '005', '006', '007', '008', '009',
+        '911', '555', '800', '888', '877', '866', '855', '844', '833', '822'
+      ];
+      
+      if (invalidAreaCodes.includes(areaCode)) {
+        console.warn(`Phone number ${formattedPhone} has potentially invalid area code ${areaCode} for Square payment links`);
+        return null;
+      }
+    }
+    
     return formattedPhone;
   } catch (error) {
     console.warn('Failed to format phone number for Square payment link:', error);

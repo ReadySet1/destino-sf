@@ -35,7 +35,8 @@ export async function POST(
       where: { 
         id: orderId,
         userId: user.id, // Ensure user owns the order
-        status: { in: ['PENDING', 'PAYMENT_FAILED'] }
+        status: { in: ['PENDING', 'PAYMENT_FAILED'] },
+        paymentMethod: 'SQUARE' // Only allow retries for Square payments
       },
       include: {
         items: {
@@ -49,8 +50,16 @@ export async function POST(
 
     if (!order) {
       return NextResponse.json(
-        { error: 'Order not found or not eligible for retry' }, 
+        { error: 'Order not found, not eligible for retry, or uses cash payment method' }, 
         { status: 404 }
+      );
+    }
+
+    // Additional check for payment method (extra safety)
+    if (order.paymentMethod !== 'SQUARE') {
+      return NextResponse.json(
+        { error: 'Payment retry is only available for credit card orders' }, 
+        { status: 400 }
       );
     }
 

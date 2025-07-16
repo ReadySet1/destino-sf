@@ -1024,6 +1024,79 @@ export async function createCateringOrderAndProcessPayment(
       
       console.error(`Square API Error (${fetchResponse.status} - ${squareErrorCode}):`, JSON.stringify(responseData, null, 2));
       
+      // Special handling for phone number validation errors
+      if (squareErrorCode === 'INVALID_PHONE_NUMBER' && formattedCustomerData.buyer_phone_number) {
+        console.log('Retrying Square payment link creation without phone number...');
+        
+        // Retry without phone number
+        const retryCustomerData = {
+          buyer_email: formattedCustomerData.buyer_email
+          // Omit buyer_phone_number entirely
+        };
+        
+        const retryRequestBody = {
+          ...squareRequestBody,
+          pre_populated_data: retryCustomerData
+        };
+        
+        console.log('Retry request without phone number:', JSON.stringify(retryRequestBody, null, 2));
+        
+        const retryResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
+          method: 'POST',
+          headers: {
+            'Square-Version': '2025-05-21',
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(retryRequestBody),
+        });
+        
+        const retryResponseData = await retryResponse.json();
+        
+        if (retryResponse.ok && retryResponseData.payment_link?.url && retryResponseData.payment_link?.order_id) {
+          console.log('Square payment link created successfully after removing phone number');
+          
+          // Update the order with Square information
+          await db.cateringOrder.update({
+            where: { id: cateringOrder.id },
+            data: {
+              squareOrderId: retryResponseData.payment_link.order_id,
+              squareCheckoutUrl: retryResponseData.payment_link.url,
+              notes: `Phone number ${customerInfo.phone} was invalid for Square, proceeded without it`
+            }
+          });
+          
+          // Revalidate paths
+          revalidatePath('/catering');
+          revalidatePath('/admin/catering/orders');
+          
+          return { 
+            success: true, 
+            data: { 
+              orderId: cateringOrder.id, 
+              checkoutUrl: retryResponseData.payment_link.url 
+            } 
+          };
+        } else {
+          console.error('Retry also failed:', JSON.stringify(retryResponseData, null, 2));
+          const retryErrorDetail = retryResponseData.errors?.[0]?.detail || 'Failed to create Square payment link after retry';
+          
+          await db.cateringOrder.update({
+            where: { id: cateringOrder.id },
+            data: { 
+              status: CateringStatus.CANCELLED,
+              paymentStatus: PaymentStatus.FAILED,
+              notes: `Square API Error (retry failed): ${retryErrorDetail}`
+            }
+          });
+          
+          return { 
+            success: false, 
+            error: `Payment provider error: ${retryErrorDetail}`,
+          };
+        }
+      }
+      
       await db.cateringOrder.update({
         where: { id: cateringOrder.id },
         data: { 
