@@ -246,7 +246,8 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     {/* Show retry payment button for eligible orders */}
                     {isRegularOrder && 
                      (orderData.status === 'PENDING' || orderData.status === 'PAYMENT_FAILED') && 
-                     (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+                     (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
+                     regularOrder.paymentMethod === 'SQUARE' && (
                       <div className="mt-2">
                         <RetryPaymentButton 
                           orderId={orderData.id} 
@@ -255,6 +256,16 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                         />
                       </div>
                     )}
+                  </div>
+                </div>
+                
+                {/* Add Payment Method Row */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div>
+                    <p className="text-sm text-gray-600 font-medium">Payment Method</p>
+                    <Badge variant="outline" className="mt-1">
+                      {isRegularOrder ? (regularOrder.paymentMethod || 'SQUARE') : (cateringOrder!.paymentMethod || 'SQUARE')}
+                    </Badge>
                   </div>
                 </div>
                 

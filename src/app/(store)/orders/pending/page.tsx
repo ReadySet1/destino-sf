@@ -17,7 +17,16 @@ export default async function PendingOrdersPage() {
       status: { in: ['PENDING', 'PAYMENT_FAILED'] },
       paymentStatus: { in: ['PENDING', 'FAILED'] }
     },
-    include: {
+    select: {
+      id: true,
+      total: true,
+      status: true,
+      paymentStatus: true,
+      paymentMethod: true,
+      createdAt: true,
+      updatedAt: true,
+      retryCount: true,
+      paymentUrlExpiresAt: true,
       items: {
         include: {
           product: true,

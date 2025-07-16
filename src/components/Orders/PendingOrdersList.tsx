@@ -14,6 +14,7 @@ interface PendingOrder {
   total: number;
   status: string;
   paymentStatus: string;
+  paymentMethod: string;
   createdAt: Date;
   retryCount: number;
   paymentUrlExpiresAt: Date | null;
@@ -136,14 +137,21 @@ export function PendingOrdersList({ orders }: Props) {
 
             {/* Action Button */}
             <div className="flex justify-end">
-              <Button
-                onClick={() => handleRetryPayment(order.id)}
-                disabled={retryingOrderId === order.id || order.retryCount >= 3}
-                className="flex items-center gap-2"
-              >
-                <CreditCard className="h-4 w-4" />
-                {retryingOrderId === order.id ? 'Processing...' : 'Retry Payment'}
-              </Button>
+              {order.paymentMethod === 'SQUARE' && (
+                <Button
+                  onClick={() => handleRetryPayment(order.id)}
+                  disabled={retryingOrderId === order.id || order.retryCount >= 3}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {retryingOrderId === order.id ? 'Processing...' : 'Retry Payment'}
+                </Button>
+              )}
+              {order.paymentMethod === 'CASH' && (
+                <div className="text-sm text-gray-600">
+                  <p>Please visit our store to pay with cash</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
