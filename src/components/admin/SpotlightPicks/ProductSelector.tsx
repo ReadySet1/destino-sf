@@ -147,14 +147,14 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
     return () => clearTimeout(timer);
   }, [searchTerm, selectedCategory, statusFilter, fetchProducts]);
 
-  // Initial load
+  // Initial load and when filters change
   useEffect(() => {
     fetchProducts({
       page: 1,
       category: selectedCategory,
       status: statusFilter,
     });
-  }, []); // Only run on mount
+  }, [fetchProducts, selectedCategory, statusFilter]);
 
   const handlePageChange = (page: number) => {
     fetchProducts({
