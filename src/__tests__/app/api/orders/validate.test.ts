@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateOrderMinimumsServer } from '@/app/actions/orders';
-import { getDeliveryZone, calculateDeliveryFee } from '@/lib/deliveryUtils';
+import { getDeliveryZone, calculateDeliveryFee, DeliveryZone } from '@/lib/deliveryUtils';
 import { calculateShippingWeight } from '@/lib/shippingUtils';
 import { prisma } from '@/lib/db';
 
@@ -253,9 +253,9 @@ describe('/api/orders/validate', () => {
         postalCode: '94105',
       };
 
-      mockGetDeliveryZone.mockReturnValue('nearby');
+      mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
       mockCalculateDeliveryFee.mockReturnValue({
-        zone: 'nearby',
+        zone: DeliveryZone.NEARBY,
         fee: 0, // Free delivery for orders over $75
         isFreeDelivery: true,
         minOrderForFreeDelivery: 75,
@@ -277,9 +277,9 @@ describe('/api/orders/validate', () => {
         postalCode: '94612',
       };
 
-      mockGetDeliveryZone.mockReturnValue('distant');
+      mockGetDeliveryZone.mockReturnValue(DeliveryZone.DISTANT);
       mockCalculateDeliveryFee.mockReturnValue({
-        zone: 'distant',
+        zone: DeliveryZone.DISTANT,
         fee: 25,
         isFreeDelivery: false,
       });

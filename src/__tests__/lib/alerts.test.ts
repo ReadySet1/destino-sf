@@ -188,18 +188,18 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
     const mockOrderStatusData = {
       order: {
         id: 'order-123',
-        status: OrderStatus.READY_FOR_PICKUP,
+        status: OrderStatus.READY,
         customer: {
           email: 'customer@test.com',
           name: 'John Doe',
         },
         total: 29.99,
       },
-      previousStatus: OrderStatus.PREPARING,
+      previousStatus: OrderStatus.PROCESSING,
     } as any;
 
     it('should send order status change alert to admin', async () => {
-      const result = await alertService.sendOrderStatusChangeAlert(mockOrderStatusData);
+      const result = await alertService.sendOrderStatusChangeAlert(mockOrderStatusData.order, mockOrderStatusData.previousStatus);
 
       expect(result.success).toBe(true);
       expect(mockPrisma.emailAlert.create).toHaveBeenCalledWith({
@@ -234,8 +234,8 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
         data: expect.objectContaining({
           metadata: expect.objectContaining({
             orderId: 'order-123',
-            newStatus: OrderStatus.READY_FOR_PICKUP,
-            previousStatus: OrderStatus.PREPARING,
+            newStatus: OrderStatus.READY,
+            previousStatus: OrderStatus.PROCESSING,
           }),
         }),
       });

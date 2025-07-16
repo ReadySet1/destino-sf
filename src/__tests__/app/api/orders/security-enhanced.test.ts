@@ -84,7 +84,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
     mockPrisma.order.findUnique.mockResolvedValue(validOrder);
     mockPrisma.order.findMany.mockResolvedValue([validOrder]);
     mockPrisma.order.update.mockResolvedValue({ ...validOrder, status: 'CONFIRMED' });
-    mockCheckRateLimit.mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: new Date() });
+    mockCheckRateLimit.mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: new Date(), count: 1 });
     
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -172,7 +172,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
     it('should implement rate limiting for order operations', async () => {
       const checkOrderRateLimit = async (operation: string) => {
-        const result = await checkRateLimit({} as any, `order_${operation}`);
+        const result = await checkRateLimit({} as any, 'orders');
         return result.success;
       };
 

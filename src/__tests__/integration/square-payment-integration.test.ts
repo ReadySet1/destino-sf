@@ -838,13 +838,9 @@ describe('Square Payment Integration - E2E Testing', () => {
 
     it('should handle production vs sandbox environment differences', () => {
       const getSquareClient = (environment: 'sandbox' | 'production') => {
-        const squareEnvironment = environment === 'production' 
-          ? Square.Environment.Production 
-          : Square.Environment.Sandbox;
-
         return new Square.SquareClient({
           accessToken: process.env.SQUARE_ACCESS_TOKEN!,
-          environment: squareEnvironment,
+          environment: environment,
         });
       };
 
@@ -854,11 +850,11 @@ describe('Square Payment Integration - E2E Testing', () => {
       expect(MockSquare.SquareClient).toHaveBeenCalledTimes(2);
       expect(MockSquare.SquareClient).toHaveBeenCalledWith({
         accessToken: 'test-access-token',
-        environment: Square.Environment.Sandbox,
+        environment: 'sandbox',
       });
       expect(MockSquare.SquareClient).toHaveBeenCalledWith({
         accessToken: 'test-access-token',
-        environment: Square.Environment.Production,
+        environment: 'production',
       });
     });
   });
