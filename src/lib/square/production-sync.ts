@@ -582,7 +582,7 @@ export class ProductionSyncManager {
         description: 'Default category for products',
         slug: 'default',
         order: 0,
-        isActive: true
+        active: true
       }
     });
 

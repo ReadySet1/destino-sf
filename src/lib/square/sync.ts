@@ -211,7 +211,7 @@ async function getOrCreateDefaultCategory() {
         description: 'Default category for imported products',
         slug: 'default', // Ensure slug is unique and URL-friendly
         order: 0, // Or determine order based on existing categories
-        isActive: true, // Assuming new categories should be active
+        active: true, // Assuming new categories should be active
         // Remove metadata if not defined in your Prisma schema
         // metadata: {
         //   createdAt: new Date().toISOString(),
@@ -293,7 +293,7 @@ async function getOrCreateCategoryByName(name: string): Promise<{ id: string, na
           description: `Category for ${name} products`,
           slug,
           order: 0, // Default order
-          isActive: true
+          active: true
         }
       });
       
@@ -327,7 +327,7 @@ async function getOrCreateCategoryByName(name: string): Promise<{ id: string, na
             description: `Category for ${name} products`,
             slug: timestampSlug,
             order: 0,
-            isActive: true
+            active: true
           }
         });
         
@@ -367,7 +367,7 @@ async function ensureTestCateringCategory(): Promise<void> {
           description: 'Test catering category for debugging',
           slug: 'catering-test',
           order: 1000, // High order number to place at the end
-          isActive: true
+          active: true
         }
       });
       logger.info(`Created test catering category with ID ${testCategory.id}`);

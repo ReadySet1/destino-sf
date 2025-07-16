@@ -91,7 +91,7 @@ export async function createCategoryAction(
         name: name.trim(),
         description: descriptionStr,
         order,
-        isActive,
+        active: isActive,
         slug,
         imageUrl,
         metadata: {

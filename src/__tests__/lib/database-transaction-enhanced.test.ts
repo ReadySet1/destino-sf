@@ -45,22 +45,34 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
 
   describe('Transaction Isolation and Concurrency', () => {
     it('should handle concurrent order creation with inventory updates', async () => {
-      const mockOrder = { id: 'order-123', total: 50.99 };
-      const mockInventoryUpdate = { id: 'product-1', quantity: 8 };
+      // Mock database operations
+      const mockOrder = {
+        id: 'order-123',
+        customerName: 'John Doe',
+        email: 'john@example.com',
+        phone: '+1234567890',
+        total: 50.99,
+        status: 'PENDING' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      // Simulate successful transaction
-      mockPrisma.$transaction.mockImplementation(async (transactionFn) => {
-        return await transactionFn(mockPrisma);
-      });
+      const mockInventoryUpdate = {
+        id: 'product-1',
+        name: 'Test Product',
+        inventory: 8, // 10 - 2 = 8
+      };
 
-      mockPrisma.order.create.mockResolvedValue(mockOrder);
-      mockPrisma.product.update.mockResolvedValue(mockInventoryUpdate);
+      (mockPrisma.order.create as jest.Mock).mockResolvedValue(mockOrder);
+      (mockPrisma.product.update as jest.Mock).mockResolvedValue(mockInventoryUpdate);
 
       const result = await mockPrisma.$transaction(async (tx) => {
         // Create order
         const order = await tx.order.create({
           data: {
             customerName: 'John Doe',
+            email: 'john@example.com',
+            phone: '+1234567890',
             total: 50.99,
             status: 'PENDING',
           },
@@ -69,7 +81,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
         // Update product inventory
         const product = await tx.product.update({
           where: { id: 'product-1' },
-          data: { quantity: { decrement: 2 } },
+          data: { inventory: { decrement: 2 } },
         });
 
         return { order, product };

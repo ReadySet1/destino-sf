@@ -1,13 +1,8 @@
-// Define PaymentMethod enum locally to avoid import issues with mocked Prisma
-const PaymentMethod = {
-  SQUARE: 'SQUARE' as const,
-  CASH: 'CASH' as const,
-  VENMO: 'VENMO' as const,
-} as const;
-
-type PaymentMethodType = typeof PaymentMethod[keyof typeof PaymentMethod];
+import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 import type { MockPrismaClient } from './database-mocks';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Common test data with proper types
 export const TestData = {
@@ -15,6 +10,7 @@ export const TestData = {
   PaymentMethods: {
     SQUARE: PaymentMethod.SQUARE,
     CASH: PaymentMethod.CASH,
+    VENMO: PaymentMethod.VENMO,
   },
 
   // Common cart items
@@ -74,12 +70,56 @@ export const TestData = {
       rateId: 'rate-123',
     },
   },
+
+  // Common order data
+  orders: {
+    pending: {
+      id: 'order-123',
+      status: OrderStatus.PENDING,
+      total: new Decimal('50.99'),
+      customerName: 'John Doe',
+      email: 'john@example.com',
+      phone: '+1234567890',
+      paymentStatus: PaymentStatus.PENDING,
+      paymentMethod: PaymentMethod.SQUARE,
+      createdAt: new Date('2024-01-15T10:00:00.000Z'),
+      updatedAt: new Date('2024-01-15T10:00:00.000Z'),
+    },
+  },
+
+  // Common product data  
+  products: {
+    active: {
+      id: 'product-1',
+      name: 'Dulce de Leche Alfajores',
+      price: new Decimal('12.99'),
+      active: true,
+      inventory: 50,
+      squareId: 'square-123',
+      categoryId: 'category-1',
+      featured: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    inactive: {
+      id: 'product-2',
+      name: 'Discontinued Item',
+      price: new Decimal('15.99'),
+      active: false,
+      inventory: 0,
+      squareId: 'square-456',
+      categoryId: 'category-1',
+      featured: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  },
 };
 
 // Helper to create properly typed form data
 export const createFormData = (overrides: {
   fulfillment?: any;
-  paymentMethod?: PaymentMethodType;
+  paymentMethod?: PaymentMethod;
   items?: any[];
   customerInfo?: any;
 } = {}) => ({
@@ -89,60 +129,102 @@ export const createFormData = (overrides: {
   fulfillment: overrides.fulfillment || TestData.fulfillment.pickup,
 });
 
-// Helper for validation results with proper typing
-export const createValidationResult = (overrides: {
-  isValid?: boolean;
-  errorMessage?: string | null;
-  deliveryZone?: string;
-  minimumRequired?: number;
-  currentAmount?: number;
-} = {}) => ({
-  isValid: overrides.isValid ?? true,
-  errorMessage: overrides.errorMessage ?? null,
-  // Only include additional properties if they're provided
-  ...(overrides.deliveryZone && { deliveryZone: overrides.deliveryZone }),
-  ...(overrides.minimumRequired && { minimumRequired: overrides.minimumRequired }),
-  ...(overrides.currentAmount && { currentAmount: overrides.currentAmount }),
+// Mock validation results
+export const createValidationResult = (isValid: boolean, error?: string) => ({
+  isValid,
+  errorMessage: error,
+  minimumRequired: 25,
+  currentAmount: isValid ? 50 : 20,
 });
 
-// Helper for mock order data
-export const createMockOrder = (overrides: any = {}) => ({
-  id: 'order-123',
-  status: 'PENDING',
-  total: 4543,
-  taxAmount: 346,
-  subtotal: 4197,
-  customerName: 'John Doe',
-  customerEmail: 'john@example.com',
-  customerPhone: '+1234567890',
-  fulfillmentMethod: 'pickup',
-  userId: null,
-  createdAt: new Date('2025-06-19T16:55:08.495Z'),
-  updatedAt: new Date('2025-06-19T16:55:08.495Z'),
+// Mock order creation
+export const createMockOrder = (overrides: Partial<typeof TestData.orders.pending> = {}) => ({
+  ...TestData.orders.pending,
   ...overrides,
 });
 
-// Type-safe mock setup helpers
+// Mock product creation
+export const createMockProduct = (overrides: Partial<typeof TestData.products.active> = {}) => ({
+  ...TestData.products.active,
+  ...overrides,
+});
+
+// Setup mock Prisma client
 export const setupMockPrisma = (mockPrisma: MockPrismaClient) => {
-  // Setup default successful responses for available models
-  mockPrisma.order.create.mockResolvedValue(createMockOrder());
-  mockPrisma.order.findMany.mockResolvedValue([]);
-  mockPrisma.order.findUnique.mockResolvedValue(null);
-  mockPrisma.order.findFirst.mockResolvedValue(null);
-  mockPrisma.product.findMany.mockResolvedValue([]);
-  mockPrisma.product.findFirst.mockResolvedValue(null);
-  mockPrisma.product.findUnique.mockResolvedValue(null);
-  mockPrisma.shippingConfiguration.findMany.mockResolvedValue([]);
-  mockPrisma.shippingConfiguration.findFirst.mockResolvedValue(null);
+  // Setup default mock responses
+  (mockPrisma.order.create as jest.Mock).mockResolvedValue(TestData.orders.pending);
+  (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([TestData.products.active]);
+  (mockPrisma.product.update as jest.Mock).mockResolvedValue({
+    ...TestData.products.active,
+    inventory: 48, // Decremented by 2
+  });
+  
+  return mockPrisma;
 };
 
-// Console mock helpers
+// Console mocking utilities
 export const mockConsole = () => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, 'log').mockImplementation(() => {});
 };
 
 export const restoreConsole = () => {
   jest.restoreAllMocks();
+};
+
+// Export standalone variables for backwards compatibility
+export const validCartItems = TestData.validCartItems;
+export const validCustomerInfo = TestData.validCustomerInfo;
+export const validPickupFulfillment = TestData.fulfillment.pickup;
+export const validLocalDeliveryFulfillment = TestData.fulfillment.localDelivery;
+export const validNationwideShippingFulfillment = TestData.fulfillment.nationwideShipping;
+
+// Mock API route POST function
+export const createMockPOST = (mockResponse: any) => {
+  return async (request: NextRequest) => {
+    try {
+      const body = await request.json();
+      return NextResponse.json(mockResponse, { status: 200 });
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+  };
+};
+
+// Create mock API responses
+export const createMockAPIResponse = (data: any, status = 200) => {
+  return {
+    json: async () => data,
+    status,
+  };
+};
+
+// Enhanced delivery zone validation
+export const createMockDeliveryZone = (zone: 'nearby' | 'distant' | 'extended') => {
+  const zones = {
+    nearby: {
+      zone: 'nearby',
+      name: 'Nearby Delivery',
+      minimumAmount: new Decimal('25.00'),
+      deliveryFee: new Decimal('5.00'),
+      active: true,
+    },
+    distant: {
+      zone: 'distant', 
+      name: 'Extended Delivery',
+      minimumAmount: new Decimal('50.00'),
+      deliveryFee: new Decimal('10.00'),
+      active: true,
+    },
+    extended: {
+      zone: 'extended',
+      name: 'Extended Delivery',
+      minimumAmount: new Decimal('75.00'),
+      deliveryFee: new Decimal('15.00'),
+      active: true,
+    },
+  };
+  
+  return zones[zone];
 }; 

@@ -72,7 +72,7 @@ async function seedTestData() {
         slug: 'empanadas',
         description: 'Authentic Argentine empanadas',
         squareId: 'test-category-empanadas',
-        isActive: true,
+        active: true,
       },
     });
 

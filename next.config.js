@@ -8,7 +8,7 @@ const nextConfig = {
   poweredByHeader: false,
   // Configure TypeScript checking
   typescript: {
-    // Enable strict TypeScript checking for production
+    // Re-enable TypeScript checking for production builds
     ignoreBuildErrors: false,
     // Use main tsconfig.json for builds to ensure proper path resolution
     tsconfigPath: './tsconfig.json',
@@ -16,7 +16,7 @@ const nextConfig = {
   // Enable ESLint checking during builds
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: false, // Re-enable ESLint checking for production builds
   },
   // Add Sanity to transpile modules to avoid issues with conflicting types
   transpilePackages: ['next-sanity', '@sanity/client'],

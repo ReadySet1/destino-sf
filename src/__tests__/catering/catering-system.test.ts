@@ -9,6 +9,8 @@ import {
 } from '@/actions/catering';
 import { db } from '@/lib/db';
 import { DeliveryZone } from '@/types/catering';
+// Import the type guards
+import { isProfileSuccess, isProfileError, isOrderSuccess, isOrderError } from '@/lib/type-guards';
 // Mock Prisma enums since they may not be available in test environment
 const CateringStatus = {
   PENDING: 'PENDING',
@@ -310,7 +312,9 @@ describe('Catering System Integration Tests', () => {
       const result = await saveContactInfo(contactData);
 
       expect(result.success).toBe(true);
-      expect(result.data.profileId).toBe('profile-123');
+      if (isProfileSuccess(result)) {
+        expect(result.data.profileId).toBe('profile-123');
+      }
       
       expect(mockDb.profile.create).toHaveBeenCalledWith({
         data: {
@@ -348,7 +352,9 @@ describe('Catering System Integration Tests', () => {
       const result = await saveContactInfo(contactData);
 
       expect(result.success).toBe(true);
-      expect(result.data.profileId).toBe('existing-profile');
+      if (isProfileSuccess(result)) {
+        expect(result.data.profileId).toBe('existing-profile');
+      }
       
       expect(mockDb.profile.update).toHaveBeenCalledWith({
         where: { id: 'existing-profile' },
@@ -370,7 +376,9 @@ describe('Catering System Integration Tests', () => {
       const result = await saveContactInfo(incompleteData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Name, email, and phone are required');
+      if (isProfileError(result)) {
+        expect(result.error).toContain('Name, email, and phone are required');
+      }
     });
   });
 
@@ -496,8 +504,10 @@ describe('Catering System Integration Tests', () => {
       const result = await createCateringOrderAndProcessPayment(orderData);
 
       expect(result.success).toBe(true);
-      expect(result.data.orderId).toBe('order-123');
-      expect(result.data.checkoutUrl).toBe('https://sandbox.square.link/u/abc123');
+      if (isOrderSuccess(result)) {
+        expect(result.data?.orderId).toBe('order-123');
+        expect(result.data?.checkoutUrl).toBe('https://sandbox.square.link/u/abc123');
+      }
       
       // Verify order creation
       expect(mockDb.cateringOrder.create).toHaveBeenCalledWith({

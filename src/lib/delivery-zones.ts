@@ -19,7 +19,9 @@ export async function getDeliveryZones(): Promise<ZoneMinimumConfig[]> {
 
   try {
     const zones = await prisma.cateringDeliveryZone.findMany({
-      where: { isActive: true },
+      where: {
+        active: true,
+      },
       orderBy: { displayOrder: 'asc' },
     });
 
@@ -31,7 +33,7 @@ export async function getDeliveryZones(): Promise<ZoneMinimumConfig[]> {
       description: zone.description || undefined,
       deliveryFee: Number(zone.deliveryFee),
       estimatedDeliveryTime: zone.estimatedDeliveryTime || undefined,
-      isActive: zone.isActive,
+      active: zone.active,
     }));
 
     cacheTimestamp = now;
@@ -57,7 +59,7 @@ export async function getZoneConfig(zone: DeliveryZone): Promise<ZoneMinimumConf
  */
 export async function getActiveDeliveryZones(): Promise<ZoneMinimumConfig[]> {
   const zones = await getDeliveryZones();
-  return zones.filter(zone => zone.isActive);
+  return zones.filter(zone => zone.active);
 }
 
 /**
@@ -66,7 +68,9 @@ export async function getActiveDeliveryZones(): Promise<ZoneMinimumConfig[]> {
 export async function determineDeliveryZone(postalCode: string, city?: string): Promise<DeliveryZone | null> {
   try {
     const zones = await prisma.cateringDeliveryZone.findMany({
-      where: { isActive: true },
+      where: {
+        active: true,
+      },
     });
 
     // Find zone that matches postal code
@@ -192,7 +196,7 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
       description: 'San Francisco and surrounding areas',
       deliveryFee: 50.00,
       estimatedDeliveryTime: '1-2 hours',
-      isActive: true
+      active: true
     },
     {
       zone: DeliveryZone.SOUTH_BAY,
@@ -201,7 +205,7 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
       description: 'San José, Santa Clara, Sunnyvale and surrounding areas',
       deliveryFee: 75.00,
       estimatedDeliveryTime: '2-3 hours',
-      isActive: true
+      active: true
     },
     {
       zone: DeliveryZone.LOWER_PENINSULA,
@@ -210,7 +214,7 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
       description: 'Redwood City, Palo Alto, Mountain View and surrounding areas',
       deliveryFee: 100.00,
       estimatedDeliveryTime: '2-3 hours',
-      isActive: true
+      active: true
     },
     {
       zone: DeliveryZone.PENINSULA,
@@ -219,7 +223,7 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
       description: 'San Ramón, Walnut Creek and far Peninsula areas',
       deliveryFee: 150.00,
       estimatedDeliveryTime: '3-4 hours',
-      isActive: true
+      active: true
     }
   ];
 } 

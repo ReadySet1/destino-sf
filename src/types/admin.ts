@@ -124,7 +124,7 @@ export function generateDefaultZoneConfig(zone: DeliveryZone): AdminZoneConfig {
     deliveryFee: 50.00, // Default delivery fee
     estimatedDeliveryTime: '2-3 hours',
     description: `Delivery to ${zone.replace('_', ' ').toLowerCase()}`,
-    isActive: true,
+    active: true,
     createdAt: new Date(),
     updatedAt: new Date()
   };

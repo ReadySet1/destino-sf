@@ -3,6 +3,7 @@ import { validateOrderMinimumsServer } from '@/app/actions/orders';
 import { getDeliveryZone, calculateDeliveryFee, DeliveryZone } from '@/lib/deliveryUtils';
 import { calculateShippingWeight } from '@/lib/shippingUtils';
 import { prisma } from '@/lib/db';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Import our new test utilities
 import { 
@@ -436,47 +437,31 @@ describe('/api/orders/validate', () => {
       });
 
       expect(products).toHaveLength(2);
-      expect(products.every(product => product.active)).toBe(true);
+      expect(products.every(product => product.isActive)).toBe(true);
       
       // Check inventory availability
       const hasInventory = products.every(product => {
         const orderItem = orderItems.find(item => item.id === product.id);
-        return product.inventory >= orderItem!.quantity;
+        return (product.inventory || 0) >= orderItem!.quantity;
       });
 
       expect(hasInventory).toBe(true);
     });
 
     test('should reject orders with inactive products', async () => {
-      const orderItems = [
-        {
-          id: 'prod-inactive',
-          name: 'Discontinued Product',
-          quantity: 1,
-          price: 25.00,
-        },
+      // Mock products: one active, one inactive
+      const products = [
+        { id: '1', name: 'Active Product', price: new Decimal(10), active: true, inventory: 10 },
+        { id: '2', name: 'Inactive Product', price: new Decimal(15), active: false, inventory: 5 },
       ];
 
-      mockPrisma.product.findMany.mockResolvedValue([
-        {
-          id: 'prod-inactive',
-          name: 'Discontinued Product',
-          isActive: false,
-          inventory: 10,
-          price: 25.00,
-        },
-      ]);
+      const orderItems = [
+        { id: '1', quantity: 2 },
+        { id: '2', quantity: 1 },
+      ];
 
-      const products = await prisma.product.findMany({
-        where: {
-          id: {
-            in: orderItems.map(item => item.id),
-          },
-        },
-      });
-
-      const allProductsActive = products.every(product => product.isActive);
-
+      // Check if all products are active
+      const allProductsActive = products.every(product => product.active);
       expect(allProductsActive).toBe(false);
     });
 
@@ -510,7 +495,7 @@ describe('/api/orders/validate', () => {
 
       const hasInventory = products.every(product => {
         const orderItem = orderItems.find(item => item.id === product.id);
-        return product.inventory >= orderItem!.quantity;
+        return (product.inventory || 0) >= orderItem!.quantity;
       });
 
       expect(hasInventory).toBe(false);
@@ -571,37 +556,22 @@ describe('/api/orders/validate', () => {
       expect(allProductsFound).toBe(false);
     });
 
-    test('should validate price consistency', async () => {
-      const orderItems = [
-        {
-          id: 'prod-1',
-          name: 'Dulce de Leche Alfajores',
-          quantity: 2,
-          price: 25.00,
-        },
+    test('should validate product price consistency', async () => {
+      // Mock products and order items
+      const products = [
+        { id: '1', name: 'Product 1', price: new Decimal(10), active: true },
+        { id: '2', name: 'Product 2', price: new Decimal(15), active: true },
       ];
 
-      mockPrisma.product.findMany.mockResolvedValue([
-        {
-          id: 'prod-1',
-          name: 'Dulce de Leche Alfajores',
-          isActive: true,
-          inventory: 50,
-          price: 25.00, // Matches order item price
-        },
-      ]);
+      const orderItems = [
+        { id: '1', quantity: 2, price: new Decimal(10) },
+        { id: '2', quantity: 1, price: new Decimal(15) },
+      ];
 
-      const products = await prisma.product.findMany({
-        where: {
-          id: {
-            in: orderItems.map(item => item.id),
-          },
-        },
-      });
-
+      // Check price consistency
       const pricesMatch = products.every(product => {
         const orderItem = orderItems.find(item => item.id === product.id);
-        return product.price === orderItem!.price;
+        return product.price.equals(orderItem!.price);
       });
 
       expect(pricesMatch).toBe(true);

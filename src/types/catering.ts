@@ -42,7 +42,7 @@ export interface ZoneMinimumConfig {
   description?: string;
   deliveryFee?: number;
   estimatedDeliveryTime?: string;
-  isActive: boolean;
+  active: boolean;
 }
 
 // Default Zone Minimums Configuration
@@ -54,7 +54,7 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
     description: 'San Francisco and surrounding areas',
     deliveryFee: 50.00,
     estimatedDeliveryTime: '1-2 hours',
-    isActive: true
+    active: true
   },
   [DeliveryZone.SOUTH_BAY]: {
     zone: DeliveryZone.SOUTH_BAY,
@@ -63,7 +63,7 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
     description: 'San José, Santa Clara, Sunnyvale and surrounding areas',
     deliveryFee: 75.00,
     estimatedDeliveryTime: '2-3 hours',
-    isActive: true
+    active: true
   },
   [DeliveryZone.LOWER_PENINSULA]: {
     zone: DeliveryZone.LOWER_PENINSULA,
@@ -72,7 +72,7 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
     description: 'Redwood City, Palo Alto, Mountain View and surrounding areas',
     deliveryFee: 100.00,
     estimatedDeliveryTime: '2-3 hours',
-    isActive: true
+    active: true
   },
   [DeliveryZone.PENINSULA]: {
     zone: DeliveryZone.PENINSULA,
@@ -81,7 +81,7 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
     description: 'San Ramón, Walnut Creek and far Peninsula areas',
     deliveryFee: 150.00,
     estimatedDeliveryTime: '3-4 hours',
-    isActive: true
+    active: true
   }
 };
 
@@ -452,7 +452,7 @@ export function getZoneConfig(zone: DeliveryZone): ZoneMinimumConfig {
  * Get all active delivery zones
  */
 export function getActiveDeliveryZones(): ZoneMinimumConfig[] {
-  return Object.values(DELIVERY_ZONE_MINIMUMS).filter(zone => zone.isActive);
+  return Object.values(DELIVERY_ZONE_MINIMUMS).filter(zone => zone.active);
 }
 
 /**
