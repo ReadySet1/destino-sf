@@ -15,20 +15,13 @@ export const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   title,
   description,
   type = 'default',
-  children,
 }) => {
   const getBgColor = () => {
     if (className.includes('bg-[')) {
       return className;
     }
 
-    switch (type) {
-      case 'products':
-      case 'menu':
-        return 'bg-[hsl(var(--header-orange))]';
-      default:
-        return 'bg-[hsl(var(--accent))]';
-    }
+    return 'bg-destino-orange';
   };
 
   return (
