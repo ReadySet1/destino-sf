@@ -4,8 +4,6 @@ import CategoryHeader from '@/components/Products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Product, Variant } from '@/types/product';
 import { redirect, notFound } from 'next/navigation';
-import { Suspense } from 'react';
-import FoodLoader from '@/components/ui/FoodLoader';
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 
@@ -236,18 +234,15 @@ export default async function ProductPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--header-orange))]">
+    <div className="min-h-screen bg-destino-orange">
+      <CategoryHeader 
+        title="Details"
+        type="default"
+        className="bg-destino-charcoal"
+      />
       <div className="py-8 mb-0">
         <div className="max-w-4xl mx-auto px-4">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-20">
-                <FoodLoader text="Preparing product details..." size="medium" />
-              </div>
-            }
-          >
-            <ProductDetails product={validProduct} />
-          </Suspense>
+          <ProductDetails product={validProduct} />
         </div>
       </div>
     </div>

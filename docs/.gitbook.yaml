@@ -1,0 +1,35 @@
+root: ./
+
+structure:
+  readme: README.md
+  summary: SUMMARY.md
+
+redirects:
+  # Legacy documentation redirects
+  - from: /old-docs/catering
+    to: /features/catering/README.md
+  - from: /old-docs/shipping
+    to: /features/shipping/README.md
+  - from: /old-docs/testing
+    to: /testing/testing-strategy.md
+
+# GitBook integrations
+integrations:
+  googleAnalytics:
+    trackingId: # Add your GA tracking ID
+
+# Custom styling
+theme:
+  palette:
+    primary: "#2563eb"
+    accent: "#f59e0b"
+
+# Search configuration
+search:
+  enabled: true
+  # Add custom search configuration here
+
+# API documentation
+openapi:
+  # Will be configured when OpenAPI spec is ready
+  enabled: false

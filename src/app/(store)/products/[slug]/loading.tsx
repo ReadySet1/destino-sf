@@ -5,19 +5,19 @@ import CategoryHeader from "@/components/Products/CategoryHeader";
 
 export default function ProductLoading() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-destino-orange">
       <CategoryHeader 
         title="Details"
-        type="products"
-      >
-        <div className="py-8">
-          <div className="max-w-4xl mx-auto flex flex-col items-center justify-center">
-            <div className="my-20">
-              <FoodLoader text="Gathering fresh ingredients..." size="large"/>
-            </div>
+        type="default"
+        className="bg-destino-charcoal"
+      />
+      <div className="py-8 mb-0">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex items-center justify-center py-20">
+            <FoodLoader text="Preparing product details..." size="large"/>
           </div>
         </div>
-      </CategoryHeader>
+      </div>
     </div>
   );
 } 

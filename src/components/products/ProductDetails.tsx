@@ -320,17 +320,28 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const { addItem } = useCartStore();
   const { showAlert } = useCartAlertStore();
 
-  // Ensure product exists before rendering the rest
-  if (!product) {
-    return <div>Loading product...</div>;
+  // Ensure product exists and has required fields before rendering
+  if (!product || !product.id || !product.name) {
+    return (
+      <div className="min-h-screen bg-[hsl(var(--header-orange))]">
+        <div className="py-8 mb-0">
+          <div className="max-w-4xl mx-auto px-4 text-center text-white">
+            <div className="py-20">
+              <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+                             <p className="text-white/80">The product you&apos;re looking for doesn&apos;t exist or has been removed.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Handle both Sanity and DB product structures
-  const displayPrice = selectedVariant?.price || product.price;
+  const displayPrice = selectedVariant?.price || product.price || 0;
   const mainImage = product.images?.[0] || "/images/menu/empanadas.png";
   const productId = product.id;
   const productName = product.name;
-  const isActive = product.active;
+  const isActive = product.active ?? true;
   const stock: number = 999; // Explicitly type as number
 
   const handleAddToCart = () => {

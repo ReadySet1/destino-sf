@@ -25,16 +25,81 @@ jest.mock('@/actions/catering', () => ({
   updateCateringPackage: jest.fn(),
 }));
 
-// Mock UI components that might cause issues in tests
-jest.mock('@/components/ui/form', () => ({
-  Form: ({ children, ...props }: any) => <form {...props}>{children}</form>,
-  FormField: ({ children, render }: any) => render({ field: {} }),
-  FormItem: ({ children }: any) => <div className="form-item">{children}</div>,
-  FormLabel: ({ children }: any) => <label>{children}</label>,
-  FormControl: ({ children }: any) => <div className="form-control">{children}</div>,
-  FormDescription: ({ children }: any) => <div className="form-description">{children}</div>,
-  FormMessage: ({ children }: any) => <div className="form-message">{children}</div>,
+jest.mock('react-hook-form', () => ({
+  useForm: () => ({
+    control: {},
+    handleSubmit: jest.fn((onSubmit) => onSubmit),
+    formState: { errors: {}, isSubmitting: false },
+    setValue: jest.fn(),
+    watch: jest.fn(),
+    reset: jest.fn(),
+  }),
 }));
+
+// Mock UI components with proper accessibility features
+jest.mock('@/components/ui/form', () => {
+  const React = require('react');
+  
+  const FormItemContext = React.createContext({ id: 'test-id' });
+  
+  return {
+    Form: ({ children, ...props }: any) => <form {...props} role="form">{children}</form>,
+    FormField: ({ children, render, name, defaultValue }: any) => {
+      const field = {
+        name,
+        value: defaultValue || '',
+        onChange: jest.fn(),
+        onBlur: jest.fn(),
+        ref: React.createRef(),
+      };
+      return render({ field });
+    },
+    FormItem: ({ children }: any) => {
+      const id = React.useId();
+      return (
+        <FormItemContext.Provider value={{ id }}>
+          <div className="form-item">{children}</div>
+        </FormItemContext.Provider>
+      );
+    },
+    FormLabel: ({ children }: any) => {
+      const { id } = React.useContext(FormItemContext);
+      return <label htmlFor={`${id}-form-item`}>{children}</label>;
+    },
+    FormControl: ({ children }: any) => {
+      const { id } = React.useContext(FormItemContext);
+      
+      // Use a ref to track if we've assigned an ID yet
+      const hasAssignedId = React.useRef(false);
+      
+      const assignIdToElement = (element: any): any => {
+        if (React.isValidElement(element)) {
+          // Check if it's our mocked Input or Textarea component and we haven't assigned ID yet
+          if (!hasAssignedId.current && (element.props?.['data-testid'] === 'input' || element.props?.['data-testid'] === 'textarea')) {
+            hasAssignedId.current = true;
+            return React.cloneElement(element, { id: `${id}-form-item` });
+          }
+          // If it has children, recursively process them
+          if (element.props?.children) {
+            const processedChildren = React.Children.map(element.props.children, (child: any) => {
+              return assignIdToElement(child);
+            });
+            return React.cloneElement(element, { children: processedChildren });
+          }
+        }
+        return element;
+      };
+      
+      return (
+        <div className="form-control">
+          {assignIdToElement(children)}
+        </div>
+      );
+    },
+    FormDescription: ({ children }: any) => <div className="form-description">{children}</div>,
+    FormMessage: ({ children }: any) => <div className="form-message">{children}</div>,
+  };
+});
 
 jest.mock('@/components/ui/input', () => ({
   Input: React.forwardRef<HTMLInputElement, any>(function Input({ ...props }, ref) {
@@ -93,11 +158,39 @@ jest.mock('@/components/ui/alert', () => ({
   AlertDescription: ({ children }: any) => <div className="alert-description">{children}</div>,
 }));
 
+jest.mock('@/components/ui/radio-group', () => ({
+  RadioGroup: ({ children, onValueChange, defaultValue, ...props }: any) => (
+    <div role="radiogroup" {...props}>
+      {children}
+    </div>
+  ),
+  RadioGroupItem: ({ value, ...props }: any) => (
+    <button
+      type="button"
+      role="radio"
+      aria-checked="false"
+      data-state="unchecked"
+      value={value}
+      {...props}
+    />
+  ),
+}));
+
+jest.mock('@/components/ui/badge', () => ({
+  Badge: ({ children, variant, ...props }: any) => (
+    <span data-variant={variant} {...props}>
+      {children}
+    </span>
+  ),
+}));
+
 // Mock icons
 jest.mock('lucide-react', () => ({
   AlertTriangle: () => <div data-testid="alert-triangle" />,
   Trash2: () => <div data-testid="trash-icon" />,
   Plus: () => <div data-testid="plus-icon" />,
+  X: () => <div data-testid="x-icon" />,
+  Eye: () => <div data-testid="eye-icon" />,
 }));
 
 describe('ProductForm (CateringPackageForm)', () => {
@@ -127,8 +220,9 @@ describe('ProductForm (CateringPackageForm)', () => {
       // Check required fields
       expect(screen.getByLabelText(/package name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/price/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/serves/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/price per person/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/minimum people/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/image url/i)).toBeInTheDocument();
 
       // Check form actions
       expect(screen.getByRole('button', { name: /create package/i })).toBeInTheDocument();
@@ -295,8 +389,8 @@ describe('ProductForm (CateringPackageForm)', () => {
       // Fill form fields
       await user.type(screen.getByLabelText(/package name/i), 'Test Package');
       await user.type(screen.getByLabelText(/description/i), 'Test description');
-      await user.type(screen.getByLabelText(/price/i), '100');
-      await user.type(screen.getByLabelText(/serves/i), '8-10 people');
+      await user.type(screen.getByLabelText(/price per person/i), '100');
+      await user.type(screen.getByLabelText(/minimum people/i), '8');
 
       // Submit form
       await user.click(screen.getByRole('button', { name: /create package/i }));
@@ -332,7 +426,7 @@ describe('ProductForm (CateringPackageForm)', () => {
       render(<CateringPackageForm package={mockPackage} isEditing />);
 
       // Update name
-      const nameInput = screen.getByDisplayValue('Existing Package');
+      const nameInput = screen.getByLabelText(/package name/i);
       await user.clear(nameInput);
       await user.type(nameInput, 'Updated Package');
 
@@ -365,7 +459,7 @@ describe('ProductForm (CateringPackageForm)', () => {
 
       // Fill minimal required fields
       await user.type(screen.getByLabelText(/package name/i), 'Test Package');
-      await user.type(screen.getByLabelText(/price/i), '100');
+      await user.type(screen.getByLabelText(/price per person/i), '100');
 
       // Submit form
       await user.click(screen.getByRole('button', { name: /create package/i }));
@@ -388,7 +482,7 @@ describe('ProductForm (CateringPackageForm)', () => {
 
       // Fill minimal fields and submit
       await user.type(screen.getByLabelText(/package name/i), 'Test Package');
-      await user.type(screen.getByLabelText(/price/i), '100');
+      await user.type(screen.getByLabelText(/price per person/i), '100');
       await user.click(screen.getByRole('button', { name: /create package/i }));
 
       await waitFor(() => {
@@ -432,8 +526,9 @@ describe('ProductForm (CateringPackageForm)', () => {
 
       expect(screen.getByLabelText(/package name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/price/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/serves/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/price per person/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/minimum people/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/image url/i)).toBeInTheDocument();
     });
 
     it('should have proper form structure', () => {

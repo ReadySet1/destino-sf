@@ -62,7 +62,7 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
     console.log('Attempting to update profile with data:', data);
 
     try {
-      const { error } = await supabase.from('Profile')
+      const { error } = await supabase.from('profiles')
         .update({
           name: data.name || null,
           phone: data.phone || null,
@@ -72,10 +72,16 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
 
       if (error) {
         console.error('Supabase error details:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        
         if (error.code === '42501') {
           throw new Error('Permission denied. You might not be allowed to update this profile.');
         }
-        throw new Error(`Failed to update profile: ${error.message}`);
+        throw new Error(`Failed to update profile: ${error.message || 'Unknown error'}`);
       }
 
       toast.success('Profile updated successfully');

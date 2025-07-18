@@ -24,6 +24,7 @@ const config = {
         script: ['Great Vibes', 'cursive'],
       },
       colors: {
+        // Existing shadcn/ui colors
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -56,6 +57,17 @@ const config = {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        
+        // Destino brand colors
+        destino: {
+          yellow: '#fdc32d',
+          gold: '#fdc32d', // alias for yellow
+          charcoal: '#2d3538',
+          dark: '#2d3538', // alias for charcoal
+          cream: '#fcfcf5',
+          light: '#fcfcf5', // alias for cream
+          orange: '#f77c22',
         },
       },
       borderRadius: {
