@@ -58,3 +58,107 @@ time="2025-07-17T09:18:42-07:00" level=error msg="thresholds on metrics 'http_re
 [2025-07-17 09:18:10] ⚠️ Performance test had issues
 [2025-07-17 09:48:42] Health: 200 (2.029187s) | Detailed: 200 (1.566452s) | Homepage: 200 (0.259682s)
 🚨 ALERT: Health check issue - Status: 200, Time: 2.029187s
+[2025-07-17 10:48:46] Health: 200 (1.921031s) | Detailed: 200 (1.617378s) | Homepage: 200 (0.331376s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.921031s
+[2025-07-17 11:48:50] Health: 200 (2.344919s) | Detailed: 200 (1.565602s) | Homepage: 200 (0.260972s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.344919s
+[2025-07-17 12:48:54] Health: 200 (1.913194s) | Detailed: 200 (1.514983s) | Homepage: 200 (0.269392s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.913194s
+[2025-07-17 13:48:58] Health: 200 (2.023519s) | Detailed: 200 (1.604916s) | Homepage: 200 (0.290738s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.023519s
+[2025-07-17 14:49:02] Health: 200 (1.959418s) | Detailed: 200 (1.711187s) | Homepage: 200 (0.318027s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.959418s
+[2025-07-17 14:49:07] Checking business metrics...
+[2025-07-17 14:49:07] Products: 500 (2.633886s) | Cart: 200 (0.309254s) | Catering: 200 (1.886209s)
+[2025-07-17 15:49:12] Health: 200 (1.975436s) | Detailed: 200 (1.679606s) | Homepage: 200 (0.262171s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.975436s
+[2025-07-17 16:49:16] Health: 200 (1.944992s) | Detailed: 200 (1.707783s) | Homepage: 200 (0.276732s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.944992s
+[2025-07-17 17:49:20] Health: 200 (1.954591s) | Detailed: 200 (1.753572s) | Homepage: 200 (0.291138s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.954591s
+[2025-07-17 18:49:24] Health: 200 (1.898411s) | Detailed: 200 (1.749576s) | Homepage: 200 (0.369540s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.898411s
+[2025-07-17 19:49:28] Health: 200 (2.157463s) | Detailed: 200 (1.801286s) | Homepage: 200 (0.287756s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.157463s
+[2025-07-17 20:49:33] Health: 200 (1.977627s) | Detailed: 200 (1.643325s) | Homepage: 200 (0.281475s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.977627s
+[2025-07-17 20:49:37] Checking business metrics...
+[2025-07-17 20:49:37] Products: 500 (2.436075s) | Cart: 200 (0.367614s) | Catering: 200 (1.928537s)
+[2025-07-17 20:49:42] Running performance test...
+time="2025-07-17T20:49:42-07:00" level=info msg="Starting load test against https://destino-467b47ljb-ready-sets-projects.vercel.app" source=console
+time="2025-07-17T20:50:14-07:00" level=info msg="Load test completed" source=console
+
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<500' p(95)=727.65ms
+
+    http_req_failed
+    ✓ 'rate<0.1' rate=0.00%
+
+    http_reqs
+    ✗ 'rate>10' rate=2.554191/s
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......................: 288    8.970818/s
+    checks_succeeded...................: 71.52% 206 out of 288
+    checks_failed......................: 28.47% 82 out of 288
+
+    ✓ health check status is 200
+    ✗ health check response time < 100ms
+      ↳  0% — ✓ 0 / ✗ 61
+    ✓ health check returns status
+    ✓ detailed health check status is 200
+    ✗ detailed health check response time < 500ms
+      ↳  0% — ✓ 0 / ✗ 21
+    ✓ detailed health check returns services
+    ✓ detailed health check shows database
+    ✓ detailed health check shows cache
+
+    HTTP
+    http_req_duration.......................................................: avg=324.72ms min=139.68ms med=163.23ms max=1.96s p(90)=606.67ms p(95)=727.65ms
+      { expected_response:true }............................................: avg=324.72ms min=139.68ms med=163.23ms max=1.96s p(90)=606.67ms p(95)=727.65ms
+    http_req_failed.........................................................: 0.00%  0 out of 82
+    http_reqs...............................................................: 82     2.554191/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=2.53s    min=1.22s    med=2.42s    max=5.45s p(90)=3.35s    p(95)=3.55s   
+    iterations..............................................................: 61     1.900069/s
+    vus.....................................................................: 1      min=1       max=5
+    vus_max.................................................................: 5      min=5       max=5
+
+    NETWORK
+    data_received...........................................................: 82 kB  2.6 kB/s
+    data_sent...............................................................: 6.0 kB 187 B/s
+
+
+
+time="2025-07-17T20:50:14-07:00" level=error msg="thresholds on metrics 'http_req_duration, http_reqs' have been crossed"
+[2025-07-17 20:49:42] ⚠️ Performance test had issues
+[2025-07-17 21:50:14] Health: 200 (1.901992s) | Detailed: 200 (1.804539s) | Homepage: 200 (1.262739s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.901992s
+[2025-07-17 22:50:19] Health: 200 (1.970396s) | Detailed: 200 (1.709974s) | Homepage: 200 (0.327814s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.970396s
+[2025-07-17 23:50:24] Health: 200 (2.056928s) | Detailed: 200 (1.742685s) | Homepage: 200 (0.283093s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.056928s
+[2025-07-18 00:50:28] Health: 200 (2.018817s) | Detailed: 200 (1.726026s) | Homepage: 200 (0.287132s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.018817s
+[2025-07-18 01:50:32] Health: 200 (2.004337s) | Detailed: 200 (1.580974s) | Homepage: 200 (0.299239s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.004337s
+[2025-07-18 02:50:36] Health: 200 (1.990456s) | Detailed: 200 (1.747841s) | Homepage: 200 (0.284444s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.990456s
+[2025-07-18 02:50:40] Checking business metrics...
+[2025-07-18 02:50:40] Products: 500 (2.512974s) | Cart: 200 (0.249904s) | Catering: 200 (2.043430s)
+[2025-07-18 03:50:45] Health: 200 (2.004399s) | Detailed: 200 (1.803668s) | Homepage: 200 (0.314511s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.004399s
+[2025-07-18 04:50:50] Health: 200 (2.102680s) | Detailed: 200 (1.803637s) | Homepage: 200 (0.276101s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.102680s
+[2025-07-18 05:50:54] Health: 200 (2.144310s) | Detailed: 200 (1.805187s) | Homepage: 200 (0.303610s)
+🚨 ALERT: Health check issue - Status: 200, Time: 2.144310s
+[2025-07-18 06:50:58] Health: 200 (1.814460s) | Detailed: 200 (1.976874s) | Homepage: 200 (0.283705s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.814460s
+[2025-07-18 07:51:03] Health: 200 (1.918751s) | Detailed: 200 (1.750895s) | Homepage: 200 (0.337802s)
+🚨 ALERT: Health check issue - Status: 200, Time: 1.918751s
