@@ -23,6 +23,7 @@ model Profile {
   cateringOrders           CateringOrder[]
   emailAlerts              EmailAlert[]
   customerEmailPreferences CustomerEmailPreferences[]
+  userSyncLogs             UserSyncLog[]
   
   @@map("profiles")
 }
@@ -649,4 +650,37 @@ enum AlertStatus {
   SENT
   FAILED
   RETRYING
+}
+
+enum SyncStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// User-triggered sync logging
+model UserSyncLog {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @db.Uuid
+  syncId      String     @unique
+  status      SyncStatus @default(PENDING)
+  startedBy   String     // User's name/email
+  startTime   DateTime   @default(now())
+  endTime     DateTime?
+  progress    Int        @default(0) // 0-100 percentage
+  message     String?    // User-friendly message
+  currentStep String?    // Current operation
+  results     Json?      // Summary for user
+  errors      Json?      // User-friendly error messages
+  options     Json?      // User sync options
+  
+  // Relations
+  user        Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startTime])
+  @@map("user_sync_logs")
 }
