@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Activity, Clock, CheckCircle2, XCircle, AlertTriangle, Square } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -70,11 +70,11 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
   };
 
   // Check if sync is stale (too old to be meaningful)
-  const isSyncStale = (startTime: string): boolean => {
+  const isSyncStale = useCallback((startTime: string): boolean => {
     const now = new Date().getTime();
     const syncStartTime = new Date(startTime).getTime();
     return (now - syncStartTime) > STALE_SYNC_THRESHOLD;
-  };
+  }, [STALE_SYNC_THRESHOLD]);
 
   // Poll for status updates
   useEffect(() => {
@@ -202,7 +202,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
       mountedRef.current = false;
       cleanup();
     };
-  }, [syncId, onSyncComplete, toast]);
+  }, [syncId, onSyncComplete, toast, isSyncStale]);
 
   const handleCancelSync = async () => {
     if (!syncId) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Clock, CheckCircle2, XCircle, Square, AlertTriangle, Filter } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +56,7 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [limit, setLimit] = useState<number>(10);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -84,11 +84,11 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, statusFilter]);
 
   useEffect(() => {
     fetchHistory();
-  }, [statusFilter, limit, refreshTrigger]);
+  }, [statusFilter, limit, refreshTrigger, fetchHistory]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
