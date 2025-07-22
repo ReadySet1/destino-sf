@@ -52,3 +52,14 @@ playwright-report/
 
 # archive and backups
 archive/
+backups/
+
+# logs
+*.log
+production-monitoring-*.log
+
+# backup files
+*.backup
+*.bak
+*.dump
+*.dump.metadata.json
