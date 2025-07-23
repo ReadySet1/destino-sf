@@ -467,7 +467,7 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
   try {
     order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
-      select: { id: true, status: true, paymentStatus: true },
+      select: { id: true, status: true, paymentStatus: true, customerName: true, email: true, phone: true },
     });
   } catch (dbError) {
     console.error(`❌ Error finding order with squareOrderId ${squareOrderId}:`, dbError);
@@ -475,34 +475,9 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
   }
 
   if (!order) {
-    console.warn(`⚠️ Order with squareOrderId ${squareOrderId} not found in DB for payment ${data.id}. Creating order stub.`);
-    
-    // Create order stub if webhook arrives before order webhook
-    try {
-      const newOrder = await prisma.order.create({
-        data: {
-          squareOrderId: squareOrderId,
-          status: 'PROCESSING',
-          total: paymentData?.amount_money?.amount ? paymentData.amount_money.amount / 100 : 0,
-          customerName: 'Payment Processing',
-          email: 'processing@example.com',
-          phone: 'processing',
-          pickupTime: new Date(),
-          paymentStatus: 'PAID',
-          rawData: {
-            createdFromPayment: true,
-            paymentEventId: eventId,
-            squareOrderId: squareOrderId,
-            note: 'Order created from payment webhook - order webhook may arrive later'
-          } as unknown as Prisma.InputJsonValue
-        }
-      });
-      order = { id: newOrder.id };
-      console.log(`🆕 Created order stub ${newOrder.id} from payment ${data.id}`);
-    } catch (createError) {
-      console.error(`❌ Failed to create order stub for payment ${data.id}:`, createError);
-      return;
-    }
+    console.warn(`⚠️ Order with squareOrderId ${squareOrderId} not found for payment ${data.id}. Skipping payment processing until order.created webhook arrives.`);
+    // Don't create stub orders - wait for proper order data
+    return;
   }
 
   const internalOrderId = order.id;
@@ -554,25 +529,66 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
     throw upsertError;
   }
 
-  // Update order status only if not already paid/processed
+  // Update order status and customer information
   try {
     const currentOrder = await prisma.order.findUnique({
       where: { id: internalOrderId },
-      select: { paymentStatus: true, status: true }
+      select: { paymentStatus: true, status: true, customerName: true, email: true, phone: true }
     });
 
-    if (currentOrder && currentOrder.paymentStatus !== 'PAID') {
+    if (!currentOrder) {
+      console.error(`❌ Order ${internalOrderId} not found when updating status`);
+      return;
+    }
+
+    // Prepare update data
+    const updateData: Prisma.OrderUpdateInput = {
+      updatedAt: new Date()
+    };
+
+    // Update payment status if not already paid
+    if (currentOrder.paymentStatus !== 'PAID') {
+      updateData.paymentStatus = 'PAID';
+      updateData.status = 'PROCESSING';
+    }
+
+    // Update customer information if order has placeholder data
+    const hasPlaceholderData = 
+      currentOrder.customerName === 'Pending' || 
+      currentOrder.email === 'pending@example.com' || 
+      currentOrder.phone === 'pending';
+
+    if (hasPlaceholderData) {
+      // Extract customer information from payment data
+      const customerInfo = paymentData?.buyer_email_address || paymentData?.receipt_email;
+      const customerName = paymentData?.buyer?.email_address || paymentData?.receipt_email;
+      
+      if (customerInfo && currentOrder.email === 'pending@example.com') {
+        updateData.email = customerInfo;
+        console.log(`📧 Updated order ${internalOrderId} email from placeholder to: ${customerInfo}`);
+      }
+      
+      if (customerName && currentOrder.customerName === 'Pending') {
+        updateData.customerName = customerName;
+        console.log(`👤 Updated order ${internalOrderId} customer name from placeholder to: ${customerName}`);
+      }
+      
+      // Update phone if available (Square payments don't always include phone)
+      if (paymentData?.buyer?.phone_number && currentOrder.phone === 'pending') {
+        updateData.phone = paymentData.buyer.phone_number;
+        console.log(`📞 Updated order ${internalOrderId} phone from placeholder to: ${paymentData.buyer.phone_number}`);
+      }
+    }
+
+    // Only update if there are changes
+    if (Object.keys(updateData).length > 1) { // More than just updatedAt
       await prisma.order.update({
         where: { id: internalOrderId },
-        data: { 
-          status: 'PROCESSING',
-          paymentStatus: 'PAID',
-          updatedAt: new Date()
-        }
+        data: updateData
       });
-      console.log(`✅ Successfully updated order ${internalOrderId} status to PROCESSING/PAID`);
+      console.log(`✅ Successfully updated order ${internalOrderId} with payment and customer data`);
     } else {
-      console.log(`ℹ️ Order ${internalOrderId} already marked as paid, skipping status update`);
+      console.log(`ℹ️ Order ${internalOrderId} already up to date, no changes needed`);
     }
   } catch (updateError) {
     console.error(`❌ Error updating order status for internal order ${internalOrderId}:`, updateError);

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock, UtensilsCrossed, Truck, Star, RefreshCw } from 'lucide-react'; // Added UtensilsCrossed, Truck, Star, and RefreshCw icons
 import { MobileMenu } from './components/MobileMenu'; // Ensure path is correct
+import { signOutAction } from '@/app/actions/auth';
 
 // Authentication and authorization checks (Supabase, Prisma) MUST be performed
 // before rendering this component, likely in a parent Server Component,
@@ -158,9 +159,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-4 py-4 mt-auto border-t">
           {' '}
           {/* Added border-t */}
-          {/* Ensure the sign-out action works correctly in Client Components */}
-          {/* Might need adjustment depending on how Supabase auth is handled client-side */}
-          <form action="/auth/sign-out" method="post">
+          {/* Use the existing signOutAction server action */}
+          <form action={signOutAction}>
             <button
               type="submit"
               className="w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"

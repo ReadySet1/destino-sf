@@ -40,6 +40,7 @@ interface OrderStatusUpdateEmailProps {
     deliveryTime?: string | null;
     trackingNumber?: string | null;
     items: OrderItem[];
+    notes?: string;
   };
   previousStatus: string;
   shopName: string;
@@ -350,6 +351,7 @@ export const OrderStatusUpdateEmail = ({
             deliveryDate={order.deliveryDate}
             deliveryTime={order.deliveryTime}
             trackingNumber={order.trackingNumber}
+            notes={order.notes}
             showPricing={false}
           />
 

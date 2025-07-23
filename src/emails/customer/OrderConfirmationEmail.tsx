@@ -226,51 +226,52 @@ export const OrderConfirmationEmail = ({
             pickupTime={order.pickupTime}
             deliveryDate={order.deliveryDate}
             deliveryTime={order.deliveryTime}
+            notes={order.notes}
           />
 
           {/* Fulfillment Information */}
           <Section style={infoSection}>
             <Text style={infoTitle}>
-              📍 {formatFulfillmentType(order.fulfillmentType || 'pickup')} Information
+              📋 Order Details
             </Text>
             
             {order.fulfillmentType === 'pickup' && (
               <>
                 <Text style={infoText}>
-                  <strong>Estimated preparation time:</strong> {estimatedPreparationTime}
+                  <strong>Fulfillment:</strong> Pickup
                 </Text>
                 {order.pickupTime && (
                   <Text style={infoText}>
-                    <strong>Requested pickup time:</strong> {formatDateTime(order.pickupTime)}
+                    <strong>Pickup Time:</strong> {formatDateTime(order.pickupTime)}
                   </Text>
                 )}
                 <Text style={infoText}>
-                  <strong>Pickup location:</strong> 123 Main St, San Francisco, CA 94102
-                </Text>
-                <Text style={infoText}>
-                  We&apos;ll send you a notification when your order is ready for pickup!
+                  <strong>Estimated preparation time:</strong> {estimatedPreparationTime}
                 </Text>
               </>
             )}
 
             {order.fulfillmentType === 'local_delivery' && (
               <>
-                {order.deliveryDate && (
+                <Text style={infoText}>
+                  <strong>Fulfillment:</strong> Local Delivery
+                </Text>
+                {order.deliveryDate && order.deliveryTime && (
                   <Text style={infoText}>
-                    <strong>Scheduled delivery:</strong> {formatDateTime(order.deliveryDate, order.deliveryTime)}
+                    <strong>Delivery:</strong> {formatDateTime(order.deliveryDate, order.deliveryTime)}
                   </Text>
                 )}
                 <Text style={infoText}>
                   <strong>Estimated preparation time:</strong> {estimatedPreparationTime}
-                </Text>
-                <Text style={infoText}>
-                  We&apos;ll send you updates as your order is prepared and out for delivery!
                 </Text>
               </>
             )}
 
             {order.fulfillmentType === 'nationwide_shipping' && (
               <>
+                <Text style={infoText}>
+                  <strong>Fulfillment:</strong> Nationwide Shipping
+                </Text>
                 <Text style={infoText}>
                   <strong>Processing time:</strong> 1-2 business days
                 </Text>
@@ -280,15 +281,6 @@ export const OrderConfirmationEmail = ({
               </>
             )}
           </Section>
-
-          {/* Special Notes */}
-          {order.notes && (
-            <Section style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '6px', margin: '16px 0' }}>
-              <Text style={{ fontSize: '14px', color: '#4a5568', margin: '0' }}>
-                <strong>Special requests:</strong> {order.notes}
-              </Text>
-            </Section>
-          )}
 
           {/* Call to Action */}
           <Section style={ctaSection}>

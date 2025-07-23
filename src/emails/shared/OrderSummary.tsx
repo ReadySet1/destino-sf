@@ -1,5 +1,6 @@
 import { Section, Text, Row, Column, Hr } from '@react-email/components';
 import * as React from 'react';
+import { formatOrderNotes } from '@/lib/email-utils';
 
 interface OrderItem {
   id: string;
@@ -31,6 +32,7 @@ interface OrderSummaryProps {
     postalCode: string;
   } | null;
   trackingNumber?: string | null;
+  notes?: string | null;
   showPricing?: boolean;
 }
 
@@ -164,35 +166,42 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   deliveryTime,
   shippingAddress,
   trackingNumber,
+  notes,
   showPricing = true,
 }) => {
+  // Format notes to extract shipping address and other information
+  const formattedNotes = formatOrderNotes(notes || null);
+
   return (
     <Section style={summarySection}>
-      <Text style={summaryTitle}>Order #{orderId}</Text>
-      
+      <Text style={summaryTitle}>
+        Order Summary
+      </Text>
+
       {/* Order Items */}
       {items.map((item, index) => (
-        <Row key={item.id} style={itemRow}>
+        <Row key={index} style={itemRow}>
           <Column style={{ width: '60%' }}>
             <Text style={itemName}>
-              {item.product.name}
-              {item.variant?.name && ` - ${item.variant.name}`}
+              {item.quantity}x {item.product.name}
             </Text>
-            <Text style={itemDetails}>
-              Quantity: {item.quantity}
+            {item.variant && (
+              <Text style={itemDetails}>
+                {item.variant.name}
+              </Text>
+            )}
+          </Column>
+          <Column style={{ width: '40%' }}>
+            <Text style={priceText}>
+              {formatCurrency(item.price * item.quantity)}
             </Text>
           </Column>
-          {showPricing && (
-            <Column style={{ width: '40%' }}>
-              <Text style={priceText}>
-                {formatCurrency(Number(item.price) * item.quantity)}
-              </Text>
-            </Column>
-          )}
         </Row>
       ))}
 
-      {/* Pricing Breakdown */}
+      <Hr style={{ borderColor: '#e2e8f0', margin: '16px 0' }} />
+
+      {/* Pricing Information */}
       {showPricing && (
         <>
           {subtotal && (
@@ -272,11 +281,23 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           
           {fulfillmentType === 'nationwide_shipping' && (
             <>
-              {shippingAddress && (
+              {/* Use formatted shipping address from notes if available, otherwise fall back to props */}
+              {(formattedNotes.hasShippingAddress || shippingAddress) && (
                 <Text style={fulfillmentText}>
                   <strong>Shipping to:</strong><br />
-                  {shippingAddress.street}<br />
-                  {shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}
+                  {formattedNotes.hasShippingAddress ? (
+                    formattedNotes.shippingAddress?.split('\n').map((line, index) => (
+                      <React.Fragment key={index}>
+                        {line}
+                        {index < formattedNotes.shippingAddress!.split('\n').length - 1 && <br />}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <>
+                      {shippingAddress?.street}<br />
+                      {shippingAddress?.city}, {shippingAddress?.state} {shippingAddress?.postalCode}
+                    </>
+                  )}
                 </Text>
               )}
               
@@ -287,6 +308,34 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               )}
             </>
           )}
+        </Section>
+      )}
+
+      {/* Special Notes Section */}
+      {formattedNotes.otherNotes && (
+        <Section style={{ 
+          marginTop: '16px', 
+          padding: '16px', 
+          backgroundColor: '#fefce8', 
+          border: '1px solid #f59e0b', 
+          borderRadius: '6px' 
+        }}>
+          <Text style={{ 
+            fontSize: '14px', 
+            fontWeight: 'bold', 
+            color: '#92400e', 
+            margin: '0 0 8px 0' 
+          }}>
+            Special Requests:
+          </Text>
+          <Text style={{ 
+            fontSize: '14px', 
+            color: '#92400e', 
+            margin: '0',
+            whiteSpace: 'pre-wrap'
+          }}>
+            {formattedNotes.otherNotes}
+          </Text>
         </Section>
       )}
     </Section>

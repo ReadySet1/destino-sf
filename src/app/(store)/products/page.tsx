@@ -69,6 +69,15 @@ export default async function ProductsPage() {
   const dbProducts = await prisma.product.findMany({
     where: {
       active: true, // Fetch only active products
+      // Exclude catering products from main products page
+      category: {
+        NOT: {
+          name: {
+            startsWith: 'CATERING',
+            mode: 'insensitive'
+          }
+        }
+      }
     },
     include: {
       category: true, // Include category data

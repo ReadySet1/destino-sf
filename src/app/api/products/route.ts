@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
     const exclude = searchParams.get('exclude') || undefined; // Product ID to exclude
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const excludeCatering = searchParams.get('excludeCatering') !== 'false'; // Default to true
     
     // New parameters for pagination and search
     const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
@@ -47,6 +48,18 @@ export async function GET(request: NextRequest) {
       categoryId: categoryId,
       featured: featured,
     };
+
+    // Exclude catering products by default (unless explicitly requested)
+    if (excludeCatering) {
+      whereCondition.category = {
+        NOT: {
+          name: {
+            startsWith: 'CATERING',
+            mode: 'insensitive'
+          }
+        }
+      };
+    }
 
     // Add search condition if provided
     if (search) {
