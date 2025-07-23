@@ -108,7 +108,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: pnpm build
+        run: |
+          echo "Starting build process..."
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Listing src/components/Store directory:"
+          ls -la src/components/Store/
+          echo "Building application..."
+          pnpm build
 
   # Job 4: Security scan
   security:
@@ -172,7 +180,8 @@ jobs:
       - name: Type checking (core files only)
         run: |
           # Type check only the main source files, skip test files and problematic modules
-          pnpm tsc --noEmit --project tsconfig.build.json --skipLibCheck || echo "Type check completed with warnings"
+          echo "Using tsconfig.json for type checking..."
+          pnpm tsc --noEmit --project tsconfig.json --skipLibCheck || echo "Type check completed with warnings"
 
   # Job 6: Quality gates
   quality-gates:
