@@ -8,6 +8,7 @@ import { logger } from '@/utils/logger';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
+import { FormattedNotes } from '@/components/Order/FormattedNotes';
 
 // Define types for serialized data
 interface SerializedOrderItem {
@@ -49,6 +50,7 @@ interface SerializedOrder {
   userId: string | null;
   trackingNumber: string | null;
   shippingCarrier: string | null;
+  notes: string | null;
   items: SerializedOrderItem[];
   payments: SerializedPayment[];
 }
@@ -137,6 +139,7 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     userId: order.userId,
     trackingNumber: order.trackingNumber,
     shippingCarrier: order.shippingCarrier,
+    notes: order.notes,
     items: serializedItems,
     payments: serializedPayments
   };
@@ -330,6 +333,14 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
               }
             </div>
           </div>
+
+          {/* Order Notes */}
+          {serializedOrder?.notes && (
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Order Notes</h2>
+              <FormattedNotes notes={serializedOrder.notes} />
+            </div>
+          )}
         </div>
 
         {/* Order Items */}

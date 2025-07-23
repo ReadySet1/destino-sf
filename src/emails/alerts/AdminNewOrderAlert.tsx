@@ -1,19 +1,38 @@
+import { Html, Head, Body, Container, Section, Text, Heading, Row, Column, Hr, Link } from '@react-email/components';
 import * as React from 'react';
-import { 
-  Html, 
-  Body, 
-  Head, 
-  Heading, 
-  Container, 
-  Preview, 
-  Section, 
-  Text, 
-  Hr,
-  Link,
-  Row,
-  Column
-} from '@react-email/components';
-import { NewOrderAlertData } from '@/types/alerts';
+import { formatOrderNotes } from '@/lib/email-utils';
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  price: number | { toNumber: () => number };
+  product: {
+    name: string;
+  };
+  variant?: {
+    name: string;
+  } | null;
+}
+
+interface Order {
+  id: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  total: number | { toNumber: () => number };
+  fulfillmentType?: string | null;
+  pickupTime?: Date | null;
+  deliveryDate?: string | null;
+  deliveryTime?: string | null;
+  notes?: string | null;
+  items: OrderItem[];
+}
+
+interface NewOrderAlertData {
+  order: Order;
+  timestamp: Date;
+  totalOrdersToday: number;
+}
 
 interface AdminNewOrderAlertProps extends NewOrderAlertData {}
 
@@ -22,124 +41,140 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
   timestamp,
   totalOrdersToday,
 }) => {
-  const formattedTotal = Number(order.total).toFixed(2);
   const formattedTimestamp = timestamp.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
-    year: 'numeric',
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
 
+  // Format notes to extract shipping address and other information
+  const formattedNotes = formatOrderNotes(order.notes || null);
+
   return (
     <Html>
       <Head />
-      <Preview>New order #{order.id} for ${formattedTotal} from {order.customerName}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
-            <Heading style={styles.title}>🎉 New Order Alert</Heading>
-            <Text style={styles.subtitle}>
-              Order #{order.id} • {formattedTimestamp}
+            <Heading as="h1" style={styles.headerTitle}>
+              🎉 New Order Received!
+            </Heading>
+            <Text style={styles.headerSubtitle}>
+              Order #{order.id} - ${(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}
             </Text>
           </Section>
-          
-          <Section style={styles.orderSummary}>
-            <Heading as="h2" style={styles.sectionTitle}>Order Summary</Heading>
-            
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Customer:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.value}>{order.customerName}</Text>
-              </Column>
-            </Row>
 
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Email:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.value}>
-                  <Link href={`mailto:${order.email}`} style={styles.link}>
-                    {order.email}
-                  </Link>
-                </Text>
-              </Column>
-            </Row>
-
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Phone:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.value}>
-                  <Link href={`tel:${order.phone}`} style={styles.link}>
-                    {order.phone}
-                  </Link>
-                </Text>
-              </Column>
-            </Row>
-
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Total:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.totalValue}>${formattedTotal}</Text>
-              </Column>
-            </Row>
-
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Payment:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.value}>{order.paymentMethod}</Text>
-              </Column>
-            </Row>
-
-            <Row>
-              <Column style={styles.labelColumn}>
-                <Text style={styles.label}>Fulfillment:</Text>
-              </Column>
-              <Column>
-                <Text style={styles.value}>{order.fulfillmentType || 'Not specified'}</Text>
-              </Column>
-            </Row>
-
-            {order.pickupTime && (
+          <Section style={styles.content}>
+            <Section style={styles.customerSection}>
+              <Heading as="h2" style={styles.sectionTitle}>Customer Information</Heading>
+              
               <Row>
                 <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Pickup Time:</Text>
+                  <Text style={styles.label}>Customer:</Text>
+                </Column>
+                <Column>
+                  <Text style={styles.value}>{order.customerName}</Text>
+                </Column>
+              </Row>
+
+              <Row>
+                <Column style={styles.labelColumn}>
+                  <Text style={styles.label}>Email:</Text>
                 </Column>
                 <Column>
                   <Text style={styles.value}>
-                    {new Date(order.pickupTime).toLocaleString('en-US', {
-                      timeZone: 'America/Los_Angeles',
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    <Link href={`mailto:${order.email}`} style={styles.link}>
+                      {order.email}
+                    </Link>
                   </Text>
                 </Column>
               </Row>
-            )}
 
-            {order.notes && (
               <Row>
                 <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Notes:</Text>
+                  <Text style={styles.label}>Phone:</Text>
                 </Column>
                 <Column>
-                  <Text style={styles.value}>{order.notes}</Text>
+                  <Text style={styles.value}>
+                    <Link href={`tel:${order.phone}`} style={styles.link}>
+                      {order.phone}
+                    </Link>
+                  </Text>
                 </Column>
               </Row>
-            )}
+
+              <Row>
+                <Column style={styles.labelColumn}>
+                  <Text style={styles.label}>Total:</Text>
+                </Column>
+                <Column>
+                  <Text style={styles.totalValue}>${(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}</Text>
+                </Column>
+              </Row>
+
+              <Row>
+                <Column style={styles.labelColumn}>
+                  <Text style={styles.label}>Fulfillment:</Text>
+                </Column>
+                <Column>
+                  <Text style={styles.value}>{order.fulfillmentType || 'Not specified'}</Text>
+                </Column>
+              </Row>
+
+              {order.pickupTime && (
+                <Row>
+                  <Column style={styles.labelColumn}>
+                    <Text style={styles.label}>Pickup Time:</Text>
+                  </Column>
+                  <Column>
+                    <Text style={styles.value}>
+                      {new Date(order.pickupTime).toLocaleString('en-US', {
+                        timeZone: 'America/Los_Angeles',
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </Column>
+                </Row>
+              )}
+
+              {/* Shipping Address Section */}
+              {formattedNotes.hasShippingAddress && (
+                <Row>
+                  <Column style={styles.labelColumn}>
+                    <Text style={styles.label}>Shipping Address:</Text>
+                  </Column>
+                  <Column>
+                    <Text style={styles.value}>
+                      {formattedNotes.shippingAddress?.split('\n').map((line, index) => (
+                        <React.Fragment key={index}>
+                          {line}
+                          {index < formattedNotes.shippingAddress!.split('\n').length - 1 && <br />}
+                        </React.Fragment>
+                      ))}
+                    </Text>
+                  </Column>
+                </Row>
+              )}
+
+              {/* Special Notes Section */}
+              {formattedNotes.otherNotes && (
+                <Row>
+                  <Column style={styles.labelColumn}>
+                    <Text style={styles.label}>Special Requests:</Text>
+                  </Column>
+                  <Column>
+                    <Text style={styles.value}>{formattedNotes.otherNotes}</Text>
+                  </Column>
+                </Row>
+              )}
+            </Section>
           </Section>
 
           <Section style={styles.itemsSection}>
@@ -158,7 +193,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                   </Column>
                   <Column style={styles.priceColumn}>
                     <Text style={styles.itemPrice}>
-                      ${Number(item.price).toFixed(2)}
+                      ${(typeof item.price === 'number' ? item.price : item.price.toNumber()).toFixed(2)}
                     </Text>
                   </Column>
                 </Row>
@@ -218,19 +253,22 @@ const styles = {
     padding: '20px',
     textAlign: 'center' as const,
   },
-  title: {
+  headerTitle: {
     color: '#ffffff',
     fontSize: '24px',
     fontWeight: 'bold',
     margin: '0 0 8px 0',
   },
-  subtitle: {
+  headerSubtitle: {
     color: '#dbeafe',
     fontSize: '14px',
     margin: '0',
   },
-  orderSummary: {
+  content: {
     padding: '24px',
+  },
+  customerSection: {
+    marginBottom: '24px',
   },
   sectionTitle: {
     fontSize: '18px',

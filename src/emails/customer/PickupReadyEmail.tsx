@@ -291,17 +291,9 @@ export const PickupReadyEmail = ({
             total={Number(order.total)}
             fulfillmentType="pickup"
             pickupTime={order.pickupTime}
+            notes={order.notes}
             showPricing={false}
           />
-
-          {/* Special Notes */}
-          {order.notes && (
-            <Section style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '6px', margin: '16px 0' }}>
-              <Text style={{ fontSize: '14px', color: '#4a5568', margin: '0' }}>
-                <strong>Special requests:</strong> {order.notes}
-              </Text>
-            </Section>
-          )}
 
           {/* Call to Action */}
           <Section style={ctaSection}>

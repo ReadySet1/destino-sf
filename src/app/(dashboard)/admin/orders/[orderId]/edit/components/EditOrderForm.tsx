@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createManualOrder } from '@/app/(dashboard)/admin/orders/manual/actions';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { FormattedNotes } from '@/components/Order/FormattedNotes';
 
 // Helper function to safely format price
 const convertDecimalToNumber = (decimal: unknown): number => {
@@ -448,14 +449,26 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                 Order Notes
               </label>
+              
+              {/* Show formatted notes if they exist */}
+              {formState.notes && (
+                <div className="mb-3">
+                  <FormattedNotes notes={formState.notes} />
+                </div>
+              )}
+              
               <textarea
                 id="notes"
                 name="notes"
                 value={formState.notes}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
-                rows={2}
+                rows={4}
+                placeholder="Enter order notes, special requests, or shipping information..."
               />
+              <p className="text-xs text-gray-500 mt-1">
+                For shipping orders, the system will automatically format addresses. You can edit the raw JSON if needed.
+              </p>
             </div>
           </div>
         </div>
