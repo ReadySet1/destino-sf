@@ -1,7 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
-  // Optimize for serverless
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
   binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
@@ -19,12 +18,14 @@ model Profile {
   role                     UserRole                   @default(CUSTOMER)
   created_at               DateTime                   @default(now())
   updated_at               DateTime                   @updatedAt
-  orders                   Order[]
   cateringOrders           CateringOrder[]
-  emailAlerts              EmailAlert[]
   customerEmailPreferences CustomerEmailPreferences[]
+  emailAlerts              EmailAlert[]
+  orders                   Order[]
   userSyncLogs             UserSyncLog[]
-  
+  archivedOrders           Order[]                    @relation("ArchivedOrders")
+  archivedCateringOrders   CateringOrder[]            @relation("ArchivedCateringOrders")
+
   @@map("profiles")
 }
 
@@ -38,15 +39,15 @@ model Product {
   categoryId     String          @db.Uuid
   featured       Boolean         @default(false)
   active         Boolean         @default(true)
-  inventory      Int?            @default(0)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   slug           String?         @unique
   ordinal        BigInt?
+  inventory      Int?            @default(0)
   orderItems     OrderItem[]
   category       Category        @relation(fields: [categoryId], references: [id])
-  variants       Variant[]
   spotlightPicks SpotlightPick[]
+  variants       Variant[]
 
   @@index([categoryId])
   @@index([ordinal])
@@ -66,7 +67,7 @@ model Category {
   updatedAt   DateTime  @updatedAt
   squareId    String?   @unique
   products    Product[]
-  
+
   @@map("categories")
 }
 
@@ -113,19 +114,26 @@ model Order {
   taxAmount                 Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
   isCateringOrder           Boolean       @default(false)
   paymentMethod             PaymentMethod @default(SQUARE)
+  lastRetryAt               DateTime?     @map("last_retry_at")
   paymentUrl                String?       @map("payment_url")
   paymentUrlExpiresAt       DateTime?     @map("payment_url_expires_at")
   retryCount                Int           @default(0) @map("retry_count")
-  lastRetryAt               DateTime?     @map("last_retry_at")
-  items                     OrderItem[]
-  payments                  Payment[]
-  profile                   Profile?      @relation(fields: [userId], references: [id])
+  // Archive fields
+  isArchived                Boolean       @default(false) @map("is_archived")
+  archivedAt                DateTime?     @map("archived_at")
+  archivedBy                String?       @db.Uuid @map("archived_by")
+  archiveReason             String?       @map("archive_reason")
+  archivedByUser            Profile?      @relation("ArchivedOrders", fields: [archivedBy], references: [id])
   emailAlerts               EmailAlert[]
+  items                     OrderItem[]
+  profile                   Profile?      @relation(fields: [userId], references: [id])
+  payments                  Payment[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
   @@index([isCateringOrder])
+  @@index([isArchived])
   @@map("orders")
 }
 
@@ -189,7 +197,7 @@ model BusinessHours {
   isClosed  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("business_hours")
 }
 
@@ -211,25 +219,25 @@ model StoreSettings {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   cateringMinimumAmount Decimal  @default(0) @db.Decimal(10, 2)
-  
+
   @@map("store_settings")
 }
 
 model CateringDeliveryZone {
   id                    String   @id @default(uuid()) @db.Uuid
-  zone                  String   @unique // DeliveryZone enum value
-  name                  String   
+  zone                  String   @unique
+  name                  String
   description           String?
   minimumAmount         Decimal  @db.Decimal(10, 2)
-  deliveryFee          Decimal  @db.Decimal(10, 2)
+  deliveryFee           Decimal  @db.Decimal(10, 2)
   estimatedDeliveryTime String?
-  active               Boolean  @default(true)
-  postalCodes          String[] // Array of postal codes for this zone
-  cities               String[] // Array of cities for this zone
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  displayOrder         Int      @default(0)
-  
+  postalCodes           String[]
+  cities                String[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  displayOrder          Int      @default(0)
+  active                Boolean  @default(true)
+
   @@index([zone])
   @@index([active])
   @@map("catering_delivery_zones")
@@ -242,9 +250,7 @@ model SpotlightPick {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([position])
   @@index([isActive])
@@ -252,15 +258,13 @@ model SpotlightPick {
   @@map("spotlight_picks")
 }
 
-
-
 model Subscriber {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("subscribers")
 }
 
@@ -277,7 +281,7 @@ model PromoCode {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  
+
   @@map("promo_codes")
 }
 
@@ -296,6 +300,259 @@ model ShippingConfiguration {
   @@map("shipping_configurations")
 }
 
+model CateringPackage {
+  id             String                @id @default(uuid()) @db.Uuid
+  name           String
+  description    String?
+  minPeople      Int
+  pricePerPerson Decimal               @db.Decimal(10, 2)
+  type           CateringPackageType
+  imageUrl       String?
+  isActive       Boolean               @default(true)
+  featuredOrder  Int?
+  dietaryOptions String[]
+  squareCategory String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  orderItems     CateringOrderItem[]
+  items          CateringPackageItem[]
+  ratings        CateringRating[]
+
+  @@map("catering_packages")
+}
+
+model CateringItem {
+  id              String                 @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  price           Decimal                @db.Decimal(10, 2)
+  category        CateringItemCategory
+  isVegetarian    Boolean                @default(false)
+  isVegan         Boolean                @default(false)
+  isGlutenFree    Boolean                @default(false)
+  servingSize     String?
+  imageUrl        String?
+  isActive        Boolean                @default(true)
+  squareCategory  String?
+  squareProductId String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  overrides       CateringItemOverrides?
+  orderItems      CateringOrderItem[]
+  packageItems    CateringPackageItem[]
+
+  @@map("catering_items")
+}
+
+model CateringPackageItem {
+  id           String          @id @default(uuid()) @db.Uuid
+  packageId    String          @db.Uuid
+  itemId       String          @db.Uuid
+  quantity     Int
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  cateringItem CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  package      CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, itemId])
+  @@index([packageId])
+  @@index([itemId])
+  @@map("catering_package_items")
+}
+
+model CateringRating {
+  id           String          @id @default(uuid()) @db.Uuid
+  packageId    String          @db.Uuid
+  rating       Int             @db.SmallInt
+  review       String?
+  reviewerName String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  package      CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@map("catering_ratings")
+}
+
+model CateringOrder {
+  id                String              @id @default(uuid()) @db.Uuid
+  customerId        String?             @db.Uuid
+  email             String
+  name              String
+  phone             String
+  eventDate         DateTime
+  numberOfPeople    Int
+  totalAmount       Decimal             @db.Decimal(10, 2)
+  status            CateringStatus      @default(PENDING)
+  notes             String?
+  specialRequests   String?
+  deliveryZone      String?
+  deliveryAddress   String?
+  deliveryFee       Decimal?            @db.Decimal(10, 2)
+  paymentMethod     PaymentMethod       @default(SQUARE)
+  paymentStatus     PaymentStatus       @default(PENDING)
+  squareOrderId     String?             @unique
+  squareCheckoutUrl String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  // Archive fields
+  isArchived        Boolean             @default(false) @map("is_archived")
+  archivedAt        DateTime?           @map("archived_at")
+  archivedBy        String?             @db.Uuid @map("archived_by")
+  archiveReason     String?             @map("archive_reason")
+  archivedByUser    Profile?            @relation("ArchivedCateringOrders", fields: [archivedBy], references: [id])
+  items             CateringOrderItem[]
+  customer          Profile?            @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([status])
+  @@index([eventDate])
+  @@index([createdAt])
+  @@index([isArchived])
+  @@map("catering_orders")
+}
+
+model CateringOrderItem {
+  id           String           @id @default(uuid()) @db.Uuid
+  orderId      String           @db.Uuid
+  itemType     String
+  itemId       String?          @db.Uuid
+  packageId    String?          @db.Uuid
+  name         String
+  quantity     Int
+  pricePerUnit Decimal          @db.Decimal(10, 2)
+  totalPrice   Decimal          @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  item         CateringItem?    @relation(fields: [itemId], references: [id])
+  order        CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  package      CateringPackage? @relation(fields: [packageId], references: [id])
+
+  @@index([orderId])
+  @@index([itemId])
+  @@index([packageId])
+  @@map("catering_order_items")
+}
+
+model CateringItemOverrides {
+  id                  String       @id @default(uuid()) @db.Uuid
+  itemId              String       @unique @db.Uuid
+  localDescription    String?
+  localImageUrl       String?
+  localIsVegetarian   Boolean?
+  localIsVegan        Boolean?
+  localIsGlutenFree   Boolean?
+  localServingSize    String?
+  localDietaryOptions String[]
+  overrideDescription Boolean      @default(false)
+  overrideImage       Boolean      @default(false)
+  overrideDietary     Boolean      @default(false)
+  overrideServingSize Boolean      @default(false)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  item                CateringItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("catering_item_overrides")
+}
+
+model EmailAlert {
+  id             String        @id @default(uuid()) @db.Uuid
+  type           AlertType
+  priority       AlertPriority @default(MEDIUM)
+  status         AlertStatus   @default(PENDING)
+  recipientEmail String
+  subject        String
+  sentAt         DateTime?
+  failedAt       DateTime?
+  retryCount     Int           @default(0)
+  metadata       Json?
+  relatedOrderId String?       @db.Uuid
+  relatedUserId  String?       @db.Uuid
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  relatedOrder   Order?        @relation(fields: [relatedOrderId], references: [id])
+  relatedUser    Profile?      @relation(fields: [relatedUserId], references: [id])
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([relatedOrderId])
+  @@map("email_alerts")
+}
+
+model CustomerEmailPreferences {
+  email            String
+  orderUpdates     EmailFrequency @default(IMMEDIATE) @map("order_updates")
+  marketingEmails  EmailFrequency @default(WEEKLY_DIGEST) @map("marketing_emails")
+  feedbackRequests EmailFrequency @default(IMMEDIATE) @map("feedback_requests")
+  timezone         String         @default("America/Los_Angeles")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String?        @map("user_id") @db.Uuid
+  user             Profile?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([userId])
+  @@map("customer_email_preferences")
+}
+
+model ContactSubmission {
+  name       String
+  email      String
+  subject    String?
+  message    String
+  type       String   @default("general")
+  status     String   @default("new")
+  assignedTo String?  @map("assigned_to")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid()) @db.Uuid
+
+  @@index([email])
+  @@index([status])
+  @@index([type])
+  @@map("contact_submissions")
+}
+
+model BusinessMetric {
+  date      DateTime @db.Date
+  metric    String
+  value     Decimal  @db.Decimal(10, 2)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid()) @db.Uuid
+
+  @@unique([date, metric])
+  @@index([date])
+  @@index([metric])
+  @@map("business_metrics")
+}
+
+model UserSyncLog {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @db.Uuid
+  syncId      String     @unique
+  status      SyncStatus @default(PENDING)
+  startedBy   String
+  startTime   DateTime   @default(now())
+  endTime     DateTime?
+  progress    Int        @default(0)
+  message     String?
+  currentStep String?
+  results     Json?
+  errors      Json?
+  options     Json?
+  user        Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([startTime])
+  @@map("user_sync_logs")
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN
@@ -303,7 +560,6 @@ enum UserRole {
 
 enum OrderStatus {
   PENDING
-  PAYMENT_FAILED
   PROCESSING
   READY
   COMPLETED
@@ -311,6 +567,7 @@ enum OrderStatus {
   FULFILLMENT_UPDATED
   SHIPPING
   DELIVERED
+  PAYMENT_FAILED
 }
 
 enum PaymentStatus {
@@ -332,7 +589,6 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
-// Catering-specific enums
 enum CateringStatus {
   PENDING
   CONFIRMED
@@ -357,202 +613,6 @@ enum CateringItemCategory {
   BEVERAGE
 }
 
-// Catering models
-model CateringPackage {
-  id             String              @id @default(uuid()) @db.Uuid
-  name           String
-  description    String?
-  minPeople      Int
-  pricePerPerson Decimal             @db.Decimal(10, 2)
-  type           CateringPackageType
-  imageUrl       String?
-  isActive       Boolean             @default(true)
-  featuredOrder  Int?
-  dietaryOptions String[]
-  squareCategory String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-
-  // Relations
-  ratings    CateringRating[]
-  items      CateringPackageItem[]
-  orderItems CateringOrderItem[]
-  
-  @@map("catering_packages")
-}
-
-model CateringItem {
-  id              String               @id @default(uuid()) @db.Uuid
-  name            String
-  description     String?
-  price           Decimal              @db.Decimal(10, 2)
-  category        CateringItemCategory
-  isVegetarian    Boolean              @default(false)
-  isVegan         Boolean              @default(false)
-  isGlutenFree    Boolean              @default(false)
-  servingSize     String?
-  imageUrl        String?
-  isActive        Boolean              @default(true)
-  squareCategory  String?
-  squareProductId String?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-
-  // Relations
-  packageItems CateringPackageItem[]
-  orderItems   CateringOrderItem[]
-  overrides    CateringItemOverrides[]
-  
-  @@map("catering_items")
-}
-
-model CateringPackageItem {
-  id        String   @id @default(uuid()) @db.Uuid
-  packageId String   @db.Uuid
-  itemId    String   @db.Uuid
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  package      CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  cateringItem CateringItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
-
-  @@unique([packageId, itemId])
-  @@index([packageId])
-  @@index([itemId])
-  @@map("catering_package_items")
-}
-
-model CateringRating {
-  id           String   @id @default(uuid()) @db.Uuid
-  packageId    String   @db.Uuid
-  rating       Int      @db.SmallInt
-  review       String?
-  reviewerName String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  package CateringPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-
-  @@index([packageId])
-  @@map("catering_ratings")
-}
-
-model CateringOrder {
-  id                String         @id @default(uuid()) @db.Uuid
-  customerId        String?        @db.Uuid
-  email             String
-  name              String
-  phone             String
-  eventDate         DateTime
-  numberOfPeople    Int
-  totalAmount       Decimal        @db.Decimal(10, 2)
-  status            CateringStatus @default(PENDING)
-  notes             String?
-  specialRequests   String?
-  deliveryZone      String?
-  deliveryAddress   String?
-  deliveryFee       Decimal?       @db.Decimal(10, 2)
-  paymentMethod     PaymentMethod  @default(SQUARE)
-  paymentStatus     PaymentStatus  @default(PENDING)
-  squareOrderId     String?        @unique
-  squareCheckoutUrl String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-
-  // Relations
-  customer Profile?            @relation(fields: [customerId], references: [id])
-  items    CateringOrderItem[]
-
-  @@index([customerId])
-  @@index([status])
-  @@index([eventDate])
-  @@index([createdAt])
-  @@map("catering_orders")
-}
-
-model CateringOrderItem {
-  id           String   @id @default(uuid()) @db.Uuid
-  orderId      String   @db.Uuid
-  itemType     String // "package" or "item"
-  itemId       String?  @db.Uuid
-  packageId    String?  @db.Uuid
-  name         String
-  quantity     Int
-  pricePerUnit Decimal  @db.Decimal(10, 2)
-  totalPrice   Decimal  @db.Decimal(10, 2)
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  order   CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  item    CateringItem?    @relation(fields: [itemId], references: [id])
-  package CateringPackage? @relation(fields: [packageId], references: [id])
-
-  @@index([orderId])
-  @@index([itemId])
-  @@index([packageId])
-  @@map("catering_order_items")
-}
-
-model CateringItemOverrides {
-  id                  String   @id @default(uuid()) @db.Uuid
-  itemId              String   @db.Uuid
-  localDescription    String?
-  localImageUrl       String?
-  localIsVegetarian   Boolean?
-  localIsVegan        Boolean?
-  localIsGlutenFree   Boolean?
-  localServingSize    String?
-  localDietaryOptions String[]
-  overrideDescription Boolean  @default(false)
-  overrideImage       Boolean  @default(false)
-  overrideDietary     Boolean  @default(false)
-  overrideServingSize Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  // Relations
-  item CateringItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-
-  @@unique([itemId])
-  @@index([itemId])
-  @@map("catering_item_overrides")
-}
-
-// Email Alert tracking model
-model EmailAlert {
-  id             String        @id @default(uuid()) @db.Uuid
-  type           AlertType
-  priority       AlertPriority @default(MEDIUM)
-  status         AlertStatus   @default(PENDING)
-  recipientEmail String
-  subject        String
-  sentAt         DateTime?
-  failedAt       DateTime?
-  retryCount     Int           @default(0)
-  metadata       Json?
-  relatedOrderId String?       @db.Uuid
-  relatedUserId  String?       @db.Uuid
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  // Relations
-  relatedOrder Order?   @relation(fields: [relatedOrderId], references: [id])
-  relatedUser  Profile? @relation(fields: [relatedUserId], references: [id])
-
-  @@index([type])
-  @@index([status])
-  @@index([createdAt])
-  @@index([relatedOrderId])
-  @@map("email_alerts")
-}
-
-// Phase 3 & 4: Additional enums and models
-
 enum EmailFrequency {
   IMMEDIATE
   DAILY_DIGEST
@@ -560,58 +620,6 @@ enum EmailFrequency {
   DISABLED
 }
 
-model CustomerEmailPreferences {
-  id               String         @id @default(uuid()) @db.Uuid
-  userId           String?        @map("user_id") @db.Uuid
-  email            String
-  orderUpdates     EmailFrequency @default(IMMEDIATE) @map("order_updates")
-  marketingEmails  EmailFrequency @default(WEEKLY_DIGEST) @map("marketing_emails")
-  feedbackRequests EmailFrequency @default(IMMEDIATE) @map("feedback_requests")
-  timezone         String         @default("America/Los_Angeles")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
-
-  // Relations
-  user Profile? @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([email])
-  @@index([userId])
-  @@map("customer_email_preferences")
-}
-
-model ContactSubmission {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String
-  email      String
-  subject    String?
-  message    String
-  type       String   @default("general") // general, catering, support
-  status     String   @default("new") // new, responded, resolved
-  assignedTo String?  @map("assigned_to")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  @@index([email])
-  @@index([status])
-  @@index([type])
-  @@map("contact_submissions")
-}
-
-model BusinessMetric {
-  id        String   @id @default(uuid()) @db.Uuid
-  date      DateTime @db.Date
-  metric    String // 'daily_orders', 'daily_revenue', etc.
-  value     Decimal  @db.Decimal(10, 2)
-  metadata  Json?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@unique([date, metric])
-  @@index([date])
-  @@index([metric])
-  @@map("business_metrics")
-}
-
-// Email alert enums
 enum AlertType {
   NEW_ORDER
   ORDER_STATUS_CHANGE
@@ -619,7 +627,6 @@ enum AlertType {
   SYSTEM_ERROR
   LOW_INVENTORY
   DAILY_SUMMARY
-  // Phase 3: Customer-facing alerts
   CUSTOMER_ORDER_CONFIRMATION
   CUSTOMER_ORDER_STATUS
   CUSTOMER_PICKUP_READY
@@ -629,7 +636,6 @@ enum AlertType {
   CUSTOMER_FEEDBACK_REQUEST
   CONTACT_FORM_RECEIVED
   CATERING_INQUIRY_RECEIVED
-  // Phase 4: Business operations alerts
   INVENTORY_LOW_STOCK
   SALES_TREND_ALERT
   REVENUE_MILESTONE
@@ -658,29 +664,4 @@ enum SyncStatus {
   COMPLETED
   FAILED
   CANCELLED
-}
-
-// User-triggered sync logging
-model UserSyncLog {
-  id          String     @id @default(uuid()) @db.Uuid
-  userId      String     @db.Uuid
-  syncId      String     @unique
-  status      SyncStatus @default(PENDING)
-  startedBy   String     // User's name/email
-  startTime   DateTime   @default(now())
-  endTime     DateTime?
-  progress    Int        @default(0) // 0-100 percentage
-  message     String?    // User-friendly message
-  currentStep String?    // Current operation
-  results     Json?      // Summary for user
-  errors      Json?      // User-friendly error messages
-  options     Json?      // User sync options
-  
-  // Relations
-  user        Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([status])
-  @@index([startTime])
-  @@map("user_sync_logs")
 }

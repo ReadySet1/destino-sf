@@ -99,6 +99,7 @@ export default async function ProductsPage() {
             name: p.category.name,
             description: p.category.description,
             order: p.category.order ?? 0,
+            active: p.category.active ?? true, // Default to true if not specified
             createdAt: p.category.createdAt,
             updatedAt: p.category.updatedAt,
             // Add slug and other fields if they exist and are needed

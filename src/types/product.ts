@@ -24,6 +24,11 @@ export interface Category {
   name: string;
   description?: string | null;
   order: number;
+  active: boolean;
+  slug?: string | null;
+  imageUrl?: string | null;
+  metadata?: any;
+  squareId?: string | null;
   products?: Product[];
   createdAt: Date;
   updatedAt: Date;
@@ -63,4 +68,9 @@ export interface CreateCategoryInput {
   name: string;
   description?: string;
   order?: number;
+  active?: boolean;
+  slug?: string;
+  imageUrl?: string;
+  metadata?: any;
+  squareId?: string;
 }

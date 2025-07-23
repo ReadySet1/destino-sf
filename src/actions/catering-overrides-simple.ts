@@ -37,7 +37,7 @@ export async function getCateringItemWithOverrides(itemId: string) {
     const isFromSquare = !!(item as any).squareProductId;
     
     // Get the first (and only) override since there's a unique constraint on itemId
-    const override = item.overrides?.[0];
+    const override = Array.isArray(item.overrides) ? item.overrides[0] : undefined;
     
     return {
       ...item,

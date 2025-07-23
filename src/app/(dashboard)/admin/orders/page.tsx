@@ -178,7 +178,9 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
 
   try {
     // Build where conditions for regular orders
-    const regularOrdersWhere: any = {};
+    const regularOrdersWhere: any = {
+      isArchived: false, // Exclude archived orders by default
+    };
     
     if (searchQuery) {
       regularOrdersWhere.OR = [
@@ -197,7 +199,9 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     }
 
     // Build where conditions for catering orders
-    const cateringOrdersWhere: any = {};
+    const cateringOrdersWhere: any = {
+      isArchived: false, // Exclude archived orders by default
+    };
     
     if (searchQuery) {
       cateringOrdersWhere.OR = [
@@ -312,6 +316,12 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold uppercase tracking-wide">Order Management</h1>
           <div className="flex gap-2">
+            <Link
+              href="/admin/orders/archived"
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+            >
+              View Archived Orders
+            </Link>
             <Link
               href="/admin/orders/manual"
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"

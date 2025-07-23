@@ -205,6 +205,7 @@ export default async function ProductPage({ params }: PageProps) {
           name: dbProduct.category.name,
           description: dbProduct.category.description,
           order: dbProduct.category.order ?? 0, // Handle potential null order
+          active: dbProduct.category.active ?? true, // Default to true if not specified
           createdAt: dbProduct.category.createdAt,
           updatedAt: dbProduct.category.updatedAt,
         }

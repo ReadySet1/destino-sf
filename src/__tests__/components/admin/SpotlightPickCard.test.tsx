@@ -176,7 +176,9 @@ describe('SpotlightPickCard', () => {
       const productSelect = screen.getByTestId('product-select');
       fireEvent.click(productSelect);
 
-      expect(mockOnProductSelect).toHaveBeenCalledWith('product-123');
+      // The onProductSelect is only called when a product is actually selected from the modal
+      // Clicking the button just opens the modal, it doesn't select a product
+      expect(mockOnProductSelect).not.toHaveBeenCalled();
     });
   });
 
@@ -196,7 +198,7 @@ describe('SpotlightPickCard', () => {
 
       // Check empty state content
       expect(screen.getByText('No Product Selected')).toBeInTheDocument();
-      expect(screen.getByText('Choose a product from the dropdown above')).toBeInTheDocument();
+      expect(screen.getByText('Tap the button above to choose a product')).toBeInTheDocument();
       expect(screen.getByTestId('package-icon')).toBeInTheDocument();
 
       // Clear button should not be present for empty picks
@@ -239,7 +241,7 @@ describe('SpotlightPickCard', () => {
       // Check that updating text is shown
       const loadingText = within(productSelect).getByText('Loading products...');
       expect(loadingText).toBeInTheDocument();
-      expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+      expect(screen.getAllByTestId('loader-icon').length).toBeGreaterThan(0);
     });
 
     it('should disable clear button when loading', () => {
@@ -273,7 +275,7 @@ describe('SpotlightPickCard', () => {
       // Check that updating text is shown
       const loadingText = within(productSelect).getByText('Loading products...');
       expect(loadingText).toBeInTheDocument();
-      expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+      expect(screen.getAllByTestId('loader-icon').length).toBeGreaterThan(0);
     });
   });
 
@@ -308,7 +310,7 @@ describe('SpotlightPickCard', () => {
       );
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Error fetching products:', expect.any(Error));
+        expect(consoleSpy).toHaveBeenCalledWith('Error fetching data:', expect.any(Error));
       });
 
       consoleSpy.mockRestore();

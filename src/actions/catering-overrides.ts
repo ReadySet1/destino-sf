@@ -26,7 +26,7 @@ export async function getEnhancedCateringItem(itemId: string): Promise<EnhancedC
 
     const isSquareItem = !!item.squareProductId;
     // Get the first (and only) override since there's a unique constraint on itemId
-    const overrides = item.overrides?.[0];
+    const overrides = Array.isArray(item.overrides) ? item.overrides[0] : undefined;
 
     // Compute final values based on overrides
     const enhanced: EnhancedCateringItem = {
@@ -369,7 +369,7 @@ export async function convertSquareItemToLocal(itemId: string): Promise<{ succes
     }
 
     // Get the first (and only) override since there's a unique constraint on itemId
-    const override = item.overrides?.[0];
+    const override = Array.isArray(item.overrides) ? item.overrides[0] : undefined;
 
     // Apply all current overrides as permanent values
     const updates: any = {

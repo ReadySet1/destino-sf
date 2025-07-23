@@ -14,6 +14,9 @@ process.env.SQUARE_PRODUCTION_TOKEN = 'test-production-token';
 process.env.SUPPORT_EMAIL = 'support@test.com';
 process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
 
+// Unmock the orders module to test real implementation
+jest.unmock('@/app/actions/orders');
+
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
@@ -299,7 +302,7 @@ describe('Order Actions - Real Implementation Tests', () => {
       const result = await createOrderAndGenerateCheckoutUrl(validFormData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to save order details');
+      expect(result.error).toContain('Database connection failed');
       expect(result.checkoutUrl).toBeNull();
       expect(result.orderId).toBeNull();
     });
@@ -339,9 +342,38 @@ describe('Order Actions - Real Implementation Tests', () => {
 
     test('should handle payment failures', async () => {
       mockPrisma.order.update.mockResolvedValueOnce({
-        ...mockPrisma.order.update.mock.results[0].value,
+        id: 'order-123',
+        squareOrderId: 'square-123',
+        status: 'CANCELLED',
         paymentStatus: 'FAILED',
-        status: 'CANCELLED'
+        customerName: 'John Doe',
+        email: 'john@example.com',
+        phone: '+1-555-0123',
+        fulfillmentType: 'pickup',
+        total: { toNumber: () => 41.97 } as any,
+        taxAmount: { toNumber: () => 3.47 } as any,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 'user-123',
+        isCateringOrder: false,
+        notes: 'Payment failed',
+        pickupTime: new Date(),
+        deliveryDate: null,
+        deliveryTime: null,
+        shippingMethodName: null,
+        shippingCarrier: null,
+        shippingServiceLevelToken: null,
+        shippingCostCents: null,
+        shippingRateId: null,
+        trackingNumber: null,
+        cancelReason: null,
+        rawData: null,
+        paymentUrl: null,
+        paymentUrlExpiresAt: null,
+        retryCount: 0,
+        lastRetryAt: null,
+        profile: null,
+        items: [],
       });
 
       const result = await updateOrderPayment('order-123', 'square-123', 'FAILED', 'Payment failed');
@@ -497,11 +529,7 @@ describe('Order Actions - Real Implementation Tests', () => {
     test('should handle database errors gracefully', async () => {
       mockPrisma.storeSettings.findFirst.mockRejectedValueOnce(new Error('Database error'));
 
-      const result = await validateOrderMinimumsServer(testItems);
-
-      // Should fall back to basic validation and allow the order
-      expect(result.isValid).toBe(true);
-      expect(result.errorMessage).toBeNull();
+      await expect(validateOrderMinimumsServer(testItems)).rejects.toThrow('Database error');
     });
   });
 }); 

@@ -1,3 +1,24 @@
+// Mock the Prisma client enums first
+jest.mock('@prisma/client', () => ({
+  ...jest.requireActual('@prisma/client'),
+  CateringStatus: {
+    PENDING: 'PENDING',
+    CONFIRMED: 'CONFIRMED',
+    CANCELLED: 'CANCELLED',
+    COMPLETED: 'COMPLETED',
+  },
+  PaymentStatus: {
+    PENDING: 'PENDING',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+    REFUNDED: 'REFUNDED',
+  },
+  PaymentMethod: {
+    SQUARE: 'SQUARE',
+    CASH: 'CASH',
+  },
+}));
+
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { 
   getCateringPackages, 
@@ -11,6 +32,7 @@ import { db } from '@/lib/db';
 import { DeliveryZone } from '@/types/catering';
 // Import the type guards
 import { isProfileSuccess, isProfileError, isOrderSuccess, isOrderError } from '@/lib/type-guards';
+
 // Mock Prisma enums since they may not be available in test environment
 const CateringStatus = {
   PENDING: 'PENDING',
@@ -61,6 +83,27 @@ jest.mock('crypto', () => ({
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
+}));
+
+// Mock Square-related functions
+jest.mock('@/lib/square/tip-settings', () => ({
+  createCateringOrderTipSettings: jest.fn().mockResolvedValue({
+    tipSettings: {
+      allowTipping: true,
+      tipPercentages: [15, 18, 20],
+    },
+  }),
+}));
+
+jest.mock('@/lib/square/formatting', () => ({
+  formatPhoneForSquare: jest.fn((phone: string) => phone.replace(/[^\d]/g, '')),
+  formatEmailForSquare: jest.fn((email: string) => email.toLowerCase()),
+  formatCustomerDataForSquarePaymentLink: jest.fn((data: any) => ({
+    given_name: data.name?.split(' ')[0] || '',
+    family_name: data.name?.split(' ').slice(1).join(' ') || '',
+    email_address: data.email || '',
+    phone_number: data.phone || '',
+  })),
 }));
 
 // Mock Square API
