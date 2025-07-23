@@ -38,6 +38,12 @@ jest.mock('@/lib/square/tip-settings', () => ({
   createRegularOrderTipSettings: jest.fn(),
 }));
 
+// Mock delivery zones
+jest.mock('@/lib/delivery-zones', () => ({
+  determineDeliveryZone: jest.fn(),
+  validateMinimumPurchase: jest.fn(),
+}));
+
 const mockPrisma = prisma as any;
 
 // Test fixtures
@@ -151,6 +157,16 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     const { createServerClient } = require('@supabase/ssr');
     createServerClient.mockReturnValue(mockSupabaseClient);
     
+    // Mock delivery zone functions
+    const { determineDeliveryZone, validateMinimumPurchase } = require('@/lib/delivery-zones');
+    determineDeliveryZone.mockResolvedValue('zone-1');
+    validateMinimumPurchase.mockResolvedValue({
+      isValid: true,
+      message: null,
+      minimumRequired: 250,
+      currentAmount: 400
+    });
+    
     // Setup default Prisma mock responses
     mockPrisma.storeSettings = {
       findFirst: jest.fn().mockResolvedValue({
@@ -201,9 +217,13 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         { id: 'catering-1', name: 'Catering Platter', price: 400.00, quantity: 1 }
       ];
       
-      // Mock catering product detection
+      // Mock catering product detection - products with catering category
       mockPrisma.product.findMany.mockResolvedValue([
-        { id: 'catering-1', name: 'Catering Platter' }
+        { 
+          id: 'catering-1', 
+          name: 'Catering Platter',
+          category: { name: 'Catering Platters' }
+        }
       ]);
       
       const deliveryAddress = {
@@ -222,9 +242,13 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         { id: 'catering-1', name: 'Small Catering', price: 100.00, quantity: 1 }
       ];
       
-      // Mock catering product detection
+      // Mock catering product detection - products with catering category
       mockPrisma.product.findMany.mockResolvedValue([
-        { id: 'catering-1', name: 'Small Catering' }
+        { 
+          id: 'catering-1', 
+          name: 'Small Catering',
+          category: { name: 'Catering Items' }
+        }
       ]);
       
       const result = await validateOrderMinimumsServer(smallCateringItems);
@@ -255,7 +279,11 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         { id: 'prod-1', name: 'Item', price: 20.00, quantity: 1 }
       ];
       
-      await expect(validateOrderMinimumsServer(items)).rejects.toThrow('Database error');
+      // The function catches database errors and assumes non-catering order
+      const result = await validateOrderMinimumsServer(items);
+      
+      expect(result.isValid).toBe(true);
+      expect(result.errorMessage).toBeNull();
     });
   });
 

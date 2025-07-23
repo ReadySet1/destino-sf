@@ -15,7 +15,7 @@ interface Category {
   order: number;
   _count: CategoryCount;
   metadata?: JsonValue;
-  isActive?: boolean;
+  active?: boolean;
   parentId?: string | null;
   slug: string | null;
   imageUrl?: string | null;
@@ -57,7 +57,7 @@ export async function createCategoryAction(
   const name = formData.get('name');
   const description = formData.get('description');
   const orderRaw = formData.get('order');
-  const isActiveRaw = formData.get('isActive');
+  const activeRaw = formData.get('active');
   const image = formData.get('image') as File | null;
 
   // Validate inputs with type guards
@@ -68,7 +68,7 @@ export async function createCategoryAction(
 
   const order = typeof orderRaw === 'string' ? parseInt(orderRaw, 10) || 0 : 0;
   const descriptionStr = typeof description === 'string' ? description : '';
-  const isActive = isActiveRaw === 'true';
+  const active = activeRaw === 'true';
 
   try {
     // Handle image upload if present
@@ -91,7 +91,7 @@ export async function createCategoryAction(
         name: name.trim(),
         description: descriptionStr,
         order,
-        active: isActive,
+        active: active,
         slug,
         imageUrl,
         metadata: {

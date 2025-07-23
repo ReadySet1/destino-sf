@@ -73,7 +73,7 @@ const baseConfig: Partial<Config> = {
     }
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library))'
+    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library|@t3-oss))'
   ],
 };
 

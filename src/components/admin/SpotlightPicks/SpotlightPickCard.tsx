@@ -138,7 +138,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
               disabled={isLoading}
               className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3 w-3" data-testid="trash-icon" />
             </Button>
           )}
         </div>
@@ -155,15 +155,16 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                 variant="outline"
                 className="w-full h-9 justify-start text-xs"
                 disabled={isLoading || loadingProducts}
+                data-testid="product-select"
               >
                 {loadingProducts ? (
                   <>
-                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" data-testid="loader-icon" />
                     Loading products...
                   </>
                 ) : pick.product?.name ? (
                   <>
-                    <Package className="h-3 w-3 mr-2" />
+                    <Package className="h-3 w-3 mr-2" data-testid="package-icon" />
                     <span className="truncate">{pick.product.name}</span>
                   </>
                 ) : (
@@ -357,7 +358,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
 
               {pick.product?.price && pick.product.price > 0 && (
                 <div className="flex items-center gap-1 text-base font-semibold text-green-600">
-                  <DollarSign className="h-4 w-4" />
+                  <DollarSign className="h-4 w-4" data-testid="dollar-icon" />
                   {pick.product.price.toFixed(2)}
                 </div>
               )}

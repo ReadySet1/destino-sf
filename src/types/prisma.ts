@@ -63,7 +63,7 @@ export interface Category {
   name: string;
   description?: string | null;
   order: number;
-  isActive: boolean;
+  active: boolean;
   slug?: string | null;
   imageUrl?: string | null;
   metadata?: Record<string, any> | null;

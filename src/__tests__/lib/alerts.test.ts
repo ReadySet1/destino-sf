@@ -1,15 +1,46 @@
+// Mock the Prisma client enums first
+jest.mock('@prisma/client', () => ({
+  AlertType: {
+    NEW_ORDER: 'NEW_ORDER',
+    ORDER_STATUS_CHANGE: 'ORDER_STATUS_CHANGE',
+    PAYMENT_FAILED: 'PAYMENT_FAILED',
+    SYSTEM_ERROR: 'SYSTEM_ERROR',
+    DAILY_SUMMARY: 'DAILY_SUMMARY',
+    CONTACT_FORM: 'CONTACT_FORM',
+  },
+  AlertPriority: {
+    LOW: 'LOW',
+    MEDIUM: 'MEDIUM',
+    HIGH: 'HIGH',
+    CRITICAL: 'CRITICAL',
+  },
+  AlertStatus: {
+    PENDING: 'PENDING',
+    SENT: 'SENT',
+    FAILED: 'FAILED',
+    RETRYING: 'RETRYING',
+  },
+  OrderStatus: {
+    PENDING: 'PENDING',
+    PROCESSING: 'PROCESSING',
+    READY: 'READY',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED',
+  },
+  PaymentStatus: {
+    PENDING: 'PENDING',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+    REFUNDED: 'REFUNDED',
+  },
+}));
+
 import { AlertService } from '@/lib/alerts';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
-import { 
-  AlertType, 
-  AlertPriority, 
-  AlertStatus,
-  OrderStatus,
-  PaymentStatus 
-} from '@prisma/client';
 import { FulfillmentType } from '@/types/order';
 import { OrderWithItems } from '@/types/alerts';
+import { AlertType, AlertPriority, AlertStatus, OrderStatus, PaymentStatus } from '@prisma/client';
 
 // Mock dependencies
 jest.mock('resend');
@@ -39,6 +70,10 @@ jest.mock('@/env', () => ({
     SHOP_NAME: 'Test Shop',
     NODE_ENV: 'test',
   },
+}));
+
+jest.mock('@/lib/webhook-queue', () => ({
+  sendEmailWithQueue: jest.fn(),
 }));
 
 const mockResend = {
@@ -74,6 +109,9 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
       data: { id: 'email-123' },
       error: null,
     });
+    
+    const { sendEmailWithQueue } = require('@/lib/webhook-queue');
+    sendEmailWithQueue.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -114,7 +152,7 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
       const result = await alertService.sendNewOrderAlert(mockOrder);
 
       expect(result.success).toBe(true);
-      expect(result.messageId).toBe('email-123');
+      expect(result.messageId).toBe('queued');
       
       expect(mockPrisma.emailAlert.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -127,19 +165,19 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
         }),
       });
 
-      expect(mockResend.emails.send).toHaveBeenCalledWith({
+      const { sendEmailWithQueue } = require('@/lib/webhook-queue');
+      expect(sendEmailWithQueue).toHaveBeenCalledWith({
         from: 'Test Shop Alerts <noreply@test.com>',
         to: 'admin@test.com',
         subject: expect.stringContaining('New Order #order-123 - $45.99'),
         react: expect.any(Object),
+        priority: 'high'
       });
     });
 
     it('should handle email sending failures', async () => {
-      mockResend.emails.send.mockResolvedValue({
-        data: null,
-        error: { message: 'Email service unavailable' },
-      });
+      const { sendEmailWithQueue } = require('@/lib/webhook-queue');
+      sendEmailWithQueue.mockRejectedValue(new Error('Email service unavailable'));
 
       const result = await alertService.sendNewOrderAlert(mockOrder);
 

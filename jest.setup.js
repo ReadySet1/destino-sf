@@ -57,6 +57,22 @@ jest.mock('next-themes', () => ({
   }),
 }));
 
+// Mock next/font/google
+jest.mock('next/font/google', () => ({
+  Dancing_Script: () => ({
+    className: 'dancing-script-class',
+    style: { fontFamily: 'Dancing Script' }
+  }),
+  Inter: () => ({
+    className: 'inter-class',
+    style: { fontFamily: 'Inter' }
+  }),
+  Poppins: () => ({
+    className: 'poppins-class',
+    style: { fontFamily: 'Poppins' }
+  }),
+}));
+
 // Mock Supabase
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
