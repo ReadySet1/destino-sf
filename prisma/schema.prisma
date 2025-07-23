@@ -23,6 +23,8 @@ model Profile {
   emailAlerts              EmailAlert[]
   orders                   Order[]
   userSyncLogs             UserSyncLog[]
+  archivedOrders           Order[]                    @relation("ArchivedOrders")
+  archivedCateringOrders   CateringOrder[]            @relation("ArchivedCateringOrders")
 
   @@map("profiles")
 }
@@ -116,6 +118,12 @@ model Order {
   paymentUrl                String?       @map("payment_url")
   paymentUrlExpiresAt       DateTime?     @map("payment_url_expires_at")
   retryCount                Int           @default(0) @map("retry_count")
+  // Archive fields
+  isArchived                Boolean       @default(false) @map("is_archived")
+  archivedAt                DateTime?     @map("archived_at")
+  archivedBy                String?       @db.Uuid @map("archived_by")
+  archiveReason             String?       @map("archive_reason")
+  archivedByUser            Profile?      @relation("ArchivedOrders", fields: [archivedBy], references: [id])
   emailAlerts               EmailAlert[]
   items                     OrderItem[]
   profile                   Profile?      @relation(fields: [userId], references: [id])
@@ -125,6 +133,7 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([isCateringOrder])
+  @@index([isArchived])
   @@map("orders")
 }
 
@@ -386,6 +395,12 @@ model CateringOrder {
   squareCheckoutUrl String?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  // Archive fields
+  isArchived        Boolean             @default(false) @map("is_archived")
+  archivedAt        DateTime?           @map("archived_at")
+  archivedBy        String?             @db.Uuid @map("archived_by")
+  archiveReason     String?             @map("archive_reason")
+  archivedByUser    Profile?            @relation("ArchivedCateringOrders", fields: [archivedBy], references: [id])
   items             CateringOrderItem[]
   customer          Profile?            @relation(fields: [customerId], references: [id])
 
@@ -393,6 +408,7 @@ model CateringOrder {
   @@index([status])
   @@index([eventDate])
   @@index([createdAt])
+  @@index([isArchived])
   @@map("catering_orders")
 }
 

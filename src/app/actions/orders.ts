@@ -1303,3 +1303,541 @@ async function hasCateringProducts(productIds: string[]): Promise<boolean> {
     return false;
   }
 } 
+
+/**
+ * Archive a single order
+ */
+export async function archiveOrder(
+  orderId: string, 
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get current user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Check admin role
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Check if order exists and is not already archived
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, isArchived: true },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (order.isArchived) {
+      return { success: false, error: 'Order is already archived' };
+    }
+
+    // Archive the order
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        isArchived: true,
+        archivedAt: new Date(),
+        archivedBy: user.id,
+        archiveReason: reason || null,
+      },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/orders/archived');
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error archiving order:', error);
+    return { success: false, error: error.message || 'Failed to archive order' };
+  }
+}
+
+/**
+ * Archive a single catering order
+ */
+export async function archiveCateringOrder(
+  orderId: string, 
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get current user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Check admin role
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Check if catering order exists and is not already archived
+    const order = await prisma.cateringOrder.findUnique({
+      where: { id: orderId },
+      select: { id: true, isArchived: true },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Catering order not found' };
+    }
+
+    if (order.isArchived) {
+      return { success: false, error: 'Catering order is already archived' };
+    }
+
+    // Archive the catering order
+    await prisma.cateringOrder.update({
+      where: { id: orderId },
+      data: {
+        isArchived: true,
+        archivedAt: new Date(),
+        archivedBy: user.id,
+        archiveReason: reason || null,
+      },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/orders/archived');
+    revalidatePath(`/admin/catering/${orderId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error archiving catering order:', error);
+    return { success: false, error: error.message || 'Failed to archive catering order' };
+  }
+}
+
+/**
+ * Archive multiple orders (bulk operation)
+ */
+export async function archiveBulkOrders(
+  orderIds: string[], 
+  reason?: string
+): Promise<{ success: boolean; count: number; errors?: string[] }> {
+  try {
+    // Get current user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, count: 0, errors: ['Authentication required'] };
+    }
+
+    // Check admin role
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return { success: false, count: 0, errors: ['Admin access required'] };
+    }
+
+    // Limit bulk operations to prevent abuse
+    if (orderIds.length > 100) {
+      return { success: false, count: 0, errors: ['Too many orders for bulk operation (max 100)'] };
+    }
+
+    const errors: string[] = [];
+    let successCount = 0;
+
+    // Process each order
+    for (const orderId of orderIds) {
+      try {
+        // Check if it's a regular order or catering order
+        const regularOrder = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { id: true, isArchived: true },
+        });
+
+        if (regularOrder) {
+          if (regularOrder.isArchived) {
+            errors.push(`Order ${orderId}: Already archived`);
+            continue;
+          }
+
+          await prisma.order.update({
+            where: { id: orderId },
+            data: {
+              isArchived: true,
+              archivedAt: new Date(),
+              archivedBy: user.id,
+              archiveReason: reason || null,
+            },
+          });
+          successCount++;
+        } else {
+          // Check if it's a catering order
+          const cateringOrder = await prisma.cateringOrder.findUnique({
+            where: { id: orderId },
+            select: { id: true, isArchived: true },
+          });
+
+          if (cateringOrder) {
+            if (cateringOrder.isArchived) {
+              errors.push(`Catering order ${orderId}: Already archived`);
+              continue;
+            }
+
+            await prisma.cateringOrder.update({
+              where: { id: orderId },
+              data: {
+                isArchived: true,
+                archivedAt: new Date(),
+                archivedBy: user.id,
+                archiveReason: reason || null,
+              },
+            });
+            successCount++;
+          } else {
+            errors.push(`Order ${orderId}: Not found`);
+          }
+        }
+      } catch (error: any) {
+        errors.push(`Order ${orderId}: ${error.message || 'Unknown error'}`);
+      }
+    }
+
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/orders/archived');
+
+    return { 
+      success: successCount > 0, 
+      count: successCount, 
+      errors: errors.length > 0 ? errors : undefined 
+    };
+  } catch (error: any) {
+    console.error('Error in bulk archive operation:', error);
+    return { success: false, count: 0, errors: [error.message || 'Failed to archive orders'] };
+  }
+}
+
+/**
+ * Unarchive an order
+ */
+export async function unarchiveOrder(
+  orderId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get current user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Check admin role
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Check if order exists and is archived
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, isArchived: true },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Order not found' };
+    }
+
+    if (!order.isArchived) {
+      return { success: false, error: 'Order is not archived' };
+    }
+
+    // Unarchive the order
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+      },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/orders/archived');
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error unarchiving order:', error);
+    return { success: false, error: error.message || 'Failed to unarchive order' };
+  }
+}
+
+/**
+ * Unarchive a catering order
+ */
+export async function unarchiveCateringOrder(
+  orderId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get current user
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Check admin role
+    const profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Check if catering order exists and is archived
+    const order = await prisma.cateringOrder.findUnique({
+      where: { id: orderId },
+      select: { id: true, isArchived: true },
+    });
+
+    if (!order) {
+      return { success: false, error: 'Catering order not found' };
+    }
+
+    if (!order.isArchived) {
+      return { success: false, error: 'Catering order is not archived' };
+    }
+
+    // Unarchive the catering order
+    await prisma.cateringOrder.update({
+      where: { id: orderId },
+      data: {
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+      },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/orders/archived');
+    revalidatePath(`/admin/catering/${orderId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error unarchiving catering order:', error);
+    return { success: false, error: error.message || 'Failed to unarchive catering order' };
+  }
+}
+
+/**
+ * Get archived orders with pagination and filtering
+ */
+export async function getArchivedOrders(params: {
+  page?: number;
+  search?: string;
+  type?: 'all' | 'regular' | 'catering';
+  reason?: string;
+  archivedBy?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<{
+  success: boolean;
+  orders: any[];
+  totalCount: number;
+  totalPages: number;
+  error?: string;
+}> {
+  try {
+    const {
+      page = 1,
+      search = '',
+      type = 'all',
+      reason,
+      archivedBy,
+      startDate,
+      endDate,
+    } = params;
+
+    const itemsPerPage = 15;
+    const skip = (page - 1) * itemsPerPage;
+
+    let allOrders: any[] = [];
+    let totalCount = 0;
+
+    // Build where conditions for regular orders
+    const regularOrdersWhere: any = {
+      isArchived: true,
+    };
+
+    if (search) {
+      regularOrdersWhere.OR = [
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { id: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (reason) {
+      regularOrdersWhere.archiveReason = { contains: reason, mode: 'insensitive' };
+    }
+
+    if (archivedBy) {
+      regularOrdersWhere.archivedBy = archivedBy;
+    }
+
+    if (startDate && endDate) {
+      regularOrdersWhere.archivedAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    // Build where conditions for catering orders
+    const cateringOrdersWhere: any = {
+      isArchived: true,
+    };
+
+    if (search) {
+      cateringOrdersWhere.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { id: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (reason) {
+      cateringOrdersWhere.archiveReason = { contains: reason, mode: 'insensitive' };
+    }
+
+    if (archivedBy) {
+      cateringOrdersWhere.archivedBy = archivedBy;
+    }
+
+    if (startDate && endDate) {
+      cateringOrdersWhere.archivedAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    if (type === 'all' || type === 'regular') {
+      const regularOrders = await prisma.order.findMany({
+        where: regularOrdersWhere,
+        include: {
+          items: true,
+          archivedByUser: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: { archivedAt: 'desc' },
+        ...(type === 'regular' ? { skip, take: itemsPerPage } : {}),
+      });
+
+      const serializedRegularOrders = regularOrders.map(order => ({
+        ...order,
+        type: 'regular' as const,
+        total: order.total.toNumber(),
+        taxAmount: order.taxAmount.toNumber(),
+        items: order.items.map(item => ({
+          ...item,
+          price: item.price.toNumber(),
+        })),
+      }));
+
+      allOrders.push(...serializedRegularOrders);
+
+      if (type === 'regular') {
+        totalCount = await prisma.order.count({ where: regularOrdersWhere });
+      }
+    }
+
+    if (type === 'all' || type === 'catering') {
+      const cateringOrders = await prisma.cateringOrder.findMany({
+        where: cateringOrdersWhere,
+        include: {
+          items: true,
+          archivedByUser: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: { archivedAt: 'desc' },
+        ...(type === 'catering' ? { skip, take: itemsPerPage } : {}),
+      });
+
+      const serializedCateringOrders = cateringOrders.map(order => ({
+        ...order,
+        type: 'catering' as const,
+        total: order.totalAmount.toNumber(),
+        deliveryFee: order.deliveryFee?.toNumber(),
+      }));
+
+      allOrders.push(...serializedCateringOrders);
+
+      if (type === 'catering') {
+        totalCount = await prisma.cateringOrder.count({ where: cateringOrdersWhere });
+      }
+    }
+
+    // If fetching all types, we need to sort and paginate manually
+    if (type === 'all') {
+      // Sort by archived date (most recent first)
+      allOrders.sort((a, b) => {
+        const aDate = new Date(a.archivedAt || 0);
+        const bDate = new Date(b.archivedAt || 0);
+        return bDate.getTime() - aDate.getTime();
+      });
+
+      totalCount = allOrders.length;
+      allOrders = allOrders.slice(skip, skip + itemsPerPage);
+    }
+
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+    return {
+      success: true,
+      orders: allOrders,
+      totalCount,
+      totalPages,
+    };
+  } catch (error: any) {
+    console.error('Error fetching archived orders:', error);
+    return {
+      success: false,
+      orders: [],
+      totalCount: 0,
+      totalPages: 0,
+      error: error.message || 'Failed to fetch archived orders',
+    };
+  }
+} 
