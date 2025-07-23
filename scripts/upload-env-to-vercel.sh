@@ -81,7 +81,8 @@ vercel env add SHIPPING_ORIGIN_PHONE 555-555-5555 production
 echo "📧 Configurando Email (Resend)..."
 vercel env add SHOP_NAME "Destino SF" production
 vercel env add FROM_EMAIL system@updates.destinosf.com production
-vercel env add ADMIN_EMAIL james@destinosf.com production
+vercel env add ADMIN_EMAIL ealanis@readysetllc.com production
+vercel env add JAMES_EMAIL james@destinosf.com production
 vercel env add SUPPORT_EMAIL info@destinosf.com production
 vercel env add RESEND_API_KEY re_placeholder_key_for_testing production
 

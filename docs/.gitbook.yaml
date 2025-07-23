@@ -6,12 +6,9 @@ structure:
 
 redirects:
   # Legacy documentation redirects
-  - from: /old-docs/catering
-    to: /features/catering/README.md
-  - from: /old-docs/shipping
-    to: /features/shipping/README.md
-  - from: /old-docs/testing
-    to: /testing/testing-strategy.md
+  "/old-docs/catering": "/features/catering/README.md"
+  "/old-docs/shipping": "/features/shipping/README.md"
+  "/old-docs/testing": "/testing/testing-strategy.md"
 
 # GitBook integrations
 integrations:

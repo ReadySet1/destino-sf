@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { AlertService } from '@/lib/alerts';
 import { AlertType, AlertPriority, AlertStatus } from '@prisma/client';
 import { z } from 'zod';
+import { getRecipientEmail } from '@/lib/email-routing';
 
 // Response types
 interface AlertHistoryResponse {
@@ -174,11 +175,11 @@ export async function POST(
 
     const alertService = new AlertService();
 
-    // Determine recipient email
-    const recipientEmail = validatedData.recipientEmail || process.env.ADMIN_EMAIL;
+    // Determine recipient email - use provided email or route based on alert type
+    const recipientEmail = validatedData.recipientEmail || getRecipientEmail(validatedData.type);
     if (!recipientEmail) {
       return NextResponse.json(
-        { success: false, error: 'No recipient email provided and ADMIN_EMAIL not set' },
+        { success: false, error: 'No recipient email provided and no default email configured' },
         { status: 400 }
       );
     }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { env } from '@/env';
 import { sendEmailWithQueue } from '@/lib/webhook-queue';
 import { AlertType, AlertPriority, AlertStatus, OrderStatus } from '@prisma/client';
+import { getRecipientEmail } from '@/lib/email-routing';
 import {
   AlertResult,
   CreateAlertInput,
@@ -40,6 +41,8 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   exponentialBackoff: true,
 };
 
+
+
 /**
  * Main Alert Service Class
  * Handles sending email alerts and tracking them in the database
@@ -72,12 +75,13 @@ export class AlertService {
       };
 
       const subject = `🎉 New Order #${order.id} - $${Number(order.total).toFixed(2)}`;
+      const recipientEmail = getRecipientEmail(AlertType.NEW_ORDER);
 
       // Create alert record in database
       const alertRecord = await this.createAlertRecord({
         type: AlertType.NEW_ORDER,
         priority: AlertPriority.HIGH,
-        recipientEmail: env.ADMIN_EMAIL,
+        recipientEmail,
         subject,
         metadata: alertData,
         relatedOrderId: order.id,
@@ -88,14 +92,14 @@ export class AlertService {
       try {
         await sendEmailWithQueue({
           from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
-          to: env.ADMIN_EMAIL,
+          to: recipientEmail,
           subject,
           react: React.createElement(AdminNewOrderAlert, alertData),
           priority: 'high',
         });
 
         await this.markAlertAsSent(alertRecord.id, 'queued');
-        console.log(`✅ New order alert queued for order ${order.id}`);
+        console.log(`✅ New order alert queued for order ${order.id} to ${recipientEmail}`);
 
         return { success: true, messageId: 'queued' };
       } catch (error: any) {
@@ -157,10 +161,11 @@ export class AlertService {
 
       // Send to admin for important status changes
       if (this.shouldNotifyAdminOfStatusChange(order.status)) {
+        const adminRecipientEmail = getRecipientEmail(AlertType.ORDER_STATUS_CHANGE);
         const adminAlertRecord = await this.createAlertRecord({
           type: AlertType.ORDER_STATUS_CHANGE,
           priority: AlertPriority.MEDIUM,
-          recipientEmail: env.ADMIN_EMAIL,
+          recipientEmail: adminRecipientEmail,
           subject: `🔄 Admin Alert: ${subject}`,
           metadata: alertData,
           relatedOrderId: order.id,
@@ -169,7 +174,7 @@ export class AlertService {
 
         const { data: adminData, error: adminError } = await resend.emails.send({
           from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
-          to: env.ADMIN_EMAIL,
+          to: adminRecipientEmail,
           subject: `🔄 Admin Alert: ${subject}`,
           react: React.createElement(OrderStatusChangeAlert, { ...alertData, isCustomer: false }),
         });
@@ -179,7 +184,7 @@ export class AlertService {
           console.error('❌ Failed to send admin status change alert:', adminError);
         } else {
           await this.markAlertAsSent(adminAlertRecord.id, adminData?.id);
-          console.log(`✅ Admin status change alert sent for order ${order.id}`);
+          console.log(`✅ Admin status change alert sent for order ${order.id} to ${adminRecipientEmail}`);
         }
       }
 
@@ -210,11 +215,12 @@ export class AlertService {
       };
 
       const subject = `🚨 Payment Failed - Order #${order.id}`;
+      const recipientEmail = getRecipientEmail(AlertType.PAYMENT_FAILED);
 
       const alertRecord = await this.createAlertRecord({
         type: AlertType.PAYMENT_FAILED,
         priority: AlertPriority.CRITICAL,
-        recipientEmail: env.ADMIN_EMAIL,
+        recipientEmail,
         subject,
         metadata: alertData,
         relatedOrderId: order.id,
@@ -223,7 +229,7 @@ export class AlertService {
 
       const { data, error } = await resend.emails.send({
         from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
-        to: env.ADMIN_EMAIL,
+        to: recipientEmail,
         subject,
         react: React.createElement(PaymentFailedAlert, alertData),
       });
@@ -234,7 +240,7 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, data?.id);
-      console.log(`✅ Payment failed alert sent for order ${order.id}`);
+      console.log(`✅ Payment failed alert sent for order ${order.id} to ${recipientEmail}`);
 
       return { success: true, messageId: data?.id };
     } catch (error) {
@@ -259,18 +265,19 @@ export class AlertService {
       };
 
       const subject = `🔥 System Error: ${error.name || 'Unknown Error'}`;
+      const recipientEmail = getRecipientEmail(AlertType.SYSTEM_ERROR);
 
       const alertRecord = await this.createAlertRecord({
         type: AlertType.SYSTEM_ERROR,
         priority: AlertPriority.CRITICAL,
-        recipientEmail: env.ADMIN_EMAIL,
+        recipientEmail,
         subject,
         metadata: alertData,
       });
 
       const { data: emailData, error: emailError } = await resend.emails.send({
         from: `${env.SHOP_NAME} Alerts <${env.FROM_EMAIL}>`,
-        to: env.ADMIN_EMAIL,
+        to: recipientEmail,
         subject,
         react: SystemErrorAlert({
           error: alertData.error,
@@ -288,7 +295,7 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, emailData?.id);
-      console.log(`✅ System error alert sent: ${error.message}`);
+      console.log(`✅ System error alert sent: ${error.message} to ${recipientEmail}`);
 
       return { success: true, messageId: emailData?.id };
     } catch (alertError) {
@@ -310,11 +317,12 @@ export class AlertService {
       const summaryData = await this.collectDailySummaryData(date);
 
       const subject = `📊 Daily Summary - ${date.toDateString()}`;
+      const recipientEmail = getRecipientEmail(AlertType.DAILY_SUMMARY);
 
       const alertRecord = await this.createAlertRecord({
         type: AlertType.DAILY_SUMMARY,
         priority: AlertPriority.LOW,
-        recipientEmail: env.ADMIN_EMAIL,
+        recipientEmail,
         subject,
         metadata: { summaryData },
       });
@@ -322,7 +330,7 @@ export class AlertService {
       // Send to admin
       const { data, error } = await resend.emails.send({
         from: `${env.SHOP_NAME} Reports <${env.FROM_EMAIL}>`,
-        to: env.ADMIN_EMAIL,
+        to: recipientEmail,
         subject,
         react: DailySummaryAlert({
           summary: summaryData,
@@ -336,7 +344,7 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, data?.id);
-      console.log(`✅ Daily summary alert sent for ${date.toDateString()}`);
+      console.log(`✅ Daily summary alert sent for ${date.toDateString()} to ${recipientEmail}`);
 
       return { success: true, messageId: data?.id };
     } catch (error) {
@@ -765,9 +773,10 @@ export class AlertService {
       });
 
       // Admin notification
+      const adminRecipientEmail = getRecipientEmail(AlertType.CONTACT_FORM_RECEIVED);
       const { data: adminEmailData, error: adminError } = await resend.emails.send({
         from: `${shopName} Alerts <${env.FROM_EMAIL}>`,
-        to: [env.ADMIN_EMAIL],
+        to: [adminRecipientEmail],
         subject: `New Contact Form: ${data.type} - ${data.name}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -796,7 +805,7 @@ export class AlertService {
       await this.createAlertRecord({
         type: AlertType.CONTACT_FORM_RECEIVED,
         priority: AlertPriority.MEDIUM,
-        recipientEmail: data.email,
+        recipientEmail: adminRecipientEmail,
         subject: `Contact form submission from ${data.name}`,
         metadata: {
           type: data.type,
@@ -805,7 +814,7 @@ export class AlertService {
         },
       });
 
-      console.log(`✅ Contact form processed for ${data.name} (${data.email})`);
+      console.log(`✅ Contact form processed for ${data.name} (${data.email}) - admin notification sent to ${adminRecipientEmail}`);
       return { success: !customerError && !adminError };
     } catch (error) {
       console.error('Error processing contact form:', error);

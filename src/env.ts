@@ -11,6 +11,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     FROM_EMAIL: z.string().email(),
     ADMIN_EMAIL: z.string().email(),
+    JAMES_EMAIL: z.string().email().optional(),
     SHOP_NAME: z.string().default('Destino SF'),
     // Supabase Configuration
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
@@ -56,6 +57,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    JAMES_EMAIL: process.env.JAMES_EMAIL,
     SHOP_NAME: process.env.SHOP_NAME,
     // Supabase Configuration
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
