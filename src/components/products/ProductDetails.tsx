@@ -87,11 +87,19 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
   useEffect(() => {
     async function fetchRelatedProducts() {
       try {
-        // Fetch products from the same category, excluding the current product
-        const response = await fetch(`/api/products?categoryId=${currentProduct.categoryId}&exclude=${currentProduct.id}&limit=3`);
+        // Fetch products from the same category, excluding the current product and catering products
+        const response = await fetch(`/api/products?categoryId=${currentProduct.categoryId}&exclude=${currentProduct.id}&limit=6&excludeCatering=true`);
         if (response.ok) {
           const products = await response.json();
-          setRelatedProducts(products);
+          // Filter out any products with $0.00 price as an additional safety measure
+          const filteredProducts = products.filter((product: Product) => {
+            const price = typeof product.price === 'object' && product.price !== null && 'toNumber' in product.price 
+              ? product.price.toNumber() 
+              : Number(product.price);
+            return price > 0;
+          });
+          // Take only the first 3 products after filtering
+          setRelatedProducts(filteredProducts.slice(0, 3));
         }
       } catch (error) {
         console.error('Error fetching related products:', error);

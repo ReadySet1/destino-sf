@@ -1,11 +1,8 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
+import { signOutAction } from '@/app/actions/auth';
 
-// Define and export the Server Action
+// Re-export the centralized signOutAction for consistency
 export async function handleSignOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect('/sign-in');
+  return signOutAction();
 } 

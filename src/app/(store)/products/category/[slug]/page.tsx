@@ -146,6 +146,15 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       where: {
         categoryId: category.id,
         active: true, // Only fetch active products
+        // Exclude catering products from category pages
+        category: {
+          NOT: {
+            name: {
+              startsWith: 'CATERING',
+              mode: 'insensitive'
+            }
+          }
+        }
       },
       include: {
         variants: true, // Include variants if needed by ProductGrid
