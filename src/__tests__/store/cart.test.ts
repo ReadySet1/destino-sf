@@ -178,8 +178,12 @@ describe('Cart Store', () => {
 
       const state = useCartStore.getState();
       expect(state.items).toHaveLength(2);
-      expect(state.items.find(item => item.id === '2' && item.variantId === 'variant-1')).toBeUndefined();
-      expect(state.items.find(item => item.id === '2' && item.variantId === 'variant-2')).toBeDefined();
+      expect(
+        state.items.find(item => item.id === '2' && item.variantId === 'variant-1')
+      ).toBeUndefined();
+      expect(
+        state.items.find(item => item.id === '2' && item.variantId === 'variant-2')
+      ).toBeDefined();
       expect(state.totalPrice).toBe(33.97); // 21.98 + 11.99
       expect(state.totalItems).toBe(3);
     });
@@ -270,7 +274,7 @@ describe('Cart Store', () => {
 
     it('should not update quantity for non-existent item', () => {
       const initialState = useCartStore.getState();
-      
+
       act(() => {
         useCartStore.getState().updateQuantity('non-existent', 5);
       });
@@ -281,7 +285,7 @@ describe('Cart Store', () => {
 
     it('should not update quantity for wrong variant', () => {
       const initialState = useCartStore.getState();
-      
+
       act(() => {
         useCartStore.getState().updateQuantity('2', 5, 'wrong-variant');
       });
@@ -349,7 +353,7 @@ describe('Cart Store', () => {
           price: 10.99,
           quantity: 2,
         });
-        
+
         useCartStore.getState().addItem({
           id: '2',
           name: 'Chicken Empanada Small',
@@ -357,7 +361,7 @@ describe('Cart Store', () => {
           quantity: 1,
           variantId: 'small',
         });
-        
+
         useCartStore.getState().addItem({
           id: '2',
           name: 'Chicken Empanada Large',
@@ -401,7 +405,7 @@ describe('Cart Store', () => {
           price: 10.33,
           quantity: 3,
         });
-        
+
         useCartStore.getState().addItem({
           id: '2',
           name: 'Item 2',
@@ -415,4 +419,4 @@ describe('Cart Store', () => {
       expect(state.totalItems).toBe(5);
     });
   });
-}); 
+});

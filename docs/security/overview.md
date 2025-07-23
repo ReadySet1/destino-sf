@@ -9,6 +9,7 @@
 ## 📁 File Organization
 
 ### Core Implementation Files
+
 ```
 src/
 ├── lib/
@@ -27,6 +28,7 @@ src/
 ```
 
 ### Configuration Files
+
 ```
 ├── next.config.js                       # Security headers + app config
 ├── vercel.json                          # Vercel deployment + security config
@@ -34,6 +36,7 @@ src/
 ```
 
 ### Documentation & Testing
+
 ```
 docs/
 ├── SECURITY_HEADERS_TEST_GUIDE.md       # Security headers testing guide
@@ -49,6 +52,7 @@ scripts/
 ## 🛡️ Security Features Implemented
 
 ### 1. Rate Limiting System
+
 - **Service**: Token bucket algorithm using Upstash Redis
 - **Middleware**: IP-based and user-based rate limiting
 - **Endpoints Protected**:
@@ -59,6 +63,7 @@ scripts/
   - General API: 60 requests/minute
 
 ### 2. Security Headers Configuration
+
 - **Content Security Policy**: Allows Square, Supabase, Google Maps, AWS S3
 - **Anti-Clickjacking**: X-Frame-Options: DENY
 - **MIME Protection**: X-Content-Type-Options: nosniff
@@ -71,17 +76,21 @@ scripts/
 ## 🚀 Domain Deployment
 
 ### Automatic Application
+
 Security headers automatically apply to all domains:
+
 - ✅ **localhost:3000** (development)
 - ✅ **development.destinosf.com** (staging)
 - ✅ **destinosf.com** (production - when deployed)
 
 ### No Domain-Specific Configuration Required
+
 The security implementation is code-based, not domain-specific.
 
 ## 🧪 Testing
 
 ### Quick Test Commands
+
 ```bash
 # Test security headers
 ./scripts/test-security-headers.sh
@@ -94,12 +103,14 @@ BASE_URL=https://development.destinosf.com ./scripts/test-security-headers.sh
 ```
 
 ### Test Endpoints
+
 - **Security Headers**: `/api/security/headers-test`
 - **Rate Limiting**: `/api/test-rate-limit`
 
 ## 📊 Test Results Analysis
 
 ### ✅ Working Perfectly
+
 - All security headers present and correct
 - CSP properly configured for all external services
 - Rate limiting functional
@@ -107,6 +118,7 @@ BASE_URL=https://development.destinosf.com ./scripts/test-security-headers.sh
 - Server information concealed
 
 ### ⚠️ Minor Notes
+
 - Static assets don't need all security headers (normal behavior)
 - Rate limiting headers only show when limits are active
 - Admin routes return 307 redirect (normal auth behavior)
@@ -114,6 +126,7 @@ BASE_URL=https://development.destinosf.com ./scripts/test-security-headers.sh
 ## 🔧 Environment Variables
 
 ### Required for Production
+
 ```env
 # Rate Limiting
 UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
@@ -126,18 +139,20 @@ BYPASS_RATE_LIMIT=false  # Set to true only in development
 ## 📈 Security Improvements
 
 ### Attack Vector Protection
-| Attack Type | Protection Level | Implementation |
-|-------------|------------------|----------------|
-| XSS | **High** | CSP + X-XSS-Protection |
-| Clickjacking | **High** | X-Frame-Options: DENY |
-| MIME Sniffing | **High** | X-Content-Type-Options |
-| DDoS/Abuse | **High** | Rate Limiting |
-| Data Injection | **High** | CSP + form-action |
-| Info Disclosure | **Medium** | Hidden server headers |
+
+| Attack Type     | Protection Level | Implementation         |
+| --------------- | ---------------- | ---------------------- |
+| XSS             | **High**         | CSP + X-XSS-Protection |
+| Clickjacking    | **High**         | X-Frame-Options: DENY  |
+| MIME Sniffing   | **High**         | X-Content-Type-Options |
+| DDoS/Abuse      | **High**         | Rate Limiting          |
+| Data Injection  | **High**         | CSP + form-action      |
+| Info Disclosure | **Medium**       | Hidden server headers  |
 
 ### Security Grade
+
 - **Expected Grade**: A or A+
-- **Test Tools**: 
+- **Test Tools**:
   - https://securityheaders.com/
   - https://observatory.mozilla.org/
 
@@ -160,6 +175,7 @@ BYPASS_RATE_LIMIT=false  # Set to true only in development
 ## 📋 Maintenance
 
 ### Monthly Tasks
+
 - [ ] Test security headers on all domains
 - [ ] Review CSP violation reports
 - [ ] Update trusted domains if needed
@@ -167,6 +183,7 @@ BYPASS_RATE_LIMIT=false  # Set to true only in development
 - [ ] Run security scans
 
 ### When Adding New External Services
+
 1. Add domains to `src/lib/security/csp-config.ts`
 2. Update CSP in `next.config.js`
 3. Test with security headers script
@@ -177,4 +194,4 @@ BYPASS_RATE_LIMIT=false  # Set to true only in development
 **Implementation Date**: January 2025  
 **Status**: Production Ready  
 **Next Priority**: Webhook Signature Validation  
-**Estimated Security Grade**: A/A+ 
+**Estimated Security Grade**: A/A+

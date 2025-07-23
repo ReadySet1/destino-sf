@@ -28,12 +28,13 @@
 ### **Phase 1: Fix Core Type Definitions (1 hour)** ✅ **COMPLETED**
 
 #### **1.1 Update Order Types** ✅ **COMPLETED**
+
 ```typescript
 // src/types/order.ts - Add missing properties and enum
 export enum FulfillmentType {
   PICKUP = 'pickup',
-  LOCAL_DELIVERY = 'local_delivery', 
-  NATIONWIDE_SHIPPING = 'nationwide_shipping'
+  LOCAL_DELIVERY = 'local_delivery',
+  NATIONWIDE_SHIPPING = 'nationwide_shipping',
 }
 
 // Update OrderInput to match test expectations
@@ -66,6 +67,7 @@ export interface OrderInput {
 ```
 
 #### **1.2 Align PaymentMethod Types** ✅ **COMPLETED**
+
 ```typescript
 // Check Prisma schema and align with test usage
 export type PaymentMethod = 'CASH' | 'SQUARE' | 'CREDIT_CARD';
@@ -74,6 +76,7 @@ export type PaymentMethod = 'CASH' | 'SQUARE' | 'CREDIT_CARD';
 ### **Phase 2: Fix Database/Prisma Issues (1.5 hours)** ✅ **COMPLETED**
 
 #### **2.1 Update Prisma Mock Types** ✅ **COMPLETED**
+
 ```typescript
 // src/__tests__/setup/prisma-mocks.ts
 import type { PrismaClient } from '@prisma/client';
@@ -85,6 +88,7 @@ export const mockPrisma = mockDeep<PrismaClient>() as MockPrismaClient;
 ```
 
 #### **2.2 Fix Property Name Mismatches** ✅ **COMPLETED**
+
 - Change `isActive` → `active` in tests
 - Add missing properties to mock data
 - Update field references to match Prisma schema
@@ -92,26 +96,26 @@ export const mockPrisma = mockDeep<PrismaClient>() as MockPrismaClient;
 ### **Phase 3: Fix Test Infrastructure (2 hours)** ✅ **COMPLETED**
 
 #### **3.1 Create Test Type Factories** ✅ **COMPLETED**
+
 ```typescript
 // src/__tests__/utils/test-factories.ts
 export const createValidOrderInput = (): OrderInput => ({
-  items: [
-    { id: '1', name: 'Test Product', price: 10, quantity: 1 }
-  ],
+  items: [{ id: '1', name: 'Test Product', price: 10, quantity: 1 }],
   customerInfo: {
     name: 'Test User',
-    email: 'test@example.com', 
-    phone: '555-0123'
+    email: 'test@example.com',
+    phone: '555-0123',
   },
   fulfillment: {
     method: 'pickup',
-    pickupTime: new Date().toISOString()
+    pickupTime: new Date().toISOString(),
   },
-  paymentMethod: 'SQUARE'
+  paymentMethod: 'SQUARE',
 });
 ```
 
 #### **3.2 Fix Component Test Props** ✅ **COMPLETED**
+
 - Add missing required props to component tests
 - Update mock implementations to match interfaces
 - Fix test data structures
@@ -119,6 +123,7 @@ export const createValidOrderInput = (): OrderInput => ({
 ### **Phase 4: Module Resolution & Imports (1 hour)** 🔄 **NEXT**
 
 #### **4.1 Fix Missing Modules**
+
 ```typescript
 // Add missing exports and fix import paths
 export { default as CheckoutPage } from './page';
@@ -126,6 +131,7 @@ export { useCartStore } from './useCartStore';
 ```
 
 #### **4.2 Update Import Statements**
+
 - Add `type` keyword for type-only imports
 - Fix module path resolution
 - Update tsconfig paths if needed
@@ -133,13 +139,14 @@ export { useCartStore } from './useCartStore';
 ### **Phase 5: Square API Type Alignment (0.5 hours)**
 
 #### **5.1 Fix Square SDK Types**
+
 ```typescript
 // src/types/square.ts - Update to match actual Square SDK
 export interface SquarePaymentRequest {
-  source_id: string;     // not sourceId
-  idempotency_key: string; // not idempotencyKey  
+  source_id: string; // not sourceId
+  idempotency_key: string; // not idempotencyKey
   amount_money: {
-    amount: number;        // not bigint
+    amount: number; // not bigint
     currency: string;
   };
 }
@@ -150,24 +157,28 @@ export interface SquarePaymentRequest {
 ## **🔧 Implementation Steps**
 
 ### **Step 1: Immediate Fixes (Quick Wins)** ✅ **COMPLETED**
+
 1. ✅ **Export FulfillmentType as enum** - Fixed 20+ errors immediately
-2. ✅ **Add missing OrderInput properties** - Fixed 25+ errors  
+2. ✅ **Add missing OrderInput properties** - Fixed 25+ errors
 3. ✅ **Align PaymentMethod enum** - Fixed 15+ errors
 4. ✅ **Fix common property name mismatches** - Fixed 10+ errors
 
 ### **Step 2: Prisma/Database Fixes** ✅ **COMPLETED**
+
 1. ✅ **Update mock type definitions** - Fixed test data factories
 2. ✅ **Fix property name mismatches** - Fixed fulfillmentMethod → fulfillmentType, customerEmail → email
 3. ✅ **Add missing mock method implementations** - Added proper mock returns
 4. ✅ **Update test data factories** - Created comprehensive test factories
 
 ### **Step 3: Test Infrastructure** ✅ **COMPLETED**
+
 1. ✅ **Fix component prop types** - Added missing cart store props, fixed FeaturedProducts test
 2. ✅ **Update test utilities** - Fixed jest-mock-extended imports, proper type factories
 3. ✅ **Fix mock implementations** - Properly typed mock functions to avoid 'never' errors
 4. ✅ **Add missing test type definitions** - Resolved module resolution issues
 
 ### **Step 4: Final Cleanup** 🔄 **IN PROGRESS**
+
 1. **Fix remaining import/export issues**
 2. **Update module paths**
 3. **Add missing type definitions**
@@ -205,6 +216,7 @@ pnpm tsc --noEmit src/__tests__/app/actions/*.ts
 ## **Phase 6 Summary: Final Cleanup** ✅ **COMPLETED**
 
 ### **What was accomplished:**
+
 1. ✅ **Fixed enum value mismatches** - Changed invalid "CONFIRMED" to "READY" in OrderStatus
 2. ✅ **Fixed property name mismatches** - Updated fulfillmentMethod → fulfillmentType, customerEmail → email, customerPhone → phone
 3. ✅ **Removed non-existent properties** - Cleaned up deliveryAddress, paymentDetails, specialInstructions, deliveryFee, subtotal from mock data
@@ -212,10 +224,12 @@ pnpm tsc --noEmit src/__tests__/app/actions/*.ts
 5. ✅ **Fixed test expectations** - Updated test assertions to match actual schema properties
 
 ### **Key files fixed:**
+
 - `src/__tests__/app/api/admin/orders.test.ts` - Fixed 6+ property mismatches and invalid enum values
 - `src/__tests__/app/api/orders/create.test.ts` - Fixed 2+ property name issues and enum values
 
 ### **Properties cleaned up:**
+
 - `deliveryAddress` → Removed (doesn't exist in schema)
 - `paymentDetails` → Replaced with `paymentStatus` and `paymentMethod`
 - `specialInstructions` → Replaced with `notes`
@@ -226,6 +240,7 @@ pnpm tsc --noEmit src/__tests__/app/actions/*.ts
 - `subtotal` → Removed (doesn't exist in Order schema)
 
 ### **Remaining work:**
+
 - **364 errors still remain** - mostly complex type assignment issues and schema mismatches
 - **Items property access issues** - Tests expect items relation but mocks aren't properly typed
 - **Decimal vs number conversion issues** - BigInt/Decimal type mismatches

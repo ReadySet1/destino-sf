@@ -1,16 +1,19 @@
 # 🎭 Playwright Setup Guide - Destino SF
 
 ## 📋 Overview
+
 This guide covers the setup, configuration, and best practices for Playwright testing in the Destino SF project.
 
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - pnpm package manager
 - Next.js application running locally
 
 ### Installation
+
 ```bash
 # Install Playwright dependencies (already included in project)
 pnpm install
@@ -25,6 +28,7 @@ pnpm exec playwright install-deps
 ## ⚙️ Configuration
 
 ### Playwright Configuration (`playwright.config.ts`)
+
 Our configuration supports multiple environments and device types:
 
 ```typescript
@@ -36,10 +40,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html'],
-    ['junit', { outputFile: 'test-results/junit.xml' }]
-  ],
+  reporter: [['html'], ['junit', { outputFile: 'test-results/junit.xml' }]],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -79,6 +80,7 @@ export default defineConfig({
 ```
 
 ### Environment Variables
+
 Create a `.env.test` file:
 
 ```bash
@@ -101,6 +103,7 @@ RESEND_API_KEY=test_key
 ## 📁 Test Structure
 
 ### Directory Organization
+
 ```
 tests/
 ├── e2e/                     # End-to-end tests
@@ -118,6 +121,7 @@ tests/
 ```
 
 ### Test Naming Convention
+
 - `01-`, `02-`, etc. for execution order
 - Descriptive names indicating the test purpose
 - `.spec.ts` extension for test files
@@ -139,10 +143,10 @@ test.describe('Feature Name', () => {
   test('should perform specific action', async ({ page }) => {
     // Arrange
     await page.goto('/target-page');
-    
+
     // Act
     await page.click('[data-testid="action-button"]');
-    
+
     // Assert
     await expect(page.getByText('Success message')).toBeVisible();
   });
@@ -150,6 +154,7 @@ test.describe('Feature Name', () => {
 ```
 
 ### Data Test IDs
+
 Use consistent `data-testid` attributes:
 
 ```html
@@ -164,6 +169,7 @@ Use consistent `data-testid` attributes:
 ```
 
 ### Test Helpers
+
 Create reusable functions for common actions:
 
 ```typescript
@@ -176,11 +182,11 @@ export class TestHelpers {
 
   static async addProductToCart(page: Page, productSlug: string, quantity = 1) {
     await page.goto(`/products/${productSlug}`);
-    
+
     if (quantity > 1) {
       await page.fill('[data-testid="quantity-input"]', quantity.toString());
     }
-    
+
     await page.click('[data-testid="add-to-cart"]');
     await expect(page.getByText('Added to cart')).toBeVisible();
   }
@@ -189,10 +195,10 @@ export class TestHelpers {
     // Fill in customer details
     await page.fill('[data-testid="email-input"]', options.email);
     await page.fill('[data-testid="phone-input"]', options.phone);
-    
+
     // Select delivery/pickup
     await page.click(`[data-testid="${options.deliveryType}"]`);
-    
+
     // Complete payment
     await page.click('[data-testid="place-order"]');
   }
@@ -202,6 +208,7 @@ export class TestHelpers {
 ## 🚀 Running Tests
 
 ### Local Development
+
 ```bash
 # Run all tests
 pnpm test:e2e
@@ -223,6 +230,7 @@ pnpm exec playwright test --grep "purchase"
 ```
 
 ### Critical Tests Only
+
 ```bash
 # Run only business-critical tests
 pnpm test:e2e:critical
@@ -232,6 +240,7 @@ pnpm test:e2e:mobile
 ```
 
 ### CI/CD Integration
+
 ```bash
 # CI-optimized run
 pnpm test:e2e:ci
@@ -243,17 +252,20 @@ pnpm exec playwright test --reporter=junit
 ## 📊 Test Reports
 
 ### HTML Reports
+
 ```bash
 # Generate and view HTML report
 pnpm test:e2e:report
 ```
 
 ### Screenshots and Videos
+
 - Screenshots: Captured on test failure
 - Videos: Recorded for failed tests
 - Traces: Available for debugging
 
 ### Artifacts Location
+
 ```
 test-results/
 ├── screenshots/
@@ -265,6 +277,7 @@ test-results/
 ## 🔧 Debugging
 
 ### Visual Debugging
+
 ```bash
 # Open test in debug mode
 pnpm test:e2e:debug
@@ -274,6 +287,7 @@ pnpm exec playwright test --debug --grep "specific test"
 ```
 
 ### Browser Developer Tools
+
 ```typescript
 // Add debugging breakpoints in tests
 await page.pause(); // Stops execution
@@ -281,6 +295,7 @@ await page.screenshot({ path: 'debug.png' }); // Manual screenshot
 ```
 
 ### Trace Viewer
+
 ```bash
 # View trace for failed test
 pnpm exec playwright show-trace test-results/trace.zip
@@ -289,16 +304,19 @@ pnpm exec playwright show-trace test-results/trace.zip
 ## 🌐 Cross-Browser Testing
 
 ### Desktop Browsers
+
 - **Chrome**: Primary browser for development
 - **Firefox**: Secondary browser support
 - **Safari**: macOS/iOS compatibility
 - **Edge**: Windows compatibility
 
 ### Mobile Testing
+
 - **Mobile Chrome**: Android devices
 - **Mobile Safari**: iOS devices
 
 ### Running Specific Browsers
+
 ```bash
 # Run on specific browser
 pnpm exec playwright test --project=chromium
@@ -311,16 +329,19 @@ pnpm exec playwright test --project=chromium --project=firefox
 ## 🎯 Best Practices
 
 ### Test Isolation
+
 - Each test should be independent
 - Clean state before each test
 - Use unique test data
 
 ### Reliable Selectors
+
 1. `data-testid` attributes (preferred)
 2. Semantic selectors (`getByRole`, `getByText`)
 3. CSS selectors (as last resort)
 
 ### Async Handling
+
 ```typescript
 // Wait for elements
 await expect(page.getByText('Loading...')).toBeHidden();
@@ -334,13 +355,12 @@ await page.waitForURL('**/order-confirmation');
 ```
 
 ### Error Handling
+
 ```typescript
 test('should handle errors gracefully', async ({ page }) => {
   // Test error scenarios
-  await page.route('**/api/checkout', route => 
-    route.fulfill({ status: 500 })
-  );
-  
+  await page.route('**/api/checkout', route => route.fulfill({ status: 500 }));
+
   await page.click('[data-testid="checkout-button"]');
   await expect(page.getByText('Error processing order')).toBeVisible();
 });
@@ -349,18 +369,20 @@ test('should handle errors gracefully', async ({ page }) => {
 ## 🔍 Performance Testing
 
 ### Metrics to Monitor
+
 - Page load times
 - Time to interactive
 - Largest contentful paint
 - Core web vitals
 
 ### Performance Assertions
+
 ```typescript
 test('should load quickly', async ({ page }) => {
   const start = Date.now();
   await page.goto('/');
   const loadTime = Date.now() - start;
-  
+
   expect(loadTime).toBeLessThan(3000); // 3 seconds max
 });
 ```
@@ -368,18 +390,21 @@ test('should load quickly', async ({ page }) => {
 ## 📋 Maintenance Checklist
 
 ### Weekly
+
 - [ ] Run full test suite
 - [ ] Check for flaky tests
 - [ ] Update test data if needed
 - [ ] Review test execution times
 
 ### Monthly
+
 - [ ] Update Playwright version
 - [ ] Review test coverage
 - [ ] Optimize slow tests
 - [ ] Update browser versions
 
 ### Before Deployment
+
 - [ ] All critical tests pass
 - [ ] Cross-browser validation
 - [ ] Mobile testing complete
@@ -387,4 +412,4 @@ test('should load quickly', async ({ page }) => {
 
 ---
 
-*This guide should be updated as the testing strategy evolves.* 
+_This guide should be updated as the testing strategy evolves._

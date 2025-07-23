@@ -17,12 +17,12 @@ The Minimum Purchase Requirements system implements zone-based minimum order amo
 
 ### Current Zones
 
-| Zone | Area | Minimum | Delivery Fee | Est. Time |
-|------|------|---------|--------------|-----------|
-| San Francisco | SF and surrounding | $250.00 | $50.00 | 1-2 hours |
-| South Bay | San José, Santa Clara, Sunnyvale | $350.00 | $75.00 | 2-3 hours |
-| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $400.00 | $100.00 | 2-3 hours |
-| Peninsula | San Ramón, Walnut Creek, Far Peninsula | $500.00 | $150.00 | 3-4 hours |
+| Zone            | Area                                   | Minimum | Delivery Fee | Est. Time |
+| --------------- | -------------------------------------- | ------- | ------------ | --------- |
+| San Francisco   | SF and surrounding                     | $250.00 | $50.00       | 1-2 hours |
+| South Bay       | San José, Santa Clara, Sunnyvale       | $350.00 | $75.00       | 2-3 hours |
+| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $400.00 | $100.00      | 2-3 hours |
+| Peninsula       | San Ramón, Walnut Creek, Far Peninsula | $500.00 | $150.00      | 3-4 hours |
 
 ### Zone Configuration
 
@@ -31,11 +31,11 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
   [DeliveryZone.SAN_FRANCISCO]: {
     zone: DeliveryZone.SAN_FRANCISCO,
     name: 'San Francisco',
-    minimumAmount: 250.00,
+    minimumAmount: 250.0,
     description: 'San Francisco and surrounding areas',
-    deliveryFee: 50.00,
+    deliveryFee: 50.0,
     estimatedDeliveryTime: '1-2 hours',
-    isActive: true
+    isActive: true,
   },
   // ... other zones
 };
@@ -93,12 +93,10 @@ import { getActiveDeliveryZones, getMinimumPurchaseMessage } from '@/types/cater
 
 function CateringPageHeader() {
   const activeZones = getActiveDeliveryZones();
-  
+
   return (
     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-      <h3 className="font-semibold text-yellow-800 mb-2">
-        Delivery Minimums
-      </h3>
+      <h3 className="font-semibold text-yellow-800 mb-2">Delivery Minimums</h3>
       <ul className="text-yellow-700 text-sm space-y-1">
         {activeZones.map(zone => (
           <li key={zone.zone}>
@@ -136,19 +134,19 @@ function CateringOrderForm() {
   return (
     <form>
       {/* Address fields */}
-      <input 
-        type="text" 
+      <input
+        type="text"
         placeholder="Postal Code"
-        onChange={(e) => handlePostalCodeChange(e.target.value)}
+        onChange={e => handlePostalCodeChange(e.target.value)}
       />
-      
+
       {/* Minimum validation display */}
       {validationResult && !validationResult.isValid && (
         <div className="bg-red-50 border border-red-200 rounded p-3 mt-4">
           <p className="text-red-800 text-sm">{validationResult.message}</p>
         </div>
       )}
-      
+
       {/* Order summary */}
       <div className="mt-4">
         <p>Subtotal: ${orderTotal.toFixed(2)}</p>
@@ -173,14 +171,14 @@ import { validateMinimumPurchase, determineDeliveryZone } from '@/types/catering
 export async function submitCateringOrder(orderData: CateringFormData) {
   // Determine delivery zone
   const deliveryZone = determineDeliveryZone(orderData.postalCode, orderData.city);
-  
+
   if (!deliveryZone) {
     throw new Error('Unable to deliver to this location');
   }
 
   // Validate minimum purchase
   const validation = validateMinimumPurchase(orderData.totalAmount, deliveryZone);
-  
+
   if (!validation.isValid) {
     throw new Error(validation.message);
   }
@@ -194,8 +192,8 @@ export async function submitCateringOrder(orderData: CateringFormData) {
       ...orderData,
       deliveryZone,
       deliveryFee: getZoneConfig(deliveryZone).deliveryFee,
-      totalAmount: finalTotal
-    }
+      totalAmount: finalTotal,
+    },
   });
 
   return order;
@@ -212,7 +210,7 @@ function AdminZoneManagement() {
 
   const handleUpdateZone = async (zone: DeliveryZone, updates: ZoneUpdateRequest) => {
     const validation = validateZoneConfig(updates);
-    
+
     if (!validation.isValid) {
       alert('Validation errors: ' + validation.errors.join(', '));
       return;
@@ -220,7 +218,7 @@ function AdminZoneManagement() {
 
     // Call admin API to update zone
     await updateZoneConfig(zone, updates);
-    
+
     // Refresh zones list
     loadZones();
   };
@@ -228,22 +226,19 @@ function AdminZoneManagement() {
   return (
     <div className="admin-panel">
       <h2>Delivery Zone Management</h2>
-      
+
       {zones.map(zone => (
         <div key={zone.zone} className="zone-config-card">
           <h3>{zone.name}</h3>
-          
+
           {editingZone === zone.zone ? (
-            <ZoneEditForm 
-              zone={zone} 
-              onSave={(updates) => handleUpdateZone(zone.zone, updates)}
+            <ZoneEditForm
+              zone={zone}
+              onSave={updates => handleUpdateZone(zone.zone, updates)}
               onCancel={() => setEditingZone(null)}
             />
           ) : (
-            <ZoneDisplayCard 
-              zone={zone}
-              onEdit={() => setEditingZone(zone.zone)}
-            />
+            <ZoneDisplayCard zone={zone} onEdit={() => setEditingZone(zone.zone)} />
           )}
         </div>
       ))}
@@ -259,13 +254,13 @@ function AdminZoneManagement() {
 ```typescript
 import { validateMinimumPurchase, DeliveryZone } from '@/types/catering';
 
-const orderAmount = 225.00;
+const orderAmount = 225.0;
 const zone = DeliveryZone.SAN_FRANCISCO;
 
 const validation = validateMinimumPurchase(orderAmount, zone);
 
 if (!validation.isValid) {
-  console.log(validation.message); 
+  console.log(validation.message);
   // "Minimum order of $250.00 required for San Francisco. You need $25.00 more."
 }
 ```
@@ -275,7 +270,7 @@ if (!validation.isValid) {
 ```typescript
 import { calculateOrderTotal, DeliveryZone } from '@/types/catering';
 
-const subtotal = 300.00;
+const subtotal = 300.0;
 const zone = DeliveryZone.SOUTH_BAY;
 
 const total = calculateOrderTotal(subtotal, zone);
@@ -312,6 +307,7 @@ const zone3 = determineDeliveryZone('12345'); // Returns null (unknown area)
 ### Recommended Minimum Calculator
 
 The system includes a utility to calculate recommended minimums based on:
+
 - Delivery costs
 - Distance from restaurant
 - Operational overhead
@@ -322,8 +318,8 @@ import { calculateRecommendedMinimum } from '@/types/admin';
 
 const recommended = calculateRecommendedMinimum(
   150, // delivery fee
-  25,  // miles from base
-  50   // preparation cost
+  25, // miles from base
+  50 // preparation cost
 );
 // Returns recommended minimum (e.g., $275)
 ```
@@ -378,4 +374,4 @@ describe('Minimum Purchase Validation', () => {
 - [ ] Order validation integrated
 - [ ] Email templates updated with minimum information
 - [ ] Analytics dashboard configured
-- [ ] Documentation updated for staff training 
+- [ ] Documentation updated for staff training

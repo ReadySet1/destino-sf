@@ -8,7 +8,10 @@ import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
 import { CateringSection } from '@/components/Marketing/CateringSection';
 import GoogleMaps from '@/components/Maps/GoogleMaps';
 import { generatePageSEO } from '@/lib/seo';
-import { RestaurantStructuredData, LocalBusinessStructuredData } from '@/components/seo/StructuredData';
+import {
+  RestaurantStructuredData,
+  LocalBusinessStructuredData,
+} from '@/components/seo/StructuredData';
 
 export const metadata = generatePageSEO('home');
 

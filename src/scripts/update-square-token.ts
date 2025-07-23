@@ -13,11 +13,11 @@ import { logger } from '../utils/logger';
 async function updateSquareToken(): Promise<void> {
   try {
     const args = process.argv.slice(2);
-    
+
     // Parse command line arguments
     let tokenType = 'production';
     let tokenValue: string | null = null;
-    
+
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--sandbox' || args[i] === '-s') {
         tokenType = 'sandbox';
@@ -28,7 +28,7 @@ async function updateSquareToken(): Promise<void> {
         i++; // Skip the next argument
       }
     }
-    
+
     if (!tokenValue) {
       logger.info('\nSquare API Token Updater');
       logger.info('------------------------');
@@ -39,41 +39,39 @@ async function updateSquareToken(): Promise<void> {
       logger.info('  --production, -p Update the production token (default)');
       logger.info('  --token, -t      The new token value');
       logger.info('\nExample:');
-      logger.info('  npm run script -- src/scripts/update-square-token.ts --production --token EAAAEExxxxx');
+      logger.info(
+        '  npm run script -- src/scripts/update-square-token.ts --production --token EAAAEExxxxx'
+      );
       return;
     }
-    
+
     // Determine which env var to update
-    const envVarName = tokenType === 'sandbox' 
-      ? 'SQUARE_SANDBOX_TOKEN' 
-      : 'SQUARE_PRODUCTION_TOKEN';
-    
-    const envVarAlias = tokenType === 'sandbox' 
-      ? 'SQUARE_SANDBOX_TOKEN' 
-      : 'SQUARE_ACCESS_TOKEN'; // For production, also update SQUARE_ACCESS_TOKEN
-      
+    const envVarName = tokenType === 'sandbox' ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_PRODUCTION_TOKEN';
+
+    const envVarAlias = tokenType === 'sandbox' ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_ACCESS_TOKEN'; // For production, also update SQUARE_ACCESS_TOKEN
+
     // Temporarily set the environment variable for testing
     const originalValue = process.env[envVarName];
     process.env[envVarName] = tokenValue;
-    
+
     if (tokenType === 'production') {
       process.env.SQUARE_ACCESS_TOKEN = tokenValue;
       process.env.USE_SQUARE_SANDBOX = 'false';
     } else {
       process.env.USE_SQUARE_SANDBOX = 'true';
     }
-    
+
     // Test the token
     logger.info(`Testing ${tokenType} token...`);
-    
+
     const result = await directCatalogApi.testConnection();
-    
+
     if (result.success) {
       logger.info(`✅ Token test successful for ${tokenType} environment!`);
-      
+
       // Update the .env.local file
       const envFilePath = path.resolve(process.cwd(), '.env.local');
-      
+
       // Read existing env file or create new one
       let envFileContent = '';
       try {
@@ -81,10 +79,10 @@ async function updateSquareToken(): Promise<void> {
       } catch (err) {
         // File doesn't exist, will create it
       }
-      
+
       // Update or add the env var
       const envVarRegex = new RegExp(`^${envVarName}=.*$`, 'm');
-      
+
       if (envFileContent.match(envVarRegex)) {
         // Update existing var
         envFileContent = envFileContent.replace(envVarRegex, `${envVarName}=${tokenValue}`);
@@ -92,44 +90,48 @@ async function updateSquareToken(): Promise<void> {
         // Add new var
         envFileContent += `\n${envVarName}=${tokenValue}`;
       }
-      
+
       // For production token, also update SQUARE_ACCESS_TOKEN
       if (tokenType === 'production') {
         const accessTokenRegex = /^SQUARE_ACCESS_TOKEN=.*$/m;
-        
+
         if (envFileContent.match(accessTokenRegex)) {
-          envFileContent = envFileContent.replace(accessTokenRegex, `SQUARE_ACCESS_TOKEN=${tokenValue}`);
+          envFileContent = envFileContent.replace(
+            accessTokenRegex,
+            `SQUARE_ACCESS_TOKEN=${tokenValue}`
+          );
         } else {
           envFileContent += `\nSQUARE_ACCESS_TOKEN=${tokenValue}`;
         }
       }
-      
+
       // Make sure USE_SQUARE_SANDBOX is set correctly
       const sandboxFlagRegex = /^USE_SQUARE_SANDBOX=.*$/m;
       const sandboxValue = tokenType === 'sandbox' ? 'true' : 'false';
-      
+
       if (envFileContent.match(sandboxFlagRegex)) {
-        envFileContent = envFileContent.replace(sandboxFlagRegex, `USE_SQUARE_SANDBOX=${sandboxValue}`);
+        envFileContent = envFileContent.replace(
+          sandboxFlagRegex,
+          `USE_SQUARE_SANDBOX=${sandboxValue}`
+        );
       } else {
         envFileContent += `\nUSE_SQUARE_SANDBOX=${sandboxValue}`;
       }
-      
+
       // Write back to file
       fs.writeFileSync(envFilePath, envFileContent.trim() + '\n');
-      
+
       logger.info(`✅ Updated ${envVarName} in .env.local file`);
-      
+
       // Recommend restarting the dev server
       logger.info('\n🔄 Please restart your development server for changes to take effect.');
-      
     } else {
       logger.error(`❌ Token test failed for ${tokenType} environment.`);
       logger.error(`Error: ${result.error}`);
-      
+
       // Restore original value
       process.env[envVarName] = originalValue;
     }
-    
   } catch (error) {
     logger.error('Error during token update:', error);
   }
@@ -141,7 +143,7 @@ updateSquareToken()
     logger.info('Script completed');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     logger.error('Unhandled error in script:', error);
     process.exit(1);
-  }); 
+  });

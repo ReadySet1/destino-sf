@@ -22,6 +22,7 @@ const RATE_LIMIT_DELAY = 250; // 250ms between requests
 ```
 
 **RateLimiter Class:**
+
 - Implements intelligent request queuing
 - Prevents API calls from exceeding Square's limits
 - Maintains consistent delay between requests
@@ -29,12 +30,14 @@ const RATE_LIMIT_DELAY = 250; // 250ms between requests
 ### 2. Exponential Backoff Retry Logic
 
 **Square API Retry (`withSquareRetry`):**
+
 - Handles 429 rate limiting errors specifically
 - Exponential backoff with jitter: `baseDelay * 2^attempt + random jitter`
 - Maximum 3 retry attempts
 - Special handling for server errors (500, 502, 503)
 
 **Database Retry (`withDatabaseRetry`):**
+
 - Handles connection timeouts and server unavailability
 - Exponential backoff for database reconnection
 - Automatic retry for connection-related errors
@@ -42,6 +45,7 @@ const RATE_LIMIT_DELAY = 250; // 250ms between requests
 ### 3. Controlled Concurrency
 
 **Before:**
+
 ```typescript
 // Old: Uncontrolled parallel processing
 const batchPromises = batch.map(async (item) => {
@@ -51,6 +55,7 @@ await Promise.allSettled(batchPromises);
 ```
 
 **After:**
+
 ```typescript
 // New: Controlled concurrency with rate limiting
 const batchPromises = batch.map(async (item) => {
@@ -74,7 +79,7 @@ All database operations now wrapped with retry logic:
 const existingProduct = await withDatabaseRetry(async () => {
   return await prisma.product.findUnique({
     where: { squareId: item.id },
-    select: { id: true, slug: true, images: true, name: true }
+    select: { id: true, slug: true, images: true, name: true },
   });
 });
 ```
@@ -90,13 +95,13 @@ const existingProduct = await withDatabaseRetry(async () => {
 
 ### Expected Improvements:
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Rate Limit Errors | High (429s) | Near Zero | 95%+ reduction |
-| Database Timeouts | Frequent | Rare | 90%+ reduction |
-| Sync Success Rate | 60-70% | 95%+ | 25-35% improvement |
-| API Calls/Second | 15-20 | 4-6 | Sustainable rate |
-| Memory Usage | High spikes | Stable | More predictable |
+| Metric            | Before      | After     | Improvement        |
+| ----------------- | ----------- | --------- | ------------------ |
+| Rate Limit Errors | High (429s) | Near Zero | 95%+ reduction     |
+| Database Timeouts | Frequent    | Rare      | 90%+ reduction     |
+| Sync Success Rate | 60-70%      | 95%+      | 25-35% improvement |
+| API Calls/Second  | 15-20       | 4-6       | Sustainable rate   |
+| Memory Usage      | High spikes | Stable    | More predictable   |
 
 ## Configuration Options
 
@@ -140,6 +145,7 @@ SYNC_RATE_LIMIT_DELAY=250
 ### Key Log Messages to Monitor:
 
 **Success Indicators:**
+
 ```
 ✅ Starting Square product sync with enhanced rate limiting...
 ✅ Processed item: [Product Name]
@@ -147,12 +153,14 @@ SYNC_RATE_LIMIT_DELAY=250
 ```
 
 **Warning Indicators:**
+
 ```
 ⚠️ Rate limited (attempt 1), waiting 2000ms before retry...
 ⚠️ Database connection failed (attempt 1), retrying in 1000ms...
 ```
 
 **Error Indicators:**
+
 ```
 ❌ Square API rate limited after 3 attempts
 ❌ Database operation failed after 3 attempts
@@ -161,17 +169,20 @@ SYNC_RATE_LIMIT_DELAY=250
 ## Troubleshooting
 
 ### Rate Limiting Issues:
+
 1. Reduce `BATCH_SIZE` and `MAX_CONCURRENT_REQUESTS`
 2. Increase `RATE_LIMIT_DELAY`
 3. Check Square API dashboard for usage limits
 
 ### Database Connection Issues:
+
 1. Verify Supabase project is active (not paused)
 2. Check `DATABASE_URL` configuration
 3. Monitor connection pool usage
 4. Consider increasing connection timeout
 
 ### Performance Issues:
+
 1. Monitor memory usage during sync
 2. Check for long-running database queries
 3. Review batch sizes based on data volume
@@ -180,6 +191,7 @@ SYNC_RATE_LIMIT_DELAY=250
 ## Testing the Improvements
 
 ### 1. Manual Testing:
+
 ```bash
 # Run a small sync to test improvements
 curl -X POST http://localhost:3000/api/square/sync
@@ -189,6 +201,7 @@ tail -f logs/sync.log | grep -E "(Rate limited|Database|Error)"
 ```
 
 ### 2. Performance Testing:
+
 ```typescript
 // Add this to monitor sync performance
 const startTime = Date.now();
@@ -198,6 +211,7 @@ console.log(`Sync completed in ${duration}ms`);
 ```
 
 ### 3. Error Recovery Testing:
+
 - Temporarily reduce API limits to test retry logic
 - Simulate database connection issues
 - Verify graceful handling of network interruptions
@@ -220,4 +234,4 @@ These improvements transform the sync process from an unreliable, error-prone op
 - **Provides better visibility** through enhanced logging
 - **Scales reliably** with controlled concurrency
 
-The sync should now run successfully even under adverse conditions and provide clear feedback about any issues that arise. 
+The sync should now run successfully even under adverse conditions and provide clear feedback about any issues that arise.

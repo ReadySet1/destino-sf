@@ -24,8 +24,5 @@
     "src/**/*.ts",
     "src/**/*.tsx"
   ],
-  "exclude": [
-    "node_modules",
-    ".next"
-  ]
-} 
+  "exclude": ["node_modules", ".next"]
+}

@@ -30,4 +30,4 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
       </div>
     </div>
   );
-} 
+}

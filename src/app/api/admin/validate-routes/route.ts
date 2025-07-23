@@ -24,7 +24,7 @@ interface ValidationReport {
 export async function GET() {
   try {
     logger.info('🔍 Starting comprehensive route validation...');
-    
+
     const validations: RouteValidation[] = [];
     const criticalIssues: string[] = [];
 
@@ -41,7 +41,7 @@ export async function GET() {
       total: validations.length,
       healthy: validations.filter(v => v.status === 'healthy').length,
       warnings: validations.filter(v => v.status === 'warning').length,
-      errors: validations.filter(v => v.status === 'error').length
+      errors: validations.filter(v => v.status === 'error').length,
     };
 
     // Determine production readiness
@@ -56,25 +56,27 @@ export async function GET() {
       summary,
       routes: validations,
       criticalIssues,
-      productionReadiness
+      productionReadiness,
     };
 
     logger.info('✅ Route validation completed', {
       productionReadiness,
       totalRoutes: summary.total,
       errors: summary.errors,
-      warnings: summary.warnings
+      warnings: summary.warnings,
     });
 
     return NextResponse.json(report);
-
   } catch (error) {
     logger.error('❌ Route validation failed:', error);
-    
-    return NextResponse.json({
-      error: 'Route validation failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: 'Route validation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -82,20 +84,20 @@ async function validateSquareRoutes(validations: RouteValidation[], criticalIssu
   // Validate Square sync route
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/square/sync`, {
-      method: 'HEAD'
+      method: 'HEAD',
     });
-    
+
     if (response.ok) {
       validations.push({
         path: '/api/square/sync',
         status: 'healthy',
-        message: 'Square sync endpoint accessible'
+        message: 'Square sync endpoint accessible',
       });
     } else {
       validations.push({
         path: '/api/square/sync',
         status: 'error',
-        message: `Square sync endpoint returned ${response.status}`
+        message: `Square sync endpoint returned ${response.status}`,
       });
       criticalIssues.push('Square sync endpoint not accessible');
     }
@@ -104,18 +106,18 @@ async function validateSquareRoutes(validations: RouteValidation[], criticalIssu
       path: '/api/square/sync',
       status: 'error',
       message: 'Square sync endpoint not reachable',
-      issues: [error instanceof Error ? error.message : 'Unknown error']
+      issues: [error instanceof Error ? error.message : 'Unknown error'],
     });
     criticalIssues.push('Square sync endpoint not reachable');
   }
 
   // Validate Square client configuration
   const squareConfigIssues: string[] = [];
-  
+
   if (!process.env.SQUARE_ACCESS_TOKEN) {
     squareConfigIssues.push('SQUARE_ACCESS_TOKEN not configured');
   }
-  
+
   if (!process.env.SQUARE_ENVIRONMENT) {
     squareConfigIssues.push('SQUARE_ENVIRONMENT not configured');
   }
@@ -125,14 +127,14 @@ async function validateSquareRoutes(validations: RouteValidation[], criticalIssu
       path: '/api/square/*',
       status: 'error',
       message: 'Square configuration incomplete',
-      issues: squareConfigIssues
+      issues: squareConfigIssues,
     });
     criticalIssues.push('Square API configuration incomplete');
   } else {
     validations.push({
       path: '/api/square/*',
       status: 'healthy',
-      message: 'Square configuration complete'
+      message: 'Square configuration complete',
     });
   }
 }
@@ -141,21 +143,21 @@ async function validateProductRoutes(validations: RouteValidation[], criticalIss
   // Validate products API
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/products?limit=1`, {
-      method: 'GET'
+      method: 'GET',
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       validations.push({
         path: '/api/products',
         status: 'healthy',
-        message: `Products API working - ${Array.isArray(data) ? data.length : 0} products accessible`
+        message: `Products API working - ${Array.isArray(data) ? data.length : 0} products accessible`,
       });
     } else {
       validations.push({
         path: '/api/products',
         status: 'error',
-        message: `Products API returned ${response.status}`
+        message: `Products API returned ${response.status}`,
       });
       criticalIssues.push('Products API not working');
     }
@@ -164,7 +166,7 @@ async function validateProductRoutes(validations: RouteValidation[], criticalIss
       path: '/api/products',
       status: 'error',
       message: 'Products API not reachable',
-      issues: [error instanceof Error ? error.message : 'Unknown error']
+      issues: [error instanceof Error ? error.message : 'Unknown error'],
     });
     criticalIssues.push('Products API not reachable');
   }
@@ -184,15 +186,16 @@ async function validateWebhookRoutes(validations: RouteValidation[], criticalIss
   validations.push({
     path: '/api/webhooks/square',
     status: webhookIssues.length > 0 ? 'error' : 'warning',
-    message: webhookIssues.length > 0 
-      ? 'Webhook configuration has critical issues'
-      : 'Webhook endpoint configured but needs verification',
+    message:
+      webhookIssues.length > 0
+        ? 'Webhook configuration has critical issues'
+        : 'Webhook endpoint configured but needs verification',
     issues: webhookIssues,
     recommendations: [
       'Test webhook endpoint with Square webhook simulator',
       'Verify webhook signature validation',
-      'Monitor webhook processing logs'
-    ]
+      'Monitor webhook processing logs',
+    ],
   });
 
   // Check Shippo webhook
@@ -202,8 +205,8 @@ async function validateWebhookRoutes(validations: RouteValidation[], criticalIss
     message: 'Shippo webhook configured but signature verification needed',
     recommendations: [
       'Implement Shippo webhook signature verification',
-      'Test tracking updates with real shipments'
-    ]
+      'Test tracking updates with real shipments',
+    ],
   });
 }
 
@@ -218,15 +221,15 @@ async function validateOrderRoutes(validations: RouteValidation[], criticalIssue
       recommendations: [
         'Implement order creation endpoint validation',
         'Test order status updates',
-        'Verify payment integration'
-      ]
+        'Verify payment integration',
+      ],
     });
   } catch (error) {
     validations.push({
       path: '/api/orders',
       status: 'error',
       message: 'Order routes have issues',
-      issues: [error instanceof Error ? error.message : 'Unknown error']
+      issues: [error instanceof Error ? error.message : 'Unknown error'],
     });
   }
 }
@@ -239,15 +242,15 @@ async function validateCateringRoutes(validations: RouteValidation[], criticalIs
     recommendations: [
       'Test catering order creation',
       'Verify catering item sync',
-      'Validate catering pricing calculations'
-    ]
+      'Validate catering pricing calculations',
+    ],
   });
 }
 
 async function validateAdminRoutes(validations: RouteValidation[], criticalIssues: string[]) {
   // Check admin authentication
   const adminIssues: string[] = [];
-  
+
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
     adminIssues.push('Supabase configuration incomplete');
   }
@@ -255,9 +258,8 @@ async function validateAdminRoutes(validations: RouteValidation[], criticalIssue
   validations.push({
     path: '/api/admin/*',
     status: adminIssues.length > 0 ? 'error' : 'healthy',
-    message: adminIssues.length > 0 
-      ? 'Admin routes have configuration issues'
-      : 'Admin routes configured',
-    issues: adminIssues
+    message:
+      adminIssues.length > 0 ? 'Admin routes have configuration issues' : 'Admin routes configured',
+    issues: adminIssues,
   });
-} 
+}

@@ -5,6 +5,7 @@ Complete reference for all environment variables used in the Destino SF platform
 ## Required Environment Variables
 
 ### Database Configuration
+
 ```env
 # PostgreSQL database connection
 DATABASE_URL="postgresql://username:password@host:port/database_name"
@@ -17,6 +18,7 @@ DATABASE_URL="postgresql://user:pass@host.region.provider.com:5432/dbname"
 ```
 
 ### Next.js Configuration
+
 ```env
 # Required for authentication
 NEXTAUTH_SECRET="your-secret-key-here-minimum-32-characters"
@@ -27,6 +29,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 ### Square Payment Integration
+
 ```env
 # Square API credentials
 SQUARE_APPLICATION_ID="your-square-application-id"
@@ -42,6 +45,7 @@ NEXT_PUBLIC_SQUARE_ENVIRONMENT="sandbox"
 ```
 
 ### Shippo Shipping Integration
+
 ```env
 # Shippo API token
 SHIPPO_TOKEN="your-shippo-api-token"
@@ -51,6 +55,7 @@ SHIPPO_WEBHOOK_SECRET="your-shippo-webhook-secret"
 ```
 
 ### Email Configuration
+
 ```env
 # Email service provider (Resend, SendGrid, etc.)
 EMAIL_FROM="noreply@destinosf.com"
@@ -69,6 +74,7 @@ SMTP_PASS="your-smtp-password"
 ## Optional Environment Variables
 
 ### Caching and Performance
+
 ```env
 # Vercel KV (Redis) for caching
 KV_REST_API_URL="your-kv-rest-api-url"
@@ -81,6 +87,7 @@ CACHE_TTL_SHIPPING="900"      # 15 minutes
 ```
 
 ### File Storage
+
 ```env
 # Vercel Blob storage
 BLOB_READ_WRITE_TOKEN="your-blob-storage-token"
@@ -93,6 +100,7 @@ AWS_S3_REGION="us-west-2"
 ```
 
 ### Analytics and Monitoring
+
 ```env
 # Sentry error tracking
 SENTRY_DSN="your-sentry-dsn"
@@ -107,6 +115,7 @@ NEXT_PUBLIC_VERCEL_ANALYTICS="true"
 ```
 
 ### Feature Flags
+
 ```env
 # Feature toggles
 ENABLE_CATERING="true"
@@ -120,6 +129,7 @@ MAINTENANCE_MESSAGE="We're currently updating our system. Please check back soon
 ```
 
 ### Rate Limiting
+
 ```env
 # Rate limiting configuration
 RATE_LIMIT_WINDOW="900000"    # 15 minutes in milliseconds
@@ -132,6 +142,7 @@ ADMIN_RATE_LIMIT_MAX="1000"
 ## Development Environment Variables
 
 ### Local Development
+
 ```env
 # .env.local
 NODE_ENV="development"
@@ -146,6 +157,7 @@ TEST_DATABASE_URL="postgresql://postgres:password@localhost:5432/destino_sf_test
 ```
 
 ### Testing Environment
+
 ```env
 # .env.test
 NODE_ENV="test"
@@ -163,6 +175,7 @@ DISABLE_WEBHOOKS="true"
 ## Production Environment Variables
 
 ### Security
+
 ```env
 # Strong secrets for production
 NEXTAUTH_SECRET="super-secure-secret-at-least-32-characters-long"
@@ -176,6 +189,7 @@ SECURE_COOKIES="true"
 ```
 
 ### Performance
+
 ```env
 # Production optimizations
 NODE_ENV="production"
@@ -188,6 +202,7 @@ IMAGE_CDN_URL="https://images.destinosf.com"
 ```
 
 ### Monitoring
+
 ```env
 # Production monitoring
 LOG_LEVEL="warn"
@@ -202,6 +217,7 @@ SENTRY_RELEASE="1.0.0"
 ## Environment-Specific Configurations
 
 ### Development (.env.local)
+
 ```env
 NODE_ENV=development
 DATABASE_URL="postgresql://postgres:password@localhost:5432/destino_sf"
@@ -229,6 +245,7 @@ VERBOSE_LOGGING="true"
 ```
 
 ### Staging (.env.staging)
+
 ```env
 NODE_ENV=production
 DATABASE_URL="postgresql://user:pass@staging-db.com:5432/destino_staging"
@@ -256,6 +273,7 @@ SENTRY_ENVIRONMENT="staging"
 ```
 
 ### Production (.env.production)
+
 ```env
 NODE_ENV=production
 DATABASE_URL="postgresql://user:pass@prod-db.com:5432/destino_production"
@@ -290,6 +308,7 @@ LOG_LEVEL="error"
 ## Validation and Security
 
 ### Environment Variable Validation
+
 ```typescript
 // lib/env.ts - Environment validation
 import { z } from 'zod';
@@ -297,23 +316,23 @@ import { z } from 'zod';
 const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().url(),
-  
+
   // Authentication
   NEXTAUTH_SECRET: z.string().min(32),
   NEXTAUTH_URL: z.string().url(),
-  
+
   // Square
   SQUARE_APPLICATION_ID: z.string(),
   SQUARE_ACCESS_TOKEN: z.string(),
   SQUARE_ENVIRONMENT: z.enum(['sandbox', 'production']),
-  
+
   // Shippo
   SHIPPO_TOKEN: z.string(),
-  
+
   // Email
   EMAIL_FROM: z.string().email(),
   RESEND_API_KEY: z.string().optional(),
-  
+
   // Optional
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.string().default('3000'),
@@ -351,12 +370,14 @@ vercel env add DATABASE_URL preview
 ### Common Issues
 
 **Database Connection Errors**
+
 ```env
 # Ensure DATABASE_URL is correctly formatted
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
 ```
 
 **Square Payment Errors**
+
 ```env
 # Verify Square environment matches token type
 SQUARE_ENVIRONMENT="sandbox"  # for sandbox tokens
@@ -364,6 +385,7 @@ SQUARE_ENVIRONMENT="production"  # for production tokens
 ```
 
 **Authentication Issues**
+
 ```env
 # Ensure NEXTAUTH_SECRET is at least 32 characters
 NEXTAUTH_SECRET="your-very-long-secret-key-here-minimum-32-characters"
@@ -383,7 +405,7 @@ export function GET() {
     SQUARE_ACCESS_TOKEN: !!process.env.SQUARE_ACCESS_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
   };
-  
+
   return Response.json(envStatus);
 }
 ```

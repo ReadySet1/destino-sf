@@ -18,9 +18,17 @@ interface AddressFormProps {
   onAddressChange?: () => void;
 }
 
-export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, onAddressChange }) => {
-  const { register, formState: { errors } } = form;
-  
+export const AddressForm: React.FC<AddressFormProps> = ({
+  form,
+  prefix,
+  title,
+  onAddressChange,
+}) => {
+  const {
+    register,
+    formState: { errors },
+  } = form;
+
   // Get nested error
   const getError = (field: string): string => {
     const nestedErrors = errors[prefix] as Record<string, any> | undefined;
@@ -37,26 +45,24 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
       setTimeout(onAddressChange, 100);
     }
   };
-  
+
   return (
     <div className="space-y-4">
       <h3 className="font-medium text-lg">{title}</h3>
       <Separator />
-      
+
       <div>
         <Label htmlFor={`${prefix}.street`}>Street Address</Label>
         <Input
           id={`${prefix}.street`}
           {...register(`${prefix}.street`)}
-          onChange={(e) => {
+          onChange={e => {
             register(`${prefix}.street`).onChange(e);
             handleInputChange(e);
           }}
           className={getError('street') ? 'border-red-500' : ''}
         />
-        {getError('street') && (
-          <p className="mt-1 text-sm text-red-500">{getError('street')}</p>
-        )}
+        {getError('street') && <p className="mt-1 text-sm text-red-500">{getError('street')}</p>}
       </div>
 
       <div>
@@ -64,7 +70,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
         <Input
           id={`${prefix}.street2`}
           {...register(`${prefix}.street2`)}
-          onChange={(e) => {
+          onChange={e => {
             register(`${prefix}.street2`).onChange(e);
             handleInputChange(e);
           }}
@@ -77,15 +83,13 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
           <Input
             id={`${prefix}.city`}
             {...register(`${prefix}.city`)}
-            onChange={(e) => {
+            onChange={e => {
               register(`${prefix}.city`).onChange(e);
               handleInputChange(e);
             }}
             className={getError('city') ? 'border-red-500' : ''}
           />
-          {getError('city') && (
-            <p className="mt-1 text-sm text-red-500">{getError('city')}</p>
-          )}
+          {getError('city') && <p className="mt-1 text-sm text-red-500">{getError('city')}</p>}
         </div>
 
         <div>
@@ -93,15 +97,13 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
           <Input
             id={`${prefix}.state`}
             {...register(`${prefix}.state`)}
-            onChange={(e) => {
+            onChange={e => {
               register(`${prefix}.state`).onChange(e);
               handleInputChange(e);
             }}
             className={getError('state') ? 'border-red-500' : ''}
           />
-          {getError('state') && (
-            <p className="mt-1 text-sm text-red-500">{getError('state')}</p>
-          )}
+          {getError('state') && <p className="mt-1 text-sm text-red-500">{getError('state')}</p>}
         </div>
       </div>
 
@@ -111,7 +113,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
           <Input
             id={`${prefix}.postalCode`}
             {...register(`${prefix}.postalCode`)}
-            onChange={(e) => {
+            onChange={e => {
               register(`${prefix}.postalCode`).onChange(e);
               handleInputChange(e);
             }}
@@ -124,4 +126,4 @@ export const AddressForm: React.FC<AddressFormProps> = ({ form, prefix, title, o
       </div>
     </div>
   );
-}; 
+};

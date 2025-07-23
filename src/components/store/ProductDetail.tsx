@@ -42,26 +42,26 @@ export function ProductDetail({ product }: ProductDetailProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCartStore();
-  
+
   // Add state for image handling
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  
+
   // Default fallback image
   const fallbackImage = '/images/menu/empanadas.png';
 
   // Calculate the current price based on selected variant
   const currentPrice = selectedVariant ? selectedVariant.price : product.price;
-  
+
   // Set image URL on component mount and when product changes
   useEffect(() => {
     setImageLoading(true);
     setImageError(false);
-    
+
     // Get the first image from product.images if it exists
     const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
-    
+
     if (firstImage) {
       // Process the URL through our proxy if it's external
       const processedUrl = getProxiedImageUrl(firstImage);
@@ -71,7 +71,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
       setImageUrl(fallbackImage);
       setImageError(true);
     }
-    
+
     setImageLoading(false);
   }, [product._id, product.images, product.name]);
 

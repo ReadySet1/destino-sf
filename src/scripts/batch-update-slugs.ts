@@ -10,10 +10,7 @@ async function batchUpdateSlugs() {
     // Find products where slug is null or an empty string
     const productsToUpdate = await prisma.product.findMany({
       where: {
-        OR: [
-          { slug: null },
-          { slug: '' }
-        ],
+        OR: [{ slug: null }, { slug: '' }],
         active: true, // Optional: only update active products, adjust if needed
       },
       select: {
@@ -58,11 +55,13 @@ async function batchUpdateSlugs() {
         failedCount++;
         continue;
       }
-      
+
       if (!generatedSlug) {
-         console.warn(`Skipping product ID ${product.id} (Name: "${product.name}"): Generated slug is empty.`);
-         failedCount++;
-         continue;
+        console.warn(
+          `Skipping product ID ${product.id} (Name: "${product.name}"): Generated slug is empty.`
+        );
+        failedCount++;
+        continue;
       }
 
       try {
@@ -70,7 +69,9 @@ async function batchUpdateSlugs() {
           where: { id: product.id },
           data: { slug: generatedSlug },
         });
-        console.log(`Updated product ID ${product.id} (Name: "${product.name}") with slug: "${generatedSlug}"`);
+        console.log(
+          `Updated product ID ${product.id} (Name: "${product.name}") with slug: "${generatedSlug}"`
+        );
         updatedCount++;
       } catch (error) {
         console.error(`Failed to update product ID ${product.id}:`, error);
@@ -83,7 +84,6 @@ async function batchUpdateSlugs() {
        Successfully updated: ${updatedCount}
        Failed/Skipped: ${failedCount}`
     );
-
   } catch (error) {
     console.error('Error during batch slug update process:', error);
   } finally {
@@ -92,4 +92,4 @@ async function batchUpdateSlugs() {
   }
 }
 
-batchUpdateSlugs(); 
+batchUpdateSlugs();

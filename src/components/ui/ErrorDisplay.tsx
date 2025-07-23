@@ -17,8 +17,8 @@ export function ErrorDisplay({
   message = 'There was an error processing your request.',
   returnLink = {
     href: '/',
-    label: 'Return to homepage'
-  }
+    label: 'Return to homepage',
+  },
 }: ErrorDisplayProps) {
   return (
     <div className="bg-red-50 text-red-700 p-6 rounded-lg shadow-md">
@@ -31,4 +31,4 @@ export function ErrorDisplay({
   );
 }
 
-export default ErrorDisplay; 
+export default ErrorDisplay;

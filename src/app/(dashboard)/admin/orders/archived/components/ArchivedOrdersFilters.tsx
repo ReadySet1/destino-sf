@@ -22,7 +22,7 @@ export default function ArchivedOrdersFilters({
 }: ArchivedOrdersFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [search, setSearch] = useState(currentSearch);
   const [type, setType] = useState(currentType);
   const [reason, setReason] = useState(currentReason);
@@ -38,55 +38,62 @@ export default function ArchivedOrdersFilters({
     setArchivedBy(currentArchivedBy);
     setStartDate(currentStartDate);
     setEndDate(currentEndDate);
-  }, [currentSearch, currentType, currentReason, currentArchivedBy, currentStartDate, currentEndDate]);
+  }, [
+    currentSearch,
+    currentType,
+    currentReason,
+    currentArchivedBy,
+    currentStartDate,
+    currentEndDate,
+  ]);
 
   const updateFilters = () => {
     const params = new URLSearchParams(searchParams);
-    
+
     // Update or remove search parameter
     if (search.trim()) {
       params.set('search', search.trim());
     } else {
       params.delete('search');
     }
-    
+
     // Update or remove type parameter
     if (type && type !== 'all') {
       params.set('type', type);
     } else {
       params.delete('type');
     }
-    
+
     // Update or remove reason parameter
     if (reason.trim()) {
       params.set('reason', reason.trim());
     } else {
       params.delete('reason');
     }
-    
+
     // Update or remove archivedBy parameter
     if (archivedBy.trim()) {
       params.set('archivedBy', archivedBy.trim());
     } else {
       params.delete('archivedBy');
     }
-    
+
     // Update or remove date parameters
     if (startDate) {
       params.set('startDate', startDate);
     } else {
       params.delete('startDate');
     }
-    
+
     if (endDate) {
       params.set('endDate', endDate);
     } else {
       params.delete('endDate');
     }
-    
+
     // Reset to page 1 when filters change
     params.delete('page');
-    
+
     router.push(`/admin/orders/archived?${params.toString()}`);
   };
 
@@ -114,7 +121,7 @@ export default function ArchivedOrdersFilters({
             type="text"
             id="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Order ID, customer, email..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -128,7 +135,7 @@ export default function ArchivedOrdersFilters({
           <select
             id="type"
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={e => setType(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">All Types</option>
@@ -146,7 +153,7 @@ export default function ArchivedOrdersFilters({
             type="text"
             id="reason"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={e => setReason(e.target.value)}
             placeholder="Search by reason..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -161,7 +168,7 @@ export default function ArchivedOrdersFilters({
             type="text"
             id="archivedBy"
             value={archivedBy}
-            onChange={(e) => setArchivedBy(e.target.value)}
+            onChange={e => setArchivedBy(e.target.value)}
             placeholder="Admin email or name..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -176,7 +183,7 @@ export default function ArchivedOrdersFilters({
             type="date"
             id="startDate"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={e => setStartDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -190,7 +197,7 @@ export default function ArchivedOrdersFilters({
             type="date"
             id="endDate"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={e => setEndDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -249,4 +256,4 @@ export default function ArchivedOrdersFilters({
       )}
     </div>
   );
-} 
+}

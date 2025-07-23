@@ -69,8 +69,8 @@ export default async function OrderConfirmationPage({
   // Await the promises to get the actual values
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  
-  const order = await getOrderDetails(resolvedParams.orderId) as ExtendedOrder | null;
+
+  const order = (await getOrderDetails(resolvedParams.orderId)) as ExtendedOrder | null;
 
   if (!order) {
     notFound();
@@ -79,20 +79,20 @@ export default async function OrderConfirmationPage({
   // Extract fulfillment details from the order with explicit typing
   const fulfillment = order.fulfillments?.[0];
   const fulfillmentType = fulfillment?.type?.toLowerCase() || '';
-  
+
   // Safely parse the payment note
   let paymentNote: PaymentNote | null = null;
   if (order.payment_note) {
     try {
       paymentNote = JSON.parse(order.payment_note) as PaymentNote;
     } catch (error) {
-      console.error("Failed to parse payment note:", error);
+      console.error('Failed to parse payment note:', error);
     }
   }
 
   // Use searchParams status as fallback or primary source if needed
   const displayStatus = resolvedSearchParams.status || order.status || 'Processing';
-  
+
   // Parse order date safely
   const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
 
@@ -102,25 +102,30 @@ export default async function OrderConfirmationPage({
     try {
       return format(new Date(dateString), formatString);
     } catch (error) {
-      console.error("Error formatting date:", error);
+      console.error('Error formatting date:', error);
       return 'Invalid date';
     }
   };
 
   // Calculate total amount safely
-  const totalAmount = order.totalMoney?.amount !== undefined
-    ? (Number(order.totalMoney.amount) / 100).toFixed(2)
-    : '0.00';
+  const totalAmount =
+    order.totalMoney?.amount !== undefined
+      ? (Number(order.totalMoney.amount) / 100).toFixed(2)
+      : '0.00';
 
   // Helper function to determine fulfillment title
   const getFulfillmentTitle = (): string => {
     if (!fulfillment) return 'Order Details';
-    
+
     switch (fulfillment.type?.toLowerCase()) {
-      case 'pickup': return 'Pickup Details';
-      case 'delivery': return 'Delivery Details';
-      case 'shipment': return 'Shipping Details';
-      default: return 'Order Details';
+      case 'pickup':
+        return 'Pickup Details';
+      case 'delivery':
+        return 'Delivery Details';
+      case 'shipment':
+        return 'Shipping Details';
+      default:
+        return 'Order Details';
     }
   };
 
@@ -184,74 +189,86 @@ export default async function OrderConfirmationPage({
                 )}
 
                 {/* Delivery/Shipment Details */}
-                {fulfillment && ['delivery', 'shipment'].includes(fulfillment.type?.toLowerCase() || '') && (
-                  <>
-                    {/* Shipping Address */}
-                    <div className="flex items-start gap-3">
-                      <MapPinIcon className="mt-1 h-5 w-5 text-gray-500" />
-                      <div>
-                        <p className="font-medium">Shipping Address</p>
-                        {(fulfillment.deliveryDetails?.recipient || fulfillment.shipmentDetails?.recipient) ? (
-                          <>
-                            <p className="text-gray-600">
-                              {fulfillment.deliveryDetails?.recipient?.displayName ||
-                               fulfillment.shipmentDetails?.recipient?.displayName || 'N/A'}
-                            </p>
-                            <p className="text-gray-600">
-                              {fulfillment.deliveryDetails?.recipient?.address?.addressLine1 ||
-                               fulfillment.shipmentDetails?.recipient?.address?.addressLine1 || 'N/A'}
-                            </p>
-                            {(fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
-                              fulfillment.shipmentDetails?.recipient?.address?.addressLine2) && (
+                {fulfillment &&
+                  ['delivery', 'shipment'].includes(fulfillment.type?.toLowerCase() || '') && (
+                    <>
+                      {/* Shipping Address */}
+                      <div className="flex items-start gap-3">
+                        <MapPinIcon className="mt-1 h-5 w-5 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Shipping Address</p>
+                          {fulfillment.deliveryDetails?.recipient ||
+                          fulfillment.shipmentDetails?.recipient ? (
+                            <>
                               <p className="text-gray-600">
-                                {fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
-                                 fulfillment.shipmentDetails?.recipient?.address?.addressLine2}
+                                {fulfillment.deliveryDetails?.recipient?.displayName ||
+                                  fulfillment.shipmentDetails?.recipient?.displayName ||
+                                  'N/A'}
                               </p>
-                            )}
-                            <p className="text-gray-600">
-                              {[
-                                fulfillment.deliveryDetails?.recipient?.address?.locality ||
-                                fulfillment.shipmentDetails?.recipient?.address?.locality || '',
-                                fulfillment.deliveryDetails?.recipient?.address?.administrativeDistrictLevel1 ||
-                                fulfillment.shipmentDetails?.recipient?.address?.administrativeDistrictLevel1 || '',
-                                fulfillment.deliveryDetails?.recipient?.address?.postalCode ||
-                                fulfillment.shipmentDetails?.recipient?.address?.postalCode || ''
-                              ].filter(Boolean).join(', ') || 'N/A'}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-gray-600">Address not available</p>
+                              <p className="text-gray-600">
+                                {fulfillment.deliveryDetails?.recipient?.address?.addressLine1 ||
+                                  fulfillment.shipmentDetails?.recipient?.address?.addressLine1 ||
+                                  'N/A'}
+                              </p>
+                              {(fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
+                                fulfillment.shipmentDetails?.recipient?.address?.addressLine2) && (
+                                <p className="text-gray-600">
+                                  {fulfillment.deliveryDetails?.recipient?.address?.addressLine2 ||
+                                    fulfillment.shipmentDetails?.recipient?.address?.addressLine2}
+                                </p>
+                              )}
+                              <p className="text-gray-600">
+                                {[
+                                  fulfillment.deliveryDetails?.recipient?.address?.locality ||
+                                    fulfillment.shipmentDetails?.recipient?.address?.locality ||
+                                    '',
+                                  fulfillment.deliveryDetails?.recipient?.address
+                                    ?.administrativeDistrictLevel1 ||
+                                    fulfillment.shipmentDetails?.recipient?.address
+                                      ?.administrativeDistrictLevel1 ||
+                                    '',
+                                  fulfillment.deliveryDetails?.recipient?.address?.postalCode ||
+                                    fulfillment.shipmentDetails?.recipient?.address?.postalCode ||
+                                    '',
+                                ]
+                                  .filter(Boolean)
+                                  .join(', ') || 'N/A'}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-gray-600">Address not available</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Delivery Time */}
+                      {fulfillment.type?.toLowerCase() === 'delivery' &&
+                        fulfillment.deliveryDetails?.deliverAt && (
+                          <div className="flex items-start gap-3">
+                            <CalendarIcon className="mt-1 h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="font-medium">Delivery Time</p>
+                              <p className="text-gray-600">
+                                {safeFormat(fulfillment.deliveryDetails.deliverAt, 'PPP p')}
+                              </p>
+                            </div>
+                          </div>
                         )}
-                      </div>
-                    </div>
 
-                    {/* Delivery Time */}
-                    {fulfillment.type?.toLowerCase() === 'delivery' && fulfillment.deliveryDetails?.deliverAt && (
-                      <div className="flex items-start gap-3">
-                        <CalendarIcon className="mt-1 h-5 w-5 text-gray-500" />
-                        <div>
-                          <p className="font-medium">Delivery Time</p>
-                          <p className="text-gray-600">
-                            {safeFormat(fulfillment.deliveryDetails.deliverAt, 'PPP p')}
-                          </p>
+                      {/* Shipping Method */}
+                      {fulfillment.type?.toLowerCase() === 'shipment' && (
+                        <div className="flex items-start gap-3">
+                          <TruckIcon className="mt-1 h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium">Shipping Method</p>
+                            <p className="text-gray-600">
+                              {fulfillment.shipmentDetails?.carrier || 'Standard Shipping'}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Shipping Method */}
-                    {fulfillment.type?.toLowerCase() === 'shipment' && (
-                      <div className="flex items-start gap-3">
-                        <TruckIcon className="mt-1 h-5 w-5 text-gray-500" />
-                        <div>
-                          <p className="font-medium">Shipping Method</p>
-                          <p className="text-gray-600">
-                            {fulfillment.shipmentDetails?.carrier || 'Standard Shipping'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+                      )}
+                    </>
+                  )}
               </div>
             </div>
           )}
@@ -261,26 +278,24 @@ export default async function OrderConfirmationPage({
             <AlertDescription>
               {fulfillment?.type?.toLowerCase() === 'pickup' && (
                 <>
-                  Please bring your ID and order confirmation when picking up your order.
-                  We&apos;ll notify you when your order is ready for pickup.
+                  Please bring your ID and order confirmation when picking up your order. We&apos;ll
+                  notify you when your order is ready for pickup.
                 </>
               )}
               {fulfillment?.type?.toLowerCase() === 'delivery' && (
                 <>
-                  We&apos;ll notify you when your order is out for delivery.
-                  Make sure someone is available at the delivery address during the selected time slot.
+                  We&apos;ll notify you when your order is out for delivery. Make sure someone is
+                  available at the delivery address during the selected time slot.
                 </>
               )}
               {fulfillment?.type?.toLowerCase() === 'shipment' && (
                 <>
-                  We&apos;ll send you tracking information once your order ships.
-                  You can track your order status using the order ID above.
+                  We&apos;ll send you tracking information once your order ships. You can track your
+                  order status using the order ID above.
                 </>
               )}
               {(!fulfillment || !fulfillment.type) && (
-                <>
-                  Your order details are being processed. We&apos;ll update you soon.
-                </>
+                <>Your order details are being processed. We&apos;ll update you soon.</>
               )}
             </AlertDescription>
           </Alert>

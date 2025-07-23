@@ -142,16 +142,12 @@ describe('Products API Integration', () => {
     });
 
     it('searches products by name', async () => {
-      const response = await fetch(
-        'http://localhost:3000/api/products/search?q=empanadas'
-      );
+      const response = await fetch('http://localhost:3000/api/products/search?q=empanadas');
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(
-        data.data.every((product: any) =>
-          product.name.toLowerCase().includes('empanadas')
-        )
+        data.data.every((product: any) => product.name.toLowerCase().includes('empanadas'))
       ).toBe(true);
     });
   });
@@ -289,7 +285,7 @@ describe('Product Database Integration', () => {
 
     it('deletes product and cascades relations', async () => {
       const productId = 'prod_empanadas_beef';
-      
+
       // Verify product exists with relations
       const beforeDelete = await prisma.product.findUnique({
         where: { id: productId },
@@ -338,9 +334,8 @@ describe('Product Database Integration', () => {
 
       expect(searchResults.length).toBeGreaterThan(0);
       expect(
-        searchResults.some(p => 
-          p.name.toLowerCase().includes('beef') && 
-          p.name.toLowerCase().includes('empanadas')
+        searchResults.some(
+          p => p.name.toLowerCase().includes('beef') && p.name.toLowerCase().includes('empanadas')
         )
       ).toBe(true);
     });
@@ -577,9 +572,7 @@ describe('Shippo Service Integration', () => {
     });
 
     it('handles rate calculation errors', async () => {
-      mockShippoClient.shipment.create.mockRejectedValue(
-        new Error('Invalid address')
-      );
+      mockShippoClient.shipment.create.mockRejectedValue(new Error('Invalid address'));
 
       const result = await shippoService.getRates({} as any);
 
@@ -630,7 +623,7 @@ describe('Complete Order Flow Integration', () => {
     // 1. Get available products
     const productsResponse = await fetch('http://localhost:3000/api/products');
     const productsData = await productsResponse.json();
-    
+
     expect(productsResponse.status).toBe(200);
     expect(productsData.data.length).toBeGreaterThan(0);
 
@@ -730,7 +723,7 @@ describe('Database Performance Integration', () => {
     const startTime = performance.now();
 
     const promises = Array.from({ length: concurrentQueries }, (_, i) =>
-      fetch(`http://localhost:3000/api/products?page=${i % 5 + 1}&limit=12`)
+      fetch(`http://localhost:3000/api/products?page=${(i % 5) + 1}&limit=12`)
     );
 
     const responses = await Promise.all(promises);
@@ -832,7 +825,7 @@ on:
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -849,21 +842,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - run: pnpm install
-      
+
       - name: Set up test database
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/destino_test
         run: |
           pnpm prisma migrate deploy
           pnpm db:seed
-      
+
       - name: Run integration tests
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/destino_test
@@ -875,18 +868,21 @@ jobs:
 ## Best Practices
 
 ### Test Isolation
+
 - Use separate test database for each test run
 - Clean database state between tests
 - Mock external services consistently
 - Use transactions for test data cleanup
 
 ### Error Handling
+
 - Test both success and failure scenarios
 - Verify error messages and status codes
 - Test network failure scenarios
 - Validate input sanitization
 
 ### Performance Considerations
+
 - Monitor test execution time
 - Use database indexes for test queries
 - Limit test data size

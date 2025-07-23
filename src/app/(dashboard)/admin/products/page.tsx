@@ -50,31 +50,31 @@ type ProductPageProps = {
 export default async function ProductsPage({ searchParams }: ProductPageProps) {
   // Await the searchParams promise
   const params = await searchParams;
-  
+
   // Parse search params
   const currentPage = Number(params?.page || 1);
   const searchQuery = params?.search || '';
   const categoryFilter = params?.category || '';
   const statusFilter = params?.status || '';
   const featuredFilter = params?.featured || '';
-  
+
   const itemsPerPage = 10;
   const skip = (currentPage - 1) * itemsPerPage;
 
   // Build the where clause for filtering
   const where: any = {};
-  
+
   if (searchQuery) {
     where.name = {
       contains: searchQuery,
       mode: 'insensitive',
     };
   }
-  
+
   if (categoryFilter && categoryFilter !== 'all') {
     where.categoryId = categoryFilter;
   }
-  
+
   if (statusFilter && statusFilter !== 'all') {
     if (statusFilter === 'active') {
       where.active = true;
@@ -82,7 +82,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       where.active = false;
     }
   }
-  
+
   if (featuredFilter && featuredFilter !== 'all') {
     if (featuredFilter === 'featured') {
       where.featured = true;
@@ -158,7 +158,9 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       console.log(`Product "${product.name}" deleted successfully from database`);
 
       // Redirect with success status
-      return redirect(`/admin/products?status=success&action=delete&productName=${encodeURIComponent(product.name)}`);
+      return redirect(
+        `/admin/products?status=success&action=delete&productName=${encodeURIComponent(product.name)}`
+      );
     } catch (error) {
       // Don't log redirect "errors" as they're normal
       if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
@@ -167,13 +169,13 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       }
 
       console.error('Error deleting product:', error);
-      
+
       // Redirect with error status
       let errorMessage = 'Failed to delete product. An unexpected error occurred.';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       return redirect(`/admin/products?status=error&message=${encodeURIComponent(errorMessage)}`);
     }
   }
@@ -235,12 +237,17 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700 font-medium">
-                  Products can only be edited in Square Dashboard. Use the &quot;Sync Products &amp; Images from Square&quot; button to update your products.
+                  Products can only be edited in Square Dashboard. Use the &quot;Sync Products &amp;
+                  Images from Square&quot; button to update your products.
                 </p>
               </div>
             </div>
@@ -248,8 +255,8 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
         </div>
 
         {/* Filters Section */}
-        <ProductFilters 
-          categories={categories} 
+        <ProductFilters
+          categories={categories}
           currentSearch={searchQuery}
           currentCategory={categoryFilter}
           currentStatus={statusFilter}
@@ -340,10 +347,10 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <Pagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            searchParams={params || {}} 
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            searchParams={params || {}}
           />
         )}
       </div>

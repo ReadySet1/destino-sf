@@ -5,20 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import {
   DropdownMenu,
@@ -26,13 +26,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  MoreHorizontal, 
-  Square, 
-  Database, 
-  Edit, 
-  Eye, 
-  Settings, 
+import {
+  MoreHorizontal,
+  Square,
+  Database,
+  Edit,
+  Eye,
+  Settings,
   RefreshCw,
   Upload,
   AlertTriangle,
@@ -41,7 +41,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
 } from 'lucide-react';
 import { CateringItem, CateringItemCategory } from '@/types/catering';
 import Link from 'next/link';
@@ -64,17 +64,15 @@ interface FilterState {
 
 const ITEMS_PER_PAGE = 10;
 
-export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
-  items
-}) => {
+export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({ items }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitializingStorage, setIsInitializingStorage] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
     search: searchParams.get('search') || '',
@@ -82,7 +80,7 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     source: searchParams.get('source') || 'all',
     status: searchParams.get('status') || 'all',
     dietary: searchParams.get('dietary') || 'all',
-    priceRange: searchParams.get('priceRange') || 'all'
+    priceRange: searchParams.get('priceRange') || 'all',
   });
 
   // Group items by source
@@ -95,7 +93,7 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     // Group items by source (using type assertion for now)
     const square = items.filter(item => (item as any).squareProductId);
     const local = items.filter(item => !(item as any).squareProductId);
-    
+
     setGroupedItems({ square, local });
   }, [items]);
 
@@ -106,9 +104,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.name.toLowerCase().includes(searchLower) ||
-        (item.description && item.description.toLowerCase().includes(searchLower))
+      filtered = filtered.filter(
+        item =>
+          item.name.toLowerCase().includes(searchLower) ||
+          (item.description && item.description.toLowerCase().includes(searchLower))
       );
     }
 
@@ -181,20 +180,20 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
       totalPages,
       currentPage,
       hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1
+      hasPrevPage: currentPage > 1,
     };
   }, [items, filters, currentPage]);
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value !== 'all') {
         params.set(key, value);
       }
     });
-    
+
     if (currentPage > 1) {
       params.set('page', currentPage.toString());
     }
@@ -219,7 +218,7 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
       source: 'all',
       status: 'all',
       dietary: 'all',
-      priceRange: 'all'
+      priceRange: 'all',
     });
     setCurrentPage(1);
   };
@@ -239,17 +238,17 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
   const handleInitStorage = async () => {
     setIsInitializingStorage(true);
     try {
-      const response = await fetch('/api/admin/init-storage', { 
+      const response = await fetch('/api/admin/init-storage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to initialize storage');
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         toast.success('Storage initialized successfully!');
       } else {
@@ -267,12 +266,15 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(numPrice);
   };
 
   const formatCategory = (category: string) => {
-    return category.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    return category
+      .replace('_', ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase());
   };
 
   // Get unique categories from items
@@ -281,13 +283,16 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     return categories.sort();
   }, [items]);
 
-  const ItemRow: React.FC<{ item: CateringItem; isSquareItem: boolean }> = ({ item, isSquareItem }) => (
+  const ItemRow: React.FC<{ item: CateringItem; isSquareItem: boolean }> = ({
+    item,
+    isSquareItem,
+  }) => (
     <TableRow key={item.id}>
       <TableCell>
         <div className="flex items-center space-x-3">
           {item.imageUrl && (
-            <Image 
-              src={item.imageUrl} 
+            <Image
+              src={item.imageUrl}
               alt={item.name}
               width={48}
               height={48}
@@ -297,9 +302,7 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
           <div>
             <div className="font-medium">{item.name}</div>
             {item.description && (
-              <div className="text-sm text-gray-500 truncate max-w-xs">
-                {item.description}
-              </div>
+              <div className="text-sm text-gray-500 truncate max-w-xs">{item.description}</div>
             )}
           </div>
         </div>
@@ -323,14 +326,26 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
       <TableCell>{formatPrice(item.price)}</TableCell>
       <TableCell>
         <div className="flex items-center space-x-1">
-          {item.isVegetarian && <Badge variant="outline" className="text-xs">V</Badge>}
-          {item.isVegan && <Badge variant="outline" className="text-xs">VG</Badge>}
-          {item.isGlutenFree && <Badge variant="outline" className="text-xs">GF</Badge>}
+          {item.isVegetarian && (
+            <Badge variant="outline" className="text-xs">
+              V
+            </Badge>
+          )}
+          {item.isVegan && (
+            <Badge variant="outline" className="text-xs">
+              VG
+            </Badge>
+          )}
+          {item.isGlutenFree && (
+            <Badge variant="outline" className="text-xs">
+              GF
+            </Badge>
+          )}
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant={item.isActive ? "default" : "secondary"}>
-          {item.isActive ? "Active" : "Inactive"}
+        <Badge variant={item.isActive ? 'default' : 'secondary'}>
+          {item.isActive ? 'Active' : 'Inactive'}
         </Badge>
       </TableCell>
       <TableCell>
@@ -369,12 +384,12 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
     <div className="flex items-center justify-between px-2">
       <div className="flex items-center space-x-2">
         <p className="text-sm text-gray-700">
-          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
+          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
           {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndPaginatedItems.totalItems)} of{' '}
           {filteredAndPaginatedItems.totalItems} results
         </p>
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
@@ -392,11 +407,11 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        
+
         <span className="text-sm text-gray-700">
           Page {currentPage} of {filteredAndPaginatedItems.totalPages}
         </span>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -428,26 +443,16 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handleInitStorage}
-            disabled={isInitializingStorage}
-          >
+          <Button variant="outline" onClick={handleInitStorage} disabled={isInitializingStorage}>
             <Upload className={`h-4 w-4 mr-2 ${isInitializingStorage ? 'animate-spin' : ''}`} />
             {isInitializingStorage ? 'Initializing...' : 'Init Storage'}
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button asChild>
-            <Link href="/admin/catering/items/new">
-              Add Local Item
-            </Link>
+            <Link href="/admin/catering/items/new">Add Local Item</Link>
           </Button>
         </div>
       </div>
@@ -475,7 +480,7 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
                 <Input
                   placeholder="Search items..."
                   value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  onChange={e => handleFilterChange('search', e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -484,7 +489,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
             {/* Category */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Category</label>
-              <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
+              <Select
+                value={filters.category}
+                onValueChange={value => handleFilterChange('category', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -502,7 +510,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
             {/* Source */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Source</label>
-              <Select value={filters.source} onValueChange={(value) => handleFilterChange('source', value)}>
+              <Select
+                value={filters.source}
+                onValueChange={value => handleFilterChange('source', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
@@ -517,7 +528,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
             {/* Status */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+              <Select
+                value={filters.status}
+                onValueChange={value => handleFilterChange('status', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
@@ -532,7 +546,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
             {/* Dietary */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Dietary</label>
-              <Select value={filters.dietary} onValueChange={(value) => handleFilterChange('dietary', value)}>
+              <Select
+                value={filters.dietary}
+                onValueChange={value => handleFilterChange('dietary', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Dietary" />
                 </SelectTrigger>
@@ -548,7 +565,10 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
             {/* Price Range */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Price Range</label>
-              <Select value={filters.priceRange} onValueChange={(value) => handleFilterChange('priceRange', value)}>
+              <Select
+                value={filters.priceRange}
+                onValueChange={value => handleFilterChange('priceRange', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Prices" />
                 </SelectTrigger>
@@ -593,13 +613,13 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
           {filteredAndPaginatedItems.totalItems === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">
-                {items.length === 0 ? 'No catering items found.' : 'No items match your current filters.'}
+                {items.length === 0
+                  ? 'No catering items found.'
+                  : 'No items match your current filters.'}
               </p>
               {items.length === 0 ? (
                 <Button asChild className="mt-4">
-                  <Link href="/admin/catering/items/new">
-                    Add Your First Item
-                  </Link>
+                  <Link href="/admin/catering/items/new">Add Your First Item</Link>
                 </Button>
               ) : (
                 <Button variant="outline" onClick={clearFilters} className="mt-4">
@@ -624,13 +644,11 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
                 <TableBody>
                   {filteredAndPaginatedItems.items.map(item => {
                     const isSquareItem = !!(item as any).squareProductId;
-                    return (
-                      <ItemRow key={item.id} item={item} isSquareItem={isSquareItem} />
-                    );
+                    return <ItemRow key={item.id} item={item} isSquareItem={isSquareItem} />;
                   })}
                 </TableBody>
               </Table>
-              
+
               {filteredAndPaginatedItems.totalPages > 1 && (
                 <div className="border-t pt-4">
                   <PaginationControls />
@@ -650,8 +668,8 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
               <div>
                 <h3 className="font-medium text-blue-900">Square Items</h3>
                 <p className="text-sm text-blue-700 mt-1">
-                  These items sync from Square. You can override description, images, and dietary info locally. 
-                  Name, price, and category will be updated during sync.
+                  These items sync from Square. You can override description, images, and dietary
+                  info locally. Name, price, and category will be updated during sync.
                 </p>
               </div>
             </div>
@@ -668,8 +686,8 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
               <div>
                 <h3 className="font-medium text-green-900">Local Items</h3>
                 <p className="text-sm text-green-700 mt-1">
-                  These items are managed locally. You have full control over all properties including 
-                  name, price, description, images, and dietary information.
+                  These items are managed locally. You have full control over all properties
+                  including name, price, description, images, and dietary information.
                 </p>
               </div>
             </div>
@@ -678,4 +696,4 @@ export const SmartCateringItemsList: React.FC<SmartCateringItemsListProps> = ({
       )}
     </div>
   );
-}; 
+};

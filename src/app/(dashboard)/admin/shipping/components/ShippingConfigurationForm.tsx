@@ -20,8 +20,14 @@ interface ShippingConfigurationFormProps {
 // Schema for form validation
 const configurationSchema = z.object({
   productName: z.string().min(1, 'Product name is required'),
-  baseWeightLb: z.number().min(0.1, 'Base weight must be at least 0.1 lbs').max(50, 'Base weight cannot exceed 50 lbs'),
-  weightPerUnitLb: z.number().min(0, 'Per-unit weight cannot be negative').max(50, 'Per-unit weight cannot exceed 50 lbs'),
+  baseWeightLb: z
+    .number()
+    .min(0.1, 'Base weight must be at least 0.1 lbs')
+    .max(50, 'Base weight cannot exceed 50 lbs'),
+  weightPerUnitLb: z
+    .number()
+    .min(0, 'Per-unit weight cannot be negative')
+    .max(50, 'Per-unit weight cannot exceed 50 lbs'),
   isActive: z.boolean(),
   applicableForNationwideOnly: z.boolean(),
 });
@@ -32,7 +38,9 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function ShippingConfigurationForm({ configurations }: ShippingConfigurationFormProps) {
+export default function ShippingConfigurationForm({
+  configurations,
+}: ShippingConfigurationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -64,12 +72,14 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
       }
 
       toast.success('Shipping configuration updated successfully');
-      
+
       // Refresh the page to show updated data
       window.location.reload();
     } catch (error) {
       console.error('Error updating shipping configuration:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update shipping configuration');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update shipping configuration'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +103,8 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">
-                  {form.watch(`configurations.${index}.productName`) || `Configuration ${index + 1}`}
+                  {form.watch(`configurations.${index}.productName`) ||
+                    `Configuration ${index + 1}`}
                 </CardTitle>
                 {fields.length > 1 && (
                   <Button
@@ -111,9 +122,7 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor={`configurations.${index}.productName`}>
-                    Product Name/Type
-                  </Label>
+                  <Label htmlFor={`configurations.${index}.productName`}>Product Name/Type</Label>
                   <Input
                     {...form.register(`configurations.${index}.productName`)}
                     placeholder="e.g., alfajores, empanadas"
@@ -127,9 +136,7 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
                 </div>
 
                 <div>
-                  <Label htmlFor={`configurations.${index}.baseWeightLb`}>
-                    Base Weight (lbs)
-                  </Label>
+                  <Label htmlFor={`configurations.${index}.baseWeightLb`}>Base Weight (lbs)</Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -179,21 +186,22 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
                     <Switch
                       {...form.register(`configurations.${index}.isActive`)}
                       checked={form.watch(`configurations.${index}.isActive`)}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={checked =>
                         form.setValue(`configurations.${index}.isActive`, checked)
                       }
                     />
-                    <Label htmlFor={`configurations.${index}.isActive`}>
-                      Active
-                    </Label>
+                    <Label htmlFor={`configurations.${index}.isActive`}>Active</Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <Switch
                       {...form.register(`configurations.${index}.applicableForNationwideOnly`)}
                       checked={form.watch(`configurations.${index}.applicableForNationwideOnly`)}
-                      onCheckedChange={(checked) => 
-                        form.setValue(`configurations.${index}.applicableForNationwideOnly`, checked)
+                      onCheckedChange={checked =>
+                        form.setValue(
+                          `configurations.${index}.applicableForNationwideOnly`,
+                          checked
+                        )
                       }
                     />
                     <Label htmlFor={`configurations.${index}.applicableForNationwideOnly`}>
@@ -205,17 +213,20 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
 
               {/* Weight Calculation Preview */}
               <div className="bg-gray-50 p-3 rounded-md">
-                <p className="text-sm font-medium text-gray-700 mb-2">Weight Calculation Preview:</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Weight Calculation Preview:
+                </p>
                 <div className="text-xs text-gray-600 space-y-1">
                   {(() => {
                     const baseWeight = form.watch(`configurations.${index}.baseWeightLb`) || 0;
-                    const perUnitWeight = form.watch(`configurations.${index}.weightPerUnitLb`) || 0;
+                    const perUnitWeight =
+                      form.watch(`configurations.${index}.weightPerUnitLb`) || 0;
                     return (
                       <>
                         <p>• 1 unit: {baseWeight.toFixed(1)} lbs</p>
-                        <p>• 3 units: {(baseWeight + (2 * perUnitWeight)).toFixed(1)} lbs</p>
-                        <p>• 5 units: {(baseWeight + (4 * perUnitWeight)).toFixed(1)} lbs</p>
-                        <p>• 10 units: {(baseWeight + (9 * perUnitWeight)).toFixed(1)} lbs</p>
+                        <p>• 3 units: {(baseWeight + 2 * perUnitWeight).toFixed(1)} lbs</p>
+                        <p>• 5 units: {(baseWeight + 4 * perUnitWeight).toFixed(1)} lbs</p>
+                        <p>• 10 units: {(baseWeight + 9 * perUnitWeight).toFixed(1)} lbs</p>
                       </>
                     );
                   })()}
@@ -237,11 +248,7 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
           Add Configuration
         </Button>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex items-center gap-2"
-        >
+        <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
           {isSubmitting ? (
             'Saving...'
           ) : (
@@ -254,4 +261,4 @@ export default function ShippingConfigurationForm({ configurations }: ShippingCo
       </div>
     </form>
   );
-} 
+}

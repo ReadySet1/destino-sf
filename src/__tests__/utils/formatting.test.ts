@@ -46,7 +46,7 @@ describe('Formatting', () => {
       describe('Decimal.js handling', () => {
         test('should format Decimal-like objects using serializeDecimal', () => {
           const decimalLike = {
-            toNumber: jest.fn().mockReturnValue(42.75)
+            toNumber: jest.fn().mockReturnValue(42.75),
           };
 
           const result = formatPrice(decimalLike);
@@ -56,7 +56,7 @@ describe('Formatting', () => {
 
         test('should handle Decimal-like objects without currency', () => {
           const decimalLike = {
-            toNumber: jest.fn().mockReturnValue(15.50)
+            toNumber: jest.fn().mockReturnValue(15.5),
           };
 
           const result = formatPrice(decimalLike, false);
@@ -65,12 +65,15 @@ describe('Formatting', () => {
 
         test('should fallback when Decimal conversion fails', () => {
           const problematicDecimal = {
-            toNumber: jest.fn().mockReturnValue(null)
+            toNumber: jest.fn().mockReturnValue(null),
           };
 
           const result = formatPrice(problematicDecimal);
           expect(result).toBe('$0.00');
-          expect(logger.warn).toHaveBeenCalledWith('Failed to format price value:', problematicDecimal);
+          expect(logger.warn).toHaveBeenCalledWith(
+            'Failed to format price value:',
+            problematicDecimal
+          );
         });
       });
 
@@ -138,7 +141,7 @@ describe('Formatting', () => {
       describe('Decimal.js handling', () => {
         test('should format Decimal-like objects', () => {
           const decimalAmount = {
-            toNumber: jest.fn().mockReturnValue(1234.56)
+            toNumber: jest.fn().mockReturnValue(1234.56),
           };
 
           const result = formatCurrency(decimalAmount);
@@ -148,12 +151,15 @@ describe('Formatting', () => {
 
         test('should handle failed Decimal conversion', () => {
           const problematicDecimal = {
-            toNumber: jest.fn().mockReturnValue(null)
+            toNumber: jest.fn().mockReturnValue(null),
           };
 
           const result = formatCurrency(problematicDecimal);
           expect(result).toBe('$0.00');
-          expect(logger.warn).toHaveBeenCalledWith('Failed to format currency value:', problematicDecimal);
+          expect(logger.warn).toHaveBeenCalledWith(
+            'Failed to format currency value:',
+            problematicDecimal
+          );
         });
       });
 
@@ -171,19 +177,24 @@ describe('Formatting', () => {
         test('should handle conversion errors gracefully', () => {
           // Mock console.error since that's where serializeDecimal logs errors
           const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-          
+
           const throwingObject = {
             toNumber: jest.fn().mockImplementation(() => {
               throw new Error('Conversion failed');
-            })
+            }),
           };
 
           const result = formatCurrency(throwingObject);
           expect(result).toBe('$0.00');
-          
+
           // The error is logged by serializeDecimal via console.error, not logger.error
-          expect(consoleSpy).toHaveBeenCalledWith('Error serializing Decimal:', expect.any(Error), 'Value:', throwingObject);
-          
+          expect(consoleSpy).toHaveBeenCalledWith(
+            'Error serializing Decimal:',
+            expect.any(Error),
+            'Value:',
+            throwingObject
+          );
+
           consoleSpy.mockRestore();
         });
 
@@ -193,15 +204,18 @@ describe('Formatting', () => {
           const mockFormat = jest.fn().mockImplementation(() => {
             throw new Error('Formatting error');
           });
-          
+
           // Create a mock constructor that returns an object with the throwing format method
           (Intl as any).NumberFormat = jest.fn().mockImplementation(() => ({
-            format: mockFormat
+            format: mockFormat,
           }));
 
           const result = formatCurrency(100);
           expect(result).toBe('$0.00');
-          expect(logger.error).toHaveBeenCalledWith('Error formatting currency:', expect.any(Error));
+          expect(logger.error).toHaveBeenCalledWith(
+            'Error formatting currency:',
+            expect.any(Error)
+          );
 
           // Restore original implementation
           Intl.NumberFormat = originalNumberFormat;
@@ -211,19 +225,19 @@ describe('Formatting', () => {
 
     describe('Tax calculations and edge cases', () => {
       test('should handle tax-like calculations', () => {
-        const subtotal = 100.00;
+        const subtotal = 100.0;
         const taxRate = 0.08875; // SF tax rate
         const tax = subtotal * taxRate;
-        
+
         expect(formatCurrency(tax)).toBe('$8.88');
         expect(formatPrice(tax)).toBe('$8.88');
       });
 
       test('should handle tip calculations', () => {
-        const bill = 87.50;
+        const bill = 87.5;
         const tipPercent = 0.18;
         const tip = bill * tipPercent;
-        
+
         expect(formatCurrency(tip)).toBe('$15.75');
       });
 
@@ -232,7 +246,7 @@ describe('Formatting', () => {
         const eurAmount = 100;
         const exchangeRate = 1.08452;
         const usdAmount = eurAmount * exchangeRate;
-        
+
         expect(formatCurrency(usdAmount)).toBe('$108.45');
       });
     });
@@ -244,7 +258,7 @@ describe('Formatting', () => {
         test('should format Date objects correctly', () => {
           const date = new Date('2024-01-15T14:30:00Z');
           const result = formatDateTime(date);
-          
+
           // Check that it contains expected components (format may vary by locale)
           expect(result).toMatch(/Jan/);
           expect(result).toMatch(/15/);
@@ -255,7 +269,7 @@ describe('Formatting', () => {
         test('should format date strings correctly', () => {
           const dateString = '2024-12-25T09:15:30Z';
           const result = formatDateTime(dateString);
-          
+
           expect(result).toMatch(/Dec/);
           expect(result).toMatch(/25/);
           expect(result).toMatch(/2024/);
@@ -265,7 +279,7 @@ describe('Formatting', () => {
         test('should handle different time zones consistently', () => {
           const utcDate = new Date('2024-06-15T12:00:00Z');
           const result = formatDateTime(utcDate);
-          
+
           expect(result).toMatch(/Jun/);
           expect(result).toMatch(/15/);
           expect(result).toMatch(/2024/);
@@ -295,7 +309,7 @@ describe('Formatting', () => {
           // Create a date that might cause formatting issues
           const problematicDate = new Date('1900-01-01T00:00:00Z');
           const result = formatDateTime(problematicDate);
-          
+
           // Should either format correctly or return N/A, but not throw
           expect(typeof result).toBe('string');
         });
@@ -305,7 +319,7 @@ describe('Formatting', () => {
         test('should handle dates at boundaries', () => {
           const endOfYear = new Date('2024-12-31T12:00:00Z'); // Use noon to avoid timezone edge cases
           const startOfYear = new Date('2024-01-01T12:00:00Z'); // Use noon to avoid timezone edge cases
-          
+
           expect(formatDateTime(endOfYear)).toMatch(/Dec.*31.*2024/);
           expect(formatDateTime(startOfYear)).toMatch(/Jan.*1.*2024/);
         });
@@ -313,14 +327,14 @@ describe('Formatting', () => {
         test('should handle leap year dates', () => {
           const leapDay = new Date('2024-02-29T12:00:00Z');
           const result = formatDateTime(leapDay);
-          
+
           expect(result).toMatch(/Feb.*29.*2024/);
         });
 
         test('should handle very old and future dates', () => {
           const oldDate = new Date('1970-01-01T12:00:00Z'); // Use noon to avoid timezone edge cases
           const futureDate = new Date('2099-12-31T12:00:00Z'); // Use noon to avoid timezone edge cases
-          
+
           expect(formatDateTime(oldDate)).toMatch(/1970/);
           expect(formatDateTime(futureDate)).toMatch(/2099/);
         });
@@ -331,11 +345,11 @@ describe('Formatting', () => {
   describe('Integration scenarios', () => {
     test('should handle order summary formatting', () => {
       const orderData = {
-        subtotal: { toNumber: () => 45.50 },
+        subtotal: { toNumber: () => 45.5 },
         tax: { toNumber: () => 4.04 },
-        deliveryFee: 15.00,
+        deliveryFee: 15.0,
         total: { toNumber: () => 64.54 },
-        createdAt: new Date('2024-01-15T16:30:00Z')
+        createdAt: new Date('2024-01-15T16:30:00Z'),
       };
 
       expect(formatCurrency(orderData.subtotal)).toBe('$45.50');
@@ -351,8 +365,8 @@ describe('Formatting', () => {
     test('should handle product pricing scenarios', () => {
       const products = [
         { name: 'Alfajores', price: { toNumber: () => 12.99 } },
-        { name: 'Empanadas', price: { toNumber: () => 8.50 } },
-        { name: 'Milanesa', price: null }
+        { name: 'Empanadas', price: { toNumber: () => 8.5 } },
+        { name: 'Milanesa', price: null },
       ];
 
       expect(formatPrice(products[0].price)).toBe('$12.99');
@@ -361,13 +375,13 @@ describe('Formatting', () => {
     });
 
     test('should handle promotional pricing', () => {
-      const originalPrice = 25.00;
-      const discountPercent = 0.20;
+      const originalPrice = 25.0;
+      const discountPercent = 0.2;
       const salePrice = originalPrice * (1 - discountPercent);
-      
+
       expect(formatPrice(originalPrice)).toBe('$25.00');
       expect(formatPrice(salePrice)).toBe('$20.00');
       expect(formatCurrency(originalPrice - salePrice)).toBe('$5.00');
     });
   });
-}); 
+});

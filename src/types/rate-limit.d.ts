@@ -31,12 +31,7 @@ export interface RateLimitOptions {
   config?: Partial<RateLimitConfig>;
 }
 
-export type RateLimitEndpoint = 
-  | 'webhooks' 
-  | 'checkout' 
-  | 'orders' 
-  | 'api' 
-  | 'admin';
+export type RateLimitEndpoint = 'webhooks' | 'checkout' | 'orders' | 'api' | 'admin';
 
 export interface EndpointRateLimits {
   webhooks: RateLimitConfig;
@@ -53,4 +48,4 @@ export interface RateLimitResponse {
   remaining: number;
   reset: number;
   retryAfter: number;
-} 
+}

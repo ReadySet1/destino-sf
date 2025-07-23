@@ -13,9 +13,10 @@ interface CashPaymentDetailsProps {
 
 export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order }) => {
   const amount = parseFloat(order.total.toString());
-  const storeAddress = process.env.NEXT_PUBLIC_STORE_ADDRESS || '123 Main Street, San Francisco, CA 94110';
+  const storeAddress =
+    process.env.NEXT_PUBLIC_STORE_ADDRESS || '123 Main Street, San Francisco, CA 94110';
   const storeHours = process.env.NEXT_PUBLIC_STORE_HOURS || 'Mon-Fri: 9am-6pm, Sat-Sun: 10am-5pm';
-  
+
   return (
     <div className="space-y-6">
       <div className="p-4 bg-yellow-50 rounded-lg">
@@ -24,7 +25,7 @@ export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order })
           reference your order number. Your order will be prepared after payment is received.
         </p>
       </div>
-      
+
       <div className="space-y-4">
         <h3 className="font-medium">Payment Details:</h3>
         <ul className="space-y-1">
@@ -38,7 +39,7 @@ export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order })
           </li>
         </ul>
       </div>
-      
+
       <div className="space-y-3">
         <h3 className="font-medium">Store Information:</h3>
         <div className="space-y-1">
@@ -46,7 +47,7 @@ export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order })
           <p className="text-sm">{storeHours}</p>
         </div>
       </div>
-      
+
       <div className="border-t pt-6 mt-6">
         <h3 className="font-medium mb-3">Important Information</h3>
         <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
@@ -55,18 +56,15 @@ export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order })
           <li>Your items will be prepared after payment is confirmed.</li>
           <li>Unpaid orders will be automatically canceled after 48 hours.</li>
         </ul>
-        
+
         <div className="flex gap-4 mt-6">
-          <Button
-            variant="outline"
-            onClick={() => window.location.href = '/'}
-          >
+          <Button variant="outline" onClick={() => (window.location.href = '/')}>
             Return to Home
           </Button>
-          
+
           <Button
-            variant="outline" 
-            onClick={() => window.location.href = `/order-status/${order.id}`}
+            variant="outline"
+            onClick={() => (window.location.href = `/order-status/${order.id}`)}
           >
             Check Order Status
           </Button>
@@ -74,4 +72,4 @@ export const CashPaymentDetails: React.FC<CashPaymentDetailsProps> = ({ order })
       </div>
     </div>
   );
-}; 
+};

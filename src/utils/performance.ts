@@ -16,28 +16,25 @@ let performanceMetrics: PerformanceMetric[] = [];
 /**
  * Measure the performance of an async function
  */
-export function measurePerformance<T>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> {
+export function measurePerformance<T>(name: string, fn: () => Promise<T>): Promise<T> {
   return new Promise(async (resolve, reject) => {
     const start = performance.now();
     const timestamp = Date.now();
-    
+
     try {
       const result = await fn();
       const end = performance.now();
       const duration = end - start;
-      
+
       const metric: PerformanceMetric = {
         name,
         duration,
         timestamp,
-        success: true
+        success: true,
       };
-      
+
       performanceMetrics.push(metric);
-      
+
       // Log in development
       if (process.env.NODE_ENV === 'development') {
         if (duration > 1000) {
@@ -48,27 +45,27 @@ export function measurePerformance<T>(
           console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
         }
       }
-      
+
       // In production, log slow operations
       if (process.env.NODE_ENV === 'production' && duration > 2000) {
         console.warn(`Slow operation in production: ${name}: ${duration.toFixed(2)}ms`);
       }
-      
+
       resolve(result);
     } catch (error) {
       const end = performance.now();
       const duration = end - start;
-      
+
       const metric: PerformanceMetric = {
         name,
         duration,
         timestamp,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
-      
+
       performanceMetrics.push(metric);
-      
+
       console.error(`❌ ${name} failed after ${duration.toFixed(2)}ms:`, error);
       reject(error);
     }
@@ -78,46 +75,43 @@ export function measurePerformance<T>(
 /**
  * Measure sync function performance
  */
-export function measureSyncPerformance<T>(
-  name: string,
-  fn: () => T
-): T {
+export function measureSyncPerformance<T>(name: string, fn: () => T): T {
   const start = performance.now();
   const timestamp = Date.now();
-  
+
   try {
     const result = fn();
     const end = performance.now();
     const duration = end - start;
-    
+
     const metric: PerformanceMetric = {
       name,
       duration,
       timestamp,
-      success: true
+      success: true,
     };
-    
+
     performanceMetrics.push(metric);
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
     }
-    
+
     return result;
   } catch (error) {
     const end = performance.now();
     const duration = end - start;
-    
+
     const metric: PerformanceMetric = {
       name,
       duration,
       timestamp,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
-    
+
     performanceMetrics.push(metric);
-    
+
     console.error(`❌ ${name} failed after ${duration.toFixed(2)}ms:`, error);
     throw error;
   }
@@ -140,17 +134,17 @@ export class PerformanceTimer {
   end(success: boolean = true, error?: string): number {
     const endTime = performance.now();
     const duration = endTime - this.startTime;
-    
+
     const metric: PerformanceMetric = {
       name: this.name,
       duration,
       timestamp: this.timestamp,
       success,
-      error
+      error,
     };
-    
+
     performanceMetrics.push(metric);
-    
+
     if (process.env.NODE_ENV === 'development') {
       if (success) {
         console.log(`⚡ ${this.name}: ${duration.toFixed(2)}ms`);
@@ -158,7 +152,7 @@ export class PerformanceTimer {
         console.error(`❌ ${this.name} failed after ${duration.toFixed(2)}ms:`, error);
       }
     }
-    
+
     return duration;
   }
 }
@@ -195,20 +189,21 @@ export function getPerformanceSummary(): {
       failedOperations: 0,
       averageDuration: 0,
       slowestOperation: null,
-      fastestOperation: null
+      fastestOperation: null,
     };
   }
 
   const successful = performanceMetrics.filter(m => m.success);
   const failed = performanceMetrics.filter(m => !m.success);
-  const averageDuration = performanceMetrics.reduce((sum, m) => sum + m.duration, 0) / performanceMetrics.length;
-  
-  const slowest = performanceMetrics.reduce((prev, current) => 
-    (prev.duration > current.duration) ? prev : current
+  const averageDuration =
+    performanceMetrics.reduce((sum, m) => sum + m.duration, 0) / performanceMetrics.length;
+
+  const slowest = performanceMetrics.reduce((prev, current) =>
+    prev.duration > current.duration ? prev : current
   );
-  
-  const fastest = performanceMetrics.reduce((prev, current) => 
-    (prev.duration < current.duration) ? prev : current
+
+  const fastest = performanceMetrics.reduce((prev, current) =>
+    prev.duration < current.duration ? prev : current
   );
 
   return {
@@ -217,7 +212,7 @@ export function getPerformanceSummary(): {
     failedOperations: failed.length,
     averageDuration,
     slowestOperation: slowest,
-    fastestOperation: fastest
+    fastestOperation: fastest,
   };
 }
 
@@ -240,13 +235,13 @@ export function withApiMetrics<T>(apiName: string, apiCall: () => Promise<T>): P
  */
 export function logRenderTime(componentName: string): () => void {
   const start = performance.now();
-  
+
   return () => {
     const end = performance.now();
     const duration = end - start;
-    
+
     if (process.env.NODE_ENV === 'development' && duration > 100) {
       console.log(`🎨 ${componentName} render: ${duration.toFixed(2)}ms`);
     }
   };
-} 
+}

@@ -5,6 +5,7 @@ Comprehensive testing approach for Destino SF ensuring reliability, performance,
 ## Testing Philosophy
 
 Our testing strategy follows the testing pyramid principle with emphasis on:
+
 - **Fast Feedback**: Unit tests provide immediate feedback during development
 - **Confidence**: Integration tests ensure components work together
 - **User Experience**: E2E tests validate complete user workflows
@@ -32,18 +33,21 @@ Our testing strategy follows the testing pyramid principle with emphasis on:
 ## Test Types and Coverage
 
 ### Unit Testing (70% of test suite)
+
 - **Target Coverage**: 85%+ code coverage
 - **Focus Areas**: Business logic, utilities, pure functions
 - **Tools**: Jest, React Testing Library
 - **Run Time**: < 30 seconds for full suite
 
 ### Integration Testing (20% of test suite)
+
 - **API Testing**: All endpoints with various scenarios
 - **Database Testing**: CRUD operations and data integrity
 - **Service Integration**: External API mocking and contracts
 - **Run Time**: < 2 minutes for full suite
 
 ### End-to-End Testing (10% of test suite)
+
 - **Critical Paths**: Purchase flow, catering inquiries, admin operations
 - **Browser Coverage**: Chrome, Firefox, Safari, Mobile browsers
 - **Tools**: Playwright
@@ -52,6 +56,7 @@ Our testing strategy follows the testing pyramid principle with emphasis on:
 ## Testing Framework and Tools
 
 ### Frontend Testing
+
 ```typescript
 // Jest configuration for React components
 module.exports = {
@@ -76,7 +81,7 @@ describe('ProductCard', () => {
   it('displays product information correctly', () => {
     const product = mockProduct();
     render(<ProductCard product={product} />);
-    
+
     expect(screen.getByText(product.name)).toBeInTheDocument();
     expect(screen.getByText(`$${product.price}`)).toBeInTheDocument();
   });
@@ -84,11 +89,11 @@ describe('ProductCard', () => {
   it('handles add to cart action', async () => {
     const onAddToCart = jest.fn();
     const product = mockProduct();
-    
+
     render(<ProductCard product={product} onAddToCart={onAddToCart} />);
-    
+
     fireEvent.click(screen.getByText('Add to Cart'));
-    
+
     await waitFor(() => {
       expect(onAddToCart).toHaveBeenCalledWith(product.id, 1);
     });
@@ -97,6 +102,7 @@ describe('ProductCard', () => {
 ```
 
 ### Backend API Testing
+
 ```typescript
 // API route testing with Next.js
 import { createMocks } from 'node-mocks-http';
@@ -135,6 +141,7 @@ describe('/api/products', () => {
 ```
 
 ### Database Testing
+
 ```typescript
 // Prisma testing setup
 import { PrismaClient } from '@prisma/client';
@@ -177,6 +184,7 @@ describe('Product Database Operations', () => {
 ## End-to-End Testing with Playwright
 
 ### Critical User Journeys
+
 ```typescript
 // Complete purchase flow test
 import { test, expect } from '@playwright/test';
@@ -185,18 +193,18 @@ test.describe('Complete Purchase Flow', () => {
   test('customer can complete a purchase successfully', async ({ page }) => {
     // Navigate to product page
     await page.goto('/products/empanadas-beef');
-    
+
     // Add product to cart
     await page.click('[data-testid="add-to-cart-btn"]');
     await expect(page.locator('[data-testid="cart-count"]')).toContainText('1');
-    
+
     // Go to cart
     await page.click('[data-testid="cart-icon"]');
     await expect(page.locator('[data-testid="cart-item"]')).toBeVisible();
-    
+
     // Proceed to checkout
     await page.click('[data-testid="checkout-btn"]');
-    
+
     // Fill shipping information
     await page.fill('[data-testid="email"]', 'test@example.com');
     await page.fill('[data-testid="first-name"]', 'John');
@@ -205,18 +213,18 @@ test.describe('Complete Purchase Flow', () => {
     await page.fill('[data-testid="city"]', 'San Francisco');
     await page.selectOption('[data-testid="state"]', 'CA');
     await page.fill('[data-testid="zip"]', '94105');
-    
+
     // Continue to payment
     await page.click('[data-testid="continue-to-payment"]');
-    
+
     // Fill payment information (using test card)
     await page.fill('[data-testid="card-number"]', '4111111111111111');
     await page.fill('[data-testid="expiry"]', '12/25');
     await page.fill('[data-testid="cvv"]', '123');
-    
+
     // Complete order
     await page.click('[data-testid="place-order"]');
-    
+
     // Verify order confirmation
     await expect(page.locator('[data-testid="order-confirmation"]')).toBeVisible();
     await expect(page.locator('[data-testid="order-number"]')).toContainText(/ORDER-\d+/);
@@ -225,30 +233,31 @@ test.describe('Complete Purchase Flow', () => {
 ```
 
 ### Catering Flow Testing
+
 ```typescript
 test.describe('Catering Inquiry Flow', () => {
   test('business customer can submit catering inquiry', async ({ page }) => {
     await page.goto('/catering');
-    
+
     // Fill event details
     await page.fill('[data-testid="guest-count"]', '50');
     await page.selectOption('[data-testid="event-type"]', 'CORPORATE');
     await page.fill('[data-testid="event-date"]', '2025-03-15');
-    
+
     // Fill contact information
     await page.fill('[data-testid="contact-name"]', 'Jane Smith');
     await page.fill('[data-testid="contact-email"]', 'jane@company.com');
     await page.fill('[data-testid="contact-phone"]', '(555) 123-4567');
-    
+
     // Fill delivery address
     await page.fill('[data-testid="delivery-address"]', '456 Business Ave');
     await page.fill('[data-testid="delivery-city"]', 'San Francisco');
     await page.selectOption('[data-testid="delivery-state"]', 'CA');
     await page.fill('[data-testid="delivery-zip"]', '94107');
-    
+
     // Submit inquiry
     await page.click('[data-testid="submit-inquiry"]');
-    
+
     // Verify confirmation
     await expect(page.locator('[data-testid="inquiry-confirmation"]')).toBeVisible();
     await expect(page.locator('[data-testid="inquiry-id"]')).toContainText(/INQ-\d+/);
@@ -259,6 +268,7 @@ test.describe('Catering Inquiry Flow', () => {
 ## Test Data Management
 
 ### Fixtures and Mocks
+
 ```typescript
 // Test data factories
 export const mockProduct = (overrides: Partial<Product> = {}): Product => ({
@@ -317,7 +327,7 @@ export const mockOrder = (overrides: Partial<Order> = {}): Order => ({
     },
   ],
   subtotal: 49.98,
-  tax: 4.50,
+  tax: 4.5,
   shipping: 8.99,
   total: 63.47,
   paymentStatus: PaymentStatus.PENDING,
@@ -335,6 +345,7 @@ export const mockOrder = (overrides: Partial<Order> = {}): Order => ({
 ```
 
 ### Database Seeding for Tests
+
 ```typescript
 // Test database seeding
 export async function seedTestDatabase() {
@@ -380,6 +391,7 @@ export async function seedTestDatabase() {
 ## Performance Testing
 
 ### Load Testing with Artillery
+
 ```yaml
 # artillery-config.yml
 config:
@@ -396,40 +408,41 @@ config:
       name: Peak load
 
 scenarios:
-  - name: "Product browsing"
+  - name: 'Product browsing'
     weight: 70
     flow:
       - get:
-          url: "/api/products"
+          url: '/api/products'
       - get:
-          url: "/api/products/{{ $randomString() }}"
-      
-  - name: "Checkout flow"
+          url: '/api/products/{{ $randomString() }}'
+
+  - name: 'Checkout flow'
     weight: 20
     flow:
       - post:
-          url: "/api/cart"
+          url: '/api/cart'
           json:
-            productId: "prod_empanadas_beef"
+            productId: 'prod_empanadas_beef'
             quantity: 2
       - post:
-          url: "/api/checkout"
+          url: '/api/checkout'
           json:
-            paymentMethodId: "pm_test"
-            
-  - name: "Catering inquiry"
+            paymentMethodId: 'pm_test'
+
+  - name: 'Catering inquiry'
     weight: 10
     flow:
       - post:
-          url: "/api/catering"
+          url: '/api/catering'
           json:
             guestCount: 25
-            eventType: "CORPORATE"
+            eventType: 'CORPORATE'
 ```
 
 ## Continuous Integration Testing
 
 ### GitHub Actions Workflow
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
@@ -449,11 +462,11 @@ jobs:
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - run: pnpm install
       - run: pnpm test:unit
       - run: pnpm test:components
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
 
@@ -475,7 +488,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - run: pnpm install
       - run: pnpm prisma migrate deploy
       - run: pnpm test:integration
@@ -488,12 +501,12 @@ jobs:
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - run: pnpm install
       - run: pnpm playwright install
       - run: pnpm build
       - run: pnpm test:e2e:critical
-      
+
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
@@ -504,6 +517,7 @@ jobs:
 ## Test Commands Reference
 
 ### Development Testing
+
 ```bash
 # Unit tests
 pnpm test:unit                    # Run all unit tests
@@ -527,6 +541,7 @@ pnpm test:ci                     # CI-optimized test run
 ```
 
 ### Production Testing
+
 ```bash
 # Pre-deployment validation
 pnpm test:pre-deploy             # Critical tests before deploy
@@ -541,18 +556,21 @@ pnpm test:accessibility          # Accessibility validation
 ## Quality Gates
 
 ### Code Coverage Requirements
+
 - **Minimum Coverage**: 80% overall
 - **Critical Paths**: 95% coverage required
 - **New Code**: Must maintain or improve coverage
 - **Components**: 85% coverage for React components
 
 ### Performance Benchmarks
+
 - **Page Load Time**: < 2 seconds (LCP)
 - **API Response Time**: < 500ms for 95th percentile
 - **Test Suite Runtime**: < 15 minutes total
 - **Bundle Size**: < 250KB main bundle
 
 ### Accessibility Standards
+
 - **WCAG Compliance**: AA level minimum
 - **Keyboard Navigation**: Full functionality without mouse
 - **Screen Reader**: Compatible with major screen readers
@@ -561,6 +579,7 @@ pnpm test:accessibility          # Accessibility validation
 ## Testing Best Practices
 
 ### Writing Effective Tests
+
 1. **Test Behavior, Not Implementation**: Focus on what the code does, not how
 2. **Use Descriptive Names**: Test names should explain the scenario clearly
 3. **Arrange-Act-Assert**: Structure tests with clear setup, action, and verification
@@ -568,6 +587,7 @@ pnpm test:accessibility          # Accessibility validation
 5. **Keep Tests Independent**: Each test should run in isolation
 
 ### Maintaining Test Suite
+
 1. **Regular Test Reviews**: Review and update tests during code reviews
 2. **Flaky Test Management**: Identify and fix unreliable tests promptly
 3. **Test Data Management**: Keep test data current and representative

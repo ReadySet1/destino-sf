@@ -7,11 +7,11 @@ async function fixProductCategories() {
 
     // Get the category IDs
     const alfajoresCategory = await prisma.category.findFirst({
-      where: { name: 'ALFAJORES' }
+      where: { name: 'ALFAJORES' },
     });
 
     const empanadasCategory = await prisma.category.findFirst({
-      where: { name: 'EMPANADAS' }
+      where: { name: 'EMPANADAS' },
     });
 
     if (!alfajoresCategory) {
@@ -30,14 +30,14 @@ async function fixProductCategories() {
       where: {
         name: {
           contains: 'alfajor',
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
-        categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24' // Default category
+        categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24', // Default category
       },
       data: {
         categoryId: alfajoresCategory.id,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     // Update empanadas products
@@ -45,14 +45,14 @@ async function fixProductCategories() {
       where: {
         name: {
           contains: 'empanada',
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
-        categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24' // Default category
+        categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24', // Default category
       },
       data: {
         categoryId: empanadasCategory.id,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     logger.info(`Updated ${alfajoresResult.count} alfajores products`);
@@ -60,15 +60,15 @@ async function fixProductCategories() {
 
     // Verify the changes
     const alfajoresCount = await prisma.product.count({
-      where: { categoryId: alfajoresCategory.id }
+      where: { categoryId: alfajoresCategory.id },
     });
 
     const empanadasCount = await prisma.product.count({
-      where: { categoryId: empanadasCategory.id }
+      where: { categoryId: empanadasCategory.id },
     });
 
     const defaultCount = await prisma.product.count({
-      where: { categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24' }
+      where: { categoryId: '738b24dd-4b07-46a0-a561-57ee885c1f24' },
     });
 
     logger.info(`Final counts:`);
@@ -77,7 +77,6 @@ async function fixProductCategories() {
     logger.info(`- Default category: ${defaultCount} products`);
 
     logger.info('Product category fix completed successfully!');
-
   } catch (error) {
     logger.error('Error fixing product categories:', error);
     throw error;
@@ -91,10 +90,10 @@ if (require.main === module) {
       console.log('Category fix completed successfully');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Category fix failed:', error);
       process.exit(1);
     });
 }
 
-export { fixProductCategories }; 
+export { fixProductCategories };

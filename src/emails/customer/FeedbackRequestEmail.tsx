@@ -191,7 +191,7 @@ const primaryButton = {
 
 const formatDateTime = (date: Date | string | null) => {
   if (!date) return null;
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -231,27 +231,24 @@ export const FeedbackRequestEmail = ({
 
           {/* Feedback Request Section */}
           <Section style={feedbackSection}>
-            <Text style={feedbackTitle}>
-              💜 How was your experience?
-            </Text>
+            <Text style={feedbackTitle}>💜 How was your experience?</Text>
             <Text style={feedbackText}>
               Hi {order.customerName}! We hope you enjoyed your recent order from {shopName}.
             </Text>
             <Text style={feedbackText}>
-              Your feedback helps us continue serving the best authentic Mexican cuisine in San Francisco.
+              Your feedback helps us continue serving the best authentic Mexican cuisine in San
+              Francisco.
             </Text>
           </Section>
 
           {/* Quick Rating */}
           <Section style={ratingSection}>
-            <Text style={ratingTitle}>
-              ⭐ Quick Rating
-            </Text>
+            <Text style={ratingTitle}>⭐ Quick Rating</Text>
             <Text style={{ fontSize: '14px', color: '#713f12', margin: '0 0 16px 0' }}>
               How would you rate your overall experience?
             </Text>
             <div style={{ textAlign: 'center' }}>
-              {[1, 2, 3, 4, 5].map((rating) => (
+              {[1, 2, 3, 4, 5].map(rating => (
                 <Link
                   key={rating}
                   href={`${feedbackUrl}&rating=${rating}`}
@@ -272,11 +269,10 @@ export const FeedbackRequestEmail = ({
 
           {/* Detailed Feedback Form */}
           <Section style={feedbackFormSection}>
-            <Text style={formTitle}>
-              📝 Share More Details
-            </Text>
+            <Text style={formTitle}>📝 Share More Details</Text>
             <Text style={formText}>
-              We&apos;d love to hear more about your experience! Your detailed feedback helps us improve.
+              We&apos;d love to hear more about your experience! Your detailed feedback helps us
+              improve.
             </Text>
             <div style={{ textAlign: 'center', margin: '16px 0' }}>
               <Button href={feedbackUrl} style={primaryButton}>
@@ -288,9 +284,7 @@ export const FeedbackRequestEmail = ({
           {/* Review Platforms */}
           {(reviewPlatforms.google || reviewPlatforms.yelp || reviewPlatforms.facebook) && (
             <Section style={reviewPlatformSection}>
-              <Text style={reviewTitle}>
-                🌟 Love what you tried? Share it with others!
-              </Text>
+              <Text style={reviewTitle}>🌟 Love what you tried? Share it with others!</Text>
               <div style={{ textAlign: 'center' }}>
                 {reviewPlatforms.google && (
                   <Button href={reviewPlatforms.google} style={platformButton}>
@@ -308,7 +302,14 @@ export const FeedbackRequestEmail = ({
                   </Button>
                 )}
               </div>
-              <Text style={{ fontSize: '12px', color: '#0c4a6e', textAlign: 'center', margin: '12px 0 0 0' }}>
+              <Text
+                style={{
+                  fontSize: '12px',
+                  color: '#0c4a6e',
+                  textAlign: 'center',
+                  margin: '12px 0 0 0',
+                }}
+              >
                 Reviews help other food lovers discover our authentic Mexican cuisine
               </Text>
             </Section>
@@ -317,29 +318,61 @@ export const FeedbackRequestEmail = ({
           {/* Incentive Offer */}
           {incentive && (
             <Section style={incentiveSection}>
-              <Text style={incentiveTitle}>
-                🎁 {incentive.description}
-              </Text>
-              <Text style={incentiveText}>
-                {incentive.details}
-              </Text>
+              <Text style={incentiveTitle}>🎁 {incentive.description}</Text>
+              <Text style={incentiveText}>{incentive.details}</Text>
             </Section>
           )}
 
           {/* Order Details */}
-          <Section style={{ padding: '16px', backgroundColor: '#f1f5f9', borderRadius: '6px', margin: '16px 0' }}>
-            <Text style={{ fontSize: '14px', color: '#475569', margin: '0 0 8px 0', fontWeight: 'bold', textAlign: 'center' as const }}>
+          <Section
+            style={{
+              padding: '16px',
+              backgroundColor: '#f1f5f9',
+              borderRadius: '6px',
+              margin: '16px 0',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: '14px',
+                color: '#475569',
+                margin: '0 0 8px 0',
+                fontWeight: 'bold',
+                textAlign: 'center' as const,
+              }}
+            >
               Order Details
             </Text>
-            <Text style={{ fontSize: '12px', color: '#64748b', margin: '4px 0', textAlign: 'center' as const }}>
+            <Text
+              style={{
+                fontSize: '12px',
+                color: '#64748b',
+                margin: '4px 0',
+                textAlign: 'center' as const,
+              }}
+            >
               Order #{order.id}
             </Text>
             {order.completedAt && (
-              <Text style={{ fontSize: '12px', color: '#64748b', margin: '4px 0', textAlign: 'center' as const }}>
+              <Text
+                style={{
+                  fontSize: '12px',
+                  color: '#64748b',
+                  margin: '4px 0',
+                  textAlign: 'center' as const,
+                }}
+              >
                 Completed on {formatDateTime(order.completedAt)}
               </Text>
             )}
-            <Text style={{ fontSize: '12px', color: '#64748b', margin: '4px 0', textAlign: 'center' as const }}>
+            <Text
+              style={{
+                fontSize: '12px',
+                color: '#64748b',
+                margin: '4px 0',
+                textAlign: 'center' as const,
+              }}
+            >
               {formatFulfillmentType(order.fulfillmentType || 'pickup')} order
             </Text>
           </Section>
@@ -358,7 +391,14 @@ export const FeedbackRequestEmail = ({
           </Section>
 
           {/* Thank You */}
-          <Section style={{ padding: '20px', textAlign: 'center' as const, backgroundColor: '#fef7ff', borderRadius: '6px' }}>
+          <Section
+            style={{
+              padding: '20px',
+              textAlign: 'center' as const,
+              backgroundColor: '#fef7ff',
+              borderRadius: '6px',
+            }}
+          >
             <Text style={{ fontSize: '16px', color: '#86198f', margin: '0', fontWeight: 'bold' }}>
               🙏 Thank you for choosing {shopName}!
             </Text>
@@ -367,7 +407,7 @@ export const FeedbackRequestEmail = ({
             </Text>
           </Section>
 
-          <EmailFooter 
+          <EmailFooter
             shopName={shopName}
             unsubscribeUrl={`${websiteUrl}/unsubscribe?email=${encodeURIComponent(order.email)}`}
           />
@@ -377,4 +417,4 @@ export const FeedbackRequestEmail = ({
   );
 };
 
-export default FeedbackRequestEmail; 
+export default FeedbackRequestEmail;

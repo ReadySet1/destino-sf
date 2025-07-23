@@ -39,23 +39,21 @@ export function FixImagesButton() {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        onClick={handleFixImages}
-        disabled={isLoading}
-        variant="outline"
-        className="gap-2"
-      >
+      <Button onClick={handleFixImages} disabled={isLoading} variant="outline" className="gap-2">
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         Fix Product Images
       </Button>
-      
+
       {stats && (
         <div className="text-sm bg-muted p-2 rounded mt-2">
           <p>✓ Fixed: {stats.fixedCount} products</p>
           <p>❌ Errors: {stats.errorCount}</p>
-          <p>📊 Processed {stats.resetProductsCount} reset products and {stats.customProductsCount} custom products</p>
+          <p>
+            📊 Processed {stats.resetProductsCount} reset products and {stats.customProductsCount}{' '}
+            custom products
+          </p>
         </div>
       )}
     </div>
   );
-} 
+}

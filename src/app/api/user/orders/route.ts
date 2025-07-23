@@ -149,9 +149,10 @@ export async function GET() {
       id: order.id,
       createdAt: order.createdAt,
       status: order.status || 'UNKNOWN',
-      total: typeof order.total === 'object' && order.total !== null 
-        ? Number(order.total) 
-        : Number(order.total) || 0,
+      total:
+        typeof order.total === 'object' && order.total !== null
+          ? Number(order.total)
+          : Number(order.total) || 0,
       paymentStatus: order.paymentStatus || 'UNKNOWN',
       trackingNumber: order.trackingNumber,
       shippingCarrier: order.shippingCarrier,
@@ -159,9 +160,10 @@ export async function GET() {
       items: order.items.map(item => ({
         id: item.id,
         quantity: item.quantity,
-        price: typeof item.price === 'object' && item.price !== null 
-          ? Number(item.price) 
-          : Number(item.price) || 0,
+        price:
+          typeof item.price === 'object' && item.price !== null
+            ? Number(item.price)
+            : Number(item.price) || 0,
         product: item.product,
         variant: item.variant,
       })),
@@ -172,9 +174,10 @@ export async function GET() {
       id: order.id,
       createdAt: order.createdAt,
       status: order.status || 'UNKNOWN',
-      total: typeof order.totalAmount === 'object' && order.totalAmount !== null 
-        ? Number(order.totalAmount) 
-        : Number(order.totalAmount) || 0,
+      total:
+        typeof order.totalAmount === 'object' && order.totalAmount !== null
+          ? Number(order.totalAmount)
+          : Number(order.totalAmount) || 0,
       paymentStatus: order.paymentStatus || 'UNKNOWN',
       type: 'catering' as const,
       eventDate: order.eventDate,
@@ -182,9 +185,10 @@ export async function GET() {
       items: order.items.map(item => ({
         id: item.id,
         quantity: item.quantity,
-        price: typeof item.pricePerUnit === 'object' && item.pricePerUnit !== null 
-          ? Number(item.pricePerUnit) 
-          : Number(item.pricePerUnit) || 0,
+        price:
+          typeof item.pricePerUnit === 'object' && item.pricePerUnit !== null
+            ? Number(item.pricePerUnit)
+            : Number(item.pricePerUnit) || 0,
         name: item.name,
       })),
     }));
@@ -194,16 +198,20 @@ export async function GET() {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    console.log(`API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${user.id}`);
+    console.log(
+      `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${user.id}`
+    );
 
     return NextResponse.json(allOrders);
-
   } catch (error) {
     console.error('Error fetching user orders:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return NextResponse.json({ error: 'Failed to fetch orders', details: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch orders', details: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
 // Optional: Define explicit types for request and response if needed
-// export type GetUserOrdersResponse = UserOrder[] | { error: string; details?: string }; 
+// export type GetUserOrdersResponse = UserOrder[] | { error: string; details?: string };

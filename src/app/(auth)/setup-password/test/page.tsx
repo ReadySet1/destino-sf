@@ -3,10 +3,7 @@ import { AuthContainer } from '@/components/auth-container';
 
 export default function PasswordSetupTestPage() {
   return (
-    <AuthContainer 
-      title="Password Setup Test" 
-      subtitle="Test the password setup flow"
-    >
+    <AuthContainer title="Password Setup Test" subtitle="Test the password setup flow">
       <div className="space-y-4">
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
           <h3 className="font-medium text-blue-900 mb-2">Testing Instructions</h3>
@@ -36,7 +33,7 @@ export default function PasswordSetupTestPage() {
           >
             Go to Admin Users
           </Link>
-          
+
           <Link
             href="/setup-password"
             className="block w-full text-center bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -47,4 +44,4 @@ export default function PasswordSetupTestPage() {
       </div>
     </AuthContainer>
   );
-} 
+}

@@ -5,10 +5,10 @@ export const createEnhancedPrismaMock = () => {
   const mockPrismaInstance = {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn().mockImplementation((callback) => callback(mockPrismaInstance)),
+    $transaction: jest.fn().mockImplementation(callback => callback(mockPrismaInstance)),
     $queryRaw: jest.fn().mockResolvedValue([]),
     $executeRaw: jest.fn().mockResolvedValue(0),
-    
+
     // Main models
     order: {
       create: jest.fn(),
@@ -18,7 +18,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     product: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -27,7 +27,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     // Missing productVariant model - this was causing failures
     productVariant: {
       create: jest.fn(),
@@ -37,7 +37,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     category: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -46,7 +46,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     user: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -55,7 +55,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     profile: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -64,7 +64,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     shippingConfiguration: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -73,7 +73,7 @@ export const createEnhancedPrismaMock = () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
-    
+
     // SpotlightPick model for testing spotlight picks functionality
     spotlightPick: {
       create: jest.fn(),
@@ -83,7 +83,7 @@ export const createEnhancedPrismaMock = () => {
       upsert: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
-    }
+    },
   };
 
   return mockPrismaInstance;
@@ -95,7 +95,7 @@ export const createValidateOrderMinimumsMock = () => {
     isValid: true,
     errorMessage: null,
     deliveryZone: 'zone-1',
-    minimumAmount: 50
+    minimumAmount: 50,
   });
 };
 
@@ -104,7 +104,7 @@ export const createMockDecimal = (value: number) => ({
   toNumber: () => value,
   toString: () => value.toString(),
   toFixed: (digits: number) => value.toFixed(digits),
-  valueOf: () => value
+  valueOf: () => value,
 });
 
 // Enhanced Product mock with proper price handling
@@ -118,15 +118,15 @@ export const createMockProductWithPricing = (overrides: any = {}) => ({
     {
       id: 'var-1',
       name: 'Small',
-      price: createMockDecimal(8.99)
+      price: createMockDecimal(8.99),
     },
     {
-      id: 'var-2', 
+      id: 'var-2',
       name: 'Large',
-      price: createMockDecimal(12.99)
-    }
+      price: createMockDecimal(12.99),
+    },
   ],
-  ...overrides
+  ...overrides,
 });
 
 // Spotlight Pick Mock Factories
@@ -144,7 +144,7 @@ export const createMockSpotlightPick = (overrides: any = {}) => ({
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
   product: null,
-  ...overrides
+  ...overrides,
 });
 
 export const createMockProductBasedSpotlightPick = (overrides: any = {}) => ({
@@ -164,7 +164,7 @@ export const createMockProductBasedSpotlightPick = (overrides: any = {}) => ({
       slug: 'alfajores',
     },
   },
-  ...overrides
+  ...overrides,
 });
 
 export const createMockCustomSpotlightPick = (overrides: any = {}) => ({
@@ -178,7 +178,7 @@ export const createMockCustomSpotlightPick = (overrides: any = {}) => ({
   personalizeText: 'Made fresh daily just for you!',
   isCustom: true,
   product: null,
-  ...overrides
+  ...overrides,
 });
 
 export const createMockEmptySpotlightPick = (position: 1 | 2 | 3 | 4 = 1) => ({
@@ -208,7 +208,7 @@ export const createMockCategories = () => [
 export const ORDER_STATUS_MAPPING = {
   PAID: 'PROCESSING',
   FAILED: 'CANCELLED',
-  PENDING: 'PENDING'
+  PENDING: 'PENDING',
 } as const;
 
 // Mock store creators for React components
@@ -218,14 +218,14 @@ export const createMockCartStore = () => ({
   removeItem: jest.fn(),
   updateQuantity: jest.fn(),
   clearCart: jest.fn(),
-  getTotal: jest.fn().mockReturnValue(0)
+  getTotal: jest.fn().mockReturnValue(0),
 });
 
 export const createMockCartAlertStore = () => ({
   isVisible: false,
   message: '',
   showAlert: jest.fn(),
-  hideAlert: jest.fn()
+  hideAlert: jest.fn(),
 });
 
 // Mock Supabase client for authentication testing
@@ -251,4 +251,4 @@ export const createMockCustomerProfile = () => ({
   id: 'customer-123',
   role: 'CUSTOMER',
   email: 'customer@example.com',
-}); 
+});

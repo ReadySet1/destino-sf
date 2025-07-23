@@ -94,20 +94,24 @@ X-RateLimit-Reset: 1642694400
 ## API Endpoints Overview
 
 ### Core E-commerce
+
 - [Products API](products.md) - Product catalog and search
 - [Orders API](orders.md) - Order management and tracking
 - [Checkout API](#checkout) - Payment processing and order creation
 
 ### Catering System
+
 - [Catering API](catering.md) - Catering packages and inquiries
 - [Categories API](#categories) - Product and catering categories
 
 ### Admin Operations
+
 - [Admin API](admin.md) - Administrative functions
 - [Spotlight Picks API](#spotlight) - Featured product management
 - [Square Sync API](#square) - Product synchronization
 
 ### System APIs
+
 - [Health Check](#health) - System status monitoring
 - [Webhooks](../webhooks/README.md) - External service integrations
 
@@ -252,7 +256,7 @@ enum OrderStatus {
   PROCESSING = 'PROCESSING',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 // Catering types
@@ -284,7 +288,7 @@ enum EventType {
   BIRTHDAY = 'BIRTHDAY',
   ANNIVERSARY = 'ANNIVERSARY',
   GRADUATION = 'GRADUATION',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 ```
 
@@ -314,7 +318,7 @@ interface User {
 enum UserRole {
   CUSTOMER = 'CUSTOMER',
   ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER'
+  MANAGER = 'MANAGER',
 }
 ```
 
@@ -350,10 +354,7 @@ class DestinoApiClient {
     this.token = token;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -416,8 +417,8 @@ const config: Record<string, ApiConfig> = {
     retryAttempts: 3,
     rateLimit: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 1000
-    }
+      maxRequests: 1000,
+    },
   },
   production: {
     baseUrl: 'https://destinosf.com/api',
@@ -425,9 +426,9 @@ const config: Record<string, ApiConfig> = {
     retryAttempts: 2,
     rateLimit: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 100
-    }
-  }
+      maxRequests: 100,
+    },
+  },
 };
 ```
 

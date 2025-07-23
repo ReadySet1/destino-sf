@@ -27,7 +27,7 @@ export class WebhookPerformanceMonitor {
   complete(status: 'success' | 'error' = 'success', error?: any): WebhookPerformanceMetrics {
     this.metrics.processingTime = Date.now() - this.metrics.startTime;
     this.metrics.status = status;
-    
+
     if (error) {
       this.metrics.error = error;
     }
@@ -57,7 +57,7 @@ export class WebhookPerformanceMonitor {
         endpoint,
         processingTime,
         error: error?.message || error,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       console.log(`✅ Webhook processed successfully in ${processingTime}ms for ${endpoint}`);
@@ -96,15 +96,15 @@ export async function withWebhookPerformanceMonitoring<T>(
  * Add performance monitoring headers to webhook responses
  */
 export function addPerformanceHeaders(
-  response: Response, 
+  response: Response,
   metrics: WebhookPerformanceMetrics
 ): Response {
   const headers = new Headers(response.headers);
-  
+
   headers.set('X-Processing-Time', `${metrics.processingTime}ms`);
   headers.set('X-Webhook-Status', metrics.status || 'unknown');
   headers.set('X-Timestamp', new Date().toISOString());
-  
+
   if (metrics.processingTime! > 2000) {
     headers.set('X-Performance-Warning', 'slow-processing');
   }
@@ -119,14 +119,11 @@ export function addPerformanceHeaders(
 /**
  * Log webhook request details for debugging
  */
-export async function logWebhookRequest(
-  request: Request,
-  endpoint: string
-): Promise<void> {
+export async function logWebhookRequest(request: Request, endpoint: string): Promise<void> {
   try {
     const headers = Object.fromEntries(request.headers.entries());
     const contentType = headers['content-type'] || '';
-    
+
     console.log(`📥 Webhook received: ${endpoint}`, {
       method: request.method,
       url: request.url,
@@ -138,9 +135,9 @@ export async function logWebhookRequest(
         'content-length': headers['content-length'],
         'x-forwarded-for': headers['x-forwarded-for'],
         'x-real-ip': headers['x-real-ip'],
-      }
+      },
     });
   } catch (error) {
     console.warn('Failed to log webhook request details:', error);
   }
-} 
+}

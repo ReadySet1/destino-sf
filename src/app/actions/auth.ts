@@ -59,8 +59,8 @@ export const signUpAction = async (formData: FormData) => {
   }
 
   if (!signUpData.user) {
-     console.error('Supabase SignUp Error: User data missing after sign up.');
-     return { error: 'Sign up process failed unexpectedly. Could not retrieve user information.' };
+    console.error('Supabase SignUp Error: User data missing after sign up.');
+    return { error: 'Sign up process failed unexpectedly. Could not retrieve user information.' };
   }
 
   const userId = signUpData.user.id;
@@ -94,7 +94,7 @@ export const signUpAction = async (formData: FormData) => {
     }
   } catch (profileError: any) {
     console.error('Prisma profile creation/update error during sign up:', profileError);
-    
+
     // If it's a unique constraint error on email, try to handle it
     if (profileError.code === 'P2002' && profileError.meta?.target?.includes('email')) {
       try {
@@ -112,7 +112,9 @@ export const signUpAction = async (formData: FormData) => {
         return { error: `Account created, but profile linking failed. Please contact support.` };
       }
     } else {
-      return { error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.` };
+      return {
+        error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.`,
+      };
     }
   }
 
@@ -135,7 +137,9 @@ export const signInAction = async (formData: FormData) => {
   }
 
   // After successful sign-in, get user and their profile
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     // Should not happen after successful sign-in, but handle defensively
@@ -145,12 +149,14 @@ export const signInAction = async (formData: FormData) => {
   let profile: { role: UserRole } | null = null;
   let profileFetchError: any = null; // Use 'any' or a more specific error type if known
 
-  try { // Try block ONLY for prisma query
+  try {
+    // Try block ONLY for prisma query
     profile = await prisma.profile.findUnique({
       where: { id: user.id },
       select: { role: true }, // Only select the role field
     });
-  } catch (dbError) { // Catch ONLY potential database errors
+  } catch (dbError) {
+    // Catch ONLY potential database errors
     profileFetchError = dbError; // Store the error
     console.error('Prisma profile fetch error:', JSON.stringify(dbError, null, 2));
     // Redirect immediately if the database query itself fails
@@ -161,12 +167,12 @@ export const signInAction = async (formData: FormData) => {
   if (!profile) {
     // Log the specific error for tracking
     console.error(`Sign-in error: Profile not found for user ${user.id}`);
-    
+
     try {
       // Auto-create a basic profile for the user with default role
       const authName = user.user_metadata?.name as string | undefined;
       const authPhone = user.user_metadata?.phone as string | undefined;
-      
+
       profile = await prisma.profile.create({
         data: {
           id: user.id,
@@ -178,23 +184,31 @@ export const signInAction = async (formData: FormData) => {
         },
         select: { role: true },
       });
-      
+
       console.log(`Created new profile for user ${user.id} during sign-in`);
-      
     } catch (createError) {
       console.error(`Failed to create profile for user ${user.id} during sign-in:`, createError);
       // If profile creation fails, inform the user with a clear error message
-      return encodedRedirect('error', '/sign-in', 'User profile could not be created. Please contact support.');
+      return encodedRedirect(
+        'error',
+        '/sign-in',
+        'User profile could not be created. Please contact support.'
+      );
     }
-    
+
     // Double-check that profile was created successfully
     if (!profile) {
-      return encodedRedirect('error', '/sign-in', 'Unable to create user profile. Please contact support.');
+      return encodedRedirect(
+        'error',
+        '/sign-in',
+        'Unable to create user profile. Please contact support.'
+      );
     }
   }
 
   // Profile fetched or created successfully, perform redirect based on role and redirect parameter
-  if (profile.role === UserRole.ADMIN) { // Use Prisma enum for role comparison
+  if (profile.role === UserRole.ADMIN) {
+    // Use Prisma enum for role comparison
     return redirect('/admin');
   } else {
     // For non-admin users, use the redirect URL if provided, otherwise default to menu
@@ -282,11 +296,23 @@ export const setupPasswordAction = async (formData: FormData) => {
 
   // Validate password strength
   const passwordRequirements = [
-    { test: (pwd: string) => pwd.length >= 8, message: 'Password must be at least 8 characters long' },
-    { test: (pwd: string) => /[A-Z]/.test(pwd), message: 'Password must contain an uppercase letter' },
-    { test: (pwd: string) => /[a-z]/.test(pwd), message: 'Password must contain a lowercase letter' },
+    {
+      test: (pwd: string) => pwd.length >= 8,
+      message: 'Password must be at least 8 characters long',
+    },
+    {
+      test: (pwd: string) => /[A-Z]/.test(pwd),
+      message: 'Password must contain an uppercase letter',
+    },
+    {
+      test: (pwd: string) => /[a-z]/.test(pwd),
+      message: 'Password must contain a lowercase letter',
+    },
     { test: (pwd: string) => /\d/.test(pwd), message: 'Password must contain a number' },
-    { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: 'Password must contain a special character' },
+    {
+      test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+      message: 'Password must contain a special character',
+    },
   ];
 
   for (const requirement of passwordRequirements) {
@@ -296,10 +322,17 @@ export const setupPasswordAction = async (formData: FormData) => {
   }
 
   // Get current user (should be authenticated via invitation link)
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return encodedRedirect('error', '/setup-password', 'Authentication required. Please use the invitation link.');
+    return encodedRedirect(
+      'error',
+      '/setup-password',
+      'Authentication required. Please use the invitation link.'
+    );
   }
 
   // Update the user's password
@@ -309,7 +342,11 @@ export const setupPasswordAction = async (formData: FormData) => {
 
   if (updateError) {
     console.error('Password setup error:', updateError);
-    return encodedRedirect('error', '/setup-password', 'Failed to set up password. Please try again.');
+    return encodedRedirect(
+      'error',
+      '/setup-password',
+      'Failed to set up password. Please try again.'
+    );
   }
 
   // Check if user has a profile, if not create one
@@ -373,8 +410,8 @@ export const magicLinkSignInAction = async (formData: FormData) => {
 
   if (!existingProfile) {
     return encodedRedirect(
-      'error', 
-      '/sign-in', 
+      'error',
+      '/sign-in',
       'No account found with this email. Please sign up first or use a different email.'
     );
   }
@@ -391,7 +428,7 @@ export const magicLinkSignInAction = async (formData: FormData) => {
     email,
     origin,
     redirectTo,
-    fullRedirectUrl: `${origin}/auth/callback?redirect_to=${redirectTo}`
+    fullRedirectUrl: `${origin}/auth/callback?redirect_to=${redirectTo}`,
   });
 
   // Send magic link using OTP flow
@@ -406,7 +443,7 @@ export const magicLinkSignInAction = async (formData: FormData) => {
 
   if (error) {
     console.error('Magic link error:', error.message);
-    
+
     // Provide more specific error messages
     if (error.message.includes('email not confirmed')) {
       return encodedRedirect('error', '/sign-in', 'Please verify your email address first.');
@@ -419,9 +456,5 @@ export const magicLinkSignInAction = async (formData: FormData) => {
 
   console.log('✅ Magic link sent successfully to:', email);
 
-  return encodedRedirect(
-    'success',
-    '/sign-in',
-    'Check your email for a magic link to sign in!'
-  );
-}; 
+  return encodedRedirect('success', '/sign-in', 'Check your email for a magic link to sign in!');
+};

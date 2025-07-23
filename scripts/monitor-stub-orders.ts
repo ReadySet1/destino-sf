@@ -23,8 +23,8 @@ async function monitorStubOrders() {
           { customerName: { contains: 'Pending' } },
           { phone: 'processing' },
           { phone: 'pending' },
-          { total: 0 }
-        ]
+          { total: 0 },
+        ],
       },
       select: {
         id: true,
@@ -35,9 +35,9 @@ async function monitorStubOrders() {
         total: true,
         status: true,
         createdAt: true,
-        rawData: true
+        rawData: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     if (stubOrders.length === 0) {
@@ -56,7 +56,7 @@ async function monitorStubOrders() {
       console.log(`Total: $${order.total}`);
       console.log(`Status: ${order.status}`);
       console.log(`Created: ${order.createdAt.toISOString()}`);
-      
+
       // Check if it was created from a webhook
       if (order.rawData && typeof order.rawData === 'object') {
         const rawData = order.rawData as any;
@@ -64,13 +64,14 @@ async function monitorStubOrders() {
           console.log(`⚠️  This appears to be a webhook-created stub order!`);
         }
       }
-      
+
       console.log('---');
     }
 
-    console.log('\n🚨 RECOMMENDATION: Investigate webhook processing logic if stub orders are found.');
+    console.log(
+      '\n🚨 RECOMMENDATION: Investigate webhook processing logic if stub orders are found.'
+    );
     console.log('   This may indicate a race condition between order.created and other webhooks.');
-
   } catch (error) {
     console.error('❌ Error monitoring stub orders:', error);
   } finally {
@@ -79,4 +80,4 @@ async function monitorStubOrders() {
 }
 
 // Run the monitor
-monitorStubOrders(); 
+monitorStubOrders();

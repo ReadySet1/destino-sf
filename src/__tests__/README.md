@@ -28,12 +28,14 @@ src/__tests__/
 ## Test Categories
 
 ### 1. Unit Tests
+
 - Component testing with React Testing Library
 - Utility function testing
 - Individual function and class testing
 - Located in respective directories (components/, utils/, lib/)
 
 ### 2. Integration Tests
+
 - Complete user flow testing
 - Database integration testing
 - External service integration
@@ -163,9 +165,7 @@ describe('My Integration Test', () => {
     });
 
     // Act
-    const result = await waitForApiCall(
-      someAsyncOperation(testItem)
-    );
+    const result = await waitForApiCall(someAsyncOperation(testItem));
 
     // Assert
     expect(result).toBeDefined();
@@ -242,27 +242,32 @@ expect(meetsMinimumOrder(items, address)).toBe(true);
 ## Testing Best Practices
 
 ### 1. Test Isolation
+
 - Each test should be independent
 - Use `beforeEach` to reset state
 - Don't rely on test execution order
 
 ### 2. Descriptive Tests
+
 - Use clear, descriptive test names
 - Follow the "should do X when Y" pattern
 - Group related tests with `describe` blocks
 
 ### 3. Comprehensive Coverage
+
 - Test happy paths and edge cases
 - Test error conditions
 - Test user interactions
 - Test async operations
 
 ### 4. Mock External Dependencies
+
 - Always mock external APIs
 - Use consistent mock data
 - Verify mock interactions
 
 ### 5. Database Testing
+
 - Use test database only
 - Reset state between tests
 - Seed with consistent test data
@@ -357,4 +362,4 @@ When adding new tests:
 - Never commit real API keys or passwords
 - Use test-specific credentials only
 - Isolate test data from production
-- Sanitize any logged test data 
+- Sanitize any logged test data

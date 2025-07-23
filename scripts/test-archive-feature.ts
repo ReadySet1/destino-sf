@@ -17,28 +17,33 @@ async function testArchiveFeature() {
     let testOrder = await prisma.order.findFirst({
       where: {
         isArchived: false,
-        email: { contains: 'test' }
+        email: { contains: 'test' },
       },
-      select: { id: true, customerName: true, email: true, isArchived: true }
+      select: { id: true, customerName: true, email: true, isArchived: true },
     });
 
     if (!testOrder) {
       console.log('❌ No test order found. Creating a test order...');
-      
+
       // Create a test order
       const newOrder = await prisma.order.create({
         data: {
           customerName: 'Test Customer',
           email: 'test@example.com',
           phone: '555-1234',
-          total: 25.00,
+          total: 25.0,
           status: 'PENDING',
           paymentStatus: 'PENDING',
-        }
+        },
       });
-      
+
       console.log(`✅ Created test order: ${newOrder.id}`);
-      testOrder = { id: newOrder.id, customerName: newOrder.customerName, email: newOrder.email, isArchived: false };
+      testOrder = {
+        id: newOrder.id,
+        customerName: newOrder.customerName,
+        email: newOrder.email,
+        isArchived: false,
+      };
     }
 
     console.log(`✅ Found test order: ${testOrder.id} (${testOrder.customerName})`);
@@ -46,7 +51,7 @@ async function testArchiveFeature() {
     // 2. Test archiving the order
     console.log('\n2. Testing archive functionality...');
     const archiveResult = await archiveOrder(testOrder.id, 'Test archive reason');
-    
+
     if (archiveResult.success) {
       console.log('✅ Order archived successfully');
     } else {
@@ -58,7 +63,7 @@ async function testArchiveFeature() {
     console.log('\n3. Verifying order is archived...');
     const archivedOrder = await prisma.order.findUnique({
       where: { id: testOrder.id },
-      select: { id: true, isArchived: true, archivedAt: true, archiveReason: true }
+      select: { id: true, isArchived: true, archivedAt: true, archiveReason: true },
     });
 
     if (archivedOrder?.isArchived) {
@@ -73,7 +78,7 @@ async function testArchiveFeature() {
     // 4. Test getting archived orders
     console.log('\n4. Testing getArchivedOrders function...');
     const archivedOrdersResult = await getArchivedOrders({ page: 1 });
-    
+
     if (archivedOrdersResult.success) {
       console.log(`✅ Found ${archivedOrdersResult.orders.length} archived orders`);
       const foundOrder = archivedOrdersResult.orders.find(o => o.id === testOrder.id);
@@ -89,7 +94,7 @@ async function testArchiveFeature() {
     // 5. Test unarchiving the order
     console.log('\n5. Testing unarchive functionality...');
     const unarchiveResult = await unarchiveOrder(testOrder.id);
-    
+
     if (unarchiveResult.success) {
       console.log('✅ Order unarchived successfully');
     } else {
@@ -101,7 +106,7 @@ async function testArchiveFeature() {
     console.log('\n6. Verifying order is unarchived...');
     const unarchivedOrder = await prisma.order.findUnique({
       where: { id: testOrder.id },
-      select: { id: true, isArchived: true, archivedAt: true, archiveReason: true }
+      select: { id: true, isArchived: true, archivedAt: true, archiveReason: true },
     });
 
     if (!unarchivedOrder?.isArchived) {
@@ -114,7 +119,7 @@ async function testArchiveFeature() {
     // 7. Verify it's not in archived orders list
     console.log('\n7. Verifying order is not in archived list...');
     const archivedOrdersAfterUnarchive = await getArchivedOrders({ page: 1 });
-    
+
     if (archivedOrdersAfterUnarchive.success) {
       const foundOrder = archivedOrdersAfterUnarchive.orders.find(o => o.id === testOrder.id);
       if (!foundOrder) {
@@ -125,7 +130,6 @@ async function testArchiveFeature() {
     }
 
     console.log('\n🎉 All tests passed! Archive feature is working correctly.');
-
   } catch (error) {
     console.error('❌ Test failed with error:', error);
   } finally {
@@ -134,4 +138,4 @@ async function testArchiveFeature() {
 }
 
 // Run the test
-testArchiveFeature().catch(console.error); 
+testArchiveFeature().catch(console.error);

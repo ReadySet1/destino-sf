@@ -1,17 +1,20 @@
 Based on your comprehensive testing updates and the documentation I've analyzed, here's the **Updated Production-Ready Master Plan** that incorporates your testing achievements:
 
 ## 🚀 **PRODUCTION DEPLOYMENT MASTER PLAN - DESTINO SF**
+
 ### Updated: January 2025
 
 ## 📊 **Current Status Overview**
 
 ### ✅ **Testing Achievements**
+
 - **Critical Path Coverage**: ✅ 87.5% (Exceeded 85% target)
 - **Test Success Rate**: ✅ 78.3% on critical paths
 - **Security Vulnerabilities**: ✅ Fixed (Auth, validation, security headers)
 - **Infrastructure**: ✅ 25% complete (Rate limiting, Security headers)
 
 ### 🎯 **Production Readiness Status**
+
 - **Payment Processing**: ✅ SECURE (87.5% coverage)
 - **Health Monitoring**: ✅ ACTIVE (Comprehensive health checks)
 - **Core Business Logic**: ✅ VALIDATED
@@ -60,6 +63,7 @@ NODE_ENV=production
 ## 🔄 **WEEK 1: COMPLETE CRITICAL INFRASTRUCTURE**
 
 ### **1. Webhook Signature Validation (Day 1-2)**
+
 **Status**: 🔴 Required | **Priority**: CRITICAL | **Time**: 3-4 hours
 
 ```typescript
@@ -96,7 +100,7 @@ export class WebhookValidator {
     // 2. Validate timestamp
     const currentTime = Math.floor(Date.now() / 1000);
     const webhookTime = parseInt(timestamp);
-    
+
     if (Math.abs(currentTime - webhookTime) > this.maxClockSkew) {
       console.error('Webhook timestamp outside acceptable window');
       return false;
@@ -108,10 +112,7 @@ export class WebhookValidator {
       .update(`${timestamp}.${body}`)
       .digest('base64');
 
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 
     // 4. Mark as processed (with TTL to prevent Redis bloat)
     if (isValid) {
@@ -124,6 +125,7 @@ export class WebhookValidator {
 ```
 
 **Integration with existing webhook route:**
+
 ```typescript
 // src/app/api/webhooks/square/route.ts - Update existing handler
 export async function POST(request: Request) {
@@ -133,13 +135,8 @@ export async function POST(request: Request) {
   const event = JSON.parse(body);
 
   const validator = new WebhookValidator(process.env.SQUARE_WEBHOOK_SECRET!);
-  
-  if (!await validator.validateSignature(
-    signature!,
-    body,
-    timestamp!,
-    event.event_id
-  )) {
+
+  if (!(await validator.validateSignature(signature!, body, timestamp!, event.event_id))) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -166,32 +163,33 @@ pnpm test:e2e:smoke-production
 ## 🔄 **WEEK 2: MONITORING & ERROR HANDLING**
 
 ### **3. Sentry Integration (Day 4-5)**
+
 **Status**: 🟡 High Priority | **Time**: 3-4 hours
 
 ```typescript
 // sentry.client.config.ts
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  
+
   beforeSend(event, hint) {
     // Filter sensitive data
     if (event.request) {
       delete event.request.cookies;
       delete event.request.headers?.authorization;
     }
-    
+
     // Don't send events in development
     if (process.env.NODE_ENV === 'development') {
       return null;
     }
-    
+
     return event;
   },
-  
+
   integrations: [
     Sentry.replayIntegration({
       maskAllText: true,
@@ -202,12 +200,12 @@ Sentry.init({
 
 // Update your existing error monitoring
 // src/lib/error-monitoring.ts
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 export class ErrorMonitor {
   async logToExternalService(error: Error, context: any, severity: string) {
     // Your existing implementation...
-    
+
     // Add Sentry integration
     Sentry.captureException(error, {
       level: severity as Sentry.SeverityLevel,
@@ -228,13 +226,14 @@ export class ErrorMonitor {
 ```
 
 ### **4. Performance Monitoring (Day 6-7)**
+
 **Status**: 🟡 High Priority | **Time**: 4-5 hours
 
 ```typescript
 // src/lib/performance.ts
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
-  
+
   static getInstance(): PerformanceMonitor {
     if (!this.instance) {
       this.instance = new PerformanceMonitor();
@@ -247,7 +246,7 @@ export class PerformanceMonitor {
     if (duration > 1000) {
       console.warn(`Slow API call: ${endpoint} took ${duration}ms`);
     }
-    
+
     // Track in Sentry
     if (typeof window === 'undefined') {
       Sentry.addBreadcrumb({
@@ -267,31 +266,21 @@ export class PerformanceMonitor {
 }
 
 // Integration with API routes
-export function withPerformanceTracking(
-  handler: (req: Request) => Promise<Response>
-) {
+export function withPerformanceTracking(handler: (req: Request) => Promise<Response>) {
   return async (req: Request) => {
     const start = Date.now();
     const monitor = PerformanceMonitor.getInstance();
-    
+
     try {
       const response = await handler(req);
       const duration = Date.now() - start;
-      
-      monitor.trackApiCall(
-        new URL(req.url).pathname,
-        duration,
-        response.status
-      );
-      
+
+      monitor.trackApiCall(new URL(req.url).pathname, duration, response.status);
+
       return response;
     } catch (error) {
       const duration = Date.now() - start;
-      monitor.trackApiCall(
-        new URL(req.url).pathname,
-        duration,
-        500
-      );
+      monitor.trackApiCall(new URL(req.url).pathname, duration, 500);
       throw error;
     }
   };
@@ -303,6 +292,7 @@ export function withPerformanceTracking(
 ## 🔄 **WEEK 3-4: OPTIMIZATION & SCALING**
 
 ### **5. Database Connection Pooling**
+
 **Status**: 🟢 Medium Priority | **Time**: 2-3 hours
 
 ```typescript
@@ -347,6 +337,7 @@ prisma.$on('query' as never, (e: any) => {
 ```
 
 ### **6. Caching Strategy**
+
 **Status**: 🟢 Medium Priority | **Time**: 4-5 hours
 
 ```typescript
@@ -356,7 +347,7 @@ import { Redis } from '@upstash/redis';
 export class CacheService {
   private redis: Redis;
   private static instance: CacheService;
-  
+
   private constructor() {
     this.redis = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -381,11 +372,7 @@ export class CacheService {
     }
   }
 
-  async set(
-    key: string, 
-    value: any, 
-    options?: { ex?: number; px?: number }
-  ): Promise<void> {
+  async set(key: string, value: any, options?: { ex?: number; px?: number }): Promise<void> {
     try {
       await this.redis.set(key, value, options);
     } catch (error) {
@@ -407,7 +394,7 @@ export class CacheService {
   // Cache key generators
   static keys = {
     product: (id: string) => `product:${id}`,
-    products: (categoryId?: string, page = 1) => 
+    products: (categoryId?: string, page = 1) =>
       categoryId ? `products:${categoryId}:${page}` : `products:all:${page}`,
     cart: (userId: string) => `cart:${userId}`,
     userSession: (userId: string) => `session:${userId}`,
@@ -432,7 +419,7 @@ export interface ProductionMetrics {
     failedPayments: number;
     cartAbandonmentRate: number;
   };
-  
+
   // Performance Metrics
   performance: {
     apiResponseTime: {
@@ -447,7 +434,7 @@ export interface ProductionMetrics {
     };
     pageLoadTime: number;
   };
-  
+
   // Infrastructure Health
   infrastructure: {
     errorRate: number;
@@ -456,7 +443,7 @@ export interface ProductionMetrics {
     cacheHitRate: number;
     rateLimitViolations: number;
   };
-  
+
   // Security Metrics
   security: {
     failedAuthAttempts: number;
@@ -471,17 +458,20 @@ export interface ProductionMetrics {
 ## 🚀 **DEPLOYMENT SCHEDULE**
 
 ### **Week 1: Core Infrastructure & Initial Deploy**
+
 - ✅ Day 1-2: Implement webhook validation
 - ✅ Day 3: Deploy to staging with health checks
 - ✅ Day 4: Production deploy with limited traffic (10%)
 - ✅ Day 5: Monitor and increase to 50% traffic
 
 ### **Week 2: Monitoring & Stability**
+
 - Day 6-7: Sentry integration
 - Day 8-9: Performance monitoring
 - Day 10: Full production traffic (100%)
 
 ### **Week 3-4: Optimization**
+
 - Connection pooling optimization
 - Caching implementation
 - Performance tuning based on metrics
@@ -491,6 +481,7 @@ export interface ProductionMetrics {
 ## ✅ **SUCCESS CRITERIA**
 
 ### **Production Launch Gates**
+
 - ✅ Critical path test coverage > 85%
 - ✅ Health check endpoint responding
 - ✅ Rate limiting active
@@ -499,6 +490,7 @@ export interface ProductionMetrics {
 - 🔄 Error monitoring active
 
 ### **Post-Launch Monitoring**
+
 - Error rate < 0.1%
 - Payment success rate > 98%
 - API response time p95 < 500ms

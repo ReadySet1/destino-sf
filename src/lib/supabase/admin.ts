@@ -10,7 +10,9 @@ if (!supabaseUrl) {
 
 if (!supabaseServiceRoleKey) {
   // Log a more specific error server-side if the service role key is missing
-  console.error('Missing environment variable: SUPABASE_SERVICE_ROLE_KEY. This key is required for admin operations.');
+  console.error(
+    'Missing environment variable: SUPABASE_SERVICE_ROLE_KEY. This key is required for admin operations.'
+  );
   throw new Error('Server configuration error: Missing Supabase service role key.');
 }
 
@@ -25,4 +27,4 @@ export const supabaseAdmin: SupabaseClient = createClient(supabaseUrl, supabaseS
   },
 });
 
-console.log('Supabase Admin Client initialized.'); // Optional: Log initialization 
+console.log('Supabase Admin Client initialized.'); // Optional: Log initialization

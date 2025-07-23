@@ -93,10 +93,10 @@ export default async function AdminDashboard() {
           href="/admin/settings"
           description="Configure store settings"
         />
-        <DashboardCard 
-          title="Shipping Config" 
-          href="/admin/shipping" 
-          description="Manage shipping weight calculations" 
+        <DashboardCard
+          title="Shipping Config"
+          href="/admin/shipping"
+          description="Manage shipping weight calculations"
         />
         <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
         {/* <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" /> */}

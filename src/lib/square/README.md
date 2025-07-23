@@ -32,12 +32,13 @@ import { squareClient } from '@/lib/square/client';
 The client currently supports:
 
 - **Locations API**: Get all locations for your account
+
   ```typescript
   const { result } = await squareClient.locationsApi.listLocations();
   const locations = result.locations;
   ```
 
-- **Catalog API**: 
+- **Catalog API**:
   - List catalog items
     ```typescript
     const { result } = await squareClient.catalogApi.listCatalog(cursor, 'ITEM');
@@ -47,7 +48,7 @@ The client currently supports:
     ```typescript
     const response = await squareClient.catalogApi.searchCatalogObjects({
       object_types: ['ITEM'],
-      include_related_objects: true
+      include_related_objects: true,
     });
     const items = response.result.objects;
     ```
@@ -66,13 +67,13 @@ The client currently supports:
                 name: 'Regular',
                 price_money: {
                   amount: 1500,
-                  currency: 'USD'
-                }
-              }
-            }
-          ]
-        }
-      }
+                  currency: 'USD',
+                },
+              },
+            },
+          ],
+        },
+      },
     });
     ```
 
@@ -98,7 +99,7 @@ If you encounter issues:
 
 1. Check the server logs for detailed error information
 2. Verify your Square access token in environment variables
-3. Use the `/api/square/diagnose` endpoint to see details about the client configuration 
+3. Use the `/api/square/diagnose` endpoint to see details about the client configuration
 
 # Square Tip Percentage Customization
 
@@ -107,6 +108,7 @@ This implementation provides custom tip percentage options (5%, 10%, 15%) for Sq
 ## Overview
 
 The custom tip settings are implemented using Square's Checkout API `tip_settings` configuration, which allows you to:
+
 - Set custom tip percentages (up to 3 values, 0-100%)
 - Enable/disable custom tip input field
 - Control tip screen behavior
@@ -149,7 +151,7 @@ const customTipSettings = createTipSettings([10, 20, 30]);
 const squareCheckoutOptions = {
   allow_tipping: true,
   // ... other options
-  tip_settings: createRegularOrderTipSettings()
+  tip_settings: createRegularOrderTipSettings(),
 };
 ```
 
@@ -159,11 +161,11 @@ const squareCheckoutOptions = {
 
 ```typescript
 interface SquareTipSettings {
-  allow_tipping: boolean;           // Enable/disable tipping
-  separate_tip_screen: boolean;     // Show tips on separate screen
-  custom_tip_field: boolean;        // Allow custom tip input
-  tip_percentages: number[];        // Array of percentages (max 3)
-  smart_tip_amounts: boolean;       // Use Square's smart tips (overrides custom)
+  allow_tipping: boolean; // Enable/disable tipping
+  separate_tip_screen: boolean; // Show tips on separate screen
+  custom_tip_field: boolean; // Allow custom tip input
+  tip_percentages: number[]; // Array of percentages (max 3)
+  smart_tip_amounts: boolean; // Use Square's smart tips (overrides custom)
 }
 ```
 
@@ -226,4 +228,4 @@ SQUARE_ENVIRONMENT=sandbox # or production
 - Environment-specific tip percentages
 - A/B testing for different tip amounts
 - Analytics tracking for tip selection rates
-- Admin interface for tip percentage management 
+- Admin interface for tip percentage management

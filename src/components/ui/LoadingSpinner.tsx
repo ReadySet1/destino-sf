@@ -13,10 +13,7 @@ const sizeClasses = {
   lg: 'w-8 h-8',
 };
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = 'md', 
-  className = '' 
-}) => {
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', className = '' }) => {
   return (
     <div className={`flex justify-center items-center ${className}`}>
       <div
@@ -30,4 +27,4 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   );
 };
 
-export default LoadingSpinner; 
+export default LoadingSpinner;

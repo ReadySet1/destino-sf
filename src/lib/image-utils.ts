@@ -28,11 +28,7 @@ export function shouldUsePlaceholder(
   }
 
   // Check for specific Tier 2 BoxLunch items that need placeholders
-  const tier2Items = [
-    'carne asada',
-    'pollo al carbon',
-    'pollo al carbón'
-  ];
+  const tier2Items = ['carne asada', 'pollo al carbon', 'pollo al carbón'];
 
   const nameToCheck = productName.toLowerCase();
   const isTier2Item = tier2Items.some(item => nameToCheck.includes(item));
@@ -59,7 +55,7 @@ export function getProductImageConfig(
     return {
       src: '', // Empty src will trigger placeholder in component
       alt: productName,
-      placeholder: true
+      placeholder: true,
     };
   }
 
@@ -67,7 +63,7 @@ export function getProductImageConfig(
     src: images![0],
     alt: productName,
     fallback: getDefaultImageForCategory(category),
-    placeholder: false
+    placeholder: false,
   };
 }
 
@@ -109,12 +105,23 @@ export function getPlaceholderCategory(
     return 'dessert';
   }
 
-  if (cat.includes('beverage') || name.includes('coffee') || name.includes('tea') || name.includes('drink')) {
+  if (
+    cat.includes('beverage') ||
+    name.includes('coffee') ||
+    name.includes('tea') ||
+    name.includes('drink')
+  ) {
     return 'beverage';
   }
 
-  if (cat.includes('food') || cat.includes('entree') || cat.includes('empanada') || 
-      name.includes('carne') || name.includes('pollo') || name.includes('chicken')) {
+  if (
+    cat.includes('food') ||
+    cat.includes('entree') ||
+    cat.includes('empanada') ||
+    name.includes('carne') ||
+    name.includes('pollo') ||
+    name.includes('chicken')
+  ) {
     return 'food';
   }
 
@@ -161,4 +168,4 @@ export async function preloadImages(urls: string[]): Promise<void> {
   } catch (error) {
     console.warn('Some images failed to preload:', error);
   }
-} 
+}

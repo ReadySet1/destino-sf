@@ -12,7 +12,7 @@ export async function withDatabaseConnection<T>(
       const result = await executeWithConnectionManagement(operation);
       return result;
     } catch (error: any) {
-      const isConnectionError = 
+      const isConnectionError =
         error.code === 'P1008' || // Operations timed out
         error.code === 'P1001' || // Can't reach database server
         error.code === 'P2024' || // Timed out fetching a new connection
@@ -23,14 +23,14 @@ export async function withDatabaseConnection<T>(
 
       if (isConnectionError && attempt < retries) {
         console.log(`🔄 Database connection attempt ${attempt} failed, retrying...`);
-        
+
         // Disconnect and wait before retry
         try {
           await prisma.$disconnect();
         } catch (disconnectError) {
           console.log('Disconnect error (non-fatal):', disconnectError);
         }
-        
+
         // Exponential backoff: 1s, 2s, 4s
         const backoffDelay = Math.pow(2, attempt) * 1000;
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -43,7 +43,7 @@ export async function withDatabaseConnection<T>(
         message: error.message,
         isConnectionError,
         attempt,
-        maxRetries: retries
+        maxRetries: retries,
       });
 
       throw error;
@@ -84,7 +84,12 @@ export async function safeQueryRaw<T = unknown>(
  * Safe transaction execution with retry logic
  */
 export async function safeTransaction<T>(
-  transactionFn: (tx: Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => Promise<T>
+  transactionFn: (
+    tx: Omit<
+      typeof prisma,
+      '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+    >
+  ) => Promise<T>
 ): Promise<T> {
   return withDatabaseConnection(async () => {
     return await prisma.$transaction(transactionFn, {
@@ -104,7 +109,7 @@ export async function checkDatabaseHealth(): Promise<{
   diagnostics?: any;
 }> {
   const startTime = Date.now();
-  
+
   try {
     const result = await safeQueryRaw`
       SELECT 
@@ -114,17 +119,17 @@ export async function checkDatabaseHealth(): Promise<{
         now() as current_time,
         pg_postmaster_start_time() as server_start_time
     `;
-    
+
     const responseTime = Date.now() - startTime;
-    
+
     return {
       connected: true,
       responseTime,
-      diagnostics: result
+      diagnostics: result,
     };
   } catch (error: any) {
     const responseTime = Date.now() - startTime;
-    
+
     return {
       connected: false,
       responseTime,
@@ -132,8 +137,8 @@ export async function checkDatabaseHealth(): Promise<{
       diagnostics: {
         code: error.code,
         environment: process.env.NODE_ENV,
-        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@')
-      }
+        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@'),
+      },
     };
   }
 }
@@ -150,4 +155,4 @@ export async function gracefulDatabaseShutdown(): Promise<void> {
     console.error('❌ Error during database shutdown:', error);
     throw error;
   }
-} 
+}

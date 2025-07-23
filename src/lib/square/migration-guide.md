@@ -31,6 +31,7 @@ This guide explains changes made to fix Square API initialization issues that we
 ### 1. Replace Direct Client Import
 
 **Before**:
+
 ```typescript
 import { squareClient } from '@/lib/square/client';
 
@@ -41,6 +42,7 @@ export async function myFunction() {
 ```
 
 **After**:
+
 ```typescript
 import { getSquareService } from '@/lib/square/service';
 
@@ -54,6 +56,7 @@ export async function myFunction() {
 ### 2. API Routes
 
 **Before**:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { squareClient } from '@/lib/square/client';
@@ -61,9 +64,9 @@ import { squareClient } from '@/lib/square/client';
 export async function GET() {
   try {
     const response = await squareClient.catalogApi.listCatalog();
-    return NextResponse.json({ 
-      success: true, 
-      items: response.result.objects 
+    return NextResponse.json({
+      success: true,
+      items: response.result.objects,
     });
   } catch (error) {
     // Error handling
@@ -72,6 +75,7 @@ export async function GET() {
 ```
 
 **After**:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { getSquareService } from '@/lib/square/service';
@@ -80,9 +84,9 @@ export async function GET() {
   try {
     const squareService = getSquareService();
     const items = await squareService.getCatalogItems();
-    return NextResponse.json({ 
-      success: true, 
-      items 
+    return NextResponse.json({
+      success: true,
+      items,
     });
   } catch (error) {
     // Error handling
@@ -93,6 +97,7 @@ export async function GET() {
 ### 3. Server Actions / Components
 
 **Before**:
+
 ```typescript
 import { squareClient } from '@/lib/square/client';
 
@@ -103,6 +108,7 @@ export async function createOrder(data: any) {
 ```
 
 **After**:
+
 ```typescript
 import { getSquareService } from '@/lib/square/service';
 
@@ -132,4 +138,4 @@ To verify your migration:
 
 ## Need to Add More Service Methods?
 
-Extend the `SquareService` class in `src/lib/square/service.ts` with new methods for any Square API operations you need. 
+Extend the `SquareService` class in `src/lib/square/service.ts` with new methods for any Square API operations you need.

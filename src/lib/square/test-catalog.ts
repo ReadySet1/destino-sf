@@ -7,20 +7,20 @@ import { logger } from '@/utils/logger';
 async function testCatalogAccess() {
   try {
     logger.info('Testing Square catalog API access...');
-    
+
     const items = await fetchCatalogItems();
-    
+
     logger.info(`Successfully retrieved ${items.length} catalog items`);
     logger.info('First few items:', items.slice(0, 3));
-    
+
     return {
       success: true,
       itemCount: items.length,
-      sample: items.slice(0, 3)
+      sample: items.slice(0, 3),
     };
   } catch (error) {
     logger.error('Error testing Square catalog access:', error);
-    
+
     if (error instanceof Error) {
       logger.error('Error details:', error.message);
       if ('body' in error) {
@@ -30,10 +30,10 @@ async function testCatalogAccess() {
         logger.error('Stack trace:', error.stack);
       }
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -52,4 +52,4 @@ if (require.main === module) {
       console.error('Test failed with error:', error);
       process.exit(1);
     });
-} 
+}

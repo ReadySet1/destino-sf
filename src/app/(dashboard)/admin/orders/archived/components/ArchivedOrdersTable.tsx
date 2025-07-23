@@ -86,29 +86,30 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     setUnarchivingOrderId(orderId);
 
     try {
-      const result = orderType === 'catering' 
-        ? await unarchiveCateringOrder(orderId)
-        : await unarchiveOrder(orderId);
+      const result =
+        orderType === 'catering'
+          ? await unarchiveCateringOrder(orderId)
+          : await unarchiveOrder(orderId);
 
       if (result.success) {
         toast({
-          title: "Order Unarchived",
+          title: 'Order Unarchived',
           description: `Order ${orderId.substring(0, 8)}... has been restored successfully.`,
         });
         // Refresh the page to update the list
         window.location.reload();
       } else {
         toast({
-          title: "Unarchive Failed",
-          description: result.error || "Failed to unarchive order",
-          variant: "destructive",
+          title: 'Unarchive Failed',
+          description: result.error || 'Failed to unarchive order',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: "Unarchive Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Unarchive Failed',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setUnarchivingOrderId(null);
@@ -152,7 +153,10 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order, index) => (
-              <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
+              <tr
+                key={order.id || `order-${index}`}
+                className={order.type === 'catering' ? 'bg-amber-50' : ''}
+              >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   <Link
                     href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
@@ -163,7 +167,9 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
                   </Link>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}
+                  >
                     {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
                   </span>
                 </td>
@@ -192,7 +198,13 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>
-                    <div>{order.archivedAt ? formatDistance(new Date(order.archivedAt), new Date(), { addSuffix: true }) : 'N/A'}</div>
+                    <div>
+                      {order.archivedAt
+                        ? formatDistance(new Date(order.archivedAt), new Date(), {
+                            addSuffix: true,
+                          })
+                        : 'N/A'}
+                    </div>
                     <div className="text-xs text-gray-400">
                       by {order.archivedByUser?.name || order.archivedByUser?.email || 'Unknown'}
                     </div>
@@ -218,7 +230,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
                           View Details
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleUnarchiveOrder(order.id, order.type)}
                         disabled={unarchivingOrderId === order.id}
                         className="flex items-center gap-2 cursor-pointer text-green-600 focus:text-green-600 disabled:opacity-50"
@@ -236,4 +248,4 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
       </div>
     </div>
   );
-} 
+}

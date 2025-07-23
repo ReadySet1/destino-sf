@@ -3,12 +3,12 @@ import { setupTestDatabase } from './database-setup';
 
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting global setup for Destino SF E2E tests...');
-  
+
   // Ensure test environment variables are set
   const requiredEnvVars = [
     'DATABASE_URL',
     'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -19,7 +19,7 @@ async function globalSetup(config: FullConfig) {
   // Set test-specific environment variables using Object.assign to avoid readonly issues
   Object.assign(process.env, {
     NODE_ENV: 'test',
-    NEXT_TELEMETRY_DISABLED: '1'
+    NEXT_TELEMETRY_DISABLED: '1',
   });
 
   // Setup test database

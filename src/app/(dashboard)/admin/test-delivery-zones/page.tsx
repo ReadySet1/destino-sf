@@ -1,16 +1,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DeliveryZoneInfo } from '@/components/Catering/DeliveryZoneInfo';
-import { 
-  getActiveDeliveryZones, 
-  determineDeliveryZone, 
+import {
+  getActiveDeliveryZones,
+  determineDeliveryZone,
   validateMinimumPurchase,
-  DeliveryZone 
+  DeliveryZone,
 } from '@/types/catering';
 
 export default function TestDeliveryZonesPage() {
   const activeZones = getActiveDeliveryZones();
-  
+
   // Test postal codes
   const testCodes = [
     { code: '94110', city: 'San Francisco', expected: 'SAN_FRANCISCO' },
@@ -21,7 +21,7 @@ export default function TestDeliveryZonesPage() {
     { code: '94500', city: 'Fremont', expected: 'PENINSULA' },
     { code: '90210', city: 'Beverly Hills', expected: null },
   ];
-  
+
   // Test order amounts
   const testOrders = [
     { amount: 200, zone: DeliveryZone.SAN_FRANCISCO },
@@ -33,7 +33,7 @@ export default function TestDeliveryZonesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Delivery Zone Testing</h1>
-      
+
       <div className="grid gap-6">
         {/* Zone Information Display */}
         <Card>
@@ -44,10 +44,10 @@ export default function TestDeliveryZonesPage() {
             <DeliveryZoneInfo compact={true} />
           </CardContent>
         </Card>
-        
+
         {/* Full Zone Information Display */}
         <DeliveryZoneInfo showTitle={true} />
-        
+
         {/* Postal Code Testing */}
         <Card>
           <CardHeader>
@@ -58,9 +58,9 @@ export default function TestDeliveryZonesPage() {
               {testCodes.map((test, index) => {
                 const detectedZone = determineDeliveryZone(test.code, test.city);
                 const isCorrect = detectedZone === test.expected;
-                
+
                 return (
-                  <div 
+                  <div
                     key={index}
                     className={`p-3 rounded-lg border ${
                       isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
@@ -68,10 +68,14 @@ export default function TestDeliveryZonesPage() {
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="font-medium">{test.code} - {test.city}</span>
+                        <span className="font-medium">
+                          {test.code} - {test.city}
+                        </span>
                       </div>
                       <div className="text-right">
-                        <div className={`font-medium ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                        <div
+                          className={`font-medium ${isCorrect ? 'text-green-700' : 'text-red-700'}`}
+                        >
                           Detected: {detectedZone || 'None'}
                         </div>
                         <div className="text-sm text-gray-600">
@@ -85,7 +89,7 @@ export default function TestDeliveryZonesPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Minimum Purchase Validation Testing */}
         <Card>
           <CardHeader>
@@ -95,12 +99,14 @@ export default function TestDeliveryZonesPage() {
             <div className="space-y-4">
               {testOrders.map((test, index) => {
                 const validation = validateMinimumPurchase(test.amount, test.zone);
-                
+
                 return (
-                  <div 
+                  <div
                     key={index}
                     className={`p-3 rounded-lg border ${
-                      validation.isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                      validation.isValid
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-red-200 bg-red-50'
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -109,15 +115,15 @@ export default function TestDeliveryZonesPage() {
                           ${test.amount.toFixed(2)} order in {test.zone.replace('_', ' ')}
                         </div>
                         {validation.message && (
-                          <div className="text-sm text-gray-600 mt-1">
-                            {validation.message}
-                          </div>
+                          <div className="text-sm text-gray-600 mt-1">{validation.message}</div>
                         )}
                       </div>
                       <div className="text-right">
-                        <div className={`font-medium ${
-                          validation.isValid ? 'text-green-700' : 'text-red-700'
-                        }`}>
+                        <div
+                          className={`font-medium ${
+                            validation.isValid ? 'text-green-700' : 'text-red-700'
+                          }`}
+                        >
                           {validation.isValid ? '✓ Valid' : '✗ Invalid'}
                         </div>
                         <div className="text-sm text-gray-600">
@@ -136,7 +142,7 @@ export default function TestDeliveryZonesPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Active Zones Summary */}
         <Card>
           <CardHeader>
@@ -145,7 +151,10 @@ export default function TestDeliveryZonesPage() {
           <CardContent>
             <div className="grid gap-3">
               {activeZones.map(zone => (
-                <div key={zone.zone} className="flex justify-between items-center p-3 border rounded-lg">
+                <div
+                  key={zone.zone}
+                  className="flex justify-between items-center p-3 border rounded-lg"
+                >
                   <div>
                     <div className="font-medium">{zone.name}</div>
                     <div className="text-sm text-gray-600">{zone.description}</div>
@@ -157,9 +166,7 @@ export default function TestDeliveryZonesPage() {
                     <div className="text-sm text-gray-600">
                       ${zone.deliveryFee?.toFixed(2) || '0.00'} delivery
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {zone.estimatedDeliveryTime}
-                    </div>
+                    <div className="text-xs text-gray-500">{zone.estimatedDeliveryTime}</div>
                   </div>
                 </div>
               ))}
@@ -169,4 +176,4 @@ export default function TestDeliveryZonesPage() {
       </div>
     </div>
   );
-} 
+}

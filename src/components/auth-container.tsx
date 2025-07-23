@@ -25,20 +25,20 @@ export function AuthContainer({ children, className, title, subtitle }: AuthCont
             />
           </Link>
         </div>
-        
-        <div className={cn(
-          "bg-white border border-gray-200 rounded-xl p-5 shadow-sm w-full",
-          className
-        )}>
+
+        <div
+          className={cn(
+            'bg-white border border-gray-200 rounded-xl p-5 shadow-sm w-full',
+            className
+          )}
+        >
           <div className="space-y-1 pb-3 text-center">
             <h1 className="text-2xl font-bold">{title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {subtitle}
-            </p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
-          
+
           {children}
-          
+
           <div className="text-center text-xs text-muted-foreground pt-3">
             Taste the tradition at Destino SF
           </div>
@@ -46,4 +46,4 @@ export function AuthContainer({ children, className, title, subtitle }: AuthCont
       </div>
     </div>
   );
-} 
+}

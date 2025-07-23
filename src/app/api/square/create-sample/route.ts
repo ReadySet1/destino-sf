@@ -4,11 +4,14 @@ import { logger } from '@/utils/logger';
 
 export async function POST(request: Request) {
   try {
-    const { name = 'Sample Product', description = 'Created via API', price = 19.99 } = 
-      await request.json().catch(() => ({}));
-    
+    const {
+      name = 'Sample Product',
+      description = 'Created via API',
+      price = 19.99,
+    } = await request.json().catch(() => ({}));
+
     logger.info(`Creating sample Square product: ${name}`);
-    
+
     const productId = await createSquareProduct({
       name,
       description,
@@ -17,11 +20,11 @@ export async function POST(request: Request) {
         { name: 'Small', price: price - 5 },
         { name: 'Medium', price: price },
         { name: 'Large', price: price + 5 },
-      ]
+      ],
     });
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       message: 'Sample product created in Square',
       productId,
       details: {
@@ -32,18 +35,18 @@ export async function POST(request: Request) {
           { name: 'Small', price: price - 5 },
           { name: 'Medium', price: price },
           { name: 'Large', price: price + 5 },
-        ]
-      }
+        ],
+      },
     });
   } catch (error) {
     logger.error('Error creating sample Square product:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to create sample product in Square',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
-} 
+}

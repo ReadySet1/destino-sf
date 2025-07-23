@@ -61,9 +61,7 @@ function GoogleMaps({ apiKey }: GoogleMapsProps) {
         // Crear el mapa
         const map = new Map(mapRef.current, options);
 
-        const { AdvancedMarkerElement } = await loader.importLibrary(
-          'marker'
-        );
+        const { AdvancedMarkerElement } = await loader.importLibrary('marker');
 
         new AdvancedMarkerElement({
           position: location,

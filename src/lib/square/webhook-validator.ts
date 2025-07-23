@@ -34,14 +34,16 @@ export class WebhookValidator {
       // 2. Validate timestamp to prevent replay attacks
       const currentTime = Math.floor(Date.now() / 1000);
       const webhookTime = parseInt(timestamp);
-      
+
       if (isNaN(webhookTime)) {
         console.error('🔒 Invalid timestamp format in webhook');
         return false;
       }
 
       if (Math.abs(currentTime - webhookTime) > this.maxClockSkew) {
-        console.error(`🔒 Webhook timestamp outside acceptable window: ${Math.abs(currentTime - webhookTime)}s`);
+        console.error(
+          `🔒 Webhook timestamp outside acceptable window: ${Math.abs(currentTime - webhookTime)}s`
+        );
         return false;
       }
 
@@ -66,7 +68,6 @@ export class WebhookValidator {
       }
 
       return isValid;
-
     } catch (error) {
       console.error('🔒 Error validating webhook signature:', error);
       return false;
@@ -127,6 +128,4 @@ export class WebhookValidator {
 /**
  * Singleton instance for webhook validation
  */
-export const webhookValidator = new WebhookValidator(
-  process.env.SQUARE_WEBHOOK_SECRET || ''
-); 
+export const webhookValidator = new WebhookValidator(process.env.SQUARE_WEBHOOK_SECRET || '');

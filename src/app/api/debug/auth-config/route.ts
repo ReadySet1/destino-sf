@@ -25,24 +25,24 @@ export async function GET() {
         magic_link_redirect: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/admin`,
       },
       supabase_config_check: {},
-      recommendations: [] as Recommendation[]
+      recommendations: [] as Recommendation[],
     };
 
     // Test Supabase connection
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.auth.getSession();
-      
+
       diagnostics.supabase_config_check = {
         connection_status: error ? 'ERROR' : 'SUCCESS',
         error_message: error?.message || null,
-        auth_available: true
+        auth_available: true,
       };
     } catch (err) {
       diagnostics.supabase_config_check = {
         connection_status: 'FAILED',
         error_message: (err as Error).message,
-        auth_available: false
+        auth_available: false,
       };
     }
 
@@ -53,15 +53,18 @@ export async function GET() {
       recommendations.push({
         issue: 'Missing NEXT_PUBLIC_APP_URL',
         fix: 'Add NEXT_PUBLIC_APP_URL=https://development.destinosf.com to your Vercel environment variables',
-        priority: 'HIGH'
+        priority: 'HIGH',
       });
     }
 
-    if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.startsWith('https://')) {
+    if (
+      process.env.NEXT_PUBLIC_APP_URL &&
+      !process.env.NEXT_PUBLIC_APP_URL.startsWith('https://')
+    ) {
       recommendations.push({
         issue: 'APP_URL not using HTTPS',
         fix: 'Update NEXT_PUBLIC_APP_URL to use https:// in production',
-        priority: 'HIGH'
+        priority: 'HIGH',
       });
     }
 
@@ -73,9 +76,9 @@ export async function GET() {
         `Redirect URLs: ${diagnostics.urls.callback_url}`,
         `Additional redirect URLs: ${diagnostics.urls.callback_url}/**`,
         'Confirm email settings are enabled for magic links',
-        'Check that "Enable email confirmations" is set correctly'
+        'Check that "Enable email confirmations" is set correctly',
       ],
-      priority: 'HIGH'
+      priority: 'HIGH',
     });
 
     recommendations.push({
@@ -84,25 +87,27 @@ export async function GET() {
       details: [
         'In Supabase dashboard, check Authentication > Settings',
         'Verify "Enable email confirmations" setting',
-        'Make sure PKCE is not forced for all flows'
+        'Make sure PKCE is not forced for all flows',
       ],
-      priority: 'MEDIUM'
+      priority: 'MEDIUM',
     });
 
     diagnostics.recommendations = recommendations;
 
-    return NextResponse.json(diagnostics, { 
+    return NextResponse.json(diagnostics, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+        'Cache-Control': 'no-cache',
+      },
     });
-
   } catch (error) {
-    return NextResponse.json({
-      error: 'Failed to generate diagnostics',
-      message: (error as Error).message
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to generate diagnostics',
+        message: (error as Error).message,
+      },
+      { status: 500 }
+    );
   }
-} 
+}

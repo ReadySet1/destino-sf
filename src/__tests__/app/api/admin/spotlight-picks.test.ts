@@ -7,9 +7,11 @@ import { NextRequest } from 'next/server';
 jest.mock('@/lib/db');
 jest.mock('@/utils/supabase/server');
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => Promise.resolve({
-    getAll: () => []
-  })),
+  cookies: jest.fn(() =>
+    Promise.resolve({
+      getAll: () => [],
+    })
+  ),
 }));
 
 const mockedCreateClient = createClient as jest.MockedFunction<typeof createClient>;
@@ -360,7 +362,9 @@ describe('/api/admin/spotlight-picks API Routes', () => {
       expect(data.success).toBe(true);
       expect(data.data.showNewFeatureModal).toBe(true);
       expect(data.data.newFeatureTitle).toBe('Amazing New Feature');
-      expect(data.data.newFeatureDescription).toBe('This feature will revolutionize your experience');
+      expect(data.data.newFeatureDescription).toBe(
+        'This feature will revolutionize your experience'
+      );
       expect(data.data.newFeatureBadgeText).toBe('BETA');
 
       expect(prisma.spotlightPick.upsert).toHaveBeenCalledWith({
@@ -461,9 +465,12 @@ describe('/api/admin/spotlight-picks API Routes', () => {
     it('should clear a spotlight pick at a specific position', async () => {
       (prisma.spotlightPick.update as jest.Mock).mockResolvedValue({});
 
-      const request = new NextRequest('http://localhost:3000/api/admin/spotlight-picks?position=1', {
-        method: 'DELETE',
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/spotlight-picks?position=1',
+        {
+          method: 'DELETE',
+        }
+      );
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -492,9 +499,12 @@ describe('/api/admin/spotlight-picks API Routes', () => {
     });
 
     it('should return 400 for invalid position', async () => {
-      const request = new NextRequest('http://localhost:3000/api/admin/spotlight-picks?position=5', {
-        method: 'DELETE',
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/spotlight-picks?position=5',
+        {
+          method: 'DELETE',
+        }
+      );
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -523,9 +533,12 @@ describe('/api/admin/spotlight-picks API Routes', () => {
         role: 'CUSTOMER',
       });
 
-      const request = new NextRequest('http://localhost:3000/api/admin/spotlight-picks?position=1', {
-        method: 'DELETE',
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/spotlight-picks?position=1',
+        {
+          method: 'DELETE',
+        }
+      );
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -573,9 +586,12 @@ describe('/api/admin/spotlight-picks API Routes', () => {
     it('should handle database errors in DELETE', async () => {
       (prisma.spotlightPick.update as jest.Mock).mockRejectedValue(new Error('Database error'));
 
-      const request = new NextRequest('http://localhost:3000/api/admin/spotlight-picks?position=1', {
-        method: 'DELETE',
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/spotlight-picks?position=1',
+        {
+          method: 'DELETE',
+        }
+      );
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -585,4 +601,4 @@ describe('/api/admin/spotlight-picks API Routes', () => {
       expect(data.error).toBe('Database error');
     });
   });
-}); 
+});

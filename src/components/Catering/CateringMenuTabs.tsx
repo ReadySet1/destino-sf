@@ -11,17 +11,14 @@ interface CateringMenuTabsProps {
   cateringPackages: CateringPackage[];
 }
 
-const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ 
-  cateringItems, 
-  cateringPackages 
-}) => {
+const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cateringPackages }) => {
   const [activeTab, setActiveTab] = useState<string>('appetizers');
 
   const tabs = [
     { id: 'appetizers', label: 'Appetizers' },
     { id: 'buffet', label: 'Buffet' },
     { id: 'lunch', label: 'Lunch' },
-    { id: 'boxed-lunches', label: 'Boxed Lunches' }
+    { id: 'boxed-lunches', label: 'Boxed Lunches' },
   ];
 
   const handleTabClick = (tabId: string) => {
@@ -31,7 +28,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-4xl mx-auto mb-8 md:mb-10">
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab.id)}
@@ -51,43 +48,37 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({
           <div>
             {/* Appetizer Packages */}
             <div className="mb-12">
-              <AppetizerPackageSelector 
-                packages={cateringPackages.filter(pkg => 
-                  pkg.name.includes('Appetizer Selection')
+              <AppetizerPackageSelector
+                packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
+                availableItems={getItemsForTab(cateringItems, 'appetizers').filter(
+                  item => item.price === 0
                 )}
-                availableItems={getItemsForTab(cateringItems, 'appetizers').filter(item => item.price === 0)}
               />
             </div>
 
             {/* Individual Appetizer Items - Share Platters and Desserts */}
             <div className="border-t pt-12">
-              <ALaCarteMenu 
+              <ALaCarteMenu
                 items={cateringItems.filter(item => {
                   // Get items for appetizers tab but exclude $0 items (package-only)
                   const appetizerTabItems = getItemsForTab(cateringItems, 'appetizers');
                   return appetizerTabItems.includes(item) && item.price > 0;
-                })} 
-                activeCategory="appetizers" 
+                })}
+                activeCategory="appetizers"
                 showDessertsAtBottom={true}
               />
             </div>
           </div>
         )}
-        
-        {activeTab === 'buffet' && (
-          <ALaCarteMenu items={cateringItems} activeCategory="buffet" />
-        )}
-        
-        {activeTab === 'lunch' && (
-          <ALaCarteMenu items={cateringItems} activeCategory="lunch" />
-        )}
-        
-        {activeTab === 'boxed-lunches' && (
-          <BoxedLunchMenu />
-        )}
+
+        {activeTab === 'buffet' && <ALaCarteMenu items={cateringItems} activeCategory="buffet" />}
+
+        {activeTab === 'lunch' && <ALaCarteMenu items={cateringItems} activeCategory="lunch" />}
+
+        {activeTab === 'boxed-lunches' && <BoxedLunchMenu />}
       </div>
     </div>
   );
 };
 
-export default CateringMenuTabs; 
+export default CateringMenuTabs;

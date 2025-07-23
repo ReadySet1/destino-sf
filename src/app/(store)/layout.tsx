@@ -6,17 +6,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#ffffff'
+  themeColor: '#ffffff',
 };
 
-export default function StoreLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <>
-      {children}
-    </>
-  );
-} 
+export default function StoreLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}

@@ -7,4 +7,4 @@
     "*.test.tsx": "typescriptreact"
   },
   "typescript.server.includePackageJsonAutoImports": "on"
-} 
+}

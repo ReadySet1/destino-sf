@@ -40,7 +40,7 @@ export default function AdminSetup() {
       if (data.user?.email) setEmail(data.user?.email);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Error fetching user info: ${  errorMessage}`);
+      toast.error(`Error fetching user info: ${errorMessage}`);
     }
   };
 

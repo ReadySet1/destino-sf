@@ -94,22 +94,22 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
     jest.clearAllMocks();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     alertService = new AlertService();
-    
+
     // Setup default mocks
     mockPrisma.emailAlert.create.mockResolvedValue({
       id: 'alert-123',
       type: AlertType.NEW_ORDER,
       priority: AlertPriority.HIGH,
     });
-    
+
     mockPrisma.emailAlert.update.mockResolvedValue({});
     mockResend.emails.send.mockResolvedValue({
       data: { id: 'email-123' },
       error: null,
     });
-    
+
     const { sendEmailWithQueue } = require('@/lib/webhook-queue');
     sendEmailWithQueue.mockResolvedValue(undefined);
   });
@@ -148,12 +148,12 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
 
     it('should send new order alert successfully', async () => {
       mockPrisma.order.count.mockResolvedValue(5); // 5 orders today
-      
+
       const result = await alertService.sendNewOrderAlert(mockOrder);
 
       expect(result.success).toBe(true);
       expect(result.messageId).toBe('queued');
-      
+
       expect(mockPrisma.emailAlert.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           type: AlertType.NEW_ORDER,
@@ -171,7 +171,7 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
         to: 'admin@test.com',
         subject: expect.stringContaining('New Order #order-123 - $45.99'),
         react: expect.any(Object),
-        priority: 'high'
+        priority: 'high',
       });
     });
 
@@ -237,7 +237,10 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
     } as any;
 
     it('should send order status change alert to admin', async () => {
-      const result = await alertService.sendOrderStatusChangeAlert(mockOrderStatusData.order, mockOrderStatusData.previousStatus);
+      const result = await alertService.sendOrderStatusChangeAlert(
+        mockOrderStatusData.order,
+        mockOrderStatusData.previousStatus
+      );
 
       expect(result.success).toBe(true);
       expect(mockPrisma.emailAlert.create).toHaveBeenCalledWith({
@@ -284,7 +287,7 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
     const mockPaymentFailedData = {
       order: {
         id: 'order-123',
-        total: 75.50,
+        total: 75.5,
         customer: {
           email: 'customer@test.com',
           name: 'Jane Smith',
@@ -438,16 +441,16 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
     beforeEach(() => {
       // Mock the database queries for daily summary
       mockPrisma.order.findMany.mockResolvedValue([
-        { 
-          id: 'order-1', 
-          total: 45.99, 
+        {
+          id: 'order-1',
+          total: 45.99,
           paymentStatus: PaymentStatus.PAID,
           status: OrderStatus.COMPLETED,
           fulfillmentType: FulfillmentType.pickup,
         },
-        { 
-          id: 'order-2', 
-          total: 32.50, 
+        {
+          id: 'order-2',
+          total: 32.5,
           paymentStatus: PaymentStatus.FAILED,
           status: OrderStatus.CANCELLED,
           fulfillmentType: FulfillmentType.local_delivery,
@@ -702,9 +705,9 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
       })) as any[];
 
       const promises = orders.map(order => alertService.sendNewOrderAlert(order));
-      
+
       await expect(Promise.all(promises)).resolves.not.toThrow();
-      
+
       expect(mockResend.emails.send).toHaveBeenCalledTimes(10);
     });
 
@@ -737,7 +740,7 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
 
       const mockOrder = {
         id: 'order-test',
-        total: 30.00,
+        total: 30.0,
         items: [],
       } as any;
 
@@ -779,4 +782,4 @@ describe('Alert Service System (Phase 2 - Monitoring Support)', () => {
       expect(failureCount).toBeGreaterThan(0);
     });
   });
-}); 
+});

@@ -22,40 +22,44 @@ function validateToken(token: string): boolean {
 // Function to get the current Square configuration
 function getSquareConfig() {
   const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-  
+
   let accessToken;
   let tokenSource;
-  
+
   if (useSandbox) {
     accessToken = process.env.SQUARE_SANDBOX_TOKEN;
     tokenSource = 'SQUARE_SANDBOX_TOKEN';
   } else if (process.env.NODE_ENV === 'production') {
     accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-    tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
+    tokenSource = process.env.SQUARE_PRODUCTION_TOKEN
+      ? 'SQUARE_PRODUCTION_TOKEN'
+      : 'SQUARE_ACCESS_TOKEN';
   } else {
     accessToken = process.env.SQUARE_ACCESS_TOKEN;
     tokenSource = 'SQUARE_ACCESS_TOKEN';
   }
-  
+
   // Validate and sanitize the token
   if (accessToken) {
     const sanitizedToken = sanitizeToken(accessToken);
-    
+
     if (!validateToken(sanitizedToken)) {
       logger.error(`Invalid token format from ${tokenSource}. Token length: ${accessToken.length}`);
-      throw new Error(`Invalid Square token format from ${tokenSource}. Please check your environment variables.`);
+      throw new Error(
+        `Invalid Square token format from ${tokenSource}. Please check your environment variables.`
+      );
     }
-    
+
     accessToken = sanitizedToken;
   }
-  
+
   const apiHost = useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com';
-    
+
   return {
     useSandbox,
     accessToken,
     apiHost,
-    tokenSource
+    tokenSource,
   };
 }
 
@@ -64,27 +68,27 @@ function getSquareConfig() {
  */
 async function httpsRequest(options: any, requestBody?: any): Promise<any> {
   const squareConfig = getSquareConfig();
-  
+
   if (!squareConfig.accessToken) {
     throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
   }
-  
+
   if (options.headers) {
     options.headers['Authorization'] = `Bearer ${squareConfig.accessToken}`;
   }
-  
+
   return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
+    const req = https.request(options, res => {
       let data = '';
-      
-      res.on('data', (chunk) => {
+
+      res.on('data', chunk => {
         data += chunk;
       });
-      
+
       res.on('end', () => {
         try {
           const parsedData = JSON.parse(data);
-          
+
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
             resolve(parsedData);
           } else {
@@ -94,50 +98,54 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
                 // Check for gift card insufficient funds error
                 if (error.code === 'INSUFFICIENT_FUNDS') {
                   // Look for accompanying GIFT_CARD_AVAILABLE_AMOUNT error
-                  const giftCardError = parsedData.errors.find((e: any) => 
-                    e.code === 'GIFT_CARD_AVAILABLE_AMOUNT'
+                  const giftCardError = parsedData.errors.find(
+                    (e: any) => e.code === 'GIFT_CARD_AVAILABLE_AMOUNT'
                   );
-                  
+
                   if (giftCardError) {
                     logger.info('Gift card insufficient funds with available amount:', {
                       availableAmount: giftCardError.available_amount,
-                      requestedAmount: error.requested_amount
+                      requestedAmount: error.requested_amount,
                     });
                   }
                 }
                 return error;
               });
-              
+
               parsedData.errors = enhancedErrors;
             }
-            
+
             if (res.statusCode === 401) {
               logger.error(`Authentication error with token from ${squareConfig.tokenSource}`);
             }
-            
-            reject(new Error(`Request failed with status: ${res.statusCode}, body: ${JSON.stringify(parsedData)}`));
+
+            reject(
+              new Error(
+                `Request failed with status: ${res.statusCode}, body: ${JSON.stringify(parsedData)}`
+              )
+            );
           }
         } catch (error) {
           reject(new Error(`Failed to parse response: ${data}`));
         }
       });
     });
-    
-    req.on('error', (error) => {
+
+    req.on('error', error => {
       reject(error);
     });
-    
+
     if (requestBody) {
       // CRITICAL FIX: Handle BigInt serialization in JSON
       const safeStringify = (obj: any) => {
-        return JSON.stringify(obj, (_, value) => 
+        return JSON.stringify(obj, (_, value) =>
           typeof value === 'bigint' ? value.toString() : value
         );
       };
-      
+
       req.write(safeStringify(requestBody));
     }
-    
+
     req.end();
   });
 }
@@ -184,20 +192,20 @@ export async function createPayment(requestBody: {
   }>;
 }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Creating payment on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: '/v2/payments',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     // In test environment, leverage mocked Square SDK
     if (process.env.NODE_ENV === 'test') {
@@ -216,7 +224,7 @@ export async function createPayment(requestBody: {
     };
   } catch (error) {
     logger.error('Error creating payment:', error);
-    
+
     // Parse error response for enhanced gift card error handling
     try {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -226,14 +234,14 @@ export async function createPayment(requestBody: {
         if (errorBody.errors) {
           return {
             errors: errorBody.errors,
-            success: false
+            success: false,
           };
         }
       }
     } catch (parseError) {
       logger.error('Error parsing payment error response:', parseError);
     }
-    
+
     throw error;
   }
 }
@@ -250,28 +258,27 @@ export function handleGiftCardPaymentError(errors: any[]): {
   const giftCardErrorCodes = [
     'GIFT_CARD_INSUFFICIENT_FUNDS',
     'GIFT_CARD_AVAILABLE_AMOUNT',
-    'INSUFFICIENT_FUNDS' // When used with gift cards
+    'INSUFFICIENT_FUNDS', // When used with gift cards
   ];
-  
-  const insufficientFunds = errors.some(error => 
-    error.code === 'INSUFFICIENT_FUNDS' || error.code === 'GIFT_CARD_INSUFFICIENT_FUNDS'
+
+  const insufficientFunds = errors.some(
+    error => error.code === 'INSUFFICIENT_FUNDS' || error.code === 'GIFT_CARD_INSUFFICIENT_FUNDS'
   );
-  
+
   // Look for any gift card specific error
-  const giftCardError = errors.find(error => 
-    giftCardErrorCodes.includes(error.code) || 
-    error.code?.includes('GIFT_CARD')
+  const giftCardError = errors.find(
+    error => giftCardErrorCodes.includes(error.code) || error.code?.includes('GIFT_CARD')
   );
-  
+
   // Check for available amount in gift card error or accompanying error
-  const availableAmountError = errors.find(error => 
-    error.code === 'GIFT_CARD_AVAILABLE_AMOUNT' || error.available_amount
+  const availableAmountError = errors.find(
+    error => error.code === 'GIFT_CARD_AVAILABLE_AMOUNT' || error.available_amount
   );
-  
+
   return {
     isGiftCardError: !!giftCardError,
     availableAmount: availableAmountError?.available_amount || giftCardError?.available_amount,
-    insufficientFunds
+    insufficientFunds,
   };
 }
 
@@ -284,7 +291,7 @@ export function formatGiftCardErrorMessage(
 ): string {
   const availableFormatted = (availableAmount.amount / 100).toFixed(2);
   const requestedFormatted = (requestedAmount.amount / 100).toFixed(2);
-  
+
   return `Gift card has insufficient funds. Available: $${availableFormatted}, Requested: $${requestedFormatted}`;
 }
 
@@ -307,8 +314,10 @@ export async function processGiftCardPayment(request: {
 }> {
   try {
     const squareConfig = getSquareConfig();
-    const idempotencyKey = request.idempotencyKey || `gift-card-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-    
+    const idempotencyKey =
+      request.idempotencyKey ||
+      `gift-card-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+
     const paymentRequest = {
       source_id: request.giftCardNonce,
       idempotency_key: idempotencyKey,
@@ -316,48 +325,45 @@ export async function processGiftCardPayment(request: {
       order_id: request.orderId,
       autocomplete: true,
     };
-    
+
     const response = await createPayment(paymentRequest);
-    
+
     if (response.errors) {
       const giftCardError = handleGiftCardPaymentError(response.errors);
-      
+
       if (giftCardError.isGiftCardError) {
         if (giftCardError.insufficientFunds && giftCardError.availableAmount) {
           return {
             success: false,
-            error: formatGiftCardErrorMessage(
-              giftCardError.availableAmount,
-              request.amountMoney
-            ),
-            errorType: 'INSUFFICIENT_FUNDS'
+            error: formatGiftCardErrorMessage(giftCardError.availableAmount, request.amountMoney),
+            errorType: 'INSUFFICIENT_FUNDS',
           };
         }
-        
+
         return {
           success: false,
           error: 'Gift card is not active or has expired',
-          errorType: 'INACTIVE_CARD'
+          errorType: 'INACTIVE_CARD',
         };
       }
-      
+
       return {
         success: false,
         error: response.errors[0].detail || 'Gift card payment failed',
-        errorType: response.errors[0].code
+        errorType: response.errors[0].code,
       };
     }
-    
+
     return {
       success: true,
-      payment: response.payment
+      payment: response.payment,
     };
   } catch (error) {
     logger.error('Error processing gift card payment:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error processing gift card payment',
-      errorType: 'PAYMENT_PROCESSING_ERROR'
+      errorType: 'PAYMENT_PROCESSING_ERROR',
     };
   }
 }
@@ -376,9 +382,9 @@ export async function handlePaymentWebhook(webhookPayload: any): Promise<{
     // Validate webhook signature (in production implementation)
     // const isValid = validateWebhookSignature(webhookPayload);
     // if (!isValid) throw new Error('Invalid webhook signature');
-    
+
     const eventType = webhookPayload.type;
-    
+
     // Handle different event types
     switch (eventType) {
       case 'payment.created':
@@ -386,48 +392,48 @@ export async function handlePaymentWebhook(webhookPayload: any): Promise<{
         const paymentId = webhookPayload.data?.object?.payment?.id;
         const orderId = webhookPayload.data?.object?.payment?.order_id;
         const status = webhookPayload.data?.object?.payment?.status;
-        
+
         logger.info(`Payment webhook received: ${eventType}`, { paymentId, status });
-        
+
         // In production, update order status based on payment status
-        
+
         return {
           success: true,
           eventType,
           paymentId,
-          orderId
+          orderId,
         };
       }
-      
+
       case 'refund.created':
       case 'refund.updated': {
         const refundId = webhookPayload.data?.object?.refund?.id;
         const paymentId = webhookPayload.data?.object?.refund?.payment_id;
         const status = webhookPayload.data?.object?.refund?.status;
-        
+
         logger.info(`Refund webhook received: ${eventType}`, { refundId, paymentId, status });
-        
+
         // In production, update order status based on refund status
-        
+
         return {
           success: true,
           eventType,
-          paymentId
+          paymentId,
         };
       }
-      
+
       default:
         logger.info(`Unhandled webhook event type: ${eventType}`);
         return {
           success: true,
-          eventType
+          eventType,
         };
     }
   } catch (error) {
     logger.error('Error handling payment webhook:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error handling webhook'
+      error: error instanceof Error ? error.message : 'Unknown error handling webhook',
     };
   }
 }
@@ -438,8 +444,8 @@ export const squarePaymentsApi = {
   processGiftCardPayment,
   handlePaymentWebhook,
   handleGiftCardPaymentError,
-  formatGiftCardErrorMessage
+  formatGiftCardErrorMessage,
 };
 
 // Export as directPaymentsApi for backward compatibility
-export const directPaymentsApi = squarePaymentsApi; 
+export const directPaymentsApi = squarePaymentsApi;

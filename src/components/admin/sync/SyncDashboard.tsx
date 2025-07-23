@@ -34,7 +34,7 @@ export function SyncDashboard() {
           // Testing options
           mockMode: testOptions.mockMode,
           simulateError: testOptions.simulateError,
-          customDuration: testOptions.customDuration
+          customDuration: testOptions.customDuration,
         }),
       });
 
@@ -53,29 +53,16 @@ export function SyncDashboard() {
   return (
     <div className="space-y-6">
       {/* Testing Panel */}
-      <SyncTestingPanel 
-        onTestSync={handleTestSync}
-        disabled={!!currentSyncId}
-      />
+      <SyncTestingPanel onTestSync={handleTestSync} disabled={!!currentSyncId} />
 
       {/* Sync Trigger */}
-      <SyncTrigger 
-        onSyncStarted={handleSyncStarted}
-        disabled={!!currentSyncId}
-      />
+      <SyncTrigger onSyncStarted={handleSyncStarted} disabled={!!currentSyncId} />
 
       {/* Sync Progress (only shown when there's an active sync) */}
-      {currentSyncId && (
-        <SyncProgress 
-          syncId={currentSyncId}
-          onSyncComplete={handleSyncComplete}
-        />
-      )}
+      {currentSyncId && <SyncProgress syncId={currentSyncId} onSyncComplete={handleSyncComplete} />}
 
       {/* Sync History */}
-      <SyncHistory 
-        refreshTrigger={historyRefreshTrigger}
-      />
+      <SyncHistory refreshTrigger={historyRefreshTrigger} />
     </div>
   );
-} 
+}

@@ -1,7 +1,8 @@
 // Node.js specific setup for API/lib/utils tests
 
 // Database setup for Prisma tests
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
 
 // Mock external Node.js services that don't exist in test environment
 // Note: @/lib/db is mocked globally in jest.setup.js to avoid conflicts

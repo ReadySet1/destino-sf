@@ -22,13 +22,13 @@ export interface ErrorContext {
   userAgent?: string;
   ipAddress?: string;
   userId?: string;
-  
+
   // Application context
   component?: string;
   action?: string;
   orderId?: string;
   paymentId?: string;
-  
+
   // Additional data
   additionalData?: Record<string, any>;
   stackTrace?: string;
@@ -70,14 +70,14 @@ export class ErrorMonitor {
    * Capture and process any error
    */
   async captureError(
-    error: Error | unknown, 
+    error: Error | unknown,
     context: ErrorContext = {},
     severity: ErrorSeverity = ErrorSeverity.MEDIUM
   ): Promise<void> {
     try {
       const enhancedError = this.enhanceError(error, context);
       const errorSeverity = this.determineSeverity(enhancedError, severity);
-      
+
       // Always log to console if enabled
       if (this.config.enableConsoleLogging) {
         this.logToConsole(enhancedError, errorSeverity, context);
@@ -97,7 +97,6 @@ export class ErrorMonitor {
       if (this.config.enableExtrenalLogging) {
         await this.logToExternalService(enhancedError, context, errorSeverity);
       }
-
     } catch (monitoringError) {
       // Ensure monitoring doesn't break the application
       console.error('❌ Error in error monitoring:', monitoringError);
@@ -212,12 +211,13 @@ export class ErrorMonitor {
    */
   private determineSeverity(error: Error, providedSeverity: ErrorSeverity): ErrorSeverity {
     const message = error.message.toLowerCase();
-    
+
     // Critical patterns
     if (
-      message.includes('database') && (message.includes('connection') || message.includes('timeout')) ||
-      message.includes('payment') && message.includes('failed') ||
-      message.includes('webhook') && message.includes('signature') ||
+      (message.includes('database') &&
+        (message.includes('connection') || message.includes('timeout'))) ||
+      (message.includes('payment') && message.includes('failed')) ||
+      (message.includes('webhook') && message.includes('signature')) ||
       message.includes('out of memory') ||
       message.includes('segmentation fault')
     ) {
@@ -227,7 +227,7 @@ export class ErrorMonitor {
     // High patterns
     if (
       message.includes('payment') ||
-      message.includes('order') && message.includes('failed') ||
+      (message.includes('order') && message.includes('failed')) ||
       message.includes('webhook') ||
       message.includes('timeout')
     ) {
@@ -249,8 +249,8 @@ export class ErrorMonitor {
    * Send error alert to admin
    */
   private async sendErrorAlert(
-    error: Error, 
-    context: ErrorContext, 
+    error: Error,
+    context: ErrorContext,
     severity: ErrorSeverity
   ): Promise<void> {
     try {
@@ -276,15 +276,15 @@ export class ErrorMonitor {
     }[severity];
 
     console.error(`${emoji} [${severity}] ${error.message}`);
-    
+
     if (context.component || context.action) {
       console.error(`   Context: ${context.component}:${context.action}`);
     }
-    
+
     if (context.orderId) {
       console.error(`   Order: ${context.orderId}`);
     }
-    
+
     if (error.stack) {
       console.error(`   Stack: ${error.stack.split('\n').slice(0, 3).join('\n')}`);
     }
@@ -309,14 +309,14 @@ export class ErrorMonitor {
    * Log to external service (Sentry integration)
    */
   private async logToExternalService(
-    error: Error, 
-    context: ErrorContext, 
+    error: Error,
+    context: ErrorContext,
     severity: ErrorSeverity
   ): Promise<void> {
     try {
       // Map our severity to Sentry levels
       const sentryLevel = this.mapSeverityToSentryLevel(severity);
-      
+
       // Set user context if available
       if (context.userId) {
         Sentry.setUser({
@@ -324,7 +324,7 @@ export class ErrorMonitor {
           email: context.additionalData?.userEmail || undefined,
         });
       }
-      
+
       // Set additional context
       Sentry.setContext('error_context', {
         component: context.component,
@@ -333,16 +333,16 @@ export class ErrorMonitor {
         additionalData: context.additionalData,
         timestamp: new Date().toISOString(),
       });
-      
+
       // Set tags for better filtering
       Sentry.setTag('component', context.component || 'unknown');
       Sentry.setTag('action', context.action || 'unknown');
       Sentry.setTag('severity', severity);
-      
+
       if (context.orderId) {
         Sentry.setTag('order_id', context.orderId);
       }
-      
+
       // Capture the exception
       Sentry.captureException(error, {
         level: sentryLevel,
@@ -352,12 +352,11 @@ export class ErrorMonitor {
           timestamp: new Date().toISOString(),
         },
       });
-      
     } catch (sentryError) {
       console.error('Failed to log to Sentry:', sentryError);
     }
   }
-  
+
   /**
    * Map our severity levels to Sentry severity levels
    */
@@ -375,25 +374,25 @@ export class ErrorMonitor {
         return 'error';
     }
   }
-  
+
   /**
    * Generate fingerprint for error grouping in Sentry
    */
   private generateFingerprint(error: Error, context: ErrorContext): string[] {
     const fingerprint = [error.name || 'Error'];
-    
+
     if (context.component) {
       fingerprint.push(context.component);
     }
-    
+
     if (context.action) {
       fingerprint.push(context.action);
     }
-    
+
     // Add a portion of the error message for better grouping
     const messagePrefix = error.message.substring(0, 50);
     fingerprint.push(messagePrefix);
-    
+
     return fingerprint;
   }
 
@@ -454,4 +453,4 @@ export function MonitorErrors(context: Partial<ErrorContext> = {}) {
       }
     };
   };
-} 
+}

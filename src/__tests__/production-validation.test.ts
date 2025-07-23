@@ -72,53 +72,144 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 // Import modules
-import { validateConfiguration, validateEnvironmentVariables, validateSecrets, validateDatabaseConfig, validateExternalServices } from '@/lib/config-validator';
-import { validateSecurityHeaders, validateSSLConfiguration, validateAuthConfiguration, validateCORSConfiguration, validateRateLimiting, scanForVulnerabilities } from '@/lib/security-validator';
-import { checkDeploymentReadiness, validateAssets, validateDependencies, checkDatabaseMigrations, validateEnvironmentParity } from '@/lib/deployment-checker';
-import { validateDataIntegrity, checkReferentialIntegrity, validateConstraints, checkIndexIntegrity, validateBackupIntegrity } from '@/lib/data-integrity';
-import { testBackupProcess, testRecoveryProcess, validateBackupSchedule, testPointInTimeRecovery, validateBackupEncryption } from '@/lib/backup-recovery';
-import { validateMonitoringSetup, validateAlertingConfiguration, validateLoggingConfiguration, testErrorReporting, validateMetricsCollection } from '@/lib/monitoring-validation';
+import {
+  validateConfiguration,
+  validateEnvironmentVariables,
+  validateSecrets,
+  validateDatabaseConfig,
+  validateExternalServices,
+} from '@/lib/config-validator';
+import {
+  validateSecurityHeaders,
+  validateSSLConfiguration,
+  validateAuthConfiguration,
+  validateCORSConfiguration,
+  validateRateLimiting,
+  scanForVulnerabilities,
+} from '@/lib/security-validator';
+import {
+  checkDeploymentReadiness,
+  validateAssets,
+  validateDependencies,
+  checkDatabaseMigrations,
+  validateEnvironmentParity,
+} from '@/lib/deployment-checker';
+import {
+  validateDataIntegrity,
+  checkReferentialIntegrity,
+  validateConstraints,
+  checkIndexIntegrity,
+  validateBackupIntegrity,
+} from '@/lib/data-integrity';
+import {
+  testBackupProcess,
+  testRecoveryProcess,
+  validateBackupSchedule,
+  testPointInTimeRecovery,
+  validateBackupEncryption,
+} from '@/lib/backup-recovery';
+import {
+  validateMonitoringSetup,
+  validateAlertingConfiguration,
+  validateLoggingConfiguration,
+  testErrorReporting,
+  validateMetricsCollection,
+} from '@/lib/monitoring-validation';
 import fs from 'fs/promises';
 import { exec, spawn } from 'child_process';
 
-const mockValidateConfiguration = validateConfiguration as jest.MockedFunction<typeof validateConfiguration>;
-const mockValidateEnvironmentVariables = validateEnvironmentVariables as jest.MockedFunction<typeof validateEnvironmentVariables>;
+const mockValidateConfiguration = validateConfiguration as jest.MockedFunction<
+  typeof validateConfiguration
+>;
+const mockValidateEnvironmentVariables = validateEnvironmentVariables as jest.MockedFunction<
+  typeof validateEnvironmentVariables
+>;
 const mockValidateSecrets = validateSecrets as jest.MockedFunction<typeof validateSecrets>;
-const mockValidateDatabaseConfig = validateDatabaseConfig as jest.MockedFunction<typeof validateDatabaseConfig>;
-const mockValidateExternalServices = validateExternalServices as jest.MockedFunction<typeof validateExternalServices>;
-const mockValidateSecurityHeaders = validateSecurityHeaders as jest.MockedFunction<typeof validateSecurityHeaders>;
-const mockValidateSSLConfiguration = validateSSLConfiguration as jest.MockedFunction<typeof validateSSLConfiguration>;
-const mockValidateAuthConfiguration = validateAuthConfiguration as jest.MockedFunction<typeof validateAuthConfiguration>;
-const mockValidateCORSConfiguration = validateCORSConfiguration as jest.MockedFunction<typeof validateCORSConfiguration>;
-const mockValidateRateLimiting = validateRateLimiting as jest.MockedFunction<typeof validateRateLimiting>;
-const mockScanForVulnerabilities = scanForVulnerabilities as jest.MockedFunction<typeof scanForVulnerabilities>;
-const mockCheckDeploymentReadiness = checkDeploymentReadiness as jest.MockedFunction<typeof checkDeploymentReadiness>;
+const mockValidateDatabaseConfig = validateDatabaseConfig as jest.MockedFunction<
+  typeof validateDatabaseConfig
+>;
+const mockValidateExternalServices = validateExternalServices as jest.MockedFunction<
+  typeof validateExternalServices
+>;
+const mockValidateSecurityHeaders = validateSecurityHeaders as jest.MockedFunction<
+  typeof validateSecurityHeaders
+>;
+const mockValidateSSLConfiguration = validateSSLConfiguration as jest.MockedFunction<
+  typeof validateSSLConfiguration
+>;
+const mockValidateAuthConfiguration = validateAuthConfiguration as jest.MockedFunction<
+  typeof validateAuthConfiguration
+>;
+const mockValidateCORSConfiguration = validateCORSConfiguration as jest.MockedFunction<
+  typeof validateCORSConfiguration
+>;
+const mockValidateRateLimiting = validateRateLimiting as jest.MockedFunction<
+  typeof validateRateLimiting
+>;
+const mockScanForVulnerabilities = scanForVulnerabilities as jest.MockedFunction<
+  typeof scanForVulnerabilities
+>;
+const mockCheckDeploymentReadiness = checkDeploymentReadiness as jest.MockedFunction<
+  typeof checkDeploymentReadiness
+>;
 const mockValidateAssets = validateAssets as jest.MockedFunction<typeof validateAssets>;
-const mockValidateDependencies = validateDependencies as jest.MockedFunction<typeof validateDependencies>;
-const mockCheckDatabaseMigrations = checkDatabaseMigrations as jest.MockedFunction<typeof checkDatabaseMigrations>;
-const mockValidateEnvironmentParity = validateEnvironmentParity as jest.MockedFunction<typeof validateEnvironmentParity>;
-const mockValidateDataIntegrity = validateDataIntegrity as jest.MockedFunction<typeof validateDataIntegrity>;
-const mockCheckReferentialIntegrity = checkReferentialIntegrity as jest.MockedFunction<typeof checkReferentialIntegrity>;
-const mockValidateConstraints = validateConstraints as jest.MockedFunction<typeof validateConstraints>;
-const mockCheckIndexIntegrity = checkIndexIntegrity as jest.MockedFunction<typeof checkIndexIntegrity>;
-const mockValidateBackupIntegrity = validateBackupIntegrity as jest.MockedFunction<typeof validateBackupIntegrity>;
+const mockValidateDependencies = validateDependencies as jest.MockedFunction<
+  typeof validateDependencies
+>;
+const mockCheckDatabaseMigrations = checkDatabaseMigrations as jest.MockedFunction<
+  typeof checkDatabaseMigrations
+>;
+const mockValidateEnvironmentParity = validateEnvironmentParity as jest.MockedFunction<
+  typeof validateEnvironmentParity
+>;
+const mockValidateDataIntegrity = validateDataIntegrity as jest.MockedFunction<
+  typeof validateDataIntegrity
+>;
+const mockCheckReferentialIntegrity = checkReferentialIntegrity as jest.MockedFunction<
+  typeof checkReferentialIntegrity
+>;
+const mockValidateConstraints = validateConstraints as jest.MockedFunction<
+  typeof validateConstraints
+>;
+const mockCheckIndexIntegrity = checkIndexIntegrity as jest.MockedFunction<
+  typeof checkIndexIntegrity
+>;
+const mockValidateBackupIntegrity = validateBackupIntegrity as jest.MockedFunction<
+  typeof validateBackupIntegrity
+>;
 const mockTestBackupProcess = testBackupProcess as jest.MockedFunction<typeof testBackupProcess>;
-const mockTestRecoveryProcess = testRecoveryProcess as jest.MockedFunction<typeof testRecoveryProcess>;
-const mockValidateBackupSchedule = validateBackupSchedule as jest.MockedFunction<typeof validateBackupSchedule>;
-const mockTestPointInTimeRecovery = testPointInTimeRecovery as jest.MockedFunction<typeof testPointInTimeRecovery>;
-const mockValidateBackupEncryption = validateBackupEncryption as jest.MockedFunction<typeof validateBackupEncryption>;
-const mockValidateMonitoringSetup = validateMonitoringSetup as jest.MockedFunction<typeof validateMonitoringSetup>;
-const mockValidateAlertingConfiguration = validateAlertingConfiguration as jest.MockedFunction<typeof validateAlertingConfiguration>;
-const mockValidateLoggingConfiguration = validateLoggingConfiguration as jest.MockedFunction<typeof validateLoggingConfiguration>;
+const mockTestRecoveryProcess = testRecoveryProcess as jest.MockedFunction<
+  typeof testRecoveryProcess
+>;
+const mockValidateBackupSchedule = validateBackupSchedule as jest.MockedFunction<
+  typeof validateBackupSchedule
+>;
+const mockTestPointInTimeRecovery = testPointInTimeRecovery as jest.MockedFunction<
+  typeof testPointInTimeRecovery
+>;
+const mockValidateBackupEncryption = validateBackupEncryption as jest.MockedFunction<
+  typeof validateBackupEncryption
+>;
+const mockValidateMonitoringSetup = validateMonitoringSetup as jest.MockedFunction<
+  typeof validateMonitoringSetup
+>;
+const mockValidateAlertingConfiguration = validateAlertingConfiguration as jest.MockedFunction<
+  typeof validateAlertingConfiguration
+>;
+const mockValidateLoggingConfiguration = validateLoggingConfiguration as jest.MockedFunction<
+  typeof validateLoggingConfiguration
+>;
 const mockTestErrorReporting = testErrorReporting as jest.MockedFunction<typeof testErrorReporting>;
-const mockValidateMetricsCollection = validateMetricsCollection as jest.MockedFunction<typeof validateMetricsCollection>;
+const mockValidateMetricsCollection = validateMetricsCollection as jest.MockedFunction<
+  typeof validateMetricsCollection
+>;
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockExec = exec as jest.MockedFunction<typeof exec>;
 
 describe('Production Validation - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up production environment
     process.env.NODE_ENV = 'production';
     process.env.DATABASE_URL = 'postgresql://user:pass@prod-db:5432/destino_sf';
@@ -523,7 +614,8 @@ describe('Production Validation - Phase 4', () => {
     describe('Security Headers', () => {
       it('should validate security headers are properly configured', () => {
         const securityHeaders = {
-          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+          'Content-Security-Policy':
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
           'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
           'X-Frame-Options': 'DENY',
           'X-Content-Type-Options': 'nosniff',
@@ -545,12 +637,14 @@ describe('Production Validation - Phase 4', () => {
         expect(headerValidation.valid).toBe(true);
         expect(headerValidation.missing).toHaveLength(0);
         expect(headerValidation.weak).toHaveLength(0);
-        expect(headerValidation.recommendations).toContain('Security headers are properly configured');
+        expect(headerValidation.recommendations).toContain(
+          'Security headers are properly configured'
+        );
       });
 
       it('should detect missing or weak security headers', () => {
         const weakHeaders = {
-          'Content-Security-Policy': "default-src *; script-src *;", // Too permissive
+          'Content-Security-Policy': 'default-src *; script-src *;', // Too permissive
           'X-Frame-Options': 'SAMEORIGIN', // Could be stronger
           // Missing HSTS and other headers
         };
@@ -600,7 +694,7 @@ describe('Production Validation - Phase 4', () => {
           valid: true,
           certificate: {
             valid: true,
-            issuer: 'Let\'s Encrypt',
+            issuer: "Let's Encrypt",
             daysUntilExpiry: 60,
             subjectAltNames: ['destino-sf.com', 'www.destino-sf.com'],
           },
@@ -805,7 +899,9 @@ describe('Production Validation - Phase 4', () => {
         expect(rateLimitValidation.valid).toBe(true);
         expect(rateLimitValidation.configuration.auth).toBe('strict');
         expect(rateLimitValidation.bypasses).toHaveLength(0);
-        expect(rateLimitValidation.recommendations).toContain('Rate limiting is properly configured');
+        expect(rateLimitValidation.recommendations).toContain(
+          'Rate limiting is properly configured'
+        );
       });
 
       it('should validate CORS configuration', () => {
@@ -1034,10 +1130,7 @@ describe('Production Validation - Phase 4', () => {
             incompatible: 0,
             unknown: 3,
           },
-          recommendations: [
-            'Update outdated dependencies',
-            'Review unknown licenses',
-          ],
+          recommendations: ['Update outdated dependencies', 'Review unknown licenses'],
         });
 
         const depValidation = await mockValidateDependencies();
@@ -1059,8 +1152,16 @@ describe('Production Validation - Phase 4', () => {
           latestMigration: '20240115_001_add_catering_tables',
           appliedAt: '2024-01-15T10:30:00Z',
           migrations: [
-            { name: '20240101_001_initial_schema', status: 'applied', appliedAt: '2024-01-01T00:00:00Z' },
-            { name: '20240115_001_add_catering_tables', status: 'applied', appliedAt: '2024-01-15T10:30:00Z' },
+            {
+              name: '20240101_001_initial_schema',
+              status: 'applied',
+              appliedAt: '2024-01-01T00:00:00Z',
+            },
+            {
+              name: '20240115_001_add_catering_tables',
+              status: 'applied',
+              appliedAt: '2024-01-15T10:30:00Z',
+            },
           ],
           rollbackPlan: {
             available: true,
@@ -1088,7 +1189,11 @@ describe('Production Validation - Phase 4', () => {
             '20240117_001_update_user_preferences',
           ],
           failedMigrations: [
-            { name: '20240115_002_add_indexes', error: 'Duplicate index name', timestamp: '2024-01-15T11:00:00Z' },
+            {
+              name: '20240115_002_add_indexes',
+              error: 'Duplicate index name',
+              timestamp: '2024-01-15T11:00:00Z',
+            },
           ],
           recommendations: [
             'Fix failed migration before deployment',
@@ -1102,7 +1207,9 @@ describe('Production Validation - Phase 4', () => {
         expect(migrationValidation.status).toBe('pending');
         expect(migrationValidation.pending).toBe(2);
         expect(migrationValidation.failed).toBe(1);
-        expect(migrationValidation.recommendations).toContain('Fix failed migration before deployment');
+        expect(migrationValidation.recommendations).toContain(
+          'Fix failed migration before deployment'
+        );
       });
     });
 
@@ -1111,9 +1218,7 @@ describe('Production Validation - Phase 4', () => {
         mockValidateEnvironmentParity.mockResolvedValue({
           parity: {
             score: 0.95, // 95% match
-            differences: [
-              { key: 'CACHE_TTL', staging: '3600', production: '7200', impact: 'low' },
-            ],
+            differences: [{ key: 'CACHE_TTL', staging: '3600', production: '7200', impact: 'low' }],
           },
           configuration: {
             database: { match: true },
@@ -1125,10 +1230,7 @@ describe('Production Validation - Phase 4', () => {
             match: true,
             differences: [],
           },
-          recommendations: [
-            'Environment parity is excellent',
-            'Consider syncing CACHE_TTL values',
-          ],
+          recommendations: ['Environment parity is excellent', 'Consider syncing CACHE_TTL values'],
         });
 
         const parityValidation = await mockValidateEnvironmentParity();
@@ -1173,7 +1275,9 @@ describe('Production Validation - Phase 4', () => {
         expect(parityValidation.parity.score).toBeLessThan(0.8);
         expect(parityValidation.configuration.cache.match).toBe(false);
         expect(parityValidation.dependencies.match).toBe(false);
-        expect(parityValidation.recommendations).toContain('Sync critical configuration differences');
+        expect(parityValidation.recommendations).toContain(
+          'Sync critical configuration differences'
+        );
       });
     });
 
@@ -1194,14 +1298,9 @@ describe('Production Validation - Phase 4', () => {
             monitoring: { status: 'pass', score: 85 },
             testing: { status: 'pass', score: 91 },
           },
-          warnings: [
-            'Monitoring score could be improved',
-          ],
+          warnings: ['Monitoring score could be improved'],
           blockers: [],
-          recommendations: [
-            'Deployment approved',
-            'Enhance monitoring configuration',
-          ],
+          recommendations: ['Deployment approved', 'Enhance monitoring configuration'],
         });
 
         const readinessCheck = await mockCheckDeploymentReadiness();
@@ -1228,9 +1327,7 @@ describe('Production Validation - Phase 4', () => {
             monitoring: { status: 'pass', score: 85 },
             testing: { status: 'fail', score: 55, issues: ['Low test coverage'] },
           },
-          warnings: [
-            'Multiple critical issues detected',
-          ],
+          warnings: ['Multiple critical issues detected'],
           blockers: [
             'Critical environment variables missing',
             'Vulnerable dependencies detected',
@@ -1251,7 +1348,9 @@ describe('Production Validation - Phase 4', () => {
         expect(readinessCheck.overall.ready).toBe(false);
         expect(readinessCheck.overall.score).toBeLessThan(70);
         expect(readinessCheck.blockers.length).toBeGreaterThan(0);
-        expect(readinessCheck.recommendations).toContain('Do not deploy until blockers are resolved');
+        expect(readinessCheck.recommendations).toContain(
+          'Do not deploy until blockers are resolved'
+        );
       });
     });
   });
@@ -1390,8 +1489,18 @@ describe('Production Validation - Phase 4', () => {
           },
           foreignKeys: [
             { table: 'orders', column: 'user_id', references: 'users.id', status: 'healthy' },
-            { table: 'order_items', column: 'order_id', references: 'orders.id', status: 'healthy' },
-            { table: 'order_items', column: 'product_id', references: 'products.id', status: 'healthy' },
+            {
+              table: 'order_items',
+              column: 'order_id',
+              references: 'orders.id',
+              status: 'healthy',
+            },
+            {
+              table: 'order_items',
+              column: 'product_id',
+              references: 'products.id',
+              status: 'healthy',
+            },
             { table: 'payments', column: 'order_id', references: 'orders.id', status: 'healthy' },
           ],
           orphans: {
@@ -1654,7 +1763,9 @@ describe('Production Validation - Phase 4', () => {
         expect(monitoringValidation.infrastructure.healthChecks.configured).toBe(true);
         expect(monitoringValidation.infrastructure.metrics.collection).toBe('active');
         expect(monitoringValidation.services.sentry.status).toBe('active');
-        expect(monitoringValidation.recommendations).toContain('Monitoring infrastructure is comprehensive');
+        expect(monitoringValidation.recommendations).toContain(
+          'Monitoring infrastructure is comprehensive'
+        );
       });
 
       it('should validate alerting configuration', async () => {
@@ -1700,7 +1811,9 @@ describe('Production Validation - Phase 4', () => {
         expect(alertingValidation.channels.slack.configured).toBe(true);
         expect(alertingValidation.channels.pagerduty.configured).toBe(true);
         expect(alertingValidation.rules.active).toBe(15);
-        expect(alertingValidation.recommendations).toContain('Alerting configuration is production-ready');
+        expect(alertingValidation.recommendations).toContain(
+          'Alerting configuration is production-ready'
+        );
       });
 
       it('should validate logging configuration', async () => {
@@ -1863,4 +1976,4 @@ describe('Production Validation - Phase 4', () => {
       expect(checklist.monitoringSetup).toBe(true);
     });
   });
-}); 
+});

@@ -19,7 +19,9 @@ export const createMockCartItem = (overrides: Partial<CartItem> = {}): CartItem 
 /**
  * Create a mock address for different delivery zones
  */
-export const createMockAddress = (zone: 'nearby' | 'distant' | 'international' = 'nearby'): Address => {
+export const createMockAddress = (
+  zone: 'nearby' | 'distant' | 'international' = 'nearby'
+): Address => {
   const baseAddresses = {
     nearby: {
       recipientName: 'Test Customer',
@@ -30,7 +32,7 @@ export const createMockAddress = (zone: 'nearby' | 'distant' | 'international' =
       country: 'US',
     },
     distant: {
-      recipientName: 'Distant Customer', 
+      recipientName: 'Distant Customer',
       street: '456 Broadway',
       city: 'Oakland',
       state: 'CA',
@@ -71,7 +73,10 @@ export const createMockOrder = (overrides: Partial<any> = {}) => ({
 /**
  * Create a mock user profile
  */
-export const createMockProfile = (role: 'CUSTOMER' | 'ADMIN' = 'CUSTOMER', overrides: Partial<any> = {}) => ({
+export const createMockProfile = (
+  role: 'CUSTOMER' | 'ADMIN' = 'CUSTOMER',
+  overrides: Partial<any> = {}
+) => ({
   id: `test-profile-${Date.now()}`,
   email: `test-${role.toLowerCase()}@example.com`,
   name: `Test ${role}`,
@@ -122,7 +127,7 @@ export const createMockCategory = (overrides: Partial<any> = {}) => ({
  */
 export const calculateDeliveryFee = (address: Address): number => {
   const city = address.city.toLowerCase();
-  
+
   if (city.includes('san francisco')) {
     return 5.99;
   } else if (city.includes('oakland')) {
@@ -139,13 +144,13 @@ export const calculateDeliveryFee = (address: Address): number => {
  */
 export const getMinimumOrderAmount = (address: Address): number => {
   const city = address.city.toLowerCase();
-  
+
   if (city.includes('san francisco')) {
-    return 25.00;
+    return 25.0;
   } else if (city.includes('oakland')) {
-    return 50.00;
+    return 50.0;
   } else {
-    return 75.00; // Premium zone or international
+    return 75.0; // Premium zone or international
   }
 };
 
@@ -153,7 +158,7 @@ export const getMinimumOrderAmount = (address: Address): number => {
  * Calculate cart totals including tax and delivery
  */
 export const calculateCartTotals = (items: CartItem[], address?: Address) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const taxRate = 0.0825; // 8.25% tax rate
   const taxAmount = subtotal * taxRate;
   const deliveryFee = address ? calculateDeliveryFee(address) : 0;
@@ -171,7 +176,7 @@ export const calculateCartTotals = (items: CartItem[], address?: Address) => {
  * Check if cart meets minimum order requirements
  */
 export const meetsMinimumOrder = (items: CartItem[], address: Address): boolean => {
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const minimumRequired = getMinimumOrderAmount(address);
   return subtotal >= minimumRequired;
 };
@@ -180,12 +185,12 @@ export const meetsMinimumOrder = (items: CartItem[], address: Address): boolean 
  * Wait for an async operation to complete with timeout
  */
 export const waitForApiCall = async <T>(
-  apiCall: Promise<T>, 
+  apiCall: Promise<T>,
   timeoutMs: number = 5000
 ): Promise<T> => {
   return Promise.race([
     apiCall,
-    new Promise<T>((_, reject) => 
+    new Promise<T>((_, reject) =>
       setTimeout(() => reject(new Error(`API call timed out after ${timeoutMs}ms`)), timeoutMs)
     ),
   ]);
@@ -216,7 +221,7 @@ export const retryOperation = async <T>(
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
@@ -308,11 +313,11 @@ export const isValidPostalCode = (postalCode: string, country: string = 'US'): b
  * Create a complete test cart with multiple items
  */
 export const createTestCart = (itemCount: number = 3): CartItem[] => {
-  return Array.from({ length: itemCount }, (_, index) => 
+  return Array.from({ length: itemCount }, (_, index) =>
     createMockCartItem({
       id: `cart-item-${index + 1}`,
       name: `Test Product ${index + 1}`,
-      price: 10 + (index * 2.5),
+      price: 10 + index * 2.5,
       quantity: 1 + index,
     })
   );
@@ -321,7 +326,9 @@ export const createTestCart = (itemCount: number = 3): CartItem[] => {
 /**
  * Simulate Square payment response
  */
-export const createMockSquarePayment = (status: 'COMPLETED' | 'PENDING' | 'FAILED' = 'COMPLETED') => ({
+export const createMockSquarePayment = (
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' = 'COMPLETED'
+) => ({
   id: `sq-payment-${Date.now()}`,
   status,
   amount_money: {
@@ -351,7 +358,7 @@ export const createOrderWithItems = async (
   customerInfo: { name: string; email: string; phone: string }
 ) => {
   const totals = calculateCartTotals(items, address);
-  
+
   return createMockOrder({
     customerName: customerInfo.name,
     email: customerInfo.email,
@@ -395,4 +402,4 @@ export const centsToDollars = (cents: number): number => {
  */
 export const dollarsToCents = (dollars: number): number => {
   return Math.round(dollars * 100);
-}; 
+};

@@ -24,7 +24,7 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
   useEffect(() => {
     const successMessage = searchParams.get('success');
     const errorMessage = searchParams.get('error');
-    
+
     if (successMessage && successMessage.toLowerCase().includes('magic link')) {
       toast.success('Magic Link Sent! 🪄', {
         description: 'Check your email for a secure sign-in link. It will expire in 1 hour.',
@@ -33,8 +33,8 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
           label: 'Got it',
           onClick: () => {
             // Optional: Could clear the URL params here
-          }
-        }
+          },
+        },
       });
     } else if (successMessage) {
       toast.success('Success!', {
@@ -85,13 +85,8 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
 
       {/* Password form */}
       {method === 'password' && (
-        <form
-          action={signInAction}
-          className="space-y-5"
-        >
-          {redirectUrl && (
-            <input type="hidden" name="redirect" value={redirectUrl} />
-          )}
+        <form action={signInAction} className="space-y-5">
+          {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -150,13 +145,8 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
 
       {/* Magic Link form */}
       {method === 'magic-link' && (
-        <form
-          action={magicLinkSignInAction}
-          className="space-y-5"
-        >
-          {redirectUrl && (
-            <input type="hidden" name="redirect" value={redirectUrl} />
-          )}
+        <form action={magicLinkSignInAction} className="space-y-5">
+          {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="magic-email" className="text-sm font-medium">
@@ -191,4 +181,4 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
       )}
     </div>
   );
-} 
+}

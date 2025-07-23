@@ -41,16 +41,18 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
   const [hasAddress, setHasAddress] = useState<boolean>(!!user?.addresses?.length);
   const router = useRouter();
 
-  const defaultAddress = user?.addresses?.length ? user.addresses[0] : {
-    street: '',
-    street2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'US',
-    isDefaultShipping: true, 
-    isDefaultBilling: true
-  };
+  const defaultAddress = user?.addresses?.length
+    ? user.addresses[0]
+    : {
+        street: '',
+        street2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'US',
+        isDefaultShipping: true,
+        isDefaultBilling: true,
+      };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -89,9 +91,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
       <div className="bg-white shadow-md rounded-lg p-6">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {user?.id && (
-              <input type="hidden" name="id" id="id" value={user.id} />
-            )}
+            {user?.id && <input type="hidden" name="id" id="id" value={user.id} />}
 
             <div className="col-span-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -148,7 +148,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                 <option value="ADMIN">Admin</option>
               </select>
             </div>
-            
+
             <div className="col-span-2 mt-6">
               <div className="flex items-center mb-4">
                 <input
@@ -156,10 +156,13 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                   id="hasAddress"
                   name="hasAddress"
                   checked={hasAddress}
-                  onChange={(e) => setHasAddress(e.target.checked)}
+                  onChange={e => setHasAddress(e.target.checked)}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
-                <label htmlFor="hasAddress" className="ml-2 block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="hasAddress"
+                  className="ml-2 block text-sm font-medium text-gray-700"
+                >
                   Add Address Information
                 </label>
               </div>
@@ -281,7 +284,10 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                       defaultChecked={defaultAddress.isDefaultShipping}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="isDefaultShipping" className="ml-2 block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="isDefaultShipping"
+                      className="ml-2 block text-sm font-medium text-gray-700"
+                    >
                       Default Shipping Address
                     </label>
                   </div>
@@ -296,7 +302,10 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                       defaultChecked={defaultAddress.isDefaultBilling}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="isDefaultBilling" className="ml-2 block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="isDefaultBilling"
+                      className="ml-2 block text-sm font-medium text-gray-700"
+                    >
                       Default Billing Address
                     </label>
                   </div>
@@ -342,8 +351,10 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                     </svg>
                     {isEditing ? 'Updating...' : 'Creating...'}
                   </>
+                ) : isEditing ? (
+                  'Update User'
                 ) : (
-                  isEditing ? 'Update User' : 'Create User'
+                  'Create User'
                 )}
               </button>
             </div>
@@ -352,4 +363,4 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
       </div>
     </div>
   );
-} 
+}

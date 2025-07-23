@@ -11,14 +11,16 @@ The order cleanup system provides a safe, controlled way to remove testing order
 ### 1. Safe Cleanup Workflow (`safe-cleanup-workflow.ts`) ⭐ **RECOMMENDED**
 
 A master workflow script that orchestrates the complete safety process:
+
 - Full database backup before any changes
-- Order-specific backup for granular restore  
+- Order-specific backup for granular restore
 - Testing order cleanup with all safety features
 - Verification and rollback capabilities
 
 ### 2. Database Backup & Restore (`backup-database.ts`, `restore-database.ts`)
 
 Full PostgreSQL database backup and restore scripts using pg_dump:
+
 - Multiple formats (custom, SQL, directory)
 - Compression and verification
 - Metadata tracking and retention management
@@ -83,6 +85,7 @@ pnpm backup-db:schema
 ### 🛡️ Multiple Safety Layers
 
 **Safe Cleanup Workflow (Recommended):**
+
 1. **Full Database Backup**: Complete PostgreSQL dump before any changes
 2. **Order Analysis**: Preview exactly what will be cleaned
 3. **Order-Specific Backup**: JSON backup of orders to be deleted
@@ -91,6 +94,7 @@ pnpm backup-db:schema
 6. **Automatic Verification**: Backup integrity and result validation
 
 **Individual Scripts:**
+
 1. **Dry Run Mode (Default)**: Preview changes before execution
 2. **Automatic Backup**: Creates JSON backup before deletion
 3. **Transaction Rollback**: All changes roll back on error
@@ -113,7 +117,7 @@ The script identifies testing orders using multiple criteria:
 
 - **Test Email Patterns**: `test@`, `demo@`, `example@`, `+test`, `.test`, etc.
 - **Failed Orders**: Orders with `FAILED` payment status
-- **Cancelled Orders**: Orders with `CANCELLED` status  
+- **Cancelled Orders**: Orders with `CANCELLED` status
 - **Old Orders**: Failed/cancelled orders older than 90 days (optional)
 - **Date Ranges**: Orders within specific date ranges
 - **Custom Exclusions**: Specific order IDs to always preserve
@@ -121,6 +125,7 @@ The script identifies testing orders using multiple criteria:
 ### 🎯 What Gets Preserved
 
 The script will **NEVER** delete:
+
 - Orders with production customer emails
 - High-value paid orders (>$100 with PAID status)
 - Orders in the hardcoded exclusion list
@@ -136,20 +141,20 @@ pnpm tsx src/scripts/clean-testing-orders.ts [OPTIONS]
 
 #### Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--dry-run` | Preview what would be deleted | ✅ (default) |
-| `--execute` | Actually perform the deletion | ❌ |
-| `--backup` | Create backup before deletion | ✅ (default) |
-| `--no-backup` | Skip backup creation | ❌ |
-| `--confirm` | Ask for confirmation before deletion | ✅ (default) |
-| `--no-confirm` | Skip confirmation prompts | ❌ |
-| `--test-emails-only` | Only delete orders with test email patterns | ❌ |
-| `--include-old` | Include old failed/cancelled orders (>90 days) | ❌ |
-| `--from="YYYY-MM-DD"` | Delete orders from this date | All dates |
-| `--to="YYYY-MM-DD"` | Delete orders up to this date | All dates |
-| `--exclude-id=ID` | Exclude specific order ID from deletion | None |
-| `--batch-size=N` | Process in batches of N orders | 50 |
+| Option                | Description                                    | Default      |
+| --------------------- | ---------------------------------------------- | ------------ |
+| `--dry-run`           | Preview what would be deleted                  | ✅ (default) |
+| `--execute`           | Actually perform the deletion                  | ❌           |
+| `--backup`            | Create backup before deletion                  | ✅ (default) |
+| `--no-backup`         | Skip backup creation                           | ❌           |
+| `--confirm`           | Ask for confirmation before deletion           | ✅ (default) |
+| `--no-confirm`        | Skip confirmation prompts                      | ❌           |
+| `--test-emails-only`  | Only delete orders with test email patterns    | ❌           |
+| `--include-old`       | Include old failed/cancelled orders (>90 days) | ❌           |
+| `--from="YYYY-MM-DD"` | Delete orders from this date                   | All dates    |
+| `--to="YYYY-MM-DD"`   | Delete orders up to this date                  | All dates    |
+| `--exclude-id=ID`     | Exclude specific order ID from deletion        | None         |
+| `--batch-size=N`      | Process in batches of N orders                 | 50           |
 
 #### Examples
 
@@ -178,13 +183,13 @@ pnpm tsx src/scripts/restore-orders-from-backup.ts --backup-file="path/to/backup
 
 #### Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--backup-file=PATH` | Path to backup JSON file | **Required** |
-| `--dry-run` | Preview what would be restored | ✅ (default) |
-| `--execute` | Actually perform restoration | ❌ |
-| `--no-confirm` | Skip confirmation prompts | ❌ |
-| `--fail-on-conflicts` | Fail if conflicts found | ❌ |
+| Option                | Description                    | Default      |
+| --------------------- | ------------------------------ | ------------ |
+| `--backup-file=PATH`  | Path to backup JSON file       | **Required** |
+| `--dry-run`           | Preview what would be restored | ✅ (default) |
+| `--execute`           | Actually perform restoration   | ❌           |
+| `--no-confirm`        | Skip confirmation prompts      | ❌           |
+| `--fail-on-conflicts` | Fail if conflicts found        | ❌           |
 
 #### Examples
 
@@ -201,6 +206,7 @@ pnpm restore-orders --backup-file="backups/order-cleanup/orders-backup-2024-01-0
 ### Recommended Cleanup Process
 
 1. **Preview First** (Always!)
+
    ```bash
    pnpm clean-orders:preview
    ```
@@ -211,10 +217,11 @@ pnpm restore-orders --backup-file="backups/order-cleanup/orders-backup-2024-01-0
    - Verify no legitimate orders are included
 
 3. **Start with Conservative Options**
+
    ```bash
    # Start with test emails only
    pnpm clean-orders:test-emails
-   
+
    # Then clean specific date ranges if needed
    pnpm tsx src/scripts/clean-testing-orders.ts --execute --from="2024-01-01" --to="2024-01-31"
    ```
@@ -234,11 +241,13 @@ pnpm restore-orders --backup-file="backups/order-cleanup/orders-backup-2024-01-0
 If you need to restore deleted orders:
 
 1. **Locate Backup File**
+
    ```bash
    ls -la backups/order-cleanup/
    ```
 
 2. **Preview Restoration**
+
    ```bash
    pnpm restore-orders --backup-file="path/to/backup.json" --dry-run
    ```
@@ -265,6 +274,7 @@ The cleanup process affects these tables in order:
 ### Referential Integrity
 
 The script maintains database integrity by:
+
 - Deleting in correct dependency order
 - Using database transactions
 - Checking foreign key constraints
@@ -275,6 +285,7 @@ The script maintains database integrity by:
 ### Script Output
 
 The scripts provide detailed logging:
+
 - Configuration summary
 - Orders found and criteria
 - Deletion progress
@@ -284,6 +295,7 @@ The scripts provide detailed logging:
 ### Backup Files
 
 Backup files contain:
+
 - All deleted order data
 - Related data (payments, items, etc.)
 - Metadata (timestamp, configuration)
@@ -374,16 +386,19 @@ Backup files contain:
 ### Common Issues
 
 **"No orders found matching criteria"**
+
 - Review your criteria settings
 - Check date ranges
 - Verify test email patterns
 
 **"Transaction failed and rolled back"**
+
 - Database constraint violation
 - Check foreign key relationships
 - Review error messages for details
 
 **"Backup file not found"**
+
 - Verify backup file path
 - Check backup directory permissions
 - Ensure backup was created successfully
@@ -391,6 +406,7 @@ Backup files contain:
 ### Error Recovery
 
 If cleanup fails:
+
 1. **Check Error Messages**: Review detailed error output
 2. **Database State**: Database should be unchanged due to transaction rollback
 3. **Retry Strategy**: Fix issues and retry with smaller batch sizes
@@ -399,6 +415,7 @@ If cleanup fails:
 ### Getting Help
 
 If you encounter issues:
+
 1. **Check Logs**: Review script output and error messages
 2. **Database Status**: Verify database connectivity and health
 3. **Backup Status**: Ensure backups are available
@@ -433,4 +450,4 @@ If you encounter issues:
 
 The order cleanup system provides a comprehensive, safe way to remove testing orders while protecting production data. Always start with preview mode, use conservative criteria, and maintain backups for emergency recovery.
 
-For questions or issues, refer to the troubleshooting section or consult the development team. 
+For questions or issues, refer to the troubleshooting section or consult the development team.

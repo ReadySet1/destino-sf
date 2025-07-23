@@ -19,4 +19,4 @@ jest.mock('@/lib/db', () => ({
   db: prismaMock,
   prisma: prismaMock,
   default: prismaMock,
-})); 
+}));

@@ -6,7 +6,7 @@ import { Product } from '@prisma/client';
  */
 export function isCateringProduct(product: { category?: { name?: string } }): boolean {
   if (!product?.category?.name) return false;
-  
+
   const categoryName = product.category.name.toLowerCase();
   return categoryName.includes('catering');
 }
@@ -17,7 +17,7 @@ export function isCateringProduct(product: { category?: { name?: string } }): bo
  */
 export function isCateringCategory(categoryName: string): boolean {
   if (!categoryName) return false;
-  
+
   const normalizedName = categoryName.toLowerCase();
   return normalizedName.includes('catering');
-} 
+}

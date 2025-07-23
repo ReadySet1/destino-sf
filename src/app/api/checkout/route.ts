@@ -57,7 +57,9 @@ export async function POST(request: Request) {
     const supabase = await getSupabaseClient();
 
     // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     const { items, customerInfo }: CheckoutRequestBody = await request.json();
 

@@ -1,21 +1,11 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Calendar } from "../ui/calendar";
-import { Label } from "../ui/label";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "../ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import { Calendar } from '../ui/calendar';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 
@@ -60,9 +50,10 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
     <div className="space-y-4">
       <h3 className="text-base font-medium">Delivery Details</h3>
       <p className="text-sm text-muted-foreground mb-4">
-        We offer local delivery services within San Francisco. Please provide your delivery information below.
+        We offer local delivery services within San Francisco. Please provide your delivery
+        information below.
       </p>
-      
+
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="deliveryAddress">Delivery Address</Label>
@@ -70,12 +61,12 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
             id="deliveryAddress"
             placeholder="Enter your full address including street, apt/unit, city, state, zip code"
             value={deliveryAddress}
-            onChange={(e) => onDeliveryAddressChange(e.target.value)}
+            onChange={e => onDeliveryAddressChange(e.target.value)}
             disabled={disabled}
             className="min-h-[80px]"
           />
         </div>
-      
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="deliveryDate">Delivery Date</Label>
@@ -97,7 +88,7 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
                   selected={deliveryDate}
                   onSelect={onDeliveryDateChange}
                   initialFocus
-                  disabled={(date) => {
+                  disabled={date => {
                     // Disable past dates, today, and dates more than 14 days in the future
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -111,7 +102,7 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
               </PopoverContent>
             </Popover>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="deliveryTime">Delivery Time</Label>
             <Select
@@ -123,7 +114,7 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
                 <SelectValue placeholder="Select time" />
               </SelectTrigger>
               <SelectContent>
-                {timeSlots.map((slot) => (
+                {timeSlots.map(slot => (
                   <SelectItem key={slot} value={slot}>
                     {slot}
                   </SelectItem>
@@ -132,14 +123,14 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
             </Select>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
           <Textarea
             id="deliveryNotes"
             placeholder="Add any special instructions for delivery (gate code, preferred entrance, etc.)"
             value={deliveryNotes}
-            onChange={(e) => onDeliveryNotesChange(e.target.value)}
+            onChange={e => onDeliveryNotesChange(e.target.value)}
             disabled={disabled}
           />
         </div>
@@ -148,4 +139,4 @@ const DeliveryDetails: React.FC<DeliveryDetailsProps> = ({
   );
 };
 
-export default DeliveryDetails; 
+export default DeliveryDetails;

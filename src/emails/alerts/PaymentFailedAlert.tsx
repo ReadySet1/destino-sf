@@ -1,17 +1,17 @@
 import * as React from 'react';
-import { 
-  Html, 
-  Body, 
-  Head, 
-  Heading, 
-  Container, 
-  Preview, 
-  Section, 
-  Text, 
+import {
+  Html,
+  Body,
+  Head,
+  Heading,
+  Container,
+  Preview,
+  Section,
+  Text,
   Hr,
   Link,
   Row,
-  Column
+  Column,
 } from '@react-email/components';
 import { PaymentFailedAlertData } from '@/types/alerts';
 
@@ -44,7 +44,7 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
               Order #{order.id} • {formattedTimestamp}
             </Text>
           </Section>
-          
+
           <Section style={styles.alertSection}>
             <Section style={styles.alertBox}>
               <Text style={styles.alertTitle}>⚠️ IMMEDIATE ACTION REQUIRED</Text>
@@ -55,15 +55,19 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Section style={styles.errorSection}>
-            <Heading as="h2" style={styles.sectionTitle}>Error Details</Heading>
+            <Heading as="h2" style={styles.sectionTitle}>
+              Error Details
+            </Heading>
             <Section style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
             </Section>
           </Section>
 
           <Section style={styles.orderSummary}>
-            <Heading as="h2" style={styles.sectionTitle}>Order Information</Heading>
-            
+            <Heading as="h2" style={styles.sectionTitle}>
+              Order Information
+            </Heading>
+
             <Row>
               <Column style={styles.labelColumn}>
                 <Text style={styles.label}>Customer:</Text>
@@ -139,7 +143,9 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Section style={styles.itemsSection}>
-            <Heading as="h2" style={styles.sectionTitle}>Order Items</Heading>
+            <Heading as="h2" style={styles.sectionTitle}>
+              Order Items
+            </Heading>
             {order.items.map((item, index) => (
               <Section key={index} style={styles.orderItem}>
                 <Row>
@@ -148,14 +154,10 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
                   </Column>
                   <Column style={styles.itemNameColumn}>
                     <Text style={styles.itemName}>{item.product.name}</Text>
-                    {item.variant && (
-                      <Text style={styles.variantName}>{item.variant.name}</Text>
-                    )}
+                    {item.variant && <Text style={styles.variantName}>{item.variant.name}</Text>}
                   </Column>
                   <Column style={styles.priceColumn}>
-                    <Text style={styles.itemPrice}>
-                      ${Number(item.price).toFixed(2)}
-                    </Text>
+                    <Text style={styles.itemPrice}>${Number(item.price).toFixed(2)}</Text>
                   </Column>
                 </Row>
               </Section>
@@ -163,7 +165,9 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Section style={styles.actionsSection}>
-            <Heading as="h2" style={styles.sectionTitle}>Recommended Actions</Heading>
+            <Heading as="h2" style={styles.sectionTitle}>
+              Recommended Actions
+            </Heading>
             <Section style={styles.actionsList}>
               <Text style={styles.actionItem}>
                 1. 🔍 Review the error details above and check Square Dashboard for more information
@@ -181,13 +185,13 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Section style={styles.quickActions}>
-            <Link 
+            <Link
               href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
               style={styles.primaryButton}
             >
               View Order in Admin
             </Link>
-            <Link 
+            <Link
               href={`mailto:${order.email}?subject=Payment Issue - Order #${order.id}&body=Hi ${order.customerName},%0D%0A%0D%0AWe encountered an issue processing your payment for order #${order.id}. Please contact us to resolve this.%0D%0A%0D%0AThank you!`}
               style={styles.secondaryButton}
             >
@@ -196,14 +200,12 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Hr style={styles.hr} />
-          
+
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
               This is a critical alert from your Destino SF order management system.
             </Text>
-            <Text style={styles.footerText}>
-              Payment failed at {formattedTimestamp} PST
-            </Text>
+            <Text style={styles.footerText}>Payment failed at {formattedTimestamp} PST</Text>
             <Text style={styles.footerText}>
               <strong>Priority:</strong> High - Immediate attention required
             </Text>
@@ -425,4 +427,4 @@ const styles = {
   },
 };
 
-export default PaymentFailedAlert; 
+export default PaymentFailedAlert;

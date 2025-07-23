@@ -17,15 +17,7 @@ interface BusinessHoursFormProps {
   businessHours: BusinessHour[];
 }
 
-const DAYS_OF_WEEK = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function BusinessHoursForm({ businessHours }: BusinessHoursFormProps) {
   const [hours, setHours] = useState<BusinessHour[]>(businessHours);
@@ -56,24 +48,22 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
     try {
       // Enhanced validation with field focus
       const errors: string[] = [];
-      
+
       for (const hour of hours) {
         if (!hour.isClosed) {
           if (!hour.openTime || !hour.closeTime) {
             errors.push(`Please set both opening and closing times for ${DAYS_OF_WEEK[hour.day]}`);
-            
+
             // Focus on the first empty field
             const dayElement = document.getElementById(
-              !hour.openTime 
-                ? `open-time-${hour.day}` 
-                : `close-time-${hour.day}`
+              !hour.openTime ? `open-time-${hour.day}` : `close-time-${hour.day}`
             );
             if (dayElement && errors.length === 1) {
               setTimeout(() => dayElement.focus(), 100);
             }
           } else if (hour.openTime >= hour.closeTime) {
             errors.push(`Opening time must be before closing time for ${DAYS_OF_WEEK[hour.day]}`);
-            
+
             // Focus on the close time field
             const closeTimeElement = document.getElementById(`close-time-${hour.day}`);
             if (closeTimeElement && errors.length === 1) {
@@ -82,7 +72,7 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
           }
         }
       }
-      
+
       // If validation errors exist, display them and stop submission
       if (errors.length > 0) {
         toast.error(errors[0], {
@@ -98,7 +88,7 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
         ...hour,
         // Convert Date objects to ISO strings for JSON serialization
         createdAt: hour.createdAt instanceof Date ? hour.createdAt.toISOString() : hour.createdAt,
-        updatedAt: hour.updatedAt instanceof Date ? hour.updatedAt.toISOString() : hour.updatedAt
+        updatedAt: hour.updatedAt instanceof Date ? hour.updatedAt.toISOString() : hour.updatedAt,
       }));
 
       const response = await fetch('/api/admin/business-hours', {
@@ -113,9 +103,9 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
         const errorData = await response.json();
         if (errorData.details && Array.isArray(errorData.details)) {
           // Handle structured validation errors from Zod
-          const errorMessage = errorData.details.map((err: any) => 
-            `${err.path.join('.')} - ${err.message}`
-          ).join('; ');
+          const errorMessage = errorData.details
+            .map((err: any) => `${err.path.join('.')} - ${err.message}`)
+            .join('; ');
           throw new Error(errorMessage || errorData.error || 'Failed to update business hours');
         } else {
           throw new Error(errorData.error || 'Failed to update business hours');
@@ -125,13 +115,13 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
       toast.success('Business hours updated successfully', {
         duration: 3000,
         position: 'top-center',
-        description: 'Your store hours have been saved and are now live.'
+        description: 'Your store hours have been saved and are now live.',
       });
     } catch (error) {
       console.error('Error updating business hours:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update business hours', {
         position: 'top-center',
-        duration: 5000
+        duration: 5000,
       });
     } finally {
       setIsSubmitting(false);
@@ -146,9 +136,11 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
             <li key={hour.day} className="px-0 py-4 sm:px-0">
               <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                 <div className="md:col-span-2">
-                  <span className="text-md font-medium text-gray-900">{DAYS_OF_WEEK[hour.day]}</span>
+                  <span className="text-md font-medium text-gray-900">
+                    {DAYS_OF_WEEK[hour.day]}
+                  </span>
                 </div>
-                
+
                 <div className="flex items-center md:col-span-1">
                   <input
                     type="checkbox"
@@ -161,31 +153,37 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
                     Closed
                   </label>
                 </div>
-                
+
                 <div className="md:col-span-3 grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor={`open-time-${hour.day}`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`open-time-${hour.day}`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Opening Time
                     </label>
                     <input
                       type="time"
                       id={`open-time-${hour.day}`}
                       value={hour.openTime || ''}
-                      onChange={(e) => handleTimeChange(index, 'openTime', e.target.value)}
+                      onChange={e => handleTimeChange(index, 'openTime', e.target.value)}
                       disabled={hour.isClosed}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border disabled:opacity-50 disabled:bg-gray-100"
                     />
                   </div>
-                  
+
                   <div>
-                    <label htmlFor={`close-time-${hour.day}`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`close-time-${hour.day}`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Closing Time
                     </label>
                     <input
                       type="time"
                       id={`close-time-${hour.day}`}
                       value={hour.closeTime || ''}
-                      onChange={(e) => handleTimeChange(index, 'closeTime', e.target.value)}
+                      onChange={e => handleTimeChange(index, 'closeTime', e.target.value)}
                       disabled={hour.isClosed}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border disabled:opacity-50 disabled:bg-gray-100"
                     />
@@ -196,7 +194,7 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
           ))}
         </ul>
       </div>
-      
+
       <div className="pt-5">
         <div className="flex justify-end">
           <button
@@ -210,4 +208,4 @@ export default function BusinessHoursForm({ businessHours }: BusinessHoursFormPr
       </div>
     </form>
   );
-} 
+}

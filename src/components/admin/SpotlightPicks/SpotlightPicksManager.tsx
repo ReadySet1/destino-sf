@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SpotlightPick, SpotlightPickFormData, SpotlightPicksManagerProps } from '@/types/spotlight';
+import {
+  SpotlightPick,
+  SpotlightPickFormData,
+  SpotlightPicksManagerProps,
+} from '@/types/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,31 +25,34 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
     const positions = [1, 2, 3, 4] as const;
     return positions.map(position => {
       const existingPick = picks.find(p => p.position === position);
-      return existingPick || {
-        id: `empty-${position}`,
-        position,
-        productId: '',
-        isActive: false,
-        product: {
-          id: '',
-          name: 'No product selected',
-          description: null,
-          images: [],
-          price: 0,
-          slug: null,
-          category: undefined,
-        },
-      } as SpotlightPick;
+      return (
+        existingPick ||
+        ({
+          id: `empty-${position}`,
+          position,
+          productId: '',
+          isActive: false,
+          product: {
+            id: '',
+            name: 'No product selected',
+            description: null,
+            images: [],
+            price: 0,
+            slug: null,
+            category: undefined,
+          },
+        } as SpotlightPick)
+      );
     });
   }, [picks]);
 
   const handleProductSelect = async (position: number, productId: string) => {
     if (!productId) return;
-    
-    const formData: SpotlightPickFormData = { 
-      position: position as 1 | 2 | 3 | 4, 
-      productId, 
-      isActive: true 
+
+    const formData: SpotlightPickFormData = {
+      position: position as 1 | 2 | 3 | 4,
+      productId,
+      isActive: true,
     };
     await handleSavePick(formData);
   };
@@ -124,9 +131,12 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-8xl">
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8 lg:mb-10">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Spotlight Picks Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            Spotlight Picks Management
+          </h1>
           <p className="text-gray-600 mt-2 text-sm sm:text-base">
-            Manage the 4 featured products that appear in the &quot;Spotlight Picks&quot; section on the homepage
+            Manage the 4 featured products that appear in the &quot;Spotlight Picks&quot; section on
+            the homepage
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -147,11 +157,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
             <Eye className="h-4 w-4" />
             Preview
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="flex items-center gap-2 text-sm"
-          >
+          <Button asChild variant="outline" className="flex items-center gap-2 text-sm">
             <a href="/" target="_blank" rel="noopener noreferrer">
               <Eye className="h-4 w-4" />
               View Live
@@ -190,7 +196,8 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         <Alert className="mb-6 sm:mb-8 border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800 text-sm">
-            No spotlight picks are currently active. Add some picks to showcase your featured products on the homepage.
+            No spotlight picks are currently active. Add some picks to showcase your featured
+            products on the homepage.
           </AlertDescription>
         </Alert>
       )}
@@ -208,11 +215,11 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       <div className="mb-8 lg:mb-10">
         <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Spotlight Pick Positions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {normalizedPicks.map((pick) => (
+          {normalizedPicks.map(pick => (
             <SpotlightPickCard
               key={pick.position}
               pick={pick}
-              onProductSelect={(productId) => handleProductSelect(pick.position, productId)}
+              onProductSelect={productId => handleProductSelect(pick.position, productId)}
               onClear={() => handleClearPick(pick.position)}
               isLoading={isLoading}
             />
@@ -230,10 +237,21 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         </CardHeader>
         <CardContent className="text-blue-700">
           <ul className="space-y-2 text-xs sm:text-sm">
-            <li>• <strong>Product Selection:</strong> Choose an existing product to feature in each position</li>
-            <li>• <strong>Automatic Content:</strong> Product details (title, description, image, price) are automatically used</li>
-            <li>• <strong>Flexible Positioning:</strong> Any position can be left empty if you want fewer than 4 picks</li>
-            <li>• <strong>Live Updates:</strong> Changes are reflected immediately on your homepage</li>
+            <li>
+              • <strong>Product Selection:</strong> Choose an existing product to feature in each
+              position
+            </li>
+            <li>
+              • <strong>Automatic Content:</strong> Product details (title, description, image,
+              price) are automatically used
+            </li>
+            <li>
+              • <strong>Flexible Positioning:</strong> Any position can be left empty if you want
+              fewer than 4 picks
+            </li>
+            <li>
+              • <strong>Live Updates:</strong> Changes are reflected immediately on your homepage
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -254,4 +272,4 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       </Dialog>
     </div>
   );
-} 
+}

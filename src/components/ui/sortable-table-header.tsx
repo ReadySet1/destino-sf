@@ -11,27 +11,27 @@ interface SortableTableHeaderProps {
   className?: string;
 }
 
-export function SortableTableHeader({ 
-  column, 
-  children, 
+export function SortableTableHeader({
+  column,
+  children,
   defaultSort = null,
-  className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+  className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
 }: SortableTableHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
   const currentSort = searchParams.get('sort');
   const currentDirection = searchParams.get('direction') as SortDirection;
-  
+
   const isCurrentColumn = currentSort === column;
   const currentSortDirection = isCurrentColumn ? currentDirection : null;
 
   const handleSort = () => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     let newDirection: SortDirection;
-    
+
     if (!isCurrentColumn) {
       // If clicking a different column, start with ascending
       newDirection = 'asc';
@@ -45,7 +45,7 @@ export function SortableTableHeader({
         newDirection = 'asc';
       }
     }
-    
+
     if (newDirection) {
       params.set('sort', column);
       params.set('direction', newDirection);
@@ -53,10 +53,10 @@ export function SortableTableHeader({
       params.delete('sort');
       params.delete('direction');
     }
-    
+
     // Reset to page 1 when sorting changes
     params.set('page', '1');
-    
+
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -64,7 +64,7 @@ export function SortableTableHeader({
     if (!isCurrentColumn) {
       return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
     }
-    
+
     if (currentSortDirection === 'asc') {
       return <ChevronUp className="h-4 w-4 text-gray-600" />;
     } else if (currentSortDirection === 'desc') {
@@ -87,4 +87,4 @@ export function SortableTableHeader({
   );
 }
 
-export default SortableTableHeader; 
+export default SortableTableHeader;

@@ -4,7 +4,7 @@ import { CartIcon } from '../Layout/CartIcon';
 
 export function NavBar() {
   const pathname = usePathname();
-  
+
   // Define navigation items
   const navItems = [
     { name: 'Home', href: '/' },
@@ -22,10 +22,10 @@ export function NavBar() {
           <Link href="/" className="font-bold text-xl text-gray-900">
             Destino SF
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
-            {navItems.map((item) => (
+            {navItems.map(item => (
               <Link
                 key={item.name}
                 href={item.href}
@@ -37,7 +37,7 @@ export function NavBar() {
               </Link>
             ))}
           </div>
-          
+
           {/* Cart Icon */}
           <div className="flex items-center space-x-4">
             <CartIcon />
@@ -46,4 +46,4 @@ export function NavBar() {
       </div>
     </nav>
   );
-} 
+}

@@ -127,14 +127,20 @@ export const safeAdd = (a: number | string | Decimal, b: number | string | Decim
   return toDecimal(a).plus(toDecimal(b));
 };
 
-export const safeSubtract = (a: number | string | Decimal, b: number | string | Decimal): Decimal => {
+export const safeSubtract = (
+  a: number | string | Decimal,
+  b: number | string | Decimal
+): Decimal => {
   return toDecimal(a).minus(toDecimal(b));
 };
 
-export const safeMultiply = (a: number | string | Decimal, b: number | string | Decimal): Decimal => {
+export const safeMultiply = (
+  a: number | string | Decimal,
+  b: number | string | Decimal
+): Decimal => {
   return toDecimal(a).mul(toDecimal(b));
 };
 
 export const safeDivide = (a: number | string | Decimal, b: number | string | Decimal): Decimal => {
   return toDecimal(a).div(toDecimal(b));
-}; 
+};

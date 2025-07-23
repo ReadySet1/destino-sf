@@ -50,28 +50,30 @@ import {
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockSupabase = createClient as jest.MockedFunction<typeof createClient>;
-const mockValidateOrderMinimums = validateOrderMinimums as jest.MockedFunction<typeof validateOrderMinimums>;
+const mockValidateOrderMinimums = validateOrderMinimums as jest.MockedFunction<
+  typeof validateOrderMinimums
+>;
 const mockRevalidatePath = revalidatePath as jest.MockedFunction<typeof revalidatePath>;
 const mockAlertService = AlertService as jest.MockedClass<typeof AlertService>;
 
 describe('Order Actions - Real Implementation Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default mocks
     mockSupabase.mockReturnValue({
       auth: {
-        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null })
-      }
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null }),
+      },
     } as any);
-    
+
     mockValidateOrderMinimums.mockResolvedValue({
       isValid: true,
-      errorMessage: null
+      errorMessage: null,
     });
-    
+
     mockRevalidatePath.mockReturnValue(undefined);
-    
+
     // Mock Prisma operations
     mockPrisma.order.create.mockResolvedValue({
       id: 'order-123',
@@ -108,7 +110,7 @@ describe('Order Actions - Real Implementation Tests', () => {
       profile: null,
       items: [],
     });
-    
+
     mockPrisma.order.findUnique.mockResolvedValue({
       id: 'order-123',
       status: 'PENDING',
@@ -158,11 +160,11 @@ describe('Order Actions - Real Implementation Tests', () => {
             updatedAt: new Date(),
             product: null,
             orderItems: [],
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
-    
+
     mockPrisma.order.update.mockResolvedValue({
       id: 'order-123',
       squareOrderId: 'square-123',
@@ -197,7 +199,7 @@ describe('Order Actions - Real Implementation Tests', () => {
       profile: null,
       items: [],
     });
-    
+
     mockPrisma.product.findMany.mockResolvedValue([]);
     mockPrisma.storeSettings.findFirst.mockResolvedValue({
       id: 'settings-1',
@@ -206,18 +208,18 @@ describe('Order Actions - Real Implementation Tests', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    
+
     // Mock fetch for Square API
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({
         payment_link: {
           url: 'https://checkout.square.com/test',
-          order_id: 'square-order-123'
-        }
-      })
+          order_id: 'square-order-123',
+        },
+      }),
     });
-    
+
     // Mock AlertService
     mockAlertService.mockImplementation(() => ({
       sendNewOrderAlert: jest.fn().mockResolvedValue(undefined),
@@ -234,19 +236,19 @@ describe('Order Actions - Real Implementation Tests', () => {
           name: 'Beef Empanadas',
           price: 12.99,
           quantity: 2,
-          variantId: 'variant-1'
-        }
+          variantId: 'variant-1',
+        },
       ],
       customerInfo: {
         name: 'John Doe',
         email: 'john@example.com',
-        phone: '+1-555-0123'
+        phone: '+1-555-0123',
       },
       fulfillment: {
         method: 'pickup' as const,
-        pickupTime: '2024-01-15T14:00:00.000Z'
+        pickupTime: '2024-01-15T14:00:00.000Z',
       },
-      paymentMethod: PaymentMethod.SQUARE
+      paymentMethod: PaymentMethod.SQUARE,
     };
 
     test('should create pickup order successfully', async () => {
@@ -255,11 +257,11 @@ describe('Order Actions - Real Implementation Tests', () => {
       expect(result.success).toBe(true);
       expect(result.orderId).toBe('order-123');
       expect(result.checkoutUrl).toBe('https://checkout.square.com/test');
-      
+
       // Verify database was called
       expect(mockPrisma.order.create).toHaveBeenCalled();
       expect(mockPrisma.order.update).toHaveBeenCalled();
-      
+
       // Verify revalidation was called
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/orders');
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/orders/order-123');
@@ -268,7 +270,7 @@ describe('Order Actions - Real Implementation Tests', () => {
     test('should handle validation failures', async () => {
       mockValidateOrderMinimums.mockResolvedValueOnce({
         isValid: false,
-        errorMessage: 'Order minimum not met'
+        errorMessage: 'Order minimum not met',
       });
 
       const result = await createOrderAndGenerateCheckoutUrl(validFormData);
@@ -284,8 +286,8 @@ describe('Order Actions - Real Implementation Tests', () => {
         ...validFormData,
         customerInfo: {
           ...validFormData.customerInfo,
-          email: 'invalid-email'
-        }
+          email: 'invalid-email',
+        },
       };
 
       const result = await createOrderAndGenerateCheckoutUrl(invalidFormData);
@@ -311,8 +313,8 @@ describe('Order Actions - Real Implementation Tests', () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         json: jest.fn().mockResolvedValue({
-          errors: [{ code: 'INVALID_REQUEST', detail: 'Invalid location ID' }]
-        })
+          errors: [{ code: 'INVALID_REQUEST', detail: 'Invalid location ID' }],
+        }),
       });
 
       const result = await createOrderAndGenerateCheckoutUrl(validFormData);
@@ -326,16 +328,21 @@ describe('Order Actions - Real Implementation Tests', () => {
 
   describe('updateOrderPayment', () => {
     test('should update payment status successfully', async () => {
-      const result = await updateOrderPayment('order-123', 'square-123', 'PAID', 'Payment processed');
+      const result = await updateOrderPayment(
+        'order-123',
+        'square-123',
+        'PAID',
+        'Payment processed'
+      );
 
       expect(result.id).toBe('order-123');
       expect(result.paymentStatus).toBe('PAID');
       expect(result.status).toBe('PROCESSING');
-      
+
       // Verify database was called
       expect(mockPrisma.order.findUnique).toHaveBeenCalled();
       expect(mockPrisma.order.update).toHaveBeenCalled();
-      
+
       // Verify revalidation was called
       expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/orders/order-123');
     });
@@ -376,7 +383,12 @@ describe('Order Actions - Real Implementation Tests', () => {
         items: [],
       });
 
-      const result = await updateOrderPayment('order-123', 'square-123', 'FAILED', 'Payment failed');
+      const result = await updateOrderPayment(
+        'order-123',
+        'square-123',
+        'FAILED',
+        'Payment failed'
+      );
 
       expect(result.paymentStatus).toBe('FAILED');
       expect(result.status).toBe('CANCELLED');
@@ -385,8 +397,9 @@ describe('Order Actions - Real Implementation Tests', () => {
     test('should handle database errors', async () => {
       mockPrisma.order.update.mockRejectedValueOnce(new Error('Database error'));
 
-      await expect(updateOrderPayment('order-123', 'square-123', 'PAID'))
-        .rejects.toThrow('Database error');
+      await expect(updateOrderPayment('order-123', 'square-123', 'PAID')).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -418,7 +431,7 @@ describe('Order Actions - Real Implementation Tests', () => {
 
       expect(result).toEqual({
         success: false,
-        error: 'Database error'
+        error: 'Database error',
       });
     });
   });
@@ -431,19 +444,19 @@ describe('Order Actions - Real Implementation Tests', () => {
           name: 'Beef Empanadas',
           price: 12.99,
           quantity: 2,
-          variantId: 'variant-1'
-        }
+          variantId: 'variant-1',
+        },
       ],
       customerInfo: {
         name: 'John Doe',
         email: 'john@example.com',
-        phone: '+1-555-0123'
+        phone: '+1-555-0123',
       },
       fulfillment: {
         method: 'pickup' as const,
-        pickupTime: '2024-01-15T14:00:00.000Z'
+        pickupTime: '2024-01-15T14:00:00.000Z',
       },
-      paymentMethod: PaymentMethod.CASH
+      paymentMethod: PaymentMethod.CASH,
     };
 
     test('should create cash order successfully', async () => {
@@ -458,7 +471,7 @@ describe('Order Actions - Real Implementation Tests', () => {
     test('should reject unsupported payment methods', async () => {
       const invalidFormData = {
         ...validFormData,
-        paymentMethod: PaymentMethod.SQUARE
+        paymentMethod: PaymentMethod.SQUARE,
       };
 
       const result = await createManualPaymentOrder(invalidFormData);
@@ -472,7 +485,7 @@ describe('Order Actions - Real Implementation Tests', () => {
     test('should handle validation failures', async () => {
       mockValidateOrderMinimums.mockResolvedValueOnce({
         isValid: false,
-        errorMessage: 'Order minimum not met'
+        errorMessage: 'Order minimum not met',
       });
 
       const result = await createManualPaymentOrder(validFormData);
@@ -491,8 +504,8 @@ describe('Order Actions - Real Implementation Tests', () => {
         name: 'Beef Empanadas',
         price: 12.99,
         quantity: 2,
-        variantId: 'variant-1'
-      }
+        variantId: 'variant-1',
+      },
     ];
 
     test('should validate orders successfully', async () => {
@@ -532,4 +545,4 @@ describe('Order Actions - Real Implementation Tests', () => {
       await expect(validateOrderMinimumsServer(testItems)).rejects.toThrow('Database error');
     });
   });
-}); 
+});

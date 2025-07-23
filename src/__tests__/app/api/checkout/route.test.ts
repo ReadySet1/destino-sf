@@ -38,7 +38,9 @@ const mockCreateOrder = createOrder as jest.MockedFunction<typeof createOrder>;
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>;
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
-const mockApplyStrictRateLimit = applyStrictRateLimit as jest.MockedFunction<typeof applyStrictRateLimit>;
+const mockApplyStrictRateLimit = applyStrictRateLimit as jest.MockedFunction<
+  typeof applyStrictRateLimit
+>;
 
 describe('/api/checkout - POST', () => {
   beforeEach(() => {
@@ -57,9 +59,7 @@ describe('/api/checkout - POST', () => {
 
     // Mock cookies
     mockCookies.mockReturnValue({
-      getAll: jest.fn().mockReturnValue([
-        { name: 'test-cookie', value: 'test-value' },
-      ]),
+      getAll: jest.fn().mockReturnValue([{ name: 'test-cookie', value: 'test-value' }]),
     } as any);
 
     // Mock Supabase client
@@ -158,9 +158,7 @@ describe('/api/checkout - POST', () => {
       console.log('API call failed:', error);
       throw error;
     }
-    
 
-    
     // Assertions
     expect(response.status).toBe(200);
     expect(data.orderId).toBe('order-123');
@@ -205,10 +203,10 @@ describe('/api/checkout - POST', () => {
 
   it('should return 429 when rate limit is exceeded', async () => {
     // Mock rate limiting exceeded
-    const rateLimitResponse = new Response(
-      JSON.stringify({ error: 'Rate limit exceeded' }),
-      { status: 429, headers: { 'Content-Type': 'application/json' } }
-    );
+    const rateLimitResponse = new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    });
     mockApplyStrictRateLimit.mockResolvedValue(rateLimitResponse);
 
     const request = new Request('http://localhost:3000/api/checkout', {

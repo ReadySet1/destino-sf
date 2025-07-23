@@ -19,7 +19,7 @@ describe('Square API Comprehensive Coverage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -112,7 +112,7 @@ describe('Square API Comprehensive Coverage', () => {
     test('should handle Square API errors', async () => {
       const mockError = new Error('Square API Error') as any;
       mockError.body = { errors: [{ code: 'INVALID_REQUEST', detail: 'Invalid line items' }] };
-      
+
       mockSquareService.createOrder.mockRejectedValue(mockError);
 
       await expect(createOrder(validOrderData)).rejects.toThrow('Square API Error');
@@ -201,20 +201,24 @@ describe('Square API Comprehensive Coverage', () => {
 
     test('should handle Square payment errors', async () => {
       const mockError = new Error('Payment declined') as any;
-      mockError.body = { 
-        errors: [{ 
-          code: 'CARD_DECLINED', 
-          detail: 'Your card was declined' 
-        }] 
+      mockError.body = {
+        errors: [
+          {
+            code: 'CARD_DECLINED',
+            detail: 'Your card was declined',
+          },
+        ],
       };
-      
+
       mockSquareService.createPayment.mockRejectedValue(mockError);
 
-      await expect(createPayment(
-        validPaymentData.sourceId,
-        validPaymentData.orderId,
-        validPaymentData.amountCents
-      )).rejects.toThrow('Payment declined');
+      await expect(
+        createPayment(
+          validPaymentData.sourceId,
+          validPaymentData.orderId,
+          validPaymentData.amountCents
+        )
+      ).rejects.toThrow('Payment declined');
     });
 
     test('should handle missing payment in response', async () => {
@@ -222,11 +226,13 @@ describe('Square API Comprehensive Coverage', () => {
         payment: null,
       });
 
-      await expect(createPayment(
-        validPaymentData.sourceId,
-        validPaymentData.orderId,
-        validPaymentData.amountCents
-      )).rejects.toThrow('Failed to create payment');
+      await expect(
+        createPayment(
+          validPaymentData.sourceId,
+          validPaymentData.orderId,
+          validPaymentData.amountCents
+        )
+      ).rejects.toThrow('Failed to create payment');
     });
 
     test('should handle large payment amounts', async () => {
@@ -257,20 +263,24 @@ describe('Square API Comprehensive Coverage', () => {
 
     test('should handle payment processing errors', async () => {
       const processingError = new Error('Payment processing failed') as any;
-      processingError.body = { 
-        errors: [{ 
-          code: 'PROCESSING_ERROR', 
-          detail: 'Unable to process payment at this time' 
-        }] 
+      processingError.body = {
+        errors: [
+          {
+            code: 'PROCESSING_ERROR',
+            detail: 'Unable to process payment at this time',
+          },
+        ],
       };
-      
+
       mockSquareService.createPayment.mockRejectedValue(processingError);
 
-      await expect(createPayment(
-        validPaymentData.sourceId,
-        validPaymentData.orderId,
-        validPaymentData.amountCents
-      )).rejects.toThrow('Payment processing failed');
+      await expect(
+        createPayment(
+          validPaymentData.sourceId,
+          validPaymentData.orderId,
+          validPaymentData.amountCents
+        )
+      ).rejects.toThrow('Payment processing failed');
     });
   });
 
@@ -297,12 +307,12 @@ describe('Square API Comprehensive Coverage', () => {
 
       const orderData = {
         locationId: 'test-location-id',
-        lineItems: [
-          { quantity: '1', catalogObjectId: 'test-item', name: 'Test Item' }
-        ],
+        lineItems: [{ quantity: '1', catalogObjectId: 'test-item', name: 'Test Item' }],
       };
 
-      const promises = Array(3).fill(null).map(() => createOrder(orderData));
+      const promises = Array(3)
+        .fill(null)
+        .map(() => createOrder(orderData));
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
@@ -348,11 +358,13 @@ describe('Square API Comprehensive Coverage', () => {
     test('should handle very long order processing', async () => {
       const longProcessingOrder = {
         locationId: 'test-location-id',
-        lineItems: Array(100).fill(null).map((_, i) => ({
-          quantity: '1',
-          catalogObjectId: `item-${i}`,
-          name: `Item ${i}`,
-        })),
+        lineItems: Array(100)
+          .fill(null)
+          .map((_, i) => ({
+            quantity: '1',
+            catalogObjectId: `item-${i}`,
+            name: `Item ${i}`,
+          })),
       };
 
       const mockOrder = {
@@ -377,4 +389,4 @@ describe('Square API Comprehensive Coverage', () => {
       });
     });
   });
-}); 
+});

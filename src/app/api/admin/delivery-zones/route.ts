@@ -22,7 +22,9 @@ type DeliveryZoneData = z.infer<typeof deliveryZoneSchema>;
 
 // Check if user is admin
 async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return false;
@@ -72,15 +74,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    
+
     try {
       deliveryZoneSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ 
-          error: 'Validation failed', 
-          details: error.errors 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
       }
       throw error;
     }
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
     const zoneData: DeliveryZoneData = body;
 
     let result;
-    
+
     if (zoneData.id) {
       // Update existing zone
       result = await prisma.cateringDeliveryZone.update({
@@ -159,7 +164,7 @@ export async function PUT(request: NextRequest) {
 
     // Update zones in transaction
     const results = await prisma.$transaction(
-      validatedZones.map(zone => 
+      validatedZones.map(zone =>
         prisma.cateringDeliveryZone.update({
           where: { id: zone.id },
           data: {
@@ -192,4 +197,4 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating delivery zones:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

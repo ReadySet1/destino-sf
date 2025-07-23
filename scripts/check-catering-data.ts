@@ -29,28 +29,28 @@ async function checkCateringData(): Promise<CateringDataStatus> {
     appetizerPackages: 0,
     isAppetizerSectionWorking: false,
     issues: [],
-    suggestions: []
+    suggestions: [],
   };
 
   try {
     // Check catering items
     const itemStats = await prisma.cateringItem.aggregate({
       _count: {
-        id: true
+        id: true,
       },
       where: {
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     const zeropriceStats = await prisma.cateringItem.aggregate({
       _count: {
-        id: true
+        id: true,
       },
       where: {
         isActive: true,
-        price: 0
-      }
+        price: 0,
+      },
     });
 
     status.totalItems = itemStats._count.id || 0;
@@ -59,23 +59,23 @@ async function checkCateringData(): Promise<CateringDataStatus> {
     // Check catering packages
     const packageStats = await prisma.cateringPackage.aggregate({
       _count: {
-        id: true
+        id: true,
       },
       where: {
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     const appetizerPackageStats = await prisma.cateringPackage.aggregate({
       _count: {
-        id: true
+        id: true,
       },
       where: {
         isActive: true,
         name: {
-          contains: 'Appetizer Selection'
-        }
-      }
+          contains: 'Appetizer Selection',
+        },
+      },
     });
 
     status.totalPackages = packageStats._count.id || 0;
@@ -108,7 +108,6 @@ async function checkCateringData(): Promise<CateringDataStatus> {
     if (!status.isAppetizerSectionWorking) {
       status.issues.push('Appetizer section will show "packages unavailable" message');
     }
-
   } catch (error) {
     status.issues.push(`Database error: ${error instanceof Error ? error.message : String(error)}`);
     status.suggestions.push('Check database connection and schema');
@@ -124,7 +123,9 @@ function displayResults(status: CateringDataStatus) {
   console.log(`Zero-price Items: ${status.zeropriceItems}`);
   console.log(`Total Packages: ${status.totalPackages}`);
   console.log(`Appetizer Packages: ${status.appetizerPackages}`);
-  console.log(`Appetizer Section Working: ${status.isAppetizerSectionWorking ? '✅ YES' : '❌ NO'}`);
+  console.log(
+    `Appetizer Section Working: ${status.isAppetizerSectionWorking ? '✅ YES' : '❌ NO'}`
+  );
 
   if (status.issues.length > 0) {
     console.log('\n🚨 ISSUES FOUND');
@@ -164,4 +165,4 @@ async function main() {
 }
 
 // Run the script
-main(); 
+main();

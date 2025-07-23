@@ -2,16 +2,16 @@
 
 /**
  * Safe Cleanup Workflow Script
- * 
+ *
  * This master script orchestrates a complete safety workflow for cleaning testing orders:
  * 1. Full database backup before any changes
  * 2. Order-specific backup for granular restore
  * 3. Testing order cleanup with all safety features
  * 4. Verification and rollback capabilities
- * 
+ *
  * This is the RECOMMENDED way to clean testing orders as it provides multiple
  * layers of safety and recovery options.
- * 
+ *
  * Usage:
  *   pnpm tsx src/scripts/safe-cleanup-workflow.ts --preview
  *   pnpm tsx src/scripts/safe-cleanup-workflow.ts --execute
@@ -35,26 +35,26 @@ interface WorkflowConfig {
   // Mode settings
   execute: boolean;
   testEmailsOnly: boolean;
-  
+
   // Date range for cleanup
   fromDate?: string;
   toDate?: string;
-  
+
   // Backup settings
   createFullBackup: boolean;
   createOrderBackup: boolean;
   backupFormat: 'custom' | 'sql' | 'directory';
   compressBackups: boolean;
-  
+
   // Safety settings
   confirmSteps: boolean;
   verifyBackups: boolean;
   pauseBetweenSteps: boolean;
-  
+
   // Cleanup settings
   includeOldOrders: boolean;
   excludeOrderIds: string[];
-  
+
   // Advanced options
   retentionDays: number;
   parallelJobs: number;
@@ -111,7 +111,7 @@ function parseArgs(): WorkflowConfig {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--preview':
         config.execute = false;
@@ -262,40 +262,40 @@ RECOVERY OPTIONS:
  * Execute a shell command and capture output
  */
 async function executeCommand(
-  command: string, 
+  command: string,
   description: string,
   options: { cwd?: string; env?: Record<string, string> } = {}
 ): Promise<StepResult> {
   const startTime = Date.now();
   console.log(`🔄 ${description}...`);
-  
+
   try {
     const result = await execAsync(command, {
       cwd: options.cwd || process.cwd(),
-      env: { ...process.env, ...options.env }
+      env: { ...process.env, ...options.env },
     });
-    
+
     const duration = Date.now() - startTime;
     console.log(`✅ ${description} completed in ${(duration / 1000).toFixed(2)}s`);
-    
+
     return {
       step: description,
       success: true,
       duration,
       message: 'Completed successfully',
-      artifacts: []
+      artifacts: [],
     };
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`❌ ${description} failed: ${errorMessage}`);
-    
+
     return {
       step: description,
       success: false,
       duration,
       message: errorMessage,
-      artifacts: []
+      artifacts: [],
     };
   }
 }
@@ -306,14 +306,14 @@ async function executeCommand(
 async function createDatabaseBackup(config: WorkflowConfig): Promise<StepResult> {
   console.log('\n📦 STEP 1: Creating full database backup');
   console.log('========================================');
-  
+
   if (!config.createFullBackup) {
     console.log('⏭️  Skipping database backup (--no-full-backup)');
     return {
       step: 'Database Backup',
       success: true,
       duration: 0,
-      message: 'Skipped by configuration'
+      message: 'Skipped by configuration',
     };
   }
 
@@ -321,7 +321,7 @@ async function createDatabaseBackup(config: WorkflowConfig): Promise<StepResult>
     `--format=${config.backupFormat}`,
     config.compressBackups ? '--compress' : '--no-compress',
     config.verifyBackups ? '--verify' : '--no-verify',
-    `--retention-days=${config.retentionDays}`
+    `--retention-days=${config.retentionDays}`,
   ];
 
   if (config.backupFormat === 'directory') {
@@ -329,11 +329,8 @@ async function createDatabaseBackup(config: WorkflowConfig): Promise<StepResult>
   }
 
   const command = `pnpm tsx src/scripts/backup-database.ts ${backupArgs.join(' ')}`;
-  
-  return await executeCommand(
-    command, 
-    'Full database backup'
-  );
+
+  return await executeCommand(command, 'Full database backup');
 }
 
 /**
@@ -350,29 +347,26 @@ async function analyzeOrders(config: WorkflowConfig): Promise<StepResult> {
   if (config.testEmailsOnly) {
     cleanupArgs.push('--test-emails-only');
   }
-  
+
   if (config.fromDate) {
     cleanupArgs.push(`--from="${config.fromDate}"`);
   }
-  
+
   if (config.toDate) {
     cleanupArgs.push(`--to="${config.toDate}"`);
   }
-  
+
   if (config.includeOldOrders) {
     cleanupArgs.push('--include-old');
   }
-  
+
   config.excludeOrderIds.forEach(id => {
     cleanupArgs.push(`--exclude-id="${id}"`);
   });
 
   const command = `pnpm tsx src/scripts/clean-testing-orders.ts ${cleanupArgs.join(' ')}`;
-  
-  return await executeCommand(
-    command,
-    'Order analysis (dry run)'
-  );
+
+  return await executeCommand(command, 'Order analysis (dry run)');
 }
 
 /**
@@ -381,25 +375,25 @@ async function analyzeOrders(config: WorkflowConfig): Promise<StepResult> {
 async function createOrderBackup(config: WorkflowConfig): Promise<StepResult> {
   console.log('\n💾 STEP 3: Creating order-specific backup');
   console.log('=========================================');
-  
+
   if (!config.createOrderBackup) {
     console.log('⏭️  Skipping order backup (--no-order-backup)');
     return {
       step: 'Order Backup',
       success: true,
       duration: 0,
-      message: 'Skipped by configuration'
+      message: 'Skipped by configuration',
     };
   }
 
   // The cleanup script will create an order backup automatically when not in dry-run mode
   console.log('ℹ️  Order backup will be created automatically during cleanup step');
-  
+
   return {
     step: 'Order Backup',
     success: true,
     duration: 0,
-    message: 'Will be created during cleanup'
+    message: 'Will be created during cleanup',
   };
 }
 
@@ -416,7 +410,7 @@ async function executeCleanup(config: WorkflowConfig): Promise<StepResult> {
       step: 'Order Cleanup',
       success: true,
       duration: 0,
-      message: 'Preview mode - no changes made'
+      message: 'Preview mode - no changes made',
     };
   }
 
@@ -429,29 +423,26 @@ async function executeCleanup(config: WorkflowConfig): Promise<StepResult> {
   if (config.testEmailsOnly) {
     cleanupArgs.push('--test-emails-only');
   }
-  
+
   if (config.fromDate) {
     cleanupArgs.push(`--from="${config.fromDate}"`);
   }
-  
+
   if (config.toDate) {
     cleanupArgs.push(`--to="${config.toDate}"`);
   }
-  
+
   if (config.includeOldOrders) {
     cleanupArgs.push('--include-old');
   }
-  
+
   config.excludeOrderIds.forEach(id => {
     cleanupArgs.push(`--exclude-id="${id}"`);
   });
 
   const command = `pnpm tsx src/scripts/clean-testing-orders.ts ${cleanupArgs.join(' ')}`;
-  
-  return await executeCommand(
-    command,
-    'Order cleanup execution'
-  );
+
+  return await executeCommand(command, 'Order cleanup execution');
 }
 
 /**
@@ -467,7 +458,7 @@ async function verifyResults(config: WorkflowConfig): Promise<StepResult> {
       step: 'Result Verification',
       success: true,
       duration: 0,
-      message: 'Preview mode - no verification needed'
+      message: 'Preview mode - no verification needed',
     };
   }
 
@@ -480,7 +471,9 @@ async function verifyResults(config: WorkflowConfig): Promise<StepResult> {
     const verifications = [];
 
     if (config.createFullBackup && fs.existsSync(dbBackupDir)) {
-      const dbBackups = fs.readdirSync(dbBackupDir).filter(f => f.includes(new Date().toISOString().split('T')[0]));
+      const dbBackups = fs
+        .readdirSync(dbBackupDir)
+        .filter(f => f.includes(new Date().toISOString().split('T')[0]));
       if (dbBackups.length > 0) {
         verifications.push(`✅ Database backup created: ${dbBackups[0]}`);
       } else {
@@ -489,7 +482,9 @@ async function verifyResults(config: WorkflowConfig): Promise<StepResult> {
     }
 
     if (config.createOrderBackup && fs.existsSync(orderBackupDir)) {
-      const orderBackups = fs.readdirSync(orderBackupDir).filter(f => f.includes(new Date().toISOString().split('T')[0]));
+      const orderBackups = fs
+        .readdirSync(orderBackupDir)
+        .filter(f => f.includes(new Date().toISOString().split('T')[0]));
       if (orderBackups.length > 0) {
         verifications.push(`✅ Order backup created: ${orderBackups[0]}`);
       } else {
@@ -505,15 +500,14 @@ async function verifyResults(config: WorkflowConfig): Promise<StepResult> {
       success: true,
       duration: 100,
       message: 'Verification completed',
-      artifacts: verifications
+      artifacts: verifications,
     };
-
   } catch (error) {
     return {
       step: 'Result Verification',
       success: false,
       duration: 100,
-      message: error instanceof Error ? error.message : 'Verification failed'
+      message: error instanceof Error ? error.message : 'Verification failed',
     };
   }
 }
@@ -524,7 +518,7 @@ async function verifyResults(config: WorkflowConfig): Promise<StepResult> {
 function generateWorkflowReport(result: WorkflowResult, config: WorkflowConfig): void {
   console.log('\n📊 SAFE CLEANUP WORKFLOW REPORT');
   console.log('================================');
-  
+
   console.log('\n🔧 Configuration:');
   console.log(`   Mode: ${config.execute ? '⚡ EXECUTE' : '🔍 PREVIEW'}`);
   console.log(`   Scope: ${config.testEmailsOnly ? 'Test emails only' : 'All matching criteria'}`);
@@ -540,7 +534,7 @@ function generateWorkflowReport(result: WorkflowResult, config: WorkflowConfig):
     const status = step.success ? '✅' : '❌';
     const duration = (step.duration / 1000).toFixed(2);
     console.log(`   ${index + 1}. ${status} ${step.step} (${duration}s) - ${step.message}`);
-    
+
     if (step.artifacts && step.artifacts.length > 0) {
       step.artifacts.forEach(artifact => {
         console.log(`      ${artifact}`);
@@ -551,7 +545,9 @@ function generateWorkflowReport(result: WorkflowResult, config: WorkflowConfig):
   console.log('\n📈 Summary:');
   console.log(`   Overall status: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);
   console.log(`   Total duration: ${(result.totalDuration / 1000).toFixed(2)} seconds`);
-  console.log(`   Steps completed: ${result.steps.filter(s => s.success).length}/${result.steps.length}`);
+  console.log(
+    `   Steps completed: ${result.steps.filter(s => s.success).length}/${result.steps.length}`
+  );
 
   if (Object.keys(result.backups).length > 0) {
     console.log('\n💾 Backups Created:');
@@ -606,17 +602,17 @@ function generateWorkflowReport(result: WorkflowResult, config: WorkflowConfig):
 async function askForConfirmation(message: string, context?: string[]): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (context && context.length > 0) {
       console.log('\nℹ️  Context:');
       context.forEach(line => console.log(`   ${line}`));
       console.log('');
     }
-    
-    rl.question(`${message} (y/N): `, (answer) => {
+
+    rl.question(`${message} (y/N): `, answer => {
       rl.close();
       resolve(answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes');
     });
@@ -629,10 +625,10 @@ async function askForConfirmation(message: string, context?: string[]): Promise<
 async function pauseForReview(stepName: string): Promise<void> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     rl.question(`\n⏸️  ${stepName} completed. Press Enter to continue...`, () => {
       rl.close();
       resolve();
@@ -659,9 +655,9 @@ async function main(): Promise<void> {
       backups: {},
       cleanup: {
         ordersDeleted: 0,
-        dataDeleted: 0
+        dataDeleted: 0,
       },
-      errors: []
+      errors: [],
     };
 
     const workflowStartTime = Date.now();
@@ -683,14 +679,11 @@ async function main(): Promise<void> {
         '• Analyze orders matching your criteria',
         config.createOrderBackup ? '• Create order-specific backup' : '• Skip order backup',
         '• Delete matching testing orders',
-        '• Verify results and generate report'
+        '• Verify results and generate report',
       ];
 
-      const confirmed = await askForConfirmation(
-        'Continue with safe cleanup workflow?',
-        context
-      );
-      
+      const confirmed = await askForConfirmation('Continue with safe cleanup workflow?', context);
+
       if (!confirmed) {
         console.log('❌ Workflow cancelled by user');
         return;
@@ -701,7 +694,7 @@ async function main(): Promise<void> {
       // Step 1: Database backup
       const dbBackupResult = await createDatabaseBackup(config);
       result.steps.push(dbBackupResult);
-      
+
       if (!dbBackupResult.success && config.createFullBackup) {
         result.errors.push('Database backup failed');
         throw new Error('Critical step failed: Database backup');
@@ -714,7 +707,7 @@ async function main(): Promise<void> {
       // Step 2: Order analysis
       const analysisResult = await analyzeOrders(config);
       result.steps.push(analysisResult);
-      
+
       if (!analysisResult.success) {
         result.errors.push('Order analysis failed');
         throw new Error('Critical step failed: Order analysis');
@@ -735,7 +728,7 @@ async function main(): Promise<void> {
       // Step 4: Order cleanup
       const cleanupResult = await executeCleanup(config);
       result.steps.push(cleanupResult);
-      
+
       if (!cleanupResult.success && config.execute) {
         result.errors.push('Order cleanup failed');
         // Don't throw here - we want to continue to verification
@@ -752,7 +745,6 @@ async function main(): Promise<void> {
       if (!verificationResult.success) {
         result.errors.push('Result verification failed');
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       result.errors.push(errorMessage);
@@ -772,20 +764,19 @@ async function main(): Promise<void> {
     } else {
       console.log('\n🎉 Workflow completed successfully!');
     }
-
   } catch (error) {
     console.error('\n💥 Workflow failed:', error);
-    
+
     if (error instanceof Error) {
       console.error('Error details:', error.message);
     }
-    
+
     process.exit(1);
   }
 }
 
 // Execute the script
-main().catch((error) => {
+main().catch(error => {
   console.error('Unhandled error:', error);
   process.exit(1);
-}); 
+});

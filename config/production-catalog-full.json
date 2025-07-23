@@ -7,9 +7,7 @@
     "version": 1715023446372,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Budin de Pera",
       "description": "Anjou pear bread pudding, golden raisins, cajeta - dark rum sauce, and vanilla crème.",
@@ -23,9 +21,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "IKVWD4I6U75XJPRETZSGTR5Z",
             "name": "Budin de Pera",
@@ -37,9 +33,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -54,9 +48,7 @@
       ],
       "description_html": "<p>Anjou pear bread pudding, golden raisins, cajeta - dark rum sauce, and vanilla crème.</p>",
       "description_plaintext": "Anjou pear bread pudding, golden raisins, cajeta - dark rum sauce, and vanilla crème.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -72,9 +64,7 @@
     "version": 1715023446372,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Flan de Lucuma",
       "description": "Peruvian lucuma flan and bittersweet cocoa nib tuile.",
@@ -88,9 +78,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "WU47YPQJKGLW2CJJG2CDWQNB",
             "name": "Flan de Lucuma",
@@ -102,9 +90,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -119,9 +105,7 @@
       ],
       "description_html": "<p>Peruvian lucuma flan and bittersweet cocoa nib tuile.</p>",
       "description_plaintext": "Peruvian lucuma flan and bittersweet cocoa nib tuile.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -137,9 +121,7 @@
     "version": 1715023446372,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Panna Cotta con Mermelada de Sauco",
       "description": "Lemon – buttermilk panna cotta, elderberry reduction, and pepita brittle.",
@@ -153,9 +135,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "4D7AYN5SWCJOJLZ2J3VZILPC",
             "name": "Panna Cotta con Mermelada de Sauco",
@@ -167,9 +147,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -184,9 +162,7 @@
       ],
       "description_html": "<p>Lemon – buttermilk panna cotta, elderberry reduction, and pepita brittle.</p>",
       "description_plaintext": "Lemon – buttermilk panna cotta, elderberry reduction, and pepita brittle.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -226,9 +202,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -240,9 +214,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "XUZHAOVFRKZ3LCU2OMB7TMB6"
-      ],
+      "image_ids": ["XUZHAOVFRKZ3LCU2OMB7TMB6"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -255,9 +227,7 @@
       ],
       "description_html": "<p>Easter Special Alert! Hop into the season with our Alfajores de Lucuma! 10 buttery cookies filled with dreamy lucuma dulce de leche- the perfect combo of sweet &amp; creamy goodness. Treat yourself or share the love the Easter!</p>",
       "description_plaintext": "Easter Special Alert! Hop into the season with our Alfajores de Lucuma! 10 buttery cookies filled with dreamy lucuma dulce de leche- the perfect combo of sweet & creamy goodness. Treat yourself or share the love the Easter!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -297,9 +267,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -310,9 +278,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "NUELQ37NHFJ2QQFONJELSA3A"
-      ],
+      "image_ids": ["NUELQ37NHFJ2QQFONJELSA3A"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -321,9 +287,7 @@
       ],
       "description_html": "<p>Spiced chocolate fritters, cinnamon sugar, jalea de aji amarillo, and chocolate reduction.</p>",
       "description_plaintext": "Spiced chocolate fritters, cinnamon sugar, jalea de aji amarillo, and chocolate reduction.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -363,9 +327,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -376,9 +338,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "N7ITHVEK6ZEXQVCEJ5JKWINF"
-      ],
+      "image_ids": ["N7ITHVEK6ZEXQVCEJ5JKWINF"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -387,9 +347,7 @@
       ],
       "description_html": "<p>Mint mojo.</p>",
       "description_plaintext": "Mint mojo.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -405,9 +363,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "Empanadas- Huacatay Chicken (frozen- 4 pack)",
       "description": "Bringing back a favorite- just in time for the Holidays! Our huacatay chicken empanadas are divine! Savory Peruvian black mint with corn and spinach are truly satisfying- leaving you craving for more. Don't forget our Aji Huacatay salsa which is a perfect, spicy compliment! Seasonal item, while inventory lasts.",
@@ -421,9 +377,7 @@
           "version": 1700164050172,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "ZOOVARL76JAPJGN524L2YW6Y",
             "name": "Empanadas",
@@ -435,9 +389,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -449,9 +401,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "SYPA7DT6PANCURAWSGU6ID3N"
-      ],
+      "image_ids": ["SYPA7DT6PANCURAWSGU6ID3N"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -464,9 +414,7 @@
       ],
       "description_html": "<p>Bringing back a favorite- just in time for the Holidays! Our huacatay chicken empanadas are divine! Savory Peruvian black mint with corn and spinach are truly satisfying- leaving you craving for more. Don&#39;t forget our Aji Huacatay salsa which is a perfect, spicy compliment! Seasonal item, while inventory lasts.</p>",
       "description_plaintext": "Bringing back a favorite- just in time for the Holidays! Our huacatay chicken empanadas are divine! Savory Peruvian black mint with corn and spinach are truly satisfying- leaving you craving for more. Don't forget our Aji Huacatay salsa which is a perfect, spicy compliment! Seasonal item, while inventory lasts.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -506,9 +454,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -519,9 +465,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "X7HRMGYKOXIZNPI67ADJ3YAF"
-      ],
+      "image_ids": ["X7HRMGYKOXIZNPI67ADJ3YAF"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -530,9 +474,7 @@
       ],
       "description_html": "<p>Crema de rocoto.</p>",
       "description_plaintext": "Crema de rocoto.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -548,9 +490,7 @@
     "version": 1715023446372,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Anticuchos de Pollo",
       "description": "Chicken hearts, aji panca, and salsa criolla.",
@@ -564,9 +504,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "6QFGNLUBPYQVGJYCBHZBGWG7",
             "name": "Anticuchos de Pollo",
@@ -578,9 +516,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -590,9 +526,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "ZBN3YJJBVB6WOTACZA2XVJMO"
-      ],
+      "image_ids": ["ZBN3YJJBVB6WOTACZA2XVJMO"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -601,9 +535,7 @@
       ],
       "description_html": "<p>Chicken hearts, aji panca, and salsa criolla.</p>",
       "description_plaintext": "Chicken hearts, aji panca, and salsa criolla.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -642,9 +574,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -655,18 +585,14 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "66YOQ6NMMWLXFYA5TCZWPHN2"
-      ],
+      "image_ids": ["66YOQ6NMMWLXFYA5TCZWPHN2"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
           "ordinal": 343597383680
         }
       ],
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -682,12 +608,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "(Catering) Appetizer Platter- Tier 2",
       "description": "25 pieces. Please select one of the following: \n\nCEVICHE– all types of ceviche are served in endive boats \n*peruvian– wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf \n*mexican– wild mahi mahi / tiger prawns / chipotle / fried leeks -gf  \n*carpaccio- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf \n\nAREPAS WITH ROPA VIEJA- cornmeal biscuits / slow-braised pork shoulder / queso fresco -gf \n\nQUINOA ARANCINI BALLS– white quinoa / mozzarella / shitake / romesco salsa / marcona almonds –vg \n\nCAMOTITOS- sweet potato puree / coconut milk / shitake / rice cracker / poppyseeds –gf, vg, vgn \n\nANTICUCHOS DE POLLO– free range chicken breast skewers / smoky pepper marinade -gf \n\nCAMARONES- sautéed prawns / corn-goat cheese crème / corn tortilla chips -gf",
@@ -710,12 +632,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "CEVICHE",
@@ -727,9 +645,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -740,12 +656,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "AREPAS WITH ROPA VIEJA",
@@ -757,9 +669,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -770,12 +680,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "QUINOA ARANCINI BALLS",
@@ -787,9 +693,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -800,12 +704,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "CAMOTITOS",
@@ -817,9 +717,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -830,12 +728,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "ANTICUCHOS DE POLLO",
@@ -847,9 +741,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -860,12 +752,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "Z5WTRQ5OMJ6RZUI5ZXJSG54R",
             "name": "CAMARONES",
@@ -877,9 +765,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -891,9 +777,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "7MVYBXCNXCL2YTLWDDHU2XZU"
-      ],
+      "image_ids": ["7MVYBXCNXCL2YTLWDDHU2XZU"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -906,9 +790,7 @@
       ],
       "description_html": "<p>25 pieces. Please select one of the following: <br/><br/>CEVICHE– all types of ceviche are served in endive boats <br/>*peruvian– wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf <br/>*mexican– wild mahi mahi / tiger prawns / chipotle / fried leeks -gf  <br/>*carpaccio- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf <br/><br/>AREPAS WITH ROPA VIEJA- cornmeal biscuits / slow-braised pork shoulder / queso fresco -gf <br/><br/>QUINOA ARANCINI BALLS– white quinoa / mozzarella / shitake / romesco salsa / marcona almonds –vg <br/><br/>CAMOTITOS- sweet potato puree / coconut milk / shitake / rice cracker / poppyseeds –gf, vg, vgn <br/><br/>ANTICUCHOS DE POLLO– free range chicken breast skewers / smoky pepper marinade -gf <br/><br/>CAMARONES- sautéed prawns / corn-goat cheese crème / corn tortilla chips -gf <br/></p>",
       "description_plaintext": "25 pieces. Please select one of the following: \n\nCEVICHE– all types of ceviche are served in endive boats \n*peruvian– wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf \n*mexican– wild mahi mahi / tiger prawns / chipotle / fried leeks -gf  \n*carpaccio- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf \n\nAREPAS WITH ROPA VIEJA- cornmeal biscuits / slow-braised pork shoulder / queso fresco -gf \n\nQUINOA ARANCINI BALLS– white quinoa / mozzarella / shitake / romesco salsa / marcona almonds –vg \n\nCAMOTITOS- sweet potato puree / coconut milk / shitake / rice cracker / poppyseeds –gf, vg, vgn \n\nANTICUCHOS DE POLLO– free range chicken breast skewers / smoky pepper marinade -gf \n\nCAMARONES- sautéed prawns / corn-goat cheese crème / corn tortilla chips -gf",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -924,12 +806,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "(Catering) Appetizer Platter- Tier 1",
       "description": "25 pieces. Please select one of the following: <br /><br />AREPAS- venezuelan cornmeal biscuits / pineapple-cilantro sauce -gf, vg, vgn<br />ALBONDIGAS- baked pork meatballs / caribbean-10 spice rub / mango reduction -gf <br />MT. TAM MONTADO- cowgirl creamery’s mt. tam / jalea de aji / rice cracker -gf, vg <br />ROPA VIEJA– slow-braised pork shoulder / roma tomatoes / plantain chips -gf <br />CAUSA- savory potato balls / lime / sweet 100 tomato / olive puree / rice cracker -gf, vg, vgn<br />",
@@ -943,12 +821,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NFC2P7ZFSEU2ZWIMXG7I3W7U",
             "name": "AREPAS",
@@ -960,9 +834,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -973,12 +845,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NFC2P7ZFSEU2ZWIMXG7I3W7U",
             "name": "ALBONDIGAS",
@@ -990,9 +858,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1003,12 +869,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NFC2P7ZFSEU2ZWIMXG7I3W7U",
             "name": "MT. TAM MONTADO",
@@ -1020,9 +882,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1033,12 +893,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NFC2P7ZFSEU2ZWIMXG7I3W7U",
             "name": "ROPA VIEJA",
@@ -1050,9 +906,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1063,12 +917,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NFC2P7ZFSEU2ZWIMXG7I3W7U",
             "name": "CAUSA",
@@ -1080,9 +930,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1094,9 +942,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "PV6JI4LL7PHKKRFONUAOEPYF"
-      ],
+      "image_ids": ["PV6JI4LL7PHKKRFONUAOEPYF"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1109,9 +955,7 @@
       ],
       "description_html": "<p>25 pieces. Please select one of the following: &lt;br /&gt;&lt;br /&gt;AREPAS- venezuelan cornmeal biscuits / pineapple-cilantro sauce -gf, vg, vgn&lt;br /&gt;ALBONDIGAS- baked pork meatballs / caribbean-10 spice rub / mango reduction -gf &lt;br /&gt;MT. TAM MONTADO- cowgirl creamery’s mt. tam / jalea de aji / rice cracker -gf, vg &lt;br /&gt;ROPA VIEJA– slow-braised pork shoulder / roma tomatoes / plantain chips -gf &lt;br /&gt;CAUSA- savory potato balls / lime / sweet 100 tomato / olive puree / rice cracker -gf, vg, vgn&lt;br /&gt;</p>",
       "description_plaintext": "25 pieces. Please select one of the following: <br /><br />AREPAS- venezuelan cornmeal biscuits / pineapple-cilantro sauce -gf, vg, vgn<br />ALBONDIGAS- baked pork meatballs / caribbean-10 spice rub / mango reduction -gf <br />MT. TAM MONTADO- cowgirl creamery’s mt. tam / jalea de aji / rice cracker -gf, vg <br />ROPA VIEJA– slow-braised pork shoulder / roma tomatoes / plantain chips -gf <br />CAUSA- savory potato balls / lime / sweet 100 tomato / olive puree / rice cracker -gf, vg, vgn<br />",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1127,12 +971,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "(Catering) Appetizer Platter- Tier 3",
       "description": "25 pieces. Please select one of the following:<br /><br />FISH TACOS- butterfish / sliced mango / chipotle / pico de gallo / corn tortilla chips -gf<br /><br />EMPANADAS– these pastries are available with the following fillings:<br />*chicken- free-range chicken breast / cream–aji chile reduction / parmesan <br />*pork- ground hampshire pork / manzanilla olives / black mission figs / caribbean spices<br />*beef- ground beef / golden raisins / pimiento stuffed olives / egg / pimenton<br />*vegetarian- hearts of palms / white cheddar / cilantro / grana padano parmesan -vg<br /><br />VEGGIES A LA PARILLA- seasonal veggies / soy-honey glaze -vg<br /><br />CHURRASCO- grass fed top sirloin / chimichurri / plantain chips -gf<br /><br />PERUANITOS– angus beef mini-burgers / smoky aji panca pepper / pickled onion relish",
@@ -1146,12 +986,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "ITHFHJ2LKOZ55ZOUXMN5VGMI",
             "name": "FISH TACOS",
@@ -1163,9 +999,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1176,12 +1010,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "ITHFHJ2LKOZ55ZOUXMN5VGMI",
             "name": "EMPANADAS",
@@ -1193,9 +1023,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1206,12 +1034,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "ITHFHJ2LKOZ55ZOUXMN5VGMI",
             "name": "VEGGIES A LA PARILLA",
@@ -1223,9 +1047,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1236,12 +1058,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "ITHFHJ2LKOZ55ZOUXMN5VGMI",
             "name": "CHURRASCO",
@@ -1253,9 +1071,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1266,12 +1082,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "ITHFHJ2LKOZ55ZOUXMN5VGMI",
             "name": "PERUANITOS",
@@ -1283,9 +1095,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1297,9 +1107,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "CJ66BINBQU46JMG5JAWJDY7U"
-      ],
+      "image_ids": ["CJ66BINBQU46JMG5JAWJDY7U"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1312,9 +1120,7 @@
       ],
       "description_html": "<p>25 pieces. Please select one of the following:&lt;br /&gt;&lt;br /&gt;FISH TACOS- butterfish / sliced mango / chipotle / pico de gallo / corn tortilla chips -gf&lt;br /&gt;&lt;br /&gt;EMPANADAS– these pastries are available with the following fillings:&lt;br /&gt;*chicken- free-range chicken breast / cream–aji chile reduction / parmesan &lt;br /&gt;*pork- ground hampshire pork / manzanilla olives / black mission figs / caribbean spices&lt;br /&gt;*beef- ground beef / golden raisins / pimiento stuffed olives / egg / pimenton&lt;br /&gt;*vegetarian- hearts of palms / white cheddar / cilantro / grana padano parmesan -vg&lt;br /&gt;&lt;br /&gt;VEGGIES A LA PARILLA- seasonal veggies / soy-honey glaze -vg&lt;br /&gt;&lt;br /&gt;CHURRASCO- grass fed top sirloin / chimichurri / plantain chips -gf&lt;br /&gt;&lt;br /&gt;PERUANITOS– angus beef mini-burgers / smoky aji panca pepper / pickled onion relish</p>",
       "description_plaintext": "25 pieces. Please select one of the following:<br /><br />FISH TACOS- butterfish / sliced mango / chipotle / pico de gallo / corn tortilla chips -gf<br /><br />EMPANADAS– these pastries are available with the following fillings:<br />*chicken- free-range chicken breast / cream–aji chile reduction / parmesan <br />*pork- ground hampshire pork / manzanilla olives / black mission figs / caribbean spices<br />*beef- ground beef / golden raisins / pimiento stuffed olives / egg / pimenton<br />*vegetarian- hearts of palms / white cheddar / cilantro / grana padano parmesan -vg<br /><br />VEGGIES A LA PARILLA- seasonal veggies / soy-honey glaze -vg<br /><br />CHURRASCO- grass fed top sirloin / chimichurri / plantain chips -gf<br /><br />PERUANITOS– angus beef mini-burgers / smoky aji panca pepper / pickled onion relish",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1330,12 +1136,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "(Catering) Dessert Bites",
       "description": "25 pieces. Please select one of the following:<br /><br />ALFAJORES– south american butter cookies / dulce de leche<br /><br />CHOCOLATE BUÑUELOS- triple chocolate fritters / cinnamon sugar / aji amarillo pepper jelly",
@@ -1349,12 +1151,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "DFS3Y2O6WFN6JFCJ2CDERB4H",
             "name": "ALFAJORES",
@@ -1366,9 +1164,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1379,12 +1175,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "DFS3Y2O6WFN6JFCJ2CDERB4H",
             "name": "CHOCOLATE BUÑUELOS",
@@ -1396,9 +1188,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1410,9 +1200,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "4ODXBNVXGRH7X3UGW667WHRX"
-      ],
+      "image_ids": ["4ODXBNVXGRH7X3UGW667WHRX"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1425,9 +1213,7 @@
       ],
       "description_html": "<p>25 pieces. Please select one of the following:&lt;br /&gt;&lt;br /&gt;ALFAJORES– south american butter cookies / dulce de leche&lt;br /&gt;&lt;br /&gt;CHOCOLATE BUÑUELOS- triple chocolate fritters / cinnamon sugar / aji amarillo pepper jelly</p>",
       "description_plaintext": "25 pieces. Please select one of the following:<br /><br />ALFAJORES– south american butter cookies / dulce de leche<br /><br />CHOCOLATE BUÑUELOS- triple chocolate fritters / cinnamon sugar / aji amarillo pepper jelly",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1443,9 +1229,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "(Catering) Snack Platter",
       "description": "Plantain Chips with Aji Amarillo-cream sauce.\n\nSmall platter: 10 people. Large platter: 25 people.",
@@ -1468,9 +1252,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "EABNAOBNDNAIBXKMEFIIM4BH",
             "name": "(Catering) Snacks Platter",
@@ -1482,9 +1264,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1496,9 +1276,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "X7HRMGYKOXIZNPI67ADJ3YAF"
-      ],
+      "image_ids": ["X7HRMGYKOXIZNPI67ADJ3YAF"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1511,9 +1289,7 @@
       ],
       "description_html": "<p>Plantain Chips with Aji Amarillo-cream sauce.<br/><br/>Small platter: 10 people. Large platter: 25 people.</p>",
       "description_plaintext": "Plantain Chips with Aji Amarillo-cream sauce.\n\nSmall platter: 10 people. Large platter: 25 people.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1529,9 +1305,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "(Catering) Salads/Starters",
       "description": "3oz portion. Choose from the following:<br /><br />ENSALADA DE DESTINO- baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette -gf, vg, vgn<br /><br />QUINOA SALAD- light quinoa salad / jicama / seasonal vegetables / mint mojo -gf, vg, vgn<br /><br />CAUSA- yukon potato / lime / sweet 100 tomatoes / don alfonso olives -gf, vg, vgn<br /><br />ARUGULA-JICAMA SALAD- baby arugula / jicama / lemon / radish / honey / olive oil -gf, vg, vgn",
@@ -1545,9 +1319,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "2UCQ3D6QDIZSJOZQGD2IBIAQ",
             "name": "ENSALADA DE DESTINO",
@@ -1559,9 +1331,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1572,9 +1342,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "2UCQ3D6QDIZSJOZQGD2IBIAQ",
             "name": "QUINOA SALAD",
@@ -1586,9 +1354,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1599,9 +1365,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "2UCQ3D6QDIZSJOZQGD2IBIAQ",
             "name": "CAUSA",
@@ -1613,9 +1377,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1626,9 +1388,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "2UCQ3D6QDIZSJOZQGD2IBIAQ",
             "name": "ARUGULA-JICAMA SALAD",
@@ -1640,9 +1400,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1654,9 +1412,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "QOORTMR22NOZ2G5ZC6ARMS2Y"
-      ],
+      "image_ids": ["QOORTMR22NOZ2G5ZC6ARMS2Y"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1669,9 +1425,7 @@
       ],
       "description_html": "<p>3oz portion. Choose from the following:&lt;br /&gt;&lt;br /&gt;ENSALADA DE DESTINO- baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;QUINOA SALAD- light quinoa salad / jicama / seasonal vegetables / mint mojo -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;CAUSA- yukon potato / lime / sweet 100 tomatoes / don alfonso olives -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;ARUGULA-JICAMA SALAD- baby arugula / jicama / lemon / radish / honey / olive oil -gf, vg, vgn</p>",
       "description_plaintext": "3oz portion. Choose from the following:<br /><br />ENSALADA DE DESTINO- baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette -gf, vg, vgn<br /><br />QUINOA SALAD- light quinoa salad / jicama / seasonal vegetables / mint mojo -gf, vg, vgn<br /><br />CAUSA- yukon potato / lime / sweet 100 tomatoes / don alfonso olives -gf, vg, vgn<br /><br />ARUGULA-JICAMA SALAD- baby arugula / jicama / lemon / radish / honey / olive oil -gf, vg, vgn",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1687,12 +1441,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "(Catering) Cheese & Charcuterie Platter",
       "description": "Selection of local, imported artesan cheese and charcuterie. \n\nSmall platter: 10-15 people, Large platter: 20-30 people.",
@@ -1715,12 +1465,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "DBXG454GST4YZFXA7TCNKDZC",
             "name": "Large Cheese & Charcuterie Platter",
@@ -1732,9 +1478,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1746,9 +1490,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "3LGRZ72BU7RDALAI2ZUW42GV"
-      ],
+      "image_ids": ["3LGRZ72BU7RDALAI2ZUW42GV"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1761,9 +1503,7 @@
       ],
       "description_html": "<p>Selection of local, imported artesan cheese and charcuterie. <br/><br/>Small platter: 10-15 people, Large platter: 20-30 people.</p>",
       "description_plaintext": "Selection of local, imported artesan cheese and charcuterie. \n\nSmall platter: 10-15 people, Large platter: 20-30 people.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -1779,9 +1519,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "(Catering) Side Dishes",
       "description": "4oz portion. Please select from the following:<br /><br />KALE- white quinoa / raisins / pine nuts -gf, vg, vgn  <br /><br />BLACK BEANS- caribbean black beans -gf, vg, vgn  <br /><br />GALLO PINTO- black beans / white rice / herbs -gf, vg, vgn<br /><br />ARROZ BLANCO- white rice / garlic / peruvian choclo -gf, vg, vgn  <br /><br />ARROZ ROJO- tomato sofrito rice / oregano / english peas -gf, vg, vgn  <br /><br />ARROZ VERDE- cilantro infused rice / bell pepper / spices -gf, vg, vgn<br /><br />GARLIC-CHIPOTLE MASHED POTATOES- yukon potato / chipotle / garlic / cream -gf, vg",
@@ -1795,9 +1533,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "KALE",
@@ -1809,9 +1545,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1822,9 +1556,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "BLACK BEANS",
@@ -1836,9 +1568,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1849,9 +1579,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "GALLO PINTO",
@@ -1863,9 +1591,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1876,9 +1602,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "ARROZ BLANCO",
@@ -1890,9 +1614,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1903,9 +1625,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "ARROZ ROJO",
@@ -1917,9 +1637,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1930,9 +1648,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "ARROZ VERDE",
@@ -1944,9 +1660,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -1957,9 +1671,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "UB4BN7XZYZZRHWVW23IKW5GV",
             "name": "GARLIC-CHIPOTLE MASHED POTATOES",
@@ -1971,9 +1683,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -1985,9 +1695,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "3Z7FQB6T3JO5RSPMBAKAG47S"
-      ],
+      "image_ids": ["3Z7FQB6T3JO5RSPMBAKAG47S"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2000,9 +1708,7 @@
       ],
       "description_html": "<p>4oz portion. Please select from the following:&lt;br /&gt;&lt;br /&gt;KALE- white quinoa / raisins / pine nuts -gf, vg, vgn  &lt;br /&gt;&lt;br /&gt;BLACK BEANS- caribbean black beans -gf, vg, vgn  &lt;br /&gt;&lt;br /&gt;GALLO PINTO- black beans / white rice / herbs -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;ARROZ BLANCO- white rice / garlic / peruvian choclo -gf, vg, vgn  &lt;br /&gt;&lt;br /&gt;ARROZ ROJO- tomato sofrito rice / oregano / english peas -gf, vg, vgn  &lt;br /&gt;&lt;br /&gt;ARROZ VERDE- cilantro infused rice / bell pepper / spices -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;GARLIC-CHIPOTLE MASHED POTATOES- yukon potato / chipotle / garlic / cream -gf, vg</p>",
       "description_plaintext": "4oz portion. Please select from the following:<br /><br />KALE- white quinoa / raisins / pine nuts -gf, vg, vgn  <br /><br />BLACK BEANS- caribbean black beans -gf, vg, vgn  <br /><br />GALLO PINTO- black beans / white rice / herbs -gf, vg, vgn<br /><br />ARROZ BLANCO- white rice / garlic / peruvian choclo -gf, vg, vgn  <br /><br />ARROZ ROJO- tomato sofrito rice / oregano / english peas -gf, vg, vgn  <br /><br />ARROZ VERDE- cilantro infused rice / bell pepper / spices -gf, vg, vgn<br /><br />GARLIC-CHIPOTLE MASHED POTATOES- yukon potato / chipotle / garlic / cream -gf, vg",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2018,9 +1724,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "(Catering) Main Dishes",
       "description": "6oz portion. Choose from the following:<br /><br />PERUVIAN CEVICHE- wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf  <br /><br />SALMON CARPACCIO- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf<br /><br />CHILE RELLENO- ground sirloin / cheddar / don alfonso olives / chipotle / citrus crème fraiche -gf<br /><br />LOMO SALTADO- angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes<br /><br />PRAWN TOSTADA- corn tostada / sautéed tiger prawns / corn-goat cheese sauce -gf<br /><br />GRILLED VEGGIE SKEWERS- seasonal veggies / soy-honey glaze -vg<br /><br />AJI DE GALLINA- free-range chicken breast / cream–aji chile reduction / parmesan <br /><br />ROPA VIEJA- slow-braised pork shoulder / roma tomatoes / queso fresco -gf\\<br /><br />CAPON DE AYUAMA- roasted acorn squash / sweet potato puree / coconut milk / bell pepper couli -gf, vg, vgn<br /><br />POLLO CON MOJO- grilled chicken breast / piquillo pepper / onions / orange-garlic sauce -gf  <br /><br />PASTEL DE CHOCLO- creamed corn / ground sirloin / chicken breast / sun-dried black olives -gf",
@@ -2034,9 +1738,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "PERUVIAN CEVICHE",
@@ -2048,9 +1750,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2061,9 +1761,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "SALMON CARPACCIO",
@@ -2075,9 +1773,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2088,9 +1784,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "CHILE RELLENO",
@@ -2102,9 +1796,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2115,9 +1807,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "LOMO SALTADO",
@@ -2129,9 +1819,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2142,9 +1830,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "PRAWN TOSTADA",
@@ -2156,9 +1842,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2169,9 +1853,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "GRILLED CHICKEN SKEWERS",
@@ -2183,9 +1865,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2196,9 +1876,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "AJI DE GALLINA",
@@ -2210,9 +1888,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2223,9 +1899,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "ROPA VIEJA",
@@ -2237,9 +1911,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2250,9 +1922,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "CAPON DE AYUAMA",
@@ -2264,9 +1934,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2277,9 +1945,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "POLLO CON MOJO",
@@ -2291,9 +1957,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         },
         {
@@ -2304,9 +1968,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "CHVMCINYCYSPILATI2LOTBLX",
             "name": "PASTEL DE CHOCLO",
@@ -2318,9 +1980,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2332,9 +1992,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "VWUM6ABNZDQHKPODG5EPFIY6"
-      ],
+      "image_ids": ["VWUM6ABNZDQHKPODG5EPFIY6"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2347,9 +2005,7 @@
       ],
       "description_html": "<p>6oz portion. Choose from the following:&lt;br /&gt;&lt;br /&gt;PERUVIAN CEVICHE- wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf  &lt;br /&gt;&lt;br /&gt;SALMON CARPACCIO- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf&lt;br /&gt;&lt;br /&gt;CHILE RELLENO- ground sirloin / cheddar / don alfonso olives / chipotle / citrus crème fraiche -gf&lt;br /&gt;&lt;br /&gt;LOMO SALTADO- angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes&lt;br /&gt;&lt;br /&gt;PRAWN TOSTADA- corn tostada / sautéed tiger prawns / corn-goat cheese sauce -gf&lt;br /&gt;&lt;br /&gt;GRILLED VEGGIE SKEWERS- seasonal veggies / soy-honey glaze -vg&lt;br /&gt;&lt;br /&gt;AJI DE GALLINA- free-range chicken breast / cream–aji chile reduction / parmesan &lt;br /&gt;&lt;br /&gt;ROPA VIEJA- slow-braised pork shoulder / roma tomatoes / queso fresco -gf\\&lt;br /&gt;&lt;br /&gt;CAPON DE AYUAMA- roasted acorn squash / sweet potato puree / coconut milk / bell pepper couli -gf, vg, vgn&lt;br /&gt;&lt;br /&gt;POLLO CON MOJO- grilled chicken breast / piquillo pepper / onions / orange-garlic sauce -gf  &lt;br /&gt;&lt;br /&gt;PASTEL DE CHOCLO- creamed corn / ground sirloin / chicken breast / sun-dried black olives -gf</p>",
       "description_plaintext": "6oz portion. Choose from the following:<br /><br />PERUVIAN CEVICHE- wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts -gf  <br /><br />SALMON CARPACCIO- local wild king salmon / ginger / creamy pepper reduction / poppyseed -gf<br /><br />CHILE RELLENO- ground sirloin / cheddar / don alfonso olives / chipotle / citrus crème fraiche -gf<br /><br />LOMO SALTADO- angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes<br /><br />PRAWN TOSTADA- corn tostada / sautéed tiger prawns / corn-goat cheese sauce -gf<br /><br />GRILLED VEGGIE SKEWERS- seasonal veggies / soy-honey glaze -vg<br /><br />AJI DE GALLINA- free-range chicken breast / cream–aji chile reduction / parmesan <br /><br />ROPA VIEJA- slow-braised pork shoulder / roma tomatoes / queso fresco -gf\\<br /><br />CAPON DE AYUAMA- roasted acorn squash / sweet potato puree / coconut milk / bell pepper couli -gf, vg, vgn<br /><br />POLLO CON MOJO- grilled chicken breast / piquillo pepper / onions / orange-garlic sauce -gf  <br /><br />PASTEL DE CHOCLO- creamed corn / ground sirloin / chicken breast / sun-dried black olives -gf",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2365,9 +2021,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "item_data": {
       "name": "(Catering) Utensil Package",
       "description": "Biodegradable plasticware and plateware for your party. Includes a fork, knife, and plate. Priced per person.",
@@ -2381,9 +2035,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
           "item_variation_data": {
             "item_id": "HN4I2OGFOKTBDYMATKDY3VQH",
             "name": "(Catering) Utensil Package",
@@ -2395,9 +2047,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2409,9 +2059,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "J4J7C3YE32YV4PDGKQEJUUO7"
-      ],
+      "image_ids": ["J4J7C3YE32YV4PDGKQEJUUO7"],
       "categories": [
         {
           "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2424,9 +2072,7 @@
       ],
       "description_html": "<p>Biodegradable plasticware and plateware for your party. Includes a fork, knife, and plate. Priced per person.</p>",
       "description_plaintext": "Biodegradable plasticware and plateware for your party. Includes a fork, knife, and plate. Priced per person.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "O4FOSM6FIVRMYJQBGFMMCOVB",
@@ -2442,9 +2088,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Lomo Saltado",
       "description": "Angus sirloin stir fry, roma tomatoes, soy-balsamic reduction, and French fries.",
@@ -2458,9 +2102,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "6ITE32Y4J35P4LB2DBPTAEVO",
             "name": "Lomo Saltado",
@@ -2472,9 +2114,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2484,9 +2124,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "45RDMI7H5F5JOP77V4GCHXDU"
-      ],
+      "image_ids": ["45RDMI7H5F5JOP77V4GCHXDU"],
       "categories": [
         {
           "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2499,9 +2137,7 @@
       ],
       "description_html": "<p>Angus sirloin stir fry, roma tomatoes, soy-balsamic reduction, and French fries.</p>",
       "description_plaintext": "Angus sirloin stir fry, roma tomatoes, soy-balsamic reduction, and French fries.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2541,9 +2177,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2563,9 +2197,7 @@
       ],
       "description_html": "<p>Acorn squash, roasted seasonal veggies, epazote, cipollini onions, and carrot couli.</p>",
       "description_plaintext": "Acorn squash, roasted seasonal veggies, epazote, cipollini onions, and carrot couli.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2581,9 +2213,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Bacalao con Arroz de Aceitunas",
       "description": "Plantain encrusted black cod, don Alfonso olive rice, toasted walnuts, and spring greens.",
@@ -2597,9 +2227,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "QVLKXF7Z42NJHC7BPXKQOFHX",
             "name": "Bacalao con Arroz de Aceitunas",
@@ -2611,9 +2239,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2632,9 +2258,7 @@
       ],
       "description_html": "<p>Plantain encrusted black cod, don Alfonso olive rice, toasted walnuts, and spring greens.</p>",
       "description_plaintext": "Plantain encrusted black cod, don Alfonso olive rice, toasted walnuts, and spring greens.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2650,9 +2274,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Lechon",
       "description": "Adobo rubbed pork shoulder, creme de aji panca, sweet potato, encebollado, and pan de yuca.",
@@ -2666,9 +2288,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "PCWC4T2PTW2KLQNQBQ4TX5DU",
             "name": "Lechon",
@@ -2680,9 +2300,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2692,9 +2310,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "5CGETBT44ZP4WN566XP7A3ZG"
-      ],
+      "image_ids": ["5CGETBT44ZP4WN566XP7A3ZG"],
       "categories": [
         {
           "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2707,9 +2323,7 @@
       ],
       "description_html": "<p>Adobo rubbed pork shoulder, creme de aji panca, sweet potato, encebollado, and pan de yuca.</p>",
       "description_plaintext": "Adobo rubbed pork shoulder, creme de aji panca, sweet potato, encebollado, and pan de yuca.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "47KFJGCPRCK32AVJ5RAKWWBF",
@@ -2749,9 +2363,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2762,9 +2374,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "WJNKOJFIY3MT6RXVEARPCVUH"
-      ],
+      "image_ids": ["WJNKOJFIY3MT6RXVEARPCVUH"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2777,9 +2387,7 @@
       ],
       "description_html": "<p>Local king salmon, ginger, creamy aji reduction, malagueta pepper, and poppyseed.</p>",
       "description_plaintext": "Local king salmon, ginger, creamy aji reduction, malagueta pepper, and poppyseed.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2795,9 +2403,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Chile Relleno",
       "description": "Estancia farm sirloin, cheddar, don alfonso olives, chipotle, and citrus creme fraiche.",
@@ -2811,9 +2417,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "D2CBUYHUK2JD3RAEXZ5IOQU3",
             "name": "Chile Relleno",
@@ -2825,9 +2429,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2837,9 +2439,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "W3HKLZR5QKXLUCYP33G3UPSJ"
-      ],
+      "image_ids": ["W3HKLZR5QKXLUCYP33G3UPSJ"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2852,9 +2452,7 @@
       ],
       "description_html": "<p>Estancia farm sirloin, cheddar, don alfonso olives, chipotle, and citrus creme fraiche.</p>",
       "description_plaintext": "Estancia farm sirloin, cheddar, don alfonso olives, chipotle, and citrus creme fraiche.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2894,9 +2492,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2907,9 +2503,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "XJCSESYAIGFVBVUVYOFH2YEC"
-      ],
+      "image_ids": ["XJCSESYAIGFVBVUVYOFH2YEC"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2922,9 +2516,7 @@
       ],
       "description_html": "<p>Cilantro infused tamal, grilled chicken, piquillo peppers, and encebollado.</p>",
       "description_plaintext": "Cilantro infused tamal, grilled chicken, piquillo peppers, and encebollado.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2964,9 +2556,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -2977,9 +2567,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "PV6JI4LL7PHKKRFONUAOEPYF"
-      ],
+      "image_ids": ["PV6JI4LL7PHKKRFONUAOEPYF"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -2992,9 +2580,7 @@
       ],
       "description_html": "<p>Organic peruvian quinoa, mozzarella, shiitake, romesco salsa, and marcona almonds.</p>",
       "description_plaintext": "Organic peruvian quinoa, mozzarella, shiitake, romesco salsa, and marcona almonds.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3010,9 +2596,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Arepa con Ropa Vieja",
       "description": "Cornmeal biscuit, mozzarella, and slow braised hampshire pork shoulder.",
@@ -3026,9 +2610,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "HKUKAOTXWKTTBXEHAMAHDQMR",
             "name": "Arepa con Ropa Vieja",
@@ -3040,9 +2622,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3052,9 +2632,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "JSLMK3Q5WJDBDOEKZ5OUEFMT"
-      ],
+      "image_ids": ["JSLMK3Q5WJDBDOEKZ5OUEFMT"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3067,9 +2645,7 @@
       ],
       "description_html": "<p>Cornmeal biscuit, mozzarella, and slow braised hampshire pork shoulder.</p>",
       "description_plaintext": "Cornmeal biscuit, mozzarella, and slow braised hampshire pork shoulder.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3085,9 +2661,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Camarones con Mojo de Tomatillo",
       "description": "Sauteed tiger prawns, Pallares, and roasted tomatillo mojo.",
@@ -3101,9 +2675,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "4BIEDBHVBAVSXULNX2BYKYOB",
             "name": "Camarones con Mojo de Tomatillo",
@@ -3115,9 +2687,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3136,9 +2706,7 @@
       ],
       "description_html": "<p>Sauteed tiger prawns, Pallares, and roasted tomatillo mojo.</p>",
       "description_plaintext": "Sauteed tiger prawns, Pallares, and roasted tomatillo mojo.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3154,9 +2722,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Ceviche",
       "description": "A choice of the a la peruana, mixto, or sampler of two ceviches and tiradito.",
@@ -3170,9 +2736,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "HK6ZIN3RYWBIDVMHKAQNAXYI",
             "name": "Ceviche",
@@ -3184,9 +2748,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3196,9 +2758,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "PZM7QZURCOIHKOBAFTE4JRX6"
-      ],
+      "image_ids": ["PZM7QZURCOIHKOBAFTE4JRX6"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3211,9 +2771,7 @@
       ],
       "description_html": "<p>A choice of the a la peruana, mixto, or sampler of two ceviches and tiradito.</p>",
       "description_plaintext": "A choice of the a la peruana, mixto, or sampler of two ceviches and tiradito.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3253,9 +2811,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3275,9 +2831,7 @@
       ],
       "description_html": "<p>Spiced sofrito beef, shredded chicken, chipotle mashed potatoes, and fried capers.</p>",
       "description_plaintext": "Spiced sofrito beef, shredded chicken, chipotle mashed potatoes, and fried capers.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3293,9 +2847,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Chorizo",
       "description": "Dual of house-made and Spanish chorizo, chimichurri, parsnip puree, and Andean pink salt.",
@@ -3309,9 +2861,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "PXIXMZNPSVW7BBCGPESREI7K",
             "name": "Chorizo",
@@ -3323,9 +2873,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3335,9 +2883,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "M7W6UX73PXNM3QMGQAAPJHZ3"
-      ],
+      "image_ids": ["M7W6UX73PXNM3QMGQAAPJHZ3"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3350,9 +2896,7 @@
       ],
       "description_html": "<p>Dual of house-made and Spanish chorizo, chimichurri, parsnip puree, and Andean pink salt.</p>",
       "description_plaintext": "Dual of house-made and Spanish chorizo, chimichurri, parsnip puree, and Andean pink salt.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3368,9 +2912,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Calamari Relleno",
       "description": "Stuffed local calamar, housemade chorizo, rocoto crema, roasted almond picada, and dried jamon serrano.",
@@ -3384,9 +2926,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "YVGHXTIQPMY256DIVHOFS5PB",
             "name": "Calamari Relleno",
@@ -3398,9 +2938,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3410,9 +2948,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "OU75RP6TFVCU7UKW2ECMCAVB"
-      ],
+      "image_ids": ["OU75RP6TFVCU7UKW2ECMCAVB"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3425,9 +2961,7 @@
       ],
       "description_html": "<p>Stuffed local calamar, housemade chorizo, rocoto crema, roasted almond picada, and dried jamon serrano.</p>",
       "description_plaintext": "Stuffed local calamar, housemade chorizo, rocoto crema, roasted almond picada, and dried jamon serrano.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3443,9 +2977,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Croquetas de Yuca",
       "description": "Yucca croquettes, huacatay-arugula pesto, sautéed mushrooms, and peruvian choclo.",
@@ -3459,9 +2991,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "UEEB27LGXEDTBAS6BAE7QFU4",
             "name": "Croquetas de Yuca",
@@ -3473,9 +3003,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3485,9 +3013,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "6N362IP6EE7VOT3XYMLU2FTX"
-      ],
+      "image_ids": ["6N362IP6EE7VOT3XYMLU2FTX"],
       "categories": [
         {
           "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3500,9 +3026,7 @@
       ],
       "description_html": "<p>Yucca croquettes, huacatay-arugula pesto, sautéed mushrooms, and peruvian choclo.</p>",
       "description_plaintext": "Yucca croquettes, huacatay-arugula pesto, sautéed mushrooms, and peruvian choclo.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "N3VJ2RQSD5XBNMXTYJFJRWMF",
@@ -3542,9 +3066,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3555,9 +3077,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "3Z7FQB6T3JO5RSPMBAKAG47S"
-      ],
+      "image_ids": ["3Z7FQB6T3JO5RSPMBAKAG47S"],
       "categories": [
         {
           "id": "3DQMPLFCVB36A6U6L4ZM5P33",
@@ -3570,9 +3090,7 @@
       ],
       "description_html": "<p>Red quinoa, golden raisins, and roasted pine nuts.</p>",
       "description_plaintext": "Red quinoa, golden raisins, and roasted pine nuts.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "3DQMPLFCVB36A6U6L4ZM5P33",
@@ -3588,9 +3106,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Ensalada de Destino",
       "description": "Baby arugula, hearts of palms, Brazilian mango, rehydrated gooseberry, roasted pepitas, and coconut vinaigrette.",
@@ -3604,9 +3120,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "CFJFTJB7PCEYEO7YLFIPDL2P",
             "name": "Ensalada de Destino",
@@ -3618,9 +3132,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3639,9 +3151,7 @@
       ],
       "description_html": "<p>Baby arugula, hearts of palms, Brazilian mango, rehydrated gooseberry, roasted pepitas, and coconut vinaigrette.</p>",
       "description_plaintext": "Baby arugula, hearts of palms, Brazilian mango, rehydrated gooseberry, roasted pepitas, and coconut vinaigrette.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "3DQMPLFCVB36A6U6L4ZM5P33",
@@ -3657,9 +3167,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Causa de Cangrejo",
       "description": "Aji amarillo potato torte, local dungeness crab, avocado, and puffed quinoa.",
@@ -3673,9 +3181,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "WKY6W2DO77YHGLNW2SNFG7HX",
             "name": "Causa de Cangrejo",
@@ -3687,9 +3193,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3708,9 +3212,7 @@
       ],
       "description_html": "<p>Aji amarillo potato torte, local dungeness crab, avocado, and puffed quinoa.</p>",
       "description_plaintext": "Aji amarillo potato torte, local dungeness crab, avocado, and puffed quinoa.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "3DQMPLFCVB36A6U6L4ZM5P33",
@@ -3726,9 +3228,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Charcuterie Plate",
       "description": "Choose a selection of three meats.",
@@ -3742,9 +3242,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NZXJ342RRLYTF5GK4GTIZBZP",
             "name": "Charcuterie Plate",
@@ -3756,9 +3254,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3768,9 +3264,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "3LGRZ72BU7RDALAI2ZUW42GV"
-      ],
+      "image_ids": ["3LGRZ72BU7RDALAI2ZUW42GV"],
       "categories": [
         {
           "id": "E4CA67EKLSU2TQ53DLRGA2PX",
@@ -3783,9 +3277,7 @@
       ],
       "description_html": "<p>Choose a selection of three meats.</p>",
       "description_plaintext": "Choose a selection of three meats.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "E4CA67EKLSU2TQ53DLRGA2PX",
@@ -3801,9 +3293,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Cheese Plate",
       "description": "Choose three cheeses: Cana de Oveja, Mt.Tam, Bijou, and Patacabra.",
@@ -3817,9 +3307,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "KLDZAOTK4S22UUTHJF3JPS6L",
             "name": "Cheese Plate",
@@ -3831,9 +3319,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3843,9 +3329,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNINDEXED",
-      "image_ids": [
-        "G5ZUQTCFZMC62SQUGNJ6I3S7"
-      ],
+      "image_ids": ["G5ZUQTCFZMC62SQUGNJ6I3S7"],
       "categories": [
         {
           "id": "E4CA67EKLSU2TQ53DLRGA2PX",
@@ -3858,9 +3342,7 @@
       ],
       "description_html": "<p>Choose three cheeses: Cana de Oveja, Mt.Tam, Bijou, and Patacabra.</p>",
       "description_plaintext": "Choose three cheeses: Cana de Oveja, Mt.Tam, Bijou, and Patacabra.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "E4CA67EKLSU2TQ53DLRGA2PX",
@@ -3876,12 +3358,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Alfajores- Classic (1 dozen- packet)",
       "description": "DESTINO has always taken great pleasure in sharing our alfajores with our community. Our family recipe stems from years of inspiration from both the Schenk and Castellanos families. The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.",
@@ -3895,12 +3373,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "N6FQCAR5XZILI7BGUIN4NF4Q",
             "name": "Regular",
@@ -3912,9 +3386,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -3926,9 +3398,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "GNZTN5TTZONVVLXH2CSASA7K"
-      ],
+      "image_ids": ["GNZTN5TTZONVVLXH2CSASA7K"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -3941,9 +3411,7 @@
       ],
       "description_html": "<p>DESTINO has always taken great pleasure in sharing our alfajores with our community. Our family recipe stems from years of inspiration from both the Schenk and Castellanos families. The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.</p>",
       "description_plaintext": "DESTINO has always taken great pleasure in sharing our alfajores with our community. Our family recipe stems from years of inspiration from both the Schenk and Castellanos families. The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -3989,9 +3457,7 @@
             ],
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4003,9 +3469,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "4GRZ2GRKJBVCE3C55HJJDLRI"
-      ],
+      "image_ids": ["4GRZ2GRKJBVCE3C55HJJDLRI"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4018,9 +3482,7 @@
       ],
       "description_html": "<p>We selected the highest quality chocolate to create our chocolate covered alfajor. A dark chocolate coating is a perfect complement to our butter cookie filled with creamy dulce de leche. To finish it off, a sprinkle of Peruvian sea salt. Enjoy.</p>",
       "description_plaintext": "We selected the highest quality chocolate to create our chocolate covered alfajor. A dark chocolate coating is a perfect complement to our butter cookie filled with creamy dulce de leche. To finish it off, a sprinkle of Peruvian sea salt. Enjoy.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4036,9 +3498,7 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": true,
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Alfajores- Gluten Free (1 dozen- packet)",
       "description": "DESTINO has always taken great pleasure in sharing our alfajores with our community- now we offer our Gluten Free Alfajor! The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.",
@@ -4052,9 +3512,7 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "FK7CM63FVZUW7FA43AL3GV6K",
             "name": "Regular",
@@ -4067,9 +3525,7 @@
             "track_inventory": false,
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4081,9 +3537,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "PZCJUKLUG352OWU72OMVF2ZI"
-      ],
+      "image_ids": ["PZCJUKLUG352OWU72OMVF2ZI"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4096,9 +3550,7 @@
       ],
       "description_html": "<p>DESTINO has always taken great pleasure in sharing our alfajores with our community- now we offer our Gluten Free Alfajor! The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.</p>",
       "description_plaintext": "DESTINO has always taken great pleasure in sharing our alfajores with our community- now we offer our Gluten Free Alfajor! The end result is the delicious little butter cookie filled with dulce de leche, which you are about to enjoy.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4114,12 +3566,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Peruvian Chicken (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Our chicken empanadas are inspired by a Peruvian classic \"Aji de Gallina.\" Our recipe features free range chicken mixed with a delicious aji amarillo-cream sauce. Our empanadas can either be baked or air fried. \n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -4133,12 +3581,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "LXYPIXWTY2NBU5HV2C6CF466",
             "name": "Regular",
@@ -4150,9 +3594,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4164,9 +3606,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "7VYAMTXJ4WPTSI7J4LFS6L2T"
-      ],
+      "image_ids": ["7VYAMTXJ4WPTSI7J4LFS6L2T"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4179,9 +3619,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Our chicken empanadas are inspired by a Peruvian classic &#34;Aji de Gallina.&#34; Our recipe features free range chicken mixed with a delicious aji amarillo-cream sauce. Our empanadas can either be baked or air fried. </p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Our chicken empanadas are inspired by a Peruvian classic \"Aji de Gallina.\" Our recipe features free range chicken mixed with a delicious aji amarillo-cream sauce. Our empanadas can either be baked or air fried. \n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4197,12 +3635,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Argentine Beef (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Our recipe is based on a traditional Argentine beef empanada- ground beef, pimiento stuffed olives, egg and golden raisins! Our empanadas can either be baked or air fried. \n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -4216,12 +3650,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "6T2ZRJYG6OEWSCUVDMENEKES",
             "name": "Regular",
@@ -4233,9 +3663,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4247,9 +3675,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "ZPZYQ46SWB7RYMGUEX5G63SC"
-      ],
+      "image_ids": ["ZPZYQ46SWB7RYMGUEX5G63SC"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4262,9 +3688,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Our recipe is based on a traditional Argentine beef empanada- ground beef, pimiento stuffed olives, egg and golden raisins! Our empanadas can either be baked or air fried. </p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Our recipe is based on a traditional Argentine beef empanada- ground beef, pimiento stuffed olives, egg and golden raisins! Our empanadas can either be baked or air fried. \n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4280,12 +3704,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Caribbean Pork (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Our Caribbean pork empanadas are delicious and addicting! These empanadas feature ground pork, black mission figs and a medley of spices! Our empanadas can either be baked or air fried. \n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -4299,12 +3719,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NZ7MVVH4J5AT3F6CA572XZJU",
             "name": "Regular",
@@ -4316,9 +3732,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4330,9 +3744,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "LDMFSVXCKIZJTLMN5SB43GTQ"
-      ],
+      "image_ids": ["LDMFSVXCKIZJTLMN5SB43GTQ"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4345,9 +3757,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Our Caribbean pork empanadas are delicious and addicting! These empanadas feature ground pork, black mission figs and a medley of spices! Our empanadas can either be baked or air fried. </p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Our Caribbean pork empanadas are delicious and addicting! These empanadas feature ground pork, black mission figs and a medley of spices! Our empanadas can either be baked or air fried. \n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4363,12 +3773,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Vegetarian (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Our vegetarian empanadas have become one of biggest sellers- featuring hearts of palms, aji amarillo, parmesan & mozzarella cheeses. Our empanadas can either be baked or air fried. \n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -4382,12 +3788,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "NPW5UPF33KKZOKRJC6ECSB74",
             "name": "Regular",
@@ -4399,9 +3801,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4413,9 +3813,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "NENHKSE72QHW5MA6FLP5AW2R"
-      ],
+      "image_ids": ["NENHKSE72QHW5MA6FLP5AW2R"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4428,9 +3826,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Our vegetarian empanadas have become one of biggest sellers- featuring hearts of palms, aji amarillo, parmesan &amp; mozzarella cheeses. Our empanadas can either be baked or air fried. </p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Our vegetarian empanadas have become one of biggest sellers- featuring hearts of palms, aji amarillo, parmesan & mozzarella cheeses. Our empanadas can either be baked or air fried. \n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4446,12 +3842,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Combo (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Customize your own combo pack of empanadas! Select from our four savory options: beef, chicken, pork or vegetarian! Our empanadas can either be baked or air fried. \n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -4473,12 +3865,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "WIEPXEA7OFFMHRJWDCKHNRJ5",
             "name": "Regular",
@@ -4490,9 +3878,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4504,9 +3890,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "LQ6X5UEP4BD5VL6BEZVEE2FQ"
-      ],
+      "image_ids": ["LQ6X5UEP4BD5VL6BEZVEE2FQ"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4519,9 +3903,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Customize your own combo pack of empanadas! Select from our four savory options: beef, chicken, pork or vegetarian! Our empanadas can either be baked or air fried. </p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Customize your own combo pack of empanadas! Select from our four savory options: beef, chicken, pork or vegetarian! Our empanadas can either be baked or air fried. \n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4537,12 +3919,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Aji Amarillo Salsa (7oz)",
       "description": "Our creamy and delicious aji amarillo salsa is a must have for any kitchen! Aji amarillo is the most utilized and versatile pepper in Peru. Our classic recipe of aji amarillo, dairy and lime is a show stopper! Available in a 7oz jar.<br />",
@@ -4556,12 +3934,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "EQYCKASECLGFRETKT2L3AYXX",
             "name": "Regular",
@@ -4573,9 +3947,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4587,9 +3959,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "HMTIHV3MGNL3VQE3BOS65FWV"
-      ],
+      "image_ids": ["HMTIHV3MGNL3VQE3BOS65FWV"],
       "categories": [
         {
           "id": "7JPCLS5HEI6TVISRPSZEZOSI",
@@ -4602,9 +3972,7 @@
       ],
       "description_html": "<p>Our creamy and delicious aji amarillo salsa is a must have for any kitchen! Aji amarillo is the most utilized and versatile pepper in Peru. Our classic recipe of aji amarillo, dairy and lime is a show stopper! Available in a 7oz jar.&lt;br /&gt;</p>",
       "description_plaintext": "Our creamy and delicious aji amarillo salsa is a must have for any kitchen! Aji amarillo is the most utilized and versatile pepper in Peru. Our classic recipe of aji amarillo, dairy and lime is a show stopper! Available in a 7oz jar.<br />",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "7JPCLS5HEI6TVISRPSZEZOSI",
@@ -4620,12 +3988,8 @@
     "version": 1724860549539,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Aji Huacatay Salsa (7oz)",
       "description": "Huacatay is a Peruvian black mint that is grown locally. Our earthy and tangy aji huacatay salsa is a perfect accent for our empanadas! Our classic recipe includes huacatay, aji amarillo, garlic and lime! Available in a 7oz jar.",
@@ -4639,12 +4003,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "RUY6T7DCAHU65YQXJDAI62FQ",
             "name": "Regular",
@@ -4656,9 +4016,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4670,9 +4028,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "3MHGYHGGQTQZQZPFHRULL64C"
-      ],
+      "image_ids": ["3MHGYHGGQTQZQZPFHRULL64C"],
       "categories": [
         {
           "id": "7JPCLS5HEI6TVISRPSZEZOSI",
@@ -4685,9 +4041,7 @@
       ],
       "description_html": "Huacatay is a Peruvian black mint that is grown locally. Our earthy and tangy aji huacatay salsa is a perfect accent for our empanadas! Our classic recipe includes huacatay, aji amarillo, garlic and lime! Available in a 7oz jar.",
       "description_plaintext": "Huacatay is a Peruvian black mint that is grown locally. Our earthy and tangy aji huacatay salsa is a perfect accent for our empanadas! Our classic recipe includes huacatay, aji amarillo, garlic and lime! Available in a 7oz jar.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "7JPCLS5HEI6TVISRPSZEZOSI",
@@ -4734,9 +4088,7 @@
             "track_inventory": false,
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4748,9 +4100,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "6MJJ36L7ZO7KK72KRJ2CFJ3D"
-      ],
+      "image_ids": ["6MJJ36L7ZO7KK72KRJ2CFJ3D"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4763,9 +4113,7 @@
       ],
       "description_html": "<p>LOMO SALTADO EMPANADAS! If you love Lomo Saltado like we do- you would love this spin on a Peruvian classic! Top sirloin / aji amarillo / red onion / roasted potatoes. Packet of 4 frozen ready to pick up, deliver or ship! Our empanadas can either be baked or air fried.</p>",
       "description_plaintext": "LOMO SALTADO EMPANADAS! If you love Lomo Saltado like we do- you would love this spin on a Peruvian classic! Top sirloin / aji amarillo / red onion / roasted potatoes. Packet of 4 frozen ready to pick up, deliver or ship! Our empanadas can either be baked or air fried.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4805,9 +4153,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4819,9 +4165,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "EUCUAMZC4W5D6NHRFPEWX77M"
-      ],
+      "image_ids": ["EUCUAMZC4W5D6NHRFPEWX77M"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4834,9 +4178,7 @@
       ],
       "description_html": "<p>TAMALITOS VERDES! A classic from Northern Peru! These light tamales are packed with robust flavors of cilantro, spinach, corn &amp; aji amarillo! Vegetarian, Vegan &amp; Gluten-free! Packet of 4 frozen ready to pick up, deliver or ship!</p>",
       "description_plaintext": "TAMALITOS VERDES! A classic from Northern Peru! These light tamales are packed with robust flavors of cilantro, spinach, corn & aji amarillo! Vegetarian, Vegan & Gluten-free! Packet of 4 frozen ready to pick up, deliver or ship!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -4876,9 +4218,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4890,9 +4230,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "RAKTK4IH5SIZWRDM7WXRLT7D"
-      ],
+      "image_ids": ["RAKTK4IH5SIZWRDM7WXRLT7D"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4905,9 +4243,7 @@
       ],
       "description_html": "<p>Our classic butter cookies with dulce de leche are blanketed with a vibrant &amp; tangy lemon royal icing- for extra deliciousness! 12 cookies per packet.</p>",
       "description_plaintext": "Our classic butter cookies with dulce de leche are blanketed with a vibrant & tangy lemon royal icing- for extra deliciousness! 12 cookies per packet.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4947,9 +4283,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -4960,9 +4294,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNAVAILABLE",
-      "image_ids": [
-        "Q7O3HZZKA6PAW5FOBZTXHUF6"
-      ],
+      "image_ids": ["Q7O3HZZKA6PAW5FOBZTXHUF6"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -4975,9 +4307,7 @@
       ],
       "description_html": "<p>Satisfy your sweet tooth this holiday season with our delightful GINGERBREAD ALFAJORES!  Imagine the perfect blend of spicy gingerbread flavor, smooth dulce de leche, and a hint of festive magic in every bite.</p><p><br/></p><p> 12 cookies per packet. Limited quantities available!</p>",
       "description_plaintext": "Satisfy your sweet tooth this holiday season with our delightful GINGERBREAD ALFAJORES!  Imagine the perfect blend of spicy gingerbread flavor, smooth dulce de leche, and a hint of festive magic in every bite.\n\n 12 cookies per packet. Limited quantities available!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -5017,9 +4347,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -5031,9 +4359,7 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "VISIBLE",
-      "image_ids": [
-        "H4O6V3HRYJ4VX34KWQODJQ5M"
-      ],
+      "image_ids": ["H4O6V3HRYJ4VX34KWQODJQ5M"],
       "categories": [
         {
           "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -5046,9 +4372,7 @@
       ],
       "description_html": "<p>OUR NEW 6-PACK COMBO! Treat yourself or that special someone with a great selection of our favorite alfajores: Lemon, Classic &amp; Chocolate! Two delicious cookies of each type.</p>",
       "description_plaintext": "OUR NEW 6-PACK COMBO! Treat yourself or that special someone with a great selection of our favorite alfajores: Lemon, Classic & Chocolate! Two delicious cookies of each type.",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "VNRSJF53SAQYPU4JFKDYEA3F",
@@ -5064,12 +4388,8 @@
     "version": 1692381296266,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "item_data": {
       "name": "Empanadas- Salmon (frozen- 4 pack)",
       "description": "Box of four frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature local King salmon marinated with a sweet & tangy tamarind-panela glaze are addicting! Our empanadas can either be baked or air fried.\n\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
@@ -5083,12 +4403,8 @@
           "version": 1692381296266,
           "is_deleted": false,
           "present_at_all_locations": false,
-          "present_at_location_ids": [
-            "FN04F7551EZWX"
-          ],
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "present_at_location_ids": ["FN04F7551EZWX"],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "item_variation_data": {
             "item_id": "XTONAWF5K6PDV72FPY6ZZSIS",
             "name": "Regular",
@@ -5100,9 +4416,7 @@
             },
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -5113,9 +4427,7 @@
       ],
       "ecom_available": false,
       "ecom_visibility": "UNAVAILABLE",
-      "image_ids": [
-        "EPBYV325KWQST7K24WZCDOY2"
-      ],
+      "image_ids": ["EPBYV325KWQST7K24WZCDOY2"],
       "categories": [
         {
           "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -5124,9 +4436,7 @@
       ],
       "description_html": "<p>Box of four frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature local King salmon marinated with a sweet &amp; tangy tamarind-panela glaze are addicting! Our empanadas can either be baked or air fried.</p><p><br/></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of four frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature local King salmon marinated with a sweet & tangy tamarind-panela glaze are addicting! Our empanadas can either be baked or air fried.\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false,
       "reporting_category": {
         "id": "C54W35AAF35EASUBOAYBEZVH",
@@ -5167,9 +4477,7 @@
             "track_inventory": false,
             "sellable": true,
             "stockable": true,
-            "channels": [
-              "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-            ]
+            "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"]
           }
         }
       ],
@@ -5179,14 +4487,10 @@
       ],
       "ecom_available": true,
       "ecom_visibility": "HIDDEN",
-      "image_ids": [
-        "635PVNLU7O6J7AHNEBK3O7RF"
-      ],
+      "image_ids": ["635PVNLU7O6J7AHNEBK3O7RF"],
       "description_html": "<p>Box of six frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature Chilean salmon marinated with a sweet &amp; tangy tamarind-panela glaze are addicting! Our empanadas can either be baked or fried.</p><p><br></p><p>SHIPPING IS NEXT DAY PRIORITY ONLY!</p>",
       "description_plaintext": "Box of six frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature Chilean salmon marinated with a sweet & tangy tamarind-panela glaze are addicting! Our empanadas can either be baked or fried.\n\nSHIPPING IS NEXT DAY PRIORITY ONLY!",
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "is_archived": false
     }
   },
@@ -5403,9 +4707,7 @@
         "ordinal": 100497
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5424,9 +4726,7 @@
         "ordinal": 200634
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5445,9 +4745,7 @@
         "ordinal": 301428
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5466,9 +4764,7 @@
         "ordinal": 400645
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5487,9 +4783,7 @@
         "ordinal": 501045
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5508,9 +4802,7 @@
         "ordinal": 601851
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5529,9 +4821,7 @@
         "ordinal": 701260
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5550,9 +4840,7 @@
         "ordinal": 801752
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5571,9 +4859,7 @@
         "ordinal": 900829
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5592,9 +4878,7 @@
         "ordinal": 1000794
       },
       "is_top_level": true,
-      "channels": [
-        "CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"
-      ],
+      "channels": ["CH_7Tu4GFnmeA9cBw7p8wpQEaHPK5hpHqN4od6R9QlQuYC"],
       "online_visibility": true
     }
   },
@@ -5837,9 +5121,7 @@
     "version": 1709862332702,
     "is_deleted": false,
     "present_at_all_locations": true,
-    "absent_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
     "modifier_list_data": {
       "name": "empanada-combo",
       "selection_type": "MULTIPLE",
@@ -5852,9 +5134,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "chicken",
             "price_money": {
@@ -5873,9 +5153,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "beef",
             "price_money": {
@@ -5894,9 +5172,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "vegetarian",
             "price_money": {
@@ -5915,9 +5191,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "pork",
             "price_money": {
@@ -5936,9 +5210,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "lomo saltado",
             "price_money": {
@@ -5957,9 +5229,7 @@
           "version": 1666213204038,
           "is_deleted": false,
           "present_at_all_locations": true,
-          "absent_at_location_ids": [
-            "DEWDXSN3BAQ5M"
-          ],
+          "absent_at_location_ids": ["DEWDXSN3BAQ5M"],
           "modifier_data": {
             "name": "salmon",
             "price_money": {
@@ -5989,9 +5259,7 @@
         "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
         "name": "Square Online Store"
       },
-      "allowed_object_types": [
-        "ITEM"
-      ],
+      "allowed_object_types": ["ITEM"],
       "seller_visibility": "SELLER_VISIBILITY_READ_WRITE_VALUES",
       "app_visibility": "APP_VISIBILITY_HIDDEN",
       "key": "is_alcoholic"
@@ -6013,9 +5281,7 @@
         "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
         "name": "Square Online Store"
       },
-      "allowed_object_types": [
-        "ITEM"
-      ],
+      "allowed_object_types": ["ITEM"],
       "seller_visibility": "SELLER_VISIBILITY_HIDDEN",
       "app_visibility": "APP_VISIBILITY_HIDDEN",
       "string_config": {
@@ -6039,9 +5305,7 @@
         "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
         "name": "Square Online Store"
       },
-      "allowed_object_types": [
-        "ITEM"
-      ],
+      "allowed_object_types": ["ITEM"],
       "seller_visibility": "SELLER_VISIBILITY_HIDDEN",
       "app_visibility": "APP_VISIBILITY_HIDDEN",
       "string_config": {
@@ -6066,9 +5330,7 @@
         "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
         "name": "Square Online Store"
       },
-      "allowed_object_types": [
-        "ITEM"
-      ],
+      "allowed_object_types": ["ITEM"],
       "seller_visibility": "SELLER_VISIBILITY_READ_WRITE_VALUES",
       "app_visibility": "APP_VISIBILITY_READ_WRITE_VALUES",
       "key": "ecom_gifting_enabled"
@@ -6082,9 +5344,7 @@
     "version": 1595351524617,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "DEWDXSN3BAQ5M"
-    ],
+    "present_at_location_ids": ["DEWDXSN3BAQ5M"],
     "quick_amounts_settings_data": {
       "option": "DISABLED",
       "eligible_for_auto_amounts": false
@@ -6098,9 +5358,7 @@
     "version": 1737883678070,
     "is_deleted": false,
     "present_at_all_locations": false,
-    "present_at_location_ids": [
-      "FN04F7551EZWX"
-    ],
+    "present_at_location_ids": ["FN04F7551EZWX"],
     "quick_amounts_settings_data": {
       "option": "AUTO",
       "eligible_for_auto_amounts": true,

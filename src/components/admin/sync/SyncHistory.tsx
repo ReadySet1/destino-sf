@@ -5,7 +5,13 @@ import { Clock, CheckCircle2, XCircle, Square, AlertTriangle, Filter } from 'luc
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SyncHistoryItem {
@@ -70,14 +76,13 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
       }
 
       const response = await fetch(`/api/admin/sync/history?${params}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch sync history');
       }
 
       const historyData = await response.json();
       setData(historyData);
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch history');
       console.error('Error fetching sync history:', err);
@@ -107,7 +112,9 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "danger" | "outline" | "success" | "warning" => {
+  const getStatusVariant = (
+    status: string
+  ): 'default' | 'secondary' | 'danger' | 'outline' | 'success' | 'warning' => {
     switch (status) {
       case 'COMPLETED':
         return 'success';
@@ -160,18 +167,11 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Sync History</span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchHistory}
-            disabled={loading}
-          >
+          <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading}>
             Refresh
           </Button>
         </CardTitle>
-        <CardDescription>
-          View past sync operations and their results
-        </CardDescription>
+        <CardDescription>View past sync operations and their results</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Statistics */}
@@ -182,7 +182,9 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
               <div className="text-xs text-muted-foreground">Total</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-green-600">{data.stats.last7Days.completed}</div>
+              <div className="text-lg font-bold text-green-600">
+                {data.stats.last7Days.completed}
+              </div>
               <div className="text-xs text-muted-foreground">Completed (7d)</div>
             </div>
             <div className="text-center">
@@ -206,7 +208,7 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
             <Filter className="h-4 w-4" />
             <span className="text-sm font-medium">Filter:</span>
           </div>
-          
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -221,7 +223,7 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
             </SelectContent>
           </Select>
 
-          <Select value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
+          <Select value={limit.toString()} onValueChange={value => setLimit(parseInt(value))}>
             <SelectTrigger className="w-20">
               <SelectValue />
             </SelectTrigger>
@@ -247,30 +249,27 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
         ) : data?.history.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>No sync history found</p>
-            {statusFilter !== 'all' && (
-              <p className="text-sm">Try changing the status filter</p>
-            )}
+            {statusFilter !== 'all' && <p className="text-sm">Try changing the status filter</p>}
           </div>
         ) : (
           <div className="space-y-3">
-            {data?.history.map((sync) => (
-              <div key={sync.syncId} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+            {data?.history.map(sync => (
+              <div
+                key={sync.syncId}
+                className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {getStatusIcon(sync.status)}
                     <span className="font-medium">{formatDate(sync.startTime)}</span>
-                    <Badge variant={getStatusVariant(sync.status)}>
-                      {sync.status}
-                    </Badge>
+                    <Badge variant={getStatusVariant(sync.status)}>{sync.status}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {formatDuration(sync.duration)}
                   </div>
                 </div>
-                
-                <div className="text-sm text-muted-foreground mb-2">
-                  {sync.message}
-                </div>
+
+                <div className="text-sm text-muted-foreground mb-2">{sync.message}</div>
 
                 {sync.summary && (
                   <div className="grid grid-cols-4 gap-2 text-xs">
@@ -305,8 +304,8 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
         {/* Load More */}
         {data?.pagination.hasMore && (
           <div className="text-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setLimit(prev => prev + 10)}
               disabled={loading}
             >
@@ -317,4 +316,4 @@ export function SyncHistory({ refreshTrigger }: SyncHistoryProps) {
       </CardContent>
     </Card>
   );
-} 
+}

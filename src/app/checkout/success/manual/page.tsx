@@ -55,13 +55,15 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
 
   const paymentMethodName = order.paymentMethod === 'CASH' ? 'Cash' : 'Unknown';
 
-  const paymentInstructions = order.paymentMethod === 'CASH'
-    ? 'Please bring exact change when you pick up your order. Your order will be prepared according to your selected pickup time.'
-    : 'Please contact us for payment instructions.';
+  const paymentInstructions =
+    order.paymentMethod === 'CASH'
+      ? 'Please bring exact change when you pick up your order. Your order will be prepared according to your selected pickup time.'
+      : 'Please contact us for payment instructions.';
 
-  const nextSteps = order.paymentMethod === 'CASH'
-    ? 'Your order will be ready for pickup at the scheduled time.'
-    : 'We will process your order according to the selected payment method.';
+  const nextSteps =
+    order.paymentMethod === 'CASH'
+      ? 'Your order will be ready for pickup at the scheduled time.'
+      : 'We will process your order according to the selected payment method.';
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">

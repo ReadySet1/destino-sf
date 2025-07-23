@@ -1,6 +1,6 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { format } from "date-fns";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { format } from 'date-fns';
 
 /**
  * Utility function to merge class names with Tailwind CSS classes
@@ -14,14 +14,14 @@ export function cn(...inputs: ClassValue[]) {
  * Formats a price from a number to a string with 2 decimal places
  */
 export function formatPrice(price: number | string | null | undefined): string {
-  if (price === null || price === undefined) return "0.00";
-  
+  if (price === null || price === undefined) return '0.00';
+
   // Convert string to number if needed
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-  
+
   // Check if it's a valid number
-  if (isNaN(numPrice)) return "0.00";
-  
+  if (isNaN(numPrice)) return '0.00';
+
   // Format with 2 decimal places
   return numPrice.toFixed(2);
 }
@@ -30,20 +30,20 @@ export function formatPrice(price: number | string | null | undefined): string {
  * Formats a number as currency (USD)
  */
 export function formatCurrency(amount: number | string | null | undefined): string {
-  if (amount === null || amount === undefined) return "$0.00";
-  
+  if (amount === null || amount === undefined) return '$0.00';
+
   // Convert string to number if needed
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+
   // Check if it's a valid number
-  if (isNaN(numAmount)) return "$0.00";
-  
+  if (isNaN(numAmount)) return '$0.00';
+
   // Format as USD currency
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(numAmount);
 }
 
@@ -57,39 +57,40 @@ export function getProxiedImageUrl(url: string): string {
   if (!url || url === '') {
     return '';
   }
-  
+
   // If it's already a local URL, data URL, or already proxied, return as is
   if (url.startsWith('/') || url.startsWith('data:') || url.includes('/api/proxy/image')) {
     return url;
   }
-  
+
   try {
     // Try to parse as URL to validate
     const parsedUrl = new URL(url);
-    
+
     // Determine if it's a Square image that needs proxying
-    const isSquareS3 = parsedUrl.hostname.includes('items-images-') || 
-                       parsedUrl.hostname.includes('square-catalog-') || 
-                       (parsedUrl.hostname.includes('amazonaws.com') && 
-                        url.includes('/files/') && 
-                        !url.includes('square-marketplace'));
-                        
+    const isSquareS3 =
+      parsedUrl.hostname.includes('items-images-') ||
+      parsedUrl.hostname.includes('square-catalog-') ||
+      (parsedUrl.hostname.includes('amazonaws.com') &&
+        url.includes('/files/') &&
+        !url.includes('square-marketplace'));
+
     // If it's a Square marketplace image, those are generally public
     if (parsedUrl.hostname.includes('square-marketplace')) {
       return url;
     }
-    
+
     // Square CDN images are also public
     if (parsedUrl.hostname.includes('squarecdn.com')) {
       return url;
     }
-    
+
     // destino-sf.square.site images need to be proxied for CORS
     if (parsedUrl.hostname === 'destino-sf.square.site') {
       const encodedUrl = Buffer.from(url).toString('base64');
       return `/api/proxy/image?url=${encodedUrl}`;
     }
-    
+
     // If it's a Square S3 image, proxy it
     if (isSquareS3) {
       const filePathMatch = url.match(/\/files\/([^\/]+)\/([^\/\?]+)/);
@@ -97,40 +98,45 @@ export function getProxiedImageUrl(url: string): string {
         // Extract file ID and name for consistent URL pattern
         const fileId = filePathMatch[1];
         const fileName = filePathMatch[2];
-        
+
         // Use a consistent URL format for better caching
         const normalizedUrl = `https://square-catalog-production.s3.amazonaws.com/files/${fileId}/${fileName}`;
         const encodedUrl = Buffer.from(normalizedUrl).toString('base64');
         return `/api/proxy/image?url=${encodedUrl}`;
       }
-      
+
       // If we couldn't extract file parts, use the original URL
       const encodedUrl = Buffer.from(url).toString('base64');
       return `/api/proxy/image?url=${encodedUrl}`;
     }
-    
+
     // For other external URLs, proxy them too for CORS safety
-    if (!parsedUrl.hostname.includes('localhost') && 
-        !parsedUrl.hostname.includes('.local') &&
-        // Check for window only in browser environment
-        (typeof window === 'undefined' || !parsedUrl.hostname.includes(window.location.hostname))) {
+    if (
+      !parsedUrl.hostname.includes('localhost') &&
+      !parsedUrl.hostname.includes('.local') &&
+      // Check for window only in browser environment
+      (typeof window === 'undefined' || !parsedUrl.hostname.includes(window.location.hostname))
+    ) {
       const encodedUrl = Buffer.from(url).toString('base64');
       return `/api/proxy/image?url=${encodedUrl}`;
     }
-    
+
     // If all checks pass, use the original URL
     return url;
   } catch (error) {
     // URL parsing failed, but we can still try to proxy
     console.warn('Invalid URL in getProxiedImageUrl:', url, error);
-    
+
     // For Square S3 URLs, even if parsing failed
-    if (url.includes('items-images-') || url.includes('square-catalog-') || 
-        (url.includes('amazonaws.com') && url.includes('/files/'))) {
+    if (
+      url.includes('items-images-') ||
+      url.includes('square-catalog-') ||
+      (url.includes('amazonaws.com') && url.includes('/files/'))
+    ) {
       const encodedUrl = Buffer.from(url).toString('base64');
       return `/api/proxy/image?url=${encodedUrl}`;
     }
-    
+
     // Return original URL as last resort
     return url;
   }
@@ -155,16 +161,16 @@ export function isExternalUrl(url: string): boolean {
   if (!url || url.startsWith('/') || url.startsWith('data:')) {
     return false;
   }
-  
+
   try {
     // Simplistic check - could be enhanced for production
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
-    
+
     // Check if it's localhost or our domain
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     const isOurDomain = hostname.includes('destino-sf'); // Adjust based on your domain
-    
+
     return !(isLocalhost || isOurDomain);
   } catch (err) {
     return false;
@@ -177,7 +183,7 @@ export function isExternalUrl(url: string): boolean {
  * @returns A formatted date string (e.g., "Monday, January 1, 2023")
  */
 export function formatDate(date: Date): string {
-  return format(date, "EEEE, MMMM d, yyyy");
+  return format(date, 'EEEE, MMMM d, yyyy');
 }
 
 /**
@@ -200,10 +206,10 @@ export function truncateText(text: string, maxLength: number): string {
  */
 export function generateShortDescription(productName: string, categoryName?: string): string {
   if (!productName) return '';
-  
+
   const name = productName.toLowerCase();
   const category = categoryName?.toLowerCase() || '';
-  
+
   // Empanadas descriptions
   if (name.includes('empanada')) {
     if (name.includes('beef') || name.includes('argentine')) {
@@ -226,7 +232,7 @@ export function generateShortDescription(productName: string, categoryName?: str
     }
     return 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite.';
   }
-  
+
   // Alfajores descriptions
   if (name.includes('alfajor')) {
     if (name.includes('chocolate')) {
@@ -243,7 +249,7 @@ export function generateShortDescription(productName: string, categoryName?: str
     }
     return 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way.';
   }
-  
+
   // Catering and platters
   if (name.includes('platter') || name.includes('catering')) {
     if (name.includes('cheese') || name.includes('charcuterie')) {
@@ -257,7 +263,7 @@ export function generateShortDescription(productName: string, categoryName?: str
     }
     return 'Perfect for sharing and entertaining';
   }
-  
+
   // Beverages
   if (name.includes('coffee') || name.includes('café')) {
     return 'Premium Latin American coffee blend';
@@ -265,7 +271,7 @@ export function generateShortDescription(productName: string, categoryName?: str
   if (name.includes('mate') || name.includes('yerba')) {
     return 'Traditional South American herbal tea';
   }
-  
+
   // Desserts and sweets
   if (name.includes('dulce') || name.includes('caramel')) {
     return 'Rich and creamy dulce de leche treat';
@@ -273,7 +279,7 @@ export function generateShortDescription(productName: string, categoryName?: str
   if (name.includes('flan')) {
     return 'Silky smooth caramel custard dessert';
   }
-  
+
   // Sauces and condiments
   if (name.includes('chimichurri')) {
     return 'Fresh herb and garlic sauce';
@@ -281,7 +287,7 @@ export function generateShortDescription(productName: string, categoryName?: str
   if (name.includes('salsa') || name.includes('sauce')) {
     return 'Authentic Latin American sauce';
   }
-  
+
   // Default descriptions based on category
   if (category.includes('empanada')) {
     return 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite.';
@@ -295,7 +301,7 @@ export function generateShortDescription(productName: string, categoryName?: str
   if (category.includes('sauce') || category.includes('condiment')) {
     return 'Authentic Latin American condiment';
   }
-  
+
   // Generic fallback
   return 'Authentic Latin American specialty';
 }
@@ -306,7 +312,7 @@ export function generateShortDescription(productName: string, categoryName?: str
  */
 export function toTitleCase(str: string): string {
   if (!str) return '';
-  
+
   return str
     .toLowerCase()
     .split(' ')
@@ -328,24 +334,24 @@ export function capitalizeFirst(str: string): string {
  */
 export function getBoxedLunchImage(itemName: string): string {
   const name = itemName.toLowerCase();
-  
+
   // Map protein names to their images
   const proteinImageMap: Record<string, string> = {
     'carne asada': '/images/boxedlunches/carne-asada.png',
     'pollo al carbón': '/images/boxedlunches/pollo-carbon.png',
-    'carnitas': '/images/boxedlunches/carnitas.png',
+    carnitas: '/images/boxedlunches/carnitas.png',
     'pollo asado': '/images/boxedlunches/pollo-asado.png',
-    'pescado': '/images/boxedlunches/pescado.png',
-    'vegetarian': '/images/boxedlunches/vegetarian-option.png',
+    pescado: '/images/boxedlunches/pescado.png',
+    vegetarian: '/images/boxedlunches/vegetarian-option.png',
   };
-  
+
   // Check for matches in the item name
   for (const [protein, imagePath] of Object.entries(proteinImageMap)) {
     if (name.includes(protein)) {
       return imagePath;
     }
   }
-  
+
   // Fallback to default catering image
   return '/images/catering/default-item.jpg';
 }
@@ -355,15 +361,19 @@ export function getBoxedLunchImage(itemName: string): string {
  * Handles packages, appetizers, platters, boxed lunches, desserts, etc.
  */
 export function getCateringItemImage(
-  itemName: string, 
-  imageUrl?: string | null | undefined, 
+  itemName: string,
+  imageUrl?: string | null | undefined,
   metadata?: any
 ): string {
   // If we have a provided image URL, use it (this is the most important!)
   if (imageUrl) {
     // AWS S3 URLs already have proper format
-    if (imageUrl.includes('amazonaws.com') || imageUrl.includes('s3.') || 
-        imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (
+      imageUrl.includes('amazonaws.com') ||
+      imageUrl.includes('s3.') ||
+      imageUrl.startsWith('http://') ||
+      imageUrl.startsWith('https://')
+    ) {
       return imageUrl;
     }
     // For relative paths, ensure they start with a slash
@@ -380,14 +390,14 @@ export function getCateringItemImage(
   // Handle boxed lunch items with protein selection
   if (metadata?.type === 'boxed-lunch' && metadata?.selectedProtein) {
     const proteinImageMap: Record<string, string> = {
-      'CARNE_ASADA': '/images/boxedlunches/carne-asada.png',
-      'POLLO_AL_CARBON': '/images/boxedlunches/pollo-carbon.png',
-      'CARNITAS': '/images/boxedlunches/carnitas.png',
-      'POLLO_ASADO': '/images/boxedlunches/pollo-asado.png',
-      'PESCADO': '/images/boxedlunches/pescado.png',
-      'VEGETARIAN_OPTION': '/images/boxedlunches/vegetarian-option.png',
+      CARNE_ASADA: '/images/boxedlunches/carne-asada.png',
+      POLLO_AL_CARBON: '/images/boxedlunches/pollo-carbon.png',
+      CARNITAS: '/images/boxedlunches/carnitas.png',
+      POLLO_ASADO: '/images/boxedlunches/pollo-asado.png',
+      PESCADO: '/images/boxedlunches/pescado.png',
+      VEGETARIAN_OPTION: '/images/boxedlunches/vegetarian-option.png',
     };
-    
+
     const proteinImage = proteinImageMap[metadata.selectedProtein];
     if (proteinImage) {
       return proteinImage;
@@ -413,11 +423,11 @@ export function getCateringItemImage(
   const proteinImageMap: Record<string, string> = {
     'carne asada': '/images/boxedlunches/carne-asada.png',
     'pollo al carbón': '/images/boxedlunches/pollo-carbon.png',
-    'carnitas': '/images/boxedlunches/carnitas.png',
+    carnitas: '/images/boxedlunches/carnitas.png',
     'pollo asado': '/images/boxedlunches/pollo-asado.png',
-    'pescado': '/images/boxedlunches/pescado.png',
+    pescado: '/images/boxedlunches/pescado.png',
   };
-  
+
   for (const [protein, imagePath] of Object.entries(proteinImageMap)) {
     if (name.includes(protein)) {
       return imagePath;
@@ -426,4 +436,4 @@ export function getCateringItemImage(
 
   // Final fallback to default catering image
   return '/images/catering/default-item.jpg';
-} 
+}

@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-Note: Phase 1 has been applied. 
+Note: Phase 1 has been applied.
 
 This guide addresses two critical issues in your e-commerce system:
 
@@ -12,8 +12,11 @@ This guide addresses two critical issues in your e-commerce system:
 ## 🎯 Implementation Phases
 
 ### Phase 1: Order Recovery System (URGENT)
-### Phase 2: Checkout Session Persistence  
+
+### Phase 2: Checkout Session Persistence
+
 ### Phase 3: Unified Checkout Components
+
 ### Phase 4: Complete System Migration
 
 ---
@@ -27,13 +30,13 @@ This guide addresses two critical issues in your e-commerce system:
 ```prisma
 model Order {
   // ... existing fields ...
-  
+
   // Add these new fields:
   paymentUrl          String?   @map("payment_url")           // Store Square checkout URL
   paymentUrlExpiresAt DateTime? @map("payment_url_expires_at") // URL expiration
   retryCount          Int       @default(0) @map("retry_count") // Track retry attempts
   lastRetryAt         DateTime? @map("last_retry_at")          // Last retry timestamp
-  
+
   // ... rest of existing fields ...
 }
 
@@ -52,6 +55,7 @@ enum OrderStatus {
 ```
 
 **Migration Command:**
+
 ```bash
 npx prisma db push
 npx prisma generate
@@ -71,13 +75,12 @@ import { addHours } from 'date-fns';
 const MAX_RETRY_ATTEMPTS = 3;
 const CHECKOUT_URL_EXPIRY_HOURS = 24;
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { orderId: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { orderId: string } }) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -87,34 +90,31 @@ export async function POST(
 
     // Fetch order with validation
     const order = await prisma.order.findUnique({
-      where: { 
+      where: {
         id: orderId,
         userId: user.id, // Ensure user owns the order
-        status: { in: ['PENDING', 'PAYMENT_FAILED'] }
+        status: { in: ['PENDING', 'PAYMENT_FAILED'] },
       },
       include: {
         items: {
           include: {
             product: true,
-            variant: true
-          }
-        }
-      }
+            variant: true,
+          },
+        },
+      },
     });
 
     if (!order) {
       return NextResponse.json(
-        { error: 'Order not found or not eligible for retry' }, 
+        { error: 'Order not found or not eligible for retry' },
         { status: 404 }
       );
     }
 
     // Check retry limits
     if (order.retryCount >= MAX_RETRY_ATTEMPTS) {
-      return NextResponse.json(
-        { error: 'Maximum retry attempts exceeded' }, 
-        { status: 429 }
-      );
+      return NextResponse.json({ error: 'Maximum retry attempts exceeded' }, { status: 429 });
     }
 
     // Check if existing URL is still valid
@@ -122,7 +122,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         checkoutUrl: order.paymentUrl,
-        expiresAt: order.paymentUrlExpiresAt
+        expiresAt: order.paymentUrlExpiresAt,
       });
     }
 
@@ -133,23 +133,23 @@ export async function POST(
       customerInfo: {
         name: order.customerName,
         email: order.email,
-        phone: order.phone
+        phone: order.phone,
       },
       total: order.total,
       redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}?payment=cancelled`
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}?payment=cancelled`,
     });
 
     if (!squareResult.success || !squareResult.checkoutUrl) {
       return NextResponse.json(
-        { error: squareResult.error || 'Failed to create checkout session' }, 
+        { error: squareResult.error || 'Failed to create checkout session' },
         { status: 500 }
       );
     }
 
     // Update order with new checkout URL and retry info
     const expiresAt = addHours(new Date(), CHECKOUT_URL_EXPIRY_HOURS);
-    
+
     await prisma.order.update({
       where: { id: orderId },
       data: {
@@ -157,23 +157,19 @@ export async function POST(
         paymentUrlExpiresAt: expiresAt,
         retryCount: order.retryCount + 1,
         lastRetryAt: new Date(),
-        status: 'PENDING' // Reset to pending for new attempt
-      }
+        status: 'PENDING', // Reset to pending for new attempt
+      },
     });
 
     return NextResponse.json({
       success: true,
       checkoutUrl: squareResult.checkoutUrl,
       expiresAt,
-      retryAttempt: order.retryCount + 1
+      retryAttempt: order.retryCount + 1,
     });
-
   } catch (error) {
     console.error('Error in retry payment:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -275,7 +271,7 @@ export function PendingOrdersList({ orders }: Props) {
 
   const handleRetryPayment = async (orderId: string) => {
     setRetryingOrderId(orderId);
-    
+
     try {
       const response = await fetch(`/api/orders/${orderId}/retry-payment`, {
         method: 'POST',
@@ -346,7 +342,7 @@ export function PendingOrdersList({ orders }: Props) {
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             {/* Order Items Summary */}
             <div className="text-sm">
@@ -403,8 +399,8 @@ import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
 // In the component, add condition for showing retry button:
 {order.status === 'PENDING' || order.status === 'PAYMENT_FAILED' ? (
   <div className="mt-4">
-    <RetryPaymentButton 
-      orderId={order.id} 
+    <RetryPaymentButton
+      orderId={order.id}
       retryCount={order.retryCount}
       disabled={order.retryCount >= 3}
     />
@@ -433,7 +429,7 @@ export function RetryPaymentButton({ orderId, retryCount, disabled }: Props) {
 
   const handleRetry = async () => {
     setIsRetrying(true);
-    
+
     try {
       const response = await fetch(`/api/orders/${orderId}/retry-payment`, {
         method: 'POST',
@@ -486,8 +482,8 @@ await prisma.order.update({
   data: {
     paymentUrl: checkoutUrl,
     paymentUrlExpiresAt: expiresAt,
-    squareOrderId: squareOrderResult.order?.id
-  }
+    squareOrderId: squareOrderResult.order?.id,
+  },
 });
 ```
 
@@ -524,12 +520,12 @@ export class CheckoutPersistence {
     const id = crypto.randomUUID();
     const timestamp = Date.now();
     const expiresAt = timestamp + SESSION_DURATION;
-    
+
     const fullSession: CheckoutSession = {
       ...session,
       id,
       timestamp,
-      expiresAt
+      expiresAt,
     };
 
     try {
@@ -547,7 +543,7 @@ export class CheckoutPersistence {
       if (!stored) return null;
 
       const session: CheckoutSession = JSON.parse(stored);
-      
+
       // Check if session has expired
       if (Date.now() > session.expiresAt) {
         this.clear();
@@ -569,7 +565,7 @@ export class CheckoutPersistence {
     const updated = {
       ...current,
       ...updates,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     try {
@@ -611,7 +607,7 @@ export function useCheckoutRecovery(checkoutType: 'store' | 'catering') {
 
   useEffect(() => {
     const session = CheckoutPersistence.load();
-    
+
     if (session && session.type === checkoutType) {
       setRecoveredSession(session);
       setShowRecoveryPrompt(true);
@@ -645,7 +641,7 @@ export function useCheckoutRecovery(checkoutType: 'store' | 'catering') {
     acceptRecovery,
     declineRecovery,
     saveSession,
-    clearSession
+    clearSession,
   };
 }
 ```
@@ -681,14 +677,14 @@ export interface UnifiedCartItem {
 interface UnifiedCartState {
   items: UnifiedCartItem[];
   cartType: CartType | null;
-  
+
   // Actions
   addItem: (item: UnifiedCartItem) => void;
   removeItem: (id: string, variantId?: string) => void;
   updateQuantity: (id: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
   setCartType: (type: CartType) => void;
-  
+
   // Getters
   getItemsByType: (type: CartType) => UnifiedCartItem[];
   getTotalByType: (type: CartType) => number;
@@ -702,34 +698,32 @@ export const useUnifiedCartStore = create<UnifiedCartState>()(
       items: [],
       cartType: null,
 
-      addItem: (item) => {
+      addItem: item => {
         const state = get();
-        
+
         // Prevent mixing cart types
         if (state.cartType && state.cartType !== item.type) {
           throw new Error(`Cannot mix ${state.cartType} and ${item.type} items in cart`);
         }
 
         const existingItemIndex = state.items.findIndex(
-          i => i.id === item.id && 
-               i.variantId === item.variantId && 
-               i.type === item.type
+          i => i.id === item.id && i.variantId === item.variantId && i.type === item.type
         );
 
         if (existingItemIndex >= 0) {
           // Update existing item quantity
           const updatedItems = [...state.items];
           updatedItems[existingItemIndex].quantity += item.quantity;
-          
-          set({ 
+
+          set({
             items: updatedItems,
-            cartType: item.type
+            cartType: item.type,
           });
         } else {
           // Add new item
-          set({ 
+          set({
             items: [...state.items, item],
-            cartType: item.type
+            cartType: item.type,
           });
         }
       },
@@ -739,10 +733,10 @@ export const useUnifiedCartStore = create<UnifiedCartState>()(
         const filteredItems = state.items.filter(
           item => !(item.id === id && item.variantId === variantId)
         );
-        
-        set({ 
+
+        set({
           items: filteredItems,
-          cartType: filteredItems.length > 0 ? state.cartType : null
+          cartType: filteredItems.length > 0 ? state.cartType : null,
         });
       },
 
@@ -754,11 +748,9 @@ export const useUnifiedCartStore = create<UnifiedCartState>()(
 
         const state = get();
         const updatedItems = state.items.map(item =>
-          item.id === id && item.variantId === variantId
-            ? { ...item, quantity }
-            : item
+          item.id === id && item.variantId === variantId ? { ...item, quantity } : item
         );
-        
+
         set({ items: updatedItems });
       },
 
@@ -766,34 +758,34 @@ export const useUnifiedCartStore = create<UnifiedCartState>()(
         set({ items: [], cartType: null });
       },
 
-      setCartType: (type) => {
+      setCartType: type => {
         set({ cartType: type });
       },
 
-      getItemsByType: (type) => {
+      getItemsByType: type => {
         return get().items.filter(item => item.type === type);
       },
 
-      getTotalByType: (type) => {
-        return get().items
-          .filter(item => item.type === type)
-          .reduce((total, item) => total + (item.price * item.quantity), 0);
+      getTotalByType: type => {
+        return get()
+          .items.filter(item => item.type === type)
+          .reduce((total, item) => total + item.price * item.quantity, 0);
       },
 
       getItemCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
       },
 
-      canAddItemType: (type) => {
+      canAddItemType: type => {
         const state = get();
         return !state.cartType || state.cartType === type;
       },
     }),
     {
       name: 'destino-unified-cart',
-      partialize: (state) => ({ 
-        items: state.items, 
-        cartType: state.cartType 
+      partialize: state => ({
+        items: state.items,
+        cartType: state.cartType,
       }),
     }
   )
@@ -826,13 +818,13 @@ const unifiedCheckoutSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email required'),
   phone: z.string().min(10, 'Valid phone number required'),
-  
+
   // Fulfillment
   fulfillmentMethod: z.enum(['pickup', 'local_delivery', 'nationwide_shipping']),
-  
+
   // Payment
   paymentMethod: z.enum(['SQUARE', 'CASH']),
-  
+
   // Dynamic fields based on fulfillment method
   pickupDate: z.string().optional(),
   pickupTime: z.string().optional(),
@@ -851,7 +843,7 @@ const unifiedCheckoutSchema = z.object({
     postalCode: z.string(),
   }).optional(),
   shippingRateId: z.string().optional(),
-  
+
   // Catering specific
   eventDate: z.date().optional(),
   specialRequests: z.string().optional(),
@@ -880,7 +872,7 @@ export function UnifiedCheckout({ type, initialUserData }: Props) {
     saveSession,
     clearSession
   } = useCheckoutRecovery(type);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1077,7 +1069,7 @@ export function SessionRecoveryDialog({ open, onAccept, onDecline, sessionData }
                 {sessionData.items.length} item{sessionData.items.length !== 1 ? 's' : ''}
               </span>
             </div>
-            
+
             <div className="text-sm text-gray-600 space-y-1">
               <div>Name: {sessionData.customerInfo.name || 'Not filled'}</div>
               <div>Email: {sessionData.customerInfo.email || 'Not filled'}</div>
@@ -1117,21 +1109,25 @@ import { createCateringOrderAndProcessPayment } from './catering';
 
 const unifiedOrderSchema = z.object({
   type: z.enum(['store', 'catering']),
-  items: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    price: z.number(),
-    quantity: z.number(),
-    variantId: z.string().optional(),
-  })),
-  formData: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    phone: z.string(),
-    fulfillmentMethod: z.enum(['pickup', 'local_delivery', 'nationwide_shipping']),
-    paymentMethod: z.enum(['SQUARE', 'CASH']),
-    // Add other fields as needed
-  }).passthrough(), // Allow additional fields
+  items: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      price: z.number(),
+      quantity: z.number(),
+      variantId: z.string().optional(),
+    })
+  ),
+  formData: z
+    .object({
+      name: z.string(),
+      email: z.string().email(),
+      phone: z.string(),
+      fulfillmentMethod: z.enum(['pickup', 'local_delivery', 'nationwide_shipping']),
+      paymentMethod: z.enum(['SQUARE', 'CASH']),
+      // Add other fields as needed
+    })
+    .passthrough(), // Allow additional fields
   userId: z.string().optional(),
 });
 
@@ -1163,9 +1159,10 @@ export async function createUnifiedOrder(input: UnifiedOrderInput): Promise<Unif
 
     // Add method-specific data
     if (formData.fulfillmentMethod === 'pickup') {
-      fulfillment.pickupTime = (formData as any).pickupDate && (formData as any).pickupTime
-        ? `${(formData as any).pickupDate}T${(formData as any).pickupTime}:00`
-        : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(); // Default to 2 days from now
+      fulfillment.pickupTime =
+        (formData as any).pickupDate && (formData as any).pickupTime
+          ? `${(formData as any).pickupDate}T${(formData as any).pickupTime}:00`
+          : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(); // Default to 2 days from now
     } else if (formData.fulfillmentMethod === 'local_delivery') {
       fulfillment.deliveryDate = (formData as any).deliveryDate;
       fulfillment.deliveryTime = (formData as any).deliveryTime;
@@ -1206,14 +1203,16 @@ export async function createUnifiedOrder(input: UnifiedOrderInput): Promise<Unif
         },
         fulfillment: {
           method: formData.fulfillmentMethod,
-          ...(formData.fulfillmentMethod === 'pickup' ? {
-            pickupDate: (formData as any).pickupDate,
-            pickupTime: (formData as any).pickupTime,
-          } : {
-            deliveryAddress: (formData as any).deliveryAddress,
-            deliveryDate: (formData as any).deliveryDate,
-            deliveryTime: (formData as any).deliveryTime,
-          }),
+          ...(formData.fulfillmentMethod === 'pickup'
+            ? {
+                pickupDate: (formData as any).pickupDate,
+                pickupTime: (formData as any).pickupTime,
+              }
+            : {
+                deliveryAddress: (formData as any).deliveryAddress,
+                deliveryDate: (formData as any).deliveryDate,
+                deliveryTime: (formData as any).deliveryTime,
+              }),
         },
         payment: {
           method: formData.paymentMethod,
@@ -1252,6 +1251,7 @@ export async function createUnifiedOrder(input: UnifiedOrderInput): Promise<Unif
 ### 4.1 Gradual Migration Plan
 
 #### Step 1: Add Feature Flags
+
 ```typescript
 // src/lib/feature-flags.ts
 export const FEATURE_FLAGS = {
@@ -1261,6 +1261,7 @@ export const FEATURE_FLAGS = {
 ```
 
 #### Step 2: Update Environment Variables
+
 ```bash
 # .env.local
 NEXT_PUBLIC_ENABLE_ORDER_RECOVERY=true
@@ -1270,21 +1271,25 @@ NEXT_PUBLIC_ENABLE_UNIFIED_CHECKOUT=false # Start with false
 #### Step 3: Progressive Rollout
 
 **Week 1: Order Recovery System**
+
 - Deploy Phase 1 with feature flag
 - Test with pending orders
 - Monitor retry success rates
 
 **Week 2: Session Persistence**
+
 - Deploy Phase 2
 - Test session recovery flows
 - Gather user feedback
 
 **Week 3: Unified Components (Store)**
+
 - Enable unified checkout for store only
 - A/B test against current checkout
 - Monitor conversion rates
 
 **Week 4: Full Unification**
+
 - Enable unified checkout for catering
 - Complete migration
 - Remove old components
@@ -1292,6 +1297,7 @@ NEXT_PUBLIC_ENABLE_UNIFIED_CHECKOUT=false # Start with false
 ### 4.2 Testing Strategy
 
 #### Unit Tests
+
 ```typescript
 // src/__tests__/lib/checkout-persistence.test.ts
 import { CheckoutPersistence } from '@/lib/checkout-persistence';
@@ -1307,12 +1313,12 @@ describe('CheckoutPersistence', () => {
       customerInfo: {
         name: 'John Doe',
         email: 'john@example.com',
-        phone: '555-1234'
+        phone: '555-1234',
       },
       fulfillmentMethod: 'pickup',
       fulfillmentData: {},
       paymentMethod: 'SQUARE',
-      items: []
+      items: [],
     };
 
     const sessionId = CheckoutPersistence.save(sessionData);
@@ -1329,6 +1335,7 @@ describe('CheckoutPersistence', () => {
 ```
 
 #### Integration Tests
+
 ```typescript
 // src/__tests__/api/orders/retry-payment.test.ts
 import { POST } from '@/app/api/orders/[orderId]/retry-payment/route';
@@ -1346,6 +1353,7 @@ describe('/api/orders/[orderId]/retry-payment', () => {
 ```
 
 #### E2E Tests
+
 ```typescript
 // tests/e2e/order-recovery.spec.ts
 import { test, expect } from '@playwright/test';
@@ -1363,6 +1371,7 @@ test.describe('Order Recovery Flow', () => {
 ### 4.3 Monitoring & Analytics
 
 #### Key Metrics to Track
+
 ```typescript
 // src/lib/analytics.ts
 export const trackOrderRecovery = {
@@ -1377,14 +1386,15 @@ export const trackOrderRecovery = {
   },
   sessionRecovered: (sessionId: string, type: 'store' | 'catering') => {
     // Analytics tracking
-  }
+  },
 };
 ```
 
 #### Database Queries for Monitoring
+
 ```sql
 -- Pending orders needing attention
-SELECT 
+SELECT
   id,
   status,
   payment_status,
@@ -1392,18 +1402,18 @@ SELECT
   created_at,
   last_retry_at,
   total
-FROM orders 
+FROM orders
 WHERE status IN ('PENDING', 'PAYMENT_FAILED')
   AND retry_count < 3
   AND created_at > NOW() - INTERVAL '7 days';
 
 -- Recovery success rate
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(*) as total_pending,
   COUNT(CASE WHEN retry_count > 0 THEN 1 END) as retry_attempted,
   COUNT(CASE WHEN status = 'COMPLETED' AND retry_count > 0 THEN 1 END) as retry_succeeded
-FROM orders 
+FROM orders
 WHERE created_at > NOW() - INTERVAL '30 days'
   AND status IN ('PENDING', 'PAYMENT_FAILED', 'COMPLETED')
 GROUP BY DATE(created_at);
@@ -1414,18 +1424,20 @@ GROUP BY DATE(created_at);
 ## 🛡️ Security Considerations
 
 ### 4.1 Order Access Control
+
 ```typescript
 // Ensure users can only retry their own orders
 const order = await prisma.order.findUnique({
-  where: { 
+  where: {
     id: orderId,
     userId: user.id, // Critical: verify ownership
-    status: { in: ['PENDING', 'PAYMENT_FAILED'] }
-  }
+    status: { in: ['PENDING', 'PAYMENT_FAILED'] },
+  },
 });
 ```
 
 ### 4.2 Rate Limiting
+
 ```typescript
 // src/lib/rate-limiting.ts
 import { Ratelimit } from '@upstash/ratelimit';
@@ -1444,6 +1456,7 @@ export const retryRateLimit = new Ratelimit({
 ```
 
 ### 4.3 Session Data Validation
+
 ```typescript
 // Always validate recovered session data
 const validateSession = (session: any): session is CheckoutSession => {
@@ -1464,6 +1477,7 @@ const validateSession = (session: any): session is CheckoutSession => {
 ## 📋 Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] Run database migrations
 - [ ] Update environment variables
 - [ ] Run full test suite
@@ -1471,6 +1485,7 @@ const validateSession = (session: any): session is CheckoutSession => {
 - [ ] Prepare rollback plan
 
 ### Deployment Steps
+
 1. [ ] Deploy Phase 1 (Order Recovery) with feature flag OFF
 2. [ ] Run database migration in production
 3. [ ] Enable ORDER_RECOVERY feature flag
@@ -1482,6 +1497,7 @@ const validateSession = (session: any): session is CheckoutSession => {
 9. [ ] Remove old checkout components
 
 ### Post-Deployment Monitoring
+
 - [ ] Monitor retry success rates
 - [ ] Check error logs for new issues
 - [ ] Verify session persistence works

@@ -4,15 +4,22 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { UserOrder } from '@/app/api/user/orders/route'; // Updated import
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Eye, Calendar, Users, Package, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal, Eye, Calendar, Users, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Helper function to format currency
 const formatCurrency = (amount: number | string | null | undefined) => {
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount ?? 0;
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : (amount ?? 0);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -30,7 +37,9 @@ const formatDate = (date: Date | string | null | undefined) => {
 };
 
 // Helper to map status to badge variant
-const getStatusVariant = (status: string | null | undefined): "default" | "primary" | "secondary" | "outline" => {
+const getStatusVariant = (
+  status: string | null | undefined
+): 'default' | 'primary' | 'secondary' | 'outline' => {
   switch (status?.toLowerCase()) {
     case 'completed':
     case 'ready':
@@ -84,9 +93,9 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
   useEffect(() => {
     // Don't fetch if userId is not available (though it should be)
     if (!userId) {
-        setIsLoading(false);
-        setError('User ID is missing, cannot fetch orders.');
-        return;
+      setIsLoading(false);
+      setError('User ID is missing, cannot fetch orders.');
+      return;
     }
 
     const fetchOrders = async () => {
@@ -119,23 +128,23 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
 
   if (isLoading) {
     return (
-       <div className="flex items-center justify-center space-x-2 py-12">
-         <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
-         <span className="text-gray-600">Loading orders...</span>
-       </div>
+      <div className="flex items-center justify-center space-x-2 py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
+        <span className="text-gray-600">Loading orders...</span>
+      </div>
     );
   }
 
   if (error) {
-     return (
-        <Alert variant="destructive" className="border-red-200 bg-red-50">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Unable to Load Orders</AlertTitle>
-            <AlertDescription>
-              {error}. Please try refreshing the page or contact support if the issue persists.
-            </AlertDescription>
-        </Alert>
-     );
+    return (
+      <Alert variant="destructive" className="border-red-200 bg-red-50">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Unable to Load Orders</AlertTitle>
+        <AlertDescription>
+          {error}. Please try refreshing the page or contact support if the issue persists.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   if (orders.length === 0) {
@@ -145,7 +154,9 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
           <Package className="h-8 w-8 text-gray-400" />
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-        <p className="text-gray-500 mb-6">You haven&apos;t placed any orders yet. Start exploring our menu!</p>
+        <p className="text-gray-500 mb-6">
+          You haven&apos;t placed any orders yet. Start exploring our menu!
+        </p>
         <Button asChild>
           <Link href="/menu" className="bg-primary hover:bg-primary/90">
             Browse Menu
@@ -173,7 +184,7 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {orders.map(order => (
                 <TableRow key={order.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div className="font-medium text-gray-900">#{order.id.substring(0, 8)}</div>
@@ -205,7 +216,12 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
                     {formatCurrency(order.total)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button asChild size="sm" variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="ghost"
+                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    >
                       <Link href={`/account/order/${order.id}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -221,8 +237,11 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {orders.map((order) => (
-          <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+        {orders.map(order => (
+          <div
+            key={order.id}
+            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+          >
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="font-medium text-gray-900">#{order.id.substring(0, 8)}</div>
@@ -235,7 +254,7 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
                 </Badge>
               </div>
             </div>
-            
+
             {order.type === 'catering' && order.eventDate && (
               <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3 p-2 bg-amber-50 rounded-lg">
                 <div className="flex items-center space-x-1">
@@ -250,12 +269,15 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
                 )}
               </div>
             )}
-            
+
             <div className="flex items-center justify-between">
-              <div className="font-medium text-lg text-gray-900">
-                {formatCurrency(order.total)}
-              </div>
-              <Button asChild size="sm" variant="outline" className="border-amber-200 text-amber-600 hover:bg-amber-50">
+              <div className="font-medium text-lg text-gray-900">{formatCurrency(order.total)}</div>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="border-amber-200 text-amber-600 hover:bg-amber-50"
+              >
                 <Link href={`/account/order/${order.id}`}>
                   <Eye className="h-4 w-4 mr-1" />
                   View Details
@@ -265,13 +287,15 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
           </div>
         ))}
       </div>
-      
+
       {limit && orders.length >= limit && (
         <div className="text-center pt-4 border-t border-gray-200">
-          <Button asChild variant="outline" className="border-amber-200 text-amber-600 hover:bg-amber-50">
-            <Link href="/account/orders">
-              View All Orders ({orders.length}+)
-            </Link>
+          <Button
+            asChild
+            variant="outline"
+            className="border-amber-200 text-amber-600 hover:bg-amber-50"
+          >
+            <Link href="/account/orders">View All Orders ({orders.length}+)</Link>
           </Button>
         </div>
       )}

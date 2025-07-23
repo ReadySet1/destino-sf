@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
         const volumeType = todayOrders > alertThreshold ? 'high' : 'low';
 
         result = await alertService.sendSystemErrorAlert(
-          new Error(`${volumeType === 'high' ? 'High' : 'Low'} order volume alert: ${todayOrders} orders today`),
+          new Error(
+            `${volumeType === 'high' ? 'High' : 'Low'} order volume alert: ${todayOrders} orders today`
+          ),
           {
             type: 'order_volume',
             currentVolume: todayOrders,
@@ -116,24 +118,29 @@ export async function POST(request: NextRequest) {
     }
 
     if (result.success) {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         messageId: result.messageId,
-        message: `Business alert sent successfully` 
+        message: `Business alert sent successfully`,
       });
     } else {
-      return NextResponse.json({ 
-        success: false, 
-        error: result.error 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: 500 }
+      );
     }
-
   } catch (error) {
     console.error('Error in business alerts API:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -235,12 +242,14 @@ export async function GET(request: NextRequest) {
       alerts,
       metrics,
     });
-
   } catch (error) {
     console.error('Error fetching business alerts:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch business alerts',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch business alerts',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

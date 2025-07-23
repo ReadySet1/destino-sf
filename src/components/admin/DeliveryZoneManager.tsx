@@ -148,7 +148,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
       const result = await response.json();
       toast.success(result.message);
-      
+
       // Reload zones and reset form
       await loadDeliveryZones();
       resetForm();
@@ -221,7 +221,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
         <CardContent>
           {/* Zone List */}
           <div className="space-y-4">
-            {zones.map((zone) => (
+            {zones.map(zone => (
               <Card key={zone.id} className="border-l-4 border-l-blue-500">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                         <h3 className="font-semibold text-lg">{zone.name}</h3>
                         <Switch
                           checked={zone.isActive}
-                          onCheckedChange={(checked) => updateZoneStatus(zone.id, checked)}
+                          onCheckedChange={checked => updateZoneStatus(zone.id, checked)}
                         />
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{zone.description}</p>
@@ -257,11 +257,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                         </div>
                       )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => startEditZone(zone)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => startEditZone(zone)}>
                       Edit
                     </Button>
                   </div>
@@ -276,9 +272,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
               <Separator className="my-6" />
               <Card>
                 <CardHeader>
-                  <CardTitle>
-                    {isNewZone ? 'Add New Zone' : `Edit ${editingZone?.name}`}
-                  </CardTitle>
+                  <CardTitle>{isNewZone ? 'Add New Zone' : `Edit ${editingZone?.name}`}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -287,7 +281,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                       <Input
                         id="zone"
                         value={formData.zone}
-                        onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
+                        onChange={e => setFormData({ ...formData, zone: e.target.value })}
                         placeholder="SAN_FRANCISCO"
                         disabled={!isNewZone}
                       />
@@ -297,7 +291,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                         placeholder="San Francisco"
                       />
                     </div>
@@ -308,7 +302,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={e => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Zone description..."
                     />
                   </div>
@@ -322,7 +316,12 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                         step="0.01"
                         min="0"
                         value={formData.minimumAmount}
-                        onChange={(e) => setFormData({ ...formData, minimumAmount: parseFloat(e.target.value) || 0 })}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            minimumAmount: parseFloat(e.target.value) || 0,
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -333,7 +332,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                         step="0.01"
                         min="0"
                         value={formData.deliveryFee}
-                        onChange={(e) => setFormData({ ...formData, deliveryFee: parseFloat(e.target.value) || 0 })}
+                        onChange={e =>
+                          setFormData({ ...formData, deliveryFee: parseFloat(e.target.value) || 0 })
+                        }
                       />
                     </div>
                   </div>
@@ -343,7 +344,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                     <Input
                       id="estimatedDeliveryTime"
                       value={formData.estimatedDeliveryTime}
-                      onChange={(e) => setFormData({ ...formData, estimatedDeliveryTime: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, estimatedDeliveryTime: e.target.value })
+                      }
                       placeholder="2-3 hours"
                     />
                   </div>
@@ -353,7 +356,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                     <Input
                       id="cities"
                       value={formData.cities}
-                      onChange={(e) => setFormData({ ...formData, cities: e.target.value })}
+                      onChange={e => setFormData({ ...formData, cities: e.target.value })}
                       placeholder="San Francisco, Daly City, South San Francisco"
                     />
                   </div>
@@ -363,7 +366,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                     <Textarea
                       id="postalCodes"
                       value={formData.postalCodes}
-                      onChange={(e) => setFormData({ ...formData, postalCodes: e.target.value })}
+                      onChange={e => setFormData({ ...formData, postalCodes: e.target.value })}
                       placeholder="94102, 94103, 94104..."
                       rows={3}
                     />
@@ -373,7 +376,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                     <Switch
                       id="isActive"
                       checked={formData.isActive}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                      onCheckedChange={checked => setFormData({ ...formData, isActive: checked })}
                     />
                     <Label htmlFor="isActive">Zone is active</Label>
                   </div>
@@ -399,4 +402,4 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       </Card>
     </div>
   );
-} 
+}

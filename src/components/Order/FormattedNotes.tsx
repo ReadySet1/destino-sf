@@ -17,9 +17,7 @@ export function FormattedNotes({ notes, showRaw = false, className = '' }: Forma
   if (showRaw) {
     return (
       <div className={className}>
-        <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-          {notes}
-        </pre>
+        <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">{notes}</pre>
       </div>
     );
   }
@@ -43,9 +41,7 @@ export function FormattedNotes({ notes, showRaw = false, className = '' }: Forma
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Special Requests:</h4>
           <div className="bg-yellow-50 p-3 rounded-md">
-            <p className="text-sm text-gray-800 whitespace-pre-wrap">
-              {formattedNotes.otherNotes}
-            </p>
+            <p className="text-sm text-gray-800 whitespace-pre-wrap">{formattedNotes.otherNotes}</p>
           </div>
         </div>
       )}
@@ -53,11 +49,9 @@ export function FormattedNotes({ notes, showRaw = false, className = '' }: Forma
       {/* If no structured data found, show as plain text */}
       {!formattedNotes.hasShippingAddress && !formattedNotes.otherNotes && (
         <div className="bg-gray-50 p-3 rounded-md">
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">
-            {notes}
-          </p>
+          <p className="text-sm text-gray-800 whitespace-pre-wrap">{notes}</p>
         </div>
       )}
     </div>
   );
-} 
+}

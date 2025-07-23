@@ -9,10 +9,13 @@ export async function GET() {
       version: process.env.npm_package_version || '1.0.0',
     });
   } catch (error) {
-    return NextResponse.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: 'Health check failed',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+      },
+      { status: 500 }
+    );
   }
 }

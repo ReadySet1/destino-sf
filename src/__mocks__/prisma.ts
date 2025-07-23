@@ -1,7 +1,7 @@
 import type { PrismaClient as PrismaClientType } from '@prisma/client';
 
 // Create a proper mock function that returns consistent data
-const createOrderMock = jest.fn().mockImplementation((data) => {
+const createOrderMock = jest.fn().mockImplementation(data => {
   const baseOrder = {
     id: 'order-123',
     customerName: data.data?.customerName || 'John Doe',
@@ -12,15 +12,24 @@ const createOrderMock = jest.fn().mockImplementation((data) => {
     fulfillmentType: data.data?.fulfillmentType || 'pickup',
     paymentStatus: data.data?.paymentStatus || 'PENDING',
     paymentMethod: data.data?.paymentMethod || 'SQUARE',
-    subtotal: typeof data.data?.subtotal === 'string' ? parseFloat(data.data.subtotal) : (data.data?.subtotal || 4197),
-    taxAmount: typeof data.data?.taxAmount === 'string' ? parseFloat(data.data.taxAmount) : (data.data?.taxAmount || 346),
-    total: typeof data.data?.total === 'string' ? parseFloat(data.data.total) : (data.data?.total || 4543),
+    subtotal:
+      typeof data.data?.subtotal === 'string'
+        ? parseFloat(data.data.subtotal)
+        : data.data?.subtotal || 4197,
+    taxAmount:
+      typeof data.data?.taxAmount === 'string'
+        ? parseFloat(data.data.taxAmount)
+        : data.data?.taxAmount || 346,
+    total:
+      typeof data.data?.total === 'string' ? parseFloat(data.data.total) : data.data?.total || 4543,
     createdAt: new Date('2025-06-19T16:55:08.495Z'),
     updatedAt: new Date('2025-06-19T16:55:08.495Z'),
     userId: data.data?.userId || null,
     notes: data.data?.notes || null,
     squareOrderId: data.data?.squareOrderId || null,
-    pickupTime: data.data?.pickupTime ? new Date(data.data.pickupTime) : new Date('2024-01-15T14:00:00.000Z'),
+    pickupTime: data.data?.pickupTime
+      ? new Date(data.data.pickupTime)
+      : new Date('2024-01-15T14:00:00.000Z'),
     deliveryDate: data.data?.deliveryDate || null,
     deliveryTime: data.data?.deliveryTime || null,
     isCateringOrder: data.data?.isCateringOrder || false,
@@ -39,11 +48,11 @@ const createOrderMock = jest.fn().mockImplementation((data) => {
   return baseOrder;
 });
 
-const updateOrderMock = jest.fn().mockImplementation((updateData) => {
+const updateOrderMock = jest.fn().mockImplementation(updateData => {
   return {
     id: updateData.where?.id || 'order-123',
     customerName: 'John Doe',
-    customerEmail: 'john@example.com', 
+    customerEmail: 'john@example.com',
     customerPhone: '+1234567890',
     status: updateData.data?.status || 'PROCESSING',
     fulfillmentMethod: 'pickup',
@@ -67,7 +76,7 @@ export const mockPrismaClient = {
   // Core Prisma methods
   $connect: jest.fn().mockResolvedValue(undefined),
   $disconnect: jest.fn().mockResolvedValue(undefined),
-  $transaction: jest.fn().mockImplementation((fn) => {
+  $transaction: jest.fn().mockImplementation(fn => {
     if (typeof fn === 'function') {
       return fn(mockPrismaClient);
     }
@@ -101,7 +110,7 @@ export const mockPrismaClient = {
           price: { toNumber: () => 12.99 },
           product: { name: 'Dulce de Leche Alfajores' },
           variant: { name: '6-pack' },
-        }
+        },
       ],
     }),
     update: updateOrderMock,
@@ -126,7 +135,7 @@ export const mockPrismaClient = {
         description: 'Test Description',
         category: { name: 'Test Category' },
         isCateringProduct: false,
-      }
+      },
     ]),
     findUnique: jest.fn().mockResolvedValue({
       id: 'product-1',
@@ -238,7 +247,7 @@ export const mockPrismaClient = {
     findUnique: jest.fn().mockResolvedValue({
       id: 'variant-123',
       name: 'Default Variant',
-      price: { toNumber: () => 25.00 },
+      price: { toNumber: () => 25.0 },
       squareVariantId: 'square-variant-123',
       productId: 'product-123',
       createdAt: new Date(),
@@ -248,7 +257,7 @@ export const mockPrismaClient = {
     create: jest.fn().mockResolvedValue({
       id: 'new-variant-id',
       name: 'New Variant',
-      price: { toNumber: () => 25.00 },
+      price: { toNumber: () => 25.0 },
       productId: 'product-123',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -266,7 +275,7 @@ export const mockPrismaClient = {
       id: 'variant-123',
       productId: 'product-123',
       name: 'Default Variant',
-      price: 25.00,
+      price: 25.0,
       isActive: true,
       inventory: 10,
       createdAt: new Date(),
@@ -277,7 +286,7 @@ export const mockPrismaClient = {
       id: 'new-variant-id',
       productId: 'product-123',
       name: 'New Variant',
-      price: 25.00,
+      price: 25.0,
       isActive: true,
       inventory: 10,
       createdAt: new Date(),
@@ -362,14 +371,14 @@ export const mockPrismaClient = {
   shippingConfiguration: {
     create: jest.fn().mockResolvedValue({
       id: 'config-1',
-      minimumOrderAmount: 50.00,
+      minimumOrderAmount: 50.0,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     }),
     findFirst: jest.fn().mockResolvedValue({
       id: 'config-1',
-      minimumOrderAmount: 50.00,
+      minimumOrderAmount: 50.0,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -378,13 +387,13 @@ export const mockPrismaClient = {
     findUnique: jest.fn().mockResolvedValue(null),
     update: jest.fn().mockResolvedValue({
       id: 'config-1',
-      minimumOrderAmount: 75.00,
+      minimumOrderAmount: 75.0,
       isActive: true,
       updatedAt: new Date(),
     }),
     upsert: jest.fn().mockResolvedValue({
       id: 'config-1',
-      minimumOrderAmount: 50.00,
+      minimumOrderAmount: 50.0,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -440,7 +449,7 @@ export const mockPrismaClient = {
       productId: 'product-123',
       variantId: 'variant-123',
       quantity: 1,
-      price: { toNumber: () => 25.00 },
+      price: { toNumber: () => 25.0 },
       createdAt: new Date(),
       updatedAt: new Date(),
     }),
@@ -496,7 +505,7 @@ export const mockPrismaClient = {
       customerName: 'John Doe',
       customerEmail: 'john@example.com',
       status: 'PENDING',
-      totalAmount: { toNumber: () => 150.00 },
+      totalAmount: { toNumber: () => 150.0 },
       createdAt: new Date(),
       updatedAt: new Date(),
     }),
@@ -568,7 +577,7 @@ export const mockPrismaClient = {
       id: 'refund-123',
       squareRefundId: 'square-refund-123',
       paymentId: 'payment-123',
-      amount: { toNumber: () => 25.00 },
+      amount: { toNumber: () => 25.0 },
       status: 'COMPLETED',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -586,4 +595,4 @@ export default mockPrismaClient;
 // Additional exports for different import patterns
 export const prisma = mockPrismaClient;
 export const db = mockPrismaClient;
-export const PrismaClient = jest.fn(() => mockPrismaClient); 
+export const PrismaClient = jest.fn(() => mockPrismaClient);

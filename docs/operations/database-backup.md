@@ -15,13 +15,13 @@ The database backup system provides multiple layers of protection:
 
 ### Primary Scripts
 
-| Script | Purpose | Format | Use Case |
-|--------|---------|---------|----------|
-| `safe-cleanup-workflow.ts` | ⭐ **Master workflow** | Multiple | Complete safety workflow |
-| `backup-database.ts` | Full database backup | pg_dump | Regular backups, pre-operation safety |
-| `restore-database.ts` | Database restoration | pg_restore/psql | Disaster recovery, environment setup |
-| `clean-testing-orders.ts` | Order cleanup | JSON | Remove test data |
-| `restore-orders-from-backup.ts` | Order restoration | JSON | Granular recovery |
+| Script                          | Purpose                | Format          | Use Case                              |
+| ------------------------------- | ---------------------- | --------------- | ------------------------------------- |
+| `safe-cleanup-workflow.ts`      | ⭐ **Master workflow** | Multiple        | Complete safety workflow              |
+| `backup-database.ts`            | Full database backup   | pg_dump         | Regular backups, pre-operation safety |
+| `restore-database.ts`           | Database restoration   | pg_restore/psql | Disaster recovery, environment setup  |
+| `clean-testing-orders.ts`       | Order cleanup          | JSON            | Remove test data                      |
+| `restore-orders-from-backup.ts` | Order restoration      | JSON            | Granular recovery                     |
 
 ## Quick Reference
 
@@ -80,6 +80,7 @@ pnpm backup-db --format=custom
 ```
 
 **Features:**
+
 - ✅ Compressed by default
 - ✅ Fastest restore
 - ✅ Selective restore capability
@@ -95,6 +96,7 @@ pnpm backup-db --format=sql --compress
 ```
 
 **Features:**
+
 - ✅ Human-readable
 - ✅ Version control friendly
 - ✅ Universal compatibility
@@ -111,6 +113,7 @@ pnpm backup-db --format=directory --parallel-jobs=8
 ```
 
 **Features:**
+
 - ✅ Parallel dump/restore
 - ✅ Best for huge databases
 - ✅ Individual table files
@@ -303,23 +306,27 @@ Monitor backup operations:
 ### Common Issues
 
 **"pg_dump not found"**
+
 - Install PostgreSQL client tools
 - Ensure pg_dump is in PATH
 - Check PostgreSQL version compatibility
 
 **"Connection refused"**
+
 - Verify DATABASE_URL/DIRECT_URL
 - Check database server status
 - Verify network connectivity
 - Check firewall settings
 
 **"Out of disk space"**
+
 - Enable compression: `--compress`
 - Use cleanup: `--retention-days=X`
 - Check available disk space
 - Consider directory format for large DBs
 
 **"Backup verification failed"**
+
 - Check backup file integrity
 - Verify PostgreSQL version compatibility
 - Test with smaller backup first
@@ -328,6 +335,7 @@ Monitor backup operations:
 ### Performance Optimization
 
 **Large Databases:**
+
 ```bash
 # Use directory format with parallel processing
 pnpm backup-db --format=directory --parallel-jobs=8
@@ -337,6 +345,7 @@ pnpm backup-db --exclude-table=audit_logs --exclude-table=temp_data
 ```
 
 **Network Issues:**
+
 ```bash
 # Use DIRECT_URL for better performance
 pnpm backup-db --use-direct-url
@@ -413,7 +422,8 @@ pnpm backup-db --format=custom --no-compress
 The database backup system provides comprehensive protection for your Destino SF data with multiple recovery options. Always use the **Safe Cleanup Workflow** for maximum protection, and regularly test your backup and recovery procedures.
 
 For immediate help:
+
 - 🛡️ Safe operations: Use `pnpm safe-cleanup:preview` first
 - 💾 Quick backup: `pnpm backup-db`
 - 🔄 Emergency restore: `pnpm restore-db --backup-file="path/to/backup"`
-- 📖 Detailed docs: See [Order Cleanup Documentation](order-cleanup.md) 
+- 📖 Detailed docs: See [Order Cleanup Documentation](order-cleanup.md)

@@ -21,7 +21,7 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
   try {
     const { id } = await params;
     cateringPackage = await getCateringPackageById(id);
-    
+
     if (!cateringPackage) {
       notFound();
     }
@@ -43,9 +43,7 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Edit Catering Package</h1>
-            <p className="text-gray-600 mt-2">
-              Modify &quot;{cateringPackage?.name}&quot;
-            </p>
+            <p className="text-gray-600 mt-2">Modify &quot;{cateringPackage?.name}&quot;</p>
           </div>
         </div>
       </div>
@@ -53,13 +51,11 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
       {errorMessage && (
         <Alert className="mb-6">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {errorMessage}
-          </AlertDescription>
+          <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
 
       {cateringPackage && <CateringPackageForm package={cateringPackage} isEditing={true} />}
     </div>
   );
-} 
+}

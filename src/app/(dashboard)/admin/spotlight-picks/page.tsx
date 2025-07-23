@@ -50,8 +50,8 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
 
     // Transform the data to match our interface
     const spotlightPicks: SpotlightPick[] = rawSpotlightPicks
-      .filter((pick) => pick.product && pick.productId) // Extra safety filter
-      .map((pick) => ({
+      .filter(pick => pick.product && pick.productId) // Extra safety filter
+      .map(pick => ({
         id: pick.id,
         position: pick.position as 1 | 2 | 3 | 4,
         productId: pick.productId!,
@@ -65,10 +65,12 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
           images: pick.product!.images || [],
           price: Number(pick.product!.price),
           slug: pick.product!.slug,
-          category: pick.product!.category ? {
-            name: pick.product!.category.name,
-            slug: pick.product!.category.slug,
-          } : undefined,
+          category: pick.product!.category
+            ? {
+                name: pick.product!.category.name,
+                slug: pick.product!.category.slug,
+              }
+            : undefined,
         },
       }));
 
@@ -85,7 +87,7 @@ export default async function SpotlightPicksPage() {
   // Skip admin check for now - let the system handle it like other admin pages
   // Fetch initial data with fallback
   let initialPicks: SpotlightPick[] = [];
-  
+
   try {
     initialPicks = await getSpotlightPicks();
   } catch (error) {
@@ -95,4 +97,4 @@ export default async function SpotlightPicksPage() {
   }
 
   return <SpotlightPicksManager initialPicks={initialPicks} />;
-} 
+}

@@ -65,7 +65,7 @@ export class UserSyncManager {
   private userId: string;
   private userEmail: string;
   private userName: string;
-  
+
   constructor(userId: string, userEmail: string, userName?: string) {
     this.userId = userId;
     this.userEmail = userEmail;
@@ -77,7 +77,7 @@ export class UserSyncManager {
    */
   async startUserSync(options: UserSyncOptions): Promise<UserSyncResult> {
     const syncId = uuidv4();
-    
+
     try {
       logger.info(`User sync started by ${this.userEmail}`, { syncId, options });
 
@@ -88,7 +88,8 @@ export class UserSyncManager {
           syncId: existingSync.syncId,
           status: 'error',
           estimatedDuration: 'N/A',
-          message: 'A sync is already running. Please wait for it to complete before starting another.'
+          message:
+            'A sync is already running. Please wait for it to complete before starting another.',
         };
       }
 
@@ -107,16 +108,15 @@ export class UserSyncManager {
         syncId,
         status: 'started',
         estimatedDuration: this.estimateDuration(options),
-        message: 'Sync started successfully! You can monitor progress on this page.'
+        message: 'Sync started successfully! You can monitor progress on this page.',
       };
-
     } catch (error) {
       logger.error('Failed to start user sync:', error);
       return {
         syncId: '',
         status: 'error',
         estimatedDuration: 'N/A',
-        message: 'Failed to start sync. Please try again.'
+        message: 'Failed to start sync. Please try again.',
       };
     }
   }
@@ -127,10 +127,10 @@ export class UserSyncManager {
   async getProgress(syncId: string): Promise<SyncProgress | null> {
     try {
       const syncLog = await prisma.userSyncLog.findUnique({
-        where: { 
+        where: {
           syncId,
-          userId: this.userId 
-        }
+          userId: this.userId,
+        },
       });
 
       if (!syncLog) {
@@ -143,9 +143,8 @@ export class UserSyncManager {
         currentStep: syncLog.currentStep || 'initializing',
         processed: this.extractFromResults(syncLog.results, 'processed'),
         total: this.extractFromResults(syncLog.results, 'total'),
-        currentProduct: this.extractFromResults(syncLog.results, 'currentProduct')
+        currentProduct: this.extractFromResults(syncLog.results, 'currentProduct'),
       };
-
     } catch (error) {
       logger.error('Failed to get sync progress:', error);
       return null;
@@ -158,16 +157,16 @@ export class UserSyncManager {
   async cancelSync(syncId: string): Promise<void> {
     try {
       await prisma.userSyncLog.updateMany({
-        where: { 
+        where: {
           syncId,
           userId: this.userId,
-          status: SyncStatus.RUNNING 
+          status: SyncStatus.RUNNING,
         },
         data: {
           status: SyncStatus.CANCELLED,
           endTime: new Date(),
-          message: 'Sync cancelled by user'
-        }
+          message: 'Sync cancelled by user',
+        },
       });
 
       logger.info(`Sync ${syncId} cancelled by user ${this.userEmail}`);
@@ -195,8 +194,8 @@ export class UserSyncManager {
           progress: true,
           message: true,
           results: true,
-          errors: true
-        }
+          errors: true,
+        },
       });
 
       return history;
@@ -209,7 +208,10 @@ export class UserSyncManager {
   /**
    * Execute sync in background with progress tracking
    */
-  private async executeUserSyncInBackground(syncId: string, options: UserSyncOptions): Promise<void> {
+  private async executeUserSyncInBackground(
+    syncId: string,
+    options: UserSyncOptions
+  ): Promise<void> {
     let progressInterval: NodeJS.Timeout | null = null;
     let updateCount = 0;
     const MAX_UPDATES = 180; // 180 updates * 3 seconds = 9 minutes maximum
@@ -223,11 +225,15 @@ export class UserSyncManager {
 
     try {
       // Update status to running
-      await this.updateProgress(syncId, {
-        percentage: 0,
-        message: 'Initializing sync...',
-        currentStep: 'setup'
-      }, SyncStatus.RUNNING);
+      await this.updateProgress(
+        syncId,
+        {
+          percentage: 0,
+          message: 'Initializing sync...',
+          currentStep: 'setup',
+        },
+        SyncStatus.RUNNING
+      );
 
       // Convert user options to production options
       const productionOptions = this.convertToProductionOptions(options);
@@ -250,7 +256,7 @@ export class UserSyncManager {
           // Check if sync is still running before updating progress
           const currentSync = await prisma.userSyncLog.findUnique({
             where: { syncId },
-            select: { status: true, progress: true }
+            select: { status: true, progress: true },
           });
 
           // If sync doesn't exist or is completed, clear interval immediately
@@ -262,7 +268,9 @@ export class UserSyncManager {
 
           // If sync is completed, failed, or cancelled, clear interval and stop
           if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(currentSync.status)) {
-            logger.info(`Sync ${syncId}: Status is ${currentSync.status}, stopping progress updates`);
+            logger.info(
+              `Sync ${syncId}: Status is ${currentSync.status}, stopping progress updates`
+            );
             clearProgressInterval();
             return;
           }
@@ -279,11 +287,14 @@ export class UserSyncManager {
           const startTime = await this.getSyncStartTime(syncId);
           if (startTime) {
             const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-            
+
             // Estimate progress based on typical sync duration
             const estimatedDuration = this.getEstimatedDurationSeconds(productionOptions);
-            const estimatedProgress = Math.min(Math.floor((elapsedSeconds / estimatedDuration) * 90), 90); // Cap at 90% until completion
-            
+            const estimatedProgress = Math.min(
+              Math.floor((elapsedSeconds / estimatedDuration) * 90),
+              90
+            ); // Cap at 90% until completion
+
             await this.updateProgress(syncId, {
               percentage: estimatedProgress,
               message: this.createProgressMessage(elapsedSeconds),
@@ -305,17 +316,15 @@ export class UserSyncManager {
       try {
         // Execute sync
         const result = await productionManager.syncProducts();
-        
+
         // Final completion update - ensure we stop the interval first
         clearProgressInterval();
         await this.completeUserSync(syncId, result);
-        
       } catch (error) {
         // Clear progress interval on error
         clearProgressInterval();
         throw error;
       }
-
     } catch (error) {
       // Ensure interval is cleared in all error cases
       clearProgressInterval();
@@ -336,8 +345,8 @@ export class UserSyncManager {
         progress: 0,
         message: 'Sync queued',
         currentStep: 'queued',
-        options: options as any
-      }
+        options: options as any,
+      },
     });
   }
 
@@ -345,14 +354,14 @@ export class UserSyncManager {
    * Update sync progress
    */
   private async updateProgress(
-    syncId: string, 
-    progress: SyncProgress, 
+    syncId: string,
+    progress: SyncProgress,
     status?: SyncStatus
   ): Promise<void> {
     const updateData: any = {
       progress: progress.percentage,
       message: progress.message,
-      currentStep: progress.currentStep
+      currentStep: progress.currentStep,
     };
 
     if (status) {
@@ -363,13 +372,13 @@ export class UserSyncManager {
       updateData.results = {
         processed: progress.processed,
         total: progress.total,
-        currentProduct: progress.currentProduct
+        currentProduct: progress.currentProduct,
       };
     }
 
     await prisma.userSyncLog.update({
       where: { syncId },
-      data: updateData
+      data: updateData,
     });
   }
 
@@ -385,7 +394,7 @@ export class UserSyncManager {
           endTime: new Date(),
           progress: 100,
           currentStep: 'completed',
-          message: result.success 
+          message: result.success
             ? `Sync completed! ${result.syncedProducts} products processed.`
             : 'Sync completed with some issues.',
           results: {
@@ -394,10 +403,10 @@ export class UserSyncManager {
             skippedProducts: result.skippedProducts,
             productDetails: result.productDetails,
             warnings: result.warnings?.length || 0,
-            errors: result.errors?.length || 0
+            errors: result.errors?.length || 0,
           },
-          errors: result.errors?.length > 0 ? result.errors : undefined
-        }
+          errors: result.errors?.length > 0 ? result.errors : undefined,
+        },
       });
 
       logger.info(`User sync ${syncId} completed successfully`, { result });
@@ -406,16 +415,16 @@ export class UserSyncManager {
       // Ensure sync is marked as completed even if update fails partially
       try {
         await prisma.userSyncLog.updateMany({
-          where: { 
+          where: {
             syncId,
-            status: { not: 'COMPLETED' }
+            status: { not: 'COMPLETED' },
           },
           data: {
             status: SyncStatus.COMPLETED,
             endTime: new Date(),
             progress: 100,
-            message: 'Sync completed successfully'
-          }
+            message: 'Sync completed successfully',
+          },
         });
       } catch (finalError) {
         logger.error(`Critical: Failed final completion update for sync ${syncId}:`, finalError);
@@ -428,7 +437,7 @@ export class UserSyncManager {
    */
   private async failUserSync(syncId: string, error: any): Promise<void> {
     const userFriendlyError = this.handleSyncError(error);
-    
+
     try {
       await prisma.userSyncLog.update({
         where: { syncId },
@@ -437,12 +446,14 @@ export class UserSyncManager {
           endTime: new Date(),
           currentStep: 'failed',
           message: userFriendlyError.message,
-          errors: [{
-            title: userFriendlyError.title,
-            message: userFriendlyError.message,
-            action: userFriendlyError.action
-          }]
-        }
+          errors: [
+            {
+              title: userFriendlyError.title,
+              message: userFriendlyError.message,
+              action: userFriendlyError.action,
+            },
+          ],
+        },
       });
 
       logger.error(`User sync ${syncId} failed:`, error);
@@ -451,15 +462,15 @@ export class UserSyncManager {
       // Ensure sync is marked as failed even if update fails partially
       try {
         await prisma.userSyncLog.updateMany({
-          where: { 
+          where: {
             syncId,
-            status: { not: 'FAILED' }
+            status: { not: 'FAILED' },
           },
           data: {
             status: SyncStatus.FAILED,
             endTime: new Date(),
-            message: 'Sync failed due to an error'
-          }
+            message: 'Sync failed due to an error',
+          },
         });
       } catch (finalError) {
         logger.error(`Critical: Failed final failure update for sync ${syncId}:`, finalError);
@@ -475,10 +486,10 @@ export class UserSyncManager {
       where: {
         userId: this.userId,
         status: {
-          in: [SyncStatus.PENDING, SyncStatus.RUNNING]
-        }
+          in: [SyncStatus.PENDING, SyncStatus.RUNNING],
+        },
       },
-      select: { syncId: true }
+      select: { syncId: true },
     });
 
     return activeSync;
@@ -493,7 +504,7 @@ export class UserSyncManager {
       batchSize: this.getBatchSize(userOptions.batchSize),
       validateImages: true,
       skipInactiveProducts: true,
-      enableCleanup: false // Keep this false for user-triggered syncs
+      enableCleanup: false, // Keep this false for user-triggered syncs
     };
   }
 
@@ -502,10 +513,14 @@ export class UserSyncManager {
    */
   private getBatchSize(size: 'small' | 'medium' | 'large'): number {
     switch (size) {
-      case 'small': return 25;  // Slow & careful
-      case 'medium': return 50; // Normal speed  
-      case 'large': return 100; // Fast
-      default: return 50;
+      case 'small':
+        return 25; // Slow & careful
+      case 'medium':
+        return 50; // Normal speed
+      case 'large':
+        return 100; // Fast
+      default:
+        return 50;
     }
   }
 
@@ -513,12 +528,11 @@ export class UserSyncManager {
    * Estimate sync duration based on options
    */
   private estimateDuration(options: UserSyncOptions): string {
-    const baseMinutes = options.batchSize === 'small' ? 5 : 
-                       options.batchSize === 'medium' ? 3 : 2;
+    const baseMinutes = options.batchSize === 'small' ? 5 : options.batchSize === 'medium' ? 3 : 2;
     const imageMinutes = options.includeImages ? 2 : 0;
-    
+
     const totalMinutes = baseMinutes + imageMinutes;
-    
+
     if (totalMinutes < 2) return 'Less than 2 minutes';
     if (totalMinutes < 5) return `About ${totalMinutes} minutes`;
     return `${totalMinutes}-${totalMinutes + 2} minutes`;
@@ -530,7 +544,7 @@ export class UserSyncManager {
   private createUserFriendlyMessage(progress: any): string {
     const step = progress.currentStep || '';
     const product = progress.currentProduct || '';
-    
+
     switch (step) {
       case 'fetching':
         return 'Getting latest product data from Square...';
@@ -552,43 +566,43 @@ export class UserSyncManager {
    */
   private handleSyncError(error: any): UserFriendlyError {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     if (errorMessage.includes('Square') && errorMessage.includes('401')) {
       return {
         title: 'Authentication Issue',
         message: 'Having trouble connecting to Square. This usually resolves automatically.',
-        action: 'retry'
+        action: 'retry',
       };
     }
-    
+
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
       return {
         title: 'Sync Throttled',
         message: 'Square is rate-limiting requests. Your sync will continue automatically.',
-        action: 'wait'
+        action: 'wait',
       };
     }
-    
+
     if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
       return {
         title: 'Connection Issue',
         message: 'Network connection interrupted. You can retry the sync in a few minutes.',
-        action: 'retry'
+        action: 'retry',
       };
     }
-    
+
     if (errorMessage.includes('database') || errorMessage.includes('prisma')) {
       return {
         title: 'Database Busy',
         message: 'Database is temporarily busy. The sync will retry automatically.',
-        action: 'wait'
+        action: 'wait',
       };
     }
-    
+
     return {
       title: 'Sync Issue',
       message: 'Something unexpected happened during the sync. Our team has been notified.',
-      action: 'contact_support'
+      action: 'contact_support',
     };
   }
 
@@ -607,7 +621,7 @@ export class UserSyncManager {
     try {
       const sync = await prisma.userSyncLog.findUnique({
         where: { syncId },
-        select: { startTime: true }
+        select: { startTime: true },
       });
       return sync?.startTime || null;
     } catch (error) {
@@ -619,9 +633,12 @@ export class UserSyncManager {
    * Get estimated duration in seconds based on options
    */
   private getEstimatedDurationSeconds(options: ProductSyncOptions): number {
-    const baseSeconds = options.batchSize === 25 ? 300 : // 5 minutes for small
-                       options.batchSize === 50 ? 180 : // 3 minutes for medium
-                       120; // 2 minutes for large
+    const baseSeconds =
+      options.batchSize === 25
+        ? 300 // 5 minutes for small
+        : options.batchSize === 50
+          ? 180 // 3 minutes for medium
+          : 120; // 2 minutes for large
     const imageSeconds = options.forceImageUpdate ? 120 : 0; // 2 minutes for images
     return baseSeconds + imageSeconds;
   }
@@ -655,4 +672,4 @@ export class UserSyncManager {
       return 'completing';
     }
   }
-} 
+}

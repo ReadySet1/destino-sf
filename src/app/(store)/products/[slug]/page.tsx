@@ -78,15 +78,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Basic UUID check (adjust regex if using different UUID format)
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+    const isUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
     // Fetch product for metadata
     const dbProduct = await prisma.product.findFirst({
       where: {
-        OR: [
-          { slug: slug },
-          ...(isUUID ? [{ id: slug }] : []),
-        ],
+        OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
         active: true,
       },
       include: {
@@ -105,16 +103,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     // Get the primary product image
-    const productImage = dbProduct.images && dbProduct.images.length > 0 
-      ? Array.isArray(dbProduct.images) 
-        ? dbProduct.images[0] 
-        : dbProduct.images
-      : '/opengraph-image';
+    const productImage =
+      dbProduct.images && dbProduct.images.length > 0
+        ? Array.isArray(dbProduct.images)
+          ? dbProduct.images[0]
+          : dbProduct.images
+        : '/opengraph-image';
 
     // Generate product-specific metadata
     return generateSEO({
       title: `${dbProduct.name} | Destino SF`,
-      description: dbProduct.description || `Discover our delicious ${dbProduct.name}. Handcrafted with authentic flavors and premium ingredients.`,
+      description:
+        dbProduct.description ||
+        `Discover our delicious ${dbProduct.name}. Handcrafted with authentic flavors and premium ingredients.`,
       keywords: [
         dbProduct.name.toLowerCase(),
         dbProduct.category?.name.toLowerCase() || 'food',
@@ -123,7 +124,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'latin food',
         'san francisco',
         'handcrafted',
-        'authentic'
+        'authentic',
       ],
       type: 'product',
       image: productImage,
@@ -133,10 +134,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       availability: 'in_stock',
       category: dbProduct.category?.name,
     });
-
   } catch (error) {
     console.error('Error generating product metadata:', error);
-    
+
     // Return fallback metadata
     return generateSEO({
       title: 'Product | Destino SF',
@@ -236,11 +236,7 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-destino-orange">
-      <CategoryHeader 
-        title="Details"
-        type="default"
-        className="bg-destino-charcoal"
-      />
+      <CategoryHeader title="Details" type="default" className="bg-destino-charcoal" />
       <div className="py-8 mb-0">
         <div className="max-w-4xl mx-auto px-4">
           <ProductDetails product={validProduct} />

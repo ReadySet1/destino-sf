@@ -11,25 +11,22 @@ export async function GET() {
         images: true,
         slug: true,
         squareId: true,
-        updatedAt: true
+        updatedAt: true,
       },
       take: 10,
       orderBy: {
-        updatedAt: 'desc'
-      }
+        updatedAt: 'desc',
+      },
     });
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       products,
       count: products.length,
       hasImages: products.some(p => p.images && p.images.length > 0),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Error fetching product debug info:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
-} 
+}

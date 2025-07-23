@@ -6,7 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Search, Package, Check, Loader2, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 
@@ -46,7 +52,11 @@ interface ProductSelectorProps {
   }>;
 }
 
-export function ProductSelector({ selectedProduct, onProductSelect, categories }: ProductSelectorProps) {
+export function ProductSelector({
+  selectedProduct,
+  onProductSelect,
+  categories,
+}: ProductSelectorProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -62,76 +72,81 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
   const [statusFilter, setStatusFilter] = useState<string>('active');
 
   // Debounced search function
-  const fetchProducts = useCallback(async (params: {
-    page?: number;
-    search?: string;
-    category?: string;
-    status?: string;
-  } = {}) => {
-    setIsLoading(true);
-    try {
-      const searchParams = new URLSearchParams({
-        includePagination: 'true',
-        page: (params.page || 1).toString(),
-        limit: '8', // Smaller limit for modal
-      });
+  const fetchProducts = useCallback(
+    async (
+      params: {
+        page?: number;
+        search?: string;
+        category?: string;
+        status?: string;
+      } = {}
+    ) => {
+      setIsLoading(true);
+      try {
+        const searchParams = new URLSearchParams({
+          includePagination: 'true',
+          page: (params.page || 1).toString(),
+          limit: '8', // Smaller limit for modal
+        });
 
-      // Add search if provided
-      if (params.search) {
-        searchParams.set('search', params.search);
-      }
+        // Add search if provided
+        if (params.search) {
+          searchParams.set('search', params.search);
+        }
 
-      // Add category filter if not 'all'
-      if (params.category && params.category !== 'all') {
-        searchParams.set('categoryId', params.category);
-      }
+        // Add category filter if not 'all'
+        if (params.category && params.category !== 'all') {
+          searchParams.set('categoryId', params.category);
+        }
 
-      // Add status filter
-      if (params.status === 'active') {
-        searchParams.set('onlyActive', 'true');
-      } else if (params.status === 'inactive') {
-        searchParams.set('onlyActive', 'false');
-      }
+        // Add status filter
+        if (params.status === 'active') {
+          searchParams.set('onlyActive', 'true');
+        } else if (params.status === 'inactive') {
+          searchParams.set('onlyActive', 'false');
+        }
 
-      const response = await fetch(`/api/products?${searchParams.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
+        const response = await fetch(`/api/products?${searchParams.toString()}`);
 
-      const data = await response.json();
-      
-      if (data.data && data.pagination) {
-        // API returned paginated data
-        setProducts(data.data);
-        setPagination(data.pagination);
-      } else {
-        // API returned simple array (fallback)
-        setProducts(data);
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+
+        const data = await response.json();
+
+        if (data.data && data.pagination) {
+          // API returned paginated data
+          setProducts(data.data);
+          setPagination(data.pagination);
+        } else {
+          // API returned simple array (fallback)
+          setProducts(data);
+          setPagination({
+            page: 1,
+            limit: data.length,
+            total: data.length,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
         setPagination({
           page: 1,
-          limit: data.length,
-          total: data.length,
-          totalPages: 1,
+          limit: 8,
+          total: 0,
+          totalPages: 0,
           hasNextPage: false,
           hasPreviousPage: false,
         });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setProducts([]);
-      setPagination({
-        page: 1,
-        limit: 8,
-        total: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   // Debounced search effect
   useEffect(() => {
@@ -172,7 +187,7 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
       {/* Filters */}
       <div className="space-y-3">
         <Label>Search and Filter Products</Label>
-        
+
         {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -180,7 +195,7 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
             type="text"
             placeholder="Search by name, category, or description..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -195,7 +210,7 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
+                {categories.map(category => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
@@ -250,12 +265,10 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
           <div className="text-center py-8 text-gray-500">
             <Package className="mx-auto h-12 w-12 text-gray-300 mb-2" />
             <p>No products found</p>
-            {searchTerm && (
-              <p className="text-xs mt-1">Try adjusting your search or filters</p>
-            )}
+            {searchTerm && <p className="text-xs mt-1">Try adjusting your search or filters</p>}
           </div>
         ) : (
-          products.map((product) => (
+          products.map(product => (
             <Card
               key={product.id}
               className={`cursor-pointer transition-all duration-200 m-2 ${
@@ -288,9 +301,7 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm truncate">
-                          {product.name}
-                        </h3>
+                        <h3 className="font-medium text-sm truncate">{product.name}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           {product.category && (
                             <Badge variant="outline" className="text-xs">
@@ -309,14 +320,17 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                         <div className="text-right">
                           <p className="text-sm font-medium text-green-600">
-                            ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                            $
+                            {typeof product.price === 'number'
+                              ? product.price.toFixed(2)
+                              : product.price}
                           </p>
                         </div>
-                        
+
                         {selectedProduct?.id === product.id && (
                           <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                             <Check className="h-3 w-3 text-white" />
@@ -364,12 +378,10 @@ export function ProductSelector({ selectedProduct, onProductSelect, categories }
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2 text-blue-800">
             <Check className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              Selected: {selectedProduct.name}
-            </span>
+            <span className="text-sm font-medium">Selected: {selectedProduct.name}</span>
           </div>
         </div>
       )}
     </div>
   );
-} 
+}

@@ -7,7 +7,7 @@ const mockRevalidatePath = jest.fn();
 jest.mock('next/cache', () => ({
   revalidateTag: mockRevalidateTag,
   revalidatePath: mockRevalidatePath,
-  unstable_cache: jest.fn((fn) => fn),
+  unstable_cache: jest.fn(fn => fn),
 }));
 
 // Mock Redis cache
@@ -60,7 +60,7 @@ const measurePerformance = async (fn: () => Promise<any>, label: string) => {
   const result = await fn();
   const end = performance.now();
   const duration = end - start;
-  
+
   return {
     result,
     duration,
@@ -105,7 +105,7 @@ describe('Performance Optimization Validation', () => {
         .mockResolvedValueOnce(null); // Miss
 
       const cacheRequests = [];
-      
+
       // Simulate 10 cache requests
       for (let i = 0; i < 10; i++) {
         const result = await measurePerformance(async () => {
@@ -117,7 +117,7 @@ describe('Performance Optimization Validation', () => {
           mockQuery.mockResolvedValueOnce(createMockProducts(10));
           return await mockQuery();
         }, `cache-request-${i}`);
-        
+
         cacheRequests.push(result);
       }
 
@@ -167,7 +167,7 @@ describe('Performance Optimization Validation', () => {
 
     it('should demonstrate connection pool efficiency', async () => {
       // Simulate multiple concurrent database connections
-      const concurrentQueries = Array.from({ length: 10 }, (_, i) => 
+      const concurrentQueries = Array.from({ length: 10 }, (_, i) =>
         measurePerformance(async () => {
           mockQuery.mockResolvedValueOnce(createMockProducts(10));
           return await mockQuery();
@@ -175,10 +175,10 @@ describe('Performance Optimization Validation', () => {
       );
 
       const results = await Promise.all(concurrentQueries);
-      
+
       // All queries should complete within reasonable time
       expect(results.every(result => result.duration < 200)).toBe(true);
-      
+
       // Average response time should be good
       const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
       expect(avgDuration).toBeLessThan(100);
@@ -224,7 +224,7 @@ describe('Performance Optimization Validation', () => {
     });
 
     it('should handle concurrent API requests efficiently', async () => {
-      const concurrentRequests = Array.from({ length: 20 }, (_, i) => 
+      const concurrentRequests = Array.from({ length: 20 }, (_, i) =>
         measurePerformance(async () => {
           mockQuery.mockResolvedValueOnce(createMockProducts(5));
           return await mockQuery();
@@ -232,10 +232,10 @@ describe('Performance Optimization Validation', () => {
       );
 
       const results = await Promise.all(concurrentRequests);
-      
+
       // All requests should complete within reasonable time
       expect(results.every(result => result.duration < 1000)).toBe(true);
-      
+
       // No more than 5% should be slow
       const slowRequests = results.filter(r => r.duration > 500);
       const slowRequestRate = (slowRequests.length / results.length) * 100;
@@ -262,9 +262,9 @@ describe('Performance Optimization Validation', () => {
   describe('Memory Usage', () => {
     it('should maintain memory usage <512MB under load', async () => {
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       // Simulate memory-intensive operations
-      const operations = Array.from({ length: 100 }, (_, i) => 
+      const operations = Array.from({ length: 100 }, (_, i) =>
         measurePerformance(async () => {
           const data = createMockProducts(100);
           // Simulate processing
@@ -273,7 +273,7 @@ describe('Performance Optimization Validation', () => {
       );
 
       await Promise.all(operations);
-      
+
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = finalMemory - initialMemory;
       const memoryIncreaseMB = memoryIncrease / (1024 * 1024);
@@ -283,13 +283,13 @@ describe('Performance Optimization Validation', () => {
 
     it('should demonstrate proper garbage collection', async () => {
       const initialMemory = process.memoryUsage().heapUsed;
-      
-              // Create and dispose of large objects
-        for (let i = 0; i < 10; i++) {
-          const largeData = createMockProducts(1000);
-          // Process and dispose
-          largeData.forEach(p => (p as any).processed = true);
-        }
+
+      // Create and dispose of large objects
+      for (let i = 0; i < 10; i++) {
+        const largeData = createMockProducts(1000);
+        // Process and dispose
+        largeData.forEach(p => ((p as any).processed = true));
+      }
 
       // Force garbage collection if available
       if (global.gc) {
@@ -297,7 +297,7 @@ describe('Performance Optimization Validation', () => {
       }
 
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = finalMemory - initialMemory;
       const memoryIncreaseMB = memoryIncrease / (1024 * 1024);
@@ -308,7 +308,7 @@ describe('Performance Optimization Validation', () => {
 
   describe('Performance Under Load', () => {
     it('should maintain performance under concurrent requests', async () => {
-      const concurrentOperations = Array.from({ length: 50 }, (_, i) => 
+      const concurrentOperations = Array.from({ length: 50 }, (_, i) =>
         measurePerformance(async () => {
           // Simulate mixed operations
           if (i % 3 === 0) {
@@ -322,10 +322,12 @@ describe('Performance Optimization Validation', () => {
       );
 
       const results = await Promise.all(concurrentOperations);
-      
+
       // Calculate performance metrics
       const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
-      const p95Duration = results.map(r => r.duration).sort((a, b) => a - b)[Math.floor(results.length * 0.95)];
+      const p95Duration = results.map(r => r.duration).sort((a, b) => a - b)[
+        Math.floor(results.length * 0.95)
+      ];
       const slowRequests = results.filter(r => r.duration > 1000);
 
       expect(avgDuration).toBeLessThan(200);
@@ -335,7 +337,7 @@ describe('Performance Optimization Validation', () => {
 
     it('should handle system resource limits gracefully', async () => {
       // Simulate resource-intensive operations
-      const resourceIntensiveOperations = Array.from({ length: 100 }, (_, i) => 
+      const resourceIntensiveOperations = Array.from({ length: 100 }, (_, i) =>
         measurePerformance(async () => {
           // Simulate CPU-intensive operation
           const data = createMockProducts(50);
@@ -351,10 +353,10 @@ describe('Performance Optimization Validation', () => {
       );
 
       const results = await Promise.all(resourceIntensiveOperations);
-      
+
       // System should handle load gracefully
       expect(results.every(r => r.result.length > 0)).toBe(true);
       expect(results.every(r => r.duration < 2000)).toBe(true); // Max 2 seconds per operation
     });
   });
-}); 
+});

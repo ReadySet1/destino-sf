@@ -75,27 +75,36 @@ export default async function AdminSyncPage() {
             <div>
               <h4 className="font-medium text-foreground mb-2">Sync options:</h4>
               <ul className="space-y-1">
-                <li>• <strong>Slow & Careful:</strong> 25 products per batch, safest option</li>
-                <li>• <strong>Normal Speed:</strong> 50 products per batch, balanced approach</li>
-                <li>• <strong>Fast:</strong> 100 products per batch, for large catalogs</li>
-                <li>• <strong>Image Updates:</strong> Refreshes product images from Square</li>
-                <li>• <strong>Rate Limit:</strong> Maximum 3 syncs per hour</li>
+                <li>
+                  • <strong>Slow & Careful:</strong> 25 products per batch, safest option
+                </li>
+                <li>
+                  • <strong>Normal Speed:</strong> 50 products per batch, balanced approach
+                </li>
+                <li>
+                  • <strong>Fast:</strong> 100 products per batch, for large catalogs
+                </li>
+                <li>
+                  • <strong>Image Updates:</strong> Refreshes product images from Square
+                </li>
+                <li>
+                  • <strong>Rate Limit:</strong> Maximum 3 syncs per hour
+                </li>
               </ul>
             </div>
           </div>
-          
+
           <div className="mt-4 p-4 bg-amber-50 border-l-4 border-amber-400 rounded">
             <p className="text-amber-800 text-sm">
-              <strong>Note:</strong> Products can only be edited in your Square Dashboard. 
-              Use this sync feature to pull the latest changes from Square to your website.
+              <strong>Note:</strong> Products can only be edited in your Square Dashboard. Use this
+              sync feature to pull the latest changes from Square to your website.
             </p>
           </div>
         </div>
       </div>
     );
-
   } catch (error) {
     logger.error('Error in admin sync page:', error);
     return redirect('/');
   }
-} 
+}

@@ -7,7 +7,9 @@ jest.mock('@/lib/db-utils', () => ({
 }));
 
 import { checkDatabaseHealth } from '@/lib/db-utils';
-const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<typeof checkDatabaseHealth>;
+const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<
+  typeof checkDatabaseHealth
+>;
 
 describe('/api/health', () => {
   beforeEach(() => {
@@ -89,4 +91,4 @@ describe('/api/health', () => {
     expect(data.database.optimizations).toBeDefined();
     expect(Array.isArray(data.database.optimizations)).toBe(true);
   });
-}); 
+});

@@ -29,14 +29,14 @@ export async function GET() {
           length: 0,
           isValid: false,
           hasInvalidChars: false,
-          preview: 'NOT_SET'
+          preview: 'NOT_SET',
         };
       }
 
       const original = token;
       const sanitized = sanitizeToken(token);
       const isValid = validateToken(sanitized);
-      
+
       return {
         name: tokenName,
         exists: true,
@@ -46,14 +46,17 @@ export async function GET() {
         hasInvalidChars: original.length !== sanitized.length,
         startsWithEAAA: original.startsWith('EAAA'),
         preview: original.substring(0, 8) + '...',
-        invalidCharsFound: original.length !== sanitized.length ? 'YES' : 'NO'
+        invalidCharsFound: original.length !== sanitized.length ? 'YES' : 'NO',
       };
     }
 
     // Analyze all Square tokens
     const tokenAnalysis = {
       SQUARE_ACCESS_TOKEN: analyzeToken(process.env.SQUARE_ACCESS_TOKEN, 'SQUARE_ACCESS_TOKEN'),
-      SQUARE_PRODUCTION_TOKEN: analyzeToken(process.env.SQUARE_PRODUCTION_TOKEN, 'SQUARE_PRODUCTION_TOKEN'),
+      SQUARE_PRODUCTION_TOKEN: analyzeToken(
+        process.env.SQUARE_PRODUCTION_TOKEN,
+        'SQUARE_PRODUCTION_TOKEN'
+      ),
       SQUARE_SANDBOX_TOKEN: analyzeToken(process.env.SQUARE_SANDBOX_TOKEN, 'SQUARE_SANDBOX_TOKEN'),
     };
 
@@ -78,7 +81,9 @@ export async function GET() {
     if (forceCatalogProduction || (!useSandbox && !forceTransactionSandbox)) {
       catalogEnvironment = 'production';
       selectedToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-      tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
+      tokenSource = process.env.SQUARE_PRODUCTION_TOKEN
+        ? 'SQUARE_PRODUCTION_TOKEN'
+        : 'SQUARE_ACCESS_TOKEN';
     } else {
       catalogEnvironment = 'sandbox';
       selectedToken = process.env.SQUARE_SANDBOX_TOKEN;
@@ -89,32 +94,48 @@ export async function GET() {
 
     // Configuration conflicts detection
     const conflicts = [];
-    
-    if (envConfig.USE_SQUARE_SANDBOX === 'true' && envConfig.SQUARE_CATALOG_USE_PRODUCTION === 'true') {
+
+    if (
+      envConfig.USE_SQUARE_SANDBOX === 'true' &&
+      envConfig.SQUARE_CATALOG_USE_PRODUCTION === 'true'
+    ) {
       conflicts.push('USE_SQUARE_SANDBOX=true conflicts with SQUARE_CATALOG_USE_PRODUCTION=true');
     }
-    
-    if (envConfig.SQUARE_ENVIRONMENT === 'sandbox' && envConfig.SQUARE_CATALOG_USE_PRODUCTION === 'true') {
-      conflicts.push('SQUARE_ENVIRONMENT=sandbox conflicts with SQUARE_CATALOG_USE_PRODUCTION=true');
+
+    if (
+      envConfig.SQUARE_ENVIRONMENT === 'sandbox' &&
+      envConfig.SQUARE_CATALOG_USE_PRODUCTION === 'true'
+    ) {
+      conflicts.push(
+        'SQUARE_ENVIRONMENT=sandbox conflicts with SQUARE_CATALOG_USE_PRODUCTION=true'
+      );
     }
 
     // Recommended fixes
     const recommendations = [];
-    
+
     if (selectedTokenAnalysis.hasInvalidChars) {
-      recommendations.push(`Token ${tokenSource} contains invalid characters - regenerate this token in Square Dashboard`);
+      recommendations.push(
+        `Token ${tokenSource} contains invalid characters - regenerate this token in Square Dashboard`
+      );
     }
-    
+
     if (!selectedTokenAnalysis.isValid) {
-      recommendations.push(`Token ${tokenSource} has invalid format - verify it's a valid Square API token`);
+      recommendations.push(
+        `Token ${tokenSource} has invalid format - verify it's a valid Square API token`
+      );
     }
-    
+
     if (conflicts.length > 0) {
-      recommendations.push('Fix environment variable conflicts - set USE_SQUARE_SANDBOX=false for production catalog operations');
+      recommendations.push(
+        'Fix environment variable conflicts - set USE_SQUARE_SANDBOX=false for production catalog operations'
+      );
     }
-    
+
     if (!selectedTokenAnalysis.exists) {
-      recommendations.push(`Missing token: ${tokenSource} - add this token to your environment variables`);
+      recommendations.push(
+        `Missing token: ${tokenSource} - add this token to your environment variables`
+      );
     }
 
     return NextResponse.json({
@@ -122,34 +143,39 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       environment: {
         deployment: process.env.NODE_ENV,
-        ...envConfig
+        ...envConfig,
       },
       tokenAnalysis,
       selectedToken: {
         environment: catalogEnvironment,
         source: tokenSource,
-        ...selectedTokenAnalysis
+        ...selectedTokenAnalysis,
       },
       conflicts,
       recommendations,
-      nextSteps: recommendations.length === 0 ? [
-        'Configuration appears correct',
-        'Test Square API connection',
-        'Check network connectivity'
-      ] : [
-        'Fix the issues listed in recommendations',
-        'Update environment variables in Vercel',
-        'Redeploy and test'
-      ]
+      nextSteps:
+        recommendations.length === 0
+          ? [
+              'Configuration appears correct',
+              'Test Square API connection',
+              'Check network connectivity',
+            ]
+          : [
+              'Fix the issues listed in recommendations',
+              'Update environment variables in Vercel',
+              'Redeploy and test',
+            ],
     });
-
   } catch (error) {
     logger.error('Error in Square production debug:', error);
-    
-    return NextResponse.json({
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
-} 
+}

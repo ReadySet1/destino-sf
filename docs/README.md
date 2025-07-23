@@ -22,6 +22,7 @@ Destino SF is a premium Argentine cuisine e-commerce and catering platform that 
 ## Key Features
 
 ### E-commerce Platform
+
 - Product catalog with categories and search
 - Shopping cart with real-time calculations
 - Secure checkout process with Square payments
@@ -29,6 +30,7 @@ Destino SF is a premium Argentine cuisine e-commerce and catering platform that 
 - Customer account management
 
 ### Catering System
+
 - Specialized catering packages and pricing
 - Delivery zone validation with minimum order requirements
 - Advanced filtering for catering-specific items
@@ -36,6 +38,7 @@ Destino SF is a premium Argentine cuisine e-commerce and catering platform that 
 - Professional presentation and packaging options
 
 ### Business Features
+
 - Inventory management with Square sync
 - Real-time shipping rate calculation
 - Automated order processing
@@ -56,30 +59,39 @@ Destino SF is a premium Argentine cuisine e-commerce and catering platform that 
 This documentation is organized into the following sections:
 
 ### Getting Started
+
 Essential guides for setting up your development environment and understanding the project structure.
 
 ### Architecture
+
 Technical documentation covering system design, database schema, and architectural decisions.
 
 ### Features
+
 Detailed documentation for each major feature including e-commerce, catering, payments, and shipping.
 
 ### API Reference
+
 Complete REST API documentation with examples and type definitions.
 
 ### Testing
+
 Comprehensive testing guides covering unit tests, integration tests, and end-to-end testing.
 
 ### Deployment
+
 Step-by-step deployment procedures and environment configuration.
 
 ### Operations
+
 Day-to-day operational procedures including product sync, monitoring, and maintenance.
 
 ### Troubleshooting
+
 Common issues, solutions, and debugging guides.
 
 ### Security
+
 Security implementation details, authentication system, and best practices.
 
 ## Development Workflow
@@ -126,6 +138,7 @@ This is a private project. For development team members:
 ## Support
 
 For technical support or questions:
+
 - Review the [troubleshooting guide](troubleshooting/common-issues.md)
 - Check the [FAQ section](appendix/glossary.md)
 - Contact the development team

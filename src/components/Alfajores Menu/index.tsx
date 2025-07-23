@@ -9,47 +9,47 @@ const SAMPLE_ALFAJORES: AlfajoresItemProps[] = [
     id: 'alfajores-classic',
     name: 'Alfajores - Classic',
     description: 'South american butter cookies: shortbread / dulce de leche',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
     servingSize: 'One Piece',
     featured: true,
-    image: '/images/menu/alfajores.png'
+    image: '/images/menu/alfajores.png',
   },
   {
     id: 'alfajores-chocolate',
     name: 'Alfajores - Chocolate',
     description: 'Dulce de leche / dark chocolate / peruvian sea salt',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
     servingSize: 'One Piece',
-    image: '/images/menu/alfajores.png'
+    image: '/images/menu/alfajores.png',
   },
   {
     id: 'alfajores-lemon',
     name: 'Alfajores - Lemon',
     description: 'Shortbread / dulce de leche / lemon royal icing',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
     servingSize: 'One Piece',
-    image: '/images/menu/alfajores.png'
+    image: '/images/menu/alfajores.png',
   },
   {
     id: 'alfajores-gluten-free',
     name: 'Alfajores - Gluten-Free',
     description: 'Gluten-free dulce de leche butter cookies',
-    price: 2.50,
+    price: 2.5,
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
     servingSize: 'One Piece',
-    image: '/images/menu/alfajores.png'
-  }
+    image: '/images/menu/alfajores.png',
+  },
 ];
 
 interface AlfajoresMenuProps {
@@ -68,7 +68,7 @@ function AlfajoresMenu({ alfajores = SAMPLE_ALFAJORES }: AlfajoresMenuProps) {
       quantity: 1,
       image: item.image,
     });
-    
+
     showAlert(`1 ${item.name} has been added to your cart.`);
   };
 
@@ -84,10 +84,7 @@ function AlfajoresMenu({ alfajores = SAMPLE_ALFAJORES }: AlfajoresMenuProps) {
 
       {/* Grid */}
       <div className="container mx-auto px-4 pb-8">
-        <AlfajoresGrid 
-          alfajores={alfajores} 
-          onAddToCart={handleAddToCart}
-        />
+        <AlfajoresGrid alfajores={alfajores} onAddToCart={handleAddToCart} />
       </div>
     </div>
   );

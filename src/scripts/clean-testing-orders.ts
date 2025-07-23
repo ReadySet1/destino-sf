@@ -2,7 +2,7 @@
 
 /**
  * Clean Testing Orders Script
- * 
+ *
  * This script safely removes testing orders from the database while preserving
  * all legitimate customer data. It includes comprehensive safety features:
  * - Dry run mode for preview
@@ -10,7 +10,7 @@
  * - Transaction rollback on errors
  * - Configurable identification criteria
  * - Detailed logging and reporting
- * 
+ *
  * Usage:
  *   pnpm tsx src/scripts/clean-testing-orders.ts --dry-run
  *   pnpm tsx src/scripts/clean-testing-orders.ts --from="2024-01-01" --to="2024-01-31"
@@ -85,10 +85,28 @@ interface OrderBackup {
 const DEFAULT_CONFIG: CleanupConfig = {
   dryRun: true,
   testEmailPatterns: [
-    'test@', '@test.', 'demo@', '@demo.', 'example@', '@example.',
-    '+test', '.test', 'testing@', '@testing.', 'temp@', '@temp.',
-    'fake@', '@fake.', 'dummy@', '@dummy.', 'sample@', '@sample.',
-    'localhost', 'gmail.com+', 'yahoo.com+', '10minutemail'
+    'test@',
+    '@test.',
+    'demo@',
+    '@demo.',
+    'example@',
+    '@example.',
+    '+test',
+    '.test',
+    'testing@',
+    '@testing.',
+    'temp@',
+    '@temp.',
+    'fake@',
+    '@fake.',
+    'dummy@',
+    '@dummy.',
+    'sample@',
+    '@sample.',
+    'localhost',
+    'gmail.com+',
+    'yahoo.com+',
+    '10minutemail',
   ],
   excludeOrderIds: [
     // Add specific order IDs that should NEVER be deleted
@@ -111,7 +129,7 @@ function parseArgs(): CleanupConfig {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--dry-run':
         config.dryRun = true;
@@ -146,7 +164,8 @@ function parseArgs(): CleanupConfig {
         break;
       case '--to':
         const toDate = args[++i];
-        if (!config.dateRange) config.dateRange = { start: new Date('2020-01-01'), end: new Date(toDate) };
+        if (!config.dateRange)
+          config.dateRange = { start: new Date('2020-01-01'), end: new Date(toDate) };
         else config.dateRange.end = new Date(toDate);
         break;
       case '--exclude-id':
@@ -227,9 +246,12 @@ function isTestEmail(email: string, patterns: string[]): boolean {
 /**
  * Check if an order should be considered for deletion
  */
-function shouldDeleteOrder(order: any, config: CleanupConfig): { shouldDelete: boolean; reasons: string[] } {
+function shouldDeleteOrder(
+  order: any,
+  config: CleanupConfig
+): { shouldDelete: boolean; reasons: string[] } {
   const reasons: string[] = [];
-  
+
   // Never delete if in exclusion list
   if (config.excludeOrderIds.includes(order.id)) {
     return { shouldDelete: false, reasons: ['Order ID in exclusion list'] };
@@ -262,9 +284,11 @@ function shouldDeleteOrder(order: any, config: CleanupConfig): { shouldDelete: b
   if (config.includeOldOrders) {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    
-    if (order.createdAt < ninetyDaysAgo && 
-        (order.status === 'CANCELLED' || order.paymentStatus === 'FAILED')) {
+
+    if (
+      order.createdAt < ninetyDaysAgo &&
+      (order.status === 'CANCELLED' || order.paymentStatus === 'FAILED')
+    ) {
       reasons.push('Old failed/cancelled order (>90 days)');
     }
   }
@@ -290,22 +314,22 @@ async function findOrdersToDelete(config: CleanupConfig): Promise<{
   // Build where clause for regular orders
   const regularOrderWhere: any = {
     NOT: {
-      id: { in: config.excludeOrderIds }
-    }
+      id: { in: config.excludeOrderIds },
+    },
   };
 
   // Build where clause for catering orders
   const cateringOrderWhere: any = {
     NOT: {
-      id: { in: config.excludeOrderIds }
-    }
+      id: { in: config.excludeOrderIds },
+    },
   };
 
   // Apply date range if specified
   if (config.dateRange) {
     const dateFilter = {
       gte: config.dateRange.start,
-      lte: config.dateRange.end
+      lte: config.dateRange.end,
     };
     regularOrderWhere.createdAt = dateFilter;
     cateringOrderWhere.createdAt = dateFilter;
@@ -318,30 +342,30 @@ async function findOrdersToDelete(config: CleanupConfig): Promise<{
       items: true,
       payments: {
         include: {
-          refunds: true
-        }
+          refunds: true,
+        },
       },
-      emailAlerts: true
+      emailAlerts: true,
     },
-    orderBy: { createdAt: 'asc' }
+    orderBy: { createdAt: 'asc' },
   });
 
   // Fetch catering orders with related data
   const cateringOrders = await prisma.cateringOrder.findMany({
     where: cateringOrderWhere,
     include: {
-      items: true
+      items: true,
     },
-    orderBy: { createdAt: 'asc' }
+    orderBy: { createdAt: 'asc' },
   });
 
   // Filter based on criteria
-  const filteredRegularOrders = regularOrders.filter(order => 
-    shouldDeleteOrder(order, config).shouldDelete
+  const filteredRegularOrders = regularOrders.filter(
+    order => shouldDeleteOrder(order, config).shouldDelete
   );
 
-  const filteredCateringOrders = cateringOrders.filter(order => 
-    shouldDeleteOrder(order, config).shouldDelete
+  const filteredCateringOrders = cateringOrders.filter(
+    order => shouldDeleteOrder(order, config).shouldDelete
   );
 
   console.log(`📊 Found potential orders for deletion:`);
@@ -350,14 +374,17 @@ async function findOrdersToDelete(config: CleanupConfig): Promise<{
 
   return {
     regularOrders: filteredRegularOrders,
-    cateringOrders: filteredCateringOrders
+    cateringOrders: filteredCateringOrders,
   };
 }
 
 /**
  * Create backup of data before deletion
  */
-async function createBackup(orders: { regularOrders: any[]; cateringOrders: any[] }, config: CleanupConfig): Promise<string> {
+async function createBackup(
+  orders: { regularOrders: any[]; cateringOrders: any[] },
+  config: CleanupConfig
+): Promise<string> {
   console.log('💾 Creating backup before deletion...');
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -376,24 +403,24 @@ async function createBackup(orders: { regularOrders: any[]; cateringOrders: any[
   // Get all related data that will be deleted
   const [emailAlerts, orderItems, payments, refunds, cateringOrderItems] = await Promise.all([
     prisma.emailAlert.findMany({
-      where: { relatedOrderId: { in: regularOrderIds } }
+      where: { relatedOrderId: { in: regularOrderIds } },
     }),
     prisma.orderItem.findMany({
-      where: { orderId: { in: regularOrderIds } }
+      where: { orderId: { in: regularOrderIds } },
     }),
     prisma.payment.findMany({
-      where: { orderId: { in: regularOrderIds } }
+      where: { orderId: { in: regularOrderIds } },
     }),
     prisma.refund.findMany({
-      where: { 
-        payment: { 
-          orderId: { in: regularOrderIds } 
-        } 
-      }
+      where: {
+        payment: {
+          orderId: { in: regularOrderIds },
+        },
+      },
     }),
     prisma.cateringOrderItem.findMany({
-      where: { orderId: { in: cateringOrderIds } }
-    })
+      where: { orderId: { in: cateringOrderIds } },
+    }),
   ]);
 
   const backup: OrderBackup = {
@@ -406,15 +433,20 @@ async function createBackup(orders: { regularOrders: any[]; cateringOrders: any[
     cateringOrderItems,
     metadata: {
       timestamp,
-      totalRecords: orders.regularOrders.length + orders.cateringOrders.length + 
-                   emailAlerts.length + orderItems.length + payments.length + 
-                   refunds.length + cateringOrderItems.length,
-      config
-    }
+      totalRecords:
+        orders.regularOrders.length +
+        orders.cateringOrders.length +
+        emailAlerts.length +
+        orderItems.length +
+        payments.length +
+        refunds.length +
+        cateringOrderItems.length,
+      config,
+    },
   };
 
   fs.writeFileSync(backupPath, JSON.stringify(backup, null, 2));
-  
+
   console.log(`✅ Backup created: ${backupPath}`);
   console.log(`📋 Backup contents:`);
   console.log(`   Regular orders: ${backup.regularOrders.length}`);
@@ -435,11 +467,11 @@ async function createBackup(orders: { regularOrders: any[]; cateringOrders: any[
 async function askForConfirmation(message: string): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
+  return new Promise(resolve => {
+    rl.question(`${message} (y/N): `, answer => {
       rl.close();
       resolve(answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes');
     });
@@ -462,31 +494,32 @@ async function deleteOrdersTransactional(
       emailAlerts: 0,
       orderItems: 0,
       refunds: 0,
-      payments: 0
+      payments: 0,
     },
     cateringOrders: {
       found: orders.cateringOrders.length,
       deleted: 0,
-      orderItems: 0
+      orderItems: 0,
     },
     totalDataDeleted: 0,
-    errors: []
+    errors: [],
   };
 
   if (config.dryRun) {
     console.log('🔍 DRY RUN MODE - No data will be deleted');
-    
+
     // Simulate the deletion counts
     const regularOrderIds = orders.regularOrders.map(o => o.id);
     const cateringOrderIds = orders.cateringOrders.map(o => o.id);
 
-    const [emailAlertCount, orderItemCount, paymentCount, refundCount, cateringOrderItemCount] = await Promise.all([
-      prisma.emailAlert.count({ where: { relatedOrderId: { in: regularOrderIds } } }),
-      prisma.orderItem.count({ where: { orderId: { in: regularOrderIds } } }),
-      prisma.payment.count({ where: { orderId: { in: regularOrderIds } } }),
-      prisma.refund.count({ where: { payment: { orderId: { in: regularOrderIds } } } }),
-      prisma.cateringOrderItem.count({ where: { orderId: { in: cateringOrderIds } } })
-    ]);
+    const [emailAlertCount, orderItemCount, paymentCount, refundCount, cateringOrderItemCount] =
+      await Promise.all([
+        prisma.emailAlert.count({ where: { relatedOrderId: { in: regularOrderIds } } }),
+        prisma.orderItem.count({ where: { orderId: { in: regularOrderIds } } }),
+        prisma.payment.count({ where: { orderId: { in: regularOrderIds } } }),
+        prisma.refund.count({ where: { payment: { orderId: { in: regularOrderIds } } } }),
+        prisma.cateringOrderItem.count({ where: { orderId: { in: cateringOrderIds } } }),
+      ]);
 
     result.regularOrders.deleted = orders.regularOrders.length;
     result.regularOrders.emailAlerts = emailAlertCount;
@@ -495,15 +528,21 @@ async function deleteOrdersTransactional(
     result.regularOrders.refunds = refundCount;
     result.cateringOrders.deleted = orders.cateringOrders.length;
     result.cateringOrders.orderItems = cateringOrderItemCount;
-    result.totalDataDeleted = emailAlertCount + orderItemCount + paymentCount + refundCount + 
-                              cateringOrderItemCount + orders.regularOrders.length + orders.cateringOrders.length;
+    result.totalDataDeleted =
+      emailAlertCount +
+      orderItemCount +
+      paymentCount +
+      refundCount +
+      cateringOrderItemCount +
+      orders.regularOrders.length +
+      orders.cateringOrders.length;
 
     return result;
   }
 
   // Actual deletion in transaction
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       const regularOrderIds = orders.regularOrders.map(o => o.id);
       const cateringOrderIds = orders.cateringOrders.map(o => o.id);
 
@@ -512,7 +551,7 @@ async function deleteOrdersTransactional(
       // Step 1: Delete email alerts that reference orders
       if (regularOrderIds.length > 0) {
         const emailAlertResult = await tx.emailAlert.deleteMany({
-          where: { relatedOrderId: { in: regularOrderIds } }
+          where: { relatedOrderId: { in: regularOrderIds } },
         });
         result.regularOrders.emailAlerts = emailAlertResult.count;
         console.log(`   ✅ Deleted ${emailAlertResult.count} email alerts`);
@@ -521,7 +560,7 @@ async function deleteOrdersTransactional(
       // Step 2: Delete order items (for regular orders)
       if (regularOrderIds.length > 0) {
         const orderItemResult = await tx.orderItem.deleteMany({
-          where: { orderId: { in: regularOrderIds } }
+          where: { orderId: { in: regularOrderIds } },
         });
         result.regularOrders.orderItems = orderItemResult.count;
         console.log(`   ✅ Deleted ${orderItemResult.count} order items`);
@@ -530,7 +569,7 @@ async function deleteOrdersTransactional(
       // Step 3: Delete catering order items
       if (cateringOrderIds.length > 0) {
         const cateringOrderItemResult = await tx.cateringOrderItem.deleteMany({
-          where: { orderId: { in: cateringOrderIds } }
+          where: { orderId: { in: cateringOrderIds } },
         });
         result.cateringOrders.orderItems = cateringOrderItemResult.count;
         console.log(`   ✅ Deleted ${cateringOrderItemResult.count} catering order items`);
@@ -541,9 +580,9 @@ async function deleteOrdersTransactional(
         const refundResult = await tx.refund.deleteMany({
           where: {
             payment: {
-              orderId: { in: regularOrderIds }
-            }
-          }
+              orderId: { in: regularOrderIds },
+            },
+          },
         });
         result.regularOrders.refunds = refundResult.count;
         console.log(`   ✅ Deleted ${refundResult.count} refunds`);
@@ -552,7 +591,7 @@ async function deleteOrdersTransactional(
       // Step 5: Delete payments (which reference orders)
       if (regularOrderIds.length > 0) {
         const paymentResult = await tx.payment.deleteMany({
-          where: { orderId: { in: regularOrderIds } }
+          where: { orderId: { in: regularOrderIds } },
         });
         result.regularOrders.payments = paymentResult.count;
         console.log(`   ✅ Deleted ${paymentResult.count} payments`);
@@ -561,7 +600,7 @@ async function deleteOrdersTransactional(
       // Step 6: Delete catering orders
       if (cateringOrderIds.length > 0) {
         const cateringOrderResult = await tx.cateringOrder.deleteMany({
-          where: { id: { in: cateringOrderIds } }
+          where: { id: { in: cateringOrderIds } },
         });
         result.cateringOrders.deleted = cateringOrderResult.count;
         console.log(`   ✅ Deleted ${cateringOrderResult.count} catering orders`);
@@ -570,20 +609,23 @@ async function deleteOrdersTransactional(
       // Step 7: Delete regular orders (main tables last)
       if (regularOrderIds.length > 0) {
         const orderResult = await tx.order.deleteMany({
-          where: { id: { in: regularOrderIds } }
+          where: { id: { in: regularOrderIds } },
         });
         result.regularOrders.deleted = orderResult.count;
         console.log(`   ✅ Deleted ${orderResult.count} regular orders`);
       }
 
-      result.totalDataDeleted = result.regularOrders.emailAlerts + result.regularOrders.orderItems + 
-                               result.regularOrders.refunds + result.regularOrders.payments + 
-                               result.cateringOrders.orderItems + result.cateringOrders.deleted + 
-                               result.regularOrders.deleted;
+      result.totalDataDeleted =
+        result.regularOrders.emailAlerts +
+        result.regularOrders.orderItems +
+        result.regularOrders.refunds +
+        result.regularOrders.payments +
+        result.cateringOrders.orderItems +
+        result.cateringOrders.deleted +
+        result.regularOrders.deleted;
 
       console.log('✅ All deletions completed successfully in transaction');
     });
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     result.errors.push(errorMessage);
@@ -597,14 +639,22 @@ async function deleteOrdersTransactional(
 /**
  * Generate detailed report
  */
-function generateReport(orders: { regularOrders: any[]; cateringOrders: any[] }, result: CleanupResult, config: CleanupConfig): void {
+function generateReport(
+  orders: { regularOrders: any[]; cateringOrders: any[] },
+  result: CleanupResult,
+  config: CleanupConfig
+): void {
   console.log('\n📊 CLEANUP REPORT');
   console.log('==================');
-  
+
   console.log('\n🔧 Configuration:');
   console.log(`   Mode: ${config.dryRun ? 'DRY RUN' : 'EXECUTE'}`);
-  console.log(`   Date range: ${config.dateRange ? `${config.dateRange.start.toISOString().split('T')[0]} to ${config.dateRange.end.toISOString().split('T')[0]}` : 'All dates'}`);
-  console.log(`   Test emails only: ${!config.includeFailedOrders && !config.includeCancelledOrders && !config.includeOldOrders}`);
+  console.log(
+    `   Date range: ${config.dateRange ? `${config.dateRange.start.toISOString().split('T')[0]} to ${config.dateRange.end.toISOString().split('T')[0]}` : 'All dates'}`
+  );
+  console.log(
+    `   Test emails only: ${!config.includeFailedOrders && !config.includeCancelledOrders && !config.includeOldOrders}`
+  );
   console.log(`   Include failed orders: ${config.includeFailedOrders}`);
   console.log(`   Include cancelled orders: ${config.includeCancelledOrders}`);
   console.log(`   Include old orders: ${config.includeOldOrders}`);
@@ -645,7 +695,9 @@ function generateReport(orders: { regularOrders: any[]; cateringOrders: any[] },
     console.log('\n📋 Sample Regular Orders (first 5):');
     orders.regularOrders.slice(0, 5).forEach(order => {
       const analysis = shouldDeleteOrder(order, config);
-      console.log(`   - ${order.id}: ${order.email} ($${order.total}) - ${order.status}/${order.paymentStatus}`);
+      console.log(
+        `   - ${order.id}: ${order.email} ($${order.total}) - ${order.status}/${order.paymentStatus}`
+      );
       console.log(`     Created: ${order.createdAt.toISOString().split('T')[0]}`);
       console.log(`     Reasons: ${analysis.reasons.join(', ')}`);
     });
@@ -658,7 +710,9 @@ function generateReport(orders: { regularOrders: any[]; cateringOrders: any[] },
     console.log('\n🍽️  Sample Catering Orders (first 5):');
     orders.cateringOrders.slice(0, 5).forEach(order => {
       const analysis = shouldDeleteOrder(order, config);
-      console.log(`   - ${order.id}: ${order.email} ($${order.totalAmount}) - ${order.status}/${order.paymentStatus}`);
+      console.log(
+        `   - ${order.id}: ${order.email} ($${order.totalAmount}) - ${order.status}/${order.paymentStatus}`
+      );
       console.log(`     Created: ${order.createdAt.toISOString().split('T')[0]}`);
       console.log(`     Reasons: ${analysis.reasons.join(', ')}`);
     });
@@ -683,7 +737,9 @@ async function main(): Promise<void> {
     if (!config.dryRun && process.env.NODE_ENV === 'production') {
       console.log('⚠️  PRODUCTION ENVIRONMENT DETECTED');
       if (config.confirmBeforeDelete) {
-        const confirmed = await askForConfirmation('Are you sure you want to delete orders in production?');
+        const confirmed = await askForConfirmation(
+          'Are you sure you want to delete orders in production?'
+        );
         if (!confirmed) {
           console.log('❌ Cancelled by user');
           return;
@@ -694,7 +750,9 @@ async function main(): Promise<void> {
     // Show configuration
     console.log('⚙️  Configuration:');
     console.log(`   Mode: ${config.dryRun ? '🔍 DRY RUN' : '⚡ EXECUTE'}`);
-    console.log(`   Date range: ${config.dateRange ? `${config.dateRange.start.toISOString().split('T')[0]} to ${config.dateRange.end.toISOString().split('T')[0]}` : 'All dates'}`);
+    console.log(
+      `   Date range: ${config.dateRange ? `${config.dateRange.start.toISOString().split('T')[0]} to ${config.dateRange.end.toISOString().split('T')[0]}` : 'All dates'}`
+    );
     console.log(`   Test email patterns: ${config.testEmailPatterns.length} patterns`);
     console.log(`   Excluded order IDs: ${config.excludeOrderIds.length}`);
     console.log(`   Create backup: ${config.backupBeforeDelete}`);
@@ -736,7 +794,7 @@ async function main(): Promise<void> {
 
     if (!config.dryRun && result.errors.length === 0) {
       console.log('\n🎉 Cleanup completed successfully!');
-      
+
       if (backupPath) {
         console.log(`\n📝 Next steps:`);
         console.log(`1. Verify the cleanup results above`);
@@ -745,15 +803,14 @@ async function main(): Promise<void> {
         console.log(`4. If needed, create a restore script from the backup`);
       }
     }
-
   } catch (error) {
     console.error('\n💥 Cleanup failed:', error);
     console.error('The database should have been rolled back to its previous state');
-    
+
     if (error instanceof Error) {
       console.error('Error details:', error.message);
     }
-    
+
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -761,7 +818,7 @@ async function main(): Promise<void> {
 }
 
 // Execute the script
-main().catch((error) => {
+main().catch(error => {
   console.error('Unhandled error:', error);
   process.exit(1);
-}); 
+});

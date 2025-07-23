@@ -72,7 +72,7 @@ global.fetch = jest.fn();
 describe('Admin System Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -90,8 +90,8 @@ describe('Admin System Integration Tests', () => {
         zone: 'SAN_FRANCISCO',
         name: 'San Francisco',
         description: 'San Francisco and surrounding areas',
-        minimumAmount: 250.00,
-        deliveryFee: 50.00,
+        minimumAmount: 250.0,
+        deliveryFee: 50.0,
         estimatedDeliveryTime: '1-2 hours',
         isActive: true,
         postalCodes: ['94102', '94103', '94104'],
@@ -105,8 +105,8 @@ describe('Admin System Integration Tests', () => {
         zone: 'SOUTH_BAY',
         name: 'South Bay',
         description: 'San José, Santa Clara, Sunnyvale areas',
-        minimumAmount: 350.00,
-        deliveryFee: 75.00,
+        minimumAmount: 350.0,
+        deliveryFee: 75.0,
         estimatedDeliveryTime: '2-3 hours',
         isActive: true,
         postalCodes: ['95110', '95111', '95112'],
@@ -124,7 +124,7 @@ describe('Admin System Integration Tests', () => {
       } as Response);
 
       const { result, loadDeliveryZones } = await import('@/components/admin/DeliveryZoneManager');
-      
+
       // This would be tested with component testing
       expect(fetch).toHaveBeenCalledWith('/api/admin/delivery-zones');
     });
@@ -134,8 +134,8 @@ describe('Admin System Integration Tests', () => {
         zone: 'PENINSULA',
         name: 'Peninsula',
         description: 'Peninsula delivery zone',
-        minimumAmount: 400.00,
-        deliveryFee: 100.00,
+        minimumAmount: 400.0,
+        deliveryFee: 100.0,
         estimatedDeliveryTime: '2-3 hours',
         isActive: true,
         postalCodes: ['94301', '94302', '94303'],
@@ -146,19 +146,19 @@ describe('Admin System Integration Tests', () => {
       // Validation logic (would be extracted to utility functions)
       const validateZoneData = (data: any) => {
         const errors: string[] = [];
-        
+
         if (!data.zone || data.zone.trim().length === 0) {
           errors.push('Zone identifier is required');
         }
-        
+
         if (!data.name || data.name.trim().length === 0) {
           errors.push('Zone name is required');
         }
-        
+
         if (data.minimumAmount < 0) {
           errors.push('Minimum amount cannot be negative');
         }
-        
+
         if (data.deliveryFee < 0) {
           errors.push('Delivery fee cannot be negative');
         }
@@ -187,19 +187,19 @@ describe('Admin System Integration Tests', () => {
 
       const validateZoneData = (data: any) => {
         const errors: string[] = [];
-        
+
         if (!data.zone || data.zone.trim().length === 0) {
           errors.push('Zone identifier is required');
         }
-        
+
         if (!data.name || data.name.trim().length === 0) {
           errors.push('Zone name is required');
         }
-        
+
         if (data.minimumAmount < 0) {
           errors.push('Minimum amount cannot be negative');
         }
-        
+
         if (data.deliveryFee < 0) {
           errors.push('Delivery fee cannot be negative');
         }
@@ -223,8 +223,8 @@ describe('Admin System Integration Tests', () => {
         zone: 'EAST_BAY',
         name: 'East Bay',
         description: 'Oakland, Berkeley areas',
-        minimumAmount: 300.00,
-        deliveryFee: 60.00,
+        minimumAmount: 300.0,
+        deliveryFee: 60.0,
         estimatedDeliveryTime: '2-3 hours',
         isActive: true,
         postalCodes: ['94601', '94602', '94603'],
@@ -304,7 +304,7 @@ describe('Admin System Integration Tests', () => {
           name: 'Empanada Variety Pack',
           description: '12 assorted empanadas',
           images: ['/images/products/empanadas.jpg'],
-          price: 48.00,
+          price: 48.0,
           slug: 'empanada-variety-pack',
           category: { id: 'cat-2', name: 'Empanadas' },
         },
@@ -329,13 +329,17 @@ describe('Admin System Integration Tests', () => {
     });
 
     test('should validate spotlight pick position constraints', () => {
-      const validateSpotlightPick = (data: { position: number; productId: string; isActive: boolean }) => {
+      const validateSpotlightPick = (data: {
+        position: number;
+        productId: string;
+        isActive: boolean;
+      }) => {
         const errors: string[] = [];
-        
+
         if (data.position < 1 || data.position > 4) {
           errors.push('Position must be between 1 and 4');
         }
-        
+
         if (!data.productId || data.productId.trim().length === 0) {
           errors.push('Product ID is required');
         }
@@ -450,7 +454,7 @@ describe('Admin System Integration Tests', () => {
         name: 'Beef Empanadas',
         description: 'Traditional beef empanadas with spices',
         images: ['/images/products/empanadas-beef.jpg'],
-        price: 24.00,
+        price: 24.0,
         slug: 'beef-empanadas',
         categoryId: 'cat-2',
         category: { id: 'cat-2', name: 'Empanadas', slug: 'empanadas' },
@@ -509,7 +513,7 @@ describe('Admin System Integration Tests', () => {
 
     test('should filter products by category', async () => {
       const alfajoresProducts = mockProducts.filter(p => p.categoryId === 'cat-1');
-      
+
       (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ data: alfajoresProducts }),
@@ -528,9 +532,10 @@ describe('Admin System Integration Tests', () => {
 
     test('should search products by name and description', async () => {
       const searchTerm = 'chocolate';
-      const searchResults = mockProducts.filter(p => 
-        p.name.toLowerCase().includes(searchTerm) || 
-        p.description.toLowerCase().includes(searchTerm)
+      const searchResults = mockProducts.filter(
+        p =>
+          p.name.toLowerCase().includes(searchTerm) ||
+          p.description.toLowerCase().includes(searchTerm)
       );
 
       (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
@@ -551,7 +556,7 @@ describe('Admin System Integration Tests', () => {
 
     test('should filter products by active status', async () => {
       const activeProducts = mockProducts.filter(p => p.active);
-      
+
       (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ data: activeProducts }),
@@ -571,19 +576,19 @@ describe('Admin System Integration Tests', () => {
     test('should validate product data', () => {
       const validateProduct = (data: any) => {
         const errors: string[] = [];
-        
+
         if (!data.name || data.name.trim().length === 0) {
           errors.push('Product name is required');
         }
-        
+
         if (data.name && data.name.length > 100) {
           errors.push('Product name must be less than 100 characters');
         }
-        
+
         if (data.price <= 0) {
           errors.push('Product price must be greater than 0');
         }
-        
+
         if (!data.categoryId || data.categoryId.trim().length === 0) {
           errors.push('Category is required');
         }
@@ -602,7 +607,7 @@ describe('Admin System Integration Tests', () => {
         categoryId: 'cat-1',
         active: true,
       };
-      
+
       const validResult = validateProduct(validProduct);
       expect(validResult.isValid).toBe(true);
 
@@ -612,7 +617,7 @@ describe('Admin System Integration Tests', () => {
         price: -5, // Invalid price
         categoryId: '', // Missing category
       };
-      
+
       const invalidResult = validateProduct(invalidProduct);
       expect(invalidResult.isValid).toBe(false);
       expect(invalidResult.errors).toContain('Product name is required');
@@ -643,7 +648,7 @@ describe('Admin System Integration Tests', () => {
           {
             id: 'item-2',
             quantity: 1,
-            price: 24.00,
+            price: 24.0,
             product: { name: 'Beef Empanadas' },
           },
         ],
@@ -671,7 +676,7 @@ describe('Admin System Integration Tests', () => {
           {
             id: 'item-4',
             quantity: 2,
-            price: 24.00,
+            price: 24.0,
             product: { name: 'Beef Empanadas' },
           },
         ],
@@ -768,13 +773,13 @@ describe('Admin System Integration Tests', () => {
     test('should validate order status transitions', () => {
       const validateStatusTransition = (currentStatus: string, newStatus: string) => {
         const validTransitions: Record<string, string[]> = {
-          'PENDING': ['PROCESSING', 'CANCELLED'],
-          'PROCESSING': ['READY', 'SHIPPING', 'CANCELLED'],
-          'READY': ['COMPLETED', 'CANCELLED'],
-          'SHIPPING': ['DELIVERED', 'CANCELLED'],
-          'COMPLETED': [],
-          'DELIVERED': [],
-          'CANCELLED': [],
+          PENDING: ['PROCESSING', 'CANCELLED'],
+          PROCESSING: ['READY', 'SHIPPING', 'CANCELLED'],
+          READY: ['COMPLETED', 'CANCELLED'],
+          SHIPPING: ['DELIVERED', 'CANCELLED'],
+          COMPLETED: [],
+          DELIVERED: [],
+          CANCELLED: [],
         };
 
         const allowedStatuses = validTransitions[currentStatus] || [];
@@ -802,16 +807,22 @@ describe('Admin System Integration Tests', () => {
         const totalOrders = orders.length;
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
         const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-        
-        const statusCounts = orders.reduce((counts, order) => {
-          counts[order.status] = (counts[order.status] || 0) + 1;
-          return counts;
-        }, {} as Record<string, number>);
 
-        const fulfillmentCounts = orders.reduce((counts, order) => {
-          counts[order.fulfillmentType] = (counts[order.fulfillmentType] || 0) + 1;
-          return counts;
-        }, {} as Record<string, number>);
+        const statusCounts = orders.reduce(
+          (counts, order) => {
+            counts[order.status] = (counts[order.status] || 0) + 1;
+            return counts;
+          },
+          {} as Record<string, number>
+        );
+
+        const fulfillmentCounts = orders.reduce(
+          (counts, order) => {
+            counts[order.fulfillmentType] = (counts[order.fulfillmentType] || 0) + 1;
+            return counts;
+          },
+          {} as Record<string, number>
+        );
 
         return {
           totalOrders,
@@ -823,17 +834,17 @@ describe('Admin System Integration Tests', () => {
       };
 
       const analytics = calculateOrderAnalytics(mockOrders);
-      
+
       expect(analytics.totalOrders).toBe(2);
       expect(analytics.totalRevenue).toBe(137.95); // 47.98 + 89.97
       expect(analytics.averageOrderValue).toBeCloseTo(68.975);
       expect(analytics.statusCounts).toEqual({
-        'PENDING': 1,
-        'READY': 1,
+        PENDING: 1,
+        READY: 1,
       });
       expect(analytics.fulfillmentCounts).toEqual({
-        'pickup': 1,
-        'local_delivery': 1,
+        pickup: 1,
+        local_delivery: 1,
       });
     });
   });
@@ -897,9 +908,9 @@ describe('Admin System Integration Tests', () => {
     test('should validate user role permissions', () => {
       const hasPermission = (userRole: string, requiredRole: string) => {
         const roleHierarchy = {
-          'CUSTOMER': 1,
-          'MANAGER': 2,
-          'ADMIN': 3,
+          CUSTOMER: 1,
+          MANAGER: 2,
+          ADMIN: 3,
         };
 
         const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
@@ -950,15 +961,15 @@ describe('Admin System Integration Tests', () => {
     test('should validate user creation data', () => {
       const validateUserData = (data: any) => {
         const errors: string[] = [];
-        
+
         if (!data.email || !data.email.includes('@')) {
           errors.push('Valid email is required');
         }
-        
+
         if (!data.name || data.name.trim().length < 2) {
           errors.push('Name must be at least 2 characters');
         }
-        
+
         if (!['ADMIN', 'MANAGER', 'CUSTOMER'].includes(data.role)) {
           errors.push('Valid role is required');
         }
@@ -980,7 +991,7 @@ describe('Admin System Integration Tests', () => {
         role: 'CUSTOMER',
         phone: '+1-415-555-9999',
       };
-      
+
       const validResult = validateUserData(validUser);
       expect(validResult.isValid).toBe(true);
 
@@ -991,7 +1002,7 @@ describe('Admin System Integration Tests', () => {
         role: 'INVALID_ROLE',
         phone: '123',
       };
-      
+
       const invalidResult = validateUserData(invalidUser);
       expect(invalidResult.isValid).toBe(false);
       expect(invalidResult.errors).toContain('Valid email is required');
@@ -1009,18 +1020,14 @@ describe('Admin System Integration Tests', () => {
 
         // Order metrics
         const totalOrders = orders.length;
-        const recentOrders = orders.filter(order => 
-          new Date(order.createdAt) >= thirtyDaysAgo
-        );
+        const recentOrders = orders.filter(order => new Date(order.createdAt) >= thirtyDaysAgo);
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
         const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
         // User metrics
         const totalUsers = users.length;
         const activeUsers = users.filter(user => user.isActive).length;
-        const newUsers = users.filter(user => 
-          new Date(user.createdAt) >= thirtyDaysAgo
-        );
+        const newUsers = users.filter(user => new Date(user.createdAt) >= thirtyDaysAgo);
 
         // Product metrics
         const totalProducts = products.length;
@@ -1048,9 +1055,9 @@ describe('Admin System Integration Tests', () => {
       };
 
       const mockOrders = [
-        { id: '1', total: 50.00, createdAt: new Date('2024-11-25') },
-        { id: '2', total: 75.00, createdAt: new Date('2024-11-20') },
-        { id: '3', total: 100.00, createdAt: new Date('2024-10-15') }, // Older than 30 days
+        { id: '1', total: 50.0, createdAt: new Date('2024-11-25') },
+        { id: '2', total: 75.0, createdAt: new Date('2024-11-20') },
+        { id: '3', total: 100.0, createdAt: new Date('2024-10-15') }, // Older than 30 days
       ];
 
       const mockUsers = [
@@ -1069,8 +1076,8 @@ describe('Admin System Integration Tests', () => {
 
       expect(metrics.orders.total).toBe(3);
       expect(metrics.orders.recent).toBe(2); // Only 2 orders in last 30 days
-      expect(metrics.orders.revenue).toBe(225.00);
-      expect(metrics.orders.averageValue).toBeCloseTo(75.00);
+      expect(metrics.orders.revenue).toBe(225.0);
+      expect(metrics.orders.averageValue).toBeCloseTo(75.0);
 
       expect(metrics.users.total).toBe(3);
       expect(metrics.users.active).toBe(2);
@@ -1142,9 +1149,9 @@ describe('Admin System Integration Tests', () => {
     test('should validate admin permissions', () => {
       const checkAdminPermission = (userRole: string, requiredPermission: string) => {
         const permissions = {
-          'ADMIN': ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
-          'MANAGER': ['read', 'write'],
-          'CUSTOMER': ['read'],
+          ADMIN: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
+          MANAGER: ['read', 'write'],
+          CUSTOMER: ['read'],
         };
 
         const userPermissions = permissions[userRole as keyof typeof permissions] || [];
@@ -1166,7 +1173,7 @@ describe('Admin System Integration Tests', () => {
 
     test('should handle concurrent admin operations', async () => {
       // Simulate multiple admins updating the same resource
-      const updateOperations = Array.from({ length: 5 }, (_, i) => 
+      const updateOperations = Array.from({ length: 5 }, (_, i) =>
         fetch('/api/admin/delivery-zones', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1174,14 +1181,13 @@ describe('Admin System Integration Tests', () => {
         })
       );
 
-      (fetch as jest.MockedFunction<typeof fetch>)
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
+      (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
 
       const results = await Promise.all(updateOperations);
-      
+
       // All operations should complete successfully
       results.forEach(result => {
         expect(result).toBeDefined();
@@ -1190,4 +1196,4 @@ describe('Admin System Integration Tests', () => {
       expect(fetch).toHaveBeenCalledTimes(5);
     });
   });
-}); 
+});

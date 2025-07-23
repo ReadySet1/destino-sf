@@ -18,11 +18,7 @@ const baseConfig: Partial<Config> = {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
   },
-  testPathIgnorePatterns: [
-    '<rootDir>/node_modules/',
-    '<rootDir>/.next/',
-    '<rootDir>/coverage/',
-  ],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/coverage/'],
   moduleDirectories: ['node_modules', '<rootDir>', '<rootDir>/src'],
   resolver: '<rootDir>/jest.resolver.cjs',
   collectCoverageFrom: [
@@ -43,37 +39,52 @@ const baseConfig: Partial<Config> = {
   coverageDirectory: 'coverage',
   extensionsToTreatAsEsm: ['.tsx', '.ts'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
-      tsconfig: {
-        jsx: 'react-jsx',
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: {
+          jsx: 'react-jsx',
+        },
       },
-    }],
-    '^.+\\.(js|jsx)$': ['babel-jest', { 
-      presets: [
-        ['next/babel'],
-        ['@babel/preset-env', { 
-          targets: { node: 'current' },
-          modules: 'commonjs'
-        }],
-        ['@babel/preset-react', { 
-          runtime: 'automatic'
-        }],
-        ['@babel/preset-typescript', {
-          allowDeclareFields: true,
-          isTSX: true,
-          allExtensions: true
-        }]
-      ]
-    }],
+    ],
+    '^.+\\.(js|jsx)$': [
+      'babel-jest',
+      {
+        presets: [
+          ['next/babel'],
+          [
+            '@babel/preset-env',
+            {
+              targets: { node: 'current' },
+              modules: 'commonjs',
+            },
+          ],
+          [
+            '@babel/preset-react',
+            {
+              runtime: 'automatic',
+            },
+          ],
+          [
+            '@babel/preset-typescript',
+            {
+              allowDeclareFields: true,
+              isTSX: true,
+              allExtensions: true,
+            },
+          ],
+        ],
+      },
+    ],
   },
   globals: {
     'ts-jest': {
-      useESM: true
-    }
+      useESM: true,
+    },
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library|@t3-oss))'
+    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library|@t3-oss))',
   ],
 };
 
@@ -83,10 +94,10 @@ const config: Config = {
   coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      branches: 2,     // Temporarily very low for production deployment
-      functions: 1,    // Will increase gradually
-      lines: 3,        // as more tests are added
-      statements: 3,   // Current actual coverage levels
+      branches: 2, // Temporarily very low for production deployment
+      functions: 1, // Will increase gradually
+      lines: 3, // as more tests are added
+      statements: 3, // Current actual coverage levels
     },
     // Critical path specific thresholds for production-ready testing
     'src/app/api/checkout/**/*.ts': {
@@ -114,16 +125,16 @@ const config: Config = {
       ...baseConfig,
       displayName: 'node',
       testEnvironment: 'node',
-      testMatch: [
-        '<rootDir>/src/__tests__/**/*.test.ts',
-        '<rootDir>/src/__tests__/**/*.test.js',
-      ],
+      testMatch: ['<rootDir>/src/__tests__/**/*.test.ts', '<rootDir>/src/__tests__/**/*.test.js'],
       testPathIgnorePatterns: [
         '<rootDir>/node_modules/',
         '<rootDir>/.next/',
         '<rootDir>/coverage/',
       ],
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/setup/node-setup.js'],
+      setupFilesAfterEnv: [
+        '<rootDir>/jest.setup.js',
+        '<rootDir>/src/__tests__/setup/node-setup.js',
+      ],
     },
     // jsdom environment for React components
     {
@@ -134,7 +145,10 @@ const config: Config = {
         '<rootDir>/src/__tests__/**/*.test.tsx',
         '<rootDir>/src/__tests__/**/components/**/*.test.ts',
       ],
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/setup/jsdom-setup.js'],
+      setupFilesAfterEnv: [
+        '<rootDir>/jest.setup.js',
+        '<rootDir>/src/__tests__/setup/jsdom-setup.js',
+      ],
       testEnvironmentOptions: {
         url: 'http://localhost:3000',
       },

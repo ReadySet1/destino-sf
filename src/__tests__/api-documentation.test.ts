@@ -61,31 +61,79 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 // Import modules
-import { validateOpenAPISchema, validateEndpointDocumentation, validateResponseSchemas, validateRequestSchemas, validateExamples } from '@/lib/openapi-validator';
-import { checkDocumentationCompleteness, validateEndpointCoverage, checkSchemaAccuracy, validateDocumentationSync, generateDocumentationReport } from '@/lib/documentation-checker';
-import { testDocumentedExamples, validateResponseFormats, testErrorDocumentation, validateParameterDocumentation, testAuthDocumentation } from '@/lib/api-testing';
+import {
+  validateOpenAPISchema,
+  validateEndpointDocumentation,
+  validateResponseSchemas,
+  validateRequestSchemas,
+  validateExamples,
+} from '@/lib/openapi-validator';
+import {
+  checkDocumentationCompleteness,
+  validateEndpointCoverage,
+  checkSchemaAccuracy,
+  validateDocumentationSync,
+  generateDocumentationReport,
+} from '@/lib/documentation-checker';
+import {
+  testDocumentedExamples,
+  validateResponseFormats,
+  testErrorDocumentation,
+  validateParameterDocumentation,
+  testAuthDocumentation,
+} from '@/lib/api-testing';
 import SwaggerParser from 'swagger-parser';
 import { OpenAPISchemaValidator } from 'openapi-schema-validator';
 import fs from 'fs/promises';
 import path from 'path';
 
-const mockValidateOpenAPISchema = validateOpenAPISchema as jest.MockedFunction<typeof validateOpenAPISchema>;
-const mockValidateEndpointDocumentation = validateEndpointDocumentation as jest.MockedFunction<typeof validateEndpointDocumentation>;
-const mockValidateResponseSchemas = validateResponseSchemas as jest.MockedFunction<typeof validateResponseSchemas>;
-const mockValidateRequestSchemas = validateRequestSchemas as jest.MockedFunction<typeof validateRequestSchemas>;
+const mockValidateOpenAPISchema = validateOpenAPISchema as jest.MockedFunction<
+  typeof validateOpenAPISchema
+>;
+const mockValidateEndpointDocumentation = validateEndpointDocumentation as jest.MockedFunction<
+  typeof validateEndpointDocumentation
+>;
+const mockValidateResponseSchemas = validateResponseSchemas as jest.MockedFunction<
+  typeof validateResponseSchemas
+>;
+const mockValidateRequestSchemas = validateRequestSchemas as jest.MockedFunction<
+  typeof validateRequestSchemas
+>;
 const mockValidateExamples = validateExamples as jest.MockedFunction<typeof validateExamples>;
-const mockCheckDocumentationCompleteness = checkDocumentationCompleteness as jest.MockedFunction<typeof checkDocumentationCompleteness>;
-const mockValidateEndpointCoverage = validateEndpointCoverage as jest.MockedFunction<typeof validateEndpointCoverage>;
-const mockCheckSchemaAccuracy = checkSchemaAccuracy as jest.MockedFunction<typeof checkSchemaAccuracy>;
-const mockValidateDocumentationSync = validateDocumentationSync as jest.MockedFunction<typeof validateDocumentationSync>;
-const mockGenerateDocumentationReport = generateDocumentationReport as jest.MockedFunction<typeof generateDocumentationReport>;
-const mockTestDocumentedExamples = testDocumentedExamples as jest.MockedFunction<typeof testDocumentedExamples>;
-const mockValidateResponseFormats = validateResponseFormats as jest.MockedFunction<typeof validateResponseFormats>;
-const mockTestErrorDocumentation = testErrorDocumentation as jest.MockedFunction<typeof testErrorDocumentation>;
-const mockValidateParameterDocumentation = validateParameterDocumentation as jest.MockedFunction<typeof validateParameterDocumentation>;
-const mockTestAuthDocumentation = testAuthDocumentation as jest.MockedFunction<typeof testAuthDocumentation>;
+const mockCheckDocumentationCompleteness = checkDocumentationCompleteness as jest.MockedFunction<
+  typeof checkDocumentationCompleteness
+>;
+const mockValidateEndpointCoverage = validateEndpointCoverage as jest.MockedFunction<
+  typeof validateEndpointCoverage
+>;
+const mockCheckSchemaAccuracy = checkSchemaAccuracy as jest.MockedFunction<
+  typeof checkSchemaAccuracy
+>;
+const mockValidateDocumentationSync = validateDocumentationSync as jest.MockedFunction<
+  typeof validateDocumentationSync
+>;
+const mockGenerateDocumentationReport = generateDocumentationReport as jest.MockedFunction<
+  typeof generateDocumentationReport
+>;
+const mockTestDocumentedExamples = testDocumentedExamples as jest.MockedFunction<
+  typeof testDocumentedExamples
+>;
+const mockValidateResponseFormats = validateResponseFormats as jest.MockedFunction<
+  typeof validateResponseFormats
+>;
+const mockTestErrorDocumentation = testErrorDocumentation as jest.MockedFunction<
+  typeof testErrorDocumentation
+>;
+const mockValidateParameterDocumentation = validateParameterDocumentation as jest.MockedFunction<
+  typeof validateParameterDocumentation
+>;
+const mockTestAuthDocumentation = testAuthDocumentation as jest.MockedFunction<
+  typeof testAuthDocumentation
+>;
 const mockSwaggerParser = SwaggerParser as jest.Mocked<typeof SwaggerParser>;
-const mockOpenAPISchemaValidator = OpenAPISchemaValidator as jest.MockedClass<typeof OpenAPISchemaValidator>;
+const mockOpenAPISchemaValidator = OpenAPISchemaValidator as jest.MockedClass<
+  typeof OpenAPISchemaValidator
+>;
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
 
@@ -94,7 +142,7 @@ describe('API Documentation Testing - Phase 4', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock validator instance
     mockValidatorInstance = {
       validate: jest.fn(),
@@ -103,7 +151,7 @@ describe('API Documentation Testing - Phase 4', () => {
 
     // Mock file system paths
     mockPath.join.mockImplementation((...paths) => paths.join('/'));
-    mockPath.resolve.mockImplementation((path) => `/absolute/${path}`);
+    mockPath.resolve.mockImplementation(path => `/absolute/${path}`);
   });
 
   describe('OpenAPI Schema Validation', () => {
@@ -196,10 +244,7 @@ describe('API Documentation Testing - Phase 4', () => {
             'paths./invalid.get.responses is required',
             'paths./invalid.get missing operationId',
           ],
-          warnings: [
-            'info.description is recommended',
-            'info.contact should be provided',
-          ],
+          warnings: ['info.description is recommended', 'info.contact should be provided'],
           recommendations: [
             'Upgrade to OpenAPI 3.0.x',
             'Add missing required fields',
@@ -240,7 +285,7 @@ describe('API Documentation Testing - Phase 4', () => {
                     scopes: {
                       'read:orders': 'Read order data',
                       'write:orders': 'Create and modify orders',
-                      'admin': 'Administrative access',
+                      admin: 'Administrative access',
                     },
                   },
                 },
@@ -675,7 +720,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.schemas.invalid).toBe(1);
         expect(validation.validation.Order.valid).toBe(false);
         expect(validation.compliance.schemaMatches).toBeLessThan(50);
-        expect(validation.validation.Order.issues).toContain('Property "total" should be number type for currency values');
+        expect(validation.validation.Order.issues).toContain(
+          'Property "total" should be number type for currency values'
+        );
       });
 
       it('should validate request schemas against actual API usage', async () => {
@@ -753,7 +800,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.schemas.valid).toBe(2);
         expect(validation.validation.CreateOrderRequest.actualUsage).toBeGreaterThan(95);
         expect(validation.compliance.requestValidation).toBeGreaterThan(95);
-        expect(validation.recommendations).toContain('Request schemas accurately reflect API usage');
+        expect(validation.recommendations).toContain(
+          'Request schemas accurately reflect API usage'
+        );
       });
     });
 
@@ -770,7 +819,7 @@ describe('API Documentation Testing - Phase 4', () => {
                         id: '123e4567-e89b-12d3-a456-426614174000',
                         name: 'Empanada de Carne',
                         description: 'Traditional Argentine beef empanada',
-                        price: 4.50,
+                        price: 4.5,
                         category: 'empanadas',
                         available: true,
                         createdAt: '2024-01-15T10:00:00Z',
@@ -818,14 +867,14 @@ describe('API Documentation Testing - Phase 4', () => {
                   example: {
                     id: '456e7890-e89b-12d3-a456-426614174001',
                     status: 'pending',
-                    total: 9.00,
+                    total: 9.0,
                     items: [
                       {
                         productId: '123e4567-e89b-12d3-a456-426614174000',
                         productName: 'Empanada de Carne',
                         quantity: 2,
-                        unitPrice: 4.50,
-                        total: 9.00,
+                        unitPrice: 4.5,
+                        total: 9.0,
                         customizations: ['extra spicy'],
                         notes: 'Please make it extra crispy',
                       },
@@ -887,7 +936,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.examples.valid).toBe(3);
         expect(validation.validation.schemaCompliance).toBe(100);
         expect(validation.testing['/api/orders POST 201'].businessLogic).toBe(true);
-        expect(validation.recommendations).toContain('All documented examples are valid and accurate');
+        expect(validation.recommendations).toContain(
+          'All documented examples are valid and accurate'
+        );
       });
 
       it('should detect invalid examples in documentation', async () => {
@@ -901,7 +952,7 @@ describe('API Documentation Testing - Phase 4', () => {
                       {
                         id: 'not-a-uuid', // Invalid format
                         name: '', // Empty required field
-                        price: -5.00, // Negative price
+                        price: -5.0, // Negative price
                         category: 'invalid-category', // Not in enum
                         available: 'yes', // Wrong type (should be boolean)
                         createdAt: 'invalid-date', // Invalid date format
@@ -963,7 +1014,9 @@ describe('API Documentation Testing - Phase 4', () => {
 
         expect(validation.examples.invalid).toBe(1);
         expect(validation.validation.schemaCompliance).toBeLessThan(50);
-        expect(validation.testing['/api/products GET 200'].issues).toContain('Field "price" cannot be negative');
+        expect(validation.testing['/api/products GET 200'].issues).toContain(
+          'Field "price" cannot be negative'
+        );
         expect(validation.recommendations).toContain('Fix schema validation errors in examples');
       });
 
@@ -1040,7 +1093,9 @@ describe('API Documentation Testing - Phase 4', () => {
 
         expect(validation.examples.valid).toBe(2);
         expect(validation.apiConsistency.behaviorMatch).toBeGreaterThan(90);
-        expect(validation.realTimeValidation['/api/orders/{orderId}/status PUT request'].processed).toBe(true);
+        expect(
+          validation.realTimeValidation['/api/orders/{orderId}/status PUT request'].processed
+        ).toBe(true);
         expect(validation.recommendations).toContain('Examples accurately reflect API behavior');
       });
     });
@@ -1128,7 +1183,12 @@ describe('API Documentation Testing - Phase 4', () => {
           },
           missing: [
             { path: '/api/products/{id}', method: 'GET', category: 'public', priority: 'high' },
-            { path: '/api/orders/{id}/cancel', method: 'POST', category: 'public', priority: 'high' },
+            {
+              path: '/api/orders/{id}/cancel',
+              method: 'POST',
+              category: 'public',
+              priority: 'high',
+            },
             { path: '/api/admin/settings', method: 'GET', category: 'admin', priority: 'medium' },
             { path: '/api/admin/settings', method: 'PUT', category: 'admin', priority: 'medium' },
             { path: '/api/webhooks/square', method: 'POST', category: 'webhooks', priority: 'low' },
@@ -1148,7 +1208,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(coverage.categories.admin.coverage).toBe(0);
         expect(coverage.missing).toHaveLength(6);
         expect(coverage.missing[0].priority).toBe('high');
-        expect(coverage.recommendations).toContain('Prioritize documenting high-priority public endpoints');
+        expect(coverage.recommendations).toContain(
+          'Prioritize documenting high-priority public endpoints'
+        );
       });
     });
 
@@ -1317,10 +1379,7 @@ describe('API Documentation Testing - Phase 4', () => {
             nextRun: '2024-01-15T12:45:00Z',
             success: true,
           },
-          recommendations: [
-            'Documentation is up to date',
-            'Automated sync is working correctly',
-          ],
+          recommendations: ['Documentation is up to date', 'Automated sync is working correctly'],
         });
 
         const syncValidation = await mockValidateDocumentationSync(syncCheck);
@@ -1407,7 +1466,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(syncValidation.changes.endpoints.pending).toBe(7);
         expect(syncValidation.changes.schemas.pending).toBe(14);
         expect(syncValidation.automation.enabled).toBe(false);
-        expect(syncValidation.recommendations).toContain('Critical: Update documentation immediately');
+        expect(syncValidation.recommendations).toContain(
+          'Critical: Update documentation immediately'
+        );
       });
     });
   });
@@ -1535,7 +1596,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.accuracy.schemaCompliance).toBe(100);
         expect(validation.accuracy.behaviorMatch).toBe(100);
         expect(validation.validation['POST /api/orders 422'].actualBehavior).toBe('matches');
-        expect(validation.recommendations).toContain('Error documentation is comprehensive and accurate');
+        expect(validation.recommendations).toContain(
+          'Error documentation is comprehensive and accurate'
+        );
       });
 
       it('should detect missing or inaccurate error documentation', async () => {
@@ -1632,7 +1695,7 @@ describe('API Documentation Testing - Phase 4', () => {
                   description: 'Authentication successful',
                   schema: { $ref: '#/components/schemas/AuthResponse' },
                   examples: {
-                    'success': {
+                    success: {
                       value: {
                         token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
                         user: {
@@ -1701,7 +1764,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.documentation.securitySchemes).toBe(1);
         expect(validation.validation.protectedEndpoints.documented).toBe(4);
         expect(validation.testing.authenticationFlow).toBe('working');
-        expect(validation.recommendations).toContain('Authentication documentation is complete and accurate');
+        expect(validation.recommendations).toContain(
+          'Authentication documentation is complete and accurate'
+        );
       });
 
       it('should detect authentication documentation gaps', async () => {
@@ -1960,7 +2025,7 @@ describe('API Documentation Testing - Phase 4', () => {
                 contentType: 'application/json',
                 schema: { $ref: '#/components/schemas/Order' },
                 headers: {
-                  'Location': { schema: { type: 'string', format: 'uri' } },
+                  Location: { schema: { type: 'string', format: 'uri' } },
                 },
               },
             },
@@ -2002,7 +2067,9 @@ describe('API Documentation Testing - Phase 4', () => {
         expect(validation.consistency.contentTypes).toBe(100);
         expect(validation.standards.httpCompliance).toBe(100);
         expect(validation.validation['GET /api/products 200'].format).toBe('valid');
-        expect(validation.recommendations).toContain('Response formats are consistent and well-defined');
+        expect(validation.recommendations).toContain(
+          'Response formats are consistent and well-defined'
+        );
       });
 
       it('should detect format inconsistencies in documentation', async () => {
@@ -2021,7 +2088,8 @@ describe('API Documentation Testing - Phase 4', () => {
               },
             },
             'POST /api/checkout': {
-              '200': { // Should be 201 for creation
+              '200': {
+                // Should be 201 for creation
                 contentType: 'application/json',
                 // Missing schema
               },
@@ -2062,8 +2130,12 @@ describe('API Documentation Testing - Phase 4', () => {
 
         expect(validation.consistency.contentTypes).toBeLessThan(70);
         expect(validation.standards.restCompliance).toBeLessThan(50);
-        expect(validation.issues).toContain('GET /api/orders uses text/plain instead of application/json');
-        expect(validation.recommendations).toContain('Standardize on application/json content type');
+        expect(validation.issues).toContain(
+          'GET /api/orders uses text/plain instead of application/json'
+        );
+        expect(validation.recommendations).toContain(
+          'Standardize on application/json content type'
+        );
       });
     });
   });
@@ -2116,4 +2188,4 @@ describe('API Documentation Testing - Phase 4', () => {
       expect(qualityMetrics.overall.grade).toBe('B+');
     });
   });
-}); 
+});

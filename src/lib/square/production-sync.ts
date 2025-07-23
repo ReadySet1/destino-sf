@@ -78,7 +78,7 @@ export class ProductionSyncManager {
     warnings: 0,
     imagesProcessed: 0,
     imagesValidated: 0,
-    imagesFailed: 0
+    imagesFailed: 0,
   };
 
   constructor(options: ProductSyncOptions = {}) {
@@ -87,7 +87,7 @@ export class ProductionSyncManager {
       skipInactiveProducts: options.skipInactiveProducts ?? true,
       validateImages: options.validateImages ?? true,
       batchSize: options.batchSize ?? 50,
-      enableCleanup: options.enableCleanup ?? false
+      enableCleanup: options.enableCleanup ?? false,
     };
     this.syncStartTime = new Date();
   }
@@ -99,7 +99,7 @@ export class ProductionSyncManager {
     try {
       logger.info('🚀 Starting Production Sync Process', {
         options: this.options,
-        timestamp: this.syncStartTime.toISOString()
+        timestamp: this.syncStartTime.toISOString(),
       });
 
       // Step 1: Get catalog data from Square
@@ -125,7 +125,6 @@ export class ProductionSyncManager {
 
       // Step 5: Generate final report
       return this.generateSyncReport(syncResult);
-
     } catch (error) {
       logger.error('❌ Production sync failed:', error);
       return {
@@ -139,8 +138,8 @@ export class ProductionSyncManager {
           created: this.stats.created,
           updated: this.stats.updated,
           withImages: this.stats.imagesValidated,
-          withoutImages: this.stats.processed - this.stats.imagesValidated
-        }
+          withoutImages: this.stats.processed - this.stats.imagesValidated,
+        },
       };
     }
   }
@@ -169,20 +168,21 @@ export class ProductionSyncManager {
           object_types: ['ITEM'],
           include_related_objects: true,
           include_deleted_objects: false,
-          limit: 1000 // Maximum allowed by Square
+          limit: 1000, // Maximum allowed by Square
         });
 
         const products = response.result?.objects?.filter(obj => obj.type === 'ITEM') || [];
         const relatedObjects = response.result?.related_objects || [];
 
-        logger.info(`✅ Square catalog fetched: ${products.length} products, ${relatedObjects.length} related objects`);
+        logger.info(
+          `✅ Square catalog fetched: ${products.length} products, ${relatedObjects.length} related objects`
+        );
 
         return {
           success: true,
           products,
-          relatedObjects
+          relatedObjects,
         };
-
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         logger.warn(`⚠️ Catalog fetch attempt ${attempt} failed:`, lastError.message);
@@ -199,7 +199,7 @@ export class ProductionSyncManager {
       success: false,
       products: [],
       relatedObjects: [],
-      error: lastError?.message || 'Failed to fetch catalog after retries'
+      error: lastError?.message || 'Failed to fetch catalog after retries',
     };
   }
 
@@ -279,7 +279,7 @@ export class ProductionSyncManager {
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { squareId },
-      select: { id: true, images: true, name: true, updatedAt: true }
+      select: { id: true, images: true, name: true, updatedAt: true },
     });
 
     // Process images
@@ -290,10 +290,7 @@ export class ProductionSyncManager {
     );
 
     // Determine category
-    const categoryId = await this.determineProductCategory(
-      squareProduct,
-      defaultCategory.id
-    );
+    const categoryId = await this.determineProductCategory(squareProduct, defaultCategory.id);
 
     // Process variations
     const { variants, basePrice } = this.processVariations(
@@ -314,14 +311,14 @@ export class ProductionSyncManager {
       categoryId,
       featured: false,
       active: true,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     if (existingProduct) {
       // Update existing product
       await prisma.product.update({
         where: { id: existingProduct.id },
-        data: productData
+        data: productData,
       });
       this.stats.updated++;
       logger.debug(`✅ Updated product: ${productName}`);
@@ -331,9 +328,9 @@ export class ProductionSyncManager {
         data: {
           ...productData,
           variants: {
-            create: variants
-          }
-        }
+            create: variants,
+          },
+        },
       });
       this.stats.created++;
       logger.debug(`✅ Created product: ${productName}`);
@@ -371,7 +368,7 @@ export class ProductionSyncManager {
         return {
           validUrls: existingProduct.images,
           totalProcessed: existingProduct.images.length,
-          failed: 0
+          failed: 0,
         };
       }
       return { validUrls: [], totalProcessed: 0, failed: 0 };
@@ -417,10 +414,8 @@ export class ProductionSyncManager {
     relatedObjects: SquareCatalogObject[]
   ): Promise<string | null> {
     // Strategy 1: Look in related objects
-    const relatedImage = relatedObjects.find(
-      obj => obj.id === imageId && obj.type === 'IMAGE'
-    );
-    
+    const relatedImage = relatedObjects.find(obj => obj.id === imageId && obj.type === 'IMAGE');
+
     if (relatedImage?.image_data?.url) {
       return relatedImage.image_data.url;
     }
@@ -430,7 +425,7 @@ export class ProductionSyncManager {
       if (squareClient.catalogApi) {
         const response = await squareClient.catalogApi.retrieveCatalogObject(imageId);
         const imageData = response.result?.object;
-        
+
         if (imageData?.image_data?.url) {
           return imageData.image_data.url;
         }
@@ -449,12 +444,12 @@ export class ProductionSyncManager {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(url, { 
-        method: 'HEAD', 
-        signal: controller.signal 
+
+      const response = await fetch(url, {
+        method: 'HEAD',
+        signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
@@ -505,7 +500,7 @@ export class ProductionSyncManager {
       variants.push({
         squareVariantId: variation.id,
         name: variation.item_variation_data.name || 'Default',
-        price: variantPrice
+        price: variantPrice,
       });
     }
 
@@ -523,7 +518,7 @@ export class ProductionSyncManager {
     while (true) {
       const existing = await prisma.product.findUnique({
         where: { slug },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (!existing || (excludeId && existing.id === excludeId)) {
@@ -569,7 +564,7 @@ export class ProductionSyncManager {
    */
   private async ensureDefaultCategory(): Promise<{ id: string; name: string }> {
     const category = await prisma.category.findFirst({
-      where: { name: 'Default' }
+      where: { name: 'Default' },
     });
 
     if (category) {
@@ -582,8 +577,8 @@ export class ProductionSyncManager {
         description: 'Default category for products',
         slug: 'default',
         order: 0,
-        active: true
-      }
+        active: true,
+      },
     });
 
     return newCategory;
@@ -605,20 +600,24 @@ export class ProductionSyncManager {
    */
   private async cleanupOrphanedData(): Promise<void> {
     logger.info('🧹 Cleaning up orphaned data...');
-    
+
     // Note: Variants have CASCADE delete relationship with products,
     // so orphaned variants should not exist in the database.
     // If cleanup is needed in the future, implement specific cleanup logic here.
-    
+
     logger.info('✅ Cleanup complete - no orphaned data found');
   }
 
   /**
    * Generate comprehensive sync report
    */
-  private generateSyncReport(syncResult: { success: boolean; errors: string[]; warnings: string[] }): SyncResult {
+  private generateSyncReport(syncResult: {
+    success: boolean;
+    errors: string[];
+    warnings: string[];
+  }): SyncResult {
     const duration = Date.now() - this.syncStartTime.getTime();
-    
+
     logger.info('📊 Sync Statistics:', {
       duration: `${duration}ms`,
       processed: this.stats.processed,
@@ -629,12 +628,12 @@ export class ProductionSyncManager {
       warnings: this.stats.warnings,
       imagesProcessed: this.stats.imagesProcessed,
       imagesValidated: this.stats.imagesValidated,
-      imagesFailed: this.stats.imagesFailed
+      imagesFailed: this.stats.imagesFailed,
     });
 
     return {
       success: syncResult.success,
-      message: syncResult.success 
+      message: syncResult.success
         ? `Successfully synced ${this.stats.processed} products in ${duration}ms`
         : `Sync completed with ${syncResult.errors.length} errors`,
       syncedProducts: this.stats.processed,
@@ -645,8 +644,8 @@ export class ProductionSyncManager {
         created: this.stats.created,
         updated: this.stats.updated,
         withImages: this.stats.imagesValidated,
-        withoutImages: this.stats.processed - this.stats.imagesValidated
-      }
+        withoutImages: this.stats.processed - this.stats.imagesValidated,
+      },
     };
   }
 }
@@ -655,4 +654,4 @@ export class ProductionSyncManager {
 export async function syncProductsProduction(options?: ProductSyncOptions): Promise<SyncResult> {
   const syncManager = new ProductionSyncManager(options);
   return await syncManager.syncProducts();
-} 
+}

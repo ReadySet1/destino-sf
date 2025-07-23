@@ -3,17 +3,28 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
 
 export default function TestEmailPage() {
   const [email, setEmail] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'SQUARE' | 'CASH'>('SQUARE');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
+  const [result, setResult] = useState<{
+    success?: boolean;
+    message?: string;
+    error?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +59,7 @@ export default function TestEmailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Test Email Functionality</CardTitle>
-          <CardDescription>
-            Send a test order confirmation email using Resend API
-          </CardDescription>
+          <CardDescription>Send a test order confirmation email using Resend API</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -60,7 +69,7 @@ export default function TestEmailPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="recipient@example.com"
                 required
               />
@@ -70,7 +79,7 @@ export default function TestEmailPage() {
               <Label>Payment Method</Label>
               <RadioGroup
                 value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as 'SQUARE' | 'CASH')}
+                onValueChange={value => setPaymentMethod(value as 'SQUARE' | 'CASH')}
                 className="flex flex-col space-y-2"
               >
                 <div className="flex items-center space-x-2">
@@ -109,4 +118,4 @@ export default function TestEmailPage() {
       </Card>
     </div>
   );
-} 
+}

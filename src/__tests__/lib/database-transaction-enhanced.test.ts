@@ -13,7 +13,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockPrismaInstance = {
       $connect: jest.fn().mockResolvedValue(undefined),
       $disconnect: jest.fn().mockResolvedValue(undefined),
@@ -66,7 +66,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
       (mockPrisma.order.create as jest.Mock).mockResolvedValue(mockOrder);
       (mockPrisma.product.update as jest.Mock).mockResolvedValue(mockInventoryUpdate);
 
-      const result = await mockPrisma.$transaction(async (tx) => {
+      const result = await mockPrisma.$transaction(async tx => {
         // Create order
         const order = await tx.order.create({
           data: {
@@ -95,7 +95,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
     it('should handle deadlock detection and retry', async () => {
       const deadlockError = new Error('Transaction deadlock detected');
       deadlockError.name = 'DeadlockError';
-      
+
       let attemptCount = 0;
       mockPrisma.$transaction.mockImplementation(async () => {
         attemptCount++;
@@ -159,7 +159,10 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
         const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
-            return await mockPrisma.$transaction(async () => ({ orderId: 'order-123', success: true }));
+            return await mockPrisma.$transaction(async () => ({
+              orderId: 'order-123',
+              success: true,
+            }));
           } catch (error: any) {
             if (error.name === 'SerializationFailureError' && attempt < maxRetries) {
               await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
@@ -259,7 +262,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
         { id: 'item-2', orderId: 'order-123', productId: 'product-2', quantity: 1 },
       ];
 
-      mockPrisma.$transaction.mockImplementation(async (transactionFn) => {
+      mockPrisma.$transaction.mockImplementation(async transactionFn => {
         return await transactionFn(mockPrisma);
       });
 
@@ -268,7 +271,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
         createMany: jest.fn().mockResolvedValue({ count: 2 }),
       };
 
-      const result = await mockPrisma.$transaction(async (tx) => {
+      const result = await mockPrisma.$transaction(async tx => {
         // Create order
         const order = await tx.order.create({
           data: {
@@ -334,11 +337,11 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
       mockPrisma.$transaction.mockRejectedValue(validationError);
 
       await expect(
-        mockPrisma.$transaction(async (tx) => {
+        mockPrisma.$transaction(async tx => {
           return await tx.product.create({
             data: {
               name: 'Invalid Product',
-              price: -10.00, // Invalid negative price
+              price: -10.0, // Invalid negative price
             },
           });
         })
@@ -350,7 +353,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
     it('should handle complex raw SQL queries safely', async () => {
       const mockResults = [
         { order_id: 'order-1', total_amount: 50.99, item_count: 3 },
-        { order_id: 'order-2', total_amount: 75.50, item_count: 2 },
+        { order_id: 'order-2', total_amount: 75.5, item_count: 2 },
       ];
 
       mockPrisma.$queryRaw.mockResolvedValue(mockResults);
@@ -405,7 +408,7 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
   describe('Error Recovery and Logging', () => {
     it('should log transaction failures with context', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const transactionError = new Error('Database operation failed');
       mockPrisma.$transaction.mockRejectedValue(transactionError);
 
@@ -458,8 +461,9 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
         }
 
         private isOpen(): boolean {
-          return this.failureCount >= this.threshold &&
-                 Date.now() - this.lastFailureTime < this.timeout;
+          return (
+            this.failureCount >= this.threshold && Date.now() - this.lastFailureTime < this.timeout
+          );
         }
 
         private onSuccess(): void {
@@ -483,15 +487,15 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
 
       // First 3 attempts should fail
       for (let i = 0; i < 3; i++) {
-        await expect(
-          circuitBreaker.execute(() => mockPrisma.order.findMany())
-        ).rejects.toThrow('Database unavailable');
+        await expect(circuitBreaker.execute(() => mockPrisma.order.findMany())).rejects.toThrow(
+          'Database unavailable'
+        );
       }
 
       // 4th attempt should be blocked by circuit breaker
-      await expect(
-        circuitBreaker.execute(() => mockPrisma.order.findMany())
-      ).rejects.toThrow('Circuit breaker is open');
+      await expect(circuitBreaker.execute(() => mockPrisma.order.findMany())).rejects.toThrow(
+        'Circuit breaker is open'
+      );
     });
   });
 
@@ -534,4 +538,4 @@ describe('Database Transaction Handling - Enhanced Testing', () => {
       expect(mockPrisma.order.findUnique).toHaveBeenCalledTimes(10);
     });
   });
-}); 
+});

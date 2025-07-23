@@ -2,18 +2,14 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 
@@ -52,7 +48,7 @@ const PickupDetails: React.FC<PickupDetailsProps> = ({
       <p className="text-sm text-muted-foreground mb-4">
         Select when you would like to pick up your order at our store.
       </p>
-      
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="pickupDate">Pickup Date</Label>
@@ -74,7 +70,7 @@ const PickupDetails: React.FC<PickupDetailsProps> = ({
                 selected={pickupDate}
                 onSelect={onPickupDateChange}
                 initialFocus
-                disabled={(date) => {
+                disabled={date => {
                   // Disable past dates and dates more than 14 days in the future
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
@@ -86,7 +82,7 @@ const PickupDetails: React.FC<PickupDetailsProps> = ({
             </PopoverContent>
           </Popover>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="pickupTime">Pickup Time</Label>
           <Select
@@ -98,7 +94,7 @@ const PickupDetails: React.FC<PickupDetailsProps> = ({
               <SelectValue placeholder="Select time" />
             </SelectTrigger>
             <SelectContent>
-              {timeSlots.map((slot) => (
+              {timeSlots.map(slot => (
                 <SelectItem key={slot} value={slot}>
                   {slot}
                 </SelectItem>
@@ -111,4 +107,4 @@ const PickupDetails: React.FC<PickupDetailsProps> = ({
   );
 };
 
-export default PickupDetails; 
+export default PickupDetails;

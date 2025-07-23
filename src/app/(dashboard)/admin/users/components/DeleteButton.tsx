@@ -25,4 +25,4 @@ export function DeleteButton({ id, onDelete, entityName, warningMessage }: Delet
       </button>
     </form>
   );
-} 
+}

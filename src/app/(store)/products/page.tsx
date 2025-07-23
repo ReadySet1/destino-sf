@@ -74,10 +74,10 @@ export default async function ProductsPage() {
         NOT: {
           name: {
             startsWith: 'CATERING',
-            mode: 'insensitive'
-          }
-        }
-      }
+            mode: 'insensitive',
+          },
+        },
+      },
     },
     include: {
       category: true, // Include category data

@@ -1,6 +1,6 @@
 /**
  * Application Configuration
- * 
+ *
  * Centralizes configuration management to prevent scattered env variable access
  * and improves type safety for configuration values.
  */
@@ -26,16 +26,16 @@ export interface AppConfig {
 }
 
 // Determine if we're in a build context
-const isBuildTime = 
-  typeof process !== 'undefined' && 
-  process.env.NODE_ENV === 'production' && 
+const isBuildTime =
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'production' &&
   process.env.NEXT_PHASE === 'phase-production-build';
 
 // Determine Square-specific configurations
 const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-const squareAccessToken = useSandbox 
-  ? process.env.SQUARE_SANDBOX_TOKEN 
-  : (process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
+const squareAccessToken = useSandbox
+  ? process.env.SQUARE_SANDBOX_TOKEN
+  : process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
 
 // Centralized configuration object
 export const config: AppConfig = {
@@ -62,21 +62,21 @@ export const config: AppConfig = {
  */
 export const validateConfig = () => {
   const errors: string[] = [];
-  
+
   if (!config.square.accessToken && !config.app.isBuildTime) {
     errors.push('Square access token is required');
   }
-  
+
   if (!config.database.url) {
     errors.push('Database URL is required');
   }
-  
+
   if (errors.length > 0) {
     const errorMessage = `Configuration validation failed: ${errors.join(', ')}`;
     logger.error(errorMessage);
     throw new Error(errorMessage);
   }
-  
+
   return true;
 };
 
@@ -88,11 +88,11 @@ export const getPublicConfig = (): Partial<AppConfig> => {
   return {
     square: {
       environment: config.square.environment,
-      applicationId: config.square.applicationId, 
+      applicationId: config.square.applicationId,
       apiHost: config.square.apiHost,
       useSandbox: config.square.useSandbox,
       // Omit accessToken and other sensitive data
-      accessToken: '', 
+      accessToken: '',
     },
     app: {
       environment: config.app.environment,
@@ -100,4 +100,4 @@ export const getPublicConfig = (): Partial<AppConfig> => {
       isBuildTime: config.app.isBuildTime,
     },
   };
-}; 
+};

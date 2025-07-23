@@ -6,9 +6,21 @@ import { SpotlightPick } from '@/types/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Trash2, Package, DollarSign, Loader2, Search, Filter, Check } from 'lucide-react';
 
 interface SpotlightPickCardProps {
@@ -39,7 +51,12 @@ interface Category {
   slug?: string | null;
 }
 
-export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }: SpotlightPickCardProps) {
+export function SpotlightPickCard({
+  pick,
+  onProductSelect,
+  onClear,
+  isLoading,
+}: SpotlightPickCardProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -48,7 +65,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  
+
   const isActive = pick.isActive && pick.productId && pick.product?.id;
   const isEmpty = !isActive;
 
@@ -59,19 +76,21 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
           fetch('/api/products'),
-          fetch('/api/categories')
+          fetch('/api/categories'),
         ]);
-        
+
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
           const productsList = Array.isArray(productsData) ? productsData : productsData.data || [];
           setProducts(productsList);
           setFilteredProducts(productsList);
         }
-        
+
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json();
-          const categoriesList = Array.isArray(categoriesData) ? categoriesData : categoriesData.data || [];
+          const categoriesList = Array.isArray(categoriesData)
+            ? categoriesData
+            : categoriesData.data || [];
           setCategories(categoriesList);
         }
       } catch (error) {
@@ -90,10 +109,11 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        product =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.category?.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -124,7 +144,9 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
   };
 
   return (
-    <Card className={`h-full transition-all duration-200 ${isEmpty ? 'border-dashed border-2 border-gray-300 bg-gray-50' : 'border-solid shadow-sm hover:shadow-md'}`}>
+    <Card
+      className={`h-full transition-all duration-200 ${isEmpty ? 'border-dashed border-2 border-gray-300 bg-gray-50' : 'border-solid shadow-sm hover:shadow-md'}`}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="text-xs font-medium px-2 py-1">
@@ -148,7 +170,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
         {/* Product Selector */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-700">Select Product:</label>
-          
+
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button
@@ -175,12 +197,12 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                 )}
               </Button>
             </DialogTrigger>
-            
+
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>Select Product for Position {pick.position}</DialogTitle>
               </DialogHeader>
-              
+
               <div className="space-y-4">
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -189,25 +211,25 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                     <Input
                       placeholder="Search products..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={e => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
-                  
+
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {categories.map((category) => (
+                      {categories.map(category => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  
+
                   <Button variant="outline" onClick={resetFilters} className="whitespace-nowrap">
                     Clear Filters
                   </Button>
@@ -221,7 +243,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                 {/* Products Grid */}
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1">
-                    {filteredProducts.map((product) => (
+                    {filteredProducts.map(product => (
                       <Card
                         key={product.id}
                         className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
@@ -274,7 +296,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                                     )}
                                   </div>
                                 </div>
-                                
+
                                 {pick.productId === product.id && (
                                   <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center ml-2">
                                     <Check className="h-3 w-3 text-white" />
@@ -287,7 +309,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
                       </Card>
                     ))}
                   </div>
-                  
+
                   {filteredProducts.length === 0 && !loadingProducts && (
                     <div className="text-center py-8 text-gray-500">
                       <Package className="mx-auto h-12 w-12 text-gray-300 mb-2" />
@@ -299,7 +321,7 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
               </div>
             </DialogContent>
           </Dialog>
-          
+
           {(isLoading || loadingProducts) && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -374,4 +396,4 @@ export function SpotlightPickCard({ pick, onProductSelect, onClear, isLoading }:
       </CardContent>
     </Card>
   );
-} 
+}

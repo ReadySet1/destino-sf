@@ -30,9 +30,14 @@ export default function AuthDebugPage() {
     // Get current auth state
     const getAuthState = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         setAuthState({ user, error });
         setSessionInfo(session);
       } catch (error) {
@@ -70,10 +75,7 @@ export default function AuthDebugPage() {
   };
 
   return (
-    <AuthContainer 
-      title="Auth Debug" 
-      subtitle="Debug magic link authentication"
-    >
+    <AuthContainer title="Auth Debug" subtitle="Debug magic link authentication">
       <div className="space-y-6">
         {/* URL Information */}
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
@@ -107,7 +109,7 @@ export default function AuthDebugPage() {
           >
             Try Setting Session from URL Tokens
           </button>
-          
+
           <button
             onClick={() => window.location.reload()}
             className="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
@@ -128,4 +130,4 @@ export default function AuthDebugPage() {
       </div>
     </AuthContainer>
   );
-} 
+}

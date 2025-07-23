@@ -18,16 +18,16 @@ try {
   try {
     console.log('\n== Approach 1: SquareClient with accessToken ==');
     const { SquareClient, SquareEnvironment } = Square;
-    
+
     client = new SquareClient({
       accessToken: 'FAKE_TOKEN_FOR_TESTING',
-      environment: SquareEnvironment.Sandbox
+      environment: SquareEnvironment.Sandbox,
     });
-    
+
     console.log('Client properties:', Object.keys(client));
     console.log('Has locationsApi:', !!client.locationsApi);
     console.log('Has catalogApi:', !!client.catalogApi);
-    
+
     if (client.locationsApi) {
       method = 'SquareClient with accessToken';
     }
@@ -40,16 +40,16 @@ try {
     try {
       console.log('\n== Approach 2: SquareClient with token ==');
       const { SquareClient, SquareEnvironment } = Square;
-      
+
       client = new SquareClient({
         token: 'FAKE_TOKEN_FOR_TESTING',
-        environment: SquareEnvironment.Sandbox
+        environment: SquareEnvironment.Sandbox,
       });
-      
+
       console.log('Client properties:', Object.keys(client));
       console.log('Has locationsApi:', !!client.locationsApi);
       console.log('Has catalogApi:', !!client.catalogApi);
-      
+
       if (client.locationsApi) {
         method = 'SquareClient with token';
       }
@@ -62,16 +62,16 @@ try {
   if (!client?.locationsApi && Square.Client) {
     try {
       console.log('\n== Approach 3: Square.Client ==');
-      
+
       client = new Square.Client({
         accessToken: 'FAKE_TOKEN_FOR_TESTING',
-        environment: 'sandbox'
+        environment: 'sandbox',
       });
-      
+
       console.log('Client properties:', Object.keys(client));
       console.log('Has locationsApi:', !!client.locationsApi);
       console.log('Has catalogApi:', !!client.catalogApi);
-      
+
       if (client.locationsApi) {
         method = 'Square.Client with accessToken';
       }
@@ -79,10 +79,10 @@ try {
       console.log('Approach 3 failed:', error.message);
     }
   }
-  
+
   console.log('\n== Result ==');
   console.log('Working approach:', method);
   console.log('Square SDK version:', Square.version || 'unknown');
 } catch (error) {
   console.error('Top level error:', error);
-} 
+}

@@ -60,9 +60,10 @@ interface FilterState {
 // Example: Search filter
 if (filters.search) {
   const searchLower = filters.search.toLowerCase();
-  filtered = filtered.filter(item => 
-    item.name.toLowerCase().includes(searchLower) ||
-    (item.description && item.description.toLowerCase().includes(searchLower))
+  filtered = filtered.filter(
+    item =>
+      item.name.toLowerCase().includes(searchLower) ||
+      (item.description && item.description.toLowerCase().includes(searchLower))
   );
 }
 
@@ -96,16 +97,19 @@ if (filters.priceRange === 'under-10') {
 ## Usage Examples
 
 ### Basic Search
+
 ```
 /admin/catering?search=empanada
 ```
 
 ### Multiple Filters
+
 ```
 /admin/catering?category=STARTER&dietary=vegetarian&priceRange=under-10
 ```
 
 ### Pagination with Filters
+
 ```
 /admin/catering?search=chicken&page=2
 ```
@@ -130,7 +134,7 @@ const ITEMS_PER_PAGE = 10; // Change this value to adjust page size
 ```typescript
 // In the price range filter logic
 case 'custom-range':
-  filtered = filtered.filter(item => 
+  filtered = filtered.filter(item =>
     Number(item.price) >= minPrice && Number(item.price) <= maxPrice
   );
   break;
@@ -161,4 +165,4 @@ case 'custom-range':
 - `@/components/ui/*` - Shadcn/ui components
 - `lucide-react` - Icons
 - `next/navigation` - URL management
-- `react-hot-toast` - Notifications 
+- `react-hot-toast` - Notifications

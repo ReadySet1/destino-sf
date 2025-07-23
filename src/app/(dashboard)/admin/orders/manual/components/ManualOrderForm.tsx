@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createManualOrder, updateOrderStatus } from '@/app/(dashboard)/admin/orders/manual/actions';
+import {
+  createManualOrder,
+  updateOrderStatus,
+} from '@/app/(dashboard)/admin/orders/manual/actions';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 // Types
@@ -68,7 +71,7 @@ export function ManualOrderForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -95,7 +98,9 @@ export function ManualOrderForm() {
   }, []);
 
   // Handle form field changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormState(prev => ({
       ...prev,
@@ -108,7 +113,7 @@ export function ManualOrderForm() {
     const productId = e.target.value;
     setSelectedProduct(productId);
     setSelectedVariant('');
-    
+
     // Set default price from the selected product
     if (productId) {
       const product = products.find(p => p.id === productId);
@@ -124,7 +129,7 @@ export function ManualOrderForm() {
   const handleVariantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const variantId = e.target.value;
     setSelectedVariant(variantId);
-    
+
     // Update price if variant has custom price
     if (variantId) {
       const product = products.find(p => p.id === selectedProduct);
@@ -142,16 +147,16 @@ export function ManualOrderForm() {
   // Add item to order
   const addItem = () => {
     if (!selectedProduct) return;
-    
+
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
-    
+
     let variantName: string | null = null;
     if (selectedVariant) {
       const variant = product.variants.find(v => v.id === selectedVariant);
       variantName = variant ? variant.name : null;
     }
-    
+
     const newItem: OrderItem = {
       productId: selectedProduct,
       variantId: selectedVariant || null,
@@ -160,32 +165,29 @@ export function ManualOrderForm() {
       productName: product.name,
       variantName,
     };
-    
+
     setFormState(prev => ({
       ...prev,
-      items: [...prev.items, newItem]
+      items: [...prev.items, newItem],
     }));
-    
+
     // Reset item selection
     setSelectedProduct('');
     setSelectedVariant('');
     setQuantity(1);
     setPrice(0);
   };
-  
+
   // Remove item from order
   const removeItem = (index: number) => {
     setFormState(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter((_, i) => i !== index),
     }));
   };
 
   // Calculate order total
-  const orderTotal = formState.items.reduce(
-    (total, item) => total + item.price * item.quantity, 
-    0
-  );
+  const orderTotal = formState.items.reduce((total, item) => total + item.price * item.quantity, 0);
 
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,37 +195,36 @@ export function ManualOrderForm() {
     setIsSubmitting(true);
     setError('');
     setSuccess('');
-    
+
     try {
       // Validation
       if (formState.items.length === 0) {
         throw new Error('Please add at least one item to the order');
       }
-      
+
       if (!formState.customerName || !formState.email || !formState.phone) {
         throw new Error('Please fill in all required customer information');
       }
-      
+
       // Submit the order
       const result = await createManualOrder({
         ...formState,
         total: orderTotal,
       });
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
-      
+
       setSuccess(`Order ${result.orderId} created successfully!`);
-      
+
       // Reset form after successful submission
       setFormState(initialState);
-      
+
       // Navigate to the order details page
       setTimeout(() => {
         router.push(`/admin/orders/${result.orderId}`);
       }, 1500);
-      
     } catch (err) {
       console.error('Error creating order:', err);
       setError(err instanceof Error ? err.message : 'Failed to create order');
@@ -248,7 +249,10 @@ export function ManualOrderForm() {
           <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="customerName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Customer Name *
               </label>
               <input
@@ -297,7 +301,10 @@ export function ManualOrderForm() {
           <h2 className="text-xl font-semibold mb-4">Order Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="fulfillmentType" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="fulfillmentType"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Fulfillment Type
               </label>
               <select
@@ -336,7 +343,7 @@ export function ManualOrderForm() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
-                {Object.values(OrderStatus).map((status) => (
+                {Object.values(OrderStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -364,7 +371,10 @@ export function ManualOrderForm() {
           <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="paymentMethod"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Payment Method
               </label>
               <select
@@ -379,7 +389,10 @@ export function ManualOrderForm() {
               </select>
             </div>
             <div>
-              <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="paymentStatus"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Payment Status
               </label>
               <select
@@ -389,7 +402,7 @@ export function ManualOrderForm() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
-                {Object.values(PaymentStatus).map((status) => (
+                {Object.values(PaymentStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -402,7 +415,7 @@ export function ManualOrderForm() {
         {/* Order Items */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Order Items</h2>
-          
+
           {/* Add new item */}
           <div className="bg-gray-50 p-4 rounded-md mb-4">
             <h3 className="text-md font-medium mb-3">Add Item</h3>
@@ -418,14 +431,14 @@ export function ManualOrderForm() {
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
                   <option value="">Select a product</option>
-                  {products.map((product) => (
+                  {products.map(product => (
                     <option key={product.id} value={product.id}>
                       {product.name} - ${product.price.toFixed(2)}
                     </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label htmlFor="variant" className="block text-sm font-medium text-gray-700 mb-1">
                   Variant
@@ -435,20 +448,24 @@ export function ManualOrderForm() {
                   value={selectedVariant}
                   onChange={handleVariantChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  disabled={!selectedProduct || products.find(p => p.id === selectedProduct)?.variants.length === 0}
+                  disabled={
+                    !selectedProduct ||
+                    products.find(p => p.id === selectedProduct)?.variants.length === 0
+                  }
                 >
                   <option value="">No variant</option>
                   {selectedProduct &&
                     products
                       .find(p => p.id === selectedProduct)
-                      ?.variants.map((variant) => (
+                      ?.variants.map(variant => (
                         <option key={variant.id} value={variant.id}>
-                          {variant.name} {variant.price !== null ? `- $${variant.price.toFixed(2)}` : ''}
+                          {variant.name}{' '}
+                          {variant.price !== null ? `- $${variant.price.toFixed(2)}` : ''}
                         </option>
                       ))}
                 </select>
               </div>
-              
+
               <div>
                 <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
                   Quantity
@@ -457,12 +474,12 @@ export function ManualOrderForm() {
                   type="number"
                   id="quantity"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                   min="1"
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                   Price ($)
@@ -471,13 +488,13 @@ export function ManualOrderForm() {
                   type="number"
                   id="price"
                   value={price}
-                  onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                  onChange={e => setPrice(parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
               </div>
-              
+
               <div className="flex items-end">
                 <button
                   type="button"
@@ -490,7 +507,7 @@ export function ManualOrderForm() {
               </div>
             </div>
           </div>
-          
+
           {/* Item list */}
           {formState.items.length > 0 ? (
             <div className="border rounded-md overflow-hidden">
@@ -522,8 +539,12 @@ export function ManualOrderForm() {
                     <tr key={index}>
                       <td className="px-4 py-3 text-sm text-gray-900">{item.productName}</td>
                       <td className="px-4 py-3 text-sm text-gray-500">{item.variantName || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">${item.price.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">{item.quantity}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                        ${item.price.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                        {item.quantity}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right">
                         ${(item.price * item.quantity).toFixed(2)}
                       </td>
@@ -556,17 +577,9 @@ export function ManualOrderForm() {
         </div>
 
         {/* Error and Success Messages */}
-        {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-md">
-            {error}
-          </div>
-        )}
-        
-        {success && (
-          <div className="bg-green-50 text-green-700 p-3 rounded-md">
-            {success}
-          </div>
-        )}
+        {error && <div className="bg-red-50 text-red-700 p-3 rounded-md">{error}</div>}
+
+        {success && <div className="bg-green-50 text-green-700 p-3 rounded-md">{success}</div>}
 
         {/* Submit Button */}
         <div className="flex justify-end">
@@ -587,4 +600,4 @@ export function ManualOrderForm() {
       </form>
     </div>
   );
-} 
+}

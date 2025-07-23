@@ -1,9 +1,9 @@
-import { 
-  createOrderAndGenerateCheckoutUrl, 
-  validateOrderMinimumsServer, 
+import {
+  createOrderAndGenerateCheckoutUrl,
+  validateOrderMinimumsServer,
   createManualPaymentOrder,
   updateOrderPayment,
-  getOrderById 
+  getOrderById,
 } from '@/app/actions/orders';
 import { prisma } from '@/lib/db';
 import { PaymentMethod, OrderStatus } from '@/types/order';
@@ -18,12 +18,14 @@ jest.mock('next/cache', () => ({
 }));
 
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => Promise.resolve({
-    get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
-    set: jest.fn(),
-    remove: jest.fn(),
-    getAll: () => []
-  })),
+  cookies: jest.fn(() =>
+    Promise.resolve({
+      get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
+      set: jest.fn(),
+      remove: jest.fn(),
+      getAll: () => [],
+    })
+  ),
 }));
 
 jest.mock('@/utils/supabase/server', () => ({
@@ -51,14 +53,14 @@ const validCartItems = [
   {
     id: 'product-1',
     name: 'Dulce de Leche Alfajores',
-    price: 25.00,
+    price: 25.0,
     quantity: 2,
     variantId: 'variant-1',
   },
   {
     id: 'product-2',
     name: 'Beef Empanadas',
-    price: 15.00,
+    price: 15.0,
     quantity: 1,
   },
 ];
@@ -131,18 +133,18 @@ const mockCreatedOrder = {
 
 describe('Orders Actions - Comprehensive Coverage', () => {
   let mockSupabaseClient: any;
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     // Set up environment variables
     process.env.NEXT_PUBLIC_APP_URL = 'https://test.example.com';
-    
+
     // Mock Supabase client
     mockSupabaseClient = {
       auth: {
@@ -152,11 +154,11 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         }),
       },
     };
-    
+
     // Mock the createServerClient function
     const { createServerClient } = require('@supabase/ssr');
     createServerClient.mockReturnValue(mockSupabaseClient);
-    
+
     // Mock delivery zone functions
     const { determineDeliveryZone, validateMinimumPurchase } = require('@/lib/delivery-zones');
     determineDeliveryZone.mockResolvedValue('zone-1');
@@ -164,21 +166,21 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       isValid: true,
       message: null,
       minimumRequired: 250,
-      currentAmount: 400
+      currentAmount: 400,
     });
-    
+
     // Setup default Prisma mock responses
     mockPrisma.storeSettings = {
       findFirst: jest.fn().mockResolvedValue({
-        minOrderAmount: 25.00,
-        cateringMinimumAmount: 150.00,
+        minOrderAmount: 25.0,
+        cateringMinimumAmount: 150.0,
       }),
     };
-    
+
     mockPrisma.product = {
       findMany: jest.fn().mockResolvedValue([]),
     };
-    
+
     mockPrisma.order = {
       create: jest.fn().mockResolvedValue(mockCreatedOrder),
       update: jest.fn().mockResolvedValue(mockCreatedOrder),
@@ -194,18 +196,16 @@ describe('Orders Actions - Comprehensive Coverage', () => {
   describe('validateOrderMinimumsServer', () => {
     test('should validate empty cart', async () => {
       const result = await validateOrderMinimumsServer([]);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe('Your cart is empty');
     });
 
     test('should validate cart total below minimum', async () => {
-      const smallItems = [
-        { id: 'prod-1', name: 'Small Item', price: 10.00, quantity: 1 }
-      ];
-      
+      const smallItems = [{ id: 'prod-1', name: 'Small Item', price: 10.0, quantity: 1 }];
+
       const result = await validateOrderMinimumsServer(smallItems);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toContain('Orders require a minimum purchase');
       expect(result.currentAmount).toBe(10);
@@ -214,45 +214,45 @@ describe('Orders Actions - Comprehensive Coverage', () => {
 
     test('should validate catering order with delivery address', async () => {
       const cateringItems = [
-        { id: 'catering-1', name: 'Catering Platter', price: 400.00, quantity: 1 }
+        { id: 'catering-1', name: 'Catering Platter', price: 400.0, quantity: 1 },
       ];
-      
+
       // Mock catering product detection - products with catering category
       mockPrisma.product.findMany.mockResolvedValue([
-        { 
-          id: 'catering-1', 
+        {
+          id: 'catering-1',
           name: 'Catering Platter',
-          category: { name: 'Catering Platters' }
-        }
+          category: { name: 'Catering Platters' },
+        },
       ]);
-      
+
       const deliveryAddress = {
         city: 'San Francisco',
-        postalCode: '94105'
+        postalCode: '94105',
       };
-      
+
       const result = await validateOrderMinimumsServer(cateringItems, deliveryAddress);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.currentAmount).toBe(400);
     });
 
     test('should validate catering order below zone minimum', async () => {
       const smallCateringItems = [
-        { id: 'catering-1', name: 'Small Catering', price: 100.00, quantity: 1 }
+        { id: 'catering-1', name: 'Small Catering', price: 100.0, quantity: 1 },
       ];
-      
+
       // Mock catering product detection - products with catering category
       mockPrisma.product.findMany.mockResolvedValue([
-        { 
-          id: 'catering-1', 
+        {
+          id: 'catering-1',
           name: 'Small Catering',
-          category: { name: 'Catering Items' }
-        }
+          category: { name: 'Catering Items' },
+        },
       ]);
-      
+
       const result = await validateOrderMinimumsServer(smallCateringItems);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toContain('Catering orders require');
       expect(result.currentAmount).toBe(100);
@@ -261,27 +261,23 @@ describe('Orders Actions - Comprehensive Coverage', () => {
 
     test('should handle missing store settings', async () => {
       mockPrisma.storeSettings.findFirst.mockResolvedValue(null);
-      
-      const items = [
-        { id: 'prod-1', name: 'Item', price: 20.00, quantity: 1 }
-      ];
-      
+
+      const items = [{ id: 'prod-1', name: 'Item', price: 20.0, quantity: 1 }];
+
       const result = await validateOrderMinimumsServer(items);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeNull();
     });
 
     test('should handle database errors gracefully', async () => {
       mockPrisma.storeSettings.findFirst.mockRejectedValue(new Error('Database error'));
-      
-      const items = [
-        { id: 'prod-1', name: 'Item', price: 20.00, quantity: 1 }
-      ];
-      
+
+      const items = [{ id: 'prod-1', name: 'Item', price: 20.0, quantity: 1 }];
+
       // The function catches database errors and assumes non-catering order
       const result = await validateOrderMinimumsServer(items);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeNull();
     });
@@ -490,7 +486,12 @@ describe('Orders Actions - Comprehensive Coverage', () => {
 
   describe('updateOrderPayment', () => {
     test('should update order payment successfully', async () => {
-      const result = await updateOrderPayment('order-123', 'square-order-123', 'PAID', 'Payment completed');
+      const result = await updateOrderPayment(
+        'order-123',
+        'square-order-123',
+        'PAID',
+        'Payment completed'
+      );
 
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
         where: { id: 'order-123' },
@@ -504,7 +505,12 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     test('should handle failed payment', async () => {
-      const result = await updateOrderPayment('order-123', 'square-order-123', 'FAILED', 'Payment failed');
+      const result = await updateOrderPayment(
+        'order-123',
+        'square-order-123',
+        'FAILED',
+        'Payment failed'
+      );
 
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
         where: { id: 'order-123' },
@@ -518,7 +524,9 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     test('should handle database update errors', async () => {
       mockPrisma.order.update.mockRejectedValue(new Error('Update failed'));
 
-      await expect(updateOrderPayment('order-123', 'square-order-123')).rejects.toThrow('Update failed');
+      await expect(updateOrderPayment('order-123', 'square-order-123')).rejects.toThrow(
+        'Update failed'
+      );
     });
   });
 
@@ -530,7 +538,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
           id: 'item-1',
           productId: 'product-1',
           quantity: 2,
-          price: 25.00,
+          price: 25.0,
           product: { name: 'Dulce de Leche Alfajores' },
           variant: { name: '6-pack' },
         },
@@ -575,7 +583,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         ...mockOrderWithItems,
         notes: 'invalid-json',
       };
-      
+
       mockPrisma.order.findUnique.mockResolvedValue(orderWithInvalidNotes);
 
       const result = await getOrderById('order-123');
@@ -591,9 +599,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       validateOrderMinimums.mockResolvedValue({ isValid: true });
 
       const formData = {
-        items: [
-          { id: 'product-1', name: 'Test', price: 25.00, quantity: 0 }
-        ],
+        items: [{ id: 'product-1', name: 'Test', price: 25.0, quantity: 0 }],
         customerInfo: validCustomerInfo,
         fulfillment: validPickupFulfillment,
         paymentMethod: PaymentMethod.SQUARE,
@@ -632,9 +638,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       validateOrderMinimums.mockResolvedValue({ isValid: true });
 
       const formData = {
-        items: [
-          { id: 'product-1', name: 'Expensive Item', price: 999999.99, quantity: 999 }
-        ],
+        items: [{ id: 'product-1', name: 'Expensive Item', price: 999999.99, quantity: 999 }],
         customerInfo: validCustomerInfo,
         fulfillment: validPickupFulfillment,
         paymentMethod: PaymentMethod.SQUARE,
@@ -646,4 +650,4 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       // Should handle large calculations without overflow
     });
   });
-}); 
+});

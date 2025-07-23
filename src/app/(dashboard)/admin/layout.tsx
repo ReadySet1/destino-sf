@@ -5,7 +5,19 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Archive, Tag, ShoppingBag, Settings, Users, Clock, UtensilsCrossed, Truck, Star, RefreshCw } from 'lucide-react'; // Added UtensilsCrossed, Truck, Star, and RefreshCw icons
+import {
+  Home,
+  Archive,
+  Tag,
+  ShoppingBag,
+  Settings,
+  Users,
+  Clock,
+  UtensilsCrossed,
+  Truck,
+  Star,
+  RefreshCw,
+} from 'lucide-react'; // Added UtensilsCrossed, Truck, Star, and RefreshCw icons
 import { MobileMenu } from './components/MobileMenu'; // Ensure path is correct
 import { signOutAction } from '@/app/actions/auth';
 
@@ -68,11 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {/* Sidebar Content */}
         <div className="p-6 border-b">
-          <Link 
-            href="/" 
-            aria-label="Destino SF Home"
-            className="block relative"
-          >
+          <Link href="/" aria-label="Destino SF Home" className="block relative">
             <Image
               src="/images/logo/logo-destino.png"
               alt="Destino SF Logo"

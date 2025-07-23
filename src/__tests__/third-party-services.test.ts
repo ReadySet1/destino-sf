@@ -57,7 +57,7 @@ jest.mock('@sentry/nextjs', () => ({
   setTag: jest.fn(),
   setExtra: jest.fn(),
   addBreadcrumb: jest.fn(),
-  withScope: jest.fn((callback) => callback({ setTag: jest.fn(), setExtra: jest.fn() })),
+  withScope: jest.fn(callback => callback({ setTag: jest.fn(), setExtra: jest.fn() })),
   getCurrentHub: jest.fn(() => ({
     captureException: jest.fn(),
     captureMessage: jest.fn(),
@@ -157,7 +157,7 @@ const mockPerformanceMonitor = performanceMonitor as jest.Mocked<typeof performa
 describe('Third-Party Services Integration Tests - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up environment variables
     process.env.SQUARE_ACCESS_TOKEN = 'test-square-token';
     process.env.SQUARE_ENVIRONMENT = 'sandbox';
@@ -173,7 +173,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
     describe('Authentication and Configuration', () => {
       it('should initialize Square client with correct credentials', async () => {
         const { initializeSquareClient } = await import('@/lib/square/client');
-        
+
         expect(process.env.SQUARE_ACCESS_TOKEN).toBeDefined();
         expect(process.env.SQUARE_ENVIRONMENT).toBeDefined();
       });
@@ -594,7 +594,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
         );
 
         const results = await Promise.all(promises);
-        
+
         // Should process all emails but respect rate limits
         expect(results.every(r => r.success || r.queued)).toBe(true);
       });
@@ -683,10 +683,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
         });
 
         expect(mockSentry.withScope).toHaveBeenCalled();
-        expect(mockSentry.captureMessage).toHaveBeenCalledWith(
-          'Custom warning message',
-          'warning'
-        );
+        expect(mockSentry.captureMessage).toHaveBeenCalledWith('Custom warning message', 'warning');
       });
 
       it('should track user interactions and breadcrumbs', async () => {
@@ -741,7 +738,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
       it('should track API response times', async () => {
         const { trackApiCall } = await import('@/lib/monitoring/api-tracking');
         const startTime = Date.now();
-        
+
         await trackApiCall({
           method: 'POST',
           url: '/api/orders',
@@ -771,10 +768,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
 
         expect(health.status).toBe('healthy');
         expect(health.eventId).toBe('test-event-id');
-        expect(mockSentry.captureMessage).toHaveBeenCalledWith(
-          'Sentry health check',
-          'info'
-        );
+        expect(mockSentry.captureMessage).toHaveBeenCalledWith('Sentry health check', 'info');
       });
 
       it('should detect Sentry connectivity issues', async () => {
@@ -1449,7 +1443,9 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
 
     it('should detect integration failures', async () => {
       // Mock services with failures
-      mockSquareClient.locationsApi.retrieveLocation.mockRejectedValue(new Error('Square API down'));
+      mockSquareClient.locationsApi.retrieveLocation.mockRejectedValue(
+        new Error('Square API down')
+      );
       mockResendInstance.emails.send.mockRejectedValue(new Error('Email service unavailable'));
       mockSentry.captureMessage.mockRejectedValue(new Error('Sentry unavailable'));
 
@@ -1576,7 +1572,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
   describe('Security and Authentication Testing', () => {
     it('should validate API keys and credentials securely', async () => {
       const { validateCredentials } = await import('@/lib/security/credential-validator');
-      
+
       const validCredentials = {
         squareToken: process.env.SQUARE_ACCESS_TOKEN,
         resendApiKey: process.env.RESEND_API_KEY,
@@ -1591,7 +1587,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
 
     it('should detect invalid or compromised credentials', async () => {
       const { validateCredentials } = await import('@/lib/security/credential-validator');
-      
+
       const invalidCredentials = {
         squareToken: 'invalid-token',
         resendApiKey: 'invalid-key',
@@ -1617,4 +1613,4 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
       expect(typeof isValid).toBe('boolean');
     });
   });
-}); 
+});

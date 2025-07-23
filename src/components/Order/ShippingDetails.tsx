@@ -1,13 +1,7 @@
 import React from 'react';
-import { Label } from "../ui/label";
+import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface ShippingDetailsProps {
   shippingAddress: string;
@@ -40,7 +34,7 @@ const ShippingDetails: React.FC<ShippingDetailsProps> = ({
       <p className="text-sm text-muted-foreground mb-4">
         We ship nationwide. Please provide your shipping information below.
       </p>
-      
+
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="shippingAddress">Shipping Address</Label>
@@ -48,24 +42,20 @@ const ShippingDetails: React.FC<ShippingDetailsProps> = ({
             id="shippingAddress"
             placeholder="Enter your full address including street, apt/unit, city, state, zip code"
             value={shippingAddress}
-            onChange={(e) => onShippingAddressChange(e.target.value)}
+            onChange={e => onShippingAddressChange(e.target.value)}
             disabled={disabled}
             className="min-h-[80px]"
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="shippingMethod">Shipping Method</Label>
-          <Select
-            value={shippingMethod}
-            onValueChange={onShippingMethodChange}
-            disabled={disabled}
-          >
+          <Select value={shippingMethod} onValueChange={onShippingMethodChange} disabled={disabled}>
             <SelectTrigger id="shippingMethod" className="w-full">
               <SelectValue placeholder="Select shipping method" />
             </SelectTrigger>
             <SelectContent>
-              {SHIPPING_METHODS.map((method) => (
+              {SHIPPING_METHODS.map(method => (
                 <SelectItem key={method.id} value={method.id}>
                   {method.name} (${method.price.toFixed(2)})
                 </SelectItem>
@@ -73,14 +63,14 @@ const ShippingDetails: React.FC<ShippingDetailsProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="shippingNotes">Shipping Notes (Optional)</Label>
           <Textarea
             id="shippingNotes"
             placeholder="Add any special instructions for delivery (leave at door, call before delivery, etc.)"
             value={shippingNotes}
-            onChange={(e) => onShippingNotesChange(e.target.value)}
+            onChange={e => onShippingNotesChange(e.target.value)}
             disabled={disabled}
           />
         </div>
@@ -89,4 +79,4 @@ const ShippingDetails: React.FC<ShippingDetailsProps> = ({
   );
 };
 
-export default ShippingDetails; 
+export default ShippingDetails;

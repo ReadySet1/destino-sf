@@ -43,9 +43,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
     default: 'Destino SF - Handcrafted Empanadas & Alfajores',
-    template: '%s | Destino SF'
+    template: '%s | Destino SF',
   },
-  description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco. Order online for pickup or delivery.',
+  description:
+    'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco. Order online for pickup or delivery.',
   keywords: ['empanadas', 'alfajores', 'argentine food', 'san francisco', 'catering', 'delivery'],
   authors: [{ name: 'Destino SF' }],
   creator: 'Destino SF',
@@ -61,7 +62,8 @@ export const metadata: Metadata = {
     url: baseUrl,
     siteName: 'Destino SF',
     title: 'Destino SF - Handcrafted Empanadas & Alfajores',
-    description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
+    description:
+      'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
     images: [
       {
         url: '/opengraph-image',
@@ -74,7 +76,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Destino SF - Handcrafted Empanadas & Alfajores',
-    description: 'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
+    description:
+      'Experience authentic Argentine empanadas and alfajores, handcrafted with love in San Francisco.',
     creator: '@destinosf',
     images: ['/twitter-image'],
   },
@@ -84,9 +87,7 @@ export const metadata: Metadata = {
       { url: '/icon0.svg', type: 'image/svg+xml' },
       { url: '/icon1.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: [
-      { url: '/apple-icon.png' },
-    ],
+    apple: [{ url: '/apple-icon.png' }],
   },
   manifest: '/manifest.json',
   alternates: {

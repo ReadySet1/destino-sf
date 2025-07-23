@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 /**
@@ -19,12 +19,12 @@ export async function updateOrderWithManualPayment(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     console.log(`Updating order ${orderId} with manual payment method: ${paymentMethod}`);
-    
+
     // Validate that this is a supported manual payment method
     if (paymentMethod !== 'CASH') {
       return {
         success: false,
-        error: `Payment method ${paymentMethod} is not supported for manual processing. Only CASH is supported.`
+        error: `Payment method ${paymentMethod} is not supported for manual processing. Only CASH is supported.`,
       };
     }
 
@@ -75,4 +75,4 @@ export async function updateOrderWithManualPayment(
       error: error.message || 'An unexpected error occurred',
     };
   }
-} 
+}

@@ -5,7 +5,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface CheckoutSummaryProps {
   items: Array<{ id: string; name: string; price: number; quantity: number }>;
   includeServiceFee?: boolean;
-  deliveryFee?: { fee: number; isFreeDelivery?: boolean; zone?: string; minOrderForFreeDelivery?: number } | null;
+  deliveryFee?: {
+    fee: number;
+    isFreeDelivery?: boolean;
+    zone?: string;
+    minOrderForFreeDelivery?: number;
+  } | null;
   shippingRate?: { amount: number; carrier: string; name: string; estimatedDays?: number } | null;
   fulfillmentMethod?: 'pickup' | 'local_delivery' | 'nationwide_shipping';
 }
@@ -13,19 +18,19 @@ interface CheckoutSummaryProps {
 // Define the service fee rate
 const SERVICE_FEE_RATE = 0.035; // 3.5%
 
-export function CheckoutSummary({ 
-  items, 
-  includeServiceFee = false, 
-  deliveryFee, 
+export function CheckoutSummary({
+  items,
+  includeServiceFee = false,
+  deliveryFee,
   shippingRate,
-  fulfillmentMethod 
+  fulfillmentMethod,
 }: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.0825; // 8.25% tax
 
   // Calculate the delivery fee amount
   const deliveryFeeAmount = deliveryFee ? deliveryFee.fee : 0;
-  
+
   // Calculate shipping cost
   const shippingCost = shippingRate ? shippingRate.amount : 0;
 
@@ -45,11 +50,13 @@ export function CheckoutSummary({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {items.map((item) => (
+          {items.map(item => (
             <div key={item.id} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-gray-400" />
-                <span>{item.quantity} × {item.name}</span>
+                <span>
+                  {item.quantity} × {item.name}
+                </span>
               </div>
               <span>${(item.price * item.quantity).toFixed(2)}</span>
             </div>
@@ -126,7 +133,7 @@ export function CheckoutSummary({
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
-          
+
           {/* Enhanced messaging for different fulfillment methods */}
           {fulfillmentMethod === 'nationwide_shipping' && shippingRate && (
             <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
@@ -135,11 +142,12 @@ export function CheckoutSummary({
               {shippingRate.estimatedDays && ` (${shippingRate.estimatedDays} business days)`}
             </div>
           )}
-          
+
           {/* Delivery fee message */}
           {deliveryFee && deliveryFee.zone === 'nearby' && !deliveryFee.isFreeDelivery && (
             <div className="mt-2 text-xs text-green-600">
-              Orders over ${deliveryFee.minOrderForFreeDelivery?.toFixed(2)} qualify for free delivery!
+              Orders over ${deliveryFee.minOrderForFreeDelivery?.toFixed(2)} qualify for free
+              delivery!
             </div>
           )}
         </div>

@@ -27,7 +27,9 @@ export default async function AccountPage() {
               </div>
             </div>
             <h1 className="mb-4 text-3xl font-bold text-gray-900">Welcome to Your Account</h1>
-            <p className="mb-8 text-gray-600">Please sign in to access your account and order history.</p>
+            <p className="mb-8 text-gray-600">
+              Please sign in to access your account and order history.
+            </p>
             <Button asChild size="lg" className="bg-[#2d3538] hover:bg-[#2d3538]/90">
               <Link href="/sign-in">Sign In</Link>
             </Button>
@@ -40,7 +42,7 @@ export default async function AccountPage() {
   let profile: Profile | null = null;
   let orderCount = 0;
   let recentOrders = 0;
-  
+
   try {
     // Fetch profile and order statistics
     const [profileResult, orderCountResult, recentOrdersResult] = await Promise.all([
@@ -59,7 +61,7 @@ export default async function AccountPage() {
       // Count recent orders (last 30 days)
       Promise.all([
         prisma.order.count({
-          where: { 
+          where: {
             userId: user.id,
             createdAt: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
@@ -67,7 +69,7 @@ export default async function AccountPage() {
           },
         }),
         prisma.cateringOrder.count({
-          where: { 
+          where: {
             customerId: user.id,
             createdAt: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
@@ -76,7 +78,7 @@ export default async function AccountPage() {
         }),
       ]).then(([regular, catering]) => regular + catering),
     ]);
-    
+
     profile = profileResult;
     orderCount = orderCountResult;
     recentOrders = recentOrdersResult;
@@ -119,7 +121,7 @@ export default async function AccountPage() {
               <p className="text-xs text-gray-500 mt-1">All time</p>
             </CardContent>
           </Card>
-          
+
           <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Recent Orders</CardTitle>
@@ -130,7 +132,7 @@ export default async function AccountPage() {
               <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
             </CardContent>
           </Card>
-          
+
           <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-700">Account Status</CardTitle>
@@ -138,38 +140,56 @@ export default async function AccountPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">Active</div>
-              <p className="text-xs text-gray-500 mt-1">Since {new Date(user.created_at).getFullYear()}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Since {new Date(user.created_at).getFullYear()}
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+          >
             <Link href="/menu">
               <ShoppingBag className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Browse Menu</span>
               <span className="text-xs text-gray-500 mt-1">Order food</span>
             </Link>
           </Button>
-          
-          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+          >
             <Link href="/catering">
               <Calendar className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Catering</span>
               <span className="text-xs text-gray-500 mt-1">Plan events</span>
             </Link>
           </Button>
-          
-          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+          >
             <Link href="/account/orders">
               <Package className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">All Orders</span>
               <span className="text-xs text-gray-500 mt-1">Full history</span>
             </Link>
           </Button>
-          
-          <Button asChild variant="outline" className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto p-4 flex-col border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+          >
             <Link href="/contact">
               <User className="h-6 w-6 mb-2 text-gray-600" />
               <span className="font-medium">Contact Us</span>
@@ -188,12 +208,16 @@ export default async function AccountPage() {
                   <User className="h-5 w-5 text-gray-600" />
                   Profile Information
                 </CardTitle>
-                <CardDescription>
-                  Manage your account details and preferences
-                </CardDescription>
+                <CardDescription>Manage your account details and preferences</CardDescription>
               </CardHeader>
               <CardContent>
-                <AccountProfile {...({ user: user, profile: profile, onSignOut: handleSignOut } as AccountProfileProps)} />
+                <AccountProfile
+                  {...({
+                    user: user,
+                    profile: profile,
+                    onSignOut: handleSignOut,
+                  } as AccountProfileProps)}
+                />
               </CardContent>
             </Card>
           </div>
@@ -208,14 +232,15 @@ export default async function AccountPage() {
                       <Package className="h-5 w-5 text-gray-600" />
                       Recent Orders
                     </CardTitle>
-                    <CardDescription>
-                      Your recent orders and their status
-                    </CardDescription>
+                    <CardDescription>Your recent orders and their status</CardDescription>
                   </div>
-                  <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-                    <Link href="/account/orders">
-                      View All
-                    </Link>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  >
+                    <Link href="/account/orders">View All</Link>
                   </Button>
                 </div>
               </CardHeader>
@@ -229,7 +254,10 @@ export default async function AccountPage() {
         {/* Footer Section */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            Need help? <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">Contact our support team</Link>
+            Need help?{' '}
+            <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">
+              Contact our support team
+            </Link>
           </p>
         </div>
       </div>

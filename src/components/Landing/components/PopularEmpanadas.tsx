@@ -104,7 +104,9 @@ export function PopularEmpanadas() {
                     height={450}
                   />
                 </div>
-                <p className="mt-4 text-center text-lg font-medium text-gray-900">{empanada.name}</p>
+                <p className="mt-4 text-center text-lg font-medium text-gray-900">
+                  {empanada.name}
+                </p>
               </Link>
             ))}
           </div>

@@ -52,10 +52,11 @@ USE_SQUARE_SANDBOX=false
    - Replace `your_location_id_here_starts_with_L`
 
 5. **Test your configuration:**
+
    ```bash
    # Start your dev server
    pnpm dev
-   
+
    # In another terminal, test the configuration
    curl http://localhost:3000/api/debug/square-config
    ```
@@ -65,6 +66,7 @@ USE_SQUARE_SANDBOX=false
 If you want a different setup, uncomment one of these sections in your `.env.local`:
 
 ### Full Production Mode (be careful - real transactions!)
+
 ```bash
 SQUARE_CATALOG_USE_PRODUCTION=true
 SQUARE_TRANSACTIONS_USE_SANDBOX=false
@@ -72,8 +74,9 @@ USE_SQUARE_SANDBOX=false
 ```
 
 ### Full Sandbox Mode (everything in sandbox)
+
 ```bash
 SQUARE_CATALOG_USE_PRODUCTION=false
 SQUARE_TRANSACTIONS_USE_SANDBOX=true
 USE_SQUARE_SANDBOX=true
-``` 
+```

@@ -14,7 +14,9 @@ jest.mock('shippo', () => ({
   })),
 }));
 
-const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
+const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
+  typeof calculateShippingWeight
+>;
 
 describe('Shipping Actions - Enhanced Testing', () => {
   const mockShipmentInput = {
@@ -42,7 +44,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCalculateShippingWeight.mockResolvedValue(2.5);
-    
+
     // Set up environment variables
     process.env.SHIPPO_API_KEY = 'test-shippo-key';
     process.env.SHIPPING_ORIGIN_STREET1 = '123 Test St';
@@ -70,20 +72,22 @@ describe('Shipping Actions - Enhanced Testing', () => {
     it('should include insurance amount in metadata when specified', async () => {
       const inputWithInsurance = {
         ...mockShipmentInput,
-        insuranceAmount: 150.00,
+        insuranceAmount: 150.0,
       };
 
       mockShippo.shipments.create.mockResolvedValue({
         objectId: 'shipment-123',
         status: 'SUCCESS',
-        rates: [{
-          object_id: 'rate-123',
-          provider: 'USPS',
-          servicelevel: { name: 'Priority Mail' },
-          amount: '12.50',
-          currency: 'USD',
-          estimated_days: 2,
-        }],
+        rates: [
+          {
+            object_id: 'rate-123',
+            provider: 'USPS',
+            servicelevel: { name: 'Priority Mail' },
+            amount: '12.50',
+            currency: 'USD',
+            estimated_days: 2,
+          },
+        ],
         addressTo: {
           validationResults: { isValid: true, messages: [] },
         },
@@ -93,8 +97,8 @@ describe('Shipping Actions - Enhanced Testing', () => {
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
       const metadata = JSON.parse(createCall.metadata);
-      
-      expect(metadata).toHaveProperty('insurance_amount', 150.00);
+
+      expect(metadata).toHaveProperty('insurance_amount', 150.0);
       expect(metadata).toHaveProperty('estimated_value');
     });
 
@@ -102,13 +106,15 @@ describe('Shipping Actions - Enhanced Testing', () => {
       mockShippo.shipments.create.mockResolvedValue({
         objectId: 'shipment-123',
         status: 'SUCCESS',
-        rates: [{
-          object_id: 'rate-123',
-          provider: 'USPS',
-          servicelevel: { name: 'Priority Mail' },
-          amount: '12.50',
-          currency: 'USD',
-        }],
+        rates: [
+          {
+            object_id: 'rate-123',
+            provider: 'USPS',
+            servicelevel: { name: 'Priority Mail' },
+            amount: '12.50',
+            currency: 'USD',
+          },
+        ],
         addressTo: {
           validationResults: { isValid: true, messages: [] },
         },
@@ -118,7 +124,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
       const parcelMetadata = JSON.parse(createCall.parcels[0].metadata);
-      
+
       // Expected: (12.99 * 3) + (9.99 * 2) = 38.97 + 19.98 = 58.95
       expect(parcelMetadata.estimated_value).toBe(58.95);
       expect(parcelMetadata.insurance_amount).toBe(58.95);
@@ -127,22 +133,22 @@ describe('Shipping Actions - Enhanced Testing', () => {
     it('should handle high-value items requiring special insurance', async () => {
       const highValueInput = {
         ...mockShipmentInput,
-        cartItems: [
-          { id: '1', name: 'Premium Alfajores Gift Box', quantity: 1, price: 500.00 },
-        ],
-        insuranceAmount: 750.00, // Higher than item value for extra protection
+        cartItems: [{ id: '1', name: 'Premium Alfajores Gift Box', quantity: 1, price: 500.0 }],
+        insuranceAmount: 750.0, // Higher than item value for extra protection
       };
 
       mockShippo.shipments.create.mockResolvedValue({
         objectId: 'shipment-123',
         status: 'SUCCESS',
-        rates: [{
-          object_id: 'rate-123',
-          provider: 'UPS',
-          servicelevel: { name: 'UPS Ground' },
-          amount: '25.00',
-          currency: 'USD',
-        }],
+        rates: [
+          {
+            object_id: 'rate-123',
+            provider: 'UPS',
+            servicelevel: { name: 'UPS Ground' },
+            amount: '25.00',
+            currency: 'USD',
+          },
+        ],
         addressTo: {
           validationResults: { isValid: true, messages: [] },
         },
@@ -151,12 +157,12 @@ describe('Shipping Actions - Enhanced Testing', () => {
       const result = await getShippingRates(highValueInput);
 
       expect(result.success).toBe(true);
-      
+
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
       const metadata = JSON.parse(createCall.metadata);
-      
-      expect(metadata.insurance_amount).toBe(750.00);
-      expect(metadata.estimated_value).toBe(500.00);
+
+      expect(metadata.insurance_amount).toBe(750.0);
+      expect(metadata.estimated_value).toBe(500.0);
     });
   });
 
@@ -168,7 +174,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
           { id: '1', name: 'Dulce de Leche Alfajores', quantity: 2, price: 12.99 },
           { id: '2', name: 'Chicken Empanadas', quantity: 3, price: 9.99 },
           { id: '3', name: 'Chimichurri Sauce', quantity: 1, price: 8.99 },
-          { id: '4', name: 'Custom Gift Box', quantity: 1, price: 25.00 },
+          { id: '4', name: 'Custom Gift Box', quantity: 1, price: 25.0 },
         ],
       };
 
@@ -185,7 +191,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
       const metadata = JSON.parse(createCall.metadata);
-      
+
       expect(metadata.productTypes).toContain('alfajores');
       expect(metadata.productTypes).toContain('empanadas');
       expect(metadata.productTypes).toContain('other');
@@ -205,7 +211,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
       await getShippingRates(mockShipmentInput);
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
-      
+
       // Validate shipment-level metadata
       const shipmentMetadata = JSON.parse(createCall.metadata);
       expect(shipmentMetadata).toHaveProperty('source', 'destino_sf_website');
@@ -229,8 +235,8 @@ describe('Shipping Actions - Enhanced Testing', () => {
         cartItems: [
           { id: '1', name: 'ALFAJOR de dulce', quantity: 1, price: 5.99 }, // Mixed case
           { id: '2', name: 'Mini Empanada Bites', quantity: 1, price: 8.99 }, // Partial match
-          { id: '3', name: '', quantity: 1, price: 10.00 }, // Empty name
-          { id: '4', name: '   ', quantity: 1, price: 15.00 }, // Whitespace name
+          { id: '3', name: '', quantity: 1, price: 10.0 }, // Empty name
+          { id: '4', name: '   ', quantity: 1, price: 15.0 }, // Whitespace name
         ],
       };
 
@@ -247,7 +253,7 @@ describe('Shipping Actions - Enhanced Testing', () => {
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
       const metadata = JSON.parse(createCall.metadata);
-      
+
       expect(metadata.productTypes).toContain('alfajores');
       expect(metadata.productTypes).toContain('empanadas');
       expect(metadata.productTypes).toContain('other');
@@ -407,10 +413,10 @@ describe('Shipping Actions - Enhanced Testing', () => {
       await getShippingRates(mockShipmentInput);
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0];
-      
+
       expect(createCall.addressFrom.name).toBe('Destino SF');
       expect(createCall.addressFrom.company).toBe('Destino SF');
       expect(createCall.addressFrom.country).toBe('US');
     });
   });
-}); 
+});

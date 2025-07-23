@@ -2,10 +2,10 @@
 
 /**
  * Restore Orders from Backup Script
- * 
+ *
  * This script restores orders from a backup file created by the clean-testing-orders script.
  * It safely restores all related data in the correct order to maintain referential integrity.
- * 
+ *
  * Usage:
  *   pnpm tsx src/scripts/restore-orders-from-backup.ts --backup-file="path/to/backup.json" --dry-run
  *   pnpm tsx src/scripts/restore-orders-from-backup.ts --backup-file="path/to/backup.json" --execute
@@ -61,7 +61,7 @@ function parseArgs(): RestoreConfig {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--backup-file':
         config.backupFile = args[++i];
@@ -145,7 +145,16 @@ function loadBackup(backupFile: string): OrderBackup {
     const backup: OrderBackup = JSON.parse(backupContent);
 
     // Validate backup structure
-    const required = ['regularOrders', 'cateringOrders', 'emailAlerts', 'orderItems', 'payments', 'refunds', 'cateringOrderItems', 'metadata'];
+    const required = [
+      'regularOrders',
+      'cateringOrders',
+      'emailAlerts',
+      'orderItems',
+      'payments',
+      'refunds',
+      'cateringOrderItems',
+      'metadata',
+    ];
     for (const field of required) {
       if (!backup.hasOwnProperty(field)) {
         throw new Error(`Invalid backup file: missing field '${field}'`);
@@ -188,12 +197,12 @@ async function checkConflicts(backup: OrderBackup): Promise<{
   const [existingOrders, existingCateringOrders] = await Promise.all([
     prisma.order.findMany({
       where: { id: { in: regularOrderIds } },
-      select: { id: true, email: true, createdAt: true }
+      select: { id: true, email: true, createdAt: true },
     }),
     prisma.cateringOrder.findMany({
       where: { id: { in: cateringOrderIds } },
-      select: { id: true, email: true, createdAt: true }
-    })
+      select: { id: true, email: true, createdAt: true },
+    }),
   ]);
 
   const orderConflicts = existingOrders.map(o => o.id);
@@ -216,11 +225,11 @@ async function checkConflicts(backup: OrderBackup): Promise<{
 async function askForConfirmation(message: string): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
+  return new Promise(resolve => {
+    rl.question(`${message} (y/N): `, answer => {
       rl.close();
       resolve(answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes');
     });
@@ -239,7 +248,7 @@ async function restoreFromBackup(backup: OrderBackup, config: RestoreConfig): Pr
   console.log('🔄 Starting restoration process...');
 
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // Filter out conflicts if skipConflicts is enabled
       let regularOrders = backup.regularOrders;
       let cateringOrders = backup.cateringOrders;
@@ -251,20 +260,28 @@ async function restoreFromBackup(backup: OrderBackup, config: RestoreConfig): Pr
 
       if (config.skipConflicts) {
         const conflicts = await checkConflicts(backup);
-        
+
         if (conflicts.orderConflicts.length > 0) {
           console.log(`⏭️  Skipping ${conflicts.orderConflicts.length} conflicting regular orders`);
           regularOrders = regularOrders.filter(o => !conflicts.orderConflicts.includes(o.id));
-          emailAlerts = emailAlerts.filter(e => !conflicts.orderConflicts.includes(e.relatedOrderId));
+          emailAlerts = emailAlerts.filter(
+            e => !conflicts.orderConflicts.includes(e.relatedOrderId)
+          );
           orderItems = orderItems.filter(i => !conflicts.orderConflicts.includes(i.orderId));
           payments = payments.filter(p => !conflicts.orderConflicts.includes(p.orderId));
           // Refunds are filtered by payment, so they'll be automatically excluded
         }
 
         if (conflicts.cateringOrderConflicts.length > 0) {
-          console.log(`⏭️  Skipping ${conflicts.cateringOrderConflicts.length} conflicting catering orders`);
-          cateringOrders = cateringOrders.filter(o => !conflicts.cateringOrderConflicts.includes(o.id));
-          cateringOrderItems = cateringOrderItems.filter(i => !conflicts.cateringOrderConflicts.includes(i.orderId));
+          console.log(
+            `⏭️  Skipping ${conflicts.cateringOrderConflicts.length} conflicting catering orders`
+          );
+          cateringOrders = cateringOrders.filter(
+            o => !conflicts.cateringOrderConflicts.includes(o.id)
+          );
+          cateringOrderItems = cateringOrderItems.filter(
+            i => !conflicts.cateringOrderConflicts.includes(i.orderId)
+          );
         }
       }
 
@@ -333,12 +350,17 @@ async function restoreFromBackup(backup: OrderBackup, config: RestoreConfig): Pr
         console.log(`   ✅ Restored ${emailAlerts.length} email alerts`);
       }
 
-      const totalRestored = regularOrders.length + cateringOrders.length + payments.length + 
-                           refunds.length + orderItems.length + cateringOrderItems.length + emailAlerts.length;
+      const totalRestored =
+        regularOrders.length +
+        cateringOrders.length +
+        payments.length +
+        refunds.length +
+        orderItems.length +
+        cateringOrderItems.length +
+        emailAlerts.length;
 
       console.log(`✅ Restoration completed successfully! Restored ${totalRestored} records`);
     });
-
   } catch (error) {
     console.error('❌ Restoration failed and rolled back:', error);
     throw error;
@@ -348,10 +370,14 @@ async function restoreFromBackup(backup: OrderBackup, config: RestoreConfig): Pr
 /**
  * Generate restoration report
  */
-function generateReport(backup: OrderBackup, config: RestoreConfig, conflicts?: { orderConflicts: string[]; cateringOrderConflicts: string[] }): void {
+function generateReport(
+  backup: OrderBackup,
+  config: RestoreConfig,
+  conflicts?: { orderConflicts: string[]; cateringOrderConflicts: string[] }
+): void {
   console.log('\n📊 RESTORATION REPORT');
   console.log('=====================');
-  
+
   console.log('\n🔧 Configuration:');
   console.log(`   Mode: ${config.dryRun ? 'DRY RUN' : 'EXECUTE'}`);
   console.log(`   Backup file: ${config.backupFile}`);
@@ -372,7 +398,7 @@ function generateReport(backup: OrderBackup, config: RestoreConfig, conflicts?: 
     console.log('\n⚠️  Conflicts:');
     console.log(`   Regular order conflicts: ${conflicts.orderConflicts.length}`);
     console.log(`   Catering order conflicts: ${conflicts.cateringOrderConflicts.length}`);
-    
+
     if (config.skipConflicts) {
       console.log('   Action: Conflicts will be skipped');
     } else {
@@ -406,7 +432,10 @@ async function main(): Promise<void> {
     generateReport(backup, config, conflicts);
 
     // Check if there are any conflicts and we're not skipping them
-    if (!config.skipConflicts && (conflicts.orderConflicts.length > 0 || conflicts.cateringOrderConflicts.length > 0)) {
+    if (
+      !config.skipConflicts &&
+      (conflicts.orderConflicts.length > 0 || conflicts.cateringOrderConflicts.length > 0)
+    ) {
       console.log('\n❌ Conflicts found and --fail-on-conflicts is enabled');
       console.log('Use --skip-conflicts to skip conflicting records or resolve conflicts manually');
       return;
@@ -415,9 +444,10 @@ async function main(): Promise<void> {
     // Ask for confirmation if not dry run
     if (!config.dryRun && config.confirmBeforeRestore) {
       const totalRecords = backup.metadata.totalRecords;
-      const conflictCount = conflicts.orderConflicts.length + conflicts.cateringOrderConflicts.length;
+      const conflictCount =
+        conflicts.orderConflicts.length + conflicts.cateringOrderConflicts.length;
       const willRestore = totalRecords - conflictCount;
-      
+
       const confirmed = await askForConfirmation(
         `This will restore ${willRestore} records from backup (${conflictCount} conflicts will be skipped). Continue?`
       );
@@ -437,14 +467,13 @@ async function main(): Promise<void> {
       console.log('2. Test your application to ensure everything works correctly');
       console.log('3. Monitor for any issues with the restored data');
     }
-
   } catch (error) {
     console.error('\n💥 Restoration failed:', error);
-    
+
     if (error instanceof Error) {
       console.error('Error details:', error.message);
     }
-    
+
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -452,7 +481,7 @@ async function main(): Promise<void> {
 }
 
 // Execute the script
-main().catch((error) => {
+main().catch(error => {
   console.error('Unhandled error:', error);
   process.exit(1);
-}); 
+});

@@ -39,7 +39,7 @@ async function seedShippingConfiguration() {
 // Run if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedShippingConfiguration()
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Error seeding shipping configuration:', error);
       process.exit(1);
     })
@@ -48,4 +48,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export { seedShippingConfiguration }; 
+export { seedShippingConfiguration };

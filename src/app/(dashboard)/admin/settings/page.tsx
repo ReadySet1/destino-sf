@@ -14,7 +14,7 @@ export const metadata = {
 export default async function SettingsPage() {
   // Fetch store settings from database with retry logic for prepared statement issues
   let rawStoreSettings;
-  
+
   try {
     rawStoreSettings = await prisma.storeSettings.findFirst({
       orderBy: { createdAt: 'asc' },
@@ -35,40 +35,40 @@ export default async function SettingsPage() {
   }
 
   // Convert Decimal objects to numbers for client component compatibility
-  const storeSettings = rawStoreSettings ? {
-    ...rawStoreSettings,
-    taxRate: Number(rawStoreSettings.taxRate),
-    minOrderAmount: Number(rawStoreSettings.minOrderAmount),
-    cateringMinimumAmount: Number(rawStoreSettings.cateringMinimumAmount),
-  } : {
-    id: '',
-    name: 'Destino SF',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    phone: '',
-    email: '',
-    taxRate: 8.25,
-    minAdvanceHours: 2,
-    minOrderAmount: 0,
-    cateringMinimumAmount: 150,
-    maxDaysInAdvance: 7,
-    isStoreOpen: true,
-    temporaryClosureMsg: null,
-  };
+  const storeSettings = rawStoreSettings
+    ? {
+        ...rawStoreSettings,
+        taxRate: Number(rawStoreSettings.taxRate),
+        minOrderAmount: Number(rawStoreSettings.minOrderAmount),
+        cateringMinimumAmount: Number(rawStoreSettings.cateringMinimumAmount),
+      }
+    : {
+        id: '',
+        name: 'Destino SF',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        phone: '',
+        email: '',
+        taxRate: 8.25,
+        minAdvanceHours: 2,
+        minOrderAmount: 0,
+        cateringMinimumAmount: 150,
+        maxDaysInAdvance: 7,
+        isStoreOpen: true,
+        temporaryClosureMsg: null,
+      };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Store Settings</h1>
       </div>
-      
+
       {/* Basic Store Settings */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-500">
-          Configure your store&apos;s basic information.
-        </p>
+        <p className="text-gray-500">Configure your store&apos;s basic information.</p>
         <Separator className="mb-6" />
         <SettingsForm settings={storeSettings} />
       </div>

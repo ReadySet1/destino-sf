@@ -18,13 +18,7 @@ global.fetch = jest.fn();
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, disabled, variant, ...props }: any) => (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      data-variant={variant}
-      {...props}
-    >
+    <button type="button" onClick={onClick} disabled={disabled} data-variant={variant} {...props}>
       {children}
     </button>
   ),
@@ -32,7 +26,7 @@ jest.mock('@/components/ui/button', () => ({
 
 jest.mock('@/components/ui/select', () => ({
   Select: ({ children, onValueChange, defaultValue }: any) => (
-    <select onChange={(e) => onValueChange?.(e.target.value)} defaultValue={defaultValue}>
+    <select onChange={e => onValueChange?.(e.target.value)} defaultValue={defaultValue}>
       {children}
     </select>
   ),
@@ -57,13 +51,16 @@ jest.mock('@/components/ui/badge', () => ({
 }));
 
 jest.mock('@/components/ui/checkbox', () => ({
-  Checkbox: React.forwardRef<HTMLInputElement, any>(function Checkbox({ checked, onCheckedChange, ...props }, ref) {
+  Checkbox: React.forwardRef<HTMLInputElement, any>(function Checkbox(
+    { checked, onCheckedChange, ...props },
+    ref
+  ) {
     return (
       <input
         ref={ref}
         type="checkbox"
         checked={checked}
-        onChange={(e) => onCheckedChange?.(e.target.checked)}
+        onChange={e => onCheckedChange?.(e.target.checked)}
         {...props}
       />
     );
@@ -71,7 +68,8 @@ jest.mock('@/components/ui/checkbox', () => ({
 }));
 
 jest.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open }: any) => (open ? <div data-testid="order-details-modal">{children}</div> : null),
+  Dialog: ({ children, open }: any) =>
+    open ? <div data-testid="order-details-modal">{children}</div> : null,
   DialogContent: ({ children }: any) => <div>{children}</div>,
   DialogHeader: ({ children }: any) => <div>{children}</div>,
   DialogTitle: ({ children }: any) => <h2>{children}</h2>,
@@ -106,10 +104,8 @@ const mockOrders = [
     customerName: 'John Doe',
     email: 'john@example.com',
     phone: '555-0123',
-    total: 45.50,
-    items: [
-      { id: 'item-1', name: 'Alfajores', quantity: 6, price: 7.50 },
-    ],
+    total: 45.5,
+    items: [{ id: 'item-1', name: 'Alfajores', quantity: 6, price: 7.5 }],
     createdAt: '2024-01-15T10:00:00Z',
     pickupTime: '2024-01-16T14:00:00Z',
     type: 'regular',
@@ -122,9 +118,7 @@ const mockOrders = [
     email: 'jane@example.com',
     phone: '555-0456',
     total: 89.25,
-    items: [
-      { id: 'item-2', name: 'Empanadas', quantity: 12, price: 7.25 },
-    ],
+    items: [{ id: 'item-2', name: 'Empanadas', quantity: 12, price: 7.25 }],
     createdAt: '2024-01-14T09:30:00Z',
     pickupTime: '2024-01-15T16:00:00Z',
     type: 'regular',
@@ -136,10 +130,8 @@ const mockOrders = [
     customerName: 'Bob Wilson',
     email: 'bob@example.com',
     phone: '555-0789',
-    total: 250.00,
-    items: [
-      { id: 'item-3', name: 'Catering Package', quantity: 1, price: 250.00 },
-    ],
+    total: 250.0,
+    items: [{ id: 'item-3', name: 'Catering Package', quantity: 1, price: 250.0 }],
     createdAt: '2024-01-13T11:15:00Z',
     eventDate: '2024-01-20T18:00:00Z',
     type: 'catering',
@@ -197,23 +189,20 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
 
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(order => 
-        order.customerName.toLowerCase().includes(query) ||
-        order.email.toLowerCase().includes(query) ||
-        order.id.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        order =>
+          order.customerName.toLowerCase().includes(query) ||
+          order.email.toLowerCase().includes(query) ||
+          order.id.toLowerCase().includes(query)
       );
     }
 
     if (filters.dateFrom) {
-      filtered = filtered.filter(order => 
-        new Date(order.createdAt) >= new Date(filters.dateFrom)
-      );
+      filtered = filtered.filter(order => new Date(order.createdAt) >= new Date(filters.dateFrom));
     }
 
     if (filters.dateTo) {
-      filtered = filtered.filter(order => 
-        new Date(order.createdAt) <= new Date(filters.dateTo)
-      );
+      filtered = filtered.filter(order => new Date(order.createdAt) <= new Date(filters.dateTo));
     }
 
     setFilteredOrders(filtered);
@@ -269,7 +258,6 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
       const updatedOrder = await response.json();
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
       onOrderUpdate?.(updatedOrder);
-      
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update order');
     } finally {
@@ -303,7 +291,6 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
       onBulkUpdate?.(selectedOrders, { action: bulkAction });
       setSelectedOrders([]);
       setBulkAction('');
-      
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to perform bulk action');
     } finally {
@@ -332,7 +319,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
             type="text"
             placeholder="Search by customer, email, or order ID"
             value={filters.searchQuery}
-            onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+            onChange={e => handleFilterChange('searchQuery', e.target.value)}
             data-testid="search-input"
           />
         </div>
@@ -342,12 +329,14 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           <select
             id="status"
             value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
+            onChange={e => handleFilterChange('status', e.target.value)}
             data-testid="status-filter"
           >
             <option value="">All Statuses</option>
             {ORDER_STATUSES.map(status => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status} value={status}>
+                {status}
+              </option>
             ))}
           </select>
 
@@ -355,12 +344,14 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           <select
             id="payment-status"
             value={filters.paymentStatus}
-            onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+            onChange={e => handleFilterChange('paymentStatus', e.target.value)}
             data-testid="payment-status-filter"
           >
             <option value="">All Payment Statuses</option>
             {PAYMENT_STATUSES.map(status => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status} value={status}>
+                {status}
+              </option>
             ))}
           </select>
 
@@ -368,7 +359,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           <select
             id="order-type"
             value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value)}
+            onChange={e => handleFilterChange('type', e.target.value)}
             data-testid="type-filter"
           >
             <option value="">All Types</option>
@@ -377,10 +368,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           </select>
         </div>
 
-        <button
-          onClick={clearFilters}
-          data-testid="clear-filters-btn"
-        >
+        <button onClick={clearFilters} data-testid="clear-filters-btn">
           Clear Filters
         </button>
 
@@ -395,7 +383,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           <span>Selected: {selectedOrders.length} orders</span>
           <select
             value={bulkAction}
-            onChange={(e) => setBulkAction(e.target.value)}
+            onChange={e => setBulkAction(e.target.value)}
             data-testid="bulk-action-select"
           >
             <option value="">Choose Action</option>
@@ -420,7 +408,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
           <input
             type="checkbox"
             checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
-            onChange={(e) => handleSelectAll(e.target.checked)}
+            onChange={e => handleSelectAll(e.target.checked)}
             data-testid="select-all-checkbox"
           />
           <label>Select All</label>
@@ -429,15 +417,15 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
         {filteredOrders.length === 0 ? (
           <div data-testid="no-orders">No orders found matching your criteria</div>
         ) : (
-          filteredOrders.map((order) => (
+          filteredOrders.map(order => (
             <div key={order.id} data-testid={`order-row-${order.id}`}>
               <input
                 type="checkbox"
                 checked={selectedOrders.includes(order.id)}
-                onChange={(e) => handleOrderSelect(order.id, e.target.checked)}
+                onChange={e => handleOrderSelect(order.id, e.target.checked)}
                 data-testid={`select-order-${order.id}`}
               />
-              
+
               <div>ID: {order.id}</div>
               <div>Name: {order.customerName}</div>
               <div>Email: {order.email}</div>
@@ -449,12 +437,14 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
               {/* Status Update */}
               <select
                 value={order.status}
-                onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                onChange={e => handleStatusUpdate(order.id, e.target.value)}
                 disabled={isUpdating}
                 data-testid={`status-select-${order.id}`}
               >
                 {ORDER_STATUSES.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
                 ))}
               </select>
 
@@ -483,7 +473,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
             <div>Payment Status: {selectedOrder.paymentStatus}</div>
             <div>Total: ${selectedOrder.total}</div>
             <div>Type: {selectedOrder.type}</div>
-            
+
             <h3>Items:</h3>
             {selectedOrder.items.map((item: any, index: number) => (
               <div key={index}>
@@ -491,10 +481,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
               </div>
             ))}
 
-            <button
-              onClick={closeOrderDetails}
-              data-testid="close-modal-btn"
-            >
+            <button onClick={closeOrderDetails} data-testid="close-modal-btn">
               Close
             </button>
           </div>
@@ -512,7 +499,7 @@ describe('EditOrderForm (OrderManagement)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (fetch as jest.Mock).mockClear();
-    
+
     // Mock successful API response by default
     (fetch as jest.Mock).mockResolvedValue({
       ok: true,
@@ -597,7 +584,7 @@ describe('EditOrderForm (OrderManagement)', () => {
       // Apply some filters
       const statusFilter = screen.getByTestId('status-filter');
       await user.selectOptions(statusFilter, 'PENDING');
-      
+
       const searchInput = screen.getByTestId('search-input');
       await user.type(searchInput, 'john');
 
@@ -812,4 +799,4 @@ describe('EditOrderForm (OrderManagement)', () => {
       expect(searchInput).toHaveFocus();
     });
   });
-}); 
+});

@@ -6,16 +6,16 @@ import { toast } from 'sonner';
 
 export default function ProductToasts() {
   const searchParams = useSearchParams();
-  
+
   useEffect(() => {
     // Check for operation status in URL parameters
     const status = searchParams.get('status');
     const message = searchParams.get('message');
     const productName = searchParams.get('productName');
-    
+
     if (status === 'success' && productName) {
       const action = searchParams.get('action');
-      
+
       if (action === 'delete') {
         toast.success('Product Deleted', {
           description: `${productName} has been successfully deleted.`,
@@ -46,4 +46,4 @@ export default function ProductToasts() {
 
   // This component doesn't render anything visible
   return null;
-} 
+}

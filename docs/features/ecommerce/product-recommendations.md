@@ -9,6 +9,7 @@ The "You Might Also Like" section on product detail pages shows related products
 ### API Endpoint
 
 The recommendations are fetched from `/api/products` with the following parameters:
+
 - `categoryId`: The category of the current product
 - `exclude`: The current product ID to avoid showing it in recommendations
 - `limit`: Number of products to fetch (default: 3)
@@ -24,7 +25,8 @@ The recommendations are implemented in `src/components/Products/ProductDetails.t
 
 **Problem**: Catering products have $0.00 prices and different business logic than regular products. Mixing them in recommendations creates confusion and poor user experience.
 
-**Solution**: 
+**Solution**:
+
 - Always exclude catering products from regular product recommendations
 - Use the `excludeCatering=true` parameter in API calls
 - Filter out products with $0.00 prices as an additional safety measure
@@ -34,6 +36,7 @@ The recommendations are implemented in `src/components/Products/ProductDetails.t
 **Problem**: Catering products are assigned to categories that start with "CATERING-", but they might appear in regular product listings.
 
 **Solution**:
+
 - The API automatically excludes categories starting with "CATERING" when `excludeCatering=true`
 - Category pages also exclude catering products from their listings
 - This ensures clean separation between regular and catering products
@@ -43,6 +46,7 @@ The recommendations are implemented in `src/components/Products/ProductDetails.t
 **Problem**: Some products might have $0.00 prices due to sync issues or configuration errors.
 
 **Solution**:
+
 - Always filter out products with $0.00 prices in recommendations
 - This prevents showing broken or misconfigured products to customers
 
@@ -51,12 +55,14 @@ The recommendations are implemented in `src/components/Products/ProductDetails.t
 **Problem**: Some products like empanadas and alfajores have both regular retail versions and catering versions that should be separated.
 
 **Solution**:
+
 - **Empanadas**: Regular frozen 4-pack products ($17-18) go in "EMPANADAS" category
 - **Empanadas Catering**: Individual empanadas ($0.00) go in "EMPANADAS- OTHER" category
 - **Alfajores**: Regular retail products go in "ALFAJORES" category
 - **Alfajores Catering**: Catering versions should go in appropriate catering categories
 
 **Example of Correct Categorization**:
+
 ```sql
 -- Regular EMPANADAS category (retail products)
 Empanadas- Argentine Beef (frozen- 4 pack) - $17.00
@@ -92,9 +98,10 @@ const response = await fetch(
 
 // Additional safety: filter out $0.00 products
 const filteredProducts = products.filter((product: Product) => {
-  const price = typeof product.price === 'object' && product.price !== null && 'toNumber' in product.price 
-    ? product.price.toNumber() 
-    : Number(product.price);
+  const price =
+    typeof product.price === 'object' && product.price !== null && 'toNumber' in product.price
+      ? product.price.toNumber()
+      : Number(product.price);
   return price > 0;
 });
 ```
@@ -110,10 +117,10 @@ const whereCondition = {
     NOT: {
       name: {
         startsWith: 'CATERING',
-        mode: 'insensitive'
-      }
-    }
-  }
+        mode: 'insensitive',
+      },
+    },
+  },
 };
 ```
 
@@ -139,6 +146,7 @@ const whereCondition = {
 ### Automated Testing
 
 The tests in `src/__tests__/components/Products/ProductDetails.test.tsx` verify:
+
 - Related products are fetched with correct parameters
 - The component handles various price formats correctly
 - Error states are handled gracefully
@@ -165,37 +173,42 @@ The tests in `src/__tests__/components/Products/ProductDetails.test.tsx` verify:
 ### Debug Steps
 
 1. Check the API response:
+
    ```javascript
    // In browser console
-   fetch('/api/products?categoryId=YOUR_CATEGORY_ID&exclude=YOUR_PRODUCT_ID&limit=6&excludeCatering=true')
+   fetch(
+     '/api/products?categoryId=YOUR_CATEGORY_ID&exclude=YOUR_PRODUCT_ID&limit=6&excludeCatering=true'
+   )
      .then(r => r.json())
      .then(console.log);
    ```
 
 2. Verify category assignments:
+
    ```sql
    -- Check what products are in a category
-   SELECT p.name, p.price, c.name as category_name 
-   FROM products p 
-   JOIN categories c ON p."categoryId" = c.id 
+   SELECT p.name, p.price, c.name as category_name
+   FROM products p
+   JOIN categories c ON p."categoryId" = c.id
    WHERE c.id = 'YOUR_CATEGORY_ID';
    ```
 
 3. Check for catering products:
+
    ```sql
    -- Find catering products
-   SELECT p.name, c.name as category_name 
-   FROM products p 
-   JOIN categories c ON p."categoryId" = c.id 
+   SELECT p.name, c.name as category_name
+   FROM products p
+   JOIN categories c ON p."categoryId" = c.id
    WHERE c.name LIKE 'CATERING%';
    ```
 
 4. Check for $0.00 products in a category:
    ```sql
    -- Find products with $0.00 prices in a specific category
-   SELECT p.name, p.price, c.name as category_name 
-   FROM products p 
-   JOIN categories c ON p."categoryId" = c.id 
+   SELECT p.name, p.price, c.name as category_name
+   FROM products p
+   JOIN categories c ON p."categoryId" = c.id
    WHERE c.name = 'EMPANADAS' AND p.price = 0;
    ```
 
@@ -204,4 +217,4 @@ The tests in `src/__tests__/components/Products/ProductDetails.test.tsx` verify:
 1. **Smart Recommendations**: Implement machine learning-based recommendations instead of just category-based
 2. **Personalization**: Show recommendations based on user browsing history
 3. **A/B Testing**: Test different recommendation strategies
-4. **Performance**: Implement caching for recommendations to improve page load times 
+4. **Performance**: Implement caching for recommendations to improve page load times

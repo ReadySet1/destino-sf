@@ -48,4 +48,4 @@ Administrators can configure the catering minimum order amount through the admin
 - `src/lib/cart-helpers.ts`: Helper functions for checking catering orders and validating minimums
 - `src/app/actions/orders.ts`: Server-side validation in checkout process
 - `src/components/Store/CheckoutForm.tsx`: Client-side validation in the checkout form
-- `src/app/(dashboard)/admin/settings/components/SettingsForm.tsx`: Admin UI for configuring the minimum 
+- `src/app/(dashboard)/admin/settings/components/SettingsForm.tsx`: Admin UI for configuring the minimum

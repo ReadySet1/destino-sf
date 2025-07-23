@@ -75,9 +75,9 @@ describe('Critical User Paths E2E Tests', () => {
   let user: ReturnType<typeof userEvent.setup>;
 
   const mockProducts = [
-    { id: 'prod-1', name: 'Beef Empanada', price: 4.50, category: 'empanadas' },
-    { id: 'prod-2', name: 'Chicken Empanada', price: 4.50, category: 'empanadas' },
-    { id: 'prod-3', name: 'Dulce de Leche Alfajor', price: 3.50, category: 'alfajores' },
+    { id: 'prod-1', name: 'Beef Empanada', price: 4.5, category: 'empanadas' },
+    { id: 'prod-2', name: 'Chicken Empanada', price: 4.5, category: 'empanadas' },
+    { id: 'prod-3', name: 'Dulce de Leche Alfajor', price: 3.5, category: 'alfajores' },
   ];
 
   const mockOrder = {
@@ -85,7 +85,7 @@ describe('Critical User Paths E2E Tests', () => {
     userId: 'user-123',
     items: mockProducts.map(p => ({ ...p, quantity: 1 })),
     status: 'pending',
-    total: 12.50,
+    total: 12.5,
     paymentMethod: 'card',
     fulfillmentMethod: 'delivery',
     createdAt: new Date().toISOString(),
@@ -101,7 +101,6 @@ describe('Critical User Paths E2E Tests', () => {
   });
 
   describe('1. Complete Purchase Flow', () => {
-
     it('should complete single item purchase with delivery', async () => {
       // Mock successful payment and order creation
       mockProcessPayment.mockResolvedValueOnce({
@@ -145,7 +144,7 @@ describe('Critical User Paths E2E Tests', () => {
 
       // Test order confirmation
       expect(mockOrder.status).toBe('pending');
-      expect(mockOrder.total).toBe(12.50);
+      expect(mockOrder.total).toBe(12.5);
     });
 
     it('should handle pickup orders correctly', async () => {
@@ -175,7 +174,7 @@ describe('Critical User Paths E2E Tests', () => {
           { ...mockProducts[1], quantity: 1 },
           { ...mockProducts[2], quantity: 3 },
         ],
-        total: 24.50,
+        total: 24.5,
       };
 
       mockCreateOrder.mockResolvedValueOnce({
@@ -187,7 +186,7 @@ describe('Critical User Paths E2E Tests', () => {
       // Test multiple item handling
       expect(mockAddToCart).toHaveBeenCalledTimes(3);
       expect(multiItemOrder.items.length).toBe(3);
-      expect(multiItemOrder.total).toBe(24.50);
+      expect(multiItemOrder.total).toBe(24.5);
     });
   });
 
@@ -305,13 +304,11 @@ describe('Critical User Paths E2E Tests', () => {
 
     it('should handle network errors with retry logic', async () => {
       const networkError = new Error('Network request failed');
-      
-      mockProcessPayment
-        .mockRejectedValueOnce(networkError)
-        .mockResolvedValueOnce({
-          success: true,
-          paymentId: 'payment-retry-123',
-        });
+
+      mockProcessPayment.mockRejectedValueOnce(networkError).mockResolvedValueOnce({
+        success: true,
+        paymentId: 'payment-retry-123',
+      });
 
       // Test retry logic
       expect(mockProcessPayment).toHaveBeenCalledTimes(2);
@@ -352,10 +349,10 @@ describe('Critical User Paths E2E Tests', () => {
 
     it('should maintain performance under load', async () => {
       const startTime = Date.now();
-      
+
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const endTime = Date.now();
       const processingTime = endTime - startTime;
 
@@ -363,4 +360,4 @@ describe('Critical User Paths E2E Tests', () => {
       expect(processingTime).toBeLessThan(500); // Should process within 500ms
     });
   });
-}); 
+});

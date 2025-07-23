@@ -18,18 +18,18 @@ The Destino SF platform is built on modern web development principles:
 graph TB
     User[👤 Users] --> CDN[🌐 Vercel Edge Network]
     CDN --> NextJS[⚡ Next.js App Router]
-    
+
     NextJS --> Auth[🔐 Authentication]
     NextJS --> API[📡 API Routes]
     NextJS --> SSR[🖥️ Server Components]
-    
+
     API --> DB[(🗄️ PostgreSQL)]
     API --> Square[💳 Square API]
     API --> Shippo[📦 Shippo API]
     API --> Email[📧 Email Service]
-    
+
     DB --> Prisma[🔗 Prisma ORM]
-    
+
     NextJS --> Cache[⚡ Vercel KV Cache]
     NextJS --> Storage[📁 Vercel Blob Storage]
 ```
@@ -37,6 +37,7 @@ graph TB
 ## System Components
 
 ### Frontend Layer
+
 - **Next.js 15 App Router**: Server and client components with streaming
 - **React 18**: Modern React with Suspense and concurrent features
 - **TypeScript**: Full type safety across the application
@@ -44,18 +45,21 @@ graph TB
 - **shadcn/ui**: Reusable component library with accessibility
 
 ### Backend Layer
+
 - **Next.js API Routes**: Serverless API endpoints
 - **Prisma ORM**: Type-safe database access and migrations
 - **PostgreSQL**: Primary database for all application data
 - **JWT Authentication**: Secure user authentication with magic links
 
 ### External Integrations
+
 - **Square Payment API**: Payment processing and POS synchronization
 - **Shippo API**: Shipping rate calculation and label generation
 - **Email Service**: Transactional emails and notifications
 - **Image CDN**: Optimized image delivery and processing
 
 ### Infrastructure
+
 - **Vercel**: Deployment platform with edge network
 - **PostgreSQL Database**: Managed database service
 - **Vercel KV**: Redis-compatible cache for session storage
@@ -64,6 +68,7 @@ graph TB
 ## Data Flow Architecture
 
 ### Customer Purchase Flow
+
 ```mermaid
 sequenceDiagram
     participant C as Customer
@@ -82,13 +87,13 @@ sequenceDiagram
 
     C->>UI: Add to cart
     UI->>UI: Update cart state
-    
+
     C->>UI: Proceed to checkout
     UI->>API: POST /api/shipping/rates
     API->>Shippo: Calculate rates
     Shippo-->>API: Shipping options
     API-->>UI: Available rates
-    
+
     C->>UI: Complete payment
     UI->>API: POST /api/checkout
     API->>Square: Process payment
@@ -100,6 +105,7 @@ sequenceDiagram
 ```
 
 ### Catering Inquiry Flow
+
 ```mermaid
 sequenceDiagram
     participant B as Business Customer
@@ -123,6 +129,7 @@ sequenceDiagram
 ## Technology Stack Details
 
 ### Frontend Technologies
+
 ```typescript
 // Core dependencies
 "next": "^15.0.0"              // React framework with App Router
@@ -136,6 +143,7 @@ sequenceDiagram
 ```
 
 ### Backend Technologies
+
 ```typescript
 // Database and ORM
 "@prisma/client": "^6.8.2"    // Database client
@@ -151,6 +159,7 @@ sequenceDiagram
 ```
 
 ### Development Tools
+
 ```typescript
 // Testing
 "jest": "^29.7.0"             // Unit testing
@@ -167,6 +176,7 @@ sequenceDiagram
 ## Application Structure
 
 ### Directory Organization
+
 ```
 src/
 ├── app/                      # Next.js App Router
@@ -198,6 +208,7 @@ src/
 ```
 
 ### Component Architecture
+
 ```typescript
 // Component hierarchy example
 interface ComponentArchitecture {
@@ -241,26 +252,28 @@ interface ComponentArchitecture {
 ## Data Architecture
 
 ### Database Schema Overview
+
 ```mermaid
 erDiagram
     User ||--o{ Order : places
     User ||--o{ CateringInquiry : submits
-    
+
     Order ||--|{ OrderItem : contains
     OrderItem }o--|| Product : references
-    
+
     Product }o--|| Category : belongs_to
     Product ||--o{ ProductImage : has
     Product ||--o{ PackageSize : offers
-    
+
     CateringInquiry ||--o{ CateringItem : includes
     CateringItem }o--|| Product : references
-    
+
     Order ||--o| PaymentRecord : has
     Order ||--o| ShippingRecord : has
 ```
 
 ### Core Entities
+
 ```typescript
 // Primary database entities
 interface CoreEntities {
@@ -316,6 +329,7 @@ interface CoreEntities {
 ## API Design Patterns
 
 ### RESTful Conventions
+
 ```typescript
 // Standard API patterns
 interface APIPatterns {
@@ -324,12 +338,12 @@ interface APIPatterns {
     query: PaginationParams & FilterParams;
     response: PaginatedResponse<Product[]>;
   };
-  
+
   'GET /api/products/[id]': {
     params: { id: string };
     response: ApiResponse<Product>;
   };
-  
+
   'POST /api/products': {
     body: CreateProductRequest;
     response: ApiResponse<Product>;
@@ -340,7 +354,7 @@ interface APIPatterns {
     body: CheckoutRequest;
     response: ApiResponse<Order>;
   };
-  
+
   'POST /api/catering': {
     body: CateringInquiryRequest;
     response: ApiResponse<CateringInquiry>;
@@ -355,6 +369,7 @@ interface APIPatterns {
 ```
 
 ### Error Handling Strategy
+
 ```typescript
 // Consistent error responses
 interface ErrorResponse {
@@ -387,6 +402,7 @@ enum ErrorCodes {
 ## Security Architecture
 
 ### Authentication Flow
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -411,38 +427,25 @@ sequenceDiagram
 ```
 
 ### Authorization Patterns
+
 ```typescript
 // Role-based access control
 interface AuthorizationRules {
   // Public routes
-  public: [
-    '/products',
-    '/catering',
-    '/api/products',
-    '/api/catering'
-  ];
+  public: ['/products', '/catering', '/api/products', '/api/catering'];
 
   // Customer routes
-  customer: [
-    '/account',
-    '/orders',
-    '/api/orders/mine',
-    '/api/checkout'
-  ];
+  customer: ['/account', '/orders', '/api/orders/mine', '/api/checkout'];
 
   // Admin routes
-  admin: [
-    '/admin/*',
-    '/api/admin/*',
-    '/api/square/sync'
-  ];
+  admin: ['/admin/*', '/api/admin/*', '/api/square/sync'];
 }
 
 // Middleware protection
 const protectedRoutes = {
   '/admin/*': ['ADMIN', 'MANAGER'],
   '/api/admin/*': ['ADMIN', 'MANAGER'],
-  '/api/orders/[id]': (user: User, orderId: string) => 
+  '/api/orders/[id]': (user: User, orderId: string) =>
     user.role === 'ADMIN' || user.orders.some(o => o.id === orderId),
 };
 ```
@@ -450,6 +453,7 @@ const protectedRoutes = {
 ## Performance Optimization
 
 ### Caching Strategy
+
 ```typescript
 // Multi-layer caching approach
 interface CachingLayers {
@@ -478,6 +482,7 @@ interface CachingLayers {
 ```
 
 ### Code Splitting
+
 ```typescript
 // Dynamic imports for performance
 const LazyComponents = {
@@ -498,6 +503,7 @@ const RouteBasedSplitting = {
 ## Monitoring and Observability
 
 ### Health Checks
+
 ```typescript
 // System health monitoring
 interface HealthChecks {
@@ -519,6 +525,7 @@ interface HealthChecks {
 ```
 
 ### Error Tracking
+
 ```typescript
 // Error monitoring setup
 const ErrorTracking = {
@@ -526,12 +533,12 @@ const ErrorTracking = {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0.1,
-    beforeSend: (event) => {
+    beforeSend: event => {
       // Filter sensitive data
       return sanitizeErrorEvent(event);
     },
   },
-  
+
   customMetrics: {
     paymentFailures: 'counter',
     orderCompletionTime: 'histogram',
@@ -544,12 +551,14 @@ const ErrorTracking = {
 ## Scalability Considerations
 
 ### Horizontal Scaling
+
 - **Stateless Design**: All application logic is stateless
 - **Database Connection Pooling**: Efficient connection management
 - **Edge Caching**: Global content distribution
 - **Async Processing**: Queue-based order processing
 
 ### Vertical Scaling
+
 - **Database Optimization**: Indexed queries and efficient schemas
 - **Memory Management**: Optimized React rendering
 - **Bundle Optimization**: Code splitting and tree shaking
@@ -558,6 +567,7 @@ const ErrorTracking = {
 ## Development Workflow
 
 ### Local Development
+
 ```bash
 # Development setup
 pnpm install              # Install dependencies
@@ -567,6 +577,7 @@ pnpm test:watch           # Run tests in watch mode
 ```
 
 ### Production Deployment
+
 ```bash
 # Build and deploy
 pnpm build                # Production build

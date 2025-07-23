@@ -26,8 +26,11 @@ export interface CreatePaymentRequest {
  */
 export async function createOrder(orderData: CreateOrderRequest) {
   try {
-    logger.info('Creating Square order', { locationId: orderData.locationId, itemCount: orderData.lineItems.length });
-    
+    logger.info('Creating Square order', {
+      locationId: orderData.locationId,
+      itemCount: orderData.lineItems.length,
+    });
+
     // Get Square service instance
     const squareService = getSquareService();
 
@@ -45,7 +48,7 @@ export async function createOrder(orderData: CreateOrderRequest) {
     if (!result.order) {
       throw new Error('Failed to create order or order data is missing in the response.');
     }
-    
+
     logger.info('Successfully created Square order', { orderId: result.order.id });
     return result.order;
   } catch (error) {
@@ -67,7 +70,7 @@ export async function createOrder(orderData: CreateOrderRequest) {
 export async function createPayment(sourceId: string, orderId: string, amountCents: number) {
   try {
     logger.info('Creating Square payment', { orderId, amountCents });
-    
+
     // Get Square service instance
     const squareService = getSquareService();
 
@@ -87,7 +90,7 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
     if (!result.payment) {
       throw new Error('Failed to create payment or payment data is missing in the response.');
     }
-    
+
     logger.info('Successfully created Square payment', { paymentId: result.payment.id });
     return result.payment;
   } catch (error) {

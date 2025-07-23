@@ -6,8 +6,8 @@ jest.mock('@/env', () => ({
   env: {
     DATABASE_URL: 'mock-database-url',
     SQUARE_ACCESS_TOKEN: 'mock-access-token',
-    SQUARE_ENVIRONMENT: 'sandbox'
-  }
+    SQUARE_ENVIRONMENT: 'sandbox',
+  },
 }));
 
 jest.mock('@/lib/db', () => ({
@@ -66,13 +66,18 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default successful mocks
     mockPrisma.order.findUnique.mockResolvedValue(validOrder);
     mockPrisma.order.update.mockResolvedValue({ ...validOrder, status: 'PROCESSING' });
     mockCreatePayment.mockResolvedValue(validPayment);
-    mockCheckRateLimit.mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: new Date() });
-    
+    mockCheckRateLimit.mockResolvedValue({
+      success: true,
+      limit: 100,
+      remaining: 99,
+      reset: new Date(),
+    });
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -342,10 +347,7 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const [response1, response2] = await Promise.all([
-        POST(request1),
-        POST(request2),
-      ]);
+      const [response1, response2] = await Promise.all([POST(request1), POST(request2)]);
 
       // First should succeed, second should be detected as replay
       expect(response1.status).toBe(200);
@@ -403,12 +405,14 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
         amount: 7500,
       };
 
-      const requests = Array.from({ length: 3 }, () =>
-        new NextRequest('http://localhost:3000/api/checkout/payment', {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'application/json' },
-        })
+      const requests = Array.from(
+        { length: 3 },
+        () =>
+          new NextRequest('http://localhost:3000/api/checkout/payment', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' },
+          })
       );
 
       const responses = await Promise.all(requests.map(req => POST(req)));
@@ -564,9 +568,8 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
     it('should handle payment processing timeouts gracefully', async () => {
       // Mock Square API timeout
       mockCreatePayment.mockImplementation(
-        () => new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 100)
-        )
+        () =>
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 100))
       );
 
       const payload = {
@@ -609,7 +612,7 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
 
       // Should handle partial failure appropriately
       expect(response.status).toBe(500);
-      
+
       // Should capture the inconsistency for manual reconciliation
       expect(mockErrorMonitor.capturePaymentInconsistency).toHaveBeenCalledWith({
         paymentId: 'payment-789',
@@ -618,4 +621,4 @@ describe('Payment Security & Enhanced Coverage Tests (Phase 1 - 90%+ Target)', (
       });
     });
   });
-}); 
+});

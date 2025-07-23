@@ -35,7 +35,7 @@ export async function getTestPrismaClient(): Promise<PrismaClient> {
       }
     }
   }
-  
+
   return prisma;
 }
 
@@ -54,7 +54,7 @@ export async function disconnectTestDatabase(): Promise<void> {
  */
 export async function setupTestDatabase(): Promise<void> {
   const client = await getTestPrismaClient();
-  
+
   // Optional: Clean up test data or run migrations
   // This can be expanded based on your needs
   console.log('Test database connected successfully');
@@ -131,7 +131,8 @@ export const seedTestDatabase = async (): Promise<void> => {
       update: {},
       create: {
         name: 'Alfajores',
-        description: 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you\'re gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+        description:
+          "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
         order: 1,
         squareId: 'test-cat-alfajores',
       },
@@ -141,7 +142,8 @@ export const seedTestDatabase = async (): Promise<void> => {
       update: {},
       create: {
         name: 'Empanadas',
-        description: 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
+        description:
+          'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
         order: 2,
         squareId: 'test-cat-empanadas',
       },
@@ -157,7 +159,8 @@ export const seedTestDatabase = async (): Promise<void> => {
         squareId: 'test-square-alfajores-dulce',
         name: 'Dulce de Leche Alfajores',
         price: 12.99,
-        description: 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you\'re gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+        description:
+          "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
         categoryId: categories[0].id,
         active: true,
         images: ['/images/alfajores-dulce.jpg'],
@@ -183,7 +186,8 @@ export const seedTestDatabase = async (): Promise<void> => {
         squareId: 'test-square-empanadas-beef',
         name: 'Beef Empanadas',
         price: 18.99,
-        description: 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
+        description:
+          'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
         categoryId: categories[1].id,
         active: true,
         images: ['/images/empanadas-beef.jpg'],
@@ -240,4 +244,4 @@ export const getTestDb = () => {
 };
 
 // Legacy export for backwards compatibility
-export const testDb = getTestDb; 
+export const testDb = getTestDb;

@@ -13,7 +13,7 @@ export function useCategory() {
     startTransition(async () => {
       try {
         const result = await action;
-        
+
         if (result.success) {
           toast.success(result.message || 'Action successful!');
           if (result.redirectPath) {
@@ -30,4 +30,4 @@ export function useCategory() {
   };
 
   return { handleServerAction, isPending };
-} 
+}

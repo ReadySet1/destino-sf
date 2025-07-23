@@ -1,6 +1,6 @@
 /**
  * Square Service Layer
- * 
+ *
  * Provides a clean service interface for interacting with Square APIs
  * while ensuring proper runtime initialization and error handling
  */
@@ -24,7 +24,7 @@ export class SquareService {
       logger.warn('SquareService - Skipping initialization during build time');
       return;
     }
-    
+
     this.initialize();
   }
 
@@ -33,15 +33,15 @@ export class SquareService {
    */
   private initialize(): void {
     if (this.initialized) return;
-    
+
     try {
       logger.info('SquareService - Initializing client');
       this.client = getSquareClient();
-      
+
       if (!this.client) {
         throw new Error('Failed to initialize Square client');
       }
-      
+
       this.initialized = true;
     } catch (error) {
       logger.error('SquareService - Error initializing client:', error);
@@ -57,7 +57,7 @@ export class SquareService {
     if (!this.initialized) {
       this.initialize();
     }
-    
+
     if (!this.client) {
       throw new Error('Square client not initialized');
     }
@@ -68,7 +68,7 @@ export class SquareService {
    */
   async getCatalogItems(): Promise<any[]> {
     this.ensureClient();
-    
+
     try {
       logger.debug('SquareService - Fetching catalog items');
       const response = await this.client.catalogApi.listCatalog(undefined, 'ITEM');
@@ -84,13 +84,13 @@ export class SquareService {
    */
   async getLocations(): Promise<any[]> {
     this.ensureClient();
-    
+
     try {
       if (!this.client.locationsApi) {
         logger.warn('SquareService - Locations API not available');
         return [];
       }
-      
+
       logger.debug('SquareService - Fetching locations');
       const response = await this.client.locationsApi.listLocations();
       return response.result.locations || [];
@@ -105,7 +105,7 @@ export class SquareService {
    */
   async createOrder(orderData: any): Promise<any> {
     this.ensureClient();
-    
+
     try {
       logger.debug('SquareService - Creating order', { orderData });
       const response = await this.client.ordersApi.createOrder(orderData);
@@ -121,7 +121,7 @@ export class SquareService {
    */
   async createPayment(paymentData: any): Promise<any> {
     this.ensureClient();
-    
+
     try {
       logger.debug('SquareService - Creating payment', { paymentData });
       const response = await this.client.paymentsApi.createPayment(paymentData);
@@ -137,7 +137,7 @@ export class SquareService {
    */
   async searchCatalog(searchRequest: any): Promise<any> {
     this.ensureClient();
-    
+
     try {
       logger.debug('SquareService - Searching catalog', searchRequest);
       const response = await this.client.catalogApi.searchCatalogObjects(searchRequest);
@@ -153,12 +153,12 @@ export class SquareService {
    */
   async updateCatalogItem(catalogObject: any): Promise<any> {
     this.ensureClient();
-    
+
     try {
       logger.debug('SquareService - Updating catalog item', { id: catalogObject.id });
       const response = await this.client.catalogApi.upsertCatalogObject({
         idempotencyKey: `update-${catalogObject.id}-${Date.now()}`,
-        object: catalogObject
+        object: catalogObject,
       });
       return response.result;
     } catch (error) {
@@ -198,4 +198,4 @@ export const resetSquareService = (): void => {
     serviceInstance.reset();
   }
   serviceInstance = null;
-}; 
+};

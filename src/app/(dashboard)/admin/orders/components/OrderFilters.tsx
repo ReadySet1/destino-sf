@@ -38,33 +38,34 @@ export default function OrderFilters({
   const [payment, setPayment] = useState(currentPayment || 'all');
 
   // Function to create new URL with updated search params
-  const applyFilters = useCallback((
-    updates: { 
-      search?: string; 
-      type?: string; 
-      status?: string; 
-      payment?: string; 
-      page?: string 
-    }
-  ) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    // Update search params with new values
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value && value !== 'all') {
-        params.set(key, value);
-      } else {
-        params.delete(key);
+  const applyFilters = useCallback(
+    (updates: {
+      search?: string;
+      type?: string;
+      status?: string;
+      payment?: string;
+      page?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      // Update search params with new values
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+      });
+
+      // Reset page to 1 when filters change, unless explicitly set
+      if (!updates.page && params.has('page')) {
+        params.set('page', '1');
       }
-    });
-    
-    // Reset page to 1 when filters change, unless explicitly set
-    if (!updates.page && params.has('page')) {
-      params.set('page', '1');
-    }
-    
-    router.push(`${pathname}?${params.toString()}`);
-  }, [router, pathname, searchParams]);
+
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, searchParams]
+  );
 
   // Update search term with debounce
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function OrderFilters({
               type="text"
               placeholder="Search orders..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -109,7 +110,7 @@ export default function OrderFilters({
           <div className="w-full md:w-1/4">
             <Select
               value={type}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setType(value);
                 applyFilters({ type: value });
               }}
@@ -132,7 +133,7 @@ export default function OrderFilters({
           <div className="w-full md:w-1/4">
             <Select
               value={status}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setStatus(value);
                 applyFilters({ status: value });
               }}
@@ -160,7 +161,7 @@ export default function OrderFilters({
           <div className="w-full md:w-1/4">
             <Select
               value={payment}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setPayment(value);
                 applyFilters({ payment: value });
               }}
@@ -186,10 +187,10 @@ export default function OrderFilters({
         {/* Reset Filters Button - Only show if filters are active */}
         {hasActiveFilters && (
           <div className="flex justify-end">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={resetFilters} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
               className="flex items-center gap-1"
             >
               <X className="h-4 w-4" /> Reset Filters
@@ -199,4 +200,4 @@ export default function OrderFilters({
       </div>
     </div>
   );
-} 
+}

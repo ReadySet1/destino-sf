@@ -34,7 +34,7 @@ export function useSmartCart() {
     if ('variants' in product) {
       const dbProduct = product as DbProduct;
       const numericPrice = serializeDecimal(dbProduct.price) || 0;
-      
+
       return {
         id: dbProduct.id,
         name: dbProduct.name,
@@ -44,10 +44,10 @@ export function useSmartCart() {
         category: {
           id: dbProduct.categoryId,
           name: dbProduct.category?.name,
-        }
+        },
       };
     }
-    
+
     // If it's already a simple product, return as is
     return product as SimpleProduct;
   }, []);
@@ -55,37 +55,43 @@ export function useSmartCart() {
   /**
    * Adds a product to the appropriate cart based on its category
    */
-  const addToCart = useCallback((product: ProductInput, quantity: number = 1) => {
-    const normalizedProduct = normalizeProduct(product);
-    const isCatering = isCateringProduct(normalizedProduct);
-    
-    const cartItem = {
-      id: normalizedProduct.id,
-      name: normalizedProduct.name,
-      price: normalizedProduct.price,
-      quantity: quantity,
-      image: normalizedProduct.image,
-      variantId: normalizedProduct.variantId,
-    };
+  const addToCart = useCallback(
+    (product: ProductInput, quantity: number = 1) => {
+      const normalizedProduct = normalizeProduct(product);
+      const isCatering = isCateringProduct(normalizedProduct);
 
-    if (isCatering) {
-      cateringCart.addItem(cartItem as CateringCartItem);
-      toast.success(`Added to catering cart: ${normalizedProduct.name}`);
-    } else {
-      regularCart.addItem(cartItem as CartItem);
-      toast.success(`Added to cart: ${normalizedProduct.name}`);
-    }
+      const cartItem = {
+        id: normalizedProduct.id,
+        name: normalizedProduct.name,
+        price: normalizedProduct.price,
+        quantity: quantity,
+        image: normalizedProduct.image,
+        variantId: normalizedProduct.variantId,
+      };
 
-    return isCatering ? 'catering' : 'regular';
-  }, [regularCart, cateringCart, normalizeProduct]);
+      if (isCatering) {
+        cateringCart.addItem(cartItem as CateringCartItem);
+        toast.success(`Added to catering cart: ${normalizedProduct.name}`);
+      } else {
+        regularCart.addItem(cartItem as CartItem);
+        toast.success(`Added to cart: ${normalizedProduct.name}`);
+      }
+
+      return isCatering ? 'catering' : 'regular';
+    },
+    [regularCart, cateringCart, normalizeProduct]
+  );
 
   /**
    * Removes a product from both carts (useful when you're not sure which cart it's in)
    */
-  const removeFromAllCarts = useCallback((productId: string, variantId?: string) => {
-    regularCart.removeItem(productId, variantId);
-    cateringCart.removeItem(productId, variantId);
-  }, [regularCart, cateringCart]);
+  const removeFromAllCarts = useCallback(
+    (productId: string, variantId?: string) => {
+      regularCart.removeItem(productId, variantId);
+      cateringCart.removeItem(productId, variantId);
+    },
+    [regularCart, cateringCart]
+  );
 
   /**
    * Gets the total number of items across both carts
@@ -97,17 +103,20 @@ export function useSmartCart() {
   /**
    * Checks if a product is in either cart
    */
-  const isInAnyCart = useCallback((productId: string, variantId?: string) => {
-    const inRegularCart = regularCart.items.some(
-      item => item.id === productId && item.variantId === variantId
-    );
-    
-    const inCateringCart = cateringCart.items.some(
-      item => item.id === productId && item.variantId === variantId
-    );
-    
-    return inRegularCart || inCateringCart;
-  }, [regularCart.items, cateringCart.items]);
+  const isInAnyCart = useCallback(
+    (productId: string, variantId?: string) => {
+      const inRegularCart = regularCart.items.some(
+        item => item.id === productId && item.variantId === variantId
+      );
+
+      const inCateringCart = cateringCart.items.some(
+        item => item.id === productId && item.variantId === variantId
+      );
+
+      return inRegularCart || inCateringCart;
+    },
+    [regularCart.items, cateringCart.items]
+  );
 
   return {
     regularCart,
@@ -117,4 +126,4 @@ export function useSmartCart() {
     getTotalItemCount,
     isInAnyCart,
   };
-} 
+}

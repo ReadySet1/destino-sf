@@ -14,9 +14,12 @@ import { NextStudio } from 'next-sanity/studio';
 import config from '../../../../sanity.config';
 
 // Dynamically import the NextStudio component with SSR disabled
-const NextStudioComponent = dynamic(() => import('next-sanity/studio').then((mod) => mod.NextStudio), {
-  ssr: false,
-});
+const NextStudioComponent = dynamic(
+  () => import('next-sanity/studio').then(mod => mod.NextStudio),
+  {
+    ssr: false,
+  }
+);
 
 export default function StudioPage() {
   // Use the dynamically imported component

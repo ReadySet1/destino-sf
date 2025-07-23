@@ -11,7 +11,7 @@ interface DatabaseConfig {
   connectionTimeout: number;
   idleTimeout: number;
   maxQueryExecutionTime: number;
-  
+
   // Monitoring settings
   enableQueryLogging: boolean;
   enablePerformanceTracking: boolean;
@@ -36,21 +36,23 @@ const DATABASE_CONFIG: DatabaseConfig = {
  */
 const createPrismaClient = () => {
   const prisma = new PrismaClient({
-    log: DATABASE_CONFIG.enableQueryLogging ? [
-      {
-        emit: 'event',
-        level: 'query',
-      },
-      {
-        emit: 'event',
-        level: 'error',
-      },
-      {
-        emit: 'event',
-        level: 'warn',
-      },
-    ] : ['error'],
-    
+    log: DATABASE_CONFIG.enableQueryLogging
+      ? [
+          {
+            emit: 'event',
+            level: 'query',
+          },
+          {
+            emit: 'event',
+            level: 'error',
+          },
+          {
+            emit: 'event',
+            level: 'warn',
+          },
+        ]
+      : ['error'],
+
     datasources: {
       db: {
         url: `${process.env.DATABASE_URL}?connection_limit=${DATABASE_CONFIG.maxConnections}&pool_timeout=${DATABASE_CONFIG.connectionTimeout / 1000}&connect_timeout=${DATABASE_CONFIG.connectionTimeout / 1000}&socket_timeout=${DATABASE_CONFIG.idleTimeout / 1000}`,
@@ -63,16 +65,16 @@ const createPrismaClient = () => {
     prisma.$on('query' as never, (e: any) => {
       const duration = e.duration;
       const query = e.query;
-      
+
       // Track query performance
       performanceMonitor.trackDatabaseQuery(query, duration, true);
-      
+
       // Log slow queries
       if (duration > DATABASE_CONFIG.slowQueryThreshold) {
         console.warn(`🐌 Slow database query (${duration}ms): ${query.substring(0, 100)}...`);
-        
+
         // Track in Sentry
-        Sentry.withScope((scope) => {
+        Sentry.withScope(scope => {
           scope.setTag('db.query_type', 'slow');
           scope.setTag('db.duration', duration);
           scope.setContext('database_query', {
@@ -80,16 +82,11 @@ const createPrismaClient = () => {
             duration,
             threshold: DATABASE_CONFIG.slowQueryThreshold,
           });
-          
+
           if (duration > 2000) {
-            Sentry.captureException(
-              new Error(`Very slow database query: ${duration}ms`)
-            );
+            Sentry.captureException(new Error(`Very slow database query: ${duration}ms`));
           } else {
-            Sentry.captureMessage(
-              `Slow database query: ${duration}ms`,
-              'warning'
-            );
+            Sentry.captureMessage(`Slow database query: ${duration}ms`, 'warning');
           }
         });
       }
@@ -99,25 +96,19 @@ const createPrismaClient = () => {
   // Error monitoring
   prisma.$on('error' as never, (e: any) => {
     console.error('Database error:', e);
-    
+
     // Track database errors
-    performanceMonitor.trackDatabaseQuery(
-      e.message || 'Unknown query',
-      0,
-      false
-    );
-    
+    performanceMonitor.trackDatabaseQuery(e.message || 'Unknown query', 0, false);
+
     // Track in Sentry
-    Sentry.withScope((scope) => {
+    Sentry.withScope(scope => {
       scope.setTag('db.error', true);
       scope.setContext('database_error', {
         message: e.message,
         timestamp: new Date().toISOString(),
       });
-      
-      Sentry.captureException(
-        new Error(`Database error: ${e.message}`)
-      );
+
+      Sentry.captureException(new Error(`Database error: ${e.message}`));
     });
   });
 
@@ -159,11 +150,11 @@ export class DatabaseManager {
     } catch (error) {
       this.connectionStatus = 'error';
       this.connectionAttempts++;
-      
+
       console.error(`❌ Database connection failed (attempt ${this.connectionAttempts}):`, error);
-      
+
       // Track connection errors in Sentry
-      Sentry.withScope((scope) => {
+      Sentry.withScope(scope => {
         scope.setTag('db.connection_error', true);
         scope.setTag('db.attempt', this.connectionAttempts);
         scope.setContext('database_connection', {
@@ -171,9 +162,11 @@ export class DatabaseManager {
           attempts: this.connectionAttempts,
           maxRetries: this.maxRetries,
         });
-        
+
         Sentry.captureException(
-          new Error(`Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          new Error(
+            `Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
         );
       });
 
@@ -205,16 +198,16 @@ export class DatabaseManager {
     };
   }> {
     const start = Date.now();
-    
+
     try {
       // Simple health check query
       await this.prisma.$queryRaw`SELECT 1`;
-      
+
       const responseTime = Date.now() - start;
       this.lastHealthCheck = new Date();
-      
+
       const status = responseTime > 1000 ? 'degraded' : 'healthy';
-      
+
       return {
         status,
         details: {
@@ -226,7 +219,7 @@ export class DatabaseManager {
       };
     } catch (error) {
       console.error('Database health check failed:', error);
-      
+
       return {
         status: 'unhealthy',
         details: {
@@ -266,20 +259,23 @@ export class DatabaseManager {
     maxRetries: number = 2
   ): Promise<T> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await Promise.race([
           operation(this.prisma),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Query timeout')), DATABASE_CONFIG.maxQueryExecutionTime)
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Query timeout')),
+              DATABASE_CONFIG.maxQueryExecutionTime
+            )
           ),
         ]);
-        
+
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        
+
         // Don't retry on certain errors
         if (
           lastError.message.includes('Unique constraint') ||
@@ -288,22 +284,23 @@ export class DatabaseManager {
         ) {
           throw lastError;
         }
-        
+
         // Retry on connection errors
-        if (attempt < maxRetries && (
-          lastError.message.includes('Connection') ||
-          lastError.message.includes('timeout') ||
-          lastError.message.includes('ECONNRESET')
-        )) {
+        if (
+          attempt < maxRetries &&
+          (lastError.message.includes('Connection') ||
+            lastError.message.includes('timeout') ||
+            lastError.message.includes('ECONNRESET'))
+        ) {
           console.warn(`Database operation failed (attempt ${attempt + 1}), retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
           continue;
         }
-        
+
         throw lastError;
       }
     }
-    
+
     throw lastError || new Error('Maximum retries exceeded');
   }
 
@@ -339,21 +336,21 @@ export async function withDatabaseMonitoring<T>(
   operationName: string
 ): Promise<T> {
   const start = Date.now();
-  
+
   try {
     const result = await operation();
     const duration = Date.now() - start;
-    
+
     // Track successful operation
     performanceMonitor.trackDatabaseQuery(operationName, duration, true);
-    
+
     return result;
   } catch (error) {
     const duration = Date.now() - start;
-    
+
     // Track failed operation
     performanceMonitor.trackDatabaseQuery(operationName, duration, false);
-    
+
     throw error;
   }
 }
@@ -362,9 +359,14 @@ export async function withDatabaseMonitoring<T>(
  * Database transaction wrapper with monitoring
  */
 export async function withTransaction<T>(
-  operation: (prisma: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => Promise<T>
+  operation: (
+    prisma: Omit<
+      PrismaClient,
+      '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+    >
+  ) => Promise<T>
 ): Promise<T> {
-  return dbManager.executeWithRetry(async (prisma) => {
+  return dbManager.executeWithRetry(async prisma => {
     return await prisma.$transaction(operation);
   });
-} 
+}

@@ -5,17 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  AlertTriangle, 
-  Database, 
-  Square, 
-  CheckCircle, 
-  XCircle, 
-  Info, 
+import {
+  AlertTriangle,
+  Database,
+  Square,
+  CheckCircle,
+  XCircle,
+  Info,
   RefreshCw,
   Shield,
   Users,
-  Settings
+  Settings,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -28,7 +28,7 @@ interface CateringDataSyncProps {
 export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
   totalLocalItems,
   totalLocalPackages,
-  isDbConnected
+  isDbConnected,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -47,11 +47,7 @@ export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
                 Local catering items and packages - separate from Square POS
               </CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowDetails(!showDetails)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowDetails(!showDetails)}>
               <Info className="h-4 w-4 mr-2" />
               {showDetails ? 'Hide' : 'Show'} Details
             </Button>
@@ -62,7 +58,9 @@ export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
             {/* Local Database Status */}
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-full ${isDbConnected ? 'bg-green-100' : 'bg-red-100'}`}>
-                <Database className={`h-4 w-4 ${isDbConnected ? 'text-green-600' : 'text-red-600'}`} />
+                <Database
+                  className={`h-4 w-4 ${isDbConnected ? 'text-green-600' : 'text-red-600'}`}
+                />
               </div>
               <div>
                 <div className="font-medium">Local Database</div>
@@ -107,12 +105,14 @@ export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
 
           {/* Square Separation Notice */}
           <Separator className="my-6" />
-          
+
           <Alert>
             <Square className="h-4 w-4" />
             <AlertDescription>
-              <strong>Important:</strong> The catering items and packages managed here are stored locally and are separate from your Square POS products. 
-              This prevents conflicts with Square inventory and allows for specialized catering pricing and package configurations.
+              <strong>Important:</strong> The catering items and packages managed here are stored
+              locally and are separate from your Square POS products. This prevents conflicts with
+              Square inventory and allows for specialized catering pricing and package
+              configurations.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -194,9 +194,13 @@ export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
                 Best Practices
               </h4>
               <div className="space-y-2 text-sm text-gray-700">
-                <div>• Use the local catering database for all catering-specific items and packages</div>
+                <div>
+                  • Use the local catering database for all catering-specific items and packages
+                </div>
                 <div>• Set catering-appropriate pricing that reflects bulk/event service</div>
-                <div>• Include detailed descriptions and dietary information for customer clarity</div>
+                <div>
+                  • Include detailed descriptions and dietary information for customer clarity
+                </div>
                 <div>• Use high-quality images that showcase the catering presentation</div>
                 <div>• Create packages that simplify ordering for common event sizes</div>
                 <div>• Keep Square POS products separate for restaurant operations</div>
@@ -207,4 +211,4 @@ export const CateringDataSync: React.FC<CateringDataSyncProps> = ({
       )}
     </div>
   );
-}; 
+};

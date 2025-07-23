@@ -9,10 +9,7 @@ import {
 import { prisma } from '@/lib/db';
 
 // Import our new test utilities
-import { 
-  mockConsole,
-  restoreConsole 
-} from '@/__tests__/setup/test-utils';
+import { mockConsole, restoreConsole } from '@/__tests__/setup/test-utils';
 
 // Note: @/lib/db is mocked globally in jest.setup.js
 // Cast the prisma object to access jest mock functions
@@ -163,9 +160,7 @@ describe('ShippingUtils', () => {
     });
 
     test('should enforce minimum weight', async () => {
-      const lightItems: CartItemForShipping[] = [
-        { id: '1', name: 'Small Item', quantity: 1 },
-      ];
+      const lightItems: CartItemForShipping[] = [{ id: '1', name: 'Small Item', quantity: 1 }];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue(null);
 
@@ -448,4 +443,4 @@ describe('ShippingUtils', () => {
       });
     });
   });
-}); 
+});

@@ -17,16 +17,12 @@ export interface ErrorResponse {
 export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 
 // Type guard for success responses
-export function isSuccessResponse<T>(
-  response: ApiResponse<T>
-): response is SuccessResponse<T> {
+export function isSuccessResponse<T>(response: ApiResponse<T>): response is SuccessResponse<T> {
   return response.success === true;
 }
 
 // Type guard for error responses
-export function isErrorResponse<T>(
-  response: ApiResponse<T>
-): response is ErrorResponse {
+export function isErrorResponse<T>(response: ApiResponse<T>): response is ErrorResponse {
   return response.success === false;
 }
 
@@ -63,15 +59,11 @@ export interface PaymentErrorResponse {
 export type PaymentResponse = PaymentSuccessResponse | PaymentErrorResponse;
 
 // Payment type guards
-export function isPaymentSuccess(
-  response: PaymentResponse
-): response is PaymentSuccessResponse {
+export function isPaymentSuccess(response: PaymentResponse): response is PaymentSuccessResponse {
   return response.success === true;
 }
 
-export function isPaymentError(
-  response: PaymentResponse
-): response is PaymentErrorResponse {
+export function isPaymentError(response: PaymentResponse): response is PaymentErrorResponse {
   return response.success === false;
 }
 
@@ -94,15 +86,11 @@ export interface OrderErrorResponse {
 export type OrderResponse = OrderSuccessResponse | OrderErrorResponse;
 
 // Order type guards
-export function isOrderSuccess(
-  response: OrderResponse
-): response is OrderSuccessResponse {
+export function isOrderSuccess(response: OrderResponse): response is OrderSuccessResponse {
   return response.success === true;
 }
 
-export function isOrderError(
-  response: OrderResponse
-): response is OrderErrorResponse {
+export function isOrderError(response: OrderResponse): response is OrderErrorResponse {
   return response.success === false;
 }
 
@@ -122,15 +110,11 @@ export interface ProfileErrorResponse {
 export type ProfileResponse = ProfileSuccessResponse | ProfileErrorResponse;
 
 // Profile type guards
-export function isProfileSuccess(
-  response: ProfileResponse
-): response is ProfileSuccessResponse {
+export function isProfileSuccess(response: ProfileResponse): response is ProfileSuccessResponse {
   return response.success === true;
 }
 
-export function isProfileError(
-  response: ProfileResponse
-): response is ProfileErrorResponse {
+export function isProfileError(response: ProfileResponse): response is ProfileErrorResponse {
   return response.success === false;
 }
 
@@ -173,9 +157,7 @@ export function isShippingSuccess(
   return response.success === true;
 }
 
-export function isShippingError(
-  response: ShippingRateResponse
-): response is ShippingErrorResponse {
+export function isShippingError(response: ShippingRateResponse): response is ShippingErrorResponse {
   return response.success === false;
 }
 
@@ -198,16 +180,12 @@ export function assertErrorResponse<T>(
 }
 
 // Helper function to safely access data from response
-export function getResponseData<T>(
-  response: ApiResponse<T>
-): T | null {
+export function getResponseData<T>(response: ApiResponse<T>): T | null {
   return isSuccessResponse(response) ? response.data : null;
 }
 
 // Helper function to safely access error from response
-export function getResponseError<T>(
-  response: ApiResponse<T>
-): string | null {
+export function getResponseError<T>(response: ApiResponse<T>): string | null {
   return isErrorResponse(response) ? response.error : null;
 }
 
@@ -238,4 +216,4 @@ export function isValidationError(
   response: ValidationResponse
 ): response is ValidationErrorResponse {
   return response.isValid === false;
-} 
+}

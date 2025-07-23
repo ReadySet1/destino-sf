@@ -5,40 +5,42 @@ import { performanceMonitor } from '@/lib/performance-monitor';
 
 export async function GET() {
   const startTime = Date.now();
-  
+
   try {
     // Run health checks in parallel
-    const [
-      databaseHealth,
-      cacheHealth,
-      performanceHealth,
-    ] = await Promise.allSettled([
+    const [databaseHealth, cacheHealth, performanceHealth] = await Promise.allSettled([
       dbManager.checkHealth(),
       cacheService.healthCheck(),
       checkPerformanceHealth(),
     ]);
 
     // Process results
-    const database = databaseHealth.status === 'fulfilled' 
-      ? databaseHealth.value 
-      : { status: 'unhealthy', details: { error: databaseHealth.reason } };
+    const database =
+      databaseHealth.status === 'fulfilled'
+        ? databaseHealth.value
+        : { status: 'unhealthy', details: { error: databaseHealth.reason } };
 
-    const cache = cacheHealth.status === 'fulfilled' 
-      ? cacheHealth.value 
-      : { status: 'unhealthy', details: { error: cacheHealth.reason } };
+    const cache =
+      cacheHealth.status === 'fulfilled'
+        ? cacheHealth.value
+        : { status: 'unhealthy', details: { error: cacheHealth.reason } };
 
-    const performance = performanceHealth.status === 'fulfilled' 
-      ? performanceHealth.value 
-      : { status: 'unhealthy', details: { error: performanceHealth.reason } };
+    const performance =
+      performanceHealth.status === 'fulfilled'
+        ? performanceHealth.value
+        : { status: 'unhealthy', details: { error: performanceHealth.reason } };
 
     // Determine overall system health
-    const allHealthy = 
-      database.status === 'healthy' && 
-      cache.status === 'healthy' && 
+    const allHealthy =
+      database.status === 'healthy' &&
+      cache.status === 'healthy' &&
       performance.status === 'healthy';
 
-    const systemStatus = allHealthy ? 'healthy' : 
-      (database.status === 'unhealthy' || cache.status === 'unhealthy') ? 'unhealthy' : 'degraded';
+    const systemStatus = allHealthy
+      ? 'healthy'
+      : database.status === 'unhealthy' || cache.status === 'unhealthy'
+        ? 'unhealthy'
+        : 'degraded';
 
     const response = {
       status: systemStatus,
@@ -47,7 +49,7 @@ export async function GET() {
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV,
       uptime: process.uptime(),
-      
+
       services: {
         database: {
           ...database,
@@ -60,7 +62,7 @@ export async function GET() {
           ...performance,
         },
       },
-      
+
       system: {
         memory: {
           used: process.memoryUsage().heapUsed / 1024 / 1024,
@@ -69,26 +71,27 @@ export async function GET() {
         },
         cpu: {
           uptime: process.uptime(),
-          loadAverage: process.platform === 'linux' ? 
-            (process as any).loadavg?.() || null : null,
+          loadAverage: process.platform === 'linux' ? (process as any).loadavg?.() || null : null,
         },
       },
     };
 
-    const statusCode = systemStatus === 'healthy' ? 200 : 
-                      systemStatus === 'degraded' ? 200 : 503;
+    const statusCode = systemStatus === 'healthy' ? 200 : systemStatus === 'degraded' ? 200 : 503;
 
     return NextResponse.json(response, { status: statusCode });
   } catch (error) {
     console.error('Detailed health check failed:', error);
-    
-    return NextResponse.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      responseTime: `${Date.now() - startTime}ms`,
-      error: 'Health check system failure',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 503 });
+
+    return NextResponse.json(
+      {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        responseTime: `${Date.now() - startTime}ms`,
+        error: 'Health check system failure',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 503 }
+    );
   }
 }
 
@@ -101,7 +104,7 @@ async function checkPerformanceHealth(): Promise<{
 }> {
   try {
     const summary = performanceMonitor.getPerformanceSummary();
-    
+
     // Define health thresholds
     const thresholds = {
       apiResponseTime: 1000, // 1 second
@@ -111,16 +114,16 @@ async function checkPerformanceHealth(): Promise<{
     };
 
     const issues = [];
-    
+
     // Check API performance
     if (summary.apiPerformance.averageResponseTime > thresholds.apiResponseTime) {
       issues.push(`High API response time: ${summary.apiPerformance.averageResponseTime}ms`);
     }
-    
+
     if (summary.apiPerformance.errorRate > thresholds.errorRate) {
       issues.push(`High API error rate: ${(summary.apiPerformance.errorRate * 100).toFixed(2)}%`);
     }
-    
+
     if (summary.apiPerformance.slowRequestCount > thresholds.slowRequestCount) {
       issues.push(`High slow request count: ${summary.apiPerformance.slowRequestCount}`);
     }
@@ -130,8 +133,7 @@ async function checkPerformanceHealth(): Promise<{
       issues.push(`High database query time: ${summary.databasePerformance.averageQueryTime}ms`);
     }
 
-    const status = issues.length === 0 ? 'healthy' : 
-                   issues.length <= 2 ? 'degraded' : 'unhealthy';
+    const status = issues.length === 0 ? 'healthy' : issues.length <= 2 ? 'degraded' : 'unhealthy';
 
     return {
       status,
@@ -149,4 +151,4 @@ async function checkPerformanceHealth(): Promise<{
       },
     };
   }
-} 
+}

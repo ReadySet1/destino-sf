@@ -51,16 +51,12 @@ export const EmailHeader: React.FC<EmailHeaderProps> = ({
         />
       ) : (
         <>
-          <Text style={{ ...logoText, color: textColor }}>
-            {shopName}
-          </Text>
-          <Text style={tagline}>
-            Authentic Mexican Cuisine in San Francisco
-          </Text>
+          <Text style={{ ...logoText, color: textColor }}>{shopName}</Text>
+          <Text style={tagline}>Authentic Mexican Cuisine in San Francisco</Text>
         </>
       )}
     </Section>
   );
 };
 
-export default EmailHeader; 
+export default EmailHeader;

@@ -40,14 +40,14 @@ function mapSquareStateToOrderStatus(state: string): OrderStatus {
 export async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const squareOrderData = data.object.order_created as any;
-  
+
   console.log('🆕 Processing order.created event:', data.id);
 
   // Enhanced duplicate check with event ID tracking using safe query
-  const existingOrder = await safeQuery(() => 
+  const existingOrder = await safeQuery(() =>
     prisma.order.findUnique({
       where: { squareOrderId: data.id },
-      select: { id: true, rawData: true }
+      select: { id: true, rawData: true },
     })
   );
 
@@ -72,9 +72,9 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
           rawData: {
             ...data.object,
             lastProcessedEventId: eventId,
-            lastProcessedAt: new Date().toISOString()
+            lastProcessedAt: new Date().toISOString(),
           } as unknown as Prisma.InputJsonValue,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         create: {
           squareOrderId: data.id,
@@ -87,16 +87,16 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
           rawData: {
             ...data.object,
             lastProcessedEventId: eventId,
-            lastProcessedAt: new Date().toISOString()
+            lastProcessedAt: new Date().toISOString(),
           } as unknown as Prisma.InputJsonValue,
         },
       })
     );
-    
+
     console.log(`✅ Successfully processed order.created event for order ${data.id}`);
   } catch (error: any) {
     console.error(`❌ Error processing order.created for ${data.id}:`, error);
-    
+
     // Enhanced error logging for database connection issues
     if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
       console.error('🚨 Database connection error in order.created:', {
@@ -105,10 +105,10 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
         orderId: data.id,
         eventId: eventId,
         timestamp: new Date().toISOString(),
-        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@')
+        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@'),
       });
     }
-    
+
     await errorMonitor.captureWebhookError(
       error,
       'order.created',
@@ -132,73 +132,82 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
 
   // Prepare the base update data object
   const updateData: Omit<Prisma.OrderUpdateInput, 'status'> & { status?: OrderStatus } = {
-      total: orderUpdateData?.total_money?.amount ? orderUpdateData.total_money.amount / 100 : undefined,
-      customerName: orderUpdateData?.customer_id ? 'Customer ID: ' + orderUpdateData.customer_id : undefined,
-      rawData: data.object as unknown as Prisma.InputJsonValue,
+    total: orderUpdateData?.total_money?.amount
+      ? orderUpdateData.total_money.amount / 100
+      : undefined,
+    customerName: orderUpdateData?.customer_id
+      ? 'Customer ID: ' + orderUpdateData.customer_id
+      : undefined,
+    rawData: data.object as unknown as Prisma.InputJsonValue,
   };
 
   // Only add status to the update if it's a terminal state (COMPLETED, CANCELLED)
   if (mappedStatus === OrderStatus.CANCELLED) {
-      console.log(`Order ${data.id} cancelled. Setting paymentStatus to REFUNDED and status to CANCELLED.`);
-      updateData.paymentStatus = 'REFUNDED';
-      updateData.status = OrderStatus.CANCELLED;
+    console.log(
+      `Order ${data.id} cancelled. Setting paymentStatus to REFUNDED and status to CANCELLED.`
+    );
+    updateData.paymentStatus = 'REFUNDED';
+    updateData.status = OrderStatus.CANCELLED;
   } else if (mappedStatus === OrderStatus.COMPLETED) {
-      console.log(`Order ${data.id} completed. Setting status to COMPLETED.`);
-      updateData.status = OrderStatus.COMPLETED;
+    console.log(`Order ${data.id} completed. Setting status to COMPLETED.`);
+    updateData.status = OrderStatus.COMPLETED;
   }
 
   try {
-      // Get the previous status before updating if we're making a status change
-      let previousStatus = undefined;
-      if (updateData.status) {
-          const currentOrder = await prisma.order.findUnique({
-              where: { squareOrderId: data.id },
-              select: { status: true }
-          });
-          previousStatus = currentOrder?.status;
-      }
-
-      await prisma.order.update({
-          where: { squareOrderId: data.id },
-          data: updateData, // Apply updates (only includes status if terminal)
+    // Get the previous status before updating if we're making a status change
+    let previousStatus = undefined;
+    if (updateData.status) {
+      const currentOrder = await prisma.order.findUnique({
+        where: { squareOrderId: data.id },
+        select: { status: true },
       });
+      previousStatus = currentOrder?.status;
+    }
 
-      // Send status change alert for terminal states (COMPLETED, CANCELLED)
-      if (updateData.status && previousStatus && previousStatus !== updateData.status) {
-          try {
-              // Fetch the complete order with items for the alert
-              const orderWithItems = await prisma.order.findUnique({
-                  where: { squareOrderId: data.id },
-                  include: {
-                      items: {
-                          include: {
-                              product: true,
-                              variant: true
-                          }
-                      }
-                  }
-              });
+    await prisma.order.update({
+      where: { squareOrderId: data.id },
+      data: updateData, // Apply updates (only includes status if terminal)
+    });
 
-              if (orderWithItems) {
-                  const alertService = new AlertService();
-                  await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
-                  console.log(`Order status change alert sent for order ${data.id}: ${previousStatus} → ${updateData.status}`);
-              }
-          } catch (alertError: any) {
-              console.error(`Failed to send order status change alert for order ${data.id}:`, alertError);
-              // Don't fail the webhook if alert fails
-          }
+    // Send status change alert for terminal states (COMPLETED, CANCELLED)
+    if (updateData.status && previousStatus && previousStatus !== updateData.status) {
+      try {
+        // Fetch the complete order with items for the alert
+        const orderWithItems = await prisma.order.findUnique({
+          where: { squareOrderId: data.id },
+          include: {
+            items: {
+              include: {
+                product: true,
+                variant: true,
+              },
+            },
+          },
+        });
+
+        if (orderWithItems) {
+          const alertService = new AlertService();
+          await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+          console.log(
+            `Order status change alert sent for order ${data.id}: ${previousStatus} → ${updateData.status}`
+          );
+        }
+      } catch (alertError: any) {
+        console.error(`Failed to send order status change alert for order ${data.id}:`, alertError);
+        // Don't fail the webhook if alert fails
       }
-
+    }
   } catch (error: any) {
-      if (error.code === 'P2025') {
-          console.warn(`⚠️ Order with squareOrderId ${data.id} not found for order update. Skipping processing until order.created webhook arrives.`);
-          // Don't create stub orders - wait for proper order data
-          return;
-      } else {
-          console.error(`Error updating order ${data.id}:`, error);
-          throw error;
-      }
+    if (error.code === 'P2025') {
+      console.warn(
+        `⚠️ Order with squareOrderId ${data.id} not found for order update. Skipping processing until order.created webhook arrives.`
+      );
+      // Don't create stub orders - wait for proper order data
+      return;
+    } else {
+      console.error(`Error updating order ${data.id}:`, error);
+      throw error;
+    }
   }
 }
 
@@ -207,7 +216,7 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
  */
 export async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
-  const fulfillmentUpdateData = data.object.order_fulfillment_updated as any; 
+  const fulfillmentUpdateData = data.object.order_fulfillment_updated as any;
   console.log('Processing order.fulfillment.updated event:', data.id);
 
   const squareOrderId = data.id;
@@ -216,7 +225,9 @@ export async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayloa
   const fulfillmentUid = fulfillmentUpdate?.fulfillment_uid;
 
   if (!newFulfillmentState || !fulfillmentUid) {
-    console.warn(`No new_state or fulfillment_uid found in fulfillment update for order ${squareOrderId}. Skipping.`);
+    console.warn(
+      `No new_state or fulfillment_uid found in fulfillment update for order ${squareOrderId}. Skipping.`
+    );
     return;
   }
 
@@ -236,31 +247,37 @@ export async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayloa
 
   // Determine data to update
   const updatePayload: Prisma.OrderUpdateInput = {
-      rawData: data.object as unknown as Prisma.InputJsonValue,
-      updatedAt: new Date(),
+    rawData: data.object as unknown as Prisma.InputJsonValue,
+    updatedAt: new Date(),
   };
 
   if (newStatus) {
-      updatePayload.status = newStatus;
+    updatePayload.status = newStatus;
   }
 
   // Only update if there's something new
-  if (newStatus || updatePayload.trackingNumber !== undefined || updatePayload.shippingCarrier !== undefined) {
-      console.log(`Attempting to update order ${squareOrderId} with status: ${newStatus ?? 'unchanged'}`);
-      try {
-          await prisma.order.update({
-              where: { squareOrderId: squareOrderId },
-              data: updatePayload,
-          });
-          console.log(`Successfully updated order ${squareOrderId}.`);
-      } catch (error: any) {
-          if (error.code === 'P2025') {
-              console.warn(`Order with squareOrderId ${squareOrderId} not found for fulfillment update.`);
-          } else {
-              console.error(`Error updating order ${squareOrderId}:`, error);
-              throw error;
-          }
+  if (
+    newStatus ||
+    updatePayload.trackingNumber !== undefined ||
+    updatePayload.shippingCarrier !== undefined
+  ) {
+    console.log(
+      `Attempting to update order ${squareOrderId} with status: ${newStatus ?? 'unchanged'}`
+    );
+    try {
+      await prisma.order.update({
+        where: { squareOrderId: squareOrderId },
+        data: updatePayload,
+      });
+      console.log(`Successfully updated order ${squareOrderId}.`);
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        console.warn(`Order with squareOrderId ${squareOrderId} not found for fulfillment update.`);
+      } else {
+        console.error(`Error updating order ${squareOrderId}:`, error);
+        throw error;
       }
+    }
   }
 }
 
@@ -284,11 +301,13 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
   // Find the order by Square Order ID
   let order = await prisma.order.findUnique({
     where: { squareOrderId: squareOrderId },
-    select: { id: true, customerName: true, email: true, phone: true }
+    select: { id: true, customerName: true, email: true, phone: true },
   });
 
   if (!order) {
-    console.warn(`⚠️ Order with squareOrderId ${squareOrderId} not found for payment ${squarePaymentId}. Skipping payment processing until order.created webhook arrives.`);
+    console.warn(
+      `⚠️ Order with squareOrderId ${squareOrderId} not found for payment ${squarePaymentId}. Skipping payment processing until order.created webhook arrives.`
+    );
     // Don't create stub orders - wait for proper order data
     return;
   }
@@ -301,7 +320,9 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
     return;
   }
 
-  console.log(`🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}`);
+  console.log(
+    `🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}`
+  );
 
   try {
     // Enhanced upsert with event tracking
@@ -314,9 +335,9 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
           ...data.object,
           lastProcessedEventId: eventId,
           lastProcessedAt: new Date().toISOString(),
-          updatedViaWebhook: true
+          updatedViaWebhook: true,
         } as unknown as Prisma.InputJsonValue,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       create: {
         squarePaymentId: data.id,
@@ -326,18 +347,23 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
           ...data.object,
           lastProcessedEventId: eventId,
           lastProcessedAt: new Date().toISOString(),
-          createdViaWebhook: true
+          createdViaWebhook: true,
         } as unknown as Prisma.InputJsonValue,
         order: {
-          connect: { id: internalOrderId }
-        }
-      }
+          connect: { id: internalOrderId },
+        },
+      },
     });
     console.log(`✅ Successfully upserted payment record for internal order ${internalOrderId}`);
   } catch (upsertError: any) {
-    console.error(`❌ Error upserting payment record for internal order ${internalOrderId}:`, upsertError);
+    console.error(
+      `❌ Error upserting payment record for internal order ${internalOrderId}:`,
+      upsertError
+    );
     if (upsertError.code === 'P2025') {
-      console.error(`❌ Order with internal ID ${internalOrderId} not found when connecting payment ${data.id}`);
+      console.error(
+        `❌ Order with internal ID ${internalOrderId} not found when connecting payment ${data.id}`
+      );
     }
     throw upsertError;
   }
@@ -346,7 +372,7 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
   try {
     const currentOrder = await prisma.order.findUnique({
       where: { id: internalOrderId },
-      select: { paymentStatus: true, status: true, customerName: true, email: true, phone: true }
+      select: { paymentStatus: true, status: true, customerName: true, email: true, phone: true },
     });
 
     if (!currentOrder) {
@@ -356,7 +382,7 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
 
     // Prepare update data
     const updateData: Prisma.OrderUpdateInput = {
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Update payment status if not already paid
@@ -366,45 +392,57 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
     }
 
     // Update customer information if order has placeholder data
-    const hasPlaceholderData = 
-      currentOrder.customerName === 'Pending' || 
-      currentOrder.email === 'pending@example.com' || 
+    const hasPlaceholderData =
+      currentOrder.customerName === 'Pending' ||
+      currentOrder.email === 'pending@example.com' ||
       currentOrder.phone === 'pending';
 
     if (hasPlaceholderData) {
       // Extract customer information from payment data
       const customerInfo = paymentData?.buyer_email_address || paymentData?.receipt_email;
       const customerName = paymentData?.buyer?.email_address || paymentData?.receipt_email;
-      
+
       if (customerInfo && currentOrder.email === 'pending@example.com') {
         updateData.email = customerInfo;
-        console.log(`📧 Updated order ${internalOrderId} email from placeholder to: ${customerInfo}`);
+        console.log(
+          `📧 Updated order ${internalOrderId} email from placeholder to: ${customerInfo}`
+        );
       }
-      
+
       if (customerName && currentOrder.customerName === 'Pending') {
         updateData.customerName = customerName;
-        console.log(`👤 Updated order ${internalOrderId} customer name from placeholder to: ${customerName}`);
+        console.log(
+          `👤 Updated order ${internalOrderId} customer name from placeholder to: ${customerName}`
+        );
       }
-      
+
       // Update phone if available (Square payments don't always include phone)
       if (paymentData?.buyer?.phone_number && currentOrder.phone === 'pending') {
         updateData.phone = paymentData.buyer.phone_number;
-        console.log(`📞 Updated order ${internalOrderId} phone from placeholder to: ${paymentData.buyer.phone_number}`);
+        console.log(
+          `📞 Updated order ${internalOrderId} phone from placeholder to: ${paymentData.buyer.phone_number}`
+        );
       }
     }
 
     // Only update if there are changes
-    if (Object.keys(updateData).length > 1) { // More than just updatedAt
+    if (Object.keys(updateData).length > 1) {
+      // More than just updatedAt
       await prisma.order.update({
         where: { id: internalOrderId },
-        data: updateData
+        data: updateData,
       });
-      console.log(`✅ Successfully updated order ${internalOrderId} with payment and customer data`);
+      console.log(
+        `✅ Successfully updated order ${internalOrderId} with payment and customer data`
+      );
     } else {
       console.log(`ℹ️ Order ${internalOrderId} already up to date, no changes needed`);
     }
   } catch (updateError) {
-    console.error(`❌ Error updating order status for internal order ${internalOrderId}:`, updateError);
+    console.error(
+      `❌ Error updating order status for internal order ${internalOrderId}:`,
+      updateError
+    );
     // Don't throw here as payment was successfully recorded
   }
 }
@@ -421,7 +459,9 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
   console.log(`Processing payment.updated event: ${squarePaymentId}`);
 
   if (!squareOrderId) {
-    console.warn(`No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`);
+    console.warn(
+      `No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`
+    );
     return;
   }
 
@@ -462,20 +502,22 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
         data: cateringUpdateData,
       });
 
-      console.log(`Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`);
+      console.log(
+        `Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`
+      );
       return;
     }
 
     // Find regular order
     const order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
-      select: { 
-        id: true, 
-        status: true, 
-        paymentStatus: true, 
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
         fulfillmentType: true,
-        shippingRateId: true
-      }
+        shippingRateId: true,
+      },
     });
 
     if (!order) {
@@ -491,9 +533,10 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     else if (paymentStatus === 'REFUNDED') updatedPaymentStatus = 'REFUNDED';
     else updatedPaymentStatus = 'PENDING';
 
-    const updatedOrderStatus = (order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID')
-      ? OrderStatus.PROCESSING
-      : order.status;
+    const updatedOrderStatus =
+      order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID'
+        ? OrderStatus.PROCESSING
+        : order.status;
 
     await prisma.order.update({
       where: { id: order.id },
@@ -505,27 +548,36 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       },
     });
 
-    console.log(`Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`);
+    console.log(
+      `Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`
+    );
 
     // Purchase shipping label if applicable
     if (
-        updatedPaymentStatus === 'PAID' && 
-        order.fulfillmentType === 'nationwide_shipping' && 
-        order.shippingRateId
-       ) {
-        console.log(`Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`);
-        try {
-            const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
-            if (labelResult.success) {
-                console.log(`Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`);
-            } else {
-                console.error(`Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`);
-            }
-        } catch (labelError: any) {
-             console.error(`Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`);
+      updatedPaymentStatus === 'PAID' &&
+      order.fulfillmentType === 'nationwide_shipping' &&
+      order.shippingRateId
+    ) {
+      console.log(
+        `Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
+      );
+      try {
+        const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
+        if (labelResult.success) {
+          console.log(
+            `Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`
+          );
+        } else {
+          console.error(
+            `Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`
+          );
         }
+      } catch (labelError: any) {
+        console.error(
+          `Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`
+        );
+      }
     }
-
   } catch (error: any) {
     console.error(`Error processing payment.updated event for order ${squareOrderId}:`, error);
   }
@@ -535,84 +587,85 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
  * Handle refund.created webhook events
  */
 export async function handleRefundCreated(payload: SquareWebhookPayload): Promise<void> {
-    const { data } = payload;
-    console.log('Processing refund.created event:', data.id);
-    const refundData = data.object.refund as any;
+  const { data } = payload;
+  console.log('Processing refund.created event:', data.id);
+  const refundData = data.object.refund as any;
 
-    if (!refundData?.payment_id) {
-        console.warn(`Refund ${data.id} received without a Square payment_id.`);
-        return;
-    }
+  if (!refundData?.payment_id) {
+    console.warn(`Refund ${data.id} received without a Square payment_id.`);
+    return;
+  }
 
-    const payment = await prisma.payment.findUnique({
-        where: { squarePaymentId: refundData.payment_id },
-        select: { id: true, orderId: true }
+  const payment = await prisma.payment.findUnique({
+    where: { squarePaymentId: refundData.payment_id },
+    select: { id: true, orderId: true },
+  });
+
+  if (!payment) {
+    console.warn(
+      `Payment with squarePaymentId ${refundData.payment_id} not found for refund ${data.id}.`
+    );
+    return;
+  }
+
+  const refundAmount = refundData?.amount_money?.amount;
+  if (refundAmount === undefined || refundAmount === null) {
+    console.warn(`Refund ${data.id} received without an amount.`);
+    return;
+  }
+
+  await prisma.refund.create({
+    data: {
+      squareRefundId: data.id,
+      amount: refundAmount,
+      status: refundData.status || 'PENDING',
+      reason: refundData.reason,
+      rawData: data.object as unknown as Prisma.InputJsonValue,
+      payment: {
+        connect: { id: payment.id },
+      },
+    },
+  });
+
+  if (payment.orderId && refundData.status === 'COMPLETED') {
+    await prisma.order.update({
+      where: { id: payment.orderId },
+      data: { paymentStatus: 'REFUNDED' },
     });
-
-    if (!payment) {
-        console.warn(`Payment with squarePaymentId ${refundData.payment_id} not found for refund ${data.id}.`);
-        return;
-    }
-
-    const refundAmount = refundData?.amount_money?.amount;
-     if (refundAmount === undefined || refundAmount === null) {
-        console.warn(`Refund ${data.id} received without an amount.`);
-        return;
-    }
-
-    await prisma.refund.create({
-        data: {
-            squareRefundId: data.id,
-            amount: refundAmount,
-            status: refundData.status || 'PENDING',
-            reason: refundData.reason,
-            rawData: data.object as unknown as Prisma.InputJsonValue,
-            payment: {
-                connect: { id: payment.id }
-            }
-        },
-    });
-
-     if (payment.orderId && refundData.status === 'COMPLETED') {
-         await prisma.order.update({
-             where: { id: payment.orderId },
-             data: { paymentStatus: 'REFUNDED' }
-         });
-     }
+  }
 }
 
 /**
  * Handle refund.updated webhook events
  */
 export async function handleRefundUpdated(payload: SquareWebhookPayload): Promise<void> {
-    const { data } = payload;
-    console.log('Processing refund.updated event:', data.id);
-    const refundData = data.object.refund as any;
-    const refundStatus = refundData.status || 'PENDING';
+  const { data } = payload;
+  console.log('Processing refund.updated event:', data.id);
+  const refundData = data.object.refund as any;
+  const refundStatus = refundData.status || 'PENDING';
 
-     try {
-        const updatedRefund = await prisma.refund.update({
-            where: { squareRefundId: data.id },
-            data: {
-                status: refundStatus,
-                rawData: data.object as unknown as Prisma.InputJsonValue,
-            },
-            include: { payment: { select: { orderId: true } } }
-        });
+  try {
+    const updatedRefund = await prisma.refund.update({
+      where: { squareRefundId: data.id },
+      data: {
+        status: refundStatus,
+        rawData: data.object as unknown as Prisma.InputJsonValue,
+      },
+      include: { payment: { select: { orderId: true } } },
+    });
 
-         if (refundStatus === 'COMPLETED' && updatedRefund.payment?.orderId) {
-             await prisma.order.update({
-                 where: { id: updatedRefund.payment.orderId },
-                 data: { paymentStatus: 'REFUNDED' }
-             });
-         }
-
-    } catch (error: any) {
-        if (error.code === 'P2025') {
-            console.warn(`Refund with squareRefundId ${data.id} not found for update.`);
-        } else {
-            console.error(`Error updating refund ${data.id}:`, error);
-            throw error;
-        }
+    if (refundStatus === 'COMPLETED' && updatedRefund.payment?.orderId) {
+      await prisma.order.update({
+        where: { id: updatedRefund.payment.orderId },
+        data: { paymentStatus: 'REFUNDED' },
+      });
     }
-} 
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      console.warn(`Refund with squareRefundId ${data.id} not found for update.`);
+    } else {
+      console.error(`Error updating refund ${data.id}:`, error);
+      throw error;
+    }
+  }
+}

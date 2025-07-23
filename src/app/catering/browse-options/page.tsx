@@ -13,7 +13,7 @@ const BrowseOptionsPage = () => {
     <div className="bg-white min-h-screen">
       {/* Add the CateringCartButton component */}
       <CateringCartButton />
-      
+
       {/* Toaster for notifications */}
       <Toaster position="top-right" />
 
@@ -48,28 +48,19 @@ const BrowseOptionsPage = () => {
       <div className="bg-gray-50 mt-16">
         <div className="max-w-[1300px] mx-auto px-6 md:px-8 py-12">
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              Ready to Place Your Order?
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Ready to Place Your Order?</h3>
             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-              Have questions about our boxed lunch options or need help with a custom order? 
-              Our catering team is here to help make your event perfect.
+              Have questions about our boxed lunch options or need help with a custom order? Our
+              catering team is here to help make your event perfect.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/catering/checkout">
-                <Button 
-                  size="lg" 
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3"
-                >
+                <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3">
                   Proceed to Checkout
                 </Button>
               </Link>
               <Link href="/contact-catering">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="px-8 py-3"
-                >
+                <Button variant="outline" size="lg" className="px-8 py-3">
                   Contact Catering Team
                 </Button>
               </Link>

@@ -42,9 +42,9 @@ export async function fetchCatalogItems() {
     logger.info('Square client in catalog.ts:', {
       hasClient: !!squareClient,
       hasCatalogApi: !!squareClient.catalogApi,
-      clientKeys: Object.keys(squareClient)
+      clientKeys: Object.keys(squareClient),
     });
-    
+
     if (!squareClient.catalogApi?.listCatalog) {
       throw new Error('Square catalog API not available');
     }
@@ -91,37 +91,40 @@ export async function createSquareProduct({
     const priceInCents = Math.round(price * 100);
 
     // Create the base variation if no variations are provided
-    const catalogVariations = variations.length > 0 
-      ? variations.map((variation, index) => ({
-          type: 'ITEM_VARIATION',
-          id: `#variation${index + 1}`,
-          item_variation_data: {
-            name: variation.name,
-            price_money: {
-              amount: Math.round((variation.price || price) * 100),
-              currency: 'USD'
+    const catalogVariations =
+      variations.length > 0
+        ? variations.map((variation, index) => ({
+            type: 'ITEM_VARIATION',
+            id: `#variation${index + 1}`,
+            item_variation_data: {
+              name: variation.name,
+              price_money: {
+                amount: Math.round((variation.price || price) * 100),
+                currency: 'USD',
+              },
+              pricing_type: 'FIXED_PRICING',
             },
-            pricing_type: 'FIXED_PRICING'
-          }
-        }))
-      : [{
-          type: 'ITEM_VARIATION',
-          id: '#variation1',
-          item_variation_data: {
-            name: 'Standard',
-            price_money: {
-              amount: priceInCents,
-              currency: 'USD'
+          }))
+        : [
+            {
+              type: 'ITEM_VARIATION',
+              id: '#variation1',
+              item_variation_data: {
+                name: 'Standard',
+                price_money: {
+                  amount: priceInCents,
+                  currency: 'USD',
+                },
+                pricing_type: 'FIXED_PRICING',
+              },
             },
-            pricing_type: 'FIXED_PRICING'
-          }
-        }];
+          ];
 
     // For now, return a development ID since this is primarily for development
     // In a full production setup, this would use the proper Square catalog upsert API
     logger.info('Development mode: Creating product mock for Square compatibility');
     const mockSquareId = `square_product_${Date.now()}`;
-    
+
     logger.info(`Mock Square product created with ID: ${mockSquareId}`);
     return mockSquareId;
   } catch (error) {

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const exclude = searchParams.get('exclude') || undefined; // Product ID to exclude
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
     const excludeCatering = searchParams.get('excludeCatering') !== 'false'; // Default to true
-    
+
     // New parameters for pagination and search
     const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
     const search = searchParams.get('search') || undefined;
@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
         NOT: {
           name: {
             startsWith: 'CATERING',
-            mode: 'insensitive'
-          }
-        }
+            mode: 'insensitive',
+          },
+        },
       };
     }
 
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     // Remove undefined values
     Object.keys(whereCondition).forEach(
-      (key) => whereCondition[key] === undefined && delete whereCondition[key]
+      key => whereCondition[key] === undefined && delete whereCondition[key]
     );
 
     // Calculate pagination
@@ -104,7 +104,9 @@ export async function GET(request: NextRequest) {
     const skip = includePagination && itemsPerPage ? (page - 1) * itemsPerPage : undefined;
 
     // Get total count if pagination is requested
-    const totalCount = includePagination ? await prisma.product.count({ where: whereCondition }) : undefined;
+    const totalCount = includePagination
+      ? await prisma.product.count({ where: whereCondition })
+      : undefined;
 
     // Get products with optional variants
     const products = await prisma.product.findMany({
@@ -119,13 +121,15 @@ export async function GET(request: NextRequest) {
         categoryId: true,
         featured: true,
         active: true,
-        variants: includeVariants ? {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-          },
-        } : false,
+        variants: includeVariants
+          ? {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            }
+          : false,
         category: {
           select: {
             id: true,
@@ -145,7 +149,7 @@ export async function GET(request: NextRequest) {
     const serializedProducts = products.map(product => ({
       ...product,
       price: product.price ? parseFloat(product.price.toString()) : 0,
-      variants: includeVariants 
+      variants: includeVariants
         ? product.variants.map(variant => ({
             ...variant,
             price: variant.price ? parseFloat(variant.price.toString()) : null,
@@ -172,9 +176,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(serializedProducts);
   } catch (error) {
     logger.error('Error fetching products:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
-} 
+}

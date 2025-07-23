@@ -75,13 +75,15 @@ import * as healthChecks from '@/lib/health-checks';
 const mockDbManager = dbManager as jest.Mocked<typeof dbManager>;
 const mockCacheService = cacheService as jest.Mocked<typeof cacheService>;
 const mockPerformanceMonitor = performanceMonitor as jest.Mocked<typeof performanceMonitor>;
-const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<typeof checkDatabaseHealth>;
+const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<
+  typeof checkDatabaseHealth
+>;
 const mockHealthChecks = healthChecks as jest.Mocked<typeof healthChecks>;
 
 describe('Health Check System Tests - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set default environment variables
     process.env.NODE_ENV = 'test';
     process.env.npm_package_version = '1.0.0';
@@ -375,7 +377,7 @@ describe('Health Check System Tests - Phase 4', () => {
 
       expect(data.services.database.connectionStats.utilization).toBe(0.9);
       expect(data.services.database.connectionStats.pending).toBe(5);
-      
+
       // High utilization should be flagged in monitoring
       expect(data.services.database.connectionStats.total).toBe(20);
       expect(data.services.database.connectionStats.active).toBe(18);
@@ -400,7 +402,9 @@ describe('Health Check System Tests - Phase 4', () => {
       const response = await getDetailedHealth();
       const data = await response.json();
 
-      expect(data.services.performance.details.summary.databasePerformance.averageQueryTime).toBe(85);
+      expect(data.services.performance.details.summary.databasePerformance.averageQueryTime).toBe(
+        85
+      );
       expect(data.services.performance.details.summary.databasePerformance.slowQueryCount).toBe(4);
       expect(data.services.performance.details.summary.databasePerformance.queryCount).toBe(800);
     });
@@ -758,7 +762,9 @@ describe('Health Check System Tests - Phase 4', () => {
       const response = await getDetailedHealth();
       const data = await response.json();
 
-      expect(data.services.performance.details.summary.apiPerformance.averageResponseTime).toBe(180);
+      expect(data.services.performance.details.summary.apiPerformance.averageResponseTime).toBe(
+        180
+      );
       expect(data.services.performance.details.summary.apiPerformance.requestCount).toBe(2500);
       expect(data.services.performance.details.summary.apiPerformance.slowRequestCount).toBe(12);
     });
@@ -784,7 +790,9 @@ describe('Health Check System Tests - Phase 4', () => {
       const response = await getDetailedHealth();
       const data = await response.json();
 
-      expect(data.services.performance.details.summary.databasePerformance.averageQueryTime).toBe(45);
+      expect(data.services.performance.details.summary.databasePerformance.averageQueryTime).toBe(
+        45
+      );
       expect(data.services.performance.details.summary.databasePerformance.slowQueries).toBe(2);
       expect(data.services.performance.details.summary.databasePerformance.totalQueries).toBe(1000);
     });
@@ -991,7 +999,9 @@ describe('Health Check System Tests - Phase 4', () => {
 
     it('should handle concurrent health check requests', async () => {
       // Simulate concurrent requests
-      const concurrentRequests = Array(10).fill(null).map(() => getDetailedHealth());
+      const concurrentRequests = Array(10)
+        .fill(null)
+        .map(() => getDetailedHealth());
       const responses = await Promise.all(concurrentRequests);
 
       // All should complete successfully
@@ -1103,4 +1113,4 @@ describe('Health Check System Tests - Phase 4', () => {
       expect(data.services.performance.details.issues.length).toBeGreaterThan(0);
     });
   });
-}); 
+});

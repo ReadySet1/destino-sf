@@ -14,11 +14,11 @@ async function main() {
     // Delete all variants first to avoid foreign key constraints
     console.log('Deleting all product variants...');
     await prisma.variant.deleteMany({});
-    
+
     // Delete all products
     console.log('Deleting all products...');
     const { count } = await prisma.product.deleteMany({});
-    
+
     console.log(`Successfully removed ${count} products`);
   } catch (error) {
     console.error('Error:', error);

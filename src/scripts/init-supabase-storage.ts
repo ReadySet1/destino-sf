@@ -17,8 +17,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 });
 
 async function initializeStorage() {
@@ -26,13 +26,14 @@ async function initializeStorage() {
     console.log('🚀 Initializing Supabase Storage...');
 
     // Create the catering-images bucket
-    const { data: bucket, error: bucketError } = await supabase
-      .storage
-      .createBucket('catering-images', {
+    const { data: bucket, error: bucketError } = await supabase.storage.createBucket(
+      'catering-images',
+      {
         public: true,
         allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/jpg'],
         fileSizeLimit: 10485760, // 10MB
-      });
+      }
+    );
 
     if (bucketError) {
       if (bucketError.message.includes('already exists')) {
@@ -52,7 +53,7 @@ async function initializeStorage() {
       bucket_name: 'catering-images',
       policy_name: 'Public read access',
       definition: 'true', // Allow all reads
-      command: 'SELECT'
+      command: 'SELECT',
     });
 
     if (readPolicyError) {
@@ -66,7 +67,7 @@ async function initializeStorage() {
       bucket_name: 'catering-images',
       policy_name: 'Authenticated upload access',
       definition: 'auth.role() = "authenticated"',
-      command: 'INSERT'
+      command: 'INSERT',
     });
 
     if (uploadPolicyError) {
@@ -80,7 +81,7 @@ async function initializeStorage() {
       bucket_name: 'catering-images',
       policy_name: 'Authenticated update access',
       definition: 'auth.role() = "authenticated"',
-      command: 'UPDATE'
+      command: 'UPDATE',
     });
 
     if (updatePolicyError) {
@@ -94,7 +95,7 @@ async function initializeStorage() {
       bucket_name: 'catering-images',
       policy_name: 'Authenticated delete access',
       definition: 'auth.role() = "authenticated"',
-      command: 'DELETE'
+      command: 'DELETE',
     });
 
     if (deletePolicyError) {
@@ -105,7 +106,6 @@ async function initializeStorage() {
 
     console.log('✨ Supabase Storage initialization complete!');
     console.log('📂 Bucket URL:', `${supabaseUrl}/storage/v1/object/public/catering-images/`);
-
   } catch (error) {
     console.error('❌ Failed to initialize storage:', error);
     process.exit(1);
@@ -117,4 +117,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   initializeStorage();
 }
 
-export { initializeStorage }; 
+export { initializeStorage };

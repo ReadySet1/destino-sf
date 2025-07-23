@@ -20,7 +20,7 @@ export function createTipSettings(
   if (percentages.length > 3) {
     throw new Error('Square allows maximum 3 tip percentages');
   }
-  
+
   if (percentages.some(p => p < 0 || p > 100)) {
     throw new Error('Tip percentages must be between 0 and 100');
   }
@@ -31,7 +31,7 @@ export function createTipSettings(
     custom_tip_field: true,
     tip_percentages: percentages,
     smart_tip_amounts: false, // Must be false to use custom percentages
-    ...options
+    ...options,
   };
 }
 
@@ -68,4 +68,4 @@ export function validateTipSettings(tipSettings: SquareTipSettings): void {
   if (tipSettings.tip_percentages.some(p => p < 0 || p > 100)) {
     throw new Error('All tip percentages must be between 0 and 100');
   }
-} 
+}

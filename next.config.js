@@ -37,7 +37,7 @@ const nextConfig = {
         crypto: false,
       };
     }
-    
+
     // Suppress the realtime-js warning and other performance warnings
     config.ignoreWarnings = [
       {
@@ -61,7 +61,7 @@ const nextConfig = {
         message: /Critical dependency: the request of a dependency is an expression/,
       },
     ];
-    
+
     return config;
   },
   // Security headers configuration
@@ -73,32 +73,32 @@ const nextConfig = {
           // Prevent clickjacking attacks
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'DENY',
           },
           // Prevent MIME type sniffing
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           // Enable XSS protection
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '1; mode=block',
           },
           // Control referrer information
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin',
           },
           // Control browser features
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
+            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
           // Enforce HTTPS in production
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
           // Content Security Policy
           {
@@ -116,10 +116,10 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
-          }
-        ]
+              'upgrade-insecure-requests',
+            ].join('; '),
+          },
+        ],
       },
       // API routes specific headers
       {
@@ -127,17 +127,17 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
-          }
-        ]
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
       },
       // Admin routes specific headers
       {
@@ -145,19 +145,19 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'DENY',
           },
           {
             key: 'X-Robots-Tag',
-            value: 'noindex, nofollow'
+            value: 'noindex, nofollow',
           },
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
-          }
-        ]
-      }
-    ]
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+    ];
   },
   images: {
     remotePatterns: [

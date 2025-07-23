@@ -16,7 +16,7 @@ export function RetryPaymentButton({ orderId, retryCount, disabled }: Props) {
 
   const handleRetry = async () => {
     setIsRetrying(true);
-    
+
     try {
       const response = await fetch(`/api/orders/${orderId}/retry-payment`, {
         method: 'POST',
@@ -50,4 +50,4 @@ export function RetryPaymentButton({ orderId, retryCount, disabled }: Props) {
       {isRetrying ? 'Processing...' : 'Retry Payment'}
     </Button>
   );
-} 
+}

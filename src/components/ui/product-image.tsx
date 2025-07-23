@@ -24,7 +24,7 @@ export function ProductImage({
   alt,
   className,
   priority = false,
-  sizes = "(min-width: 768px) 33vw, 100vw",
+  sizes = '(min-width: 768px) 33vw, 100vw',
   fill = true,
   width,
   height,
@@ -56,7 +56,7 @@ export function ProductImage({
   // Determine fallback based on product type
   const getFallbackImage = () => {
     if (fallbackSrc) return fallbackSrc;
-    
+
     const altLower = alt.toLowerCase();
     if (altLower.includes('alfajor') || altLower.includes('dessert')) {
       return '/images/fallbacks/alfajores-default.svg';
@@ -72,22 +72,23 @@ export function ProductImage({
 
   // Skeleton variants
   const getSkeletonContent = () => {
-    const iconClass = skeletonVariant === 'hero' ? 'w-16 h-16' : 
-                     skeletonVariant === 'card' ? 'w-12 h-12' : 'w-8 h-8';
-    
+    const iconClass =
+      skeletonVariant === 'hero'
+        ? 'w-16 h-16'
+        : skeletonVariant === 'card'
+          ? 'w-12 h-12'
+          : 'w-8 h-8';
+
     return (
       <div className="flex flex-col items-center justify-center h-full space-y-3">
-        <div className={cn(
-          "rounded-full bg-gray-300 p-3 animate-pulse",
-          iconClass
-        )}>
+        <div className={cn('rounded-full bg-gray-300 p-3 animate-pulse', iconClass)}>
           {alt.toLowerCase().includes('catering') ? (
             <ShoppingBag className="w-full h-full text-gray-400" />
           ) : (
             <Package className="w-full h-full text-gray-400" />
           )}
         </div>
-        
+
         {skeletonVariant !== 'default' && (
           <div className="space-y-2 text-center">
             <div className="h-3 bg-gray-300 rounded animate-pulse w-20" />
@@ -100,10 +101,7 @@ export function ProductImage({
 
   if (!src || hasError) {
     return (
-      <div className={cn(
-        "image-container flex items-center justify-center",
-        className
-      )}>
+      <div className={cn('image-container flex items-center justify-center', className)}>
         <SafeImage
           src={getFallbackImage()}
           alt={alt}
@@ -121,14 +119,12 @@ export function ProductImage({
   }
 
   return (
-    <div className={cn("relative overflow-hidden image-container", className)}>
+    <div className={cn('relative overflow-hidden image-container', className)}>
       {/* Loading Skeleton */}
       {isLoading && showSkeleton && (
         <div className="absolute inset-0 z-10">
-          <div className="image-skeleton w-full h-full">
-            {getSkeletonContent()}
-          </div>
-          
+          <div className="image-skeleton w-full h-full">{getSkeletonContent()}</div>
+
           {/* Shimmer overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
         </div>
@@ -145,20 +141,20 @@ export function ProductImage({
         priority={priority}
         fallbackSrc={getFallbackImage()}
         className={cn(
-          "transition-all duration-500 ease-out",
-          isLoading ? "scale-105 blur-sm" : "scale-100 blur-0",
-          "hover:scale-105"
+          'transition-all duration-500 ease-out',
+          isLoading ? 'scale-105 blur-sm' : 'scale-100 blur-0',
+          'hover:scale-105'
         )}
         showLoader={false}
         onLoad={handleLoad}
         onError={handleError}
         {...props}
       />
-      
+
       {/* Smooth fade-in overlay */}
       {!isLoading && (
         <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
       )}
     </div>
   );
-} 
+}

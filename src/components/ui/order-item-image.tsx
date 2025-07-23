@@ -11,7 +11,7 @@ interface OrderItemImageProps {
 
 export function OrderItemImage({ src, alt, className = '' }: OrderItemImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
-  
+
   return (
     <Image
       src={imgSrc}
@@ -24,4 +24,4 @@ export function OrderItemImage({ src, alt, className = '' }: OrderItemImageProps
       }}
     />
   );
-} 
+}

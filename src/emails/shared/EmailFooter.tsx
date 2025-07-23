@@ -59,22 +59,28 @@ export const EmailFooter: React.FC<EmailFooterProps> = ({
   return (
     <Section style={footerSection}>
       <Hr style={{ borderColor: '#e2e8f0', margin: '0 0 24px 0' }} />
-      
+
       {/* Contact Information */}
       <Row>
         <Column>
           <Text style={footerText}>
             <strong>{shopName}</strong>
           </Text>
+          <Text style={footerText}>{address}</Text>
           <Text style={footerText}>
-            {address}
+            Phone:{' '}
+            <Link href={`tel:${phone}`} style={footerLink}>
+              {phone}
+            </Link>{' '}
+            | Email:{' '}
+            <Link href={`mailto:${email}`} style={footerLink}>
+              {email}
+            </Link>
           </Text>
           <Text style={footerText}>
-            Phone: <Link href={`tel:${phone}`} style={footerLink}>{phone}</Link> | 
-            Email: <Link href={`mailto:${email}`} style={footerLink}>{email}</Link>
-          </Text>
-          <Text style={footerText}>
-            <Link href={websiteUrl} style={footerLink}>Visit our website</Link>
+            <Link href={websiteUrl} style={footerLink}>
+              Visit our website
+            </Link>
           </Text>
         </Column>
       </Row>
@@ -104,7 +110,7 @@ export const EmailFooter: React.FC<EmailFooterProps> = ({
       <Text style={{ ...footerText, marginTop: '16px' }}>
         You&apos;re receiving this email because you placed an order with {shopName}.
       </Text>
-      
+
       {unsubscribeUrl && (
         <Text style={footerText}>
           <Link href={unsubscribeUrl} style={footerLink}>
@@ -120,4 +126,4 @@ export const EmailFooter: React.FC<EmailFooterProps> = ({
   );
 };
 
-export default EmailFooter; 
+export default EmailFooter;

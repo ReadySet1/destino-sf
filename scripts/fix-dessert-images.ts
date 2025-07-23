@@ -23,16 +23,16 @@ async function fixDessertImages() {
     const dessertItems = await prisma.cateringItem.findMany({
       where: {
         category: 'DESSERT',
-        isActive: true
+        isActive: true,
       },
       select: {
         id: true,
         name: true,
-        imageUrl: true
+        imageUrl: true,
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
 
     console.log(`Found ${dessertItems.length} dessert items to check\n`);
@@ -45,13 +45,13 @@ async function fixDessertImages() {
           { name: { contains: 'brownie', mode: 'insensitive' } },
           { name: { contains: 'cupcake', mode: 'insensitive' } },
           { name: { contains: 'lemon bar', mode: 'insensitive' } },
-          { name: { contains: 'dessert', mode: 'insensitive' } }
-        ]
+          { name: { contains: 'dessert', mode: 'insensitive' } },
+        ],
       },
       select: {
         name: true,
-        images: true
-      }
+        images: true,
+      },
     });
 
     console.log(`Found ${products.length} products with images that could be used for desserts\n`);
@@ -62,31 +62,33 @@ async function fixDessertImages() {
     // Define specific mappings for better matching
     const itemToProductMap: Record<string, string> = {
       'Alfajores - Classic': 'classic alfajores',
-      'Alfajores - Chocolate': 'chocolate alfajores', 
+      'Alfajores - Chocolate': 'chocolate alfajores',
       'Alfajores - Lemon': 'lemon alfajores',
       'Alfajores - Gluten-Free': 'gluten-free alfajores',
       'Mini Cupcakes': 'mini cupcakes',
       'Brownie Bites': 'brownie bites',
-      'Lemon Bars': 'lemon bars'
+      'Lemon Bars': 'lemon bars',
     };
 
     // Find matching products for each dessert item
     for (const item of dessertItems) {
       const targetProductName = itemToProductMap[item.name];
-      
+
       if (targetProductName) {
-        const matchingProduct = products.find(p => 
-          p.name.toLowerCase() === targetProductName.toLowerCase()
+        const matchingProduct = products.find(
+          p => p.name.toLowerCase() === targetProductName.toLowerCase()
         );
-        
+
         if (matchingProduct && matchingProduct.images && matchingProduct.images.length > 0) {
           mappings.push({
             cateringItemName: item.name,
             productName: matchingProduct.name,
-            s3ImageUrl: matchingProduct.images[0] as string
+            s3ImageUrl: matchingProduct.images[0] as string,
           });
         } else {
-          console.log(`⚠️  No matching product found for: ${item.name} (looking for: ${targetProductName})`);
+          console.log(
+            `⚠️  No matching product found for: ${item.name} (looking for: ${targetProductName})`
+          );
         }
       } else {
         console.log(`⚠️  No mapping defined for: ${item.name}`);
@@ -108,16 +110,16 @@ async function fixDessertImages() {
     for (const mapping of mappings) {
       try {
         const dessertItem = dessertItems.find(item => item.name === mapping.cateringItemName);
-        
+
         if (dessertItem) {
           await prisma.cateringItem.update({
             where: { id: dessertItem.id },
             data: {
               imageUrl: mapping.s3ImageUrl,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
-          
+
           console.log(`✅ Updated ${mapping.cateringItemName} with S3 image`);
           updatedCount++;
         }
@@ -128,23 +130,23 @@ async function fixDessertImages() {
     }
 
     // Handle items without mappings - use fallback image
-    const unmappedItems = dessertItems.filter(item => 
-      !mappings.some(mapping => mapping.cateringItemName === item.name)
+    const unmappedItems = dessertItems.filter(
+      item => !mappings.some(mapping => mapping.cateringItemName === item.name)
     );
 
     if (unmappedItems.length > 0) {
       console.log(`\n🔄 Setting fallback images for ${unmappedItems.length} unmapped items...\n`);
-      
+
       for (const item of unmappedItems) {
         try {
           await prisma.cateringItem.update({
             where: { id: item.id },
             data: {
               imageUrl: '/images/catering/default-item.jpg',
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
-          
+
           console.log(`✅ Set fallback image for ${item.name}`);
           updatedCount++;
         } catch (error) {
@@ -165,11 +167,12 @@ async function fixDessertImages() {
 
     if (errorCount === 0) {
       console.log('\n🎉 All dessert images have been successfully fixed!');
-      console.log('The catering system should now display high-quality S3 images for all desserts.');
+      console.log(
+        'The catering system should now display high-quality S3 images for all desserts.'
+      );
     } else {
       console.log('\n⚠️  Some errors occurred. Please check the logs above.');
     }
-
   } catch (error) {
     console.error('❌ Error fixing dessert images:', error);
     process.exit(1);
@@ -179,4 +182,4 @@ async function fixDessertImages() {
 }
 
 // Run the fix
-fixDessertImages(); 
+fixDessertImages();

@@ -14,7 +14,13 @@ import { FulfillmentSelector } from '@/components/Store/FulfillmentSelector';
 import type { FulfillmentMethod } from '@/components/Store/FulfillmentSelector';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -27,8 +33,8 @@ import { getActiveDeliveryZones } from '@/types/catering';
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 interface CateringCheckoutClientProps {
@@ -39,12 +45,11 @@ interface CateringCheckoutClientProps {
 type CheckoutStep = 'customer-info' | 'fulfillment' | 'payment' | 'review';
 
 export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckoutClientProps) {
-  
   const router = useRouter();
   const { items, removeItem, clearCart } = useCateringCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('customer-info');
-  
+
   // Customer info state
   const [customerInfo, setCustomerInfo] = useState({
     name: userData?.name || '',
@@ -53,9 +58,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     specialRequests: '',
     eventDate: addDays(new Date(), 5),
   });
-  
 
-  
   // Fulfillment info state
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
   const [pickupDate, setPickupDate] = useState<Date>(addDays(new Date(), 5));
@@ -67,10 +70,10 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     state: '',
     postalCode: '',
   });
-  
+
   // Payment method state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.SQUARE);
-  
+
   // Delivery zone validation state
   const [deliveryValidation, setDeliveryValidation] = useState<{
     isValid: boolean;
@@ -82,7 +85,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [activeDeliveryZones] = useState(getActiveDeliveryZones());
-  
+
   // Use catering cart items directly instead of filtering
   const cateringItems = items;
 
@@ -96,32 +99,36 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Validate delivery zone minimum when address changes
   useEffect(() => {
     const validateDeliveryZone = async () => {
-      if (fulfillmentMethod !== 'local_delivery' || !deliveryAddress.city || !deliveryAddress.postalCode) {
+      if (
+        fulfillmentMethod !== 'local_delivery' ||
+        !deliveryAddress.city ||
+        !deliveryAddress.postalCode
+      ) {
         setDeliveryValidation(null);
         return;
       }
 
       setIsValidating(true);
-      
+
       try {
         const validation = await validateCateringOrderWithDeliveryZone(
           cateringItems.map(item => ({
             id: item.id,
             quantity: item.quantity,
-            price: item.price
+            price: item.price,
           })),
           {
             city: deliveryAddress.city,
-            postalCode: deliveryAddress.postalCode
+            postalCode: deliveryAddress.postalCode,
           }
         );
-        
+
         setDeliveryValidation(validation);
       } catch (error) {
         console.error('Error validating delivery zone:', error);
         setDeliveryValidation({
           isValid: false,
-          errorMessage: 'Error validating delivery zone. Please try again.'
+          errorMessage: 'Error validating delivery zone. Please try again.',
         });
       } finally {
         setIsValidating(false);
@@ -136,9 +143,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Calculate total with delivery fee
   const calculateTotal = () => {
     const subtotal = cateringItems.reduce((sum, item) => {
-      return sum + (item.price * item.quantity);
+      return sum + item.price * item.quantity;
     }, 0);
-    
+
     const deliveryFee = deliveryValidation?.deliveryFee || 0;
     return subtotal + (fulfillmentMethod === 'local_delivery' ? deliveryFee : 0);
   };
@@ -160,7 +167,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     e.preventDefault();
     setCurrentStep('payment');
   };
-  
+
   // Handle payment method selection form submission
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,32 +177,34 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Handle final order submission
   const handleCompleteOrder = async () => {
     setIsSubmitting(true);
-    
+
     try {
       // Store the original form data in localStorage for reference
       const orderData = {
         customerInfo: {
           name: customerInfo.name,
           email: customerInfo.email,
-          phone: customerInfo.phone
+          phone: customerInfo.phone,
         },
         eventDetails: {
           eventDate: format(customerInfo.eventDate, 'yyyy-MM-dd'),
-          specialRequests: customerInfo.specialRequests
+          specialRequests: customerInfo.specialRequests,
         },
         fulfillment: {
           method: fulfillmentMethod as 'pickup' | 'local_delivery',
-          ...(fulfillmentMethod === 'pickup' ? {
-            pickupDate: format(pickupDate, 'yyyy-MM-dd'),
-            pickupTime
-          } : {
-            deliveryAddress,
-            deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
-            deliveryTime: pickupTime
-          })
+          ...(fulfillmentMethod === 'pickup'
+            ? {
+                pickupDate: format(pickupDate, 'yyyy-MM-dd'),
+                pickupTime,
+              }
+            : {
+                deliveryAddress,
+                deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
+                deliveryTime: pickupTime,
+              }),
         },
         payment: {
-          method: paymentMethod
+          method: paymentMethod,
         },
         items: cateringItems.map(item => {
           const metadata = JSON.parse(item.variantId || '{}');
@@ -205,11 +214,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           // Determine if this is a real CateringItem or a synthetic item
           const isRealCateringItem = metadata.type === 'item' && metadata.itemId;
           const isPackage = metadata.type === 'package';
-          
+
           // Only set itemId for real CateringItems, use null for synthetic items
           let itemId = null;
           let packageId = null;
-          
+
           if (isRealCateringItem) {
             // For real catering items, use the itemId from metadata
             itemId = metadata.itemId;
@@ -228,14 +237,14 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             pricePerUnit,
             totalPrice,
             notes: null,
-            image: item.image // AÑADIR LA IMAGEN!
+            image: item.image, // AÑADIR LA IMAGEN!
           };
         }),
-        totalAmount: calculateTotal()
+        totalAmount: calculateTotal(),
       };
-      
+
       localStorage.setItem('cateringOrderData', JSON.stringify(orderData));
-      
+
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         const metadata = JSON.parse(item.variantId || '{}');
@@ -245,11 +254,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         // Determine if this is a real CateringItem or a synthetic item
         const isRealCateringItem = metadata.type === 'item' && metadata.itemId;
         const isPackage = metadata.type === 'package';
-        
+
         // Only set itemId for real CateringItems, use null for synthetic items
         let itemId = null;
         let packageId = null;
-        
+
         if (isRealCateringItem) {
           // For real catering items, use the itemId from metadata
           itemId = metadata.itemId;
@@ -267,48 +276,50 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           quantity: item.quantity,
           pricePerUnit,
           totalPrice,
-          notes: null
+          notes: null,
         };
       });
 
       // If we have a user ID, include it, otherwise it's a guest checkout
       const customerId = userData?.id || null;
-      
+
       // Format event date as string in full ISO format
       const formattedEventDate = customerInfo.eventDate.toISOString();
-      
+
       const result = await createCateringOrderAndProcessPayment({
         customerInfo: {
           name: customerInfo.name,
           email: customerInfo.email,
           phone: customerInfo.phone,
-          customerId: userData?.id
+          customerId: userData?.id,
         },
         eventDetails: {
           eventDate: formattedEventDate as unknown as Date,
           numberOfPeople: 1, // Default value since we removed people count
-          specialRequests: customerInfo.specialRequests || null
+          specialRequests: customerInfo.specialRequests || null,
         },
         fulfillment: {
           method: fulfillmentMethod as 'pickup' | 'local_delivery',
-          ...(fulfillmentMethod === 'pickup' ? {
-            pickupDate: format(pickupDate, 'yyyy-MM-dd'),
-            pickupTime
-          } : {
-            deliveryAddress,
-            deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
-            deliveryTime: pickupTime
-          })
+          ...(fulfillmentMethod === 'pickup'
+            ? {
+                pickupDate: format(pickupDate, 'yyyy-MM-dd'),
+                pickupTime,
+              }
+            : {
+                deliveryAddress,
+                deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
+                deliveryTime: pickupTime,
+              }),
         },
         items: formattedItems,
         totalAmount: calculateTotal(),
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
       });
 
       if (result.success) {
         // Clear the cart
         clearCart();
-        
+
         // If there's a checkout URL (Square payment), redirect to it
         if (result.data.checkoutUrl) {
           window.location.href = result.data.checkoutUrl;
@@ -352,12 +363,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       {/* Left column - Form Steps */}
       <div className="lg:col-span-2">
         {currentStep === 'customer-info' && (
-          <CateringOrderForm 
+          <CateringOrderForm
             defaultValues={{
               name: userData?.name || '',
               email: userData?.email || '',
               phone: userData?.phone || '',
-              eventDate: addDays(new Date(), 5)
+              eventDate: addDays(new Date(), 5),
             }}
             onSubmit={handleCustomerInfoSubmit}
             isSubmitting={false}
@@ -366,16 +377,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
         {currentStep === 'fulfillment' && (
           <form onSubmit={handleFulfillmentSubmit} className="space-y-6">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               className="flex items-center mb-2 text-sm font-medium"
               onClick={() => setCurrentStep('customer-info')}
             >
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to customer info
             </Button>
-            
-            <FulfillmentSelector 
+
+            <FulfillmentSelector
               selectedMethod={fulfillmentMethod}
               onSelectMethod={setFulfillmentMethod}
             />
@@ -394,10 +405,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 ) : fulfillmentMethod === 'local_delivery' ? (
                   <>
                     <h3 className="text-lg font-medium mb-4">Delivery Details</h3>
-                    
+
                     {/* Delivery Zones Information */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <h4 className="font-semibold text-blue-800 mb-2">Delivery Zones & Minimums</h4>
+                      <h4 className="font-semibold text-blue-800 mb-2">
+                        Delivery Zones & Minimums
+                      </h4>
                       <div className="grid gap-2 text-sm">
                         {activeDeliveryZones.map(zone => (
                           <div key={zone.zone} className="flex justify-between">
@@ -410,7 +423,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                         ))}
                       </div>
                     </div>
-                    
+
                     <div className="grid gap-4">
                       <div>
                         <Label htmlFor="street">Street Address</Label>
@@ -418,21 +431,25 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           id="street"
                           placeholder="123 Main St"
                           value={deliveryAddress.street}
-                          onChange={(e) => setDeliveryAddress({...deliveryAddress, street: e.target.value})}
+                          onChange={e =>
+                            setDeliveryAddress({ ...deliveryAddress, street: e.target.value })
+                          }
                           required
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="street2">Apartment, suite, etc. (optional)</Label>
                         <Input
                           id="street2"
                           placeholder="Apt #42"
                           value={deliveryAddress.street2}
-                          onChange={(e) => setDeliveryAddress({...deliveryAddress, street2: e.target.value})}
+                          onChange={e =>
+                            setDeliveryAddress({ ...deliveryAddress, street2: e.target.value })
+                          }
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="city">City</Label>
@@ -440,34 +457,40 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                             id="city"
                             placeholder="San Francisco"
                             value={deliveryAddress.city}
-                            onChange={(e) => setDeliveryAddress({...deliveryAddress, city: e.target.value})}
+                            onChange={e =>
+                              setDeliveryAddress({ ...deliveryAddress, city: e.target.value })
+                            }
                             required
                           />
                         </div>
-                        
+
                         <div>
                           <Label htmlFor="state">State</Label>
                           <Input
                             id="state"
                             placeholder="CA"
                             value={deliveryAddress.state}
-                            onChange={(e) => setDeliveryAddress({...deliveryAddress, state: e.target.value})}
+                            onChange={e =>
+                              setDeliveryAddress({ ...deliveryAddress, state: e.target.value })
+                            }
                             required
                           />
                         </div>
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="postalCode">Postal Code</Label>
                         <Input
                           id="postalCode"
                           placeholder="94110"
                           value={deliveryAddress.postalCode}
-                          onChange={(e) => setDeliveryAddress({...deliveryAddress, postalCode: e.target.value})}
+                          onChange={e =>
+                            setDeliveryAddress({ ...deliveryAddress, postalCode: e.target.value })
+                          }
                           required
                         />
                       </div>
-                      
+
                       {/* Delivery Zone Validation Messages */}
                       {isValidating && deliveryAddress.city && deliveryAddress.postalCode && (
                         <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -475,17 +498,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           <span className="text-yellow-800 text-sm">Checking delivery zone...</span>
                         </div>
                       )}
-                      
+
                       {deliveryValidation && !isValidating && (
-                        <div className={`p-3 rounded-lg border ${
-                          deliveryValidation.isValid 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-red-50 border-red-200'
-                        }`}>
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            deliveryValidation.isValid
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-red-50 border-red-200'
+                          }`}
+                        >
                           <div className="flex items-start gap-2">
-                            <AlertCircle className={`w-4 h-4 mt-0.5 ${
-                              deliveryValidation.isValid ? 'text-green-600' : 'text-red-600'
-                            }`} />
+                            <AlertCircle
+                              className={`w-4 h-4 mt-0.5 ${
+                                deliveryValidation.isValid ? 'text-green-600' : 'text-red-600'
+                              }`}
+                            />
                             <div className="flex-1">
                               {deliveryValidation.isValid ? (
                                 <div>
@@ -494,12 +521,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                                   </p>
                                   {deliveryValidation.deliveryZone && (
                                     <p className="text-green-700 text-sm mt-1">
-                                      Delivering to: {deliveryValidation.deliveryZone.replace('_', ' ')}
-                                      {deliveryValidation.deliveryFee && deliveryValidation.deliveryFee > 0 && (
-                                        <span className="ml-2">
-                                          (+${deliveryValidation.deliveryFee.toFixed(2)} delivery fee)
-                                        </span>
-                                      )}
+                                      Delivering to:{' '}
+                                      {deliveryValidation.deliveryZone.replace('_', ' ')}
+                                      {deliveryValidation.deliveryFee &&
+                                        deliveryValidation.deliveryFee > 0 && (
+                                          <span className="ml-2">
+                                            (+${deliveryValidation.deliveryFee.toFixed(2)} delivery
+                                            fee)
+                                          </span>
+                                        )}
                                     </p>
                                   )}
                                 </div>
@@ -508,19 +538,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                                   <p className="text-red-800 text-sm font-medium">
                                     {deliveryValidation.errorMessage}
                                   </p>
-                                  {deliveryValidation.minimumRequired && deliveryValidation.currentAmount && (
-                                    <p className="text-red-700 text-sm mt-1">
-                                      Current order: ${deliveryValidation.currentAmount.toFixed(2)} | 
-                                      Required: ${deliveryValidation.minimumRequired.toFixed(2)}
-                                    </p>
-                                  )}
+                                  {deliveryValidation.minimumRequired &&
+                                    deliveryValidation.currentAmount && (
+                                      <p className="text-red-700 text-sm mt-1">
+                                        Current order: $
+                                        {deliveryValidation.currentAmount.toFixed(2)} | Required: $
+                                        {deliveryValidation.minimumRequired.toFixed(2)}
+                                      </p>
+                                    )}
                                   <div className="mt-3">
                                     <Button
                                       type="button"
                                       variant="outline"
                                       size="sm"
                                       className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
-                                      onClick={() => window.location.href = '/catering'}
+                                      onClick={() => (window.location.href = '/catering')}
                                     >
                                       Add More Items
                                     </Button>
@@ -531,7 +563,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           </div>
                         </div>
                       )}
-                      
+
                       <div>
                         <Label htmlFor="deliveryDate">Delivery Date</Label>
                         <div className="mt-1">
@@ -541,15 +573,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                                 id="deliveryDate"
                                 variant="outline"
                                 className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !pickupDate && "text-muted-foreground"
+                                  'w-full pl-3 text-left font-normal',
+                                  !pickupDate && 'text-muted-foreground'
                                 )}
                               >
-                                {pickupDate ? (
-                                  format(pickupDate, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
+                                {pickupDate ? format(pickupDate, 'PPP') : <span>Pick a date</span>}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </PopoverTrigger>
@@ -557,9 +585,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                               <Calendar
                                 mode="single"
                                 selected={pickupDate}
-                                onSelect={(date) => date && setPickupDate(date)}
+                                onSelect={date => date && setPickupDate(date)}
                                 initialFocus
-                                disabled={(date) => {
+                                disabled={date => {
                                   const today = new Date();
                                   const minDate = addDays(today, 5);
                                   minDate.setHours(0, 0, 0, 0);
@@ -570,22 +598,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           </Popover>
                         </div>
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="deliveryTime">Delivery Time</Label>
-                        <Select
-                          value={pickupTime}
-                          onValueChange={setPickupTime}
-                        >
+                        <Select value={pickupTime} onValueChange={setPickupTime}>
                           <SelectTrigger id="deliveryTime">
                             <SelectValue placeholder="Select a time" />
                           </SelectTrigger>
                           <SelectContent>
-                            {['10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM'].map((time) => (
-                              <SelectItem key={time} value={time}>
-                                {time}
-                              </SelectItem>
-                            ))}
+                            {['10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM'].map(
+                              time => (
+                                <SelectItem key={time} value={time}>
+                                  {time}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -594,56 +621,60 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 ) : (
                   <div className="py-4 text-center">
                     <p className="text-red-500">
-                      We currently do not support nationwide shipping for catering orders. 
-                      Please select pickup or local delivery.
+                      We currently do not support nationwide shipping for catering orders. Please
+                      select pickup or local delivery.
                     </p>
                   </div>
                 )}
               </CardContent>
             </Card>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
               disabled={
-                (fulfillmentMethod === 'local_delivery' && 
-                  (!deliveryAddress.street || !deliveryAddress.city || !deliveryAddress.state || !deliveryAddress.postalCode)) ||
+                (fulfillmentMethod === 'local_delivery' &&
+                  (!deliveryAddress.street ||
+                    !deliveryAddress.city ||
+                    !deliveryAddress.state ||
+                    !deliveryAddress.postalCode)) ||
                 fulfillmentMethod === 'nationwide_shipping' ||
-                (fulfillmentMethod === 'local_delivery' && deliveryValidation && !deliveryValidation.isValid) ||
+                (fulfillmentMethod === 'local_delivery' &&
+                  deliveryValidation &&
+                  !deliveryValidation.isValid) ||
                 (fulfillmentMethod === 'local_delivery' && isValidating)
               }
             >
-              {fulfillmentMethod === 'local_delivery' && isValidating 
-                ? "Validating..." 
-                : "Continue to Payment"
-              }
+              {fulfillmentMethod === 'local_delivery' && isValidating
+                ? 'Validating...'
+                : 'Continue to Payment'}
             </Button>
           </form>
         )}
-        
+
         {currentStep === 'payment' && (
           <form onSubmit={handlePaymentSubmit} className="space-y-6">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               className="flex items-center mb-2 text-sm font-medium"
               onClick={() => setCurrentStep('fulfillment')}
             >
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to fulfillment options
             </Button>
-            
+
             <Card>
               <CardContent className="pt-6 pb-6">
-                <PaymentMethodSelector 
+                <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onSelectMethod={setPaymentMethod}
                   showCash={fulfillmentMethod === 'pickup'} // Only show cash option for pickup
                 />
               </CardContent>
             </Card>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
             >
               Continue to Review
@@ -653,19 +684,19 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
         {currentStep === 'review' && (
           <div className="space-y-6">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               className="flex items-center mb-2 text-sm font-medium"
               onClick={() => setCurrentStep('payment')}
             >
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to payment options
             </Button>
-            
+
             <Card>
               <CardContent className="pt-6">
                 <h3 className="text-lg font-medium mb-4">Order Review</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium text-sm text-gray-500">Customer Information</h4>
@@ -675,7 +706,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                       <p>{customerInfo.phone}</p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium text-sm text-gray-500">Event Details</h4>
                     <div className="mt-1">
@@ -685,7 +716,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium text-sm text-gray-500">Fulfillment Method</h4>
                     <div className="mt-1">
@@ -700,12 +731,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           <p>Local Delivery</p>
                           <p>Date: {format(pickupDate, 'PPP')}</p>
                           <p>Time: {pickupTime}</p>
-                          <p>Address: {deliveryAddress.street} {deliveryAddress.street2} {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}</p>
+                          <p>
+                            Address: {deliveryAddress.street} {deliveryAddress.street2}{' '}
+                            {deliveryAddress.city}, {deliveryAddress.state}{' '}
+                            {deliveryAddress.postalCode}
+                          </p>
                         </>
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium text-sm text-gray-500">Payment Method</h4>
                     <div className="mt-1">
@@ -716,107 +751,111 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 </div>
               </CardContent>
             </Card>
-            
-            <Button 
+
+            <Button
               onClick={handleCompleteOrder}
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Processing..." : "Complete Order"}
+              {isSubmitting ? 'Processing...' : 'Complete Order'}
             </Button>
           </div>
         )}
       </div>
-      
+
       {/* Right column - Order Summary */}
       <div>
         <Card className="bg-white sticky top-4">
           <CardContent className="pt-6">
             <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-            
+
             <div className="space-y-4 mb-6">
-              {cateringItems.map((item) => {
+              {cateringItems.map(item => {
                 const metadata = JSON.parse(item.variantId || '{}');
                 const isPackage = metadata.type === 'package';
-                
+
                 // Function to get the correct image URL with better fallbacks
                 const getImageUrl = (imageUrl: string | undefined): string => {
                   if (!imageUrl) {
                     // Handle boxed lunch items with protein selection
                     if (metadata.type === 'boxed-lunch' && metadata.selectedProtein) {
                       const proteinImageMap: Record<string, string> = {
-                        'CARNE_ASADA': '/images/boxedlunches/carne-asada.png',
-                        'POLLO_AL_CARBON': '/images/boxedlunches/pollo-carbon.png',
-                        'CARNITAS': '/images/boxedlunches/carnitas.png',
-                        'POLLO_ASADO': '/images/boxedlunches/pollo-asado.png',
-                        'PESCADO': '/images/boxedlunches/pescado.png',
-                        'VEGETARIAN_OPTION': '/images/boxedlunches/vegetarian-option.png',
+                        CARNE_ASADA: '/images/boxedlunches/carne-asada.png',
+                        POLLO_AL_CARBON: '/images/boxedlunches/pollo-carbon.png',
+                        CARNITAS: '/images/boxedlunches/carnitas.png',
+                        POLLO_ASADO: '/images/boxedlunches/pollo-asado.png',
+                        PESCADO: '/images/boxedlunches/pescado.png',
+                        VEGETARIAN_OPTION: '/images/boxedlunches/vegetarian-option.png',
                       };
-                      
+
                       const proteinImage = proteinImageMap[metadata.selectedProtein];
                       if (proteinImage) {
                         return proteinImage;
                       }
                     }
-                    
+
                     // Check if it's an appetizer package or item
-                    if (metadata.type === 'appetizer-package' || item.name.toLowerCase().includes('appetizer')) {
+                    if (
+                      metadata.type === 'appetizer-package' ||
+                      item.name.toLowerCase().includes('appetizer')
+                    ) {
                       return '/images/catering/appetizer-selection.jpg';
                     }
                     // Other fallbacks based on item type
                     if (item.name.toLowerCase().includes('platter')) {
                       return '/images/catering/default-item.jpg';
                     }
-                    if (item.name.toLowerCase().includes('dessert') || item.name.toLowerCase().includes('alfajor')) {
+                    if (
+                      item.name.toLowerCase().includes('dessert') ||
+                      item.name.toLowerCase().includes('alfajor')
+                    ) {
                       return '/images/catering/default-item.jpg';
                     }
                     return '/images/catering/default-item.jpg';
                   }
-                  
+
                   // If URL exists but doesn't start with http/https or /, make it absolute
                   if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
                     return `/${imageUrl}`;
                   }
-                  
+
                   return imageUrl;
                 };
-                
+
                 return (
                   <div key={`${item.id}-${item.variantId}`} className="flex gap-3">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <SafeImage 
-                        src={getImageUrl(item.image)} 
+                      <SafeImage
+                        src={getImageUrl(item.image)}
                         alt={toTitleCase(item.name)}
                         width={64}
-                        height={64} 
+                        height={64}
                         className="object-cover"
                         fallbackSrc="/images/catering/default-item.jpg"
                         maxRetries={0}
                       />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <h3 className="font-medium line-clamp-2">{toTitleCase(item.name)}</h3>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-6 w-6 ml-2"
                           onClick={() => removeItem(item.id, item.variantId)}
                         >
                           <Trash2 className="h-4 w-4 text-gray-500" />
                         </Button>
                       </div>
-                      
-                      <div className="text-sm text-gray-500">
-                        Qty: {item.quantity}
-                      </div>
-                      
+
+                      <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
+
                       <div className="flex justify-between items-center mt-1">
                         <div className="text-sm">
                           <span>${item.price.toFixed(2)} each</span>
                         </div>
-                        
+
                         <div className="font-medium">
                           <span>${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
@@ -826,22 +865,29 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                 );
               })}
             </div>
-            
+
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>${cateringItems.reduce((sum, item) => {
-                  return sum + (item.price * item.quantity);
-                }, 0).toFixed(2)}</span>
+                <span>
+                  $
+                  {cateringItems
+                    .reduce((sum, item) => {
+                      return sum + item.price * item.quantity;
+                    }, 0)
+                    .toFixed(2)}
+                </span>
               </div>
-              
-              {fulfillmentMethod === 'local_delivery' && deliveryValidation?.deliveryFee && deliveryValidation.deliveryFee > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Delivery Fee</span>
-                  <span>${deliveryValidation.deliveryFee.toFixed(2)}</span>
-                </div>
-              )}
-              
+
+              {fulfillmentMethod === 'local_delivery' &&
+                deliveryValidation?.deliveryFee &&
+                deliveryValidation.deliveryFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Delivery Fee</span>
+                    <span>${deliveryValidation.deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+
               <div className="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
                 <span>Total</span>
                 <span>${calculateTotal().toFixed(2)}</span>
@@ -852,4 +898,4 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       </div>
     </div>
   );
-} 
+}

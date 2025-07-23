@@ -13,7 +13,9 @@ const spotlightPickSchema = z.object({
 
 // Check if user is admin
 async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return false;
@@ -28,16 +30,21 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 }
 
 // GET: Fetch all spotlight picks with product data
-export async function GET(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
   try {
     const supabase = await createClient();
 
     // Check admin authentication
     if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+        },
+        { status: 401 }
+      );
     }
 
     // Fetch spotlight picks with product data using Prisma
@@ -71,8 +78,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
 
     // Transform the data to match our interface
     const spotlightPicks: SpotlightPick[] = rawSpotlightPicks
-      .filter((pick) => pick.product && pick.productId) // Extra safety filter
-      .map((pick) => ({
+      .filter(pick => pick.product && pick.productId) // Extra safety filter
+      .map(pick => ({
         id: pick.id,
         position: pick.position as 1 | 2 | 3 | 4,
         productId: pick.productId!,
@@ -86,38 +93,47 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
           images: pick.product!.images || [],
           price: Number(pick.product!.price),
           slug: pick.product!.slug,
-          category: pick.product!.category ? {
-            name: pick.product!.category.name,
-            slug: pick.product!.category.slug,
-          } : undefined,
+          category: pick.product!.category
+            ? {
+                name: pick.product!.category.name,
+                slug: pick.product!.category.slug,
+              }
+            : undefined,
         },
       }));
 
-    return NextResponse.json({ 
-      success: true, 
-      data: spotlightPicks 
+    return NextResponse.json({
+      success: true,
+      data: spotlightPicks,
     });
-
   } catch (error) {
     console.error('Error in GET /api/admin/spotlight-picks:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // POST: Create or update a spotlight pick
-export async function POST(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick>>> {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick>>> {
   try {
     const supabase = await createClient();
 
     // Check admin authentication
     if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+        },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -166,22 +182,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
         images: spotlightPick.product!.images || [],
         price: Number(spotlightPick.product!.price),
         slug: spotlightPick.product!.slug,
-        category: spotlightPick.product!.category ? {
-          name: spotlightPick.product!.category.name,
-          slug: spotlightPick.product!.category.slug,
-        } : undefined,
+        category: spotlightPick.product!.category
+          ? {
+              name: spotlightPick.product!.category.name,
+              slug: spotlightPick.product!.category.slug,
+            }
+          : undefined,
       },
     };
 
-    return NextResponse.json({ 
-      success: true, 
-      data: transformedPick 
+    return NextResponse.json({
+      success: true,
+      data: transformedPick,
     });
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('Validation error:', error.errors);
-      
+
       // Create a more user-friendly error message
       const errorMessages = error.errors.map(err => {
         const field = err.path.join('.');
@@ -200,43 +217,57 @@ export async function POST(request: NextRequest): Promise<NextResponse<Spotlight
             return `${field}: ${err.message}`;
         }
       });
-      
-      return NextResponse.json({ 
-        success: false, 
-        error: errorMessages.join('; '),
-        validationErrors: error.errors
-      }, { status: 400 });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMessages.join('; '),
+          validationErrors: error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     console.error('Error in POST /api/admin/spotlight-picks:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE: Clear a spotlight pick at a specific position
-export async function DELETE(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<void>>> {
+export async function DELETE(
+  request: NextRequest
+): Promise<NextResponse<SpotlightAPIResponse<void>>> {
   try {
     const supabase = await createClient();
 
     // Check admin authentication
     if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+        },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
     const position = parseInt(searchParams.get('position') || '');
 
     if (!position || position < 1 || position > 4) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Valid position (1-4) is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Valid position (1-4) is required',
+        },
+        { status: 400 }
+      );
     }
 
     // Delete the spotlight pick using Prisma
@@ -246,15 +277,17 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Spotlig
       },
     });
 
-    return NextResponse.json({ 
-      success: true 
+    return NextResponse.json({
+      success: true,
     });
-
   } catch (error) {
     console.error('Error in DELETE /api/admin/spotlight-picks:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

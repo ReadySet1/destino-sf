@@ -13,6 +13,7 @@ Your production deployment is failing with `"Invalid character in header content
 ### 1. Fix Environment Variables in Vercel Dashboard
 
 **Current problematic configuration:**
+
 ```
 USE_SQUARE_SANDBOX=true
 SQUARE_CATALOG_USE_PRODUCTION=true
@@ -61,6 +62,7 @@ https://your-production-domain.com/api/debug/square-production-fix
 ```
 
 This will show you:
+
 - Which tokens are being used
 - If tokens have invalid characters
 - Configuration conflicts
@@ -90,6 +92,7 @@ I've implemented the following fixes in your codebase:
 ## 🎯 Expected Outcome
 
 After these fixes:
+
 - No more "Invalid character in header content" errors
 - Square API requests will use properly sanitized tokens
 - Clear error messages if tokens are still invalid
@@ -124,4 +127,4 @@ curl https://your-domain.com/api/debug/square-production-fix
 **Priority**: CRITICAL - Production is broken  
 **Impact**: All Square API operations failing  
 **Time to fix**: 5-10 minutes  
-**Requires**: Vercel dashboard access 
+**Requires**: Vercel dashboard access

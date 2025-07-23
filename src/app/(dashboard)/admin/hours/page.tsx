@@ -34,7 +34,7 @@ export default async function BusinessHoursPage() {
     closeTime: '18:00',
     isClosed: i === 0, // Sunday closed by default
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   }));
 
   // Merge existing hours with defaults
@@ -52,11 +52,12 @@ export default async function BusinessHoursPage() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Store Hours</h2>
         <p className="text-gray-500">
-          Set your store&apos;s operating hours. Customers will only be able to place orders for pickup during these hours.
+          Set your store&apos;s operating hours. Customers will only be able to place orders for
+          pickup during these hours.
         </p>
         <Separator className="mb-6" />
         <BusinessHoursForm businessHours={mergedBusinessHours} />
       </div>
     </div>
   );
-} 
+}

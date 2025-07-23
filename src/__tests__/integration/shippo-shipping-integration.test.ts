@@ -8,14 +8,16 @@ jest.mock('@/lib/shippingUtils');
 jest.mock('@/lib/db');
 
 const MockShippo = Shippo as jest.MockedClass<typeof Shippo>;
-const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
+const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
+  typeof calculateShippingWeight
+>;
 
 describe('Shippo Shipping Integration - E2E Testing', () => {
   let mockShippoClient: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock Shippo client methods
     mockShippoClient = {
       shipments: {
@@ -142,13 +144,13 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
 
       expect(result.success).toBe(true);
       expect(result.rates).toHaveLength(3);
-      
+
       // Verify USPS Ground rate
       const uspsGround = result.rates?.find(r => r.carrier === 'USPS' && r.name.includes('Ground'));
       expect(uspsGround).toBeDefined();
-      expect(uspsGround?.amount).toBe(8.50);
+      expect(uspsGround?.amount).toBe(8.5);
       expect(uspsGround?.estimatedDays).toBe(3);
-      
+
       // Verify UPS Ground rate
       const upsGround = result.rates?.find(r => r.carrier === 'UPS');
       expect(upsGround).toBeDefined();
@@ -196,9 +198,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           phone: '+1-416-555-0789',
           email: 'carlos@example.com',
         },
-        cartItems: [
-          { id: '1', name: 'Mixed Alfajores Box', quantity: 1, price: 45.99 },
-        ],
+        cartItems: [{ id: '1', name: 'Mixed Alfajores Box', quantity: 1, price: 45.99 }],
         estimatedLengthIn: 10,
         estimatedWidthIn: 8,
         estimatedHeightIn: 4,
@@ -270,7 +270,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
       expect(result.success).toBe(true);
       expect(result.rates).toHaveLength(2);
       expect(result.requiresCustomsDeclaration).toBe(true);
-      
+
       const upsWorldwide = result.rates?.find(r => r.name.includes('Worldwide'));
       expect(upsWorldwide).toBeDefined();
       expect(upsWorldwide?.amount).toBe(45.75);
@@ -289,9 +289,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           phone: '555-0123',
           email: 'john@example.com',
         },
-        cartItems: [
-          { id: '1', name: 'Test Product', quantity: 1, price: 10.00 },
-        ],
+        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 10.0 }],
         estimatedLengthIn: 8,
         estimatedWidthIn: 6,
         estimatedHeightIn: 4,
@@ -357,9 +355,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           phone: '555-0000',
           email: 'test@example.com',
         },
-        cartItems: [
-          { id: '1', name: 'Test Product', quantity: 1, price: 10.00 },
-        ],
+        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 10.0 }],
         estimatedLengthIn: 6,
         estimatedWidthIn: 4,
         estimatedHeightIn: 2,
@@ -416,7 +412,8 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
         status: 'SUCCESS',
         rate: 'rate-usps-priority-123',
         tracking_number: '9405511899564540000123',
-        tracking_url_provider: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
+        tracking_url_provider:
+          'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
         eta: '2024-12-05T17:00:00Z',
         label_url: 'https://shippo-delivery.s3.amazonaws.com/label-123.pdf',
         commercial_invoice_url: null,
@@ -438,7 +435,9 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
       expect(result.label?.transactionId).toBe('transaction-label-123');
       expect(result.label?.trackingNumber).toBe('9405511899564540000123');
       expect(result.label?.labelUrl).toBe('https://shippo-delivery.s3.amazonaws.com/label-123.pdf');
-      expect(result.label?.trackingUrl).toBe('https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123');
+      expect(result.label?.trackingUrl).toBe(
+        'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123'
+      );
       expect(result.label?.estimatedDelivery).toBe('2024-12-05T17:00:00Z');
 
       expect(mockShippoClient.transactions.create).toHaveBeenCalledWith({
@@ -495,12 +494,19 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
         }),
       });
 
-      const result = await createShippingLabel(internationalLabelRequest.rateId, internationalLabelRequest.orderMetadata);
+      const result = await createShippingLabel(
+        internationalLabelRequest.rateId,
+        internationalLabelRequest.orderMetadata
+      );
 
       expect(result.success).toBe(true);
-      expect(result.label?.commercialInvoiceUrl).toBe('https://shippo-delivery.s3.amazonaws.com/invoice-456.pdf');
+      expect(result.label?.commercialInvoiceUrl).toBe(
+        'https://shippo-delivery.s3.amazonaws.com/invoice-456.pdf'
+      );
       expect(result.label?.customsForms).toHaveLength(1);
-      expect(result.label?.customsForms?.[0].formUrl).toBe('https://shippo-delivery.s3.amazonaws.com/customs-456.pdf');
+      expect(result.label?.customsForms?.[0].formUrl).toBe(
+        'https://shippo-delivery.s3.amazonaws.com/customs-456.pdf'
+      );
     });
 
     it('should handle label generation failures', async () => {
@@ -532,7 +538,10 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
         label_url: null,
       });
 
-      const result = await createShippingLabel(failedLabelRequest.rateId, failedLabelRequest.orderMetadata);
+      const result = await createShippingLabel(
+        failedLabelRequest.rateId,
+        failedLabelRequest.orderMetadata
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('The selected rate has expired');
@@ -720,7 +729,9 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
 
       expect(result.success).toBe(true);
       expect(result.tracking?.status).toBe('FAILURE');
-      expect(result.tracking?.statusDetails).toBe('Delivery attempt failed - recipient not available');
+      expect(result.tracking?.statusDetails).toBe(
+        'Delivery attempt failed - recipient not available'
+      );
       expect(result.tracking?.hasException).toBe(true);
       expect(result.tracking?.nextAttempt).toBe('2024-12-05T17:00:00Z');
     });
@@ -767,7 +778,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           postalCode: '94102',
           country: 'US',
         },
-        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 10.00 }],
+        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 10.0 }],
         estimatedLengthIn: 6,
         estimatedWidthIn: 4,
         estimatedHeightIn: 2,
@@ -812,7 +823,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           postalCode: '94102',
           country: 'US',
         },
-        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 15.00 }],
+        cartItems: [{ id: '1', name: 'Test Product', quantity: 1, price: 15.0 }],
         estimatedLengthIn: 8,
         estimatedWidthIn: 6,
         estimatedHeightIn: 4,
@@ -840,9 +851,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           'SHIPPING_ORIGIN_ZIP',
         ];
 
-        const missingVars = requiredEnvVars.filter(
-          varName => !process.env[varName]
-        );
+        const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
         if (missingVars.length > 0) {
           throw new Error(`Missing required Shippo configuration: ${missingVars.join(', ')}`);
@@ -880,7 +889,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           postalCode: '94102',
           country: 'US',
         },
-        cartItems: [{ id: '1', name: 'Cacheable Product', quantity: 1, price: 20.00 }],
+        cartItems: [{ id: '1', name: 'Cacheable Product', quantity: 1, price: 20.0 }],
         estimatedLengthIn: 6,
         estimatedWidthIn: 4,
         estimatedHeightIn: 2,
@@ -906,14 +915,14 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
 
       // First request
       const result1 = await getShippingRates(cacheableRequest);
-      
+
       // Second identical request (should use cache)
       const result2 = await getShippingRates(cacheableRequest);
 
       expect(result1.success).toBe(true);
       expect(result2.success).toBe(true);
       expect(result1.rates).toEqual(result2.rates);
-      
+
       // Should only call Shippo API once due to caching
       expect(mockShippoClient.shipments.create).toHaveBeenCalledTimes(1);
     });
@@ -928,7 +937,7 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
           postalCode: '94102',
           country: 'US',
         },
-        cartItems: [{ id: `${i}`, name: `Bulk Product ${i}`, quantity: 1, price: 10.00 }],
+        cartItems: [{ id: `${i}`, name: `Bulk Product ${i}`, quantity: 1, price: 10.0 }],
         estimatedLengthIn: 6,
         estimatedWidthIn: 4,
         estimatedHeightIn: 2,
@@ -954,13 +963,11 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
       );
 
       // Process bulk requests concurrently
-      const results = await Promise.all(
-        bulkRequests.map(request => getShippingRates(request))
-      );
+      const results = await Promise.all(bulkRequests.map(request => getShippingRates(request)));
 
       expect(results).toHaveLength(5);
       expect(results.every(r => r.success)).toBe(true);
       expect(mockShippoClient.shipments.create).toHaveBeenCalledTimes(5);
     });
   });
-}); 
+});

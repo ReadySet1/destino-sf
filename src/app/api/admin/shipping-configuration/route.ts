@@ -7,8 +7,14 @@ import { updateShippingConfiguration } from '@/lib/shippingUtils';
 // Schema for validation
 const configurationSchema = z.object({
   productName: z.string().min(1, 'Product name is required'),
-  baseWeightLb: z.number().min(0.1, 'Base weight must be at least 0.1 lbs').max(50, 'Base weight cannot exceed 50 lbs'),
-  weightPerUnitLb: z.number().min(0, 'Per-unit weight cannot be negative').max(50, 'Per-unit weight cannot exceed 50 lbs'),
+  baseWeightLb: z
+    .number()
+    .min(0.1, 'Base weight must be at least 0.1 lbs')
+    .max(50, 'Base weight cannot exceed 50 lbs'),
+  weightPerUnitLb: z
+    .number()
+    .min(0, 'Per-unit weight cannot be negative')
+    .max(50, 'Per-unit weight cannot exceed 50 lbs'),
   isActive: z.boolean(),
   applicableForNationwideOnly: z.boolean(),
 });
@@ -21,7 +27,9 @@ type RequestData = z.infer<typeof requestSchema>;
 
 // Check if user is admin
 async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return false;
@@ -47,15 +55,18 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    
+
     try {
       requestSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ 
-          error: 'Validation failed', 
-          details: error.errors 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
       }
       throw error;
     }
@@ -66,15 +77,12 @@ export async function POST(request: NextRequest) {
     const updatedConfigurations = [];
     for (const config of configurations) {
       try {
-        const updatedConfig = await updateShippingConfiguration(
-          config.productName,
-          {
-            baseWeightLb: config.baseWeightLb,
-            weightPerUnitLb: config.weightPerUnitLb,
-            isActive: config.isActive,
-            applicableForNationwideOnly: config.applicableForNationwideOnly,
-          }
-        );
+        const updatedConfig = await updateShippingConfiguration(config.productName, {
+          baseWeightLb: config.baseWeightLb,
+          weightPerUnitLb: config.weightPerUnitLb,
+          isActive: config.isActive,
+          applicableForNationwideOnly: config.applicableForNationwideOnly,
+        });
         updatedConfigurations.push(updatedConfig);
       } catch (error) {
         console.error(`Failed to update configuration for ${config.productName}:`, error);
@@ -88,10 +96,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating shipping configurations:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -114,9 +119,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching shipping configurations:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

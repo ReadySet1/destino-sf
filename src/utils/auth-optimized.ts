@@ -31,12 +31,14 @@ export const getUserProfile = cache(async (userId: string): Promise<AuthResult> 
 
     return {
       isLoggedIn: !!profile,
-      userData: profile ? {
-        id: profile.id,
-        name: profile.name || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-      } : null,
+      userData: profile
+        ? {
+            id: profile.id,
+            name: profile.name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+          }
+        : null,
     };
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -66,33 +68,35 @@ export const getUserRole = cache(async (userId: string): Promise<'ADMIN' | 'CUST
 /**
  * Batch fetch multiple user profiles efficiently
  */
-export const getBatchUserProfiles = cache(async (userIds: string[]): Promise<Map<string, UserProfileData>> => {
-  try {
-    const profiles = await prisma.profile.findMany({
-      where: {
-        id: { in: userIds },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-      },
-    });
-
-    const profileMap = new Map<string, UserProfileData>();
-    profiles.forEach(profile => {
-      profileMap.set(profile.id, {
-        id: profile.id,
-        name: profile.name || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
+export const getBatchUserProfiles = cache(
+  async (userIds: string[]): Promise<Map<string, UserProfileData>> => {
+    try {
+      const profiles = await prisma.profile.findMany({
+        where: {
+          id: { in: userIds },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
       });
-    });
 
-    return profileMap;
-  } catch (error) {
-    console.error('Error fetching batch user profiles:', error);
-    return new Map();
+      const profileMap = new Map<string, UserProfileData>();
+      profiles.forEach(profile => {
+        profileMap.set(profile.id, {
+          id: profile.id,
+          name: profile.name || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
+        });
+      });
+
+      return profileMap;
+    } catch (error) {
+      console.error('Error fetching batch user profiles:', error);
+      return new Map();
+    }
   }
-}); 
+);

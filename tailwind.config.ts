@@ -58,7 +58,7 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        
+
         // Destino brand colors
         destino: {
           yellow: '#fdc32d',

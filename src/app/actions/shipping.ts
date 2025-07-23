@@ -3,16 +3,23 @@
 import { z } from 'zod';
 import { Shippo } from 'shippo';
 import { calculateShippingWeight, type CartItemForShipping } from '@/lib/shippingUtils';
-import { getShippingRates as libGetShippingRates, createShippingLabel as libCreateLabel, trackShipment as libTrackShipment, type ShippingRate as LibShippingRate } from '@/lib/shipping';
+import {
+  getShippingRates as libGetShippingRates,
+  createShippingLabel as libCreateLabel,
+  trackShipment as libTrackShipment,
+  type ShippingRate as LibShippingRate,
+} from '@/lib/shipping';
 
 // Debug environment variables in server action
 console.log('Server action environment check:', {
   hasShippoKey: !!process.env.SHIPPO_API_KEY,
   nodeEnv: process.env.NODE_ENV,
-  shippoKeyPrefix: process.env.SHIPPO_API_KEY ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...' : 'MISSING',
+  shippoKeyPrefix: process.env.SHIPPO_API_KEY
+    ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...'
+    : 'MISSING',
 });
 
-// --- Enhanced Schemas for Shippo Integration --- 
+// --- Enhanced Schemas for Shippo Integration ---
 const addressSchema = z.object({
   recipientName: z.string().optional(),
   street: z.string().min(1, 'Street address is required'),
@@ -74,25 +81,30 @@ type ShippingRateRequestInput = z.infer<typeof shippingRateRequestSchema>;
 export async function getShippingRates(request: any) {
   // Call the lib function and transform the response to match our interface
   const response = await libGetShippingRates(request);
-  
+
   if (!response.success || !response.rates) {
     return response;
   }
-  
+
   // Transform the rates from lib interface to actions interface
-  const transformedRates: ShippingRate[] = response.rates.map((rate: LibShippingRate, index: number) => ({
-    id: rate.id || `rate_${index}_${Date.now()}`, // Ensure unique ID with fallback
-    name: rate.name,
-    amount: rate.amount,
-    carrier: rate.carrier,
-    serviceLevelToken: rate.serviceLevel, // Map serviceLevel to serviceLevelToken
-    estimatedDays: rate.estimatedDays,
-    currency: rate.currency,
-  }));
+  const transformedRates: ShippingRate[] = response.rates.map(
+    (rate: LibShippingRate, index: number) => ({
+      id: rate.id || `rate_${index}_${Date.now()}`, // Ensure unique ID with fallback
+      name: rate.name,
+      amount: rate.amount,
+      carrier: rate.carrier,
+      serviceLevelToken: rate.serviceLevel, // Map serviceLevel to serviceLevelToken
+      estimatedDays: rate.estimatedDays,
+      currency: rate.currency,
+    })
+  );
 
   // Debug log to verify unique IDs
-  console.log('Transformed shipping rates with IDs:', transformedRates.map(r => ({ id: r.id, name: r.name })));
-  
+  console.log(
+    'Transformed shipping rates with IDs:',
+    transformedRates.map(r => ({ id: r.id, name: r.name }))
+  );
+
   return {
     ...response,
     rates: transformedRates,
@@ -103,5 +115,3 @@ export const createShippingLabel = libCreateLabel;
 export const trackShipment = libTrackShipment;
 
 // (duplicate createShippingLabel function removed)
-
- 

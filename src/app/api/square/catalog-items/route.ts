@@ -5,19 +5,19 @@ import { logger } from '@/utils/logger';
 export async function GET() {
   try {
     const items = await searchCatalogItems();
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       items,
-      count: items.length
+      count: items.length,
     });
   } catch (error) {
     logger.error('Error in Square catalog items API route:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to fetch Square catalog items',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

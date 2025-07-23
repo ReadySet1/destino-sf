@@ -8,18 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
-import { 
-  Card, 
-  CardContent
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -38,23 +35,28 @@ import { toast } from 'sonner';
 // Form schema using Zod for validation
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
+    message: 'Name must be at least 2 characters.',
   }),
   email: z.string().email({
-    message: "Please enter a valid email address.",
+    message: 'Please enter a valid email address.',
   }),
   phone: z.string().min(10, {
-    message: "Please enter a valid phone number.",
+    message: 'Please enter a valid phone number.',
   }),
-  eventDate: z.date({
-    required_error: "Please select an event date.",
-  }).refine((date) => {
-    const minDate = addDays(new Date(), 5);
-    minDate.setHours(0, 0, 0, 0);
-    return date >= minDate;
-  }, {
-    message: "Catering orders must be confirmed 5 days in advance.",
-  }),
+  eventDate: z
+    .date({
+      required_error: 'Please select an event date.',
+    })
+    .refine(
+      date => {
+        const minDate = addDays(new Date(), 5);
+        minDate.setHours(0, 0, 0, 0);
+        return date >= minDate;
+      },
+      {
+        message: 'Catering orders must be confirmed 5 days in advance.',
+      }
+    ),
   specialRequests: z.string().optional(),
 });
 
@@ -69,15 +71,13 @@ interface CateringOrderFormProps {
 export function CateringOrderForm({
   defaultValues,
   onSubmit,
-  isSubmitting
+  isSubmitting,
 }: CateringOrderFormProps) {
-  
-  
   // Get current date for minimum date selection (5 days advance)
   const today = new Date();
   const minDate = addDays(today, 5);
   minDate.setHours(0, 0, 0, 0);
-  
+
   const formDefaults = {
     name: defaultValues?.name || '',
     email: defaultValues?.email || '',
@@ -85,9 +85,7 @@ export function CateringOrderForm({
     eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
     specialRequests: defaultValues?.specialRequests || '',
   };
-  
-  
-  
+
   // Initialize form with defaultValues
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -147,7 +145,7 @@ export function CateringOrderForm({
       // Only save when all contact fields are filled and not already saved
       if (!contactSaved && fieldName && ['name', 'email', 'phone'].includes(fieldName)) {
         const { name, email, phone } = value;
-        
+
         // Debounce the save operation
         const timeoutId = setTimeout(() => {
           if (name && email && phone) {
@@ -176,7 +174,7 @@ export function CateringOrderForm({
                 </div>
               )}
             </div>
-            
+
             <div className="grid gap-4">
               <FormField
                 control={form.control}
@@ -191,7 +189,7 @@ export function CateringOrderForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="email"
@@ -205,7 +203,7 @@ export function CateringOrderForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="phone"
@@ -222,11 +220,11 @@ export function CateringOrderForm({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <h3 className="text-lg font-medium mb-4">Event Details</h3>
-            
+
             <div className="grid gap-4 mb-4">
               <FormField
                 control={form.control}
@@ -240,15 +238,11 @@ export function CateringOrderForm({
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
                             )}
                           >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
+                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -259,7 +253,7 @@ export function CateringOrderForm({
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          disabled={(date) => {
+                          disabled={date => {
                             return date < minDate;
                           }}
                         />
@@ -269,7 +263,7 @@ export function CateringOrderForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="specialRequests"
@@ -277,10 +271,10 @@ export function CateringOrderForm({
                   <FormItem>
                     <FormLabel>Special Requests</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Please include any dietary restrictions, special requests, or questions about our catering service."
-                        className="resize-none" 
-                        {...field} 
+                        className="resize-none"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -290,17 +284,17 @@ export function CateringOrderForm({
             </div>
           </CardContent>
         </Card>
-        
-        <Button 
-          type="submit" 
+
+        <Button
+          type="submit"
           className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Processing..." : "Complete Order"}
+          {isSubmitting ? 'Processing...' : 'Complete Order'}
         </Button>
       </form>
     </Form>
   );
 }
 
-export default CateringOrderForm; 
+export default CateringOrderForm;

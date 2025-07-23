@@ -24,14 +24,19 @@ export default async function OrdersPage() {
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            >
               <Link href="/account">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Account
               </Link>
             </Button>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-gray-100 p-3">
               <Package className="h-6 w-6 text-gray-600" />
@@ -62,22 +67,29 @@ export default async function OrdersPage() {
         {/* Footer Section */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500 mb-4">
-            Need help with an order? <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">Contact our support team</Link>
+            Need help with an order?{' '}
+            <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">
+              Contact our support team
+            </Link>
           </p>
-                      <div className="flex justify-center gap-4">
-              <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-                <Link href="/menu">
-                  Browse Menu
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-                <Link href="/catering">
-                  Order Catering
-                </Link>
-              </Button>
-            </div>
+          <div className="flex justify-center gap-4">
+            <Button
+              asChild
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <Link href="/menu">Browse Menu</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <Link href="/catering">Order Catering</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
-} 
+}

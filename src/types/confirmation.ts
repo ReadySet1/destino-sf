@@ -96,10 +96,14 @@ export interface OrderConfirmationProps {
 }
 
 // Type guards
-export function isStoreOrder(orderData: StoreOrderData | CateringOrderData): orderData is StoreOrderData {
+export function isStoreOrder(
+  orderData: StoreOrderData | CateringOrderData
+): orderData is StoreOrderData {
   return 'pickupTime' in orderData;
 }
 
-export function isCateringOrder(orderData: StoreOrderData | CateringOrderData): orderData is CateringOrderData {
+export function isCateringOrder(
+  orderData: StoreOrderData | CateringOrderData
+): orderData is CateringOrderData {
   return 'eventDetails' in orderData;
-} 
+}

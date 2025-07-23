@@ -8,10 +8,10 @@ declare module '@sanity/client' {
 
 declare module 'next-sanity' {
   import { SanityClient } from '@sanity/client';
-  
+
   // Override defineLive to accept any client type
   export function defineLive(config: { client: any }): {
     sanityFetch: any;
     SanityLive: any;
   };
-} 
+}

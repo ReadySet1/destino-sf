@@ -101,11 +101,11 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
     const dessertItems = items.filter(
       item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0
     );
-    
+
     // Combine and remove duplicates by using a Set of item IDs
     const allItems = [...buffetItems, ...dessertItems];
-    const uniqueItems = allItems.filter((item, index, self) => 
-      index === self.findIndex(i => i.id === item.id)
+    const uniqueItems = allItems.filter(
+      (item, index, self) => index === self.findIndex(i => i.id === item.id)
     );
     filteredItems = uniqueItems;
   } else if (activeCategory === 'lunch') {
@@ -357,8 +357,8 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
       variantId: JSON.stringify({
         type: 'item',
         itemId: item.id,
-        servingSize: item.servingSize
-      })
+        servingSize: item.servingSize,
+      }),
     };
 
     addItem(cartItem);
@@ -490,8 +490,8 @@ const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCate
       variantId: JSON.stringify({
         type: 'service-addon',
         addOnId: addOn.id,
-        categories: addOn.categories
-      })
+        categories: addOn.categories,
+      }),
     };
 
     addItem(cartItem);

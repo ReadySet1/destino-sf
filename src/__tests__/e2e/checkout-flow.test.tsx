@@ -26,7 +26,9 @@ const mockUseCartStore = useCartStore as jest.MockedFunction<typeof useCartStore
 const mockCreateOrder = createOrder as jest.MockedFunction<typeof createOrder>;
 const mockCreatePayment = createPayment as jest.MockedFunction<typeof createPayment>;
 const mockGetShippingRates = getShippingRates as jest.MockedFunction<typeof getShippingRates>;
-const mockCreateShippingLabel = createShippingLabel as jest.MockedFunction<typeof createShippingLabel>;
+const mockCreateShippingLabel = createShippingLabel as jest.MockedFunction<
+  typeof createShippingLabel
+>;
 
 describe('Checkout Flow - End-to-End Testing', () => {
   const mockCartItems = [
@@ -68,7 +70,7 @@ describe('Checkout Flow - End-to-End Testing', () => {
         {
           id: 'rate-usps-ground',
           name: 'USPS Ground (Est. 3 days)',
-          amount: 8.50,
+          amount: 8.5,
           carrier: 'USPS',
           serviceLevelToken: 'usps_ground',
           estimatedDays: 3,
@@ -139,10 +141,7 @@ describe('Checkout Flow - End-to-End Testing', () => {
       await user.selectOptions(pickupTimeSelect, '2024-12-02T14:00:00Z');
 
       // Step 5: Add special instructions
-      await user.type(
-        screen.getByLabelText(/special instructions/i),
-        'Extra napkins please'
-      );
+      await user.type(screen.getByLabelText(/special instructions/i), 'Extra napkins please');
 
       // Step 6: Select payment method
       const creditCardOption = screen.getByLabelText(/credit card/i);
@@ -305,10 +304,7 @@ describe('Checkout Flow - End-to-End Testing', () => {
       await user.selectOptions(deliveryTimeSelect, '2024-12-02T18:00:00Z');
 
       // Add delivery instructions
-      await user.type(
-        screen.getByLabelText(/delivery instructions/i),
-        'Leave at front door'
-      );
+      await user.type(screen.getByLabelText(/delivery instructions/i), 'Leave at front door');
 
       // Verify delivery fee is calculated
       await waitFor(() => {
@@ -355,7 +351,7 @@ describe('Checkout Flow - End-to-End Testing', () => {
         order: {
           id: 'order-shipping-123',
           status: 'CONFIRMED',
-          total: 91.20, // Including shipping and tax
+          total: 91.2, // Including shipping and tax
           fulfillmentType: 'NATIONWIDE_SHIPPING',
           shippingAddress: {
             recipientName: 'Mike Wilson',
@@ -381,7 +377,8 @@ describe('Checkout Flow - End-to-End Testing', () => {
           transactionId: 'transaction-shipping-123',
           trackingNumber: '9405511899564540000123',
           labelUrl: 'https://shippo-delivery.s3.amazonaws.com/label-123.pdf',
-          trackingUrl: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
+          trackingUrl:
+            'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
           estimatedDelivery: '2024-12-05T17:00:00Z',
         },
       });
@@ -493,7 +490,7 @@ describe('Checkout Flow - End-to-End Testing', () => {
           status: 'CONFIRMED',
           total: 77.16,
           payments: [
-            { method: 'GIFT_CARD', amount: 50.00 },
+            { method: 'GIFT_CARD', amount: 50.0 },
             { method: 'CREDIT_CARD', amount: 27.16 },
           ],
         },
@@ -707,4 +704,4 @@ describe('Checkout Flow - End-to-End Testing', () => {
       expect(screen.getByText(/please enter a valid phone number/i)).toBeInTheDocument();
     });
   });
-}); 
+});

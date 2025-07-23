@@ -77,55 +77,45 @@ describe('AccountProfile Component', () => {
 
     // Setup Supabase client mock
     (createClient as jest.Mock).mockReturnValue(mockSupabaseClient);
-    
+
     // Setup Supabase query chain mock
     mockSupabaseClient.from.mockReturnValue({
       update: mockSupabaseUpdate.update,
     });
-    
+
     mockSupabaseUpdate.update.mockReturnValue({
       eq: mockSupabaseUpdate.eq,
     });
-    
+
     (mockSupabaseUpdate.eq as jest.Mock).mockResolvedValue({ error: null });
   });
 
   describe('Component Rendering', () => {
     it('should render user profile information correctly', () => {
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Check header
       expect(screen.getByText('Profile Information')).toBeInTheDocument();
       expect(screen.getByText('Manage your account details and preferences')).toBeInTheDocument();
-      
+
       // Check email display
       expect(screen.getByText('Email Address')).toBeInTheDocument();
       expect(screen.getByText('emmanuel@alanis.dev')).toBeInTheDocument();
-      expect(screen.getByText('Your email address is verified and cannot be changed here.')).toBeInTheDocument();
-      
+      expect(
+        screen.getByText('Your email address is verified and cannot be changed here.')
+      ).toBeInTheDocument();
+
       // Check form fields
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument();
       expect(screen.getByLabelText('Phone Number')).toBeInTheDocument();
-      
+
       // Check buttons
       expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
     });
 
     it('should display profile data in form fields', () => {
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       const nameInput = screen.getByDisplayValue('Emmanuel Alanis');
       const phoneInput = screen.getByDisplayValue('+1-415-123-4567');
@@ -135,13 +125,7 @@ describe('AccountProfile Component', () => {
     });
 
     it('should show loading state when user is null', () => {
-      render(
-        <AccountProfile 
-          user={null} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={null} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       expect(screen.getByText('Loading profile...')).toBeInTheDocument();
       expect(screen.getByTestId('user-icon')).toBeInTheDocument();
@@ -154,13 +138,7 @@ describe('AccountProfile Component', () => {
         phone: null,
       };
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={emptyProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={emptyProfile} onSignOut={mockOnSignOut} />);
 
       const nameInput = screen.getByLabelText('Full Name') as HTMLInputElement;
       const phoneInput = screen.getByLabelText('Phone Number') as HTMLInputElement;
@@ -173,13 +151,7 @@ describe('AccountProfile Component', () => {
   describe('Form Interaction', () => {
     it('should enable save button when form data changes', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       const saveButton = screen.getByRole('button', { name: /save changes/i });
       expect(saveButton).toBeDisabled();
@@ -193,13 +165,7 @@ describe('AccountProfile Component', () => {
 
     it('should call onSignOut when sign out button is clicked', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       const signOutButton = screen.getByRole('button', { name: /sign out/i });
       await user.click(signOutButton);
@@ -209,13 +175,7 @@ describe('AccountProfile Component', () => {
 
     it('should validate required name field', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       const nameInput = screen.getByLabelText('Full Name');
       await user.clear(nameInput);
@@ -230,18 +190,12 @@ describe('AccountProfile Component', () => {
   describe('Profile Update Functionality', () => {
     it('should successfully update profile when form is submitted', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form fields
       const nameInput = screen.getByLabelText('Full Name');
       const phoneInput = screen.getByLabelText('Phone Number');
-      
+
       await user.clear(nameInput);
       await user.type(nameInput, 'Emmanuel Updated');
       await user.clear(phoneInput);
@@ -268,18 +222,12 @@ describe('AccountProfile Component', () => {
 
     it('should handle null/empty values in profile update', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Clear form fields
       const nameInput = screen.getByLabelText('Full Name');
       const phoneInput = screen.getByLabelText('Phone Number');
-      
+
       await user.clear(nameInput);
       await user.clear(phoneInput);
 
@@ -299,21 +247,15 @@ describe('AccountProfile Component', () => {
 
     it('should show loading state during profile update', async () => {
       const user = userEvent.setup();
-      
+
       // Mock a delayed response
       let resolveUpdate: (value: any) => void;
-      const updatePromise = new Promise((resolve) => {
+      const updatePromise = new Promise(resolve => {
         resolveUpdate = resolve;
       });
       mockSupabaseUpdate.eq.mockReturnValue(updatePromise);
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form and submit
       const nameInput = screen.getByLabelText('Full Name');
@@ -329,7 +271,7 @@ describe('AccountProfile Component', () => {
 
       // Resolve the promise
       resolveUpdate!({ error: null });
-      
+
       await waitFor(() => {
         expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
       });
@@ -339,7 +281,7 @@ describe('AccountProfile Component', () => {
   describe('Error Handling', () => {
     it('should handle permission denied error (42501)', async () => {
       const user = userEvent.setup();
-      
+
       // Mock permission denied error
       mockSupabaseUpdate.eq.mockResolvedValue({
         error: {
@@ -350,13 +292,7 @@ describe('AccountProfile Component', () => {
         },
       });
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form and submit
       const nameInput = screen.getByLabelText('Full Name');
@@ -368,13 +304,15 @@ describe('AccountProfile Component', () => {
 
       // Verify error handling
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Permission denied. You might not be allowed to update this profile.');
+        expect(toast.error).toHaveBeenCalledWith(
+          'Permission denied. You might not be allowed to update this profile.'
+        );
       });
     });
 
     it('should handle general database errors', async () => {
       const user = userEvent.setup();
-      
+
       // Mock general error
       mockSupabaseUpdate.eq.mockResolvedValue({
         error: {
@@ -385,13 +323,7 @@ describe('AccountProfile Component', () => {
         },
       });
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form and submit
       const nameInput = screen.getByLabelText('Full Name');
@@ -403,13 +335,15 @@ describe('AccountProfile Component', () => {
 
       // Verify error handling
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Failed to update profile: Database connection failed');
+        expect(toast.error).toHaveBeenCalledWith(
+          'Failed to update profile: Database connection failed'
+        );
       });
     });
 
     it('should handle errors with undefined message', async () => {
       const user = userEvent.setup();
-      
+
       // Mock error with undefined message
       mockSupabaseUpdate.eq.mockResolvedValue({
         error: {
@@ -420,13 +354,7 @@ describe('AccountProfile Component', () => {
         },
       });
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form and submit
       const nameInput = screen.getByLabelText('Full Name');
@@ -444,13 +372,7 @@ describe('AccountProfile Component', () => {
 
     it('should handle missing user error', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={null} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={null} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Should show loading state and not be able to submit
       expect(screen.getByText('Loading profile...')).toBeInTheDocument();
@@ -458,14 +380,10 @@ describe('AccountProfile Component', () => {
 
     it('should prevent submission when user is missing', async () => {
       const user = userEvent.setup();
-      
+
       // Start with user, then set to null to simulate sign out
       const { rerender } = render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
+        <AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />
       );
 
       // Update form first
@@ -474,13 +392,7 @@ describe('AccountProfile Component', () => {
       await user.type(nameInput, 'Emmanuel Updated');
 
       // Simulate user sign out
-      rerender(
-        <AccountProfile 
-          user={null} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      rerender(<AccountProfile user={null} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Should show loading state
       expect(screen.getByText('Loading profile...')).toBeInTheDocument();
@@ -491,7 +403,7 @@ describe('AccountProfile Component', () => {
     it('should log detailed error information', async () => {
       const user = userEvent.setup();
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const mockError = {
         code: '42501',
         message: 'permission denied for schema public',
@@ -501,13 +413,7 @@ describe('AccountProfile Component', () => {
 
       mockSupabaseUpdate.eq.mockResolvedValue({ error: mockError });
 
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Update form and submit
       const nameInput = screen.getByLabelText('Full Name');
@@ -521,10 +427,16 @@ describe('AccountProfile Component', () => {
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith('Supabase error details:', mockError);
         expect(consoleSpy).toHaveBeenCalledWith('Error code:', '42501');
-        expect(consoleSpy).toHaveBeenCalledWith('Error message:', 'permission denied for schema public');
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Error message:',
+          'permission denied for schema public'
+        );
         expect(consoleSpy).toHaveBeenCalledWith('Error details:', 'Access denied to public schema');
         expect(consoleSpy).toHaveBeenCalledWith('Error hint:', 'Grant USAGE permission');
-        expect(consoleSpy).toHaveBeenCalledWith('Full error object:', JSON.stringify(mockError, null, 2));
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Full error object:',
+          JSON.stringify(mockError, null, 2)
+        );
       });
 
       consoleSpy.mockRestore();
@@ -533,13 +445,7 @@ describe('AccountProfile Component', () => {
 
   describe('Accessibility', () => {
     it('should have proper form labels and accessibility attributes', () => {
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       // Check form labels
       expect(screen.getByLabelText('Full Name')).toBeInTheDocument();
@@ -559,13 +465,7 @@ describe('AccountProfile Component', () => {
 
     it('should show validation errors with proper styling', async () => {
       const user = userEvent.setup();
-      render(
-        <AccountProfile 
-          user={mockUser} 
-          profile={mockProfile} 
-          onSignOut={mockOnSignOut} 
-        />
-      );
+      render(<AccountProfile user={mockUser} profile={mockProfile} onSignOut={mockOnSignOut} />);
 
       const nameInput = screen.getByLabelText('Full Name');
       await user.clear(nameInput);
@@ -578,4 +478,4 @@ describe('AccountProfile Component', () => {
       });
     });
   });
-}); 
+});

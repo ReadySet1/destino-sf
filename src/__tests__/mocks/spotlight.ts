@@ -33,7 +33,7 @@ export const mockActiveSpotlightPicks: SpotlightPick[] = [
       name: 'Peruvian Coffee',
       description: 'Rich and aromatic coffee beans',
       images: ['/images/coffee.jpg'],
-      price: 18.50,
+      price: 18.5,
       slug: 'peruvian-coffee',
       category: {
         name: 'COFFEE',
@@ -41,4 +41,4 @@ export const mockActiveSpotlightPicks: SpotlightPick[] = [
       },
     },
   },
-]; 
+];

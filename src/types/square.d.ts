@@ -31,7 +31,12 @@ export interface SquareCatalogApi {
   searchCatalogObjects: (requestBody: any) => Promise<SquareCatalogApiResponse>;
   retrieveCatalogObject: (objectId: string) => Promise<SquareCatalogApiResponse>;
   listCatalog?: (cursor?: string, objectTypes?: string) => Promise<SquareCatalogApiResponse>;
-  testConnection?: () => Promise<{ success: boolean; environment: string; apiHost: string; error?: string }>;
+  testConnection?: () => Promise<{
+    success: boolean;
+    environment: string;
+    apiHost: string;
+    error?: string;
+  }>;
 }
 
 export interface SquareLocationsApiResponse {

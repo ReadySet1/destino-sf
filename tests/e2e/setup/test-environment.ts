@@ -71,13 +71,13 @@ export class TestEnvironment {
 // Environment setup utilities
 export async function setupTestEnvironment(): Promise<void> {
   console.log('🔧 Setting up test environment...');
-  
+
   // Set test environment variables using Object.assign to avoid readonly issues
   Object.assign(process.env, {
     NODE_ENV: 'test',
-    NEXT_TELEMETRY_DISABLED: '1'
+    NEXT_TELEMETRY_DISABLED: '1',
   });
-  
+
   // Disable external services during testing
   process.env.DISABLE_SQUARE_WEBHOOKS = 'true';
   process.env.DISABLE_EMAIL_SENDING = 'true';
@@ -85,15 +85,15 @@ export async function setupTestEnvironment(): Promise<void> {
 
   const testEnv = TestEnvironment.getInstance();
   await testEnv.setupPrisma();
-  
+
   console.log('✅ Test environment setup completed');
 }
 
 export async function cleanupTestEnvironment(): Promise<void> {
   console.log('🧹 Cleaning up test environment...');
-  
+
   const testEnv = TestEnvironment.getInstance();
   await testEnv.cleanup();
-  
+
   console.log('✅ Test environment cleanup completed');
-} 
+}

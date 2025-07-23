@@ -24,7 +24,7 @@ When these webhooks arrived first, the system would create "stub orders" with pl
 ### Code Locations Where Stub Orders Were Created
 
 1. **`src/lib/webhook-handlers.ts`** - `handleOrderUpdated()` function
-2. **`src/lib/webhook-handlers.ts`** - `handlePaymentCreated()` function  
+2. **`src/lib/webhook-handlers.ts`** - `handlePaymentCreated()` function
 3. **`src/app/api/webhooks/square/route.ts`** - `handlePaymentCreated()` function
 
 ## Solution Implemented
@@ -51,18 +51,18 @@ Removed all existing stub orders from the database:
 
 ```sql
 -- Removed payments associated with stub orders
-DELETE FROM payments 
+DELETE FROM payments
 WHERE "orderId" IN (
-  SELECT id FROM orders 
-  WHERE email IN ('processing@example.com', 'pending@example.com') 
-  OR "customerName" LIKE '%Processing%' 
+  SELECT id FROM orders
+  WHERE email IN ('processing@example.com', 'pending@example.com')
+  OR "customerName" LIKE '%Processing%'
   OR "customerName" = 'Pending'
 );
 
 -- Removed stub orders
-DELETE FROM orders 
-WHERE email IN ('processing@example.com', 'pending@example.com') 
-OR "customerName" LIKE '%Processing%' 
+DELETE FROM orders
+WHERE email IN ('processing@example.com', 'pending@example.com')
+OR "customerName" LIKE '%Processing%'
 OR "customerName" = 'Pending';
 ```
 
@@ -79,6 +79,7 @@ This script checks for orders with placeholder data and provides recommendations
 ## Files Modified
 
 ### Core Webhook Handlers
+
 - `src/lib/webhook-handlers.ts`
   - Removed stub order creation in `handleOrderUpdated()`
   - Enhanced `handlePaymentCreated()` to update customer information
@@ -87,6 +88,7 @@ This script checks for orders with placeholder data and provides recommendations
   - Enhanced customer information updates
 
 ### Monitoring
+
 - `scripts/monitor-stub-orders.ts` - New monitoring script
 - `package.json` - Added `monitor-stub-orders` script
 
@@ -116,8 +118,9 @@ To verify the fix:
 ## Related Issues
 
 This fix addresses the specific order shown in the admin panel:
+
 - **Order ID**: `a52b2007-1240-4b60-bc62-56ba88c6f664`
 - **Square Order ID**: `789dY2S0D34lvy5cxmszhUt6he4F`
 - **Customer**: "Order Update Processing"
 - **Email**: "processing@example.com"
-- **Total**: $0.00 
+- **Total**: $0.00

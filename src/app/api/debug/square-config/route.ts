@@ -5,7 +5,7 @@ export async function GET() {
   try {
     // Reset the client to force reinitialization
     resetSquareClient();
-    
+
     // Check environment variables (without exposing actual tokens)
     const envConfig = {
       NODE_ENV: process.env.NODE_ENV,
@@ -14,7 +14,7 @@ export async function GET() {
       SQUARE_SANDBOX_TOKEN_EXISTS: !!process.env.SQUARE_SANDBOX_TOKEN,
       SQUARE_ACCESS_TOKEN_EXISTS: !!process.env.SQUARE_ACCESS_TOKEN,
       SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID,
-      
+
       // Show token lengths for debugging (but not actual tokens)
       SQUARE_PRODUCTION_TOKEN_LENGTH: process.env.SQUARE_PRODUCTION_TOKEN?.length || 0,
       SQUARE_SANDBOX_TOKEN_LENGTH: process.env.SQUARE_SANDBOX_TOKEN?.length || 0,
@@ -31,7 +31,9 @@ export async function GET() {
       tokenSource = 'SQUARE_SANDBOX_TOKEN';
     } else {
       selectedToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-      tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
+      tokenSource = process.env.SQUARE_PRODUCTION_TOKEN
+        ? 'SQUARE_PRODUCTION_TOKEN'
+        : 'SQUARE_ACCESS_TOKEN';
     }
 
     const tokenSelection = {
@@ -45,14 +47,16 @@ export async function GET() {
       success: true,
       envConfig,
       tokenSelection,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
-} 
+}

@@ -1,4 +1,16 @@
-import { Html, Head, Body, Container, Section, Text, Heading, Row, Column, Hr, Link } from '@react-email/components';
+import {
+  Html,
+  Head,
+  Body,
+  Container,
+  Section,
+  Text,
+  Heading,
+  Row,
+  Column,
+  Hr,
+  Link,
+} from '@react-email/components';
 import * as React from 'react';
 import { formatOrderNotes } from '@/lib/email-utils';
 
@@ -63,14 +75,17 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
               🎉 New Order Received!
             </Heading>
             <Text style={styles.headerSubtitle}>
-              Order #{order.id} - ${(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}
+              Order #{order.id} - $
+              {(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}
             </Text>
           </Section>
 
           <Section style={styles.content}>
             <Section style={styles.customerSection}>
-              <Heading as="h2" style={styles.sectionTitle}>Customer Information</Heading>
-              
+              <Heading as="h2" style={styles.sectionTitle}>
+                Customer Information
+              </Heading>
+
               <Row>
                 <Column style={styles.labelColumn}>
                   <Text style={styles.label}>Customer:</Text>
@@ -111,7 +126,13 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                   <Text style={styles.label}>Total:</Text>
                 </Column>
                 <Column>
-                  <Text style={styles.totalValue}>${(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}</Text>
+                  <Text style={styles.totalValue}>
+                    $
+                    {(typeof order.total === 'number'
+                      ? order.total
+                      : order.total.toNumber()
+                    ).toFixed(2)}
+                  </Text>
                 </Column>
               </Row>
 
@@ -178,7 +199,9 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
           </Section>
 
           <Section style={styles.itemsSection}>
-            <Heading as="h2" style={styles.sectionTitle}>Order Items</Heading>
+            <Heading as="h2" style={styles.sectionTitle}>
+              Order Items
+            </Heading>
             {order.items.map((item, index) => (
               <Section key={index} style={styles.orderItem}>
                 <Row>
@@ -187,13 +210,15 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                   </Column>
                   <Column style={styles.itemNameColumn}>
                     <Text style={styles.itemName}>{item.product.name}</Text>
-                    {item.variant && (
-                      <Text style={styles.variantName}>{item.variant.name}</Text>
-                    )}
+                    {item.variant && <Text style={styles.variantName}>{item.variant.name}</Text>}
                   </Column>
                   <Column style={styles.priceColumn}>
                     <Text style={styles.itemPrice}>
-                      ${(typeof item.price === 'number' ? item.price : item.price.toNumber()).toFixed(2)}
+                      $
+                      {(typeof item.price === 'number'
+                        ? item.price
+                        : item.price.toNumber()
+                      ).toFixed(2)}
                     </Text>
                   </Column>
                 </Row>
@@ -202,13 +227,11 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
           </Section>
 
           <Section style={styles.statsSection}>
-            <Text style={styles.statsText}>
-              📊 This is order #{totalOrdersToday} today
-            </Text>
+            <Text style={styles.statsText}>📊 This is order #{totalOrdersToday} today</Text>
           </Section>
 
           <Section style={styles.actionSection}>
-            <Link 
+            <Link
               href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
               style={styles.actionButton}
             >
@@ -217,14 +240,12 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
           </Section>
 
           <Hr style={styles.hr} />
-          
+
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
               This is an automated alert from your Destino SF order management system.
             </Text>
-            <Text style={styles.footerText}>
-              Received at {formattedTimestamp} PST
-            </Text>
+            <Text style={styles.footerText}>Received at {formattedTimestamp} PST</Text>
           </Section>
         </Container>
       </Body>
@@ -384,4 +405,4 @@ const styles = {
   },
 };
 
-export default AdminNewOrderAlert; 
+export default AdminNewOrderAlert;

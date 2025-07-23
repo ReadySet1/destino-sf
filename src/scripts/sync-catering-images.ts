@@ -2,7 +2,7 @@
 
 /**
  * Sync Catering Images Script
- * 
+ *
  * This script synchronizes catering item images from their linked Square products.
  * It finds catering items that have a squareProductId but missing imageUrl,
  * then copies the first image from the linked Product.
@@ -13,7 +13,12 @@ import { logger } from '@/utils/logger';
 
 const prisma = new PrismaClient();
 
-async function syncCateringImages(): Promise<{ updated: number; skipped: number; errors: number; noSquareId: number }> {
+async function syncCateringImages(): Promise<{
+  updated: number;
+  skipped: number;
+  errors: number;
+  noSquareId: number;
+}> {
   const result = { updated: 0, skipped: 0, errors: 0, noSquareId: 0 };
 
   try {
@@ -23,17 +28,14 @@ async function syncCateringImages(): Promise<{ updated: number; skipped: number;
     const cateringItems = await prisma.cateringItem.findMany({
       where: {
         isActive: true,
-        OR: [
-          { imageUrl: null },
-          { imageUrl: '' }
-        ]
+        OR: [{ imageUrl: null }, { imageUrl: '' }],
       },
       select: {
         id: true,
         name: true,
         imageUrl: true,
-        squareProductId: true
-      }
+        squareProductId: true,
+      },
     });
 
     logger.info(`Found ${cateringItems.length} catering items without images`);
@@ -53,38 +55,41 @@ async function syncCateringImages(): Promise<{ updated: number; skipped: number;
           select: {
             name: true,
             images: true,
-            squareId: true
-          }
+            squareId: true,
+          },
         });
 
         if (!product) {
-          logger.warn(`⚠️  No product found for catering item "${item.name}" with Square ID: ${item.squareProductId}`);
+          logger.warn(
+            `⚠️  No product found for catering item "${item.name}" with Square ID: ${item.squareProductId}`
+          );
           result.skipped++;
           continue;
         }
 
         // Check if the product has images
         if (!product.images || product.images.length === 0) {
-          logger.debug(`📷 Product "${product.name}" has no images for catering item "${item.name}"`);
+          logger.debug(
+            `📷 Product "${product.name}" has no images for catering item "${item.name}"`
+          );
           result.skipped++;
           continue;
         }
 
         // Use the first image from the product
         const imageUrl = product.images[0];
-        
+
         // Update the catering item with the image URL
         await prisma.cateringItem.update({
           where: { id: item.id },
           data: {
             imageUrl: imageUrl,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
 
         logger.info(`✅ Updated "${item.name}" with image: ${imageUrl.substring(0, 50)}...`);
         result.updated++;
-
       } catch (error) {
         logger.error(`❌ Error processing catering item "${item.name}":`, error);
         result.errors++;
@@ -99,7 +104,6 @@ async function syncCateringImages(): Promise<{ updated: number; skipped: number;
     logger.info(`   ❌ Errors: ${result.errors}`);
 
     return result;
-
   } catch (error) {
     logger.error('❌ Error in catering images sync:', error);
     throw error;
@@ -118,14 +122,14 @@ async function verifyImageUrls(): Promise<void> {
     where: {
       isActive: true,
       imageUrl: {
-        not: null
-      }
+        not: null,
+      },
     },
     select: {
       id: true,
       name: true,
-      imageUrl: true
-    }
+      imageUrl: true,
+    },
   });
 
   logger.info(`Found ${itemsWithImages.length} catering items with images`);
@@ -138,9 +142,11 @@ async function verifyImageUrls(): Promise<void> {
       if (item.imageUrl) {
         // For Square S3 URLs, we'll assume they are valid
         // For production, you might want to add actual HTTP checks
-        if (item.imageUrl.includes('items-images-production.s3') || 
-            item.imageUrl.includes('squarecdn.com') ||
-            item.imageUrl.startsWith('/images/')) {
+        if (
+          item.imageUrl.includes('items-images-production.s3') ||
+          item.imageUrl.includes('squarecdn.com') ||
+          item.imageUrl.startsWith('/images/')
+        ) {
           validImages++;
           logger.debug(`✅ Valid image for "${item.name}"`);
         } else {
@@ -162,7 +168,11 @@ async function verifyImageUrls(): Promise<void> {
 /**
  * Function to sync images from Square products that don't have catering items yet
  */
-async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; skipped: number; errors: number }> {
+async function syncMissingCateringItemsFromSquare(): Promise<{
+  created: number;
+  skipped: number;
+  errors: number;
+}> {
   const result = { created: 0, skipped: 0, errors: 0 };
 
   try {
@@ -175,17 +185,17 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
         category: {
           name: {
             contains: 'CATERING',
-            mode: 'insensitive'
-          }
-        }
+            mode: 'insensitive',
+          },
+        },
       },
       include: {
         category: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     logger.info(`Found ${cateringProducts.length} products in catering categories`);
@@ -195,8 +205,8 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
         // Check if a catering item already exists for this product
         const existingCateringItem = await prisma.cateringItem.findFirst({
           where: {
-            squareProductId: product.squareId
-          }
+            squareProductId: product.squareId,
+          },
         });
 
         if (existingCateringItem) {
@@ -207,7 +217,7 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
         // Determine category based on the Square category name
         let category = 'STARTER'; // default
         const categoryName = product.category?.name?.toUpperCase() || '';
-        
+
         if (categoryName.includes('DESSERT')) {
           category = 'DESSERT';
         } else if (categoryName.includes('ENTREE') || categoryName.includes('BUFFET')) {
@@ -230,13 +240,12 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
             imageUrl: product.images[0] || null,
             squareProductId: product.squareId,
             squareCategory: product.category?.name,
-            isActive: true
-          }
+            isActive: true,
+          },
         });
 
         logger.info(`✅ Created catering item "${product.name}" from Square product`);
         result.created++;
-
       } catch (error) {
         logger.error(`❌ Error creating catering item from product "${product.name}":`, error);
         result.errors++;
@@ -249,7 +258,6 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
     logger.info(`   ❌ Errors: ${result.errors}`);
 
     return result;
-
   } catch (error) {
     logger.error('❌ Error syncing missing catering items:', error);
     throw error;
@@ -262,20 +270,19 @@ async function syncMissingCateringItemsFromSquare(): Promise<{ created: number; 
 async function main() {
   try {
     logger.info('🚀 Starting catering images sync script...');
-    
+
     // Step 1: Sync images for existing catering items
     const syncResult = await syncCateringImages();
-    
+
     // Step 2: Create missing catering items from Square products
     const missingItemsResult = await syncMissingCateringItemsFromSquare();
-    
+
     // Step 3: Verify images if we updated any
     if (syncResult.updated > 0 || missingItemsResult.created > 0) {
       await verifyImageUrls();
     }
-    
+
     logger.info('✅ Catering images sync completed successfully!');
-    
   } catch (error) {
     logger.error('❌ Fatal error in catering images sync:', error);
     process.exit(1);
@@ -287,4 +294,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { syncCateringImages, verifyImageUrls, syncMissingCateringItemsFromSquare }; 
+export { syncCateringImages, verifyImageUrls, syncMissingCateringItemsFromSquare };

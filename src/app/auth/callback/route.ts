@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     type,
     redirectTo,
     origin,
-    fullUrl: requestUrl.toString()
+    fullUrl: requestUrl.toString(),
   });
 
   const supabase = await createClient();
@@ -43,26 +43,26 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.error('❌ Error exchanging code for session:', error);
-      
+
       // Check if this might be a magic link incorrectly sent as PKCE
       if (error.message?.includes('code challenge') || error.message?.includes('code verifier')) {
         console.log('🔍 PKCE error detected - this might be a magic link sent as PKCE flow');
         console.log('🔧 Attempting to handle as magic link...');
-        
+
         // Try to extract potential magic link parameters from the URL
         const urlFragment = requestUrl.hash;
         if (urlFragment) {
           const hashParams = new URLSearchParams(urlFragment.substring(1));
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
-          
+
           if (accessToken && refreshToken) {
             console.log('🔄 Found tokens in URL fragment, attempting to set session...');
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
-            
+
             if (!sessionError) {
               console.log('✅ Successfully set session from URL fragment tokens');
             } else {
@@ -84,7 +84,10 @@ export async function GET(request: Request) {
   }
 
   // Verify session was created
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
   if (sessionError) {
     console.error('❌ Session verification error:', sessionError);
     return NextResponse.redirect(`${origin}/sign-in?error=Session verification failed`);
@@ -92,7 +95,9 @@ export async function GET(request: Request) {
 
   if (!session) {
     console.error('❌ No session found after authentication');
-    return NextResponse.redirect(`${origin}/sign-in?error=Authentication failed - no session created`);
+    return NextResponse.redirect(
+      `${origin}/sign-in?error=Authentication failed - no session created`
+    );
   }
 
   console.log('✅ Session verified for user:', session.user.email);

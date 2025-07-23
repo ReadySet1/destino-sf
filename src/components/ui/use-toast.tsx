@@ -25,4 +25,4 @@ export function useToast() {
 
 export default function Toaster() {
   return null; // Use the <Toaster /> component from react-hot-toast directly in your layout
-} 
+}

@@ -5,7 +5,7 @@ export interface SpotlightPick {
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
-  
+
   // Product data (required)
   product: {
     id: string;
@@ -36,4 +36,4 @@ export interface SpotlightAPIResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
-} 
+}

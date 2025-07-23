@@ -14,7 +14,7 @@ interface OrderWithPaymentMethod extends Omit<PrismaOrder, 'paymentMethod'> {
 
 /**
  * Sends an order confirmation email to the customer
- * 
+ *
  * @param order The order to send confirmation for
  * @returns Promise that resolves when the email is sent
  */
@@ -23,7 +23,7 @@ export async function sendOrderConfirmationEmail(order: OrderWithPaymentMethod):
     const paymentInstructions = getPaymentInstructions(order);
     const shopName = process.env.SHOP_NAME || 'Destino SF';
     const fromEmail = process.env.FROM_EMAIL || 'orders@destino-sf.com';
-    
+
     // Create HTML email template
     const emailHtml = createEmailTemplate({
       orderId: order.id,
@@ -79,17 +79,17 @@ function createEmailTemplate({
 }: EmailTemplateProps): string {
   const formattedTotal = total.toFixed(2);
   const currentYear = new Date().getFullYear();
-  
+
   // Define the payment instructions section
-  const paymentInstructionsHtml = paymentInstructions 
+  const paymentInstructionsHtml = paymentInstructions
     ? `
       <div style="margin-top: 20px; padding: 15px; background-color: ${paymentMethod === 'CASH' ? '#4CAF5020' : '#f5f5f5'}; border-radius: 5px;">
         <h3 style="margin-top: 0; color: ${paymentMethod === 'CASH' ? '#4CAF50' : '#666'};">Payment Instructions</h3>
         <p style="font-size: 16px; line-height: 24px; color: #4a5568;">${paymentInstructions}</p>
       </div>
-    ` 
+    `
     : '';
-  
+
   return `
     <!DOCTYPE html>
     <html>
@@ -158,11 +158,11 @@ function createEmailTemplate({
  */
 function getPaymentInstructions(order: OrderWithPaymentMethod): string {
   const paymentMethod = order.paymentMethod;
-  
+
   switch (paymentMethod) {
     case 'CASH':
       return `Please bring exact change for your order. Your order total is <strong>$${order.total}</strong>. Cash payment will be collected at pickup.`;
     default:
       return '';
   }
-} 
+}

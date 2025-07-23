@@ -24,13 +24,13 @@ export async function GET() {
           configured: !!process.env.SQUARE_ACCESS_TOKEN,
           length: process.env.SQUARE_ACCESS_TOKEN?.length || 0,
           startsWithEAAA: process.env.SQUARE_ACCESS_TOKEN?.startsWith('EAAA') || false,
-        }
+        },
       },
       locationId: {
         configured: !!process.env.SQUARE_LOCATION_ID,
         startsWithL: process.env.SQUARE_LOCATION_ID?.startsWith('L') || false,
       },
-      tests: {} as any
+      tests: {} as any,
     };
 
     // Test production token if available
@@ -39,22 +39,22 @@ export async function GET() {
         const response = await fetch('https://connect.squareup.com/v2/locations', {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${process.env.SQUARE_PRODUCTION_TOKEN}`,
+            Authorization: `Bearer ${process.env.SQUARE_PRODUCTION_TOKEN}`,
             'Square-Version': '2024-05-15',
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         results.tests.production = {
           status: response.status,
           success: response.status === 200,
-          error: response.status !== 200 ? await response.text() : null
+          error: response.status !== 200 ? await response.text() : null,
         };
       } catch (error) {
         results.tests.production = {
           status: 'error',
           success: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     }
@@ -65,33 +65,35 @@ export async function GET() {
         const response = await fetch('https://connect.squareupsandbox.com/v2/locations', {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${process.env.SQUARE_SANDBOX_TOKEN}`,
+            Authorization: `Bearer ${process.env.SQUARE_SANDBOX_TOKEN}`,
             'Square-Version': '2024-05-15',
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         results.tests.sandbox = {
           status: response.status,
           success: response.status === 200,
-          error: response.status !== 200 ? await response.text() : null
+          error: response.status !== 200 ? await response.text() : null,
         };
       } catch (error) {
         results.tests.sandbox = {
           status: 'error',
           success: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     }
 
     return NextResponse.json(results);
-
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
-} 
+}

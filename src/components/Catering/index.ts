@@ -7,4 +7,4 @@ export { default as CateringPackageForm } from './CateringPackageForm';
 export { BoxedLunchMenu } from './BoxedLunchMenu';
 export { BoxedLunchInitializer } from './BoxedLunchInitializer';
 export { SmartCateringItemForm } from './SmartCateringItemForm';
-export { SmartCateringItemsList } from './SmartCateringItemsList'; 
+export { SmartCateringItemsList } from './SmartCateringItemsList';

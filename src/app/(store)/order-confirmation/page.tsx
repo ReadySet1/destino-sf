@@ -5,30 +5,53 @@ import { prisma } from '@/lib/db'; // Import Prisma client
 import type { Order, Prisma } from '@prisma/client'; // Import Order type and Prisma namespace
 
 // Type fetched directly from Prisma (might include Decimal)
-type FetchedOrderData = Pick<Order, 'id' | 'status' | 'total' | 'customerName' | 'pickupTime' | 'paymentStatus' | 'trackingNumber' | 'shippingCarrier'> & {
-  items: Array<{
-    id: string;
-    quantity: number;
-    price: Prisma.Decimal;
-    product: { name: string | null } | null;
-    variant: { name: string | null } | null;
-  }>;
-} | null;
+type FetchedOrderData =
+  | (Pick<
+      Order,
+      | 'id'
+      | 'status'
+      | 'total'
+      | 'customerName'
+      | 'pickupTime'
+      | 'paymentStatus'
+      | 'trackingNumber'
+      | 'shippingCarrier'
+    > & {
+      items: Array<{
+        id: string;
+        quantity: number;
+        price: Prisma.Decimal;
+        product: { name: string | null } | null;
+        variant: { name: string | null } | null;
+      }>;
+    })
+  | null;
 
 // Type safe to pass to client components (Decimals converted to number)
-export type SerializableFetchedOrderData = Pick<Order, 'id' | 'status' | 'customerName' | 'pickupTime' | 'paymentStatus' | 'trackingNumber' | 'shippingCarrier'> & {
-  total: number | null;
-  items: Array<{
-    id: string;
-    quantity: number;
-    price: number;
-    product: { name: string | null } | null;
-    variant: { name: string | null } | null;
-  }>;
-} | null;
+export type SerializableFetchedOrderData =
+  | (Pick<
+      Order,
+      | 'id'
+      | 'status'
+      | 'customerName'
+      | 'pickupTime'
+      | 'paymentStatus'
+      | 'trackingNumber'
+      | 'shippingCarrier'
+    > & {
+      total: number | null;
+      items: Array<{
+        id: string;
+        quantity: number;
+        price: number;
+        product: { name: string | null } | null;
+        variant: { name: string | null } | null;
+      }>;
+    })
+  | null;
 
 type OrderConfirmationPageProps = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function OrderConfirmationPage({ searchParams }: OrderConfirmationPageProps) {
@@ -45,7 +68,8 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
     try {
       orderData = await prisma.order.findUnique({
         where: { id: orderId },
-        select: { // Select only needed fields
+        select: {
+          // Select only needed fields
           id: true,
           status: true,
           total: true,
@@ -87,17 +111,19 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
 
   return (
     // Suspense boundary remains useful for client component hydration
-    <Suspense fallback={
-      <main className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-lg border bg-white p-8 shadow-md">
-          <div className="mb-8 text-center">
-            <div className="mb-4 text-5xl">🔄</div>
-            <h1 className="mb-4 text-2xl font-bold">Loading Order Details...</h1>
-            <p className="text-gray-600">Please wait while we retrieve your order information.</p>
+    <Suspense
+      fallback={
+        <main className="container mx-auto px-4 py-16">
+          <div className="mx-auto max-w-lg rounded-lg border bg-white p-8 shadow-md">
+            <div className="mb-8 text-center">
+              <div className="mb-4 text-5xl">🔄</div>
+              <h1 className="mb-4 text-2xl font-bold">Loading Order Details...</h1>
+              <p className="text-gray-600">Please wait while we retrieve your order information.</p>
+            </div>
           </div>
-        </div>
-      </main>
-    }>
+        </main>
+      }
+    >
       {/* Pass status and SERIALIZED fetched order data to the client component */}
       <OrderConfirmationContent status={status} orderData={serializableOrderData} />
     </Suspense>

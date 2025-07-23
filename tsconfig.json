@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "types": ["@testing-library/jest-dom"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -32,9 +28,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -45,10 +39,5 @@
     ".next/types/**/*.ts",
     "src/types/jest.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "react-app/vite.config.ts",
-    "**/vite.config.ts",
-    "react-app/dist"
-  ]
+  "exclude": ["node_modules", "react-app/vite.config.ts", "**/vite.config.ts", "react-app/dist"]
 }

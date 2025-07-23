@@ -1,10 +1,11 @@
-import { MetadataRoute } from 'next'
-import { prisma } from '@/lib/db'
+import { MetadataRoute } from 'next';
+import { prisma } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3000' 
-    : 'https://development.destinosf.com'
+  const baseUrl =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : 'https://development.destinosf.com';
 
   // Static pages
   const staticPages = [
@@ -87,7 +88,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
-  ]
+  ];
 
   try {
     // Dynamic product pages
@@ -99,19 +100,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         slug: true,
         updatedAt: true,
       },
-    })
+    });
 
     const productPages = products.map(product => ({
       url: `${baseUrl}/products/${product.slug}`,
       lastModified: product.updatedAt,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
-    }))
+    }));
 
-    return [...staticPages, ...productPages]
+    return [...staticPages, ...productPages];
   } catch (error) {
-    console.error('Error generating sitemap:', error)
+    console.error('Error generating sitemap:', error);
     // Return static pages if database query fails
-    return staticPages
+    return staticPages;
   }
-} 
+}

@@ -17,9 +17,7 @@ export default function NewCateringPackagePage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Add New Catering Package</h1>
-            <p className="text-gray-600 mt-2">
-              Create a new package for your catering menu
-            </p>
+            <p className="text-gray-600 mt-2">Create a new package for your catering menu</p>
           </div>
         </div>
       </div>
@@ -27,4 +25,4 @@ export default function NewCateringPackagePage() {
       <CateringPackageForm />
     </div>
   );
-} 
+}

@@ -10,27 +10,29 @@ import OrderDetailsPage from '@/app/(store)/account/order/[orderId]/page';
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn(() => Promise.resolve({
-        data: { user: { id: 'test-user-id' } }
-      }))
-    }
-  }))
+      getUser: jest.fn(() =>
+        Promise.resolve({
+          data: { user: { id: 'test-user-id' } },
+        })
+      ),
+    },
+  })),
 }));
 
 jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     cateringOrder: {
-      findUnique: jest.fn()
-    }
-  }
+      findUnique: jest.fn(),
+    },
+  },
 }));
 
 jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
-  redirect: jest.fn()
+  redirect: jest.fn(),
 }));
 
 // Mock RetryPaymentButton component
@@ -39,7 +41,7 @@ jest.mock('@/components/Orders/RetryPaymentButton', () => ({
     <button data-testid="retry-payment-button" disabled={disabled}>
       Retry Payment
     </button>
-  )
+  ),
 }));
 
 describe('Order Details Payment Method Display', () => {
@@ -70,18 +72,18 @@ describe('Order Details Payment Method Display', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: { toNumber: () => 18.00 },
+          price: { toNumber: () => 18.0 },
           product: { name: 'Empanadas - Lomo Saltado', images: [] },
-          variant: { name: 'frozen-4 pack' }
-        }
-      ]
+          variant: { name: 'frozen-4 pack' },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(null);
 
     const params = Promise.resolve({ orderId: 'test-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -110,18 +112,18 @@ describe('Order Details Payment Method Display', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: { toNumber: () => 18.00 },
+          price: { toNumber: () => 18.0 },
           product: { name: 'Empanadas - Lomo Saltado', images: [] },
-          variant: { name: 'frozen-4 pack' }
-        }
-      ]
+          variant: { name: 'frozen-4 pack' },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(null);
 
     const params = Promise.resolve({ orderId: 'test-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -150,18 +152,18 @@ describe('Order Details Payment Method Display', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: { toNumber: () => 18.00 },
+          price: { toNumber: () => 18.0 },
           product: { name: 'Empanadas - Lomo Saltado', images: [] },
-          variant: { name: 'frozen-4 pack' }
-        }
-      ]
+          variant: { name: 'frozen-4 pack' },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(null);
 
     const params = Promise.resolve({ orderId: 'test-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -190,18 +192,18 @@ describe('Order Details Payment Method Display', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: { toNumber: () => 18.00 },
+          price: { toNumber: () => 18.0 },
           product: { name: 'Empanadas - Lomo Saltado', images: [] },
-          variant: { name: 'frozen-4 pack' }
-        }
-      ]
+          variant: { name: 'frozen-4 pack' },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(null);
 
     const params = Promise.resolve({ orderId: 'test-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -230,18 +232,18 @@ describe('Order Details Payment Method Display', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: { toNumber: () => 18.00 },
+          price: { toNumber: () => 18.0 },
           product: { name: 'Empanadas - Lomo Saltado', images: [] },
-          variant: { name: 'frozen-4 pack' }
-        }
-      ]
+          variant: { name: 'frozen-4 pack' },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(null);
 
     const params = Promise.resolve({ orderId: 'test-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -256,7 +258,7 @@ describe('Order Details Payment Method Display', () => {
       status: 'PENDING',
       paymentStatus: 'PENDING',
       paymentMethod: 'SQUARE',
-      totalAmount: { toNumber: () => 150.00 },
+      totalAmount: { toNumber: () => 150.0 },
       createdAt: new Date(),
       name: 'Jane Doe',
       email: 'jane@example.com',
@@ -265,24 +267,24 @@ describe('Order Details Payment Method Display', () => {
       numberOfPeople: 25,
       specialRequests: 'No onions please',
       deliveryAddress: '123 Main St, San Francisco, CA',
-      deliveryFee: { toNumber: () => 15.00 },
+      deliveryFee: { toNumber: () => 15.0 },
       items: [
         {
           id: 'catering-item-1',
           quantity: 2,
-          pricePerUnit: { toNumber: () => 75.00 },
+          pricePerUnit: { toNumber: () => 75.0 },
           name: 'Catering Package A',
           itemType: 'ENTREE',
-          totalPrice: { toNumber: () => 150.00 }
-        }
-      ]
+          totalPrice: { toNumber: () => 150.0 },
+        },
+      ],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(null);
     mockPrisma.cateringOrder.findUnique.mockResolvedValue(mockCateringOrder);
 
     const params = Promise.resolve({ orderId: 'test-catering-order-id' });
-    
+
     render(await OrderDetailsPage({ params }));
 
     await waitFor(() => {
@@ -290,4 +292,4 @@ describe('Order Details Payment Method Display', () => {
       expect(screen.getByText('Catering Order')).toBeInTheDocument();
     });
   });
-}); 
+});

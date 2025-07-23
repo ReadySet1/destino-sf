@@ -6,7 +6,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up environment
     process.env.SQUARE_WEBHOOK_SECRET = 'test-webhook-secret';
     process.env.SHIPPO_WEBHOOK_SECRET = 'shippo-webhook-secret';
@@ -28,19 +28,13 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
           .createHmac('sha256', secret)
           .update(payload)
           .digest('base64');
-        
-        return crypto.timingSafeEqual(
-          Buffer.from(signature),
-          Buffer.from(expectedSignature)
-        );
+
+        return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
       };
 
       const payload = '{"type":"payment.created","data":{"object":{"id":"payment-123"}}}';
       const secret = 'test-webhook-secret';
-      const validSignature = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('base64');
+      const validSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
 
       expect(verifySquareSignature(payload, validSignature, secret)).toBe(true);
       expect(verifySquareSignature(payload, 'invalid-signature', secret)).toBe(false);
@@ -55,16 +49,16 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
           .digest('base64');
 
         if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-          return new Response(
-            JSON.stringify({ error: 'Invalid signature' }),
-            { status: 401, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
 
-        return new Response(
-          JSON.stringify({ status: 'verified' }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ status: 'verified' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       };
 
       const payload = '{"test": "data"}';
@@ -133,9 +127,10 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
             errors.push('Payment amount is required for payment events');
           }
 
-          if (event.data?.object?.amount_money && 
-              (!event.data.object.amount_money.amount || 
-               !event.data.object.amount_money.currency)) {
+          if (
+            event.data?.object?.amount_money &&
+            (!event.data.object.amount_money.amount || !event.data.object.amount_money.currency)
+          ) {
             errors.push('Valid amount and currency are required');
           }
         }
@@ -192,8 +187,15 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
       }
 
       const processShippoEvent = (event: ShippoTrackingEvent) => {
-        const validStatuses = ['UNKNOWN', 'PRE_TRANSIT', 'TRANSIT', 'DELIVERED', 'RETURNED', 'FAILURE'];
-        
+        const validStatuses = [
+          'UNKNOWN',
+          'PRE_TRANSIT',
+          'TRANSIT',
+          'DELIVERED',
+          'RETURNED',
+          'FAILURE',
+        ];
+
         if (!validStatuses.includes(event.data.tracking_status.status)) {
           throw new Error(`Invalid tracking status: ${event.data.tracking_status.status}`);
         }
@@ -207,14 +209,14 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
               status: event.data.tracking_status.status,
               details: event.data.tracking_status.status_details,
             };
-          
+
           case 'track_delivered':
             return {
               action: 'mark_delivered',
               trackingNumber: event.data.tracking_number,
               deliveredAt: event.data.tracking_status.status_date,
             };
-          
+
           default:
             return {
               action: 'log_event',
@@ -250,7 +252,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
 
         isDuplicate(eventId: string): boolean {
           const now = Date.now();
-          
+
           // Clean up expired events
           this.cleanup(now);
 
@@ -265,7 +267,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
 
         private cleanup(now: number): void {
           const expiredEvents: string[] = [];
-          
+
           for (const [eventId, timestamp] of this.eventTimestamps.entries()) {
             if (now - timestamp > this.eventTtl) {
               expiredEvents.push(eventId);
@@ -296,14 +298,14 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
           maxRetries: number = 3
         ): Promise<{ success: boolean; attempts: number; error?: Error }> {
           let lastError: Error | null = null;
-          
+
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
               await processor();
               return { success: true, attempts: attempt };
             } catch (error) {
               lastError = error as Error;
-              
+
               if (attempt < maxRetries) {
                 const delay = this.calculateBackoff(attempt);
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -311,10 +313,10 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
             }
           }
 
-          return { 
-            success: false, 
-            attempts: maxRetries, 
-            error: lastError! 
+          return {
+            success: false,
+            attempts: maxRetries,
+            error: lastError!,
           };
         }
 
@@ -428,7 +430,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
         private onFailure(): void {
           this.failureCount++;
           this.lastFailureTime = Date.now();
-          
+
           if (this.failureCount >= this.threshold) {
             this.state = 'OPEN';
           }
@@ -454,30 +456,27 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
       expect(circuitBreaker.getState()).toBe('OPEN');
 
       // Next call should be rejected immediately
-      await expect(
-        circuitBreaker.execute(() => Promise.resolve('success'))
-      ).rejects.toThrow('Circuit breaker is open');
+      await expect(circuitBreaker.execute(() => Promise.resolve('success'))).rejects.toThrow(
+        'Circuit breaker is open'
+      );
     });
   });
 
   describe('Webhook Security and Rate Limiting', () => {
     it('should implement IP whitelisting for webhook sources', async () => {
-      const validateWebhookSource = (
-        requestIp: string,
-        allowedIps: string[]
-      ): boolean => {
+      const validateWebhookSource = (requestIp: string, allowedIps: string[]): boolean => {
         // Square's webhook IPs (example)
         const squareIps = ['184.73.202.158', '54.204.195.188'];
         // Shippo's webhook IPs (example)
         const shippoIps = ['54.183.225.53', '54.241.166.47'];
-        
+
         const allAllowedIps = [...allowedIps, ...squareIps, ...shippoIps];
-        
+
         return allAllowedIps.includes(requestIp);
       };
 
       const customAllowedIps = ['192.168.1.100'];
-      
+
       expect(validateWebhookSource('184.73.202.158', customAllowedIps)).toBe(true);
       expect(validateWebhookSource('192.168.1.100', customAllowedIps)).toBe(true);
       expect(validateWebhookSource('123.456.789.0', customAllowedIps)).toBe(false);
@@ -487,18 +486,19 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
       class WebhookRateLimiter {
         private webhookRequests: Map<string, number[]> = new Map();
         private limits = {
-          'square': { windowMs: 60000, maxRequests: 100 },
-          'shippo': { windowMs: 60000, maxRequests: 50 },
-          'default': { windowMs: 60000, maxRequests: 20 },
+          square: { windowMs: 60000, maxRequests: 100 },
+          shippo: { windowMs: 60000, maxRequests: 50 },
+          default: { windowMs: 60000, maxRequests: 20 },
         };
 
         isAllowed(webhookType: string, identifier: string): boolean {
-          const config = this.limits[webhookType as keyof typeof this.limits] || this.limits.default;
+          const config =
+            this.limits[webhookType as keyof typeof this.limits] || this.limits.default;
           const now = Date.now();
           const windowStart = now - config.windowMs;
 
           const key = `${webhookType}:${identifier}`;
-          
+
           if (!this.webhookRequests.has(key)) {
             this.webhookRequests.set(key, []);
           }
@@ -527,7 +527,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
 
       // Unknown webhook type should have lower limits
       const unknownWebhook = 'unknown';
-      
+
       for (let i = 0; i < 20; i++) {
         expect(rateLimiter.isAllowed(unknownWebhook, sourceIp)).toBe(true);
       }
@@ -542,7 +542,7 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
         maxSizeBytes: number = 1024 * 1024 // 1MB default
       ): { valid: boolean; size: number; error?: string } => {
         const payloadSize = Buffer.byteLength(payload, 'utf8');
-        
+
         if (payloadSize > maxSizeBytes) {
           return {
             valid: false,
@@ -626,4 +626,4 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
       expect(metrics.errorsByType.validation_error).toBe(1);
     });
   });
-}); 
+});

@@ -22,12 +22,12 @@ const mockCreateClient = createClient as jest.MockedFunction<typeof createClient
 describe('Third-Party Integration Tests - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    
+
     // Mock performance timing
     jest.spyOn(Date, 'now').mockReturnValue(1642665600000);
   });
@@ -193,7 +193,11 @@ describe('Third-Party Integration Tests - Phase 4', () => {
           amount: 2598,
         };
 
-        const result = await createPayment(paymentData.sourceId, paymentData.orderId, paymentData.amount);
+        const result = await createPayment(
+          paymentData.sourceId,
+          paymentData.orderId,
+          paymentData.amount
+        );
 
         expect(result.id).toBe('payment-789');
         expect(result.status).toBe('COMPLETED');
@@ -218,8 +222,9 @@ describe('Third-Party Integration Tests - Phase 4', () => {
           amount: 2598,
         };
 
-        await expect(createPayment(paymentData.sourceId, paymentData.orderId, paymentData.amount))
-          .rejects.toThrow('Payment declined');
+        await expect(
+          createPayment(paymentData.sourceId, paymentData.orderId, paymentData.amount)
+        ).rejects.toThrow('Payment declined');
         expect(mockSquareClient.paymentsApi.createPayment).toHaveBeenCalled();
       });
 
@@ -296,7 +301,7 @@ describe('Third-Party Integration Tests - Phase 4', () => {
         mockSquareClient.catalogApi.listCatalog.mockRejectedValue(mockError);
 
         const { syncCatalog } = await import('@/lib/square/catalog');
-        
+
         await expect(syncCatalog()).rejects.toThrow('Catalog API unavailable');
         expect(mockSquareClient.catalogApi.listCatalog).toHaveBeenCalled();
       });
@@ -472,7 +477,7 @@ describe('Third-Party Integration Tests - Phase 4', () => {
     describe('Email Templates', () => {
       it('should validate email template structure', async () => {
         const { validateEmailTemplate } = await import('@/lib/email-templates');
-        
+
         const validTemplate = {
           name: 'order-confirmation',
           subject: 'Order Confirmation - {{orderNumber}}',
@@ -487,7 +492,7 @@ describe('Third-Party Integration Tests - Phase 4', () => {
 
       it('should detect invalid email templates', async () => {
         const { validateEmailTemplate } = await import('@/lib/email-templates');
-        
+
         const invalidTemplate = {
           name: 'invalid-template',
           subject: '', // Empty subject
@@ -542,7 +547,10 @@ describe('Third-Party Integration Tests - Phase 4', () => {
         const errorId = await errorMonitor.capturePaymentError(paymentError, paymentContext);
 
         expect(errorId).toBe('payment-error-456');
-        expect(mockErrorMonitor.capturePaymentError).toHaveBeenCalledWith(paymentError, paymentContext);
+        expect(mockErrorMonitor.capturePaymentError).toHaveBeenCalledWith(
+          paymentError,
+          paymentContext
+        );
       });
 
       it('should capture webhook errors', async () => {
@@ -558,7 +566,10 @@ describe('Third-Party Integration Tests - Phase 4', () => {
         const errorId = await errorMonitor.captureWebhookError(webhookError, webhookContext);
 
         expect(errorId).toBe('webhook-error-789');
-        expect(mockErrorMonitor.captureWebhookError).toHaveBeenCalledWith(webhookError, webhookContext);
+        expect(mockErrorMonitor.captureWebhookError).toHaveBeenCalledWith(
+          webhookError,
+          webhookContext
+        );
       });
     });
 
@@ -719,7 +730,10 @@ describe('Third-Party Integration Tests - Phase 4', () => {
         mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
 
         const supabase = await createClient();
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
         expect(user).not.toBeNull();
         expect(user?.id).toBe('user-123');
@@ -740,7 +754,10 @@ describe('Third-Party Integration Tests - Phase 4', () => {
         mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
 
         const supabase = await createClient();
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
         expect(user).toBeNull();
         expect(error).not.toBeNull();
@@ -846,7 +863,9 @@ describe('Third-Party Integration Tests - Phase 4', () => {
 
     it('should detect integration failures', async () => {
       // Mock services with failures
-      mockSquareClient.locationsApi.retrieveLocation.mockRejectedValue(new Error('Square API down'));
+      mockSquareClient.locationsApi.retrieveLocation.mockRejectedValue(
+        new Error('Square API down')
+      );
       mockSendEmail.mockRejectedValue(new Error('Email service unavailable'));
       mockErrorMonitor.captureMessage.mockRejectedValue(new Error('Sentry unavailable'));
 
@@ -869,4 +888,4 @@ describe('Third-Party Integration Tests - Phase 4', () => {
       expect(healthCheck.overall.failedServices).toHaveLength(4);
     });
   });
-}); 
+});

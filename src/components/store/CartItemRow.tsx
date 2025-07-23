@@ -19,7 +19,7 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
     if (item.image) {
       return item.image;
     }
-    
+
     // Check if this is a boxed lunch item by examining variantId metadata
     if (item.variantId) {
       try {
@@ -32,12 +32,12 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
         // If JSON parsing fails, continue with default logic
       }
     }
-    
+
     // For non-boxed lunch items without images, check if name suggests it's a boxed lunch
     if (item.name.toLowerCase().includes('tier')) {
       return getBoxedLunchImage(item.name);
     }
-    
+
     return null;
   };
 

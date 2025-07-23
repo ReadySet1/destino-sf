@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "react-app/vite.config.ts",
+    "**/vite.config.ts",
+    "react-app/dist",
+    "src/__tests__/**/*",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "jest.setup.js",
+    "src/types/jest.d.ts"
+  ]
+}

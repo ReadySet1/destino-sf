@@ -15,29 +15,29 @@ export const BoxedLunchInitializer: React.FC<BoxedLunchInitializerProps> = ({ ha
 
   const handleInitialize = async () => {
     if (isInitializing) return;
-    
+
     setIsInitializing(true);
     toast.loading('Initializing boxed lunch data...', { id: 'init-boxed-lunch' });
-    
+
     try {
       const result = await initializeBoxedLunchDataAction();
-      
+
       if (result.success) {
-        toast.success(`✅ ${result.summary}`, { 
+        toast.success(`✅ ${result.summary}`, {
           id: 'init-boxed-lunch',
-          duration: 5000 
+          duration: 5000,
         });
       } else {
-        toast.error(`❌ ${result.error}`, { 
+        toast.error(`❌ ${result.error}`, {
           id: 'init-boxed-lunch',
-          duration: 5000 
+          duration: 5000,
         });
       }
     } catch (error) {
       console.error('Error initializing boxed lunch data:', error);
-      toast.error('❌ Failed to initialize boxed lunch data', { 
+      toast.error('❌ Failed to initialize boxed lunch data', {
         id: 'init-boxed-lunch',
-        duration: 5000 
+        duration: 5000,
       });
     } finally {
       setIsInitializing(false);
@@ -46,7 +46,7 @@ export const BoxedLunchInitializer: React.FC<BoxedLunchInitializerProps> = ({ ha
 
   if (hasPackages) {
     return (
-      <Button 
+      <Button
         onClick={handleInitialize}
         disabled={isInitializing}
         size="sm"
@@ -64,7 +64,7 @@ export const BoxedLunchInitializer: React.FC<BoxedLunchInitializerProps> = ({ ha
   }
 
   return (
-    <Button 
+    <Button
       onClick={handleInitialize}
       disabled={isInitializing}
       size="lg"
@@ -78,4 +78,4 @@ export const BoxedLunchInitializer: React.FC<BoxedLunchInitializerProps> = ({ ha
       Initialize Boxed Lunch Data
     </Button>
   );
-}; 
+};

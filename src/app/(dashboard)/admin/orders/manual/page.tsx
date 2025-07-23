@@ -14,10 +14,16 @@ export default function ManualOrderPage() {
       <p className="text-gray-600 mb-6">
         Create and manage orders for cash payments, or update existing orders.
       </p>
-      
-      <Suspense fallback={<div className="text-center py-10"><LoadingSpinner size="lg" /></div>}>
+
+      <Suspense
+        fallback={
+          <div className="text-center py-10">
+            <LoadingSpinner size="lg" />
+          </div>
+        }
+      >
         <ManualOrderForm />
       </Suspense>
     </div>
   );
-} 
+}

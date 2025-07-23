@@ -1,4 +1,8 @@
-import { SpotlightPick, SpotlightPickFormData, SpotlightPicksManagerProps } from '@/types/spotlight';
+import {
+  SpotlightPick,
+  SpotlightPickFormData,
+  SpotlightPicksManagerProps,
+} from '@/types/spotlight';
 
 describe('Spotlight Types', () => {
   describe('SpotlightPick Interface', () => {
@@ -50,7 +54,7 @@ describe('Spotlight Types', () => {
 
     it('should support all valid positions', () => {
       const positions: Array<1 | 2 | 3 | 4> = [1, 2, 3, 4];
-      
+
       positions.forEach(position => {
         const pick: SpotlightPick = {
           position,
@@ -63,7 +67,7 @@ describe('Spotlight Types', () => {
             price: 10.99,
           },
         };
-        
+
         expect(pick.position).toBe(position);
       });
     });
@@ -101,14 +105,14 @@ describe('Spotlight Types', () => {
 
     it('should support all positions in form data', () => {
       const positions: Array<1 | 2 | 3 | 4> = [1, 2, 3, 4];
-      
+
       positions.forEach(position => {
         const formData: SpotlightPickFormData = {
           position,
           productId: `product-${position}`,
           isActive: true,
         };
-        
+
         expect(formData.position).toBe(position);
       });
     });
@@ -175,7 +179,7 @@ describe('Spotlight Types', () => {
     it('should enforce position constraints', () => {
       // This test documents that position must be 1, 2, 3, or 4
       const validPositions = [1, 2, 3, 4] as const;
-      
+
       validPositions.forEach(position => {
         const pick: SpotlightPick = {
           position,
@@ -188,7 +192,7 @@ describe('Spotlight Types', () => {
             price: 10,
           },
         };
-        
+
         expect([1, 2, 3, 4]).toContain(pick.position);
       });
     });
@@ -226,4 +230,4 @@ describe('Spotlight Types', () => {
       expect(pickWithoutCategory.product.category).toBeUndefined();
     });
   });
-}); 
+});

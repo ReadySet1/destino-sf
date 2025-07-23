@@ -35,4 +35,4 @@ console.log('The archive orders feature now has:');
 console.log('- Proper loading states that only show during actual operations');
 console.log('- Clean dropdown menus instead of multiple buttons');
 console.log('- Consistent UI patterns across all order tables');
-console.log('- Better user experience with clear visual feedback'); 
+console.log('- Better user experience with clear visual feedback');

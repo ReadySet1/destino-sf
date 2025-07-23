@@ -1,5 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
 
 export const env = createEnv({
   server: {
@@ -11,7 +11,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     FROM_EMAIL: z.string().email(),
     ADMIN_EMAIL: z.string().email(),
-    SHOP_NAME: z.string().default("Destino SF"),
+    SHOP_NAME: z.string().default('Destino SF'),
     // Supabase Configuration
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
     // NextAuth Configuration
@@ -38,7 +38,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
     // Sanity CMS Configuration
     NEXT_PUBLIC_SANITY_PROJECT_ID: z.string().optional(),
-    NEXT_PUBLIC_SANITY_DATASET: z.string().default("production"),
+    NEXT_PUBLIC_SANITY_DATASET: z.string().default('production'),
     // Google Maps Configuration
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
     // Error Tracking
@@ -86,4 +86,4 @@ export const env = createEnv({
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
     NEXT_PUBLIC_MIXPANEL_TOKEN: process.env.NEXT_PUBLIC_MIXPANEL_TOKEN,
   },
-}); 
+});

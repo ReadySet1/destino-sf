@@ -6,7 +6,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 export enum UserRole {
   CUSTOMER = 'CUSTOMER',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
 }
 
 export enum OrderStatus {
@@ -14,19 +14,19 @@ export enum OrderStatus {
   PROCESSING = 'PROCESSING',
   READY = 'READY',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
   FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
+  REFUNDED = 'REFUNDED',
 }
 
 export enum DiscountType {
   PERCENTAGE = 'PERCENTAGE',
-  FIXED_AMOUNT = 'FIXED_AMOUNT'
+  FIXED_AMOUNT = 'FIXED_AMOUNT',
 }
 
 export interface Profile {
@@ -188,4 +188,4 @@ export interface Address {
   updatedAt: Date;
   user?: Profile;
   orders?: Order[];
-} 
+}

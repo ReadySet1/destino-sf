@@ -1,2 +1,11 @@
 .vercel
-eslint.config.js 
+eslint.config.js
+playwright-report/
+test-results/
+node_modules/
+.next/
+out/
+dist/
+build/
+*.min.js
+*.bundle.js 

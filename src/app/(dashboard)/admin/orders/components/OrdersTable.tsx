@@ -102,30 +102,30 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
 
       if (result.success) {
         toast({
-          title: "Orders Archived",
+          title: 'Orders Archived',
           description: `Successfully archived ${result.count} orders.`,
         });
         if (result.errors && result.errors.length > 0) {
           toast({
-            title: "Some Errors Occurred",
+            title: 'Some Errors Occurred',
             description: `${result.errors.length} orders could not be archived.`,
-            variant: "destructive",
+            variant: 'destructive',
           });
         }
         // Refresh the page to update the list
         window.location.reload();
       } else {
         toast({
-          title: "Bulk Archive Failed",
-          description: result.errors?.join(', ') || "Failed to archive orders",
-          variant: "destructive",
+          title: 'Bulk Archive Failed',
+          description: result.errors?.join(', ') || 'Failed to archive orders',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: "Bulk Archive Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Bulk Archive Failed',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsBulkArchiving(false);
@@ -159,29 +159,30 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
       const order = orders.find(o => o.id === archivingOrderId);
       if (!order) return;
 
-      const result = order.type === 'catering' 
-        ? await archiveCateringOrder(archivingOrderId, archiveReason)
-        : await archiveOrder(archivingOrderId, archiveReason);
+      const result =
+        order.type === 'catering'
+          ? await archiveCateringOrder(archivingOrderId, archiveReason)
+          : await archiveOrder(archivingOrderId, archiveReason);
 
       if (result.success) {
         toast({
-          title: "Order Archived",
+          title: 'Order Archived',
           description: `Order ${archivingOrderId.substring(0, 8)}... has been archived successfully.`,
         });
         // Refresh the page to update the list
         window.location.reload();
       } else {
         toast({
-          title: "Archive Failed",
-          description: result.error || "Failed to archive order",
-          variant: "destructive",
+          title: 'Archive Failed',
+          description: result.error || 'Failed to archive order',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: "Archive Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Archive Failed',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsArchiving(false);
@@ -218,7 +219,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                 <input
                   type="checkbox"
                   checked={selectedOrders.length === orders.length && orders.length > 0}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  onChange={e => handleSelectAll(e.target.checked)}
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
               </th>
@@ -228,27 +229,15 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
-              <SortableTableHeader column="customerName">
-                Customer
-              </SortableTableHeader>
-              <SortableTableHeader column="status">
-                Status
-              </SortableTableHeader>
-              <SortableTableHeader column="paymentStatus">
-                Payment
-              </SortableTableHeader>
+              <SortableTableHeader column="customerName">Customer</SortableTableHeader>
+              <SortableTableHeader column="status">Status</SortableTableHeader>
+              <SortableTableHeader column="paymentStatus">Payment</SortableTableHeader>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Items
               </th>
-              <SortableTableHeader column="total">
-                Total
-              </SortableTableHeader>
-              <SortableTableHeader column="date">
-                Date
-              </SortableTableHeader>
-              <SortableTableHeader column="createdAt">
-                Created
-              </SortableTableHeader>
+              <SortableTableHeader column="total">Total</SortableTableHeader>
+              <SortableTableHeader column="date">Date</SortableTableHeader>
+              <SortableTableHeader column="createdAt">Created</SortableTableHeader>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -256,12 +245,15 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order, index) => (
-              <tr key={order.id || `order-${index}`} className={order.type === 'catering' ? 'bg-amber-50' : ''}>
+              <tr
+                key={order.id || `order-${index}`}
+                className={order.type === 'catering' ? 'bg-amber-50' : ''}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={selectedOrders.includes(order.id)}
-                    onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                    onChange={e => handleSelectOrder(order.id, e.target.checked)}
                     className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                 </td>
@@ -275,7 +267,9 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                   </Link>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.type === 'catering' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}
+                  >
                     {order.type === 'catering' ? 'CATERING' : 'REGULAR'}
                   </span>
                 </td>
@@ -303,12 +297,18 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                   {formatCurrency(order.total)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {order.type === 'catering' 
-                    ? (order.eventDate ? formatDateTime(order.eventDate) : 'N/A')
-                    : (order.pickupTime ? formatDateTime(order.pickupTime) : 'N/A')}
+                  {order.type === 'catering'
+                    ? order.eventDate
+                      ? formatDateTime(order.eventDate)
+                      : 'N/A'
+                    : order.pickupTime
+                      ? formatDateTime(order.pickupTime)
+                      : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {order.createdAt ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true }) : 'N/A'}
+                  {order.createdAt
+                    ? formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })
+                    : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <DropdownMenu>
@@ -327,7 +327,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                           View Details
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleArchiveOrder(order.id, order.type)}
                         className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
                       >
@@ -349,16 +349,20 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Archive Order</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to archive this order? This will hide it from the main orders list but preserve all data.
+              Are you sure you want to archive this order? This will hide it from the main orders
+              list but preserve all data.
             </p>
             <div className="mb-4">
-              <label htmlFor="archive-reason" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="archive-reason"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Archive Reason (Optional)
               </label>
               <textarea
                 id="archive-reason"
                 value={archiveReason}
-                onChange={(e) => setArchiveReason(e.target.value)}
+                onChange={e => setArchiveReason(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., Testing order, Customer request, etc."
                 rows={3}
@@ -393,16 +397,21 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Archive Multiple Orders</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to archive {selectedOrders.length} order{selectedOrders.length !== 1 ? 's' : ''}? This will hide them from the main orders list but preserve all data.
+              Are you sure you want to archive {selectedOrders.length} order
+              {selectedOrders.length !== 1 ? 's' : ''}? This will hide them from the main orders
+              list but preserve all data.
             </p>
             <div className="mb-4">
-              <label htmlFor="bulk-archive-reason" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="bulk-archive-reason"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Archive Reason (Optional)
               </label>
               <textarea
                 id="bulk-archive-reason"
                 value={bulkArchiveReason}
-                onChange={(e) => setBulkArchiveReason(e.target.value)}
+                onChange={e => setBulkArchiveReason(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., Testing orders, Customer request, etc."
                 rows={3}
@@ -423,7 +432,9 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                 disabled={isBulkArchiving}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
               >
-                {isBulkArchiving ? 'Archiving...' : `Archive ${selectedOrders.length} Order${selectedOrders.length !== 1 ? 's' : ''}`}
+                {isBulkArchiving
+                  ? 'Archiving...'
+                  : `Archive ${selectedOrders.length} Order${selectedOrders.length !== 1 ? 's' : ''}`}
               </button>
             </div>
           </div>
@@ -431,4 +442,4 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
       )}
     </div>
   );
-} 
+}

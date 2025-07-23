@@ -1,19 +1,13 @@
 // Phase 4: Comprehensive Admin API Route Tests
 import { NextRequest, NextResponse } from 'next/server';
 import { GET, PUT, POST } from '@/app/api/admin/orders/route';
-import { 
-  GET as SettingsGET, 
-  POST as SettingsPOST 
-} from '@/app/api/admin/settings/route';
-import { 
-  GET as DeliveryZonesGET, 
-  POST as DeliveryZonesPOST, 
-  PUT as DeliveryZonesPUT 
+import { GET as SettingsGET, POST as SettingsPOST } from '@/app/api/admin/settings/route';
+import {
+  GET as DeliveryZonesGET,
+  POST as DeliveryZonesPOST,
+  PUT as DeliveryZonesPUT,
 } from '@/app/api/admin/delivery-zones/route';
-import { 
-  GET as SpotlightGET, 
-  POST as SpotlightPOST 
-} from '@/app/api/admin/spotlight-picks/route';
+import { GET as SpotlightGET, POST as SpotlightPOST } from '@/app/api/admin/spotlight-picks/route';
 import { prisma } from '@/lib/db';
 import { createClient } from '@/utils/supabase/server';
 import { OrderStatus } from '@prisma/client';
@@ -84,7 +78,7 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -446,8 +440,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
         const response = await POST(request);
 
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ 
-          error: 'Too many orders for bulk update (max 100)' 
+        expect(await response.json()).toEqual({
+          error: 'Too many orders for bulk update (max 100)',
         });
       });
     });
@@ -466,8 +460,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
         const mockStoreSettings = {
           id: 'settings-1',
           taxRate: 0.08,
-          minOrderAmount: 25.00,
-          cateringMinimumAmount: 150.00,
+          minOrderAmount: 25.0,
+          cateringMinimumAmount: 150.0,
           storeName: 'Destino SF',
           createdAt: new Date(),
         };
@@ -477,8 +471,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
             id: 'zone-1',
             zone: 'nearby',
             name: 'Nearby Delivery',
-            minimumAmount: 50.00,
-            deliveryFee: 5.00,
+            minimumAmount: 50.0,
+            deliveryFee: 5.0,
             displayOrder: 1,
           },
         ];
@@ -492,9 +486,9 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
 
         expect(response.status).toBe(200);
         expect(data.storeSettings.taxRate).toBe(0.08);
-        expect(data.storeSettings.minOrderAmount).toBe(25.00);
+        expect(data.storeSettings.minOrderAmount).toBe(25.0);
         expect(data.deliveryZones).toHaveLength(1);
-        expect(data.deliveryZones[0].minimumAmount).toBe(50.00);
+        expect(data.deliveryZones[0].minimumAmount).toBe(50.0);
       });
 
       it('should require admin authentication', async () => {
@@ -523,13 +517,13 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
         const existingSettings = {
           id: 'settings-1',
           taxRate: 0.08,
-          minOrderAmount: 25.00,
+          minOrderAmount: 25.0,
         };
 
         const updatedSettings = {
           ...existingSettings,
           taxRate: 0.09,
-          minOrderAmount: 30.00,
+          minOrderAmount: 30.0,
         };
 
         mockPrisma.storeSettings.findFirst.mockResolvedValue(existingSettings as any);
@@ -539,8 +533,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
           method: 'POST',
           body: JSON.stringify({
             taxRate: 0.09,
-            minOrderAmount: 30.00,
-            cateringMinimumAmount: 150.00,
+            minOrderAmount: 30.0,
+            cateringMinimumAmount: 150.0,
           }),
         });
 
@@ -549,7 +543,7 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
 
         expect(response.status).toBe(200);
         expect(data.storeSettings.taxRate).toBe(0.09);
-        expect(data.storeSettings.minOrderAmount).toBe(30.00);
+        expect(data.storeSettings.minOrderAmount).toBe(30.0);
         expect(mockPrisma.storeSettings.upsert).toHaveBeenCalled();
       });
 
@@ -596,8 +590,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
             zone: 'nearby',
             name: 'Nearby Delivery',
             description: 'Close to the store',
-            minimumAmount: 50.00,
-            deliveryFee: 5.00,
+            minimumAmount: 50.0,
+            deliveryFee: 5.0,
             estimatedDeliveryTime: '30-45 minutes',
             active: true,
             postalCodes: ['94110', '94103'],
@@ -615,7 +609,7 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
         expect(response.status).toBe(200);
         expect(data.deliveryZones).toHaveLength(1);
         expect(data.deliveryZones[0].zone).toBe('nearby');
-        expect(data.deliveryZones[0].minimumAmount).toBe(50.00);
+        expect(data.deliveryZones[0].minimumAmount).toBe(50.0);
       });
     });
 
@@ -632,8 +626,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
           zone: 'extended',
           name: 'Extended Delivery',
           description: 'Further delivery zone',
-          minimumAmount: 75.00,
-          deliveryFee: 10.00,
+          minimumAmount: 75.0,
+          deliveryFee: 10.0,
           estimatedDeliveryTime: '45-60 minutes',
           isActive: true,
           postalCodes: ['94107', '94108'],
@@ -659,14 +653,14 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
 
         expect(response.status).toBe(200);
         expect(data.deliveryZone.zone).toBe('extended');
-        expect(data.deliveryZone.minimumAmount).toBe(75.00);
+        expect(data.deliveryZone.minimumAmount).toBe(75.0);
         expect(mockPrisma.cateringDeliveryZone.create).toHaveBeenCalledWith({
           data: {
             zone: 'extended',
             name: 'Extended Delivery',
             description: 'Further delivery zone',
-            minimumAmount: 75.00,
-            deliveryFee: 10.00,
+            minimumAmount: 75.0,
+            deliveryFee: 10.0,
             estimatedDeliveryTime: '45-60 minutes',
             active: true,
             postalCodes: ['94107', '94108'],
@@ -689,8 +683,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
           zone: 'nearby',
           name: 'Updated Nearby Delivery',
           description: 'Updated description',
-          minimumAmount: 60.00,
-          deliveryFee: 7.00,
+          minimumAmount: 60.0,
+          deliveryFee: 7.0,
           estimatedDeliveryTime: '30-40 minutes',
           isActive: true,
           postalCodes: ['94110', '94103', '94102'],
@@ -714,15 +708,15 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
         const data = await response.json();
 
         expect(response.status).toBe(200);
-        expect(data.deliveryZone.minimumAmount).toBe(60.00);
+        expect(data.deliveryZone.minimumAmount).toBe(60.0);
         expect(mockPrisma.cateringDeliveryZone.update).toHaveBeenCalledWith({
           where: { id: 'zone-1' },
           data: {
             zone: 'nearby',
             name: 'Updated Nearby Delivery',
             description: 'Updated description',
-            minimumAmount: 60.00,
-            deliveryFee: 7.00,
+            minimumAmount: 60.0,
+            deliveryFee: 7.0,
             estimatedDeliveryTime: '30-40 minutes',
             active: true,
             postalCodes: ['94110', '94103', '94102'],
@@ -748,8 +742,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
             zone: 'nearby',
             name: 'Nearby Delivery',
             description: 'Close to the store',
-            minimumAmount: 50.00,
-            deliveryFee: 5.00,
+            minimumAmount: 50.0,
+            deliveryFee: 5.0,
             estimatedDeliveryTime: '30-45 minutes',
             isActive: true,
             postalCodes: ['94110', '94103'],
@@ -761,8 +755,8 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
             zone: 'extended',
             name: 'Extended Delivery',
             description: 'Further delivery zone',
-            minimumAmount: 75.00,
-            deliveryFee: 10.00,
+            minimumAmount: 75.0,
+            deliveryFee: 10.0,
             estimatedDeliveryTime: '45-60 minutes',
             isActive: true,
             postalCodes: ['94107', '94108'],
@@ -868,7 +862,7 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
             name: 'Peruvian Coffee',
             description: 'Rich and aromatic coffee',
             images: ['coffee.jpg'],
-            price: 18.50,
+            price: 18.5,
             slug: 'peruvian-coffee',
             category: {
               name: 'Coffee',
@@ -1038,4 +1032,4 @@ describe('Admin API Routes - Phase 4 Comprehensive Tests', () => {
       });
     });
   });
-}); 
+});

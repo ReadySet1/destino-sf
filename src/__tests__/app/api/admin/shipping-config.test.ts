@@ -3,17 +3,18 @@ import { updateShippingConfiguration, getAllShippingConfigurations } from '@/lib
 import { createClient } from '@/utils/supabase/server';
 
 // Import our new test utilities
-import { 
-  mockConsole,
-  restoreConsole 
-} from '@/__tests__/setup/test-utils';
+import { mockConsole, restoreConsole } from '@/__tests__/setup/test-utils';
 
 // Mock the dependencies
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/utils/supabase/server');
 
-const mockUpdateShippingConfiguration = updateShippingConfiguration as jest.MockedFunction<typeof updateShippingConfiguration>;
-const mockGetAllShippingConfigurations = getAllShippingConfigurations as jest.MockedFunction<typeof getAllShippingConfigurations>;
+const mockUpdateShippingConfiguration = updateShippingConfiguration as jest.MockedFunction<
+  typeof updateShippingConfiguration
+>;
+const mockGetAllShippingConfigurations = getAllShippingConfigurations as jest.MockedFunction<
+  typeof getAllShippingConfigurations
+>;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 // Mock Supabase client with proper chaining
@@ -56,7 +57,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -103,7 +104,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'USER' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -126,7 +127,10 @@ describe('/api/admin/shipping-config', () => {
         error: new Error('Not authenticated'),
       });
 
-      const { data: { user }, error } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await mockSupabaseClient.auth.getUser();
 
       expect(user).toBeNull();
       expect(error).toBeTruthy();
@@ -143,7 +147,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -168,7 +172,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -210,7 +214,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -238,19 +242,17 @@ describe('/api/admin/shipping-config', () => {
           baseWeightLb: validConfigurationData.configurations[0].baseWeightLb,
           weightPerUnitLb: validConfigurationData.configurations[0].weightPerUnitLb,
           isActive: validConfigurationData.configurations[0].isActive,
-          applicableForNationwideOnly: validConfigurationData.configurations[0].applicableForNationwideOnly,
+          applicableForNationwideOnly:
+            validConfigurationData.configurations[0].applicableForNationwideOnly,
         }
       );
 
-      expect(mockUpdateShippingConfiguration).toHaveBeenCalledWith(
-        'alfajores',
-        {
-          baseWeightLb: 0.5,
-          weightPerUnitLb: 0.4,
-          isActive: true,
-          applicableForNationwideOnly: true,
-        }
-      );
+      expect(mockUpdateShippingConfiguration).toHaveBeenCalledWith('alfajores', {
+        baseWeightLb: 0.5,
+        weightPerUnitLb: 0.4,
+        isActive: true,
+        applicableForNationwideOnly: true,
+      });
       expect(result).toEqual(mockUpdatedConfig);
     });
 
@@ -265,7 +267,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -291,15 +293,12 @@ describe('/api/admin/shipping-config', () => {
 
       mockUpdateShippingConfiguration.mockResolvedValue(mockUpdatedConfig);
 
-      const result = await updateShippingConfiguration(
-        updatedConfigData.productName,
-        {
-          baseWeightLb: updatedConfigData.baseWeightLb,
-          weightPerUnitLb: updatedConfigData.weightPerUnitLb,
-          isActive: updatedConfigData.isActive,
-          applicableForNationwideOnly: updatedConfigData.applicableForNationwideOnly,
-        }
-      );
+      const result = await updateShippingConfiguration(updatedConfigData.productName, {
+        baseWeightLb: updatedConfigData.baseWeightLb,
+        weightPerUnitLb: updatedConfigData.weightPerUnitLb,
+        isActive: updatedConfigData.isActive,
+        applicableForNationwideOnly: updatedConfigData.applicableForNationwideOnly,
+      });
 
       expect(result.baseWeightLb).toBe(0.6);
       expect(result.weightPerUnitLb).toBe(0.5);
@@ -317,7 +316,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -375,7 +374,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'USER' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -418,7 +417,9 @@ describe('/api/admin/shipping-config', () => {
 
       // These would be caught by Zod validation in the actual API route
       invalidConfigurations.forEach(config => {
-        expect(config.productName === '' || config.baseWeightLb < 0.1 || config.weightPerUnitLb > 50).toBe(true);
+        expect(
+          config.productName === '' || config.baseWeightLb < 0.1 || config.weightPerUnitLb > 50
+        ).toBe(true);
       });
     });
 
@@ -433,7 +434,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -497,7 +498,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -506,7 +507,9 @@ describe('/api/admin/shipping-config', () => {
         }),
       });
 
-      const { data: { user } } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+      } = await mockSupabaseClient.auth.getUser();
       const adminProfile = await mockSingle();
 
       expect(user).toBeTruthy();
@@ -524,7 +527,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'USER' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -533,7 +536,9 @@ describe('/api/admin/shipping-config', () => {
         }),
       });
 
-      const { data: { user } } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+      } = await mockSupabaseClient.auth.getUser();
       const adminProfile = await mockSingle();
 
       expect(user).toBeTruthy();
@@ -550,7 +555,7 @@ describe('/api/admin/shipping-config', () => {
         data: null,
         error: new Error('Profile not found'),
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -559,7 +564,9 @@ describe('/api/admin/shipping-config', () => {
         }),
       });
 
-      const { data: { user } } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+      } = await mockSupabaseClient.auth.getUser();
       const adminProfile = await mockSingle();
 
       expect(user).toBeTruthy();
@@ -572,7 +579,10 @@ describe('/api/admin/shipping-config', () => {
         error: new Error('Invalid token'),
       });
 
-      const { data: { user }, error } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await mockSupabaseClient.auth.getUser();
 
       expect(user).toBeNull();
       expect(error).toBeTruthy();
@@ -585,7 +595,7 @@ describe('/api/admin/shipping-config', () => {
       });
 
       const mockSingle = jest.fn().mockRejectedValue(new Error('Database connection failed'));
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -594,8 +604,10 @@ describe('/api/admin/shipping-config', () => {
         }),
       });
 
-      const { data: { user } } = await mockSupabaseClient.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await mockSupabaseClient.auth.getUser();
+
       expect(user).toBeTruthy();
       await expect(mockSingle()).rejects.toThrow('Database connection failed');
     });
@@ -613,7 +625,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -636,11 +648,12 @@ describe('/api/admin/shipping-config', () => {
       };
 
       // Simulate validation error
-      const hasRequiredFields = malformedData.configurations.every(config => 
-        config.productName && 
-        'baseWeightLb' in config && 
-        config.weightPerUnitLb !== undefined &&
-        config.isActive !== undefined
+      const hasRequiredFields = malformedData.configurations.every(
+        config =>
+          config.productName &&
+          'baseWeightLb' in config &&
+          config.weightPerUnitLb !== undefined &&
+          config.isActive !== undefined
       );
 
       expect(hasRequiredFields).toBe(false);
@@ -657,7 +670,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -668,12 +681,14 @@ describe('/api/admin/shipping-config', () => {
 
       mockUpdateShippingConfiguration.mockRejectedValue(new Error('Unique constraint violation'));
 
-      await expect(updateShippingConfiguration('alfajores', {
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true,
-      })).rejects.toThrow('Unique constraint violation');
+      await expect(
+        updateShippingConfiguration('alfajores', {
+          baseWeightLb: 0.5,
+          weightPerUnitLb: 0.4,
+          isActive: true,
+          applicableForNationwideOnly: true,
+        })
+      ).rejects.toThrow('Unique constraint violation');
     });
 
     test('should handle network timeouts', async () => {
@@ -687,7 +702,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -698,12 +713,14 @@ describe('/api/admin/shipping-config', () => {
 
       mockUpdateShippingConfiguration.mockRejectedValue(new Error('Request timeout'));
 
-      await expect(updateShippingConfiguration('alfajores', {
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true,
-      })).rejects.toThrow('Request timeout');
+      await expect(
+        updateShippingConfiguration('alfajores', {
+          baseWeightLb: 0.5,
+          weightPerUnitLb: 0.4,
+          isActive: true,
+          applicableForNationwideOnly: true,
+        })
+      ).rejects.toThrow('Request timeout');
     });
 
     test('should handle unexpected server errors', async () => {
@@ -717,7 +734,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -744,7 +761,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -814,7 +831,7 @@ describe('/api/admin/shipping-config', () => {
         data: { role: 'ADMIN' },
         error: null,
       });
-      
+
       mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -868,4 +885,4 @@ describe('/api/admin/shipping-config', () => {
       expect(results.map(r => r.productName)).toEqual(['alfajores', 'empanadas', 'default']);
     });
   });
-}); 
+});

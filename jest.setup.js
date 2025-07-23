@@ -6,7 +6,7 @@ require('dotenv').config({ path: '.env.test' });
 
 // Ensure test environment using Object.assign to avoid readonly issues
 Object.assign(process.env, {
-  NODE_ENV: 'test'
+  NODE_ENV: 'test',
 });
 
 if (typeof global.TextEncoder === 'undefined') {
@@ -33,7 +33,8 @@ if (!global.Headers) {
 require('@testing-library/jest-dom');
 
 // Setup test environment variables
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -61,15 +62,15 @@ jest.mock('next-themes', () => ({
 jest.mock('next/font/google', () => ({
   Dancing_Script: () => ({
     className: 'dancing-script-class',
-    style: { fontFamily: 'Dancing Script' }
+    style: { fontFamily: 'Dancing Script' },
   }),
   Inter: () => ({
     className: 'inter-class',
-    style: { fontFamily: 'Inter' }
+    style: { fontFamily: 'Inter' },
   }),
   Poppins: () => ({
     className: 'poppins-class',
-    style: { fontFamily: 'Poppins' }
+    style: { fontFamily: 'Poppins' },
   }),
 }));
 
@@ -84,184 +85,10 @@ jest.mock('@supabase/supabase-js', () => ({
   }),
 }));
 
-// Mock Prisma for unit tests - THIS MUST BE FIRST
+// Mock Prisma for unit tests - Use jest-mock-extended for proper typing
 jest.mock('@prisma/client', () => {
-  const mockPrismaClient = {
-    $connect: jest.fn().mockResolvedValue(undefined),
-    $disconnect: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn((callback) => {
-      // Execute the callback with the mock client for transaction tests
-      return callback(mockPrismaClient);
-    }),
-    $executeRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
-    $queryRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
-    
-    // CRITICAL PHASE 2 FIX - Add all missing model methods
-    order: {
-      findUnique: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PAID'
-      }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PENDING'
-      }),
-      update: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        paymentId: 'payment-789',
-        squareOrderId: 'square-order-456',
-        status: 'PAID'
-      }),
-      delete: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      count: jest.fn().mockResolvedValue(5),
-      upsert: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    orderItem: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      update: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'item-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    product: {
-      findUnique: jest.fn().mockResolvedValue({
-        id: 'product-1',
-        name: 'Test Product',
-        price: 12.99
-      }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({
-        id: 'product-1',
-        name: 'Test Product'
-      }),
-      update: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    category: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      update: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'category-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    cateringProduct: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      update: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'catering-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    cateringOrder: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      update: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'catering-order-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    shippingConfiguration: {
-      findUnique: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      findMany: jest.fn().mockResolvedValue([
-        {
-          productName: 'alfajores',
-          baseWeightLb: 0.5,
-          weightPerUnitLb: 0.4,
-          isActive: true,
-          applicableForNationwideOnly: true
-        }
-      ]),
-      create: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      update: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      delete: jest.fn().mockResolvedValue({ productName: 'alfajores' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      findFirst: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    // Add any other models that appear in your tests
-  };
+  const { mockDeep } = require('jest-mock-extended');
+  const mockPrismaClient = mockDeep();
 
   return {
     PrismaClient: jest.fn(() => mockPrismaClient),
@@ -274,7 +101,7 @@ jest.mock('@prisma/client', () => {
           this.meta = meta;
           this.name = 'PrismaClientKnownRequestError';
         }
-      }
+      },
     },
     // Export enums that tests need
     OrderStatus: global.OrderStatus,
@@ -284,145 +111,16 @@ jest.mock('@prisma/client', () => {
 });
 
 // Mock @/lib/db to use the same mock
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    $connect: jest.fn().mockResolvedValue(undefined),
-    $disconnect: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn((callback) => {
-      // For transaction tests, execute the callback with the mock client
-      const mockClient = {
-        order: {
-          create: jest.fn().mockResolvedValue({
-            id: 'order-123',
-            customerName: 'John Doe',
-            status: 'PENDING'
-          }),
-          update: jest.fn().mockResolvedValue({
-            id: 'order-123',
-            status: 'PAID'
-          }),
-          findUnique: jest.fn().mockResolvedValue({
-            id: 'order-123',
-            customerName: 'John Doe',
-            status: 'PAID'
-          }),
-        },
-        product: {
-          create: jest.fn().mockResolvedValue({
-            id: 'product-1',
-            name: 'Test Product'
-          }),
-        }
-      };
-      return callback(mockClient);
-    }),
-    $executeRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
-    $queryRaw: jest.fn().mockResolvedValue([{ count: 5 }]),
-    order: {
-      findUnique: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PAID'
-      }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        customerName: 'John Doe',
-        status: 'PENDING'
-      }),
-      update: jest.fn().mockResolvedValue({
-        id: 'order-123',
-        paymentId: 'payment-789',
-        squareOrderId: 'square-order-456',
-        status: 'PAID'
-      }),
-      delete: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      count: jest.fn().mockResolvedValue(5),
-      upsert: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'order-123' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    product: {
-      findUnique: jest.fn().mockResolvedValue({
-        id: 'product-1',
-        name: 'Test Product',
-        price: 12.99
-      }),
-      findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({
-        id: 'product-1',
-        name: 'Test Product'
-      }),
-      update: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      delete: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      findFirst: jest.fn().mockResolvedValue({ id: 'product-1' }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-    shippingConfiguration: {
-      findUnique: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      findMany: jest.fn().mockResolvedValue([
-        {
-          productName: 'alfajores',
-          baseWeightLb: 0.5,
-          weightPerUnitLb: 0.4,
-          isActive: true,
-          applicableForNationwideOnly: true
-        }
-      ]),
-      create: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      update: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      delete: jest.fn().mockResolvedValue({ productName: 'alfajores' }),
-      count: jest.fn().mockResolvedValue(0),
-      upsert: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      findFirst: jest.fn().mockResolvedValue({
-        productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
-        isActive: true,
-        applicableForNationwideOnly: true
-      }),
-      groupBy: jest.fn().mockResolvedValue([]),
-      aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 } }),
-      createMany: jest.fn().mockResolvedValue({ count: 0 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    },
-  }
-}));
+jest.mock('@/lib/db', () => {
+  const { mockDeep } = require('jest-mock-extended');
+  const mockPrismaClient = mockDeep();
+
+  return {
+    prisma: mockPrismaClient,
+    db: mockPrismaClient,
+    default: mockPrismaClient,
+  };
+});
 
 // Mock order actions to return expected values for tests - CRITICAL PHASE 2 FIX
 jest.mock('@/app/actions/orders', () => ({
@@ -430,45 +128,45 @@ jest.mock('@/app/actions/orders', () => ({
     success: true,
     error: null,
     checkoutUrl: 'https://square.checkout.url',
-    orderId: 'order-123'
+    orderId: 'order-123',
   }),
   updateOrderPayment: jest.fn().mockResolvedValue({
     id: 'order-123',
     paymentId: 'payment-789',
     squareOrderId: 'square-order-456',
-    status: 'PAID'
+    status: 'PAID',
   }),
   getOrderById: jest.fn().mockResolvedValue({
     id: 'order-123',
     customerName: 'John Doe',
-    status: 'PAID'
+    status: 'PAID',
   }),
   createManualPaymentOrder: jest.fn().mockResolvedValue({
     success: true,
     error: null,
     checkoutUrl: 'https://manual.payment.url',
-    orderId: 'order-123'
+    orderId: 'order-123',
   }),
   validateOrderMinimumsServer: jest.fn().mockResolvedValue({
     isValid: true,
     errorMessage: null,
     deliveryZone: 'zone-1',
     minimumRequired: 25,
-    currentAmount: 65
-  })
+    currentAmount: 65,
+  }),
 }));
 
 // Mock validateOrderMinimums function
 jest.mock('@/lib/cart-helpers', () => ({
   validateOrderMinimums: jest.fn().mockResolvedValue({
     isValid: true,
-    errorMessage: null
+    errorMessage: null,
   }),
   calculateCartTotal: jest.fn().mockReturnValue({
     subtotal: 25.98,
     tax: 2.14,
-    total: 28.12
-  })
+    total: 28.12,
+  }),
 }));
 
 // Mock Next.js router
@@ -563,13 +261,13 @@ expect.extend({
 // Add enum definitions for tests - CRITICAL FIX
 global.OrderStatus = {
   PENDING: 'PENDING',
-  PROCESSING: 'PROCESSING', 
+  PROCESSING: 'PROCESSING',
   READY: 'READY',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
   FULFILLMENT_UPDATED: 'FULFILLMENT_UPDATED',
   SHIPPING: 'SHIPPING',
-  DELIVERED: 'DELIVERED'
+  DELIVERED: 'DELIVERED',
 };
 
 global.PaymentStatus = {
@@ -577,13 +275,13 @@ global.PaymentStatus = {
   PAID: 'PAID',
   FAILED: 'FAILED',
   REFUNDED: 'REFUNDED',
-  COMPLETED: 'COMPLETED'
+  COMPLETED: 'COMPLETED',
 };
 
 global.PaymentMethod = {
   SQUARE: 'SQUARE',
   CASH: 'CASH',
-  VENMO: 'VENMO'
+  VENMO: 'VENMO',
 };
 
 // Mock Square Client

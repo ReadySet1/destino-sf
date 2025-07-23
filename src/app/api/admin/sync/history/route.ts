@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -16,7 +19,7 @@ export async function GET(request: NextRequest) {
     // 2. Check admin access
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },
-      select: { role: true, name: true, email: true }
+      select: { role: true, name: true, email: true },
     });
 
     if (!profile || profile.role !== 'ADMIN') {
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Build query filters
     const where: any = {
-      userId: user.id
+      userId: user.id,
     };
 
     // Filter by status if provided
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
       const dateLimit = new Date();
       dateLimit.setDate(dateLimit.getDate() - days);
       where.startTime = {
-        gte: dateLimit
+        gte: dateLimit,
       };
     }
 
@@ -65,13 +68,13 @@ export async function GET(request: NextRequest) {
         results: true,
         errors: true,
         options: true,
-        startedBy: true
-      }
+        startedBy: true,
+      },
     });
 
     // 6. Calculate summary statistics
     const totalSyncs = await prisma.userSyncLog.count({
-      where: { userId: user.id }
+      where: { userId: user.id },
     });
 
     const last7Days = new Date();
@@ -82,27 +85,30 @@ export async function GET(request: NextRequest) {
       where: {
         userId: user.id,
         startTime: {
-          gte: last7Days
-        }
+          gte: last7Days,
+        },
       },
       _count: {
-        status: true
-      }
+        status: true,
+      },
     });
 
     // 7. Format history with additional calculated fields
     const formattedHistory = syncHistory.map(sync => {
-      const duration = sync.endTime 
+      const duration = sync.endTime
         ? Math.round((sync.endTime.getTime() - sync.startTime.getTime()) / 1000)
         : null;
 
       // Extract summary data from results
-      const summary = sync.results && typeof sync.results === 'object' && sync.results !== null ? {
-        syncedProducts: (sync.results as any).syncedProducts || 0,
-        skippedProducts: (sync.results as any).skippedProducts || 0,
-        warnings: (sync.results as any).warnings || 0,
-        errors: (sync.results as any).errors || 0
-      } : null;
+      const summary =
+        sync.results && typeof sync.results === 'object' && sync.results !== null
+          ? {
+              syncedProducts: (sync.results as any).syncedProducts || 0,
+              skippedProducts: (sync.results as any).skippedProducts || 0,
+              warnings: (sync.results as any).warnings || 0,
+              errors: (sync.results as any).errors || 0,
+            }
+          : null;
 
       return {
         syncId: sync.syncId,
@@ -116,10 +122,10 @@ export async function GET(request: NextRequest) {
         startedBy: sync.startedBy,
         summary,
         options: sync.options,
-        
+
         // Include full results and errors for completed/failed syncs
         ...(sync.status === 'COMPLETED' && sync.results && { results: sync.results }),
-        ...(sync.status === 'FAILED' && sync.errors && { errors: sync.errors })
+        ...(sync.status === 'FAILED' && sync.errors && { errors: sync.errors }),
       };
     });
 
@@ -131,8 +137,8 @@ export async function GET(request: NextRequest) {
         failed: recentStats.find(s => s.status === 'FAILED')?._count?.status || 0,
         cancelled: recentStats.find(s => s.status === 'CANCELLED')?._count?.status || 0,
         running: recentStats.find(s => s.status === 'RUNNING')?._count?.status || 0,
-        pending: recentStats.find(s => s.status === 'PENDING')?._count?.status || 0
-      }
+        pending: recentStats.find(s => s.status === 'PENDING')?._count?.status || 0,
+      },
     };
 
     return NextResponse.json({
@@ -141,20 +147,22 @@ export async function GET(request: NextRequest) {
       pagination: {
         limit,
         returned: formattedHistory.length,
-        hasMore: formattedHistory.length === limit
+        hasMore: formattedHistory.length === limit,
       },
       filters: {
         status: status || 'all',
         days,
-        userId: user.id
-      }
+        userId: user.id,
+      },
     });
-
   } catch (error) {
     logger.error('Error fetching sync history:', error);
-    return NextResponse.json({
-      error: 'Internal server error',
-      message: 'Failed to fetch sync history. Please try again.'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: 'Failed to fetch sync history. Please try again.',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

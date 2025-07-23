@@ -91,7 +91,7 @@ class ResilientPrismaClient extends PrismaClient {
     } catch (error) {
       console.error('Database health check failed:', error);
       this.isConnected = false;
-      
+
       // Attempt reconnection
       try {
         await this.connectWithRetry();
@@ -119,18 +119,18 @@ class ResilientPrismaClient extends PrismaClient {
         console.error(`Operation attempt ${attempt} failed:`, error);
 
         // Check if it's a connection-related error
-        const isConnectionError = 
+        const isConnectionError =
           error.code === 'P1001' || // Can't reach database server
           error.code === 'P1008' || // Operations timed out
           error.code === 'P1017' || // Server has closed the connection
           error.message?.includes("Can't reach database server") ||
-          error.message?.includes("Connection terminated unexpectedly") ||
-          error.message?.includes("timeout");
+          error.message?.includes('Connection terminated unexpectedly') ||
+          error.message?.includes('timeout');
 
         if (isConnectionError && attempt < this.maxRetries) {
           console.log(`🔄 Connection error detected, attempting reconnection...`);
           this.isConnected = false;
-          
+
           const delay = this.retryDelay * attempt;
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
@@ -175,9 +175,9 @@ export const dbHealth = {
     return {
       isConnected: (prisma as any).isConnected,
       attempts: (prisma as any).connectionAttempts,
-      databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@') || 'Not configured'
+      databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@') || 'Not configured',
     };
-  }
+  },
 };
 
 // Graceful shutdown handling

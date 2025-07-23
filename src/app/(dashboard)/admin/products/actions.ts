@@ -37,7 +37,7 @@ export async function createProductAction(formData: FormData) {
   if (existingProductWithSlug) {
     return {
       success: false,
-      error: `Slug "${potentialSlug}" already exists. Please choose a slightly different product name.`
+      error: `Slug "${potentialSlug}" already exists. Please choose a slightly different product name.`,
     };
   }
 
@@ -54,7 +54,10 @@ export async function createProductAction(formData: FormData) {
         });
       } catch (squareError) {
         logger.error('Failed to create product in Square:', squareError);
-        return { success: false, error: 'Failed to create product in payment system. Please try again.' };
+        return {
+          success: false,
+          error: 'Failed to create product in payment system. Please try again.',
+        };
       }
     }
 
@@ -73,7 +76,9 @@ export async function createProductAction(formData: FormData) {
       },
     });
 
-    logger.info(`Product "${name}" created successfully in database and Square with slug "${potentialSlug}"`);
+    logger.info(
+      `Product "${name}" created successfully in database and Square with slug "${potentialSlug}"`
+    );
 
     // Revalidate the products path after creation
     revalidatePath('/admin/products');
@@ -104,7 +109,7 @@ export async function updateProductCategory(formData: FormData) {
   try {
     await prisma.product.update({
       where: { id: productId },
-      data: { categoryId }
+      data: { categoryId },
     });
 
     revalidatePath('/admin/products');
@@ -114,9 +119,9 @@ export async function updateProductCategory(formData: FormData) {
     return { success: true, message: 'Category updated successfully' };
   } catch (error) {
     console.error('Error updating product category:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Failed to update category'
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to update category',
     };
   }
 }
@@ -128,52 +133,60 @@ export async function updateProductCategory(formData: FormData) {
 export async function manualSyncFromSquare() {
   try {
     logger.info('Manual sync from Square initiated');
-    
+
     // Log existing categories BEFORE sync for debugging
     const beforeCategories = await prisma.category.findMany({
-      select: { id: true, name: true, slug: true }
+      select: { id: true, name: true, slug: true },
     });
-    logger.info(`Categories BEFORE sync (${beforeCategories.length}): ${JSON.stringify(beforeCategories.map(c => `${c.name} (${c.slug})` ))}`);
-    
+    logger.info(
+      `Categories BEFORE sync (${beforeCategories.length}): ${JSON.stringify(beforeCategories.map(c => `${c.name} (${c.slug})`))}`
+    );
+
     const result = await syncSquareProducts();
-    
+
     // Count categories in database after sync
     const categoriesCount = await prisma.category.count();
-    
+
     // Get detailed info about catering categories
     const cateringCategories = await prisma.category.findMany({
       where: {
         name: {
           contains: 'CATERING',
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
       },
-      select: { id: true, name: true, slug: true }
+      select: { id: true, name: true, slug: true },
     });
-    
+
     const cateringCategoriesCount = cateringCategories.length;
-    logger.info(`Found ${cateringCategoriesCount} catering categories after sync: ${JSON.stringify(cateringCategories.map(c => `${c.name} (${c.slug})` ))}`);
-    
+    logger.info(
+      `Found ${cateringCategoriesCount} catering categories after sync: ${JSON.stringify(cateringCategories.map(c => `${c.name} (${c.slug})`))}`
+    );
+
     // Log all categories AFTER sync for comparison
     const afterCategories = await prisma.category.findMany({
-      select: { id: true, name: true, slug: true }
+      select: { id: true, name: true, slug: true },
     });
-    logger.info(`Categories AFTER sync (${afterCategories.length}): ${JSON.stringify(afterCategories.map(c => `${c.name} (${c.slug})` ))}`);
-    
+    logger.info(
+      `Categories AFTER sync (${afterCategories.length}): ${JSON.stringify(afterCategories.map(c => `${c.name} (${c.slug})`))}`
+    );
+
     // Find newly created categories
     const newCategoryIds = afterCategories
       .filter(cat => !beforeCategories.some(before => before.id === cat.id))
       .map(cat => cat.id);
-    
+
     const newCategories = afterCategories.filter(cat => newCategoryIds.includes(cat.id));
-    logger.info(`Newly created categories (${newCategories.length}): ${JSON.stringify(newCategories.map(c => `${c.name} (${c.slug})` ))}`);
-    
+    logger.info(
+      `Newly created categories (${newCategories.length}): ${JSON.stringify(newCategories.map(c => `${c.name} (${c.slug})`))}`
+    );
+
     logger.info('Manual sync complete:', result);
-    
+
     revalidatePath('/admin/products');
     revalidatePath('/products');
     revalidatePath('/products/category/[slug]', 'page');
-    
+
     return {
       success: result.success,
       message: result.message || (result.success ? 'Sync completed successfully' : 'Sync failed'),
@@ -190,7 +203,7 @@ export async function manualSyncFromSquare() {
       success: false,
       message: error instanceof Error ? error.message : 'An unknown error occurred during sync',
       syncedProducts: 0,
-      errors: [error instanceof Error ? error.message : String(error)]
+      errors: [error instanceof Error ? error.message : String(error)],
     };
   }
 }

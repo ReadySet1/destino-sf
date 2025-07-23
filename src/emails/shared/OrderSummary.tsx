@@ -129,7 +129,7 @@ const formatFulfillmentType = (type: string) => {
 
 const formatDateTime = (date: Date | string | null, time?: string | null) => {
   if (!date) return null;
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -137,9 +137,9 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
     month: 'long',
     day: 'numeric',
   };
-  
+
   let formatted = dateObj.toLocaleDateString('en-US', options);
-  
+
   if (time) {
     formatted += ` at ${time}`;
   } else if (dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0) {
@@ -149,7 +149,7 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
       hour12: true,
     })}`;
   }
-  
+
   return formatted;
 };
 
@@ -174,9 +174,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   return (
     <Section style={summarySection}>
-      <Text style={summaryTitle}>
-        Order Summary
-      </Text>
+      <Text style={summaryTitle}>Order Summary</Text>
 
       {/* Order Items */}
       {items.map((item, index) => (
@@ -185,16 +183,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             <Text style={itemName}>
               {item.quantity}x {item.product.name}
             </Text>
-            {item.variant && (
-              <Text style={itemDetails}>
-                {item.variant.name}
-              </Text>
-            )}
+            {item.variant && <Text style={itemDetails}>{item.variant.name}</Text>}
           </Column>
           <Column style={{ width: '40%' }}>
-            <Text style={priceText}>
-              {formatCurrency(item.price * item.quantity)}
-            </Text>
+            <Text style={priceText}>{formatCurrency(item.price * item.quantity)}</Text>
           </Column>
         </Row>
       ))}
@@ -259,16 +251,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       {/* Fulfillment Information */}
       {fulfillmentType && (
         <Section style={fulfillmentSection}>
-          <Text style={fulfillmentTitle}>
-            {formatFulfillmentType(fulfillmentType)} Details
-          </Text>
-          
+          <Text style={fulfillmentTitle}>{formatFulfillmentType(fulfillmentType)} Details</Text>
+
           {fulfillmentType === 'pickup' && pickupTime && (
             <Text style={fulfillmentText}>
               <strong>Pickup Time:</strong> {formatDateTime(pickupTime)}
             </Text>
           )}
-          
+
           {fulfillmentType === 'local_delivery' && (
             <>
               {deliveryDate && (
@@ -278,13 +268,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               )}
             </>
           )}
-          
+
           {fulfillmentType === 'nationwide_shipping' && (
             <>
               {/* Use formatted shipping address from notes if available, otherwise fall back to props */}
               {(formattedNotes.hasShippingAddress || shippingAddress) && (
                 <Text style={fulfillmentText}>
-                  <strong>Shipping to:</strong><br />
+                  <strong>Shipping to:</strong>
+                  <br />
                   {formattedNotes.hasShippingAddress ? (
                     formattedNotes.shippingAddress?.split('\n').map((line, index) => (
                       <React.Fragment key={index}>
@@ -294,13 +285,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                     ))
                   ) : (
                     <>
-                      {shippingAddress?.street}<br />
-                      {shippingAddress?.city}, {shippingAddress?.state} {shippingAddress?.postalCode}
+                      {shippingAddress?.street}
+                      <br />
+                      {shippingAddress?.city}, {shippingAddress?.state}{' '}
+                      {shippingAddress?.postalCode}
                     </>
                   )}
                 </Text>
               )}
-              
+
               {trackingNumber && (
                 <Text style={fulfillmentText}>
                   <strong>Tracking Number:</strong> {trackingNumber}
@@ -313,27 +306,33 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
       {/* Special Notes Section */}
       {formattedNotes.otherNotes && (
-        <Section style={{ 
-          marginTop: '16px', 
-          padding: '16px', 
-          backgroundColor: '#fefce8', 
-          border: '1px solid #f59e0b', 
-          borderRadius: '6px' 
-        }}>
-          <Text style={{ 
-            fontSize: '14px', 
-            fontWeight: 'bold', 
-            color: '#92400e', 
-            margin: '0 0 8px 0' 
-          }}>
+        <Section
+          style={{
+            marginTop: '16px',
+            padding: '16px',
+            backgroundColor: '#fefce8',
+            border: '1px solid #f59e0b',
+            borderRadius: '6px',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: '14px',
+              fontWeight: 'bold',
+              color: '#92400e',
+              margin: '0 0 8px 0',
+            }}
+          >
             Special Requests:
           </Text>
-          <Text style={{ 
-            fontSize: '14px', 
-            color: '#92400e', 
-            margin: '0',
-            whiteSpace: 'pre-wrap'
-          }}>
+          <Text
+            style={{
+              fontSize: '14px',
+              color: '#92400e',
+              margin: '0',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
             {formattedNotes.otherNotes}
           </Text>
         </Section>
@@ -342,4 +341,4 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   );
 };
 
-export default OrderSummary; 
+export default OrderSummary;

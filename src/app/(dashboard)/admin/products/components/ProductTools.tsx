@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -14,22 +14,22 @@ export function ProductTools() {
     try {
       setIsRefreshingImages(true);
       setRefreshResults(null);
-      
+
       const response = await fetch('/api/square/fix-images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      
+
       const result = await response.json();
       console.log('Image refresh results:', result);
       setRefreshResults(result.results);
-      
+
       toast.success(`Successfully refreshed images for ${result.results.updated} products`);
     } catch (error) {
       console.error('Failed to refresh images:', error);
@@ -42,19 +42,15 @@ export function ProductTools() {
   return (
     <Card className="p-4 space-y-4">
       <h3 className="text-lg font-medium">Product Tools</h3>
-      
+
       <div className="space-y-4">
         <div>
           <h4 className="text-sm font-medium mb-2">Image Management</h4>
-          <Button 
-            onClick={refreshProductImages} 
-            disabled={isRefreshingImages}
-            variant="outline"
-          >
+          <Button onClick={refreshProductImages} disabled={isRefreshingImages} variant="outline">
             {isRefreshingImages && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Refresh Product Images from Square
           </Button>
-          
+
           {refreshResults && (
             <div className="mt-4 text-sm">
               <h5 className="font-medium">Results:</h5>
@@ -70,4 +66,4 @@ export function ProductTools() {
       </div>
     </Card>
   );
-} 
+}

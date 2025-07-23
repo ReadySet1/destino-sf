@@ -46,12 +46,12 @@ const mockPerformanceCache = performanceCache as jest.Mocked<typeof performanceC
 describe('Caching Strategy Tests - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    
+
     // Mock Date.now for consistent timing
     jest.spyOn(Date, 'now').mockReturnValue(1642665600000);
   });
@@ -63,16 +63,16 @@ describe('Caching Strategy Tests - Phase 4', () => {
   describe('Redis Connection and Configuration', () => {
     it('should connect to Redis successfully', async () => {
       mockRedis.get.mockResolvedValue('test-value');
-      
+
       const result = await redis.get('test-key');
-      
+
       expect(result).toBe('test-value');
       expect(mockRedis.get).toHaveBeenCalledWith('test-key');
     });
 
     it('should handle Redis connection failures', async () => {
       mockRedis.get.mockRejectedValue(new Error('Redis connection failed'));
-      
+
       await expect(redis.get('test-key')).rejects.toThrow('Redis connection failed');
     });
 
@@ -373,9 +373,7 @@ describe('Caching Strategy Tests - Phase 4', () => {
           userId: 'user-1',
           status: 'PENDING',
           total: 25.98,
-          items: [
-            { id: 'item-1', name: 'Product 1', quantity: 2 },
-          ],
+          items: [{ id: 'item-1', name: 'Product 1', quantity: 2 }],
         };
 
         mockRedis.set.mockResolvedValue('OK');
@@ -389,11 +387,7 @@ describe('Caching Strategy Tests - Phase 4', () => {
           'EX',
           1800
         );
-        expect(mockRedis.hset).toHaveBeenCalledWith(
-          'cache:tags:order',
-          'order:order-1',
-          'order'
-        );
+        expect(mockRedis.hset).toHaveBeenCalledWith('cache:tags:order', 'order:order-1', 'order');
       });
 
       it('should retrieve cached order', async () => {
@@ -716,7 +710,10 @@ describe('Caching Strategy Tests - Phase 4', () => {
         mockRedis.pipeline.mockReturnValue(pipeline);
 
         const cacheManager = new CacheManager();
-        await cacheManager.atomicUpdate('product:prod-1', { id: 'prod-1', name: 'Updated Product' });
+        await cacheManager.atomicUpdate('product:prod-1', {
+          id: 'prod-1',
+          name: 'Updated Product',
+        });
 
         expect(mockRedis.pipeline).toHaveBeenCalled();
         expect(pipeline.del).toHaveBeenCalledWith('product:prod-1');
@@ -739,7 +736,7 @@ describe('Caching Strategy Tests - Phase 4', () => {
         mockRedis.pipeline.mockReturnValue(pipeline);
 
         const cacheManager = new CacheManager();
-        
+
         await expect(
           cacheManager.atomicUpdate('product:prod-1', { id: 'prod-1', name: 'Updated Product' })
         ).rejects.toThrow('Cache update conflict');
@@ -824,7 +821,7 @@ describe('Caching Strategy Tests - Phase 4', () => {
     describe('Cache Performance Alerts', () => {
       it('should trigger alerts for cache performance issues', async () => {
         const { checkCachePerformance } = await import('@/lib/cache-monitoring');
-        
+
         const alerts = await checkCachePerformance({
           hitRatio: 0.3, // Low hit ratio
           responseTime: 500, // High response time
@@ -838,4 +835,4 @@ describe('Caching Strategy Tests - Phase 4', () => {
       });
     });
   });
-}); 
+});

@@ -14,25 +14,25 @@ interface ImageProtectionResult {
  */
 export async function protectCateringImages(): Promise<ImageProtectionResult> {
   const result = { protected: 0, skipped: 0, errors: 0 };
-  
+
   try {
     logger.info('🔄 Starting catering image update from Product table...');
-    
+
     // Get all active catering items
     const cateringItems = await prisma.cateringItem.findMany({
       where: {
-        isActive: true
+        isActive: true,
       },
       select: {
         id: true,
         name: true,
         imageUrl: true,
-        squareProductId: true
-      }
+        squareProductId: true,
+      },
     });
-    
+
     logger.info(`Found ${cateringItems.length} catering items to update`);
-    
+
     // Get products with catering categories that have real images
     const cateringProducts = await prisma.product.findMany({
       where: {
@@ -42,34 +42,34 @@ export async function protectCateringImages(): Promise<ImageProtectionResult> {
             category: {
               name: {
                 contains: 'CATERING',
-                mode: 'insensitive'
-              }
-            }
+                mode: 'insensitive',
+              },
+            },
           },
           {
             category: {
               name: {
                 contains: 'PLATTER',
-                mode: 'insensitive'
-              }
-            }
-          }
+                mode: 'insensitive',
+              },
+            },
+          },
         ],
         images: {
-          isEmpty: false
-        }
+          isEmpty: false,
+        },
       },
       include: {
         category: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
-    
+
     logger.info(`Found ${cateringProducts.length} products with real images`);
-    
+
     // Create mapping of squareId → real image
     const productImageMap = new Map();
     cateringProducts.forEach(product => {
@@ -77,7 +77,7 @@ export async function protectCateringImages(): Promise<ImageProtectionResult> {
         productImageMap.set(product.squareId, product.images[0]);
       }
     });
-    
+
     // Update catering items with real images from products
     for (const item of cateringItems) {
       try {
@@ -85,27 +85,27 @@ export async function protectCateringImages(): Promise<ImageProtectionResult> {
           result.skipped++;
           continue;
         }
-        
+
         const realImageUrl = productImageMap.get(item.squareProductId);
         if (!realImageUrl) {
           result.skipped++;
           continue;
         }
-        
+
         // Check if the catering item needs updating
-        const isGenericImage = item.imageUrl?.includes('/images/catering/') && 
-                               (item.imageUrl.includes('appetizer-package') || 
-                                item.imageUrl.includes('default-item'));
-        
+        const isGenericImage =
+          item.imageUrl?.includes('/images/catering/') &&
+          (item.imageUrl.includes('appetizer-package') || item.imageUrl.includes('default-item'));
+
         if (isGenericImage || !item.imageUrl || item.imageUrl !== realImageUrl) {
           await prisma.cateringItem.update({
             where: { id: item.id },
             data: {
               imageUrl: realImageUrl,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
-          
+
           logger.info(`✅ Updated "${item.name}" with real image from Product table`);
           result.protected++;
         } else {
@@ -116,8 +116,10 @@ export async function protectCateringImages(): Promise<ImageProtectionResult> {
         result.errors++;
       }
     }
-    
-    logger.info(`🔄 Catering image update complete: ${result.protected} updated, ${result.skipped} skipped, ${result.errors} errors`);
+
+    logger.info(
+      `🔄 Catering image update complete: ${result.protected} updated, ${result.skipped} skipped, ${result.errors} errors`
+    );
     return result;
   } catch (error) {
     logger.error('Error in catering image update:', error);
@@ -136,24 +138,24 @@ export async function createCateringImageBackup(): Promise<Record<string, string
       where: {
         isActive: true,
         imageUrl: {
-          not: null
-        }
+          not: null,
+        },
       },
       select: {
         name: true,
         imageUrl: true,
-        squareProductId: true
-      }
+        squareProductId: true,
+      },
     });
-    
+
     const backup: Record<string, string> = {};
-    
+
     for (const item of cateringItems) {
       if (item.squareProductId && item.imageUrl) {
         backup[item.squareProductId] = item.imageUrl;
       }
     }
-    
+
     logger.info(`Created backup for ${Object.keys(backup).length} catering images`);
     return backup;
   } catch (error) {
@@ -166,18 +168,21 @@ export async function createCateringImageBackup(): Promise<Record<string, string
  * NEW LOGIC: Uses the same approach as protectCateringImages
  * Prioritizes real images from Product table over backup
  */
-export async function restoreCateringImagesFromBackup(backup: Record<string, string>): Promise<ImageProtectionResult> {
+export async function restoreCateringImagesFromBackup(
+  backup: Record<string, string>
+): Promise<ImageProtectionResult> {
   const result = { protected: 0, skipped: 0, errors: 0 };
-  
+
   try {
-    logger.info(`🔄 Updating catering images (backup provided with ${Object.keys(backup).length} items, but using Product table as primary source)...`);
-    
+    logger.info(
+      `🔄 Updating catering images (backup provided with ${Object.keys(backup).length} items, but using Product table as primary source)...`
+    );
+
     // Use the same logic as protectCateringImages - prioritize Product table
     return await protectCateringImages();
-    
   } catch (error) {
     logger.error('Error in catering image backup restoration:', error);
     result.errors++;
     return result;
   }
-} 
+}

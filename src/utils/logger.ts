@@ -10,39 +10,43 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const formatValue = (value: any): string => {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
-  
+
   if (typeof value === 'object') {
     try {
       // Special handling for errors
       if (value instanceof Error) {
         return `${value.name}: ${value.message}\n${value.stack || ''}`;
       }
-      
+
       // Handle circular references safely
       const seen = new WeakSet();
       const safeStringify = (obj: any, indent = 2): string => {
-        return JSON.stringify(obj, (key, value) => {
-          // Handle circular references
-          if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) {
-              return '[Circular]';
+        return JSON.stringify(
+          obj,
+          (key, value) => {
+            // Handle circular references
+            if (typeof value === 'object' && value !== null) {
+              if (seen.has(value)) {
+                return '[Circular]';
+              }
+              seen.add(value);
             }
-            seen.add(value);
-          }
-          // Handle BigInt - convert to string
-          if (typeof value === 'bigint') {
-            return value.toString() + 'n';
-          }
-          return value;
-        }, indent);
+            // Handle BigInt - convert to string
+            if (typeof value === 'bigint') {
+              return value.toString() + 'n';
+            }
+            return value;
+          },
+          indent
+        );
       };
-      
+
       return safeStringify(value);
     } catch (err) {
       return String(value);
     }
   }
-  
+
   return String(value);
 };
 
@@ -82,4 +86,4 @@ export const logger = {
   },
 };
 
-export default logger; 
+export default logger;

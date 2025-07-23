@@ -23,16 +23,13 @@ export default async function Login({
   const redirectUrl = resolvedSearchParams.redirect;
 
   return (
-    <AuthContainer 
-      title="Welcome Back" 
-      subtitle="Sign in to your Destino SF account"
-    >
+    <AuthContainer title="Welcome Back" subtitle="Sign in to your Destino SF account">
       <div className="pt-2">
         <SignInForm redirectUrl={redirectUrl} />
-        
+
         <FormMessage message={message} type={messageType} className="text-center mt-4" />
       </div>
-      
+
       <div className="flex flex-col space-y-4 pt-6">
         <div className="text-center text-sm">
           Don&apos;t have an account?{' '}

@@ -33,10 +33,10 @@ export function AuthHandler() {
 
           if (data.user) {
             console.log('Magic link authentication successful:', data.user.email);
-            
+
             // Clear the URL fragment
             window.history.replaceState(null, '', window.location.pathname);
-            
+
             // Redirect to setup password page
             router.push('/setup-password');
           }
@@ -55,4 +55,4 @@ export function AuthHandler() {
 
   // This component doesn't render anything
   return null;
-} 
+}

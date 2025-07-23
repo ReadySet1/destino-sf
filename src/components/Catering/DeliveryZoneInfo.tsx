@@ -11,10 +11,10 @@ interface DeliveryZoneInfoProps {
   compact?: boolean;
 }
 
-export function DeliveryZoneInfo({ 
-  className = '', 
-  showTitle = true, 
-  compact = false 
+export function DeliveryZoneInfo({
+  className = '',
+  showTitle = true,
+  compact = false,
 }: DeliveryZoneInfoProps) {
   const activeZones = getActiveDeliveryZones();
 
@@ -60,19 +60,18 @@ export function DeliveryZoneInfo({
             Delivery Zones & Requirements
           </h3>
         )}
-        
+
         <div className="grid gap-4">
           {activeZones.map(zone => (
-            <div 
-              key={zone.zone} 
+            <div
+              key={zone.zone}
               className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
             >
               <div className="flex justify-between items-start mb-2">
                 <h4 className="font-semibold text-gray-900">{zone.name}</h4>
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-green-600 font-semibold">
-                    <DollarSign className="w-4 h-4" />
-                    ${zone.minimumAmount.toFixed(2)} minimum
+                    <DollarSign className="w-4 h-4" />${zone.minimumAmount.toFixed(2)} minimum
                   </div>
                   {zone.deliveryFee && zone.deliveryFee > 0 && (
                     <div className="text-sm text-gray-600 mt-1">
@@ -81,11 +80,9 @@ export function DeliveryZoneInfo({
                   )}
                 </div>
               </div>
-              
-              {zone.description && (
-                <p className="text-sm text-gray-600 mb-2">{zone.description}</p>
-              )}
-              
+
+              {zone.description && <p className="text-sm text-gray-600 mb-2">{zone.description}</p>}
+
               {zone.estimatedDeliveryTime && (
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <Clock className="w-4 h-4" />
@@ -95,11 +92,11 @@ export function DeliveryZoneInfo({
             </div>
           ))}
         </div>
-        
+
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>Note:</strong> Minimum order requirements apply to catering orders only. 
-            Regular menu items have different minimums.
+            <strong>Note:</strong> Minimum order requirements apply to catering orders only. Regular
+            menu items have different minimums.
           </p>
         </div>
       </CardContent>
@@ -107,4 +104,4 @@ export function DeliveryZoneInfo({
   );
 }
 
-export default DeliveryZoneInfo; 
+export default DeliveryZoneInfo;

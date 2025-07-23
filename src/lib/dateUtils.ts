@@ -1,4 +1,15 @@
-import { addDays, format, getDay, parse, setHours, setMinutes, setSeconds, setMilliseconds, isBefore, startOfDay } from 'date-fns';
+import {
+  addDays,
+  format,
+  getDay,
+  parse,
+  setHours,
+  setMinutes,
+  setSeconds,
+  setMilliseconds,
+  isBefore,
+  startOfDay,
+} from 'date-fns';
 
 /**
  * Checks if a given date is a business day (Monday to Friday).
@@ -44,7 +55,7 @@ export function getEarliestPickupDate(): Date {
  * @returns The earliest local delivery date.
  */
 export function getEarliestDeliveryDate(): Date {
-    // Need 2 full business days notice.
+  // Need 2 full business days notice.
   return getBusinessDaysAhead(new Date(), 2);
 }
 
@@ -67,7 +78,7 @@ export function getPickupTimeSlots(): string[] {
 export function getDeliveryTimeSlots(): string[] {
   const slots: string[] = [];
   for (let hour = 10; hour <= 14; hour++) {
-     slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    slots.push(`${hour.toString().padStart(2, '0')}:00`);
   }
   return slots;
 }
@@ -79,16 +90,16 @@ export function getDeliveryTimeSlots(): string[] {
  * @returns A Date object representing the combined date and time, or null if parsing fails.
  */
 function parseDateTime(dateStr: string, timeStr: string): Date | null {
-    if (!dateStr || !timeStr) return null;
-    try {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const [hour, minute] = timeStr.split(':').map(Number);
-        // Month is 0-indexed in JS Date
-        return new Date(year, month - 1, day, hour, minute);
-    } catch (e) {
-        console.error("Error parsing date/time:", e);
-        return null;
-    }
+  if (!dateStr || !timeStr) return null;
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hour, minute] = timeStr.split(':').map(Number);
+    // Month is 0-indexed in JS Date
+    return new Date(year, month - 1, day, hour, minute);
+  } catch (e) {
+    console.error('Error parsing date/time:', e);
+    return null;
+  }
 }
 
 /**
@@ -106,7 +117,7 @@ export function isValidPickupDateTime(dateStr: string, timeStr: string): boolean
 
   // 1. Check if date is on or after the earliest possible date
   if (isBefore(startOfDay(selectedDateTime), startOfDay(earliestPickupDate))) {
-      return false;
+    return false;
   }
 
   // 2. Check if selected date is a business day
@@ -119,10 +130,10 @@ export function isValidPickupDateTime(dateStr: string, timeStr: string): boolean
   if (hour < 10 || hour > 16) {
     return false;
   }
-  
+
   // 4. Check if time slot is one of the generated ones (redundant if using select, but good validation)
   if (!getPickupTimeSlots().includes(timeStr)) {
-      return false;
+    return false;
   }
 
   return true;
@@ -136,32 +147,31 @@ export function isValidPickupDateTime(dateStr: string, timeStr: string): boolean
  * @returns True if valid, false otherwise.
  */
 export function isValidDeliveryDateTime(dateStr: string, timeStr: string): boolean {
-    const selectedDateTime = parseDateTime(dateStr, timeStr);
-    if (!selectedDateTime) return false;
+  const selectedDateTime = parseDateTime(dateStr, timeStr);
+  if (!selectedDateTime) return false;
 
-    const earliestDeliveryDate = getEarliestDeliveryDate();
+  const earliestDeliveryDate = getEarliestDeliveryDate();
 
-    // 1. Check if date is on or after the earliest possible date
-    if (isBefore(startOfDay(selectedDateTime), startOfDay(earliestDeliveryDate))) {
-        return false;
-    }
+  // 1. Check if date is on or after the earliest possible date
+  if (isBefore(startOfDay(selectedDateTime), startOfDay(earliestDeliveryDate))) {
+    return false;
+  }
 
-    // 2. Check if selected date is a business day
-    if (!isBusinessDay(selectedDateTime)) {
-        return false;
-    }
+  // 2. Check if selected date is a business day
+  if (!isBusinessDay(selectedDateTime)) {
+    return false;
+  }
 
-    // 3. Check if time is within the allowed range (10:00 to 14:00)
-    const hour = selectedDateTime.getHours();
-    if (hour < 10 || hour > 14) {
-        return false;
-    }
-    
-    // 4. Check if time slot is one of the generated ones
-    if (!getDeliveryTimeSlots().includes(timeStr)) {
-        return false;
-    }
+  // 3. Check if time is within the allowed range (10:00 to 14:00)
+  const hour = selectedDateTime.getHours();
+  if (hour < 10 || hour > 14) {
+    return false;
+  }
 
+  // 4. Check if time slot is one of the generated ones
+  if (!getDeliveryTimeSlots().includes(timeStr)) {
+    return false;
+  }
 
   return true;
-} 
+}

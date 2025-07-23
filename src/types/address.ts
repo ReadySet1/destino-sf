@@ -16,4 +16,4 @@ export interface Address {
   postalCode: string;
   /** Country (defaults to US) */
   country?: string;
-} 
+}

@@ -40,7 +40,9 @@ export default function AdminDebugPage() {
         setLoading(true);
 
         // Get client-side user
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setClientUser(user as unknown as UserData | undefined);
 
         // Fetch server-side debug data
@@ -71,7 +73,9 @@ export default function AdminDebugPage() {
       setError(null);
 
       // Get updated client-side user
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setClientUser(user as unknown as UserData | undefined);
 
       // Fetch updated server-side debug data

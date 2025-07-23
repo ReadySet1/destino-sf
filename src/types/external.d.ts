@@ -71,4 +71,4 @@ export interface SquareCategory {
   id: string;
   name: string;
   description?: string;
-} 
+}

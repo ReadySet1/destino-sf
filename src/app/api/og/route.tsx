@@ -63,107 +63,110 @@ export async function GET(req: NextRequest) {
     const layout = getLayout(pageType);
 
     const response = new ImageResponse(
-      <div
-        style={{
-          height: '100%',
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: layout.bg,
-        }}
-      >
+      (
         <div
           style={{
+            height: '100%',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            padding: '60px 80px',
-            margin: '40px',
-            borderRadius: '24px',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
-            border: `4px solid ${layout.accent}`,
-            width: '85%',
-            maxWidth: '900px',
+            background: layout.bg,
           }}
         >
-          {/* Icon */}
-          <div
-            style={{
-              fontSize: 80,
-              marginBottom: '20px',
-              background: layout.accent,
-              borderRadius: '50%',
-              width: '120px',
-              height: '120px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: '-20px',
-            }}
-          >
-            {layout.icon}
-          </div>
-
-          {/* Title */}
-          <h1
-            style={{
-              fontSize: Math.min(title.length > 50 ? 48 : 60, 60),
-              fontWeight: 'bold',
-              color: '#1a1a1a',
-              margin: '0 0 24px 0',
-              textAlign: 'center',
-              lineHeight: 1.1,
-              fontFamily: 'Inter',
-              maxWidth: '100%',
-            }}
-          >
-            {title}
-          </h1>
-
-          {/* Description */}
-          <p
-            style={{
-              fontSize: Math.min(description.length > 100 ? 24 : 28, 28),
-              color: '#4a5568',
-              margin: '0 0 20px 0',
-              textAlign: 'center',
-              lineHeight: 1.4,
-              fontFamily: 'Inter',
-              maxWidth: '100%',
-            }}
-          >
-            {description}
-          </p>
-
-          {/* Brand */}
           <div
             style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              marginTop: '20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              padding: '60px 80px',
+              margin: '40px',
+              borderRadius: '24px',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
+              border: `4px solid ${layout.accent}`,
+              width: '85%',
+              maxWidth: '900px',
             }}
           >
+            {/* Icon */}
             <div
               style={{
-                fontSize: 24,
-                fontWeight: 'bold',
-                color: layout.accent === '#ffffff' ? '#f77c22' : layout.accent,
-                fontFamily: 'Inter',
-                background: layout.accent === '#ffffff' ? 'transparent' : 'rgba(255, 255, 255, 0.2)',
-                padding: '8px 16px',
-                borderRadius: '12px',
+                fontSize: 80,
+                marginBottom: '20px',
+                background: layout.accent,
+                borderRadius: '50%',
+                width: '120px',
+                height: '120px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '-20px',
               }}
             >
-              DestinoSF.com
+              {layout.icon}
+            </div>
+
+            {/* Title */}
+            <h1
+              style={{
+                fontSize: Math.min(title.length > 50 ? 48 : 60, 60),
+                fontWeight: 'bold',
+                color: '#1a1a1a',
+                margin: '0 0 24px 0',
+                textAlign: 'center',
+                lineHeight: 1.1,
+                fontFamily: 'Inter',
+                maxWidth: '100%',
+              }}
+            >
+              {title}
+            </h1>
+
+            {/* Description */}
+            <p
+              style={{
+                fontSize: Math.min(description.length > 100 ? 24 : 28, 28),
+                color: '#4a5568',
+                margin: '0 0 20px 0',
+                textAlign: 'center',
+                lineHeight: 1.4,
+                fontFamily: 'Inter',
+                maxWidth: '100%',
+              }}
+            >
+              {description}
+            </p>
+
+            {/* Brand */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '20px',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 'bold',
+                  color: layout.accent === '#ffffff' ? '#f77c22' : layout.accent,
+                  fontFamily: 'Inter',
+                  background:
+                    layout.accent === '#ffffff' ? 'transparent' : 'rgba(255, 255, 255, 0.2)',
+                  padding: '8px 16px',
+                  borderRadius: '12px',
+                }}
+              >
+                DestinoSF.com
+              </div>
             </div>
           </div>
         </div>
-      </div>,
+      ),
       {
         width: 1200,
         height: 630,

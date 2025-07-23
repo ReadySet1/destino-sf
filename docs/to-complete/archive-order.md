@@ -23,7 +23,7 @@ ALTER TABLE orders ADD COLUMN archived_at TIMESTAMP;
 ALTER TABLE orders ADD COLUMN archived_by STRING (UUID);
 ALTER TABLE orders ADD COLUMN archive_reason STRING;
 
--- For catering_orders table  
+-- For catering_orders table
 ALTER TABLE catering_orders ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
 ALTER TABLE catering_orders ADD COLUMN archived_at TIMESTAMP;
 ALTER TABLE catering_orders ADD COLUMN archived_by STRING (UUID);
@@ -34,7 +34,6 @@ CREATE INDEX idx_orders_is_archived ON orders(is_archived);
 CREATE INDEX idx_catering_orders_is_archived ON catering_orders(is_archived);
 ```
 
-
 ### 2. Prisma Schema Updates
 
 Update the Prisma schema to include the new fields:
@@ -44,27 +43,27 @@ prisma
 ```prisma
 model Order {
   // ... existing fields ...
-  
+
   // Archive fields
   isArchived    Boolean   @default(false) @map("is_archived")
   archivedAt    DateTime? @map("archived_at")
   archivedBy    String?   @db.Uuid @map("archived_by")
   archiveReason String?   @map("archive_reason")
   archivedByUser Profile? @relation("ArchivedOrders", fields: [archivedBy], references: [id])
-  
+
   @@index([isArchived])
 }
 
 model CateringOrder {
   // ... existing fields ...
-  
+
   // Archive fields
   isArchived    Boolean   @default(false) @map("is_archived")
   archivedAt    DateTime? @map("archived_at")
   archivedBy    String?   @db.Uuid @map("archived_by")
   archiveReason String?   @map("archive_reason")
   archivedByUser Profile? @relation("ArchivedCateringOrders", fields: [archivedBy], references: [id])
-  
+
   @@index([isArchived])
 }
 
@@ -85,16 +84,26 @@ typescript
 
 ```typescript
 // Archive single order
-async function archiveOrder(orderId: string, reason?: string): Promise<{ success: boolean; error?: string }>
+async function archiveOrder(
+  orderId: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }>;
 
 // Archive multiple orders
-async function archiveBulkOrders(orderIds: string[], reason?: string): Promise<{ success: boolean; count: number; errors?: string[] }>
+async function archiveBulkOrders(
+  orderIds: string[],
+  reason?: string
+): Promise<{ success: boolean; count: number; errors?: string[] }>;
 
 // Unarchive order
-async function unarchiveOrder(orderId: string): Promise<{ success: boolean; error?: string }>
+async function unarchiveOrder(orderId: string): Promise<{ success: boolean; error?: string }>;
 
 // Get archived orders
-async function getArchivedOrders(params: { page?: number; search?: string; type?: 'all' | 'regular' | 'catering' }): Promise<ArchivedOrdersResponse>
+async function getArchivedOrders(params: {
+  page?: number;
+  search?: string;
+  type?: 'all' | 'regular' | 'catering';
+}): Promise<ArchivedOrdersResponse>;
 ```
 
 #### 3.2 API Routes (Optional)
@@ -114,7 +123,6 @@ Modify `OrdersTable.tsx` to include archive actions:
 1. Single Order Archive
 
    :
-
    - Add "Archive" button in the Actions column
    - Show confirmation dialog with optional reason input
    - Display success/error toast notifications
@@ -122,7 +130,6 @@ Modify `OrdersTable.tsx` to include archive actions:
 2. Bulk Archive
 
    :
-
    - Add checkbox column for multi-select
    - Add bulk actions toolbar when items are selected
    - Include "Archive Selected" button
@@ -130,7 +137,6 @@ Modify `OrdersTable.tsx` to include archive actions:
 3. Visual Indicators
 
    :
-
    - Different styling for orders marked for archiving
    - Loading states during archive operations
 
@@ -156,20 +162,17 @@ New page at `/admin/orders/archived` with:
 Implement smart detection of testing orders based on:
 
 1. Email Patterns
-
    - Common test email patterns (test@, demo@, example@)
    - Temporary email services
    - Plus addressing patterns (+test)
 
 2. Order Patterns
-
    - Repeated orders from same email in short time
    - Orders with specific test product names
    - Orders with $0.00 or $0.01 amounts
    - Orders with specific notes/comments
 
 3. Payment Patterns
-
    - Test card numbers (if stored)
    - Failed payment attempts
    - Specific payment methods marked as test
@@ -192,14 +195,12 @@ Create configurable rules to automatically archive orders:
 ### 7. Security & Permissions
 
 1. Role-Based Access
-
    - Only ADMIN role can archive/unarchive orders
    - Add audit log for all archive operations
 
 2. Data Protection
 
    :
-
    - Archived orders remain in database (soft delete)
    - All relationships maintained
    - Can be restored anytime
@@ -209,7 +210,6 @@ Create configurable rules to automatically archive orders:
 1. Phase 1
 
    : Database migration
-
    - Add archive fields
    - Create indexes
    - Update Prisma schema
@@ -217,7 +217,6 @@ Create configurable rules to automatically archive orders:
 2. Phase 2
 
    : Backend implementation
-
    - Implement server actions
    - Add validation and error handling
    - Create automated tests
@@ -225,7 +224,6 @@ Create configurable rules to automatically archive orders:
 3. Phase 3
 
    : Frontend implementation
-
    - Update orders table UI
    - Add archive management pages
    - Implement filtering
@@ -233,7 +231,6 @@ Create configurable rules to automatically archive orders:
 4. Phase 4
 
    : Automation
-
    - Implement auto-detection
    - Add scheduled tasks
    - Create admin notifications
@@ -243,7 +240,6 @@ Create configurable rules to automatically archive orders:
 1. Query Optimization
 
    :
-
    - Default queries exclude archived orders (`WHERE is_archived = false`)
    - Separate indexes for archived status
    - Consider partitioning for very large datasets
@@ -251,7 +247,6 @@ Create configurable rules to automatically archive orders:
 2. Caching Strategy
 
    :
-
    - Cache archived order counts
    - Invalidate cache on archive/unarchive operations
 
@@ -260,7 +255,6 @@ Create configurable rules to automatically archive orders:
 1. Metrics to Track
 
    :
-
    - Number of archived orders over time
    - Archive/unarchive frequency
    - Most common archive reasons
@@ -269,7 +263,6 @@ Create configurable rules to automatically archive orders:
 2. Admin Dashboard Widget
 
    :
-
    - Show archive statistics
    - Quick access to recent archives
    - Alerts for unusual patterns
@@ -279,7 +272,6 @@ Create configurable rules to automatically archive orders:
 1. Bulk Operations UI
 
    :
-
    - Advanced search and filter before archiving
    - Archive by date range
    - Archive by customer
@@ -287,14 +279,12 @@ Create configurable rules to automatically archive orders:
 2. Export Features
 
    :
-
    - Export archived orders to CSV/Excel
    - Scheduled reports of archived data
 
 3. Integration with Existing Tools
 
    :
-
    - Update the `clean-testing-orders.ts` script to use archive instead of delete
    - Integration with Square/payment systems for test order detection
 

@@ -94,10 +94,7 @@ export async function getUserAddresses() {
 
   return prisma.address.findMany({
     where: { userId: user.id },
-    orderBy: [
-      { isDefault: 'desc' },
-      { createdAt: 'desc' }
-    ]
+    orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
   });
 }
 
@@ -109,15 +106,15 @@ export async function createAddress(input: CreateAddressInput) {
   if (input.isDefault) {
     await prisma.address.updateMany({
       where: { userId: user.id },
-      data: { isDefault: false }
+      data: { isDefault: false },
     });
   }
 
   const address = await prisma.address.create({
     data: {
       ...input,
-      userId: user.id
-    }
+      userId: user.id,
+    },
   });
 
   revalidatePath('/account/addresses');
@@ -132,7 +129,7 @@ export async function updateAddress(input: UpdateAddressInput) {
 
   // Verify ownership
   const existing = await prisma.address.findFirst({
-    where: { id, userId: user.id }
+    where: { id, userId: user.id },
   });
 
   if (!existing) throw new Error('Address not found');
@@ -141,13 +138,13 @@ export async function updateAddress(input: UpdateAddressInput) {
   if (data.isDefault) {
     await prisma.address.updateMany({
       where: { userId: user.id, NOT: { id } },
-      data: { isDefault: false }
+      data: { isDefault: false },
     });
   }
 
   const address = await prisma.address.update({
     where: { id },
-    data
+    data,
   });
 
   revalidatePath('/account/addresses');
@@ -160,7 +157,7 @@ export async function deleteAddress(id: string) {
 
   // Verify ownership
   const existing = await prisma.address.findFirst({
-    where: { id, userId: user.id }
+    where: { id, userId: user.id },
   });
 
   if (!existing) throw new Error('Address not found');
@@ -177,13 +174,13 @@ export async function setDefaultAddress(id: string) {
   // Unset all defaults
   await prisma.address.updateMany({
     where: { userId: user.id },
-    data: { isDefault: false }
+    data: { isDefault: false },
   });
 
   // Set new default
   await prisma.address.update({
     where: { id },
-    data: { isDefault: true }
+    data: { isDefault: true },
   });
 
   revalidatePath('/account/addresses');
@@ -209,10 +206,7 @@ export async function GET() {
 
   const addresses = await prisma.address.findMany({
     where: { userId: user.id },
-    orderBy: [
-      { isDefault: 'desc' },
-      { createdAt: 'desc' }
-    ]
+    orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
   });
 
   return NextResponse.json(addresses);
@@ -231,8 +225,8 @@ export async function POST(request: Request) {
   const address = await prisma.address.create({
     data: {
       ...body,
-      userId: user.id
-    }
+      userId: user.id,
+    },
   });
 
   return NextResponse.json(address);
@@ -259,57 +253,39 @@ interface AddressCardProps {
   onSetDefault: (id: string) => void;
 }
 
-export function AddressCard({
-  address,
-  onEdit,
-  onDelete,
-  onSetDefault
-}: AddressCardProps) {
+export function AddressCard({ address, onEdit, onDelete, onSetDefault }: AddressCardProps) {
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            {address.label && (
-              <h3 className="font-semibold mb-1">{address.label}</h3>
-            )}
-            {address.isDefault && (
-              <Badge className="mb-2">Default</Badge>
-            )}
+            {address.label && <h3 className="font-semibold mb-1">{address.label}</h3>}
+            {address.isDefault && <Badge className="mb-2">Default</Badge>}
             <p className="text-sm text-muted-foreground">
-              {address.recipientName}<br />
-              {address.street}<br />
-              {address.street2 && <>{address.street2}<br /></>}
+              {address.recipientName}
+              <br />
+              {address.street}
+              <br />
+              {address.street2 && (
+                <>
+                  {address.street2}
+                  <br />
+                </>
+              )}
               {address.city}, {address.state} {address.postalCode}
             </p>
-            {address.phone && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {address.phone}
-              </p>
-            )}
+            {address.phone && <p className="text-sm text-muted-foreground mt-1">{address.phone}</p>}
           </div>
           <div className="flex gap-2">
             {!address.isDefault && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onSetDefault(address.id)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => onSetDefault(address.id)}>
                 <Star className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(address)}
-            >
+            <Button variant="ghost" size="icon" onClick={() => onEdit(address)}>
               <Edit2 className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(address.id)}
-            >
+            <Button variant="ghost" size="icon" onClick={() => onDelete(address.id)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -328,7 +304,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { US_STATES } from '@/lib/constants';
 
 const addressSchema = z.object({
@@ -340,7 +322,7 @@ const addressSchema = z.object({
   state: z.string().min(2, 'State is required'),
   postalCode: z.string().regex(/^\\d{5}(-\\d{4})?$/, 'Invalid ZIP code'),
   phone: z.string().optional(),
-  isDefault: z.boolean().optional()
+  isDefault: z.boolean().optional(),
 });
 
 interface AddressFormProps {
@@ -355,21 +337,17 @@ export function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch
+    watch,
   } = useForm<CreateAddressInput>({
     resolver: zodResolver(addressSchema),
-    defaultValues: address || {}
+    defaultValues: address || {},
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
         <Label htmlFor="label">Address Label (optional)</Label>
-        <Input
-          id="label"
-          placeholder="e.g., Home, Work"
-          {...register('label')}
-        />
+        <Input id="label" placeholder="e.g., Home, Work" {...register('label')} />
       </div>
 
       <div>
@@ -391,9 +369,7 @@ export function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
           {...register('street')}
           className={errors.street ? 'border-red-500' : ''}
         />
-        {errors.street && (
-          <p className="text-sm text-red-500">{errors.street.message}</p>
-        )}
+        {errors.street && <p className="text-sm text-red-500">{errors.street.message}</p>}
       </div>
 
       <div>
@@ -404,36 +380,25 @@ export function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            {...register('city')}
-            className={errors.city ? 'border-red-500' : ''}
-          />
-          {errors.city && (
-            <p className="text-sm text-red-500">{errors.city.message}</p>
-          )}
+          <Input id="city" {...register('city')} className={errors.city ? 'border-red-500' : ''} />
+          {errors.city && <p className="text-sm text-red-500">{errors.city.message}</p>}
         </div>
 
         <div>
           <Label htmlFor="state">State</Label>
-          <Select
-            value={watch('state')}
-            onValueChange={(value) => setValue('state', value)}
-          >
+          <Select value={watch('state')} onValueChange={value => setValue('state', value)}>
             <SelectTrigger className={errors.state ? 'border-red-500' : ''}>
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
-              {US_STATES.map((state) => (
+              {US_STATES.map(state => (
                 <SelectItem key={state.code} value={state.code}>
                   {state.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.state && (
-            <p className="text-sm text-red-500">{errors.state.message}</p>
-          )}
+          {errors.state && <p className="text-sm text-red-500">{errors.state.message}</p>}
         </div>
       </div>
 
@@ -444,25 +409,19 @@ export function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
           {...register('postalCode')}
           className={errors.postalCode ? 'border-red-500' : ''}
         />
-        {errors.postalCode && (
-          <p className="text-sm text-red-500">{errors.postalCode.message}</p>
-        )}
+        {errors.postalCode && <p className="text-sm text-red-500">{errors.postalCode.message}</p>}
       </div>
 
       <div>
         <Label htmlFor="phone">Phone Number (optional)</Label>
-        <Input
-          id="phone"
-          type="tel"
-          {...register('phone')}
-        />
+        <Input id="phone" type="tel" {...register('phone')} />
       </div>
 
       <div className="flex items-center space-x-2">
         <Checkbox
           id="isDefault"
           checked={watch('isDefault')}
-          onCheckedChange={(checked) => setValue('isDefault', checked as boolean)}
+          onCheckedChange={checked => setValue('isDefault', checked as boolean)}
         />
         <Label htmlFor="isDefault">Set as default address</Label>
       </div>
@@ -491,13 +450,28 @@ Create the main address management page:
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUserAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress } from '@/app/actions/addresses';
+import {
+  getUserAddresses,
+  createAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
+} from '@/app/actions/addresses';
 import { SavedAddress, CreateAddressInput } from '@/types/address';
 import { AddressCard } from '@/components/Address/AddressCard';
 import { AddressForm } from '@/components/Address/AddressForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -509,7 +483,7 @@ export default function AddressesPage() {
 
   const { data: addresses = [], isLoading } = useQuery({
     queryKey: ['addresses'],
-    queryFn: getUserAddresses
+    queryFn: getUserAddresses,
   });
 
   const createMutation = useMutation({
@@ -521,7 +495,7 @@ export default function AddressesPage() {
     },
     onError: () => {
       toast.error('Failed to add address');
-    }
+    },
   });
 
   const updateMutation = useMutation({
@@ -533,7 +507,7 @@ export default function AddressesPage() {
     },
     onError: () => {
       toast.error('Failed to update address');
-    }
+    },
   });
 
   const deleteMutation = useMutation({
@@ -544,7 +518,7 @@ export default function AddressesPage() {
     },
     onError: () => {
       toast.error('Failed to delete address');
-    }
+    },
   });
 
   const setDefaultMutation = useMutation({
@@ -555,14 +529,14 @@ export default function AddressesPage() {
     },
     onError: () => {
       toast.error('Failed to update default address');
-    }
+    },
   });
 
   const handleSubmit = async (data: CreateAddressInput) => {
     if (editingAddress) {
       await updateMutation.mutateAsync({
         id: editingAddress.id,
-        ...data
+        ...data,
       });
     } else {
       await createMutation.mutateAsync(data);
@@ -592,16 +566,12 @@ export default function AddressesPage() {
 
       {addresses.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">
-            You haven't saved any addresses yet.
-          </p>
-          <Button onClick={() => setIsFormOpen(true)}>
-            Add Your First Address
-          </Button>
+          <p className="text-muted-foreground mb-4">You haven't saved any addresses yet.</p>
+          <Button onClick={() => setIsFormOpen(true)}>Add Your First Address</Button>
         </div>
       ) : (
         <div className="grid gap-4">
-          {addresses.map((address) => (
+          {addresses.map(address => (
             <AddressCard
               key={address.id}
               address={address}
@@ -615,7 +585,7 @@ export default function AddressesPage() {
 
       <Dialog
         open={isFormOpen || !!editingAddress}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) {
             setIsFormOpen(false);
             setEditingAddress(undefined);
@@ -624,9 +594,7 @@ export default function AddressesPage() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
-            </DialogTitle>
+            <DialogTitle>{editingAddress ? 'Edit Address' : 'Add New Address'}</DialogTitle>
           </DialogHeader>
           <AddressForm
             address={editingAddress}
@@ -641,7 +609,7 @@ export default function AddressesPage() {
 
       <AlertDialog
         open={!!deletingAddressId}
-        onOpenChange={(open) => !open && setDeletingAddressId(null)}
+        onOpenChange={open => !open && setDeletingAddressId(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -652,9 +620,7 @@ export default function AddressesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -688,26 +654,25 @@ export function AddressSelector({
   addresses,
   selectedId,
   onSelect,
-  onAddNew
+  onAddNew,
 }: AddressSelectorProps) {
   return (
     <div className="space-y-4">
       <RadioGroup
         value={selectedId}
-        onValueChange={(id) => {
+        onValueChange={id => {
           const address = addresses.find(a => a.id === id);
           if (address) onSelect(address);
         }}
       >
-        {addresses.map((address) => (
+        {addresses.map(address => (
           <div key={address.id} className="flex items-start space-x-2">
             <RadioGroupItem value={address.id} id={address.id} />
             <Label htmlFor={address.id} className="flex-1 cursor-pointer">
               <div>
-                {address.label && (
-                  <span className="font-semibold">{address.label}: </span>
-                )}
-                {address.recipientName}, {address.street}, {address.city}, {address.state} {address.postalCode}
+                {address.label && <span className="font-semibold">{address.label}: </span>}
+                {address.recipientName}, {address.street}, {address.city}, {address.state}{' '}
+                {address.postalCode}
               </div>
             </Label>
           </div>
@@ -823,6 +788,3 @@ ALTER TABLE "addresses" ADD CONSTRAINT "addresses_userId_fkey"
 4. **Guest checkout**: Handle address storage for guest users
 5. **Mobile optimization**: Ensure the address manager works well on mobile devices
 6. **Testing**: Add comprehensive tests for all address operations
-
-
-

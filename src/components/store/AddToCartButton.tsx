@@ -27,20 +27,21 @@ export function AddToCartButton({
   const handleAddToCart = () => {
     // Convert price to number if it's a Decimal
     const numericPrice = serializeDecimal(product.price) || 0;
-    
+
     // Create a properly formatted product object
     const cartProduct = {
       ...product,
       price: numericPrice,
       // If product has variants, use the first one's price (if available)
-      ...(product.variants && product.variants.length > 0 && {
-        variantId: product.variants[0].id,
-        price: serializeDecimal(product.variants[0].price) || numericPrice,
-      }),
+      ...(product.variants &&
+        product.variants.length > 0 && {
+          variantId: product.variants[0].id,
+          price: serializeDecimal(product.variants[0].price) || numericPrice,
+        }),
     };
-    
+
     addToCart(cartProduct, quantity);
-    
+
     // Show visual feedback
     setIsAdded(true);
     setTimeout(() => {
@@ -69,4 +70,4 @@ export function AddToCartButton({
       )}
     </Button>
   );
-} 
+}

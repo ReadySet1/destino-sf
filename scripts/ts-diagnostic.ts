@@ -57,20 +57,25 @@ try {
     const output = (error.stdout as Buffer)?.toString() || '';
     const errorCount = output.match(/Found (\d+) error/)?.[1] || 'unknown number of';
     console.log(`❌ ${errorCount} TypeScript errors found`);
-    
+
     // Extract and categorize errors
     const missingPropErrors = output.match(/Property '([^']+)' is missing/g) || [];
     const notAssignableErrors = output.match(/Type '[^']+' is not assignable to type/g) || [];
-    
+
     if (missingPropErrors.length > 0) {
       console.log('\nMost common missing properties:');
-      const props = missingPropErrors.map((e: string) => e.match(/Property '([^']+)' is missing/)?.[1]);
-      const propCounts = props.reduce((acc: Record<string, number>, prop: string | undefined) => {
-        if (!prop) return acc;
-        acc[prop] = (acc[prop] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
+      const props = missingPropErrors.map(
+        (e: string) => e.match(/Property '([^']+)' is missing/)?.[1]
+      );
+      const propCounts = props.reduce(
+        (acc: Record<string, number>, prop: string | undefined) => {
+          if (!prop) return acc;
+          acc[prop] = (acc[prop] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
       Object.entries(propCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
@@ -78,7 +83,7 @@ try {
           console.log(`- '${prop}' is missing in ${count} places`);
         });
     }
-    
+
     if (notAssignableErrors.length > 0) {
       console.log('\nType assignment issues found:', notAssignableErrors.length);
     }
@@ -95,4 +100,4 @@ console.log('3. Ensure environment variables are properly typed and available');
 console.log('4. Add @ts-ignore comments temporarily for urgent deployments');
 console.log('5. Consider using skipTypeCheck in next.config.js for production builds if needed');
 
-console.log('\n✅ Diagnostic complete'); 
+console.log('\n✅ Diagnostic complete');

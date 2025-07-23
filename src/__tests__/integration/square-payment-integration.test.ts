@@ -1,5 +1,9 @@
 import * as Square from 'square';
-import { createPayment, processGiftCardPayment, handlePaymentWebhook } from '@/lib/square/payments-api';
+import {
+  createPayment,
+  processGiftCardPayment,
+  handlePaymentWebhook,
+} from '@/lib/square/payments-api';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock Square SDK
@@ -17,7 +21,7 @@ describe('Square Payment Integration - E2E Testing', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock Square API responses
     mockPaymentsApi = {
       createPayment: jest.fn(),
@@ -763,21 +767,19 @@ describe('Square Payment Integration - E2E Testing', () => {
       const rateLimitError = new Error('Rate limit exceeded');
       (rateLimitError as any).statusCode = 429;
 
-      mockPaymentsApi.createPayment
-        .mockRejectedValueOnce(rateLimitError)
-        .mockResolvedValueOnce({
-          result: {
-            payment: {
-              id: 'payment-rate-limited-123',
-              status: 'COMPLETED',
-              totalMoney: {
-                amount: BigInt(1000),
-                currency: 'USD',
-              },
-              orderId: 'order-rate-limited',
+      mockPaymentsApi.createPayment.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce({
+        result: {
+          payment: {
+            id: 'payment-rate-limited-123',
+            status: 'COMPLETED',
+            totalMoney: {
+              amount: BigInt(1000),
+              currency: 'USD',
             },
+            orderId: 'order-rate-limited',
           },
-        });
+        },
+      });
 
       // Implement rate limit handling
       const handleRateLimit = async (request: any) => {
@@ -810,9 +812,7 @@ describe('Square Payment Integration - E2E Testing', () => {
           'SQUARE_ENVIRONMENT',
         ];
 
-        const missingVars = requiredEnvVars.filter(
-          varName => !process.env[varName]
-        );
+        const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
         if (missingVars.length > 0) {
           throw new Error(`Missing required Square configuration: ${missingVars.join(', ')}`);
@@ -858,4 +858,4 @@ describe('Square Payment Integration - E2E Testing', () => {
       });
     });
   });
-}); 
+});

@@ -193,8 +193,22 @@ describe('ProductCard', () => {
       const mockProductWithVariants = {
         ...mockProduct,
         variants: [
-          { id: 'var-1', name: 'Small', price: 8.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
-          { id: 'var-2', name: 'Large', price: 12.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
+          {
+            id: 'var-1',
+            name: 'Small',
+            price: 8.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'var-2',
+            name: 'Large',
+            price: 12.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         ],
       };
       render(<ProductCard product={mockProductWithVariants} />);
@@ -210,8 +224,22 @@ describe('ProductCard', () => {
       const mockProductWithVariants = {
         ...mockProduct,
         variants: [
-          { id: 'var-1', name: 'Small', price: 8.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
-          { id: 'var-2', name: 'Large', price: 12.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
+          {
+            id: 'var-1',
+            name: 'Small',
+            price: 8.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'var-2',
+            name: 'Large',
+            price: 12.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         ],
       };
       render(<ProductCard product={mockProductWithVariants} />);
@@ -266,8 +294,22 @@ describe('ProductCard', () => {
       const mockProductWithVariants = {
         ...mockProduct,
         variants: [
-          { id: 'var-1', name: 'Small', price: 8.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
-          { id: 'var-2', name: 'Large', price: 12.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
+          {
+            id: 'var-1',
+            name: 'Small',
+            price: 8.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'var-2',
+            name: 'Large',
+            price: 12.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         ],
       };
       render(<ProductCard product={mockProductWithVariants} />);
@@ -306,8 +348,22 @@ describe('ProductCard', () => {
       const mockProductWithVariants = {
         ...mockProduct,
         variants: [
-          { id: 'var-1', name: 'Small', price: 8.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
-          { id: 'var-2', name: 'Large', price: 12.99, productId: '1', createdAt: new Date(), updatedAt: new Date() },
+          {
+            id: 'var-1',
+            name: 'Small',
+            price: 8.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'var-2',
+            name: 'Large',
+            price: 12.99,
+            productId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         ],
       };
       render(<ProductCard product={mockProductWithVariants} />);

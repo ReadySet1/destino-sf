@@ -4,7 +4,7 @@ let testPrisma: PrismaClient | null = null;
 
 export async function setupTestDatabase() {
   console.log('🔧 Setting up test database...');
-  
+
   // Create a test-specific Prisma client with connection pooling disabled
   testPrisma = new PrismaClient({
     datasources: {
@@ -22,7 +22,7 @@ export async function setupTestDatabase() {
 
     // Optionally seed test data
     await seedTestData();
-    
+
     return testPrisma;
   } catch (error) {
     console.error('❌ Failed to setup test database:', error);
@@ -32,13 +32,13 @@ export async function setupTestDatabase() {
 
 export async function cleanupTestDatabase() {
   if (!testPrisma) return;
-  
+
   console.log('🧹 Cleaning up test database...');
-  
+
   try {
     // Clean up test data (optional - depends on your test strategy)
     // await cleanupTestData();
-    
+
     // Disconnect from database
     await testPrisma.$disconnect();
     console.log('✅ Test database cleanup completed');
@@ -51,13 +51,13 @@ export async function cleanupTestDatabase() {
 
 async function seedTestData() {
   if (!testPrisma) return;
-  
+
   console.log('🌱 Seeding test data...');
-  
+
   try {
     // Check if test products already exist
     const existingProducts = await testPrisma.product.count();
-    
+
     if (existingProducts > 0) {
       console.log('✅ Test data already exists, skipping seed');
       return;
@@ -87,7 +87,9 @@ async function seedTestData() {
         squareId: 'test-product-empanada-beef',
         categoryId: testCategory.id,
         active: true,
-        images: ['https://destino-sf.square.site/uploads/1/3/4/5/134556177/s153623720258963617_p9_i1_w1000.jpeg'],
+        images: [
+          'https://destino-sf.square.site/uploads/1/3/4/5/134556177/s153623720258963617_p9_i1_w1000.jpeg',
+        ],
       },
     });
 
@@ -100,4 +102,4 @@ async function seedTestData() {
 
 export function getTestPrismaClient() {
   return testPrisma;
-} 
+}

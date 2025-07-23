@@ -8,28 +8,37 @@ export async function POST(request: NextRequest) {
     const itemId = formData.get('itemId') as string;
 
     if (!file) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No file provided' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No file provided',
+        },
+        { status: 400 }
+      );
     }
 
     if (!itemId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No item ID provided' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No item ID provided',
+        },
+        { status: 400 }
+      );
     }
 
     const result = await uploadCateringImage(file, itemId);
-    
+
     return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Image upload failed:', error);
-    
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

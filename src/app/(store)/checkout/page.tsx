@@ -7,9 +7,16 @@ import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 
 export default async function CheckoutPage() {
   const supabase = await createClient();
-  let initialUserData: { id: string; email: string; name: string | null; phone: string | null; } | null = null;
-  
-  const { data: { user } } = await supabase.auth.getUser();
+  let initialUserData: {
+    id: string;
+    email: string;
+    name: string | null;
+    phone: string | null;
+  } | null = null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (user) {
     try {
       const profile = await prisma.profile.findUnique({
@@ -19,32 +26,32 @@ export default async function CheckoutPage() {
           email: true,
           name: true,
           phone: true,
-        }
+        },
       });
       if (profile) {
         initialUserData = {
-            id: profile.id,
-            email: profile.email || user.email || '', 
-            name: profile.name,
-            phone: profile.phone,
+          id: profile.id,
+          email: profile.email || user.email || '',
+          name: profile.name,
+          phone: profile.phone,
         };
       } else {
-          initialUserData = {
-              id: user.id,
-              email: user.email || '',
-              name: null,
-              phone: null,
-          };
-          console.warn(`No profile found for user ID: ${user.id}. Using auth email only.`);
+        initialUserData = {
+          id: user.id,
+          email: user.email || '',
+          name: null,
+          phone: null,
+        };
+        console.warn(`No profile found for user ID: ${user.id}. Using auth email only.`);
       }
     } catch (error) {
-        console.error("Error fetching profile data with Prisma:", error);
-        initialUserData = {
-             id: user.id,
-             email: user.email || '',
-             name: null,
-             phone: null,
-         };
+      console.error('Error fetching profile data with Prisma:', error);
+      initialUserData = {
+        id: user.id,
+        email: user.email || '',
+        name: null,
+        phone: null,
+      };
     }
   }
 
@@ -56,14 +63,22 @@ export default async function CheckoutPage() {
           <UserIcon className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
             Have an account?{' '}
-            <Link href="/sign-in?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
-              <LogInIcon className="inline h-4 w-4 mr-1" />Log in
+            <Link
+              href="/sign-in?redirect=/checkout"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              <LogInIcon className="inline h-4 w-4 mr-1" />
+              Log in
+            </Link>{' '}
+            for faster checkout or{' '}
+            <Link
+              href="/sign-up?redirect=/checkout"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              <UserPlusIcon className="inline h-4 w-4 mr-1" />
+              Sign up
             </Link>
-            {' '}for faster checkout or{' '}
-            <Link href="/sign-up?redirect=/checkout" className="font-medium text-blue-600 hover:underline">
-              <UserPlusIcon className="inline h-4 w-4 mr-1" />Sign up
-            </Link>.
-            You can also continue as a guest.
+            . You can also continue as a guest.
           </AlertDescription>
         </Alert>
       ) : (

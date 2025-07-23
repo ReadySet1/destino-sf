@@ -71,11 +71,26 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 // Import the API route handlers
-import { GET as getOrders, PUT as updateOrder, POST as postOrders } from '@/app/api/admin/orders/route';
-import { GET as getSpotlightPicks, POST as postSpotlightPicks, DELETE as deleteSpotlightPick } from '@/app/api/admin/spotlight-picks/route';
+import {
+  GET as getOrders,
+  PUT as updateOrder,
+  POST as postOrders,
+} from '@/app/api/admin/orders/route';
+import {
+  GET as getSpotlightPicks,
+  POST as postSpotlightPicks,
+  DELETE as deleteSpotlightPick,
+} from '@/app/api/admin/spotlight-picks/route';
 import { GET as getSettings, POST as postSettings } from '@/app/api/admin/settings/route';
-import { GET as getDeliveryZones, POST as postDeliveryZones, PUT as putDeliveryZones } from '@/app/api/admin/delivery-zones/route';
-import { GET as getShippingConfig, POST as postShippingConfig } from '@/app/api/admin/shipping-configuration/route';
+import {
+  GET as getDeliveryZones,
+  POST as postDeliveryZones,
+  PUT as putDeliveryZones,
+} from '@/app/api/admin/delivery-zones/route';
+import {
+  GET as getShippingConfig,
+  POST as postShippingConfig,
+} from '@/app/api/admin/shipping-configuration/route';
 import { POST as postBusinessHours } from '@/app/api/admin/business-hours/route';
 import { POST as postPromoteAdmin } from '@/app/api/admin/promote-admin/route';
 import { GET as getValidateRoutes } from '@/app/api/admin/validate-routes/route';
@@ -90,7 +105,7 @@ describe('Admin API Routes - Comprehensive Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default Supabase mock
     mockSupabase = {
       auth: {
@@ -101,7 +116,7 @@ describe('Admin API Routes - Comprehensive Tests', () => {
       eq: jest.fn().mockReturnThis(),
       single: jest.fn(),
     };
-    
+
     mockCreateClient.mockResolvedValue(mockSupabase);
   });
 
@@ -111,7 +126,7 @@ describe('Admin API Routes - Comprehensive Tests', () => {
       data: { user: { id: 'admin-user-id', email: 'admin@test.com' } },
       error: null,
     });
-    
+
     mockSupabase.single.mockResolvedValue({
       data: { role: 'ADMIN' },
       error: null,
@@ -134,7 +149,7 @@ describe('Admin API Routes - Comprehensive Tests', () => {
       data: { user: { id: 'user-id', email: 'user@test.com' } },
       error: null,
     });
-    
+
     mockSupabase.single.mockResolvedValue({
       data: { role: 'USER' },
       error: null,
@@ -170,14 +185,14 @@ describe('Admin API Routes - Comprehensive Tests', () => {
           {
             id: 'order-1',
             status: 'PENDING',
-            total: 50.00,
+            total: 50.0,
             email: 'customer@test.com',
             createdAt: new Date(),
             items: [
               {
                 id: 'item-1',
                 quantity: 2,
-                price: 25.00,
+                price: 25.0,
                 product: { name: 'Test Product', images: [] },
                 variant: { name: 'Regular' },
               },
@@ -188,7 +203,10 @@ describe('Admin API Routes - Comprehensive Tests', () => {
         mockPrisma.order.findMany.mockResolvedValue(mockOrders);
         mockPrisma.order.count.mockResolvedValue(1);
 
-        const request = createMockRequest('GET', '/api/admin/orders?status=PENDING&page=1&limit=50');
+        const request = createMockRequest(
+          'GET',
+          '/api/admin/orders?status=PENDING&page=1&limit=50'
+        );
         const response = await getOrders(request);
         const data = await response.json();
 
@@ -223,10 +241,10 @@ describe('Admin API Routes - Comprehensive Tests', () => {
         const email = 'customer@test.com';
 
         const request = createMockRequest(
-          'GET', 
+          'GET',
           `/api/admin/orders?email=${email}&startDate=${startDate}&endDate=${endDate}`
         );
-        
+
         await getOrders(request);
 
         expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
@@ -1202,15 +1220,12 @@ describe('Admin API Routes - Comprehensive Tests', () => {
       expect(response.status).toBe(200);
       expect(data.message).toBe('Shipping configurations updated successfully');
       expect(data.configurations).toHaveLength(1);
-      expect(updateShippingConfiguration).toHaveBeenCalledWith(
-        'Test Product',
-        {
-          baseWeightLb: 2.5,
-          weightPerUnitLb: 0.5,
-          isActive: true,
-          applicableForNationwideOnly: false,
-        }
-      );
+      expect(updateShippingConfiguration).toHaveBeenCalledWith('Test Product', {
+        baseWeightLb: 2.5,
+        weightPerUnitLb: 0.5,
+        isActive: true,
+        applicableForNationwideOnly: false,
+      });
     });
 
     it('should get shipping configurations', async () => {
@@ -1306,7 +1321,7 @@ describe('Admin API Routes - Comprehensive Tests', () => {
       const largeOrderList = Array.from({ length: 1000 }, (_, i) => ({
         id: `order-${i}`,
         status: 'PENDING',
-        total: 50.00,
+        total: 50.0,
         email: `customer${i}@test.com`,
         createdAt: new Date(),
         items: [],
@@ -1337,13 +1352,11 @@ describe('Admin API Routes - Comprehensive Tests', () => {
         })
       );
 
-      const responses = await Promise.all(
-        requests.map(request => postOrders(request))
-      );
+      const responses = await Promise.all(requests.map(request => postOrders(request)));
 
       for (const response of responses) {
         expect(response.status).toBe(200);
       }
     });
   });
-}); 
+});

@@ -51,32 +51,32 @@ const CACHE_CONFIG: CacheConfig = {
 export const CacheKeys = {
   // Product cache keys
   product: (id: string) => `product:${id}`,
-  products: (categoryId?: string, page = 1, limit = 20) => 
+  products: (categoryId?: string, page = 1, limit = 20) =>
     categoryId ? `products:${categoryId}:${page}:${limit}` : `products:all:${page}:${limit}`,
   productSearch: (query: string, page = 1) => `search:${query}:${page}`,
-  
+
   // Category cache keys
   category: (id: string) => `category:${id}`,
   categories: () => 'categories:all',
   categoryTree: () => 'categories:tree',
-  
+
   // User cache keys
   user: (id: string) => `user:${id}`,
   userSession: (id: string) => `session:${id}`,
   userPreferences: (id: string) => `preferences:${id}`,
-  
+
   // Order cache keys
   order: (id: string) => `order:${id}`,
   userOrders: (userId: string, page = 1) => `orders:${userId}:${page}`,
-  
+
   // Cart cache keys
   cart: (userId: string) => `cart:${userId}`,
   cartItems: (userId: string) => `cart:items:${userId}`,
-  
+
   // Business cache keys
   inventory: (productId: string) => `inventory:${productId}`,
   pricing: (productId: string) => `pricing:${productId}`,
-  
+
   // System cache keys
   health: () => 'system:health',
   metrics: () => 'system:metrics',
@@ -90,29 +90,29 @@ const CacheTTLs = {
   product: 1800, // 30 minutes
   products: 900, // 15 minutes
   productSearch: 600, // 10 minutes
-  
+
   // Category data - long TTL (changes infrequently)
   category: 3600, // 1 hour
   categories: 3600, // 1 hour
   categoryTree: 7200, // 2 hours
-  
+
   // User data - short TTL
   user: 600, // 10 minutes
   userSession: 3600, // 1 hour
   userPreferences: 1800, // 30 minutes
-  
+
   // Order data - moderate TTL
   order: 1800, // 30 minutes
   userOrders: 900, // 15 minutes
-  
+
   // Cart data - short TTL
   cart: 300, // 5 minutes
   cartItems: 300, // 5 minutes
-  
+
   // Business data - very short TTL
   inventory: 60, // 1 minute
   pricing: 300, // 5 minutes
-  
+
   // System data - short TTL
   health: 60, // 1 minute
   metrics: 300, // 5 minutes
@@ -137,7 +137,7 @@ export class CacheService {
       url: process.env.UPSTASH_REDIS_REST_URL!,
       token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     });
-    
+
     this.metrics = {
       hits: 0,
       misses: 0,
@@ -159,7 +159,7 @@ export class CacheService {
    */
   async get<T>(key: string): Promise<T | null> {
     const start = Date.now();
-    
+
     try {
       // Validate key length
       if (key.length > CACHE_CONFIG.maxKeyLength) {
@@ -171,20 +171,19 @@ export class CacheService {
 
       if (cached) {
         this.metrics.hits++;
-        
+
         // Track cache hit performance
         if (CACHE_CONFIG.enableMetrics) {
           performanceMonitor.trackApiCall('cache_hit', duration, 200, 'GET');
         }
 
         // Parse cached entry
-        const entry: CacheEntry<T> = typeof cached === 'string' 
-          ? JSON.parse(cached) 
-          : cached as CacheEntry<T>;
+        const entry: CacheEntry<T> =
+          typeof cached === 'string' ? JSON.parse(cached) : (cached as CacheEntry<T>);
 
         // Check if entry is expired but still serve if stale-while-revalidate is enabled
-        const isExpired = Date.now() > (entry.timestamp + (entry.ttl * 1000));
-        
+        const isExpired = Date.now() > entry.timestamp + entry.ttl * 1000;
+
         if (isExpired && !CACHE_CONFIG.staleWhileRevalidate) {
           this.metrics.misses++;
           return null;
@@ -198,9 +197,9 @@ export class CacheService {
     } catch (error) {
       this.metrics.errors++;
       console.error(`Cache get error for key ${key}:`, error);
-      
+
       // Track cache errors in Sentry
-      Sentry.withScope((scope) => {
+      Sentry.withScope(scope => {
         scope.setTag('cache.operation', 'get');
         scope.setTag('cache.key', key);
         scope.setContext('cache_operation', {
@@ -208,10 +207,8 @@ export class CacheService {
           operation: 'get',
           duration: Date.now() - start,
         });
-        
-        Sentry.captureException(
-          error instanceof Error ? error : new Error('Cache get error')
-        );
+
+        Sentry.captureException(error instanceof Error ? error : new Error('Cache get error'));
       });
 
       // Return null on cache errors to fall back to data source
@@ -223,16 +220,16 @@ export class CacheService {
    * Set value in cache with TTL and monitoring
    */
   async set<T>(
-    key: string, 
-    value: T, 
+    key: string,
+    value: T,
     ttl?: number,
-    options?: { 
+    options?: {
       compress?: boolean;
       version?: string;
     }
   ): Promise<void> {
     const start = Date.now();
-    
+
     try {
       // Validate key length
       if (key.length > CACHE_CONFIG.maxKeyLength) {
@@ -240,7 +237,7 @@ export class CacheService {
       }
 
       const finalTTL = ttl || CACHE_CONFIG.defaultTTL;
-      
+
       const entry: CacheEntry<T> = {
         value,
         timestamp: Date.now(),
@@ -251,9 +248,9 @@ export class CacheService {
 
       // Store with Redis TTL
       await this.redis.set(key, JSON.stringify(entry), { ex: finalTTL });
-      
+
       this.metrics.sets++;
-      
+
       // Track cache set performance
       if (CACHE_CONFIG.enableMetrics) {
         const duration = Date.now() - start;
@@ -262,9 +259,9 @@ export class CacheService {
     } catch (error) {
       this.metrics.errors++;
       console.error(`Cache set error for key ${key}:`, error);
-      
+
       // Track cache errors in Sentry
-      Sentry.withScope((scope) => {
+      Sentry.withScope(scope => {
         scope.setTag('cache.operation', 'set');
         scope.setTag('cache.key', key);
         scope.setContext('cache_operation', {
@@ -273,10 +270,8 @@ export class CacheService {
           ttl: ttl || CACHE_CONFIG.defaultTTL,
           duration: Date.now() - start,
         });
-        
-        Sentry.captureException(
-          error instanceof Error ? error : new Error('Cache set error')
-        );
+
+        Sentry.captureException(error instanceof Error ? error : new Error('Cache set error'));
       });
     }
   }
@@ -323,10 +318,10 @@ export class CacheService {
     options?: { version?: string }
   ): Promise<CacheResult<T>> {
     const start = Date.now();
-    
+
     // Try to get from cache first
     const cached = await this.get<T>(key);
-    
+
     if (cached !== null) {
       return {
         value: cached,
@@ -340,10 +335,10 @@ export class CacheService {
     try {
       const value = await fetcher();
       const fetchDuration = Date.now() - start;
-      
+
       // Store in cache for next time
       await this.set(key, value, ttl, options);
-      
+
       return {
         value,
         hit: false,
@@ -353,8 +348,8 @@ export class CacheService {
     } catch (error) {
       // Log fetch errors
       console.error(`Cache fetcher error for key ${key}:`, error);
-      
-      Sentry.withScope((scope) => {
+
+      Sentry.withScope(scope => {
         scope.setTag('cache.operation', 'getOrSet');
         scope.setTag('cache.key', key);
         scope.setContext('cache_operation', {
@@ -362,12 +357,10 @@ export class CacheService {
           operation: 'getOrSet',
           duration: Date.now() - start,
         });
-        
-        Sentry.captureException(
-          error instanceof Error ? error : new Error('Cache fetcher error')
-        );
+
+        Sentry.captureException(error instanceof Error ? error : new Error('Cache fetcher error'));
       });
-      
+
       throw error;
     }
   }
@@ -379,7 +372,7 @@ export class CacheService {
     keys: { key: string; fetcher: () => Promise<any>; ttl?: number }[]
   ): Promise<void> {
     const start = Date.now();
-    
+
     try {
       const promises = keys.map(async ({ key, fetcher, ttl }) => {
         try {
@@ -389,28 +382,28 @@ export class CacheService {
           console.error(`Cache warming failed for key ${key}:`, error);
         }
       });
-      
+
       await Promise.all(promises);
-      
+
       console.log(`✅ Cache warmed for ${keys.length} keys in ${Date.now() - start}ms`);
     } catch (error) {
       console.error('Cache warming error:', error);
     }
   }
 
-     /**
-    * Get cache statistics
-    */
-   getCacheStats() {
-     const totalOperations = this.metrics.hits + this.metrics.misses;
-     const hitRate = totalOperations > 0 ? this.metrics.hits / totalOperations : 0;
-     
-     return {
-       ...this.metrics,
-       hitRate,
-       totalOperations,
-     };
-   }
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    const totalOperations = this.metrics.hits + this.metrics.misses;
+    const hitRate = totalOperations > 0 ? this.metrics.hits / totalOperations : 0;
+
+    return {
+      ...this.metrics,
+      hitRate,
+      totalOperations,
+    };
+  }
 
   /**
    * Reset cache statistics
@@ -445,16 +438,16 @@ export class CacheService {
     };
   }> {
     const start = Date.now();
-    
+
     try {
       // Test Redis connection
       await this.redis.ping();
-      
+
       const responseTime = Date.now() - start;
       const stats = this.getCacheStats();
-      
+
       const status = responseTime > 100 ? 'degraded' : 'healthy';
-      
+
       return {
         status,
         details: {
@@ -485,18 +478,18 @@ export const cacheService = CacheService.getInstance();
  * Cache invalidation strategies
  */
 export class CacheInvalidation {
-     /**
-    * Invalidate product-related cache
-    */
-   static async invalidateProduct(productId: string): Promise<void> {
-     await Promise.all([
-       cacheService.delete(CacheKeys.product(productId)),
-       cacheService.delete(CacheKeys.inventory(productId)),
-       cacheService.delete(CacheKeys.pricing(productId)),
-       cacheService.invalidatePattern('products:*').then(() => {}),
-       cacheService.invalidatePattern('search:*').then(() => {}),
-     ]);
-   }
+  /**
+   * Invalidate product-related cache
+   */
+  static async invalidateProduct(productId: string): Promise<void> {
+    await Promise.all([
+      cacheService.delete(CacheKeys.product(productId)),
+      cacheService.delete(CacheKeys.inventory(productId)),
+      cacheService.delete(CacheKeys.pricing(productId)),
+      cacheService.invalidatePattern('products:*').then(() => {}),
+      cacheService.invalidatePattern('search:*').then(() => {}),
+    ]);
+  }
 
   /**
    * Invalidate category-related cache
@@ -510,30 +503,30 @@ export class CacheInvalidation {
     ]);
   }
 
-     /**
-    * Invalidate user-related cache
-    */
-   static async invalidateUser(userId: string): Promise<void> {
-     await Promise.all([
-       cacheService.delete(CacheKeys.user(userId)),
-       cacheService.delete(CacheKeys.userSession(userId)),
-       cacheService.delete(CacheKeys.userPreferences(userId)),
-       cacheService.delete(CacheKeys.cart(userId)),
-       cacheService.delete(CacheKeys.cartItems(userId)),
-       cacheService.invalidatePattern(`orders:${userId}:*`).then(() => {}),
-     ]);
-   }
+  /**
+   * Invalidate user-related cache
+   */
+  static async invalidateUser(userId: string): Promise<void> {
+    await Promise.all([
+      cacheService.delete(CacheKeys.user(userId)),
+      cacheService.delete(CacheKeys.userSession(userId)),
+      cacheService.delete(CacheKeys.userPreferences(userId)),
+      cacheService.delete(CacheKeys.cart(userId)),
+      cacheService.delete(CacheKeys.cartItems(userId)),
+      cacheService.invalidatePattern(`orders:${userId}:*`).then(() => {}),
+    ]);
+  }
 
   /**
    * Invalidate order-related cache
    */
   static async invalidateOrder(orderId: string, userId?: string): Promise<void> {
     const promises = [cacheService.delete(CacheKeys.order(orderId))];
-    
+
     if (userId) {
       promises.push(cacheService.invalidatePattern(`orders:${userId}:*`).then(() => {}));
     }
-    
+
     await Promise.all(promises);
   }
 }
@@ -543,4 +536,4 @@ export class CacheInvalidation {
  */
 export function getCacheTTL(type: keyof typeof CacheTTLs): number {
   return CacheTTLs[type] || CACHE_CONFIG.defaultTTL;
-} 
+}

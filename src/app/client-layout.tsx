@@ -16,43 +16,37 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  
+
   // Check for admin and auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
-  const isAuthRoute = pathname === '/sign-in' || 
-                      pathname === '/sign-up' || 
-                      pathname === '/forgot-password';
+  const isAuthRoute =
+    pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/forgot-password';
   const isProtectedResetPasswordRoute = pathname === '/protected/reset-password';
-  
+
   // Don't show navbar/footer for auth routes, admin routes, or reset password
   const hideNavigation = isAdminRoute || isAuthRoute || isProtectedResetPasswordRoute;
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       {/* Auth handler for magic links */}
       <AuthHandler />
-      
+
       <div className="flex min-h-screen flex-col">
         {!hideNavigation && <Navbar />}
         <main className={`flex-1 ${!hideNavigation ? 'pt-2' : ''}`}>{children}</main>
         {!hideNavigation && <Footer />}
         {!hideNavigation && <CartAlert />}
       </div>
-      
+
       {/* Theme switcher positioned in top-right corner of footer */}
       {!isAuthRoute && !isProtectedResetPasswordRoute && (
         <div className="fixed sm:bottom-4 sm:right-4 bottom-8 right-4 z-50">
           <ThemeSwitcher />
         </div>
       )}
-      
+
       {/* Global Toaster for all pages */}
       <Toaster richColors position="top-center" />
     </ThemeProvider>
   );
-} 
+}

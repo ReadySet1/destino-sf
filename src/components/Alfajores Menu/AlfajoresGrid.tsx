@@ -58,7 +58,7 @@ const AlfajoresCard: React.FC<{
             </div>
           </div>
         )}
-        
+
         {/* Dietary badges */}
         <div className="absolute bottom-2 left-2 flex gap-1">
           {item.isVegetarian && (
@@ -86,29 +86,21 @@ const AlfajoresCard: React.FC<{
             {item.name}
           </h3>
           <div className="text-right flex-shrink-0">
-            <div className="text-xl font-bold text-orange-600">
-              ${item.price.toFixed(2)}
-            </div>
+            <div className="text-xl font-bold text-orange-600">${item.price.toFixed(2)}</div>
           </div>
         </div>
 
         {/* Serving size - Fixed "One Piece" alignment */}
         {item.servingSize && (
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
-              {item.servingSize}
-            </span>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              Per piece
-            </span>
+            <span className="text-sm font-medium text-gray-600">{item.servingSize}</span>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Per piece</span>
           </div>
         )}
 
         {/* Description */}
         {item.description && (
-          <p className="text-sm text-gray-600 line-clamp-3 flex-grow mb-4">
-            {item.description}
-          </p>
+          <p className="text-sm text-gray-600 line-clamp-3 flex-grow mb-4">{item.description}</p>
         )}
 
         {/* Add to Cart Button */}
@@ -126,25 +118,17 @@ const AlfajoresCard: React.FC<{
   );
 };
 
-export const AlfajoresGrid: React.FC<AlfajoresGridProps> = ({ 
-  alfajores, 
-  onAddToCart 
-}) => {
+export const AlfajoresGrid: React.FC<AlfajoresGridProps> = ({ alfajores, onAddToCart }) => {
   return (
     <div className="w-full">
       {/* Grid Layout with consistent spacing */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {alfajores.map((item, index) => (
-          <AlfajoresCard
-            key={item.id}
-            item={item}
-            onAddToCart={onAddToCart}
-            index={index}
-          />
+          <AlfajoresCard key={item.id} item={item} onAddToCart={onAddToCart} index={index} />
         ))}
       </div>
     </div>
   );
 };
 
-export default AlfajoresGrid; 
+export default AlfajoresGrid;

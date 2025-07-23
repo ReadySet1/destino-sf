@@ -20,7 +20,7 @@ async function fixAdminAuth() {
       // 1. Get Supabase Auth user
       const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers({
         page: 1,
-        perPage: 1000
+        perPage: 1000,
       });
 
       if (listError) {
@@ -29,7 +29,7 @@ async function fixAdminAuth() {
       }
 
       const authUser = authUsers.users.find(u => u.email === email);
-      
+
       if (!authUser) {
         console.log(`⚠️  No Supabase Auth user found for ${email}`);
         continue;
@@ -67,17 +67,17 @@ async function fixAdminAuth() {
         console.log(`🔗 Successfully linked ${email} profile to auth user ${authUser.id}`);
       } catch (updateError: any) {
         console.error(`❌ Error updating profile for ${email}:`, updateError);
-        
+
         // If there's a conflict with the new ID, we might need to delete and recreate
         if (updateError.code === 'P2002') {
           console.log(`🔄 Attempting to recreate profile with correct ID...`);
-          
+
           try {
             // Delete the old profile
             await prisma.profile.delete({
               where: { email },
             });
-            
+
             // Create new profile with correct ID
             await prisma.profile.create({
               data: {
@@ -88,14 +88,13 @@ async function fixAdminAuth() {
                 role: profile.role,
               },
             });
-            
+
             console.log(`✨ Successfully recreated profile for ${email}`);
           } catch (recreateError) {
             console.error(`❌ Failed to recreate profile for ${email}:`, recreateError);
           }
         }
       }
-
     } catch (error) {
       console.error(`❌ Error processing ${email}:`, error);
     }
@@ -105,10 +104,10 @@ async function fixAdminAuth() {
 }
 
 fixAdminAuth()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Script failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

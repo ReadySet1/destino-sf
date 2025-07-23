@@ -10,9 +10,9 @@ export async function isSquareItem(itemId: string): Promise<boolean> {
   try {
     const item = await db.cateringItem.findUnique({
       where: { id: itemId },
-      select: { squareProductId: true }
+      select: { squareProductId: true },
     });
-    
+
     return !!(item as any)?.squareProductId;
   } catch (error) {
     console.error('Error checking if item is from Square:', error);
@@ -28,40 +28,46 @@ export async function getCateringItemWithOverrides(itemId: string) {
     const item = await db.cateringItem.findUnique({
       where: { id: itemId },
       include: {
-        overrides: true
-      }
+        overrides: true,
+      },
     });
 
     if (!item) return null;
 
     const isFromSquare = !!(item as any).squareProductId;
-    
+
     // Get the first (and only) override since there's a unique constraint on itemId
     const override = Array.isArray(item.overrides) ? item.overrides[0] : undefined;
-    
+
     return {
       ...item,
       price: Number(item.price),
       isSquareItem: isFromSquare,
       // Computed final values
-      finalDescription: (override?.overrideDescription && override?.localDescription) 
-        ? override.localDescription 
-        : item.description || '',
-      finalImageUrl: (override?.overrideImage && override?.localImageUrl)
-        ? override.localImageUrl
-        : item.imageUrl || (item as any).squareImageUrl || undefined,
-      finalIsVegetarian: (override?.overrideDietary && override?.localIsVegetarian !== null)
-        ? override.localIsVegetarian
-        : item.isVegetarian,
-      finalIsVegan: (override?.overrideDietary && override?.localIsVegan !== null)
-        ? override.localIsVegan
-        : item.isVegan,
-      finalIsGlutenFree: (override?.overrideDietary && override?.localIsGlutenFree !== null)
-        ? override.localIsGlutenFree
-        : item.isGlutenFree,
-      finalServingSize: (override?.overrideServingSize && override?.localServingSize)
-        ? override.localServingSize
-        : item.servingSize || undefined
+      finalDescription:
+        override?.overrideDescription && override?.localDescription
+          ? override.localDescription
+          : item.description || '',
+      finalImageUrl:
+        override?.overrideImage && override?.localImageUrl
+          ? override.localImageUrl
+          : item.imageUrl || (item as any).squareImageUrl || undefined,
+      finalIsVegetarian:
+        override?.overrideDietary && override?.localIsVegetarian !== null
+          ? override.localIsVegetarian
+          : item.isVegetarian,
+      finalIsVegan:
+        override?.overrideDietary && override?.localIsVegan !== null
+          ? override.localIsVegan
+          : item.isVegan,
+      finalIsGlutenFree:
+        override?.overrideDietary && override?.localIsGlutenFree !== null
+          ? override.localIsGlutenFree
+          : item.isGlutenFree,
+      finalServingSize:
+        override?.overrideServingSize && override?.localServingSize
+          ? override.localServingSize
+          : item.servingSize || undefined,
     };
   } catch (error) {
     console.error('Error fetching item with overrides:', error);
@@ -89,16 +95,16 @@ export async function updateCateringItemSimple(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const isFromSquare = await isSquareItem(itemId);
-    
+
     if (isFromSquare) {
       // For Square items, only allow certain direct updates
       const allowedUpdates: any = {};
       if (data.isActive !== undefined) allowedUpdates.isActive = data.isActive;
-      
+
       // Create/update overrides for other fields
       const overrideData: any = {};
       const overrideFlags: any = {};
-      
+
       if (data.description !== undefined) {
         overrideData.localDescription = data.description;
         overrideFlags.overrideDescription = true;
@@ -107,7 +113,11 @@ export async function updateCateringItemSimple(
         overrideData.localImageUrl = data.imageUrl;
         overrideFlags.overrideImage = true;
       }
-      if (data.isVegetarian !== undefined || data.isVegan !== undefined || data.isGlutenFree !== undefined) {
+      if (
+        data.isVegetarian !== undefined ||
+        data.isVegan !== undefined ||
+        data.isGlutenFree !== undefined
+      ) {
         if (data.isVegetarian !== undefined) overrideData.localIsVegetarian = data.isVegetarian;
         if (data.isVegan !== undefined) overrideData.localIsVegan = data.isVegan;
         if (data.isGlutenFree !== undefined) overrideData.localIsGlutenFree = data.isGlutenFree;
@@ -117,15 +127,15 @@ export async function updateCateringItemSimple(
         overrideData.localServingSize = data.servingSize;
         overrideFlags.overrideServingSize = true;
       }
-      
+
       // Update main item if needed
       if (Object.keys(allowedUpdates).length > 0) {
         await db.cateringItem.update({
           where: { id: itemId },
-          data: allowedUpdates
+          data: allowedUpdates,
         });
       }
-      
+
       // Update or create overrides if needed
       if (Object.keys(overrideData).length > 0) {
         await db.cateringItemOverrides.upsert({
@@ -133,20 +143,19 @@ export async function updateCateringItemSimple(
           update: {
             ...overrideData,
             ...overrideFlags,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
           create: {
             itemId,
             ...overrideData,
-            ...overrideFlags
-          }
+            ...overrideFlags,
+          },
         });
       }
-      
     } else {
       // For local items, update directly
       const updateData: any = {};
-      
+
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.price !== undefined) updateData.price = data.price;
@@ -161,7 +170,7 @@ export async function updateCateringItemSimple(
       if (Object.keys(updateData).length > 0) {
         await db.cateringItem.update({
           where: { id: itemId },
-          data: updateData
+          data: updateData,
         });
       }
     }
@@ -173,9 +182,9 @@ export async function updateCateringItemSimple(
     return { success: true };
   } catch (error) {
     console.error(`Error updating catering item ${itemId}:`, error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to update item' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update item',
     };
   }
 }
@@ -186,7 +195,7 @@ export async function updateCateringItemSimple(
 export async function getSimpleEditCapabilities(itemId: string) {
   try {
     const isFromSquare = await isSquareItem(itemId);
-    
+
     return {
       isSquareItem: isFromSquare,
       canEditName: !isFromSquare,
@@ -197,10 +206,12 @@ export async function getSimpleEditCapabilities(itemId: string) {
       canEditImage: true, // Both can edit (override for Square)
       canEditServingSize: true, // Both can edit (override for Square)
       canEditActive: true, // Both can edit
-      warnings: isFromSquare ? [
-        'This item syncs from Square. Name, price, and category will be overwritten during sync.',
-        'Changes to description, dietary info, and images are stored as local overrides.'
-      ] : []
+      warnings: isFromSquare
+        ? [
+            'This item syncs from Square. Name, price, and category will be overwritten during sync.',
+            'Changes to description, dietary info, and images are stored as local overrides.',
+          ]
+        : [],
     };
   } catch (error) {
     console.error('Error getting edit capabilities:', error);
@@ -214,7 +225,7 @@ export async function getSimpleEditCapabilities(itemId: string) {
       canEditImage: false,
       canEditServingSize: false,
       canEditActive: false,
-      warnings: ['Error determining edit capabilities']
+      warnings: ['Error determining edit capabilities'],
     };
   }
-} 
+}

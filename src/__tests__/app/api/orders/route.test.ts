@@ -79,11 +79,13 @@ describe('/api/orders - GET', () => {
 
     // Assertions
     expect(response.status).toBe(200);
-    expect(data.orders).toMatchObject(mockOrders.map(order => ({
-      ...order,
-      createdAt: expect.any(String),
-      pickupTime: expect.any(String),
-    })));
+    expect(data.orders).toMatchObject(
+      mockOrders.map(order => ({
+        ...order,
+        createdAt: expect.any(String),
+        pickupTime: expect.any(String),
+      }))
+    );
     expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
       where: { userId: 'user-123' },
       include: {
@@ -259,10 +261,12 @@ describe('/api/orders - GET', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.orders).toMatchObject(mockOrders.map(order => ({
-      ...order,
-      createdAt: expect.any(String),
-      pickupTime: expect.any(String),
-    })));
+    expect(data.orders).toMatchObject(
+      mockOrders.map(order => ({
+        ...order,
+        createdAt: expect.any(String),
+        pickupTime: expect.any(String),
+      }))
+    );
   });
-}); 
+});

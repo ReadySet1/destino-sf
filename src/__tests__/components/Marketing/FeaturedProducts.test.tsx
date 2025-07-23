@@ -30,8 +30,8 @@ describe('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        data: mockActiveSpotlightPicks
-      })
+        data: mockActiveSpotlightPicks,
+      }),
     } as Response);
 
     render(<FeaturedProducts />);
@@ -52,8 +52,8 @@ describe('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        data: []
-      })
+        data: [],
+      }),
     } as Response);
 
     render(<FeaturedProducts />);
@@ -62,9 +62,7 @@ describe('FeaturedProducts Component', () => {
       expect(screen.queryByText('Loading our featured products...')).not.toBeInTheDocument();
     });
 
-    expect(
-      screen.getByText('Check back soon for our featured products!')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Check back soon for our featured products!')).toBeInTheDocument();
   });
 
   it('should handle API errors gracefully', async () => {
@@ -73,8 +71,8 @@ describe('FeaturedProducts Component', () => {
       status: 500,
       json: async () => ({
         success: false,
-        error: 'Server error'
-      })
+        error: 'Server error',
+      }),
     } as Response);
 
     render(<FeaturedProducts />);
@@ -82,10 +80,8 @@ describe('FeaturedProducts Component', () => {
     await waitFor(() => {
       expect(screen.queryByText('Loading our featured products...')).not.toBeInTheDocument();
     });
-    
+
     // Since the component doesn't display error messages, it shows empty state
-    expect(
-      screen.getByText('Check back soon for our featured products!')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Check back soon for our featured products!')).toBeInTheDocument();
   });
 });

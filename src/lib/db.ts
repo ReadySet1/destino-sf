@@ -8,7 +8,7 @@ declare global {
 // Optimized connection configuration for serverless
 function createPrismaClient() {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   return new PrismaClient({
     log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     errorFormat: 'pretty',
@@ -28,7 +28,7 @@ let disconnectTimer: NodeJS.Timeout | null = null;
 // Auto-disconnect function
 const scheduleDisconnect = () => {
   if (disconnectTimer) clearTimeout(disconnectTimer);
-  
+
   disconnectTimer = setTimeout(async () => {
     try {
       await db.$disconnect();
@@ -49,17 +49,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Helper function to execute queries with connection management
-export async function executeWithConnectionManagement<T>(
-  operation: () => Promise<T>
-): Promise<T> {
+export async function executeWithConnectionManagement<T>(operation: () => Promise<T>): Promise<T> {
   try {
     const result = await operation();
-    
+
     // Schedule auto-disconnect for serverless
     if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
       scheduleDisconnect();
     }
-    
+
     return result;
   } catch (error) {
     console.error('Database operation failed:', error);
@@ -88,4 +86,4 @@ if (typeof process !== 'undefined') {
     await db.$disconnect();
     process.exit(0);
   });
-} 
+}

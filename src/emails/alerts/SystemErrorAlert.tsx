@@ -115,7 +115,7 @@ const severityBadge = (severity: string) => ({
   fontSize: '12px',
   fontWeight: 'bold',
   textTransform: 'uppercase' as const,
-  ...severityStyles[severity as keyof typeof severityStyles] || severityStyles.MEDIUM,
+  ...(severityStyles[severity as keyof typeof severityStyles] || severityStyles.MEDIUM),
 });
 
 export const SystemErrorAlert = ({
@@ -149,12 +149,10 @@ export const SystemErrorAlert = ({
             <Heading style={h1}>
               {isManualTrigger ? '🧪 Test Alert' : '🚨 System Error Alert'}
             </Heading>
-            
+
             <Row>
               <Column>
-                <div style={severityBadge(severity)}>
-                  {severity} SEVERITY
-                </div>
+                <div style={severityBadge(severity)}>{severity} SEVERITY</div>
               </Column>
             </Row>
 
@@ -166,7 +164,7 @@ export const SystemErrorAlert = ({
 
           <Section>
             <Heading style={h2}>Error Details</Heading>
-            
+
             <Row>
               <Column style={{ paddingRight: '8px' }}>
                 <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Error Type:</Text>
@@ -209,7 +207,7 @@ export const SystemErrorAlert = ({
           {(context.component || context.action) && (
             <Section>
               <Heading style={h2}>Context Information</Heading>
-              
+
               {context.component && (
                 <Row>
                   <Column style={{ paddingRight: '8px' }}>
@@ -259,18 +257,14 @@ export const SystemErrorAlert = ({
           {error.stack && (
             <Section>
               <Heading style={h2}>Stack Trace</Heading>
-              <div style={code}>
-                {error.stack}
-              </div>
+              <div style={code}>{error.stack}</div>
             </Section>
           )}
 
           {context.additionalData && Object.keys(context.additionalData).length > 0 && (
             <Section>
               <Heading style={h2}>Additional Data</Heading>
-              <div style={code}>
-                {JSON.stringify(context.additionalData, null, 2)}
-              </div>
+              <div style={code}>{JSON.stringify(context.additionalData, null, 2)}</div>
             </Section>
           )}
 
@@ -279,21 +273,20 @@ export const SystemErrorAlert = ({
           <Section>
             <Text style={{ ...text, fontSize: '12px', color: '#666' }}>
               {isManualTrigger ? (
-                <>
-                  This is a test alert triggered manually. No immediate action is required.
-                </>
+                <>This is a test alert triggered manually. No immediate action is required.</>
               ) : (
                 <>
                   This alert was automatically generated when an error was detected in your system.
                   {severity === 'CRITICAL' && (
                     <strong style={{ color: '#dc2626' }}>
-                      {' '}This is a critical error that requires immediate attention.
+                      {' '}
+                      This is a critical error that requires immediate attention.
                     </strong>
                   )}
                 </>
               )}
             </Text>
-            
+
             <Text style={{ ...text, fontSize: '12px', color: '#666', marginTop: '10px' }}>
               For more details, check your application logs or contact your development team.
             </Text>
@@ -304,4 +297,4 @@ export const SystemErrorAlert = ({
   );
 };
 
-export default SystemErrorAlert; 
+export default SystemErrorAlert;

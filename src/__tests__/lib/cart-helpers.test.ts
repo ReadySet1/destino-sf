@@ -19,14 +19,14 @@ const validCartItems: CartItem[] = [
   {
     id: 'product-1',
     name: 'Dulce de Leche Alfajores',
-    price: 25.00,
+    price: 25.0,
     quantity: 2,
     variantId: 'variant-1',
   },
   {
     id: 'product-2',
     name: 'Beef Empanadas',
-    price: 15.00,
+    price: 15.0,
     quantity: 1,
   },
 ];
@@ -63,7 +63,7 @@ describe('cart-helpers', () => {
       });
 
       const result = await validateOrderMinimums(validCartItems);
-      
+
       expect(result).toEqual({
         isValid: true,
         errorMessage: undefined,
@@ -211,14 +211,18 @@ describe('cart-helpers', () => {
       const result = await isCateringOrder(validCartItems);
 
       expect(result).toBe(false);
-      expect(console.warn).toHaveBeenCalledWith('isCateringOrder called from client - this is now handled server-side');
+      expect(console.warn).toHaveBeenCalledWith(
+        'isCateringOrder called from client - this is now handled server-side'
+      );
     });
 
     test('should handle empty cart items', async () => {
       const result = await isCateringOrder([]);
 
       expect(result).toBe(false);
-      expect(console.warn).toHaveBeenCalledWith('isCateringOrder called from client - this is now handled server-side');
+      expect(console.warn).toHaveBeenCalledWith(
+        'isCateringOrder called from client - this is now handled server-side'
+      );
     });
   });
-}); 
+});

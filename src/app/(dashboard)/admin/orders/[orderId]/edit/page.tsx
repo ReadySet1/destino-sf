@@ -44,7 +44,7 @@ export default async function EditOrderPage({ params }: PageProps) {
 
     // Serialize the entire order object to handle all Decimal values
     const serializedOrder = serializeObject(order);
-    
+
     // Format data to pass to client component
     const formattedOrder = {
       ...serializedOrder,
@@ -63,11 +63,15 @@ export default async function EditOrderPage({ params }: PageProps) {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2">Edit Order</h1>
-        <p className="text-gray-600 mb-6">
-          Update order #{orderId.substring(0, 8)}
-        </p>
-        
-        <Suspense fallback={<div className="text-center py-10"><LoadingSpinner size="lg" /></div>}>
+        <p className="text-gray-600 mb-6">Update order #{orderId.substring(0, 8)}</p>
+
+        <Suspense
+          fallback={
+            <div className="text-center py-10">
+              <LoadingSpinner size="lg" />
+            </div>
+          }
+        >
           <EditOrderForm initialOrder={formattedOrder} />
         </Suspense>
       </div>
@@ -76,4 +80,4 @@ export default async function EditOrderPage({ params }: PageProps) {
     logger.error(`Error fetching order ${orderId}:`, error);
     throw error;
   }
-} 
+}

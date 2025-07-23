@@ -62,10 +62,12 @@ const ManualAlertSchema = z.object({
  * GET /api/alerts
  * Retrieve alert history with filtering and pagination
  */
-export async function GET(request: NextRequest): Promise<NextResponse<AlertHistoryResponse | { error: string }>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<AlertHistoryResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Parse query parameters
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
@@ -105,26 +107,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<AlertHisto
       take: limit,
     });
 
-         // Transform the data to match the interface
-     const alerts = alertsRaw.map(alert => ({
-       id: alert.id,
-       type: alert.type,
-       priority: alert.priority,
-       status: alert.status,
-       recipientEmail: alert.recipientEmail,
-       subject: alert.subject,
-       sentAt: alert.sentAt,
-       failedAt: alert.failedAt,
-       retryCount: alert.retryCount,
-       metadata: alert.metadata,
-       relatedOrderId: alert.relatedOrderId,
-       createdAt: alert.createdAt,
-       relatedOrder: alert.relatedOrder ? {
-         id: alert.relatedOrder.id,
-         customerName: alert.relatedOrder.customerName,
-         total: Number(alert.relatedOrder.total),
-       } : null,
-     }));
+    // Transform the data to match the interface
+    const alerts = alertsRaw.map(alert => ({
+      id: alert.id,
+      type: alert.type,
+      priority: alert.priority,
+      status: alert.status,
+      recipientEmail: alert.recipientEmail,
+      subject: alert.subject,
+      sentAt: alert.sentAt,
+      failedAt: alert.failedAt,
+      retryCount: alert.retryCount,
+      metadata: alert.metadata,
+      relatedOrderId: alert.relatedOrderId,
+      createdAt: alert.createdAt,
+      relatedOrder: alert.relatedOrder
+        ? {
+            id: alert.relatedOrder.id,
+            customerName: alert.relatedOrder.customerName,
+            total: Number(alert.relatedOrder.total),
+          }
+        : null,
+    }));
 
     // Get status statistics
     const stats = await prisma.emailAlert.groupBy({
@@ -151,13 +155,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<AlertHisto
       },
       stats: statusCounts,
     });
-
   } catch (error) {
     console.error('❌ Error fetching alerts:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch alerts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 });
   }
 }
 
@@ -165,13 +165,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<AlertHisto
  * POST /api/alerts
  * Manually trigger an alert (for testing or emergency notifications)
  */
-export async function POST(request: NextRequest): Promise<NextResponse<{ success: boolean; alertId?: string; error?: string }>> {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<{ success: boolean; alertId?: string; error?: string }>> {
   try {
     const body = await request.json();
     const validatedData = ManualAlertSchema.parse(body);
 
     const alertService = new AlertService();
-    
+
     // Determine recipient email
     const recipientEmail = validatedData.recipientEmail || process.env.ADMIN_EMAIL;
     if (!recipientEmail) {
@@ -208,7 +210,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
           subject: validatedData.subject,
         });
         break;
-      
+
       default:
         // For other types, use a generic email (would need to create a GenericAlert component)
         result = { success: true, messageId: 'manual-trigger' };
@@ -222,10 +224,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
         data: {
           status: AlertStatus.SENT,
           sentAt: new Date(),
-                   metadata: {
-           ...(alertRecord.metadata as object || {}),
-           messageId: result.messageId,
-         },
+          metadata: {
+            ...((alertRecord.metadata as object) || {}),
+            messageId: result.messageId,
+          },
         },
       });
     } else {
@@ -234,10 +236,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
         data: {
           status: AlertStatus.FAILED,
           failedAt: new Date(),
-                   metadata: {
-           ...(alertRecord.metadata as object || {}),
-           error: result.error,
-         },
+          metadata: {
+            ...((alertRecord.metadata as object) || {}),
+            error: result.error,
+          },
         },
       });
     }
@@ -247,10 +249,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
       alertId: alertRecord.id,
       error: result.error,
     });
-
   } catch (error) {
     console.error('❌ Error sending manual alert:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: 'Invalid request data', details: error.errors },
@@ -258,10 +259,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
       );
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Failed to send alert' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to send alert' }, { status: 500 });
   }
 }
 
@@ -269,11 +267,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
  * DELETE /api/alerts
  * Clean up old alerts (optional maintenance endpoint)
  */
-export async function DELETE(request: NextRequest): Promise<NextResponse<{ success: boolean; deleted: number; error?: string }>> {
+export async function DELETE(
+  request: NextRequest
+): Promise<NextResponse<{ success: boolean; deleted: number; error?: string }>> {
   try {
     const { searchParams } = new URL(request.url);
     const daysOld = parseInt(searchParams.get('daysOld') || '30');
-    
+
     // Delete alerts older than specified days
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
@@ -293,7 +293,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<{ succe
       success: true,
       deleted: result.count,
     });
-
   } catch (error) {
     console.error('❌ Error cleaning up alerts:', error);
     return NextResponse.json(
@@ -301,4 +300,4 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<{ succe
       { status: 500 }
     );
   }
-} 
+}

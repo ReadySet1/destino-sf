@@ -162,7 +162,7 @@ const formatFulfillmentType = (type: string) => {
 
 const formatDateTime = (date: Date | string | null, time?: string | null) => {
   if (!date) return null;
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -170,9 +170,9 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
     month: 'long',
     day: 'numeric',
   };
-  
+
   let formatted = dateObj.toLocaleDateString('en-US', options);
-  
+
   if (time) {
     formatted += ` at ${time}`;
   } else if (dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0) {
@@ -182,7 +182,7 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
       hour12: true,
     })}`;
   }
-  
+
   return formatted;
 };
 
@@ -206,15 +206,11 @@ export const OrderConfirmationEmail = ({
 
           {/* Order Confirmation Section */}
           <Section style={confirmationSection}>
-            <Text style={thankYouTitle}>
-              🎉 Order Confirmed!
-            </Text>
+            <Text style={thankYouTitle}>🎉 Order Confirmed!</Text>
             <Text style={confirmationText}>
               Thank you, {order.customerName}! Your order has been received and is being prepared.
             </Text>
-            <div style={orderIdText}>
-              Order #{order.id}
-            </div>
+            <div style={orderIdText}>Order #{order.id}</div>
           </Section>
 
           {/* Order Summary */}
@@ -231,10 +227,8 @@ export const OrderConfirmationEmail = ({
 
           {/* Fulfillment Information */}
           <Section style={infoSection}>
-            <Text style={infoTitle}>
-              📋 Order Details
-            </Text>
-            
+            <Text style={infoTitle}>📋 Order Details</Text>
+
             {order.fulfillmentType === 'pickup' && (
               <>
                 <Text style={infoText}>
@@ -258,7 +252,8 @@ export const OrderConfirmationEmail = ({
                 </Text>
                 {order.deliveryDate && order.deliveryTime && (
                   <Text style={infoText}>
-                    <strong>Delivery:</strong> {formatDateTime(order.deliveryDate, order.deliveryTime)}
+                    <strong>Delivery:</strong>{' '}
+                    {formatDateTime(order.deliveryDate, order.deliveryTime)}
                   </Text>
                 )}
                 <Text style={infoText}>
@@ -302,12 +297,18 @@ export const OrderConfirmationEmail = ({
               Questions about your order?
             </Text>
             <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Call us at <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>{supportPhone}</Link> or 
-              email <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>{supportEmail}</Link>
+              Call us at{' '}
+              <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>
+                {supportPhone}
+              </Link>{' '}
+              or email{' '}
+              <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>
+                {supportEmail}
+              </Link>
             </Text>
           </Section>
 
-          <EmailFooter 
+          <EmailFooter
             shopName={shopName}
             unsubscribeUrl={`${websiteUrl}/unsubscribe?email=${encodeURIComponent(order.email)}`}
           />
@@ -317,4 +318,4 @@ export const OrderConfirmationEmail = ({
   );
 };
 
-export default OrderConfirmationEmail; 
+export default OrderConfirmationEmail;

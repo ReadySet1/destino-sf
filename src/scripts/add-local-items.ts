@@ -9,8 +9,9 @@ const prisma = new PrismaClient();
 const localItems = [
   {
     name: 'Destino Special Paella',
-    description: 'Our signature paella with saffron rice, fresh seafood, and locally-sourced vegetables. A true taste of Spain in San Francisco.',
-    price: 18.50,
+    description:
+      'Our signature paella with saffron rice, fresh seafood, and locally-sourced vegetables. A true taste of Spain in San Francisco.',
+    price: 18.5,
     category: CateringItemCategory.ENTREE,
     isVegetarian: false,
     isVegan: false,
@@ -23,8 +24,9 @@ const localItems = [
   },
   {
     name: 'Vegan Quinoa Power Bowl',
-    description: 'Nutrient-packed bowl with organic quinoa, roasted vegetables, avocado, and our house-made tahini dressing. Perfect for health-conscious events.',
-    price: 14.00,
+    description:
+      'Nutrient-packed bowl with organic quinoa, roasted vegetables, avocado, and our house-made tahini dressing. Perfect for health-conscious events.',
+    price: 14.0,
     category: CateringItemCategory.ENTREE,
     isVegetarian: true,
     isVegan: true,
@@ -37,8 +39,9 @@ const localItems = [
   },
   {
     name: 'Artisanal Cheese & Charcuterie Board',
-    description: 'Curated selection of local cheeses, cured meats, seasonal fruits, nuts, and artisanal crackers. Perfect for networking events.',
-    price: 45.00,
+    description:
+      'Curated selection of local cheeses, cured meats, seasonal fruits, nuts, and artisanal crackers. Perfect for networking events.',
+    price: 45.0,
     category: CateringItemCategory.STARTER,
     isVegetarian: false,
     isVegan: false,
@@ -51,8 +54,9 @@ const localItems = [
   },
   {
     name: 'House-Made Tres Leches Cake',
-    description: 'Traditional Latin American dessert made fresh daily. Light sponge cake soaked in three types of milk with cinnamon dusting.',
-    price: 35.00,
+    description:
+      'Traditional Latin American dessert made fresh daily. Light sponge cake soaked in three types of milk with cinnamon dusting.',
+    price: 35.0,
     category: CateringItemCategory.DESSERT,
     isVegetarian: true,
     isVegan: false,
@@ -65,8 +69,9 @@ const localItems = [
   },
   {
     name: 'Seasonal Fruit & Herb Agua Fresca',
-    description: 'Refreshing blend of seasonal fruits and fresh herbs. Made to order with filtered water and natural sweeteners.',
-    price: 25.00,
+    description:
+      'Refreshing blend of seasonal fruits and fresh herbs. Made to order with filtered water and natural sweeteners.',
+    price: 25.0,
     category: CateringItemCategory.BEVERAGE,
     isVegetarian: true,
     isVegan: true,
@@ -76,7 +81,7 @@ const localItems = [
     isActive: true,
     squareCategory: null,
     squareProductId: null,
-  }
+  },
 ];
 
 async function addLocalItems() {
@@ -86,7 +91,7 @@ async function addLocalItems() {
     for (const item of localItems) {
       // Check if item already exists by name
       const existingItem = await prisma.cateringItem.findFirst({
-        where: { name: item.name }
+        where: { name: item.name },
       });
 
       if (existingItem) {
@@ -95,7 +100,7 @@ async function addLocalItems() {
       }
 
       const createdItem = await prisma.cateringItem.create({
-        data: item
+        data: item,
       });
 
       console.log(`✅ Created local item: "${createdItem.name}" - $${createdItem.price}`);
@@ -104,7 +109,7 @@ async function addLocalItems() {
     // Show summary
     const totalItems = await prisma.cateringItem.count();
     const squareItems = await prisma.cateringItem.count({
-      where: { squareProductId: { not: null } }
+      where: { squareProductId: { not: null } },
     });
     const localItemsCount = totalItems - squareItems;
 
@@ -117,7 +122,7 @@ async function addLocalItems() {
     console.log('\n📋 Items by Category:');
     for (const category of Object.values(CateringItemCategory)) {
       const count = await prisma.cateringItem.count({
-        where: { category }
+        where: { category },
       });
       if (count > 0) {
         console.log(`   ${category}: ${count} items`);
@@ -125,7 +130,6 @@ async function addLocalItems() {
     }
 
     console.log('\n✨ Local items added successfully!');
-
   } catch (error) {
     console.error('❌ Failed to add local items:', error);
   } finally {
@@ -138,4 +142,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   addLocalItems();
 }
 
-export { addLocalItems }; 
+export { addLocalItems };

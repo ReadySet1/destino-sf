@@ -5,6 +5,7 @@ Get up and running with Destino SF in minutes. This guide covers the essential s
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
+
 - **Node.js** 18.17 or higher
 - **pnpm** package manager (recommended)
 - **Git** for version control
@@ -82,17 +83,20 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application runn
 Verify your setup by checking these key features:
 
 ### Frontend
+
 - [ ] Homepage loads correctly
 - [ ] Product catalog displays items
 - [ ] Shopping cart functionality works
 - [ ] Catering section is accessible
 
 ### Backend
+
 - [ ] API endpoints respond correctly
 - [ ] Database connections work
 - [ ] Authentication system functions
 
 ### Test Suite
+
 ```bash
 # Run unit tests
 pnpm test:unit
@@ -107,6 +111,7 @@ pnpm test:critical
 ## Development Workflow
 
 ### Daily Development
+
 ```bash
 # Start development server with hot reload
 pnpm dev
@@ -119,6 +124,7 @@ pnpm type-check
 ```
 
 ### Code Quality
+
 ```bash
 # Run linter
 pnpm lint
@@ -135,13 +141,13 @@ pnpm validate
 
 ## Key Development Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm test` | Run all tests |
-| `pnpm test:e2e` | Run end-to-end tests |
-| `pnpm lint` | Run ESLint |
+| Command           | Description              |
+| ----------------- | ------------------------ |
+| `pnpm dev`        | Start development server |
+| `pnpm build`      | Build for production     |
+| `pnpm test`       | Run all tests            |
+| `pnpm test:e2e`   | Run end-to-end tests     |
+| `pnpm lint`       | Run ESLint               |
 | `pnpm type-check` | TypeScript type checking |
 
 ## Project Structure Overview
@@ -175,6 +181,7 @@ Now that you have the basic setup running:
 If you encounter issues during setup:
 
 ### Database Connection Issues
+
 ```bash
 # Check if PostgreSQL is running
 sudo service postgresql status
@@ -184,10 +191,12 @@ pnpm db:reset
 ```
 
 ### Environment Variable Issues
+
 - Verify all required variables are set in `.env.local`
 - Check the [Environment Setup Guide](environment-setup.md) for detailed configuration
 
 ### Port Already in Use
+
 ```bash
 # Use a different port
 pnpm dev -- -p 3001

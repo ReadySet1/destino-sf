@@ -22,40 +22,44 @@ function validateToken(token: string): boolean {
 // Function to get the current Square configuration
 function getSquareConfig() {
   const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
-  
+
   let accessToken;
   let tokenSource;
-  
+
   if (useSandbox) {
     accessToken = process.env.SQUARE_SANDBOX_TOKEN;
     tokenSource = 'SQUARE_SANDBOX_TOKEN';
   } else if (process.env.NODE_ENV === 'production') {
     accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-    tokenSource = process.env.SQUARE_PRODUCTION_TOKEN ? 'SQUARE_PRODUCTION_TOKEN' : 'SQUARE_ACCESS_TOKEN';
+    tokenSource = process.env.SQUARE_PRODUCTION_TOKEN
+      ? 'SQUARE_PRODUCTION_TOKEN'
+      : 'SQUARE_ACCESS_TOKEN';
   } else {
     accessToken = process.env.SQUARE_ACCESS_TOKEN;
     tokenSource = 'SQUARE_ACCESS_TOKEN';
   }
-  
+
   // Validate and sanitize the token
   if (accessToken) {
     const sanitizedToken = sanitizeToken(accessToken);
-    
+
     if (!validateToken(sanitizedToken)) {
       logger.error(`Invalid token format from ${tokenSource}. Token length: ${accessToken.length}`);
-      throw new Error(`Invalid Square token format from ${tokenSource}. Please check your environment variables.`);
+      throw new Error(
+        `Invalid Square token format from ${tokenSource}. Please check your environment variables.`
+      );
     }
-    
+
     accessToken = sanitizedToken;
   }
-  
+
   const apiHost = useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com';
-    
+
   return {
     useSandbox,
     accessToken,
     apiHost,
-    tokenSource
+    tokenSource,
   };
 }
 
@@ -64,23 +68,23 @@ function getSquareConfig() {
  */
 async function httpsRequest(options: any, requestBody?: any): Promise<any> {
   const squareConfig = getSquareConfig();
-  
+
   if (!squareConfig.accessToken) {
     throw new Error(`Square access token not configured for ${squareConfig.tokenSource}`);
   }
-  
+
   if (options.headers) {
     options.headers['Authorization'] = `Bearer ${squareConfig.accessToken}`;
   }
-  
+
   return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
+    const req = https.request(options, res => {
       let data = '';
-      
-      res.on('data', (chunk) => {
+
+      res.on('data', chunk => {
         data += chunk;
       });
-      
+
       res.on('end', () => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
           try {
@@ -96,15 +100,15 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
         }
       });
     });
-    
-    req.on('error', (error) => {
+
+    req.on('error', error => {
       reject(error);
     });
-    
+
     if (requestBody) {
       req.write(JSON.stringify(requestBody));
     }
-    
+
     req.end();
   });
 }
@@ -116,26 +120,26 @@ export async function createScheduledShift(requestBody: {
   scheduled_shift: Partial<ScheduledShift>;
 }): Promise<{ result: { scheduled_shift: ScheduledShift } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Creating scheduled shift on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: '/v2/labor/scheduled-shifts',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options, requestBody);
     return {
       result: {
-        scheduled_shift: response.scheduled_shift
-      }
+        scheduled_shift: response.scheduled_shift,
+      },
     };
   } catch (error) {
     logger.error('Error creating scheduled shift:', error);
@@ -153,26 +157,26 @@ export async function updateScheduledShift(
   }
 ): Promise<{ result: { scheduled_shift: ScheduledShift } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Updating scheduled shift ${shiftId} on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: `/v2/labor/scheduled-shifts/${shiftId}`,
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options, requestBody);
     return {
       result: {
-        scheduled_shift: response.scheduled_shift
-      }
+        scheduled_shift: response.scheduled_shift,
+      },
     };
   } catch (error) {
     logger.error(`Error updating scheduled shift ${shiftId}:`, error);
@@ -196,27 +200,27 @@ export async function searchScheduledShifts(requestBody: {
   cursor?: string;
 }): Promise<{ result: { scheduled_shifts?: ScheduledShift[]; cursor?: string } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Searching scheduled shifts on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: '/v2/labor/scheduled-shifts/search',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options, requestBody);
     return {
       result: {
         scheduled_shifts: response.scheduled_shifts || [],
-        cursor: response.cursor
-      }
+        cursor: response.cursor,
+      },
     };
   } catch (error) {
     logger.error('Error searching scheduled shifts:', error);
@@ -231,26 +235,26 @@ export async function createTimecard(requestBody: {
   timecard: Partial<Timecard>;
 }): Promise<{ result: { timecard: Timecard } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Creating timecard on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: '/v2/labor/timecards',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options, requestBody);
     return {
       result: {
-        timecard: response.timecard
-      }
+        timecard: response.timecard,
+      },
     };
   } catch (error) {
     logger.error('Error creating timecard:', error);
@@ -274,27 +278,27 @@ export async function searchTimecards(requestBody: {
   cursor?: string;
 }): Promise<{ result: { timecards?: Timecard[]; cursor?: string } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Searching timecards on ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: '/v2/labor/timecards/search',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options, requestBody);
     return {
       result: {
         timecards: response.timecards || [],
-        cursor: response.cursor
-      }
+        cursor: response.cursor,
+      },
     };
   } catch (error) {
     logger.error('Error searching timecards:', error);
@@ -305,28 +309,30 @@ export async function searchTimecards(requestBody: {
 /**
  * NEW: Retrieve timecard by ID (replaces deprecated GetShift)
  */
-export async function retrieveTimecard(timecardId: string): Promise<{ result: { timecard: Timecard } }> {
+export async function retrieveTimecard(
+  timecardId: string
+): Promise<{ result: { timecard: Timecard } }> {
   const squareConfig = getSquareConfig();
-  
+
   logger.info(`Retrieving timecard ${timecardId} from ${squareConfig.apiHost}`);
-  
+
   const options = {
     hostname: squareConfig.apiHost,
     path: `/v2/labor/timecards/${timecardId}`,
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${squareConfig.accessToken}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       'Square-Version': '2025-05-21',
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
     const response = await httpsRequest(options);
     return {
       result: {
-        timecard: response.timecard
-      }
+        timecard: response.timecard,
+      },
     };
   } catch (error) {
     logger.error(`Error retrieving timecard ${timecardId}:`, error);
@@ -343,5 +349,5 @@ export const directLaborApi = {
   searchScheduledShifts,
   createTimecard,
   searchTimecards,
-  retrieveTimecard
-}; 
+  retrieveTimecard,
+};

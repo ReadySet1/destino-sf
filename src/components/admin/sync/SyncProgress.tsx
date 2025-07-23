@@ -41,7 +41,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
+
   // Use refs to track polling state and prevent race conditions
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
@@ -70,11 +70,14 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
   };
 
   // Check if sync is stale (too old to be meaningful)
-  const isSyncStale = useCallback((startTime: string): boolean => {
-    const now = new Date().getTime();
-    const syncStartTime = new Date(startTime).getTime();
-    return (now - syncStartTime) > STALE_SYNC_THRESHOLD;
-  }, [STALE_SYNC_THRESHOLD]);
+  const isSyncStale = useCallback(
+    (startTime: string): boolean => {
+      const now = new Date().getTime();
+      const syncStartTime = new Date(startTime).getTime();
+      return now - syncStartTime > STALE_SYNC_THRESHOLD;
+    },
+    [STALE_SYNC_THRESHOLD]
+  );
 
   // Poll for status updates
   useEffect(() => {
@@ -108,7 +111,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
       try {
         setLoading(true);
         const response = await fetch(`/api/admin/sync/status/${syncId}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             cleanup();
@@ -120,7 +123,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
         }
 
         const data = await response.json();
-        
+
         if (!mountedRef.current) return;
 
         // Check if sync is stale
@@ -132,7 +135,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
 
         setStatus(data);
         setError(null);
-        
+
         // Check if this is a status change to completion
         const currentStatus = data.status;
         const isComplete = isSyncComplete(currentStatus);
@@ -140,28 +143,28 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
 
         if (isComplete) {
           cleanup(); // Stop polling immediately when complete
-          
+
           // Only show toast if status actually changed (prevent duplicate toasts)
           if (statusChanged) {
             if (currentStatus === 'COMPLETED') {
               toast({
-                title: "Sync Completed! ✅",
+                title: 'Sync Completed! ✅',
                 description: `${data.results?.syncedProducts || 0} products updated successfully`,
               });
             } else if (currentStatus === 'FAILED') {
               toast({
-                title: "Sync Failed ❌",
-                description: data.message || "Something went wrong during the sync",
-                variant: "destructive"
+                title: 'Sync Failed ❌',
+                description: data.message || 'Something went wrong during the sync',
+                variant: 'destructive',
               });
             } else if (currentStatus === 'CANCELLED') {
               toast({
-                title: "Sync Cancelled ⚠️",
-                description: "The sync was cancelled successfully",
-                variant: "default"
+                title: 'Sync Cancelled ⚠️',
+                description: 'The sync was cancelled successfully',
+                variant: 'default',
               });
             }
-            
+
             // Notify parent component
             if (onSyncComplete) {
               onSyncComplete();
@@ -170,7 +173,6 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
         }
 
         lastStatusRef.current = currentStatus;
-
       } catch (err) {
         if (mountedRef.current) {
           setError('Network error while fetching status');
@@ -193,7 +195,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
         cleanup();
         return;
       }
-      
+
       await fetchStatus();
     }, 2000); // Poll every 2 seconds
 
@@ -218,23 +220,23 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
 
       if (response.ok) {
         toast({
-          title: "Sync Cancelled",
-          description: "The sync has been cancelled successfully",
+          title: 'Sync Cancelled',
+          description: 'The sync has been cancelled successfully',
         });
         // Status will be updated by the polling mechanism
       } else {
         const data = await response.json();
         toast({
-          title: "Cancel Failed",
-          description: data.message || "Failed to cancel sync",
-          variant: "destructive"
+          title: 'Cancel Failed',
+          description: data.message || 'Failed to cancel sync',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: "Cancel Failed",
-        description: "Network error while cancelling sync",
-        variant: "destructive"
+        title: 'Cancel Failed',
+        description: 'Network error while cancelling sync',
+        variant: 'destructive',
       });
     }
   };
@@ -243,9 +245,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
     return (
       <Card className="opacity-50">
         <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground">
-            No active sync to monitor
-          </div>
+          <div className="text-center text-muted-foreground">No active sync to monitor</div>
         </CardContent>
       </Card>
     );
@@ -295,7 +295,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
     }
   };
 
-  const getStatusVariant = (): "default" | "secondary" | "danger" | "outline" => {
+  const getStatusVariant = (): 'default' | 'secondary' | 'danger' | 'outline' => {
     switch (status.status) {
       case 'COMPLETED':
         return 'default';
@@ -328,22 +328,16 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
             Sync Progress
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={getStatusVariant()}>
-              {status.status}
-            </Badge>
+            <Badge variant={getStatusVariant()}>{status.status}</Badge>
             {isPollingRef.current && (
-              <div className="text-xs text-muted-foreground">
-                Monitoring...
-              </div>
+              <div className="text-xs text-muted-foreground">Monitoring...</div>
             )}
           </div>
         </CardTitle>
         <CardDescription>
           Started by {status.startedBy} • {formatDuration(status.duration)} elapsed
           {pollCountRef.current > 0 && (
-            <span className="ml-2 text-xs">
-              (Updates: {pollCountRef.current})
-            </span>
+            <span className="ml-2 text-xs">(Updates: {pollCountRef.current})</span>
           )}
         </CardDescription>
       </CardHeader>
@@ -361,11 +355,11 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
         <div className="text-sm text-muted-foreground">
           <p>Current step: {status.currentStep}</p>
           {status.processed && status.total && (
-            <p>Progress: {status.processed} / {status.total} products</p>
+            <p>
+              Progress: {status.processed} / {status.total} products
+            </p>
           )}
-          {status.currentProduct && (
-            <p>Processing: {status.currentProduct}</p>
-          )}
+          {status.currentProduct && <p>Processing: {status.currentProduct}</p>}
         </div>
 
         {/* Results Summary (for completed syncs) */}
@@ -384,15 +378,11 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
               <div className="text-xs text-muted-foreground">Skipped</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-amber-600">
-                {status.results.warnings}
-              </div>
+              <div className="text-2xl font-bold text-amber-600">{status.results.warnings}</div>
               <div className="text-xs text-muted-foreground">Warnings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {status.results.errors}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{status.results.errors}</div>
               <div className="text-xs text-muted-foreground">Errors</div>
             </div>
           </div>
@@ -417,12 +407,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
         {/* Cancel Button (for running syncs) */}
         {isRunning && (
           <div className="pt-4 border-t">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleCancelSync}
-              className="w-full"
-            >
+            <Button variant="outline" size="sm" onClick={handleCancelSync} className="w-full">
               Cancel Sync
             </Button>
           </div>
@@ -430,4 +415,4 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
       </CardContent>
     </Card>
   );
-} 
+}

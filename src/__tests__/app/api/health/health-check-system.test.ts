@@ -31,12 +31,14 @@ jest.mock('@/lib/email', () => ({
 }));
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
-const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<typeof checkDatabaseHealth>;
+const mockCheckDatabaseHealth = checkDatabaseHealth as jest.MockedFunction<
+  typeof checkDatabaseHealth
+>;
 
 describe('Health Check System Tests - Phase 4', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -134,7 +136,7 @@ describe('Health Check System Tests - Phase 4', () => {
       expect(data.database.diagnostics.pool_available).toBe(20);
       expect(data.database.diagnostics.pool_used).toBe(30);
       expect(data.database.diagnostics.pool_waiting).toBe(0);
-      
+
       // Check connection pool health
       const poolUsagePercent = (30 / 50) * 100;
       expect(poolUsagePercent).toBe(60);
@@ -165,7 +167,7 @@ describe('Health Check System Tests - Phase 4', () => {
       expect(data.status).toBe('unhealthy');
       expect(data.database.diagnostics.pool_waiting).toBe(8);
       expect(data.database.diagnostics.pool_available).toBe(2);
-      
+
       // Pool is nearly saturated
       const poolUsagePercent = (48 / 50) * 100;
       expect(poolUsagePercent).toBe(96);
@@ -397,9 +399,7 @@ describe('Health Check System Tests - Phase 4', () => {
   describe('Application-Specific Health Checks', () => {
     it('should check order processing health', async () => {
       // Mock recent orders
-      mockPrisma.$queryRaw.mockResolvedValue([
-        { count: 25, avg_processing_time: 150 },
-      ]);
+      mockPrisma.$queryRaw.mockResolvedValue([{ count: 25, avg_processing_time: 150 }]);
 
       const { checkApplicationHealth } = await import('@/lib/health-checks');
       const appHealth = await checkApplicationHealth();
@@ -411,9 +411,7 @@ describe('Health Check System Tests - Phase 4', () => {
 
     it('should detect order processing issues', async () => {
       // Mock concerning order metrics
-      mockPrisma.$queryRaw.mockResolvedValue([
-        { count: 2, avg_processing_time: 5000 },
-      ]);
+      mockPrisma.$queryRaw.mockResolvedValue([{ count: 2, avg_processing_time: 5000 }]);
 
       const { checkApplicationHealth } = await import('@/lib/health-checks');
       const appHealth = await checkApplicationHealth();
@@ -673,9 +671,9 @@ describe('Health Check System Tests - Phase 4', () => {
       const mockCache = new Map();
       jest.doMock('node-cache', () => {
         return jest.fn().mockImplementation(() => ({
-          get: jest.fn((key) => mockCache.get(key)),
+          get: jest.fn(key => mockCache.get(key)),
           set: jest.fn((key, value, ttl) => mockCache.set(key, value)),
-          del: jest.fn((key) => mockCache.delete(key)),
+          del: jest.fn(key => mockCache.delete(key)),
         }));
       });
 
@@ -709,7 +707,7 @@ describe('Health Check System Tests - Phase 4', () => {
       }));
 
       const response = await GET();
-      
+
       expect(response.status).toBe(429);
       expect(await response.json()).toEqual({
         error: 'Rate limit exceeded',
@@ -717,4 +715,4 @@ describe('Health Check System Tests - Phase 4', () => {
       });
     });
   });
-}); 
+});

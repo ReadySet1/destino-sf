@@ -6,7 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Note: Using HTML range input instead of custom Slider component
 
@@ -30,7 +36,7 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
     batchSize: 'medium',
     includeImages: true,
     simulateError: false,
-    customDuration: 25
+    customDuration: 25,
   });
 
   const handleTestSync = () => {
@@ -55,8 +61,8 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
                 <p className="text-sm text-blue-600">Test sync without hitting Square APIs</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setIsExpanded(true)}
               className="border-blue-200 text-blue-700 hover:bg-blue-100"
@@ -78,8 +84,8 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
             <Settings className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-blue-900">Testing Configuration</CardTitle>
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(false)}
             className="text-blue-600 hover:bg-blue-100"
@@ -97,16 +103,16 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
           <div className="flex items-center gap-3">
             <Zap className="h-4 w-4 text-blue-600" />
             <div>
-              <Label htmlFor="mock-mode" className="font-medium">Mock Mode</Label>
+              <Label htmlFor="mock-mode" className="font-medium">
+                Mock Mode
+              </Label>
               <p className="text-sm text-muted-foreground">Simulate sync without real API calls</p>
             </div>
           </div>
           <Switch
             id="mock-mode"
             checked={testOptions.mockMode}
-            onCheckedChange={(checked) => 
-              setTestOptions(prev => ({ ...prev, mockMode: checked }))
-            }
+            onCheckedChange={checked => setTestOptions(prev => ({ ...prev, mockMode: checked }))}
           />
         </div>
 
@@ -121,7 +127,7 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
               <input
                 type="range"
                 value={testOptions.customDuration}
-                onChange={(e) => handleDurationChange([parseInt(e.target.value)])}
+                onChange={e => handleDurationChange([parseInt(e.target.value)])}
                 max={60}
                 min={5}
                 step={5}
@@ -163,7 +169,7 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
               <Switch
                 id="include-images"
                 checked={testOptions.includeImages}
-                onCheckedChange={(checked) => 
+                onCheckedChange={checked =>
                   setTestOptions(prev => ({ ...prev, includeImages: checked }))
                 }
               />
@@ -181,7 +187,7 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
               <Switch
                 id="simulate-error"
                 checked={testOptions.simulateError}
-                onCheckedChange={(checked) => 
+                onCheckedChange={checked =>
                   setTestOptions(prev => ({ ...prev, simulateError: checked }))
                 }
               />
@@ -194,14 +200,14 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
           <Alert className="border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Warning:</strong> Mock mode is disabled. This will make real API calls to Square 
-              and consume your rate limits.
+              <strong>Warning:</strong> Mock mode is disabled. This will make real API calls to
+              Square and consume your rate limits.
             </AlertDescription>
           </Alert>
         )}
 
         {/* Test Sync Button */}
-        <Button 
+        <Button
           onClick={handleTestSync}
           disabled={disabled}
           className="w-full bg-blue-600 hover:bg-blue-700"
@@ -233,4 +239,4 @@ export function SyncTestingPanel({ onTestSync, disabled }: SyncTestingPanelProps
       </CardContent>
     </Card>
   );
-} 
+}

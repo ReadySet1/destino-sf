@@ -2,7 +2,7 @@
 
 /**
  * Deduplicate Catering Items Script
- * 
+ *
  * This script identifies and merges duplicate catering items that were created
  * due to naming format differences (e.g., "Alfajores - Chocolate" vs "chocolate alfajores").
  * It keeps the item with the best data (image + Square ID) and deactivates duplicates.
@@ -49,22 +49,22 @@ function normalizeName(name: string): string {
  */
 function calculateQualityScore(item: any): number {
   let score = 0;
-  
+
   // Has image (+10 points)
   if (item.imageUrl) score += 10;
-  
+
   // Has Square ID (+10 points)
   if (item.squareProductId) score += 10;
-  
+
   // Has description (+2 points)
   if (item.description && item.description.trim() !== '') score += 2;
-  
+
   // Newer items get slight preference (+1 point)
   if (new Date(item.createdAt) > new Date('2025-06-18 12:00:00')) score += 1;
-  
+
   // Prefer proper case format over all lowercase (+1 point)
   if (item.name !== item.name.toLowerCase()) score += 1;
-  
+
   return score;
 }
 
@@ -84,24 +84,24 @@ async function findDuplicates(): Promise<DuplicateGroup[]> {
       createdAt: true,
       category: true,
       price: true,
-      description: true
-    }
+      description: true,
+    },
   });
 
   // Group items by normalized name
   const groups = new Map<string, any[]>();
-  
+
   for (const item of allItems) {
     const normalized = normalizeName(item.name);
     if (!groups.has(normalized)) {
       groups.set(normalized, []);
     }
-    
+
     groups.get(normalized)!.push({
       ...item,
       hasImage: !!item.imageUrl,
       hasSquareId: !!item.squareProductId,
-      score: calculateQualityScore(item)
+      score: calculateQualityScore(item),
     });
   }
 
@@ -111,10 +111,10 @@ async function findDuplicates(): Promise<DuplicateGroup[]> {
     if (items.length > 1) {
       // Sort by quality score (best first)
       items.sort((a, b) => b.score - a.score);
-      
+
       duplicateGroups.push({
         normalizedName,
-        items
+        items,
       });
     }
   }
@@ -126,7 +126,10 @@ async function findDuplicates(): Promise<DuplicateGroup[]> {
 /**
  * Merge duplicate items
  */
-async function mergeDuplicates(duplicateGroups: DuplicateGroup[], dryRun: boolean = true): Promise<{
+async function mergeDuplicates(
+  duplicateGroups: DuplicateGroup[],
+  dryRun: boolean = true
+): Promise<{
   merged: number;
   deactivated: number;
   errors: number;
@@ -141,11 +144,15 @@ async function mergeDuplicates(duplicateGroups: DuplicateGroup[], dryRun: boolea
       const duplicateItems = group.items.slice(1); // Rest are duplicates
 
       logger.info(`\n📝 Group: "${group.normalizedName}"`);
-      logger.info(`   ✅ KEEP: "${bestItem.name}" (Score: ${bestItem.score}, Image: ${bestItem.hasImage}, Square: ${bestItem.hasSquareId})`);
-      
+      logger.info(
+        `   ✅ KEEP: "${bestItem.name}" (Score: ${bestItem.score}, Image: ${bestItem.hasImage}, Square: ${bestItem.hasSquareId})`
+      );
+
       for (const duplicate of duplicateItems) {
-        logger.info(`   ❌ REMOVE: "${duplicate.name}" (Score: ${duplicate.score}, Image: ${duplicate.hasImage}, Square: ${duplicate.hasSquareId})`);
-        
+        logger.info(
+          `   ❌ REMOVE: "${duplicate.name}" (Score: ${duplicate.score}, Image: ${duplicate.hasImage}, Square: ${duplicate.hasSquareId})`
+        );
+
         if (!dryRun) {
           // Merge any missing data from duplicates to the best item
           const updateData: any = {};
@@ -178,8 +185,8 @@ async function mergeDuplicates(duplicateGroups: DuplicateGroup[], dryRun: boolea
               where: { id: bestItem.id },
               data: {
                 ...updateData,
-                updatedAt: new Date()
-              }
+                updatedAt: new Date(),
+              },
             });
             result.merged++;
           }
@@ -189,8 +196,8 @@ async function mergeDuplicates(duplicateGroups: DuplicateGroup[], dryRun: boolea
             where: { id: duplicate.id },
             data: {
               isActive: false,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           result.deactivated++;
         }
@@ -210,7 +217,7 @@ async function mergeDuplicates(duplicateGroups: DuplicateGroup[], dryRun: boolea
 async function generateDuplicatesReport(duplicateGroups: DuplicateGroup[]): Promise<void> {
   logger.info('\n📊 DUPLICATE CATERING ITEMS REPORT');
   logger.info('===================================');
-  
+
   if (duplicateGroups.length === 0) {
     logger.info('✅ No duplicates found!');
     return;
@@ -221,14 +228,16 @@ async function generateDuplicatesReport(duplicateGroups: DuplicateGroup[]): Prom
   for (const group of duplicateGroups) {
     logger.info(`🏷️  Group: "${group.normalizedName}"`);
     logger.info(`   Items (${group.items.length}):`);
-    
+
     group.items.forEach((item, index) => {
       const status = index === 0 ? '✅ KEEP' : '❌ REMOVE';
       const imageStatus = item.hasImage ? '🖼️ ' : '📷 ';
       const squareStatus = item.hasSquareId ? '🔗 ' : '🚫 ';
-      
+
       logger.info(`     ${status}: "${item.name}"`);
-      logger.info(`           Score: ${item.score} | ${imageStatus}Image | ${squareStatus}Square | Created: ${item.createdAt.toISOString().split('T')[0]}`);
+      logger.info(
+        `           Score: ${item.score} | ${imageStatus}Image | ${squareStatus}Square | Created: ${item.createdAt.toISOString().split('T')[0]}`
+      );
     });
     logger.info('');
   }
@@ -249,7 +258,7 @@ async function main() {
 
     // Find duplicates
     const duplicateGroups = await findDuplicates();
-    
+
     // Generate report
     await generateDuplicatesReport(duplicateGroups);
 
@@ -264,17 +273,17 @@ async function main() {
 
     // Ask for confirmation (in a real scenario, you might want user input)
     const shouldExecute = process.argv.includes('--execute');
-    
+
     if (shouldExecute) {
       logger.info('\n🔄 Executing deduplication...');
       const realResult = await mergeDuplicates(duplicateGroups, false);
-      
+
       logger.info('\n✅ Deduplication completed!');
       logger.info(`📊 Results:`);
       logger.info(`   • Items merged: ${realResult.merged}`);
       logger.info(`   • Items deactivated: ${realResult.deactivated}`);
       logger.info(`   • Errors: ${realResult.errors}`);
-      
+
       if (realResult.errors === 0) {
         logger.info('\n🎉 All duplicates resolved successfully!');
       }
@@ -282,7 +291,6 @@ async function main() {
       logger.info('\n💡 To execute the deduplication, run:');
       logger.info('   pnpm tsx src/scripts/deduplicate-catering-items.ts --execute');
     }
-
   } catch (error) {
     logger.error('❌ Fatal error in deduplication:', error);
     process.exit(1);
@@ -296,4 +304,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { findDuplicates, mergeDuplicates, generateDuplicatesReport }; 
+export { findDuplicates, mergeDuplicates, generateDuplicatesReport };

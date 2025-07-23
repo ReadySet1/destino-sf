@@ -32,7 +32,7 @@ describe('Catering Cart Management', () => {
     // Clear localStorage mock before each test
     localStorageMock.clear();
     jest.clearAllMocks();
-    
+
     // Reset the store state
     const { result } = renderHook(() => useCateringCartStore());
     act(() => {
@@ -59,14 +59,14 @@ describe('Catering Cart Management', () => {
       const cateringItem = {
         id: 'catering-package-1',
         name: 'Executive Catering Package',
-        price: 45.00,
+        price: 45.0,
         quantity: 20, // 20 people
         image: '/images/catering/executive.jpg',
         variantId: JSON.stringify({
           type: 'package',
           minPeople: 10,
-          packageId: 'catering-package-1'
-        })
+          packageId: 'catering-package-1',
+        }),
       };
 
       act(() => {
@@ -75,10 +75,10 @@ describe('Catering Cart Management', () => {
 
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].name).toBe('Executive Catering Package');
-      expect(result.current.items[0].price).toBe(45.00);
+      expect(result.current.items[0].price).toBe(45.0);
       expect(result.current.items[0].quantity).toBe(20);
       expect(result.current.totalItems).toBe(1); // 1 unique item
-      expect(result.current.totalPrice).toBe(900.00); // 45 * 20
+      expect(result.current.totalPrice).toBe(900.0); // 45 * 20
     });
 
     test('should update existing item quantity when adding same item', () => {
@@ -87,13 +87,13 @@ describe('Catering Cart Management', () => {
       const cateringItem = {
         id: 'appetizer-tray-1',
         name: 'Gourmet Appetizer Tray',
-        price: 85.00,
+        price: 85.0,
         quantity: 2,
         image: '/images/catering/appetizers.jpg',
         variantId: JSON.stringify({
           type: 'item',
-          itemId: 'appetizer-tray-1'
-        })
+          itemId: 'appetizer-tray-1',
+        }),
       };
 
       // Add item first time
@@ -102,7 +102,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items[0].quantity).toBe(2);
-      expect(result.current.totalPrice).toBe(170.00); // 85 * 2
+      expect(result.current.totalPrice).toBe(170.0); // 85 * 2
 
       // Add same item again
       act(() => {
@@ -111,7 +111,7 @@ describe('Catering Cart Management', () => {
 
       expect(result.current.items).toHaveLength(1); // Still one unique item
       expect(result.current.items[0].quantity).toBe(5); // 2 + 3
-      expect(result.current.totalPrice).toBe(425.00); // 85 * 5
+      expect(result.current.totalPrice).toBe(425.0); // 85 * 5
     });
 
     test('should handle mixed package and item types', () => {
@@ -120,28 +120,28 @@ describe('Catering Cart Management', () => {
       const package1 = {
         id: 'pkg-executive',
         name: 'Executive Package',
-        price: 45.00,
+        price: 45.0,
         quantity: 25,
         image: '/images/catering/executive.jpg',
-        variantId: JSON.stringify({ type: 'package', packageId: 'pkg-executive' })
+        variantId: JSON.stringify({ type: 'package', packageId: 'pkg-executive' }),
       };
 
       const item1 = {
         id: 'app-tray-1',
         name: 'Appetizer Tray',
-        price: 85.00,
+        price: 85.0,
         quantity: 3,
         image: '/images/catering/appetizers.jpg',
-        variantId: JSON.stringify({ type: 'item', itemId: 'app-tray-1' })
+        variantId: JSON.stringify({ type: 'item', itemId: 'app-tray-1' }),
       };
 
       const item2 = {
         id: 'dessert-platter',
         name: 'Dessert Platter',
-        price: 120.00,
+        price: 120.0,
         quantity: 2,
         image: '/images/catering/desserts.jpg',
-        variantId: JSON.stringify({ type: 'item', itemId: 'dessert-platter' })
+        variantId: JSON.stringify({ type: 'item', itemId: 'dessert-platter' }),
       };
 
       act(() => {
@@ -152,7 +152,7 @@ describe('Catering Cart Management', () => {
 
       expect(result.current.items).toHaveLength(3);
       expect(result.current.totalItems).toBe(3);
-      
+
       // Calculate expected total: (45 * 25) + (85 * 3) + (120 * 2)
       const expectedTotal = 1125 + 255 + 240;
       expect(result.current.totalPrice).toBe(expectedTotal);
@@ -171,19 +171,19 @@ describe('Catering Cart Management', () => {
       const item1 = {
         id: 'item-1',
         name: 'Item 1',
-        price: 50.00,
+        price: 50.0,
         quantity: 2,
         image: '/images/catering/item1.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       const item2 = {
         id: 'item-2',
         name: 'Item 2',
-        price: 75.00,
+        price: 75.0,
         quantity: 1,
         image: '/images/catering/item2.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       // Add both items
@@ -193,7 +193,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items).toHaveLength(2);
-      expect(result.current.totalPrice).toBe(175.00); // (50 * 2) + (75 * 1)
+      expect(result.current.totalPrice).toBe(175.0); // (50 * 2) + (75 * 1)
 
       // Remove item1
       act(() => {
@@ -202,7 +202,7 @@ describe('Catering Cart Management', () => {
 
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].id).toBe('item-2');
-      expect(result.current.totalPrice).toBe(75.00);
+      expect(result.current.totalPrice).toBe(75.0);
     });
 
     test('should update item quantity', () => {
@@ -211,10 +211,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'package-1',
         name: 'Catering Package',
-        price: 30.00,
+        price: 30.0,
         quantity: 10,
         image: '/images/catering/package.jpg',
-        variantId: JSON.stringify({ type: 'package' })
+        variantId: JSON.stringify({ type: 'package' }),
       };
 
       act(() => {
@@ -222,7 +222,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items[0].quantity).toBe(10);
-      expect(result.current.totalPrice).toBe(300.00);
+      expect(result.current.totalPrice).toBe(300.0);
 
       // Update quantity
       act(() => {
@@ -230,7 +230,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items[0].quantity).toBe(15);
-      expect(result.current.totalPrice).toBe(450.00);
+      expect(result.current.totalPrice).toBe(450.0);
 
       // Test quantity reduction
       act(() => {
@@ -238,7 +238,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items[0].quantity).toBe(5);
-      expect(result.current.totalPrice).toBe(150.00);
+      expect(result.current.totalPrice).toBe(150.0);
     });
 
     test('should remove item when quantity is set to 0', () => {
@@ -247,10 +247,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'remove-test',
         name: 'Remove Test Item',
-        price: 100.00,
+        price: 100.0,
         quantity: 3,
         image: '/images/catering/test.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -276,26 +276,26 @@ describe('Catering Cart Management', () => {
         {
           id: 'item-1',
           name: 'Item 1',
-          price: 50.00,
+          price: 50.0,
           quantity: 2,
           image: '/images/catering/item1.jpg',
-          variantId: JSON.stringify({ type: 'item' })
+          variantId: JSON.stringify({ type: 'item' }),
         },
         {
           id: 'item-2',
           name: 'Item 2',
-          price: 75.00,
+          price: 75.0,
           quantity: 3,
           image: '/images/catering/item2.jpg',
-          variantId: JSON.stringify({ type: 'item' })
+          variantId: JSON.stringify({ type: 'item' }),
         },
         {
           id: 'package-1',
           name: 'Package 1',
-          price: 100.00,
+          price: 100.0,
           quantity: 10,
           image: '/images/catering/package1.jpg',
-          variantId: JSON.stringify({ type: 'package' })
+          variantId: JSON.stringify({ type: 'package' }),
         },
       ];
 
@@ -304,7 +304,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items).toHaveLength(3);
-      expect(result.current.totalPrice).toBe(1325.00); // (50*2) + (75*3) + (100*10)
+      expect(result.current.totalPrice).toBe(1325.0); // (50*2) + (75*3) + (100*10)
 
       // Clear cart
       act(() => {
@@ -325,26 +325,26 @@ describe('Catering Cart Management', () => {
         {
           id: 'luxury-package',
           name: 'Luxury Catering Package',
-          price: 65.00,
+          price: 65.0,
           quantity: 30, // 30 people
           image: '/images/catering/luxury.jpg',
-          variantId: JSON.stringify({ type: 'package' })
+          variantId: JSON.stringify({ type: 'package' }),
         },
         {
           id: 'wine-service',
           name: 'Wine Service Add-on',
-          price: 25.00,
+          price: 25.0,
           quantity: 30, // 30 people
           image: '/images/catering/wine.jpg',
-          variantId: JSON.stringify({ type: 'item' })
+          variantId: JSON.stringify({ type: 'item' }),
         },
         {
           id: 'appetizer-upgrade',
           name: 'Premium Appetizer Upgrade',
-          price: 15.00,
+          price: 15.0,
           quantity: 30,
           image: '/images/catering/appetizer-upgrade.jpg',
-          variantId: JSON.stringify({ type: 'item' })
+          variantId: JSON.stringify({ type: 'item' }),
         },
       ];
 
@@ -353,7 +353,7 @@ describe('Catering Cart Management', () => {
       });
 
       // Expected: (65 * 30) + (25 * 30) + (15 * 30) = 1950 + 750 + 450 = 3150
-      expect(result.current.totalPrice).toBe(3150.00);
+      expect(result.current.totalPrice).toBe(3150.0);
       expect(result.current.totalItems).toBe(3);
     });
 
@@ -366,7 +366,7 @@ describe('Catering Cart Management', () => {
         price: 12.99,
         quantity: 7,
         image: '/images/catering/decimal.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -383,19 +383,19 @@ describe('Catering Cart Management', () => {
       const freeItem = {
         id: 'free-dessert',
         name: 'Complimentary Dessert',
-        price: 0.00,
+        price: 0.0,
         quantity: 1,
         image: '/images/catering/free-dessert.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       const paidItem = {
         id: 'main-course',
         name: 'Main Course',
-        price: 35.00,
+        price: 35.0,
         quantity: 20,
         image: '/images/catering/main.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -404,7 +404,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items).toHaveLength(2);
-      expect(result.current.totalPrice).toBe(700.00); // Only the paid item
+      expect(result.current.totalPrice).toBe(700.0); // Only the paid item
       expect(result.current.items.find(item => item.id === 'free-dessert')?.price).toBe(0);
     });
   });
@@ -416,10 +416,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'persist-test',
         name: 'Persistence Test Item',
-        price: 50.00,
+        price: 50.0,
         quantity: 2,
         image: '/images/catering/persist.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -441,14 +441,14 @@ describe('Catering Cart Management', () => {
             {
               id: 'loaded-item',
               name: 'Loaded Item',
-              price: 75.00,
+              price: 75.0,
               quantity: 3,
               image: '/images/catering/loaded.jpg',
-              variantId: JSON.stringify({ type: 'item' })
-            }
-          ]
+              variantId: JSON.stringify({ type: 'item' }),
+            },
+          ],
         },
-        version: 0
+        version: 0,
       };
 
       localStorageMock.getItem.mockReturnValue(JSON.stringify(existingCartData));
@@ -459,7 +459,7 @@ describe('Catering Cart Management', () => {
       // Should load the existing item
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].name).toBe('Loaded Item');
-      expect(result.current.totalPrice).toBe(225.00); // 75 * 3
+      expect(result.current.totalPrice).toBe(225.0); // 75 * 3
     });
 
     test('should handle corrupted localStorage data gracefully', () => {
@@ -481,10 +481,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'negative-test',
         name: 'Negative Quantity Test',
-        price: 50.00,
+        price: 50.0,
         quantity: 5,
         image: '/images/catering/negative.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -532,7 +532,7 @@ describe('Catering Cart Management', () => {
       const itemWithoutVariantId = {
         id: 'no-variant',
         name: 'No Variant ID',
-        price: 25.00,
+        price: 25.0,
         quantity: 1,
         image: '/images/catering/no-variant.jpg',
         // Missing variantId
@@ -541,10 +541,10 @@ describe('Catering Cart Management', () => {
       const itemWithInvalidVariantId = {
         id: 'invalid-variant',
         name: 'Invalid Variant ID',
-        price: 35.00,
+        price: 35.0,
         quantity: 2,
         image: '/images/catering/invalid-variant.jpg',
-        variantId: 'invalid-json-string'
+        variantId: 'invalid-json-string',
       };
 
       expect(() => {
@@ -564,10 +564,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'large-quantity',
         name: 'Large Quantity Test',
-        price: 10.00,
+        price: 10.0,
         quantity: 999999,
         image: '/images/catering/large.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       act(() => {
@@ -575,7 +575,7 @@ describe('Catering Cart Management', () => {
       });
 
       expect(result.current.items[0].quantity).toBe(999999);
-      expect(result.current.totalPrice).toBe(9999990.00);
+      expect(result.current.totalPrice).toBe(9999990.0);
     });
 
     test('should maintain cart integrity during rapid operations', () => {
@@ -584,10 +584,10 @@ describe('Catering Cart Management', () => {
       const item = {
         id: 'rapid-test',
         name: 'Rapid Operations Test',
-        price: 20.00,
+        price: 20.0,
         quantity: 1,
         image: '/images/catering/rapid.jpg',
-        variantId: JSON.stringify({ type: 'item' })
+        variantId: JSON.stringify({ type: 'item' }),
       };
 
       // Perform rapid add/remove operations
@@ -600,7 +600,7 @@ describe('Catering Cart Management', () => {
 
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].quantity).toBe(10);
-      expect(result.current.totalPrice).toBe(200.00);
+      expect(result.current.totalPrice).toBe(200.0);
     });
   });
-}); 
+});

@@ -117,4 +117,4 @@ Make sure you have the following environment variables set in your `.env.local` 
 
 - `DATABASE_URL` - PostgreSQL database URL
 - `SQUARE_PRODUCTION_TOKEN` - Square API production token
-- `SQUARE_ACCESS_TOKEN` - Square API sandbox token (for testing) 
+- `SQUARE_ACCESS_TOKEN` - Square API sandbox token (for testing)

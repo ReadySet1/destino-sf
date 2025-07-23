@@ -105,22 +105,21 @@ export async function createCategoryAction(
     revalidatePath('/admin/categories');
 
     // Return success object with redirect path instead of calling toast and redirect
-    return { 
-      success: true, 
-      message: `Category "${newCategory.name}" created successfully`, 
-      redirectPath: '/admin/categories' 
+    return {
+      success: true,
+      message: `Category "${newCategory.name}" created successfully`,
+      redirectPath: '/admin/categories',
     };
   } catch (error) {
     // Remove redirect handling from here
     // if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
     //   // This should not happen anymore as we removed redirect
-    //   return { success: false, message: 'Redirect error occurred unexpectedly.' }; 
+    //   return { success: false, message: 'Redirect error occurred unexpectedly.' };
     // }
 
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Unknown error occurred while creating category';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred while creating category';
+
     console.error('Failed to create category:', error);
     // Return error object instead of calling toast
     return { success: false, message: `Failed to create category: ${errorMessage}` };
@@ -162,9 +161,9 @@ export async function deleteCategoryAction(
     // Prevent deletion if category has products
     if (category._count.products > 0) {
       // Return error object
-      return { 
-        success: false, 
-        message: `Cannot delete category '${category.name}' because it has ${category._count.products} products.` 
+      return {
+        success: false,
+        message: `Cannot delete category '${category.name}' because it has ${category._count.products} products.`,
       };
     }
 
@@ -177,10 +176,10 @@ export async function deleteCategoryAction(
     revalidatePath('/admin/categories');
 
     // Return success object with redirect path
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: `Category "${category.name}" deleted successfully`,
-      redirectPath: '/admin/categories' 
+      redirectPath: '/admin/categories',
     };
   } catch (error) {
     // Remove redirect handling
@@ -189,12 +188,13 @@ export async function deleteCategoryAction(
     //   return { success: false, message: 'Redirect error occurred unexpectedly.' };
     // }
 
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Failed to delete category. An unexpected error occurred.';
-    
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Failed to delete category. An unexpected error occurred.';
+
     console.error('Error deleting category:', error);
     // Return error object
     return { success: false, message: errorMessage };
   }
-} 
+}

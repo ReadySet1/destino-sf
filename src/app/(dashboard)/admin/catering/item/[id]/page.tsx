@@ -48,9 +48,7 @@ export default async function EditCateringItemPage({ params }: PageProps) {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Edit Catering Item</h1>
-            <p className="text-gray-600 mt-2">
-              Modify &quot;{item?.name}&quot;
-            </p>
+            <p className="text-gray-600 mt-2">Modify &quot;{item?.name}&quot;</p>
           </div>
         </div>
       </div>
@@ -58,13 +56,11 @@ export default async function EditCateringItemPage({ params }: PageProps) {
       {errorMessage && (
         <Alert className="mb-6">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {errorMessage}
-          </AlertDescription>
+          <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
 
       {item && <CateringItemForm item={item} isEditing={true} />}
     </div>
   );
-} 
+}

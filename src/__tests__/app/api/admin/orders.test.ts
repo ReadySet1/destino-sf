@@ -5,12 +5,12 @@ import { GET, POST, PUT } from '@/app/api/admin/orders/route';
 import { OrderStatus } from '@prisma/client';
 
 // Import our new test utilities
-import { 
-  TestData, 
-  createMockOrder, 
+import {
+  TestData,
+  createMockOrder,
   setupMockPrisma,
   mockConsole,
-  restoreConsole 
+  restoreConsole,
 } from '@/__tests__/setup/test-utils';
 // Note: @/lib/db is mocked globally in jest.setup.js
 
@@ -40,7 +40,7 @@ const mockOrders = [
     userId: 'user-1',
     status: 'PENDING',
     fulfillmentMethod: 'delivery',
-    total: 75.50,
+    total: 75.5,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
     customerName: 'John Doe',
@@ -51,7 +51,7 @@ const mockOrders = [
         id: 'item-1',
         productId: 'prod-1',
         quantity: 2,
-        price: 25.00,
+        price: 25.0,
         product: {
           name: 'Dulce de Leche Alfajores',
           images: ['image1.jpg'],
@@ -67,7 +67,7 @@ const mockOrders = [
     userId: 'user-2',
     status: 'COMPLETED',
     fulfillmentMethod: 'pickup',
-    total: 45.00,
+    total: 45.0,
     createdAt: new Date('2024-01-14T15:30:00Z'),
     updatedAt: new Date('2024-01-14T16:00:00Z'),
     customerName: 'Jane Smith',
@@ -78,7 +78,7 @@ const mockOrders = [
         id: 'item-2',
         productId: 'prod-2',
         quantity: 1,
-        price: 45.00,
+        price: 45.0,
         product: {
           name: 'Beef Empanadas',
           images: ['image2.jpg'],
@@ -107,10 +107,14 @@ describe('/api/admin/orders', () => {
       error: null,
     });
 
-    mockSupabaseClient.from().select().eq().single.mockResolvedValue({
-      data: { role: 'ADMIN' },
-      error: null,
-    });
+    mockSupabaseClient
+      .from()
+      .select()
+      .eq()
+      .single.mockResolvedValue({
+        data: { role: 'ADMIN' },
+        error: null,
+      });
   });
 
   afterEach(() => {
@@ -118,7 +122,6 @@ describe('/api/admin/orders', () => {
   });
 
   describe('Order listing with filters', () => {
-
     test('should return all orders without filters', async () => {
       mockPrisma.order.findMany.mockResolvedValue(mockOrders);
       mockPrisma.order.count.mockResolvedValue(2);
@@ -246,8 +249,8 @@ describe('/api/admin/orders', () => {
       const startDate = new Date('2024-01-14T00:00:00Z');
       const endDate = new Date('2024-01-15T23:59:59Z');
 
-      const filteredOrders = mockOrders.filter(order => 
-        order.createdAt >= startDate && order.createdAt <= endDate
+      const filteredOrders = mockOrders.filter(
+        order => order.createdAt >= startDate && order.createdAt <= endDate
       );
 
       mockPrisma.order.findMany.mockResolvedValue(filteredOrders);
@@ -280,7 +283,7 @@ describe('/api/admin/orders', () => {
     });
 
     test('should filter orders by customer email', async () => {
-      const customerOrders = mockOrders.filter(order => 
+      const customerOrders = mockOrders.filter(order =>
         order.customerEmail?.includes('john@example.com')
       );
 
@@ -370,7 +373,9 @@ describe('/api/admin/orders', () => {
 
     test('should sort orders by different fields', async () => {
       // Test sorting by total amount
-      mockPrisma.order.findMany.mockResolvedValue([...mockOrders].sort((a, b) => b.total - a.total));
+      mockPrisma.order.findMany.mockResolvedValue(
+        [...mockOrders].sort((a, b) => b.total - a.total)
+      );
 
       const ordersByTotal = await prisma.order.findMany({
         include: {
@@ -424,10 +429,9 @@ describe('/api/admin/orders', () => {
         },
       };
 
-      const filteredOrders = mockOrders.filter(order => 
-        order.status === 'PENDING' && 
-        order.fulfillmentMethod === 'delivery' &&
-        order.total >= 50
+      const filteredOrders = mockOrders.filter(
+        order =>
+          order.status === 'PENDING' && order.fulfillmentMethod === 'delivery' && order.total >= 50
       );
 
       mockPrisma.order.findMany.mockResolvedValue(filteredOrders);
@@ -464,8 +468,8 @@ describe('/api/admin/orders', () => {
       userId: 'user-1',
       status: 'PENDING',
       fulfillmentType: 'local_delivery',
-      total: 75.50,
-      taxAmount: 5.90,
+      total: 75.5,
+      taxAmount: 5.9,
       createdAt: new Date('2024-01-15T10:00:00Z'),
       updatedAt: new Date('2024-01-15T10:00:00Z'),
       customerName: 'John Doe',
@@ -480,8 +484,8 @@ describe('/api/admin/orders', () => {
           productId: 'prod-1',
           variantId: 'variant-1',
           quantity: 2,
-          price: 25.00,
-          total: 50.00,
+          price: 25.0,
+          total: 50.0,
           product: {
             name: 'Dulce de Leche Alfajores',
             description: 'Traditional Argentine alfajores',
@@ -497,8 +501,8 @@ describe('/api/admin/orders', () => {
           productId: 'prod-2',
           variantId: 'variant-2',
           quantity: 1,
-          price: 15.50,
-          total: 15.50,
+          price: 15.5,
+          total: 15.5,
           product: {
             name: 'Chimichurri Sauce',
             description: 'Homemade chimichurri sauce',
@@ -524,16 +528,16 @@ describe('/api/admin/orders', () => {
           items: {
             include: {
               product: {
-                select: { 
-                  name: true, 
+                select: {
+                  name: true,
                   description: true,
-                  images: true 
+                  images: true,
                 },
               },
               variant: {
-                select: { 
+                select: {
                   name: true,
-                  sku: true 
+                  sku: true,
                 },
               },
             },
@@ -547,16 +551,16 @@ describe('/api/admin/orders', () => {
           items: {
             include: {
               product: {
-                select: { 
-                  name: true, 
+                select: {
+                  name: true,
                   description: true,
-                  images: true 
+                  images: true,
                 },
               },
               variant: {
-                select: { 
+                select: {
                   name: true,
-                  sku: true 
+                  sku: true,
                 },
               },
             },
@@ -593,21 +597,23 @@ describe('/api/admin/orders', () => {
     test('should handle database errors gracefully', async () => {
       mockPrisma.order.findUnique.mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(prisma.order.findUnique({
-        where: { id: 'order-1' },
-        include: {
-          items: {
-            include: {
-              product: {
-                select: { name: true, images: true },
-              },
-              variant: {
-                select: { name: true },
+      await expect(
+        prisma.order.findUnique({
+          where: { id: 'order-1' },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: { name: true, images: true },
+                },
+                variant: {
+                  select: { name: true },
+                },
               },
             },
           },
-        },
-      })).rejects.toThrow('Database connection failed');
+        })
+      ).rejects.toThrow('Database connection failed');
     });
 
     test('should retrieve order with all related data', async () => {
@@ -644,7 +650,7 @@ describe('/api/admin/orders', () => {
 
       const order = await prisma.order.update({
         where: { id: 'order-1' },
-        data: { 
+        data: {
           status: OrderStatus.PROCESSING,
           updatedAt: new Date(),
         },
@@ -664,7 +670,7 @@ describe('/api/admin/orders', () => {
 
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
         where: { id: 'order-1' },
-        data: { 
+        data: {
           status: 'CONFIRMED',
           updatedAt: expect.any(Date),
         },
@@ -737,10 +743,12 @@ describe('/api/admin/orders', () => {
     test('should handle order not found during update', async () => {
       mockPrisma.order.update.mockRejectedValue(new Error('Record not found'));
 
-      await expect(prisma.order.update({
-        where: { id: 'non-existent-order' },
-        data: { status: 'READY' },
-      })).rejects.toThrow('Record not found');
+      await expect(
+        prisma.order.update({
+          where: { id: 'non-existent-order' },
+          data: { status: 'READY' },
+        })
+      ).rejects.toThrow('Record not found');
     });
 
     test('should track status change history', async () => {
@@ -761,7 +769,7 @@ describe('/api/admin/orders', () => {
 
       const order = await prisma.order.update({
         where: { id: 'order-1' },
-        data: { 
+        data: {
           status: 'PROCESSING',
           statusHistory,
           updatedAt: new Date(),
@@ -775,7 +783,7 @@ describe('/api/admin/orders', () => {
 
   describe('Order search functionality', () => {
     test('should search orders by customer name', async () => {
-      const searchResults = mockOrders.filter(order => 
+      const searchResults = mockOrders.filter(order =>
         order.customerName?.toLowerCase().includes('john')
       );
 
@@ -810,9 +818,7 @@ describe('/api/admin/orders', () => {
     });
 
     test('should search orders by order ID', async () => {
-      const searchResults = mockOrders.filter(order => 
-        order.id.includes('order-1')
-      );
+      const searchResults = mockOrders.filter(order => order.id.includes('order-1'));
 
       mockPrisma.order.findMany.mockResolvedValue(searchResults);
 
@@ -844,10 +850,8 @@ describe('/api/admin/orders', () => {
     });
 
     test('should search orders by product name', async () => {
-      const searchResults = mockOrders.filter(order => 
-        order.items.some(item => 
-          item.product.name.toLowerCase().includes('alfajores')
-        )
+      const searchResults = mockOrders.filter(order =>
+        order.items.some(item => item.product.name.toLowerCase().includes('alfajores'))
       );
 
       mockPrisma.order.findMany.mockResolvedValue(searchResults);
@@ -887,9 +891,7 @@ describe('/api/admin/orders', () => {
     });
 
     test('should search orders by phone number', async () => {
-      const searchResults = mockOrders.filter(order => 
-        order.customerPhone?.includes('1234567890')
-      );
+      const searchResults = mockOrders.filter(order => order.customerPhone?.includes('1234567890'));
 
       mockPrisma.order.findMany.mockResolvedValue(searchResults);
 
@@ -952,10 +954,11 @@ describe('/api/admin/orders', () => {
 
     test('should perform global search across multiple fields', async () => {
       const searchTerm = 'john';
-      const globalSearchResults = mockOrders.filter(order => 
-        order.customerName?.toLowerCase().includes(searchTerm) ||
-        order.customerEmail?.toLowerCase().includes(searchTerm) ||
-        order.id.toLowerCase().includes(searchTerm)
+      const globalSearchResults = mockOrders.filter(
+        order =>
+          order.customerName?.toLowerCase().includes(searchTerm) ||
+          order.customerEmail?.toLowerCase().includes(searchTerm) ||
+          order.id.toLowerCase().includes(searchTerm)
       );
 
       mockPrisma.order.findMany.mockResolvedValue(globalSearchResults);
@@ -1037,7 +1040,7 @@ describe('/api/admin/orders', () => {
       // Test invalid status filter
       const invalidStatus = 'INVALID_STATUS';
       const validStatuses = ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-      
+
       const isValidStatus = validStatuses.includes(invalidStatus);
       expect(isValidStatus).toBe(false);
 
@@ -1061,7 +1064,7 @@ describe('/api/admin/orders', () => {
     test('should handle complete order management workflow', async () => {
       // 1. List orders with filters
       mockPrisma.order.findMany.mockResolvedValue([mockOrders[0]]);
-      
+
       const pendingOrders = await prisma.order.findMany({
         where: { status: 'PENDING' },
         include: {
@@ -1089,7 +1092,7 @@ describe('/api/admin/orders', () => {
             id: 'item-1',
             productId: 'prod-1',
             quantity: 2,
-            price: 25.00,
+            price: 25.0,
             product: {
               name: 'Dulce de Leche Alfajores',
               images: ['image1.jpg'],
@@ -1132,7 +1135,7 @@ describe('/api/admin/orders', () => {
 
       const confirmedOrder = await prisma.order.update({
         where: { id: 'order-1' },
-        data: { 
+        data: {
           status: 'READY',
           updatedAt: new Date(),
         },
@@ -1197,7 +1200,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
         paymentStatus: 'PENDING',
       },
       {
-        id: 'order-2', 
+        id: 'order-2',
         status: 'COMPLETED',
         customerName: 'Jane Smith',
         email: 'jane@example.com',
@@ -1205,7 +1208,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
         createdAt: new Date('2024-01-14T10:30:00.000Z'),
         fulfillmentType: 'local_delivery',
         paymentStatus: 'PAID',
-      }
+      },
     ]);
 
     mockPrisma.order.count.mockResolvedValue(25);
@@ -1226,7 +1229,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
         page: 1,
         limit: 10,
         total: 25,
-        totalPages: 3
+        totalPages: 3,
       });
     });
 
@@ -1243,7 +1246,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
           createdAt: new Date(),
           fulfillmentType: 'pickup',
           paymentStatus: 'PENDING',
-        }
+        },
       ]);
 
       const response = await GET(request);
@@ -1255,8 +1258,8 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            status: 'PENDING'
-          })
+            status: 'PENDING',
+          }),
         })
       );
     });
@@ -1264,7 +1267,9 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
     test('should filter orders by date range', async () => {
       const startDate = '2024-01-01';
       const endDate = '2024-01-31';
-      const request = new NextRequest(`http://localhost:3000/api/admin/orders?startDate=${startDate}&endDate=${endDate}`);
+      const request = new NextRequest(
+        `http://localhost:3000/api/admin/orders?startDate=${startDate}&endDate=${endDate}`
+      );
 
       const response = await GET(request);
       const data = await response.json();
@@ -1275,9 +1280,9 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
           where: expect.objectContaining({
             createdAt: {
               gte: new Date(startDate),
-              lte: new Date(endDate + 'T23:59:59.999Z')
-            }
-          })
+              lte: new Date(endDate + 'T23:59:59.999Z'),
+            },
+          }),
         })
       );
     });
@@ -1342,13 +1347,13 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       expect(data.order.status).toBe('PROCESSING');
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
         where: { id: orderId },
-        data: { status: 'PROCESSING', updatedAt: expect.any(Date) }
+        data: { status: 'PROCESSING', updatedAt: expect.any(Date) },
       });
     });
 
     test('should return 404 for non-existent order', async () => {
       const orderId = 'non-existent-order';
-      
+
       mockPrisma.order.findUnique.mockResolvedValue(null);
 
       const request = new NextRequest(`http://localhost:3000/api/admin/orders/${orderId}`, {
@@ -1382,7 +1387,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
 
     test('should handle concurrent update attempts', async () => {
       const orderId = 'order-123';
-      
+
       mockPrisma.order.findUnique.mockResolvedValue({
         id: orderId,
         status: 'PENDING',
@@ -1408,7 +1413,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
     test('should update multiple orders successfully', async () => {
       const bulkData = {
         orderIds: ['order-1', 'order-2'],
-        updates: { status: 'PROCESSING' }
+        updates: { status: 'PROCESSING' },
       };
 
       mockPrisma.order.updateMany.mockResolvedValue({ count: 2 });
@@ -1426,7 +1431,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       expect(data.updatedCount).toBe(2);
       expect(mockPrisma.order.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['order-1', 'order-2'] } },
-        data: { status: 'PROCESSING', updatedAt: expect.any(Date) }
+        data: { status: 'PROCESSING', updatedAt: expect.any(Date) },
       });
     });
 
@@ -1434,7 +1439,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       const tooManyIds = Array.from({ length: 101 }, (_, i) => `order-${i}`);
       const bulkData = {
         orderIds: tooManyIds,
-        updates: { status: 'PROCESSING' }
+        updates: { status: 'PROCESSING' },
       };
 
       const request = new NextRequest('http://localhost:3000/api/admin/orders/bulk-update', {
@@ -1456,13 +1461,13 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       mockPrisma.order.groupBy.mockResolvedValue([
         { status: 'PENDING', _count: { status: 5 } },
         { status: 'PROCESSING', _count: { status: 3 } },
-        { status: 'COMPLETED', _count: { status: 15 } }
+        { status: 'COMPLETED', _count: { status: 15 } },
       ]);
 
       mockPrisma.order.aggregate.mockResolvedValue({
         _sum: { total: { toNumber: () => 1250.75 } },
         _avg: { total: { toNumber: () => 52.11 } },
-        _count: { id: 24 }
+        _count: { id: 24 },
       });
 
       const request = new NextRequest('http://localhost:3000/api/admin/orders/stats');
@@ -1475,7 +1480,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       expect(data.stats.statusCounts).toEqual({
         PENDING: 5,
         PROCESSING: 3,
-        COMPLETED: 15
+        COMPLETED: 15,
       });
       expect(data.stats.totalRevenue).toBe(1250.75);
       expect(data.stats.averageOrderValue).toBe(52.11);
@@ -1487,7 +1492,7 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       mockPrisma.order.aggregate.mockResolvedValue({
         _sum: { total: null },
         _avg: { total: null },
-        _count: { id: 0 }
+        _count: { id: 0 },
       });
 
       const request = new NextRequest('http://localhost:3000/api/admin/orders/stats');
@@ -1552,9 +1557,9 @@ describe('Admin Orders API - Comprehensive Coverage', () => {
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: expect.any(Number),
-          skip: expect.any(Number)
+          skip: expect.any(Number),
         })
       );
     });
   });
-}); 
+});

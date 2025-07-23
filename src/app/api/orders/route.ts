@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 // Remove unused imports
-// import { type CookieOptions, createServerClient } from '@supabase/ssr'; 
+// import { type CookieOptions, createServerClient } from '@supabase/ssr';
 // import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
 // Import the server client utility

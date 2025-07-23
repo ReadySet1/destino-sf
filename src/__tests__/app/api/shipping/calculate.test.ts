@@ -3,16 +3,15 @@ import { calculateShippingWeight, CartItemForShipping } from '@/lib/shippingUtil
 import { getShippingRates } from '@/app/actions/shipping';
 
 // Import our new test utilities
-import { 
-  mockConsole,
-  restoreConsole 
-} from '@/__tests__/setup/test-utils';
+import { mockConsole, restoreConsole } from '@/__tests__/setup/test-utils';
 
 // Mock the shipping utilities and actions
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/app/actions/shipping');
 
-const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
+const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
+  typeof calculateShippingWeight
+>;
 const mockGetShippingRates = getShippingRates as jest.MockedFunction<typeof getShippingRates>;
 
 // Mock Next.js request
@@ -59,7 +58,7 @@ describe('/api/shipping/calculate', () => {
 
       // Since we don't have the actual API route file, we'll test the underlying logic
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(mockCalculateShippingWeight).toHaveBeenCalledWith(cartItems, 'nationwide_shipping');
       expect(weight).toBe(2.1);
     });
@@ -73,7 +72,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(2.8); // 3 empanadas total weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(mockCalculateShippingWeight).toHaveBeenCalledWith(cartItems, 'nationwide_shipping');
       expect(weight).toBe(2.8);
     });
@@ -88,7 +87,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(3.2); // Mixed cart weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(mockCalculateShippingWeight).toHaveBeenCalledWith(cartItems, 'nationwide_shipping');
       expect(weight).toBe(3.2);
     });
@@ -101,7 +100,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(0.5); // Minimum weight enforced
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(0.5);
     });
   });
@@ -161,7 +160,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(1.0); // Different weight for local delivery
 
       const weight = await calculateShippingWeight(cartItems, 'local_delivery');
-      
+
       expect(mockCalculateShippingWeight).toHaveBeenCalledWith(cartItems, 'local_delivery');
       expect(weight).toBe(1.0);
     });
@@ -170,7 +169,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(1.0); // Same weight but no shipping needed
 
       const weight = await calculateShippingWeight(cartItems, 'pickup');
-      
+
       expect(mockCalculateShippingWeight).toHaveBeenCalledWith(cartItems, 'pickup');
       expect(weight).toBe(1.0);
     });
@@ -183,7 +182,7 @@ describe('/api/shipping/calculate', () => {
 
       const nationwideWeight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
       const localWeight = await calculateShippingWeight(cartItems, 'local_delivery');
-      
+
       expect(nationwideWeight).toBe(1.3);
       expect(localWeight).toBe(1.0);
     });
@@ -196,7 +195,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(0.5); // Minimum weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(0.5);
     });
 
@@ -208,7 +207,7 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(0.5); // Minimum weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(0.5);
     });
 
@@ -220,19 +219,17 @@ describe('/api/shipping/calculate', () => {
       mockCalculateShippingWeight.mockResolvedValue(0.5); // Minimum weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(0.5);
     });
 
     test('should handle cart items with missing names', async () => {
-      const cartItems: CartItemForShipping[] = [
-        { id: '1', name: '', quantity: 2 },
-      ];
+      const cartItems: CartItemForShipping[] = [{ id: '1', name: '', quantity: 2 }];
 
       mockCalculateShippingWeight.mockResolvedValue(1.0); // Default weight
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(1.0);
     });
 
@@ -272,7 +269,9 @@ describe('/api/shipping/calculate', () => {
 
       mockCalculateShippingWeight.mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(calculateShippingWeight(cartItems, 'nationwide_shipping')).rejects.toThrow('Database connection failed');
+      await expect(calculateShippingWeight(cartItems, 'nationwide_shipping')).rejects.toThrow(
+        'Database connection failed'
+      );
     });
 
     test('should handle Shippo API errors', async () => {
@@ -311,19 +310,17 @@ describe('/api/shipping/calculate', () => {
 
       // Test with invalid fulfillment method - should still work with fallback
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(1.0);
     });
 
     test('should handle shipping configuration not found', async () => {
-      const cartItems: CartItemForShipping[] = [
-        { id: '1', name: 'Unknown Product', quantity: 2 },
-      ];
+      const cartItems: CartItemForShipping[] = [{ id: '1', name: 'Unknown Product', quantity: 2 }];
 
       mockCalculateShippingWeight.mockResolvedValue(1.0); // Falls back to default
 
       const weight = await calculateShippingWeight(cartItems, 'nationwide_shipping');
-      
+
       expect(weight).toBe(1.0);
     });
 
@@ -447,7 +444,7 @@ describe('/api/shipping/calculate', () => {
       expect(result.success).toBe(true);
       expect(result.rates).toHaveLength(3);
       expect(result.shipmentId).toBe('shipment_456');
-      
+
       // Verify rates are sorted correctly (cheapest and fastest first)
       expect(result.rates![0].attributes).toContain('CHEAPEST');
       expect(result.rates![2].attributes).toContain('FASTEST');
@@ -503,4 +500,4 @@ describe('/api/shipping/calculate', () => {
       expect(result.rates![0].amount).toBeGreaterThan(2000); // Higher rates for cross-country
     });
   });
-}); 
+});

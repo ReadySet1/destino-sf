@@ -39,7 +39,7 @@ export function PendingOrdersList({ orders }: Props) {
 
   const handleRetryPayment = async (orderId: string) => {
     setRetryingOrderId(orderId);
-    
+
     try {
       const response = await fetch(`/api/orders/${orderId}/retry-payment`, {
         method: 'POST',
@@ -74,9 +74,7 @@ export function PendingOrdersList({ orders }: Props) {
         <CardContent className="pt-6">
           <div className="text-center py-8">
             <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Pending Orders
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Orders</h3>
             <p className="text-gray-500">
               All your orders have been completed or are being processed.
             </p>
@@ -88,29 +86,25 @@ export function PendingOrdersList({ orders }: Props) {
 
   return (
     <div className="space-y-4">
-      {orders.map((order) => (
+      {orders.map(order => (
         <Card key={order.id}>
           <CardHeader className="pb-3">
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-lg">
-                  Order #{order.id.slice(-8)}
-                </CardTitle>
+                <CardTitle className="text-lg">Order #{order.id.slice(-8)}</CardTitle>
                 <p className="text-sm text-gray-500">
                   {format(new Date(order.createdAt), 'MMM d, yyyy h:mm a')}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-lg font-semibold">
-                  ${Number(order.total).toFixed(2)}
-                </div>
+                <div className="text-lg font-semibold">${Number(order.total).toFixed(2)}</div>
                 <Badge variant={order.status === 'PAYMENT_FAILED' ? 'danger' : 'secondary'}>
                   {order.status.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             {/* Order Items Summary */}
             <div className="text-sm">
@@ -119,7 +113,8 @@ export function PendingOrdersList({ orders }: Props) {
                 {order.items.map((item, index) => (
                   <li key={index}>
                     {item.quantity}x {item.product.name}
-                    {item.variant && ` (${item.variant.name})`} - ${(Number(item.price) * item.quantity).toFixed(2)}
+                    {item.variant && ` (${item.variant.name})`} - $
+                    {(Number(item.price) * item.quantity).toFixed(2)}
                   </li>
                 ))}
               </ul>
@@ -129,9 +124,7 @@ export function PendingOrdersList({ orders }: Props) {
             {order.retryCount > 0 && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Payment retry attempts: {order.retryCount}/3
-                </AlertDescription>
+                <AlertDescription>Payment retry attempts: {order.retryCount}/3</AlertDescription>
               </Alert>
             )}
 
@@ -158,4 +151,4 @@ export function PendingOrdersList({ orders }: Props) {
       ))}
     </div>
   );
-} 
+}

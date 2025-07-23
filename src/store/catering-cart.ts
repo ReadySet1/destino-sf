@@ -40,7 +40,7 @@ export const useCateringCartStore = create<CateringCartStore>()(
           } else {
             updatedItems = [...state.items, item];
           }
-          
+
           const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
           const totalPrice = updatedItems.reduce(
             (total, item) => total + item.price * item.quantity,
@@ -71,12 +71,14 @@ export const useCateringCartStore = create<CateringCartStore>()(
         }),
       updateQuantity: (itemId, quantity, variantId) =>
         set(state => {
-          const updatedItems = state.items.map(item =>
-            item.id === itemId && item.variantId === variantId
-              ? { ...item, quantity: Math.max(0, quantity) }
-              : item
-          ).filter(item => item.quantity > 0);
-          
+          const updatedItems = state.items
+            .map(item =>
+              item.id === itemId && item.variantId === variantId
+                ? { ...item, quantity: Math.max(0, quantity) }
+                : item
+            )
+            .filter(item => item.quantity > 0);
+
           const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
           const totalPrice = updatedItems.reduce(
             (total, item) => total + item.price * item.quantity,
@@ -96,4 +98,4 @@ export const useCateringCartStore = create<CateringCartStore>()(
       name: 'catering-cart-storage',
     }
   )
-); 
+);

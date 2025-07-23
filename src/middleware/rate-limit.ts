@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  checkRateLimit, 
-  getEndpointFromPath, 
+import {
+  checkRateLimit,
+  getEndpointFromPath,
   createRateLimitResponse,
   addRateLimitHeaders,
-  getClientIp 
+  getClientIp,
 } from '@/lib/rate-limit';
 import { RateLimitOptions } from '@/types/rate-limit';
 
@@ -17,48 +17,44 @@ export async function applyRateLimit(
 ): Promise<NextResponse | null> {
   try {
     const { pathname } = request.nextUrl;
-    
+
     // Skip rate limiting for static assets and internal Next.js routes
     if (shouldSkipRateLimit(pathname)) {
       return null; // Continue to next middleware
     }
-    
+
     // Skip rate limiting if explicitly disabled
     if (options.skip) {
       return null;
     }
-    
+
     // Determine which endpoint rate limit to apply
     const endpoint = getEndpointFromPath(pathname);
-    
+
     // Check rate limit
     const rateLimitResult = await checkRateLimit(request, endpoint, options);
-    
+
     // If rate limit exceeded, return 429 response
     if (!rateLimitResult.success) {
       console.warn(`Rate limit exceeded for ${getClientIp(request)} on ${pathname}`, {
         endpoint,
         limit: rateLimitResult.limit,
         remaining: rateLimitResult.remaining,
-        reset: rateLimitResult.reset
+        reset: rateLimitResult.reset,
       });
-      
-      return new NextResponse(
-        createRateLimitResponse(rateLimitResult).body,
-        {
-          status: 429,
-          headers: createRateLimitResponse(rateLimitResult).headers
-        }
-      );
+
+      return new NextResponse(createRateLimitResponse(rateLimitResult).body, {
+        status: 429,
+        headers: createRateLimitResponse(rateLimitResult).headers,
+      });
     }
-    
+
     // Rate limit passed - return null to allow route handler to continue
     // Note: NextResponse.next() is not allowed in route handlers, only in middleware
     return null;
-    
   } catch (error) {
     console.error('Rate limiting middleware error:', error);
-    
+
     // On error, allow request to continue but log the issue
     // This ensures rate limiting failures don't break the API
     return null;
@@ -77,17 +73,17 @@ function shouldSkipRateLimit(pathname: string): boolean {
   ) {
     return true;
   }
-  
+
   // Skip for health checks (common for monitoring systems)
   if (pathname === '/api/health' || pathname === '/health') {
     return true;
   }
-  
+
   // Skip for internal Next.js routes
   if (pathname.startsWith('/_next/') || pathname.startsWith('/__nextjs_')) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -103,13 +99,13 @@ export async function applyUserBasedRateLimit(
     // Fall back to IP-based rate limiting
     return applyRateLimit(request, options);
   }
-  
+
   // Use user ID as identifier for rate limiting
   const userOptions: RateLimitOptions = {
     ...options,
-    identifier: `user:${userId}`
+    identifier: `user:${userId}`,
   };
-  
+
   return applyRateLimit(request, userOptions);
 }
 
@@ -121,14 +117,16 @@ export async function applyStrictRateLimit(
   customLimit?: number
 ): Promise<NextResponse | null> {
   const strictOptions: RateLimitOptions = {
-    config: customLimit ? {
-      id: 'strict',
-      limit: customLimit,
-      window: 60 * 1000, // 1 minute
-      prefix: 'strict_rl'
-    } : undefined
+    config: customLimit
+      ? {
+          id: 'strict',
+          limit: customLimit,
+          window: 60 * 1000, // 1 minute
+          prefix: 'strict_rl',
+        }
+      : undefined,
   };
-  
+
   return applyRateLimit(request, strictOptions);
 }
 
@@ -145,10 +143,10 @@ export async function applyWebhookRateLimit(
       id: 'webhook',
       limit: 100, // 100 requests per minute for webhooks
       window: 60 * 1000,
-      prefix: 'webhook_rl'
-    }
+      prefix: 'webhook_rl',
+    },
   };
-  
+
   return applyRateLimit(request, webhookOptions);
 }
 
@@ -165,10 +163,10 @@ export async function applyAdminRateLimit(
       id: 'admin',
       limit: 120, // Higher limit for admin operations
       window: 60 * 1000,
-      prefix: 'admin_rl'
-    }
+      prefix: 'admin_rl',
+    },
   };
-  
+
   return applyRateLimit(request, adminOptions);
 }
 
@@ -176,6 +174,5 @@ export async function applyAdminRateLimit(
  * Development mode bypass for rate limiting
  */
 export function shouldBypassInDevelopment(): boolean {
-  return process.env.NODE_ENV === 'development' && 
-         process.env.BYPASS_RATE_LIMIT === 'true';
-} 
+  return process.env.NODE_ENV === 'development' && process.env.BYPASS_RATE_LIMIT === 'true';
+}

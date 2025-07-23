@@ -23,30 +23,34 @@ export async function preparePrismaData<T extends Record<string, any>>(data: T):
   if (!data || typeof data !== 'object') {
     return data;
   }
-  
+
   // Handle Decimals in arrays
   if (Array.isArray(data)) {
-    return Promise.all(data.map(async (item) =>
-      typeof item === 'object' && item !== null ? await preparePrismaData(item) : item
-    )) as unknown as T;
+    return Promise.all(
+      data.map(async item =>
+        typeof item === 'object' && item !== null ? await preparePrismaData(item) : item
+      )
+    ) as unknown as T;
   }
-  
+
   // Create a new object to hold the serialized data
   const result = {} as Record<string, any>;
-  
+
   for (const [key, value] of Object.entries(data)) {
     if (value === null || value === undefined) {
       result[key] = value;
       continue;
     }
-    
+
     if (isDecimal(value)) {
       result[key] = decimalToNumber(value) ?? 0;
     } else if (typeof value === 'object') {
       if (Array.isArray(value)) {
-        result[key] = await Promise.all(value.map(async (item) =>
-          typeof item === 'object' && item !== null ? await preparePrismaData(item) : item
-        ));
+        result[key] = await Promise.all(
+          value.map(async item =>
+            typeof item === 'object' && item !== null ? await preparePrismaData(item) : item
+          )
+        );
       } else if (value instanceof Date) {
         result[key] = value; // Keep Date objects as is
       } else {
@@ -56,6 +60,6 @@ export async function preparePrismaData<T extends Record<string, any>>(data: T):
       result[key] = value;
     }
   }
-  
+
   return result as T;
-} 
+}

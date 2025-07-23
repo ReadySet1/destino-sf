@@ -10,8 +10,8 @@ import { PendingOrdersList } from '@/components/Orders/PendingOrdersList';
 jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
-    error: jest.fn()
-  }
+    error: jest.fn(),
+  },
 }));
 
 // Mock global fetch
@@ -35,15 +35,15 @@ describe('PendingOrdersList Component', () => {
     items: [
       {
         quantity: 2,
-        price: 18.00,
+        price: 18.0,
         product: {
-          name: 'Empanadas - Lomo Saltado'
+          name: 'Empanadas - Lomo Saltado',
         },
         variant: {
-          name: 'frozen-4 pack'
-        }
-      }
-    ]
+          name: 'frozen-4 pack',
+        },
+      },
+    ],
   };
 
   const mockCashOrder = {
@@ -60,23 +60,25 @@ describe('PendingOrdersList Component', () => {
         quantity: 1,
         price: 45.25,
         product: {
-          name: 'Catering Package'
+          name: 'Catering Package',
         },
-        variant: null
-      }
-    ]
+        variant: null,
+      },
+    ],
   };
 
   it('should render empty state when no orders provided', () => {
     render(<PendingOrdersList orders={[]} />);
-    
+
     expect(screen.getByText('No Pending Orders')).toBeInTheDocument();
-    expect(screen.getByText('All your orders have been completed or are being processed.')).toBeInTheDocument();
+    expect(
+      screen.getByText('All your orders have been completed or are being processed.')
+    ).toBeInTheDocument();
   });
 
   it('should display retry payment button for SQUARE orders', () => {
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     expect(screen.getByText('Retry Payment')).toBeInTheDocument();
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     expect(retryButton).not.toHaveAttribute('disabled');
@@ -84,24 +86,24 @@ describe('PendingOrdersList Component', () => {
 
   it('should NOT display retry payment button for CASH orders', () => {
     render(<PendingOrdersList orders={[mockCashOrder]} />);
-    
+
     expect(screen.queryByText('Retry Payment')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /retry payment/i })).not.toBeInTheDocument();
   });
 
   it('should display cash payment message for CASH orders', () => {
     render(<PendingOrdersList orders={[mockCashOrder]} />);
-    
+
     expect(screen.getByText('Please visit our store to pay with cash')).toBeInTheDocument();
   });
 
   it('should handle both SQUARE and CASH orders in the same list', () => {
     const mixedOrders = [mockSquareOrder, mockCashOrder];
     render(<PendingOrdersList orders={mixedOrders} />);
-    
+
     // Should show retry button for SQUARE order
     expect(screen.getByText('Retry Payment')).toBeInTheDocument();
-    
+
     // Should show cash message for CASH order
     expect(screen.getByText('Please visit our store to pay with cash')).toBeInTheDocument();
   });
@@ -109,22 +111,22 @@ describe('PendingOrdersList Component', () => {
   it('should display retry count information when applicable', () => {
     const orderWithRetries = {
       ...mockSquareOrder,
-      retryCount: 2
+      retryCount: 2,
     };
-    
+
     render(<PendingOrdersList orders={[orderWithRetries]} />);
-    
+
     expect(screen.getByText('Payment retry attempts: 2/3')).toBeInTheDocument();
   });
 
   it('should disable retry button when max retries reached', () => {
     const maxRetriesOrder = {
       ...mockSquareOrder,
-      retryCount: 3
+      retryCount: 3,
     };
-    
+
     render(<PendingOrdersList orders={[maxRetriesOrder]} />);
-    
+
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     expect(retryButton).toHaveAttribute('disabled');
   });
@@ -132,10 +134,11 @@ describe('PendingOrdersList Component', () => {
   it('should call retry payment API when retry button clicked', async () => {
     const mockFetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        success: true,
-        checkoutUrl: 'https://checkout.example.com'
-      })
+      json: () =>
+        Promise.resolve({
+          success: true,
+          checkoutUrl: 'https://checkout.example.com',
+        }),
     });
     (global as any).fetch = mockFetch;
 
@@ -144,20 +147,17 @@ describe('PendingOrdersList Component', () => {
     (window as any).location = { href: '' };
 
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     fireEvent.click(retryButton);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        `/api/orders/${mockSquareOrder.id}/retry-payment`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(`/api/orders/${mockSquareOrder.id}/retry-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
   });
 
@@ -165,10 +165,11 @@ describe('PendingOrdersList Component', () => {
     const checkoutUrl = 'https://checkout.example.com';
     const mockFetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        success: true,
-        checkoutUrl
-      })
+      json: () =>
+        Promise.resolve({
+          success: true,
+          checkoutUrl,
+        }),
     });
     (global as any).fetch = mockFetch;
 
@@ -177,7 +178,7 @@ describe('PendingOrdersList Component', () => {
     (window as any).location = { href: '' };
 
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     fireEvent.click(retryButton);
 
@@ -188,17 +189,18 @@ describe('PendingOrdersList Component', () => {
 
   it('should show error toast on failed retry', async () => {
     const { toast } = require('sonner');
-    
+
     const mockFetch = jest.fn().mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({
-        error: 'Payment retry failed'
-      })
+      json: () =>
+        Promise.resolve({
+          error: 'Payment retry failed',
+        }),
     });
     (global as any).fetch = mockFetch;
 
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     fireEvent.click(retryButton);
 
@@ -208,16 +210,23 @@ describe('PendingOrdersList Component', () => {
   });
 
   it('should show processing state during retry', async () => {
-    const mockFetch = jest.fn().mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve({
-        ok: true,
-        json: () => Promise.resolve({ success: true, checkoutUrl: 'https://test.com' })
-      }), 100))
+    const mockFetch = jest.fn().mockImplementation(
+      () =>
+        new Promise(resolve =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({ success: true, checkoutUrl: 'https://test.com' }),
+              }),
+            100
+          )
+        )
     );
     (global as any).fetch = mockFetch;
 
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     const retryButton = screen.getByRole('button', { name: /retry payment/i });
     fireEvent.click(retryButton);
 
@@ -233,9 +242,11 @@ describe('PendingOrdersList Component', () => {
 
   it('should format order information correctly', () => {
     render(<PendingOrdersList orders={[mockSquareOrder]} />);
-    
+
     // Check order details are displayed
-    expect(screen.getByText('2x Empanadas - Lomo Saltado (frozen-4 pack) - $36.00')).toBeInTheDocument();
+    expect(
+      screen.getByText('2x Empanadas - Lomo Saltado (frozen-4 pack) - $36.00')
+    ).toBeInTheDocument();
     expect(screen.getByText(/PENDING/)).toBeInTheDocument();
   });
 
@@ -245,28 +256,28 @@ describe('PendingOrdersList Component', () => {
       items: [
         {
           quantity: 1,
-          price: 25.00,
+          price: 25.0,
           product: {
-            name: 'Simple Product'
+            name: 'Simple Product',
           },
-          variant: null
-        }
-      ]
+          variant: null,
+        },
+      ],
     };
 
     render(<PendingOrdersList orders={[orderWithoutVariant]} />);
-    
+
     expect(screen.getByText('1x Simple Product - $25.00')).toBeInTheDocument();
   });
 
   it('should not show retry info for orders with 0 retries', () => {
     const freshOrder = {
       ...mockSquareOrder,
-      retryCount: 0
+      retryCount: 0,
     };
-    
+
     render(<PendingOrdersList orders={[freshOrder]} />);
-    
+
     expect(screen.queryByText(/Payment retry attempts/)).not.toBeInTheDocument();
   });
-}); 
+});

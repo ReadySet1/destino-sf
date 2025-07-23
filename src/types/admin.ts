@@ -109,7 +109,7 @@ export function validateZoneConfig(config: ZoneUpdateRequest): ZoneConfigValidat
     isValid: errors.length === 0,
     errors,
     warnings,
-    zone: config.zone
+    zone: config.zone,
   };
 }
 
@@ -119,14 +119,17 @@ export function validateZoneConfig(config: ZoneUpdateRequest): ZoneConfigValidat
 export function generateDefaultZoneConfig(zone: DeliveryZone): AdminZoneConfig {
   const baseConfig = {
     zone,
-    name: zone.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
-    minimumAmount: 250.00, // Default minimum
-    deliveryFee: 50.00, // Default delivery fee
+    name: zone
+      .replace('_', ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase()),
+    minimumAmount: 250.0, // Default minimum
+    deliveryFee: 50.0, // Default delivery fee
     estimatedDeliveryTime: '2-3 hours',
     description: `Delivery to ${zone.replace('_', ' ').toLowerCase()}`,
     active: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
 
   return baseConfig;
@@ -144,7 +147,7 @@ export function calculateRecommendedMinimum(
   const baseCost = deliveryFee + averagePreparationCost;
   const profitMargin = 1.5; // 50% markup
   const distanceMultiplier = Math.max(1, distanceFromBase / 10); // Increase minimum for far distances
-  
+
   return Math.round((baseCost * profitMargin * distanceMultiplier) / 25) * 25; // Round to nearest $25
 }
 
@@ -163,4 +166,4 @@ export interface AdminAuditLog {
   timestamp: Date;
   ipAddress?: string;
   userAgent?: string;
-} 
+}

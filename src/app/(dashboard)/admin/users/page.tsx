@@ -39,7 +39,9 @@ type Profile = Parameters<typeof prisma.profile.create>[0]['data'] & {
 export default async function UsersPage() {
   // Get current user for self-deletion prevention
   const supabase = await createClient();
-  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
   const currentUserId = currentUser?.id;
 
   // Fetch users with their orders
@@ -68,14 +70,14 @@ export default async function UsersPage() {
   }));
 
   // Define the type for the user data used in the table
-  type UserTableData = { 
-    id: string; 
-    email: string; 
-    name: string; 
-    phone: string; 
+  type UserTableData = {
+    id: string;
+    email: string;
+    name: string;
+    phone: string;
     role: PrismaUserRole;
-    created_at: Date; 
-    orderCount: number; 
+    created_at: Date;
+    orderCount: number;
   };
 
   // Server action to handle the form submission for deletion
@@ -117,7 +119,9 @@ export default async function UsersPage() {
     const result = await resendPasswordSetupAction(id);
 
     if (result.success) {
-      logger.info(`Successfully sent password setup invitation for user ${id}. Revalidating path /admin/users.`);
+      logger.info(
+        `Successfully sent password setup invitation for user ${id}. Revalidating path /admin/users.`
+      );
       revalidatePath('/admin/users');
     } else {
       logger.error(`Failed to send password setup invitation for user ${id}: ${result.error}`);
@@ -205,13 +209,9 @@ export default async function UsersPage() {
               {users.map((user: UserTableData) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    <div className="max-w-xs truncate">
-                      {user.email}
-                    </div>
+                    <div className="max-w-xs truncate">{user.email}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {user.name}
-                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{user.name}</td>
                   <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {user.phone}
                   </td>
@@ -233,8 +233,8 @@ export default async function UsersPage() {
                       {/* Edit Button */}
                       <form action={editUser} className="inline">
                         <input type="hidden" name="id" value={user.id} />
-                        <button 
-                          type="submit" 
+                        <button
+                          type="submit"
                           className="text-indigo-600 hover:text-indigo-900 font-medium"
                         >
                           Edit
@@ -244,8 +244,8 @@ export default async function UsersPage() {
                       {/* Password Setup Button */}
                       <form action={handleSendPasswordSetup} className="inline">
                         <input type="hidden" name="id" value={user.id} />
-                        <button 
-                          type="submit" 
+                        <button
+                          type="submit"
                           className="text-blue-600 hover:text-blue-900 font-medium"
                           title="Send password setup invitation"
                         >
@@ -265,9 +265,7 @@ export default async function UsersPage() {
 
                       {/* Self-deletion prevention message */}
                       {user.id === currentUserId && (
-                        <span className="text-gray-400 text-sm italic">
-                          (You)
-                        </span>
+                        <span className="text-gray-400 text-sm italic">(You)</span>
                       )}
                     </div>
                   </td>

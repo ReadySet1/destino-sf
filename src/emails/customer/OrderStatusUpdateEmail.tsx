@@ -209,8 +209,10 @@ const getOrderSteps = (fulfillmentType: string, currentStatus: string) => {
 const getStatusMessage = (status: string, fulfillmentType: string): string => {
   const messages: Record<string, Record<string, string>> = {
     PROCESSING: {
-      pickup: 'Our chefs are preparing your delicious order! We\'ll notify you when it\'s ready for pickup.',
-      local_delivery: 'Our chefs are preparing your order! We\'ll notify you when it\'s out for delivery.',
+      pickup:
+        "Our chefs are preparing your delicious order! We'll notify you when it's ready for pickup.",
+      local_delivery:
+        "Our chefs are preparing your order! We'll notify you when it's out for delivery.",
       nationwide_shipping: 'Your order is being prepared and will be packaged for shipping.',
     },
     READY: {
@@ -221,7 +223,8 @@ const getStatusMessage = (status: string, fulfillmentType: string): string => {
     SHIPPING: {
       pickup: 'Your order status has been updated.',
       local_delivery: 'Your order is out for delivery! Our driver is on the way.',
-      nationwide_shipping: 'Your order has been shipped! You should receive it within 3-5 business days.',
+      nationwide_shipping:
+        'Your order has been shipped! You should receive it within 3-5 business days.',
     },
     DELIVERED: {
       pickup: 'Thank you for choosing us! We hope you enjoyed your meal.',
@@ -252,7 +255,7 @@ export const OrderStatusUpdateEmail = ({
   const statusIcon = getStatusIcon(order.status);
   const defaultMessage = getStatusMessage(order.status, order.fulfillmentType || 'pickup');
   const orderSteps = getOrderSteps(order.fulfillmentType || 'pickup', order.status);
-  
+
   const previewText = `Order #${order.id} status update: ${formatStatus(order.status)}`;
 
   return (
@@ -271,7 +274,14 @@ export const OrderStatusUpdateEmail = ({
             <Text style={{ ...statusText, color: statusColors.color }}>
               Hi {order.customerName}, your order status has been updated to:
             </Text>
-            <Text style={{ ...statusTitle, color: statusColors.color, fontSize: '20px', margin: '16px 0' }}>
+            <Text
+              style={{
+                ...statusTitle,
+                color: statusColors.color,
+                fontSize: '20px',
+                margin: '16px 0',
+              }}
+            >
               {formatStatus(order.status)}
             </Text>
             <Text style={{ ...statusText, color: statusColors.color }}>
@@ -285,7 +295,7 @@ export const OrderStatusUpdateEmail = ({
             {orderSteps.map((step, index) => {
               const isCompleted = orderSteps.findIndex(s => s.status === order.status) >= index;
               const isCurrent = step.status === order.status;
-              
+
               return (
                 <div
                   key={step.status}
@@ -319,8 +329,22 @@ export const OrderStatusUpdateEmail = ({
 
           {/* Tracking Information */}
           {order.trackingNumber && (
-            <Section style={{ padding: '16px', backgroundColor: '#f0f9ff', borderRadius: '6px', margin: '16px 0' }}>
-              <Text style={{ fontSize: '14px', color: '#0c4a6e', margin: '0 0 8px 0', fontWeight: 'bold' }}>
+            <Section
+              style={{
+                padding: '16px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '6px',
+                margin: '16px 0',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: '14px',
+                  color: '#0c4a6e',
+                  margin: '0 0 8px 0',
+                  fontWeight: 'bold',
+                }}
+              >
                 📦 Tracking Information
               </Text>
               <Text style={{ fontSize: '14px', color: '#0c4a6e', margin: '0' }}>
@@ -331,7 +355,14 @@ export const OrderStatusUpdateEmail = ({
 
           {/* Next Steps */}
           {nextSteps && (
-            <Section style={{ padding: '16px', backgroundColor: '#fefce8', borderRadius: '6px', margin: '16px 0' }}>
+            <Section
+              style={{
+                padding: '16px',
+                backgroundColor: '#fefce8',
+                borderRadius: '6px',
+                margin: '16px 0',
+              }}
+            >
               <Text style={{ fontSize: '14px', color: '#713f12', margin: '0', fontWeight: 'bold' }}>
                 Next Steps:
               </Text>
@@ -368,12 +399,18 @@ export const OrderStatusUpdateEmail = ({
               Questions about your order?
             </Text>
             <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Call us at <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>{supportPhone}</Link> or 
-              email <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>{supportEmail}</Link>
+              Call us at{' '}
+              <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>
+                {supportPhone}
+              </Link>{' '}
+              or email{' '}
+              <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>
+                {supportEmail}
+              </Link>
             </Text>
           </Section>
 
-          <EmailFooter 
+          <EmailFooter
             shopName={shopName}
             unsubscribeUrl={`${websiteUrl}/unsubscribe?email=${encodeURIComponent(order.email)}`}
           />
@@ -383,4 +420,4 @@ export const OrderStatusUpdateEmail = ({
   );
 };
 
-export default OrderStatusUpdateEmail; 
+export default OrderStatusUpdateEmail;

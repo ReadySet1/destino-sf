@@ -6,11 +6,11 @@ async function main() {
     const testProducts = await prisma.product.findMany({
       where: {
         name: {
-          startsWith: 'Test'
-        }
-      }
+          startsWith: 'Test',
+        },
+      },
     });
-    
+
     console.log(JSON.stringify(testProducts, null, 2));
   } catch (error) {
     console.error('Error:', error);
@@ -19,4 +19,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

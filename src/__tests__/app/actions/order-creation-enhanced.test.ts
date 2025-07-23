@@ -9,7 +9,13 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
   const mockCreateOrderInput: CreateOrderInput = {
     cartItems: [
       { id: '1', name: 'Beef Empanadas', quantity: 3, price: 12.99, category: 'empanadas' },
-      { id: '2', name: 'Dulce de Leche Alfajores', quantity: 2, price: 15.99, category: 'alfajores' },
+      {
+        id: '2',
+        name: 'Dulce de Leche Alfajores',
+        quantity: 2,
+        price: 15.99,
+        category: 'alfajores',
+      },
     ],
     customer: {
       name: 'John Doe',
@@ -46,34 +52,34 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
 
       const calculateTax = (input: TaxCalculationInput) => {
         const { items, fulfillmentType, deliveryAddress } = input;
-        
+
         // San Francisco tax rates
         const baseTaxRate = 0.08625; // 8.625%
         const localTaxRate = 0.00125; // 0.125% additional for prepared food
-        
-        const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
+
+        const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
         let taxRate = baseTaxRate;
-        
+
         // Add local tax for prepared food
-        const hasPreparedFood = items.some(item => 
-          item.category && ['empanadas', 'alfajores'].includes(item.category)
+        const hasPreparedFood = items.some(
+          item => item.category && ['empanadas', 'alfajores'].includes(item.category)
         );
-        
+
         if (hasPreparedFood) {
           taxRate += localTaxRate;
         }
-        
+
         // Different rates for different fulfillment types
         if (fulfillmentType === FulfillmentType.DELIVERY) {
           // Delivery tax based on destination
           if (deliveryAddress?.state === 'CA') {
-            taxRate = 0.08750; // California delivery tax
+            taxRate = 0.0875; // California delivery tax
           }
         }
-        
+
         const taxAmount = subtotal * taxRate;
-        
+
         return {
           subtotal,
           taxRate,
@@ -88,7 +94,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       });
 
       expect(pickupTax.subtotal).toBe(70.95); // (12.99 * 3) + (15.99 * 2)
-      expect(pickupTax.taxRate).toBe(0.08750); // 8.625% + 0.125%
+      expect(pickupTax.taxRate).toBe(0.0875); // 8.625% + 0.125%
       expect(pickupTax.taxAmount).toBe(6.21); // 70.95 * 0.08750
       expect(pickupTax.total).toBe(77.16);
     });
@@ -96,31 +102,34 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
     it('should calculate tax for delivery orders with address-specific rates', async () => {
       const calculateTax = (input: any) => {
         const { items, fulfillmentType, deliveryAddress } = input;
-        const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-        
+        const subtotal = items.reduce(
+          (sum: number, item: any) => sum + item.price * item.quantity,
+          0
+        );
+
         let taxRate = 0.08625; // Base CA rate
-        
+
         // Delivery-specific tax calculations
         if (fulfillmentType === FulfillmentType.DELIVERY && deliveryAddress) {
           switch (deliveryAddress.state) {
             case 'CA':
               // California delivery tax with local variations
               if (deliveryAddress.city === 'San Francisco') {
-                taxRate = 0.08750;
+                taxRate = 0.0875;
               } else {
-                taxRate = 0.08250;
+                taxRate = 0.0825;
               }
               break;
             case 'NY':
-              taxRate = 0.08000;
+              taxRate = 0.08;
               break;
             default:
-              taxRate = 0.06000; // Default for other states
+              taxRate = 0.06; // Default for other states
           }
         }
-        
+
         const taxAmount = subtotal * taxRate;
-        
+
         return {
           subtotal,
           taxRate,
@@ -139,7 +148,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         },
       });
 
-      expect(deliveryTaxSF.taxRate).toBe(0.08750);
+      expect(deliveryTaxSF.taxRate).toBe(0.0875);
       expect(deliveryTaxSF.taxAmount).toBe(6.21);
 
       const deliveryTaxNY = calculateTax({
@@ -152,33 +161,35 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         },
       });
 
-      expect(deliveryTaxNY.taxRate).toBe(0.08000);
+      expect(deliveryTaxNY.taxRate).toBe(0.08);
       expect(deliveryTaxNY.taxAmount).toBe(5.68);
     });
 
     it('should handle tax-exempt items correctly', async () => {
       const calculateTaxWithExemptions = (items: any[]) => {
         const taxExemptCategories = ['gift_card', 'donation'];
-        
-        const taxableItems = items.filter(item => 
-          !item.category || !taxExemptCategories.includes(item.category)
+
+        const taxableItems = items.filter(
+          item => !item.category || !taxExemptCategories.includes(item.category)
         );
-        
-        const exemptItems = items.filter(item => 
-          item.category && taxExemptCategories.includes(item.category)
+
+        const exemptItems = items.filter(
+          item => item.category && taxExemptCategories.includes(item.category)
         );
-        
-        const taxableSubtotal = taxableItems.reduce((sum, item) => 
-          sum + (item.price * item.quantity), 0
+
+        const taxableSubtotal = taxableItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
         );
-        
-        const exemptSubtotal = exemptItems.reduce((sum, item) => 
-          sum + (item.price * item.quantity), 0
+
+        const exemptSubtotal = exemptItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
         );
-        
-        const taxRate = 0.08750;
+
+        const taxRate = 0.0875;
         const taxAmount = Math.round(taxableSubtotal * taxRate * 100) / 100;
-        
+
         return {
           taxableSubtotal,
           exemptSubtotal,
@@ -190,13 +201,13 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
 
       const mixedItems = [
         { id: '1', name: 'Beef Empanadas', quantity: 2, price: 12.99, category: 'empanadas' },
-        { id: '2', name: 'Gift Card', quantity: 1, price: 50.00, category: 'gift_card' },
+        { id: '2', name: 'Gift Card', quantity: 1, price: 50.0, category: 'gift_card' },
       ];
 
       const result = calculateTaxWithExemptions(mixedItems);
-      
+
       expect(result.taxableSubtotal).toBe(25.98);
-      expect(result.exemptSubtotal).toBe(50.00);
+      expect(result.exemptSubtotal).toBe(50.0);
       expect(result.taxAmount).toBe(2.27); // Only on taxable items
       expect(result.total).toBe(78.25);
     });
@@ -207,19 +218,19 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           if (!items || items.length === 0) {
             throw new Error('No items provided for tax calculation');
           }
-          
-          const invalidItems = items.filter(item => 
-            !item.price || item.price <= 0 || !item.quantity || item.quantity <= 0
+
+          const invalidItems = items.filter(
+            item => !item.price || item.price <= 0 || !item.quantity || item.quantity <= 0
           );
-          
+
           if (invalidItems.length > 0) {
             throw new Error('Invalid item prices or quantities');
           }
-          
-          const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          const taxRate = 0.08750;
+
+          const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+          const taxRate = 0.0875;
           const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
-          
+
           return {
             success: true,
             subtotal,
@@ -244,7 +255,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
 
       // Test with invalid items
       const invalidResult = calculateTaxSafely([
-        { id: '1', name: 'Invalid Item', quantity: 0, price: -5.00, category: 'empanadas' }
+        { id: '1', name: 'Invalid Item', quantity: 0, price: -5.0, category: 'empanadas' },
       ]);
       expect(invalidResult.success).toBe(false);
       expect(invalidResult.error).toBe('Invalid item prices or quantities');
@@ -282,7 +293,8 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           errors.push('Invalid payment amount');
         }
 
-        if (payment.amount > 50000) { // $500 limit
+        if (payment.amount > 50000) {
+          // $500 limit
           errors.push('Payment amount exceeds maximum allowed');
         }
 
@@ -354,7 +366,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
 
         // Mock gift card balance check
         const mockGiftCardBalance = 10000; // $100.00 in cents
-        
+
         if (payment.amount > mockGiftCardBalance) {
           errors.push('Insufficient gift card balance');
         }
@@ -406,11 +418,14 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         }
 
         const totalPaymentAmount = splitPayment.payments.reduce(
-          (sum, payment) => sum + payment.amount, 0
+          (sum, payment) => sum + payment.amount,
+          0
         );
 
         if (totalPaymentAmount !== splitPayment.totalAmount) {
-          errors.push(`Payment total (${totalPaymentAmount}) does not match order total (${splitPayment.totalAmount})`);
+          errors.push(
+            `Payment total (${totalPaymentAmount}) does not match order total (${splitPayment.totalAmount})`
+          );
         }
 
         // Validate each payment method
@@ -506,7 +521,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       // Create a valid pickup time that's 2 hours from now but ensure it's within business hours
       const now = new Date();
       const pickupDate = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
-      
+
       // If the pickup time is outside business hours, set it to tomorrow at 2 PM
       const pickupHour = pickupDate.getHours();
       if (pickupHour < 9 || pickupHour >= 20) {
@@ -559,11 +574,17 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         const errors: string[] = [];
 
         // Validate delivery address
-        if (!fulfillment.deliveryAddress.street || fulfillment.deliveryAddress.street.trim().length === 0) {
+        if (
+          !fulfillment.deliveryAddress.street ||
+          fulfillment.deliveryAddress.street.trim().length === 0
+        ) {
           errors.push('Delivery street address is required');
         }
 
-        if (!fulfillment.deliveryAddress.city || fulfillment.deliveryAddress.city.trim().length === 0) {
+        if (
+          !fulfillment.deliveryAddress.city ||
+          fulfillment.deliveryAddress.city.trim().length === 0
+        ) {
           errors.push('Delivery city is required');
         }
 
@@ -571,7 +592,10 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           errors.push('Valid delivery state is required');
         }
 
-        if (!fulfillment.deliveryAddress.zipCode || !/^\d{5}(-\d{4})?$/.test(fulfillment.deliveryAddress.zipCode)) {
+        if (
+          !fulfillment.deliveryAddress.zipCode ||
+          !/^\d{5}(-\d{4})?$/.test(fulfillment.deliveryAddress.zipCode)
+        ) {
           errors.push('Valid delivery zip code is required');
         }
 
@@ -655,16 +679,25 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
         const errors: string[] = [];
 
         // Validate recipient information
-        if (!fulfillment.shippingAddress.recipientName || fulfillment.shippingAddress.recipientName.trim().length === 0) {
+        if (
+          !fulfillment.shippingAddress.recipientName ||
+          fulfillment.shippingAddress.recipientName.trim().length === 0
+        ) {
           errors.push('Recipient name is required for shipping');
         }
 
         // Validate shipping address
-        if (!fulfillment.shippingAddress.street || fulfillment.shippingAddress.street.trim().length === 0) {
+        if (
+          !fulfillment.shippingAddress.street ||
+          fulfillment.shippingAddress.street.trim().length === 0
+        ) {
           errors.push('Shipping street address is required');
         }
 
-        if (!fulfillment.shippingAddress.city || fulfillment.shippingAddress.city.trim().length === 0) {
+        if (
+          !fulfillment.shippingAddress.city ||
+          fulfillment.shippingAddress.city.trim().length === 0
+        ) {
           errors.push('Shipping city is required');
         }
 
@@ -672,7 +705,10 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           errors.push('Valid shipping state is required');
         }
 
-        if (!fulfillment.shippingAddress.zipCode || !/^\d{5}(-\d{4})?$/.test(fulfillment.shippingAddress.zipCode)) {
+        if (
+          !fulfillment.shippingAddress.zipCode ||
+          !/^\d{5}(-\d{4})?$/.test(fulfillment.shippingAddress.zipCode)
+        ) {
           errors.push('Valid shipping zip code is required');
         }
 
@@ -707,7 +743,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           country: 'US',
         },
         shippingSpeed: 'STANDARD',
-        insuranceAmount: 100.00,
+        insuranceAmount: 100.0,
       };
 
       const result = validateShippingFulfillment(validShipping);
@@ -724,7 +760,7 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
           country: 'CA', // Invalid country code
         },
         shippingSpeed: 'INVALID' as any,
-        insuranceAmount: -50.00,
+        insuranceAmount: -50.0,
       };
 
       const invalidResult = validateShippingFulfillment(invalidShipping);
@@ -733,7 +769,9 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       expect(invalidResult.errors).toContain('Shipping city is required');
       expect(invalidResult.errors).toContain('Valid shipping state is required');
       expect(invalidResult.errors).toContain('Valid shipping zip code is required');
-      expect(invalidResult.errors).toContain('Shipping currently only available within the United States');
+      expect(invalidResult.errors).toContain(
+        'Shipping currently only available within the United States'
+      );
       expect(invalidResult.errors).toContain('Invalid shipping speed selected');
       expect(invalidResult.errors).toContain('Insurance amount cannot be negative');
     });
@@ -794,4 +832,4 @@ describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
       expect(result.order).toBeNull();
     });
   });
-}); 
+});

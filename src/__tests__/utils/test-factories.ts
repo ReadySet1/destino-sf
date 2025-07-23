@@ -8,36 +8,38 @@ import { type ShippingRateResponse } from '@/lib/shipping';
 export const createValidOrderInput = (overrides?: Partial<OrderInput>): OrderInput => ({
   items: [
     { id: '1', name: 'Beef Empanadas', price: 12.99, quantity: 2, variantId: 'variant-1' },
-    { id: '2', name: 'Dulce de Leche Alfajores', price: 15.99, quantity: 1 }
+    { id: '2', name: 'Dulce de Leche Alfajores', price: 15.99, quantity: 1 },
   ],
   customerInfo: {
     name: 'John Doe',
     email: 'john@example.com',
     phone: '+1-555-0123',
-    pickupTime: '2024-01-15T14:00:00.000Z'
+    pickupTime: '2024-01-15T14:00:00.000Z',
   },
   fulfillment: {
     method: 'pickup',
-    pickupTime: '2024-01-15T14:00:00.000Z'
+    pickupTime: '2024-01-15T14:00:00.000Z',
   },
   paymentMethod: PaymentMethod.SQUARE,
-  ...overrides
+  ...overrides,
 });
 
-export const createValidCreateOrderInput = (overrides?: Partial<CreateOrderInput>): CreateOrderInput => ({
+export const createValidCreateOrderInput = (
+  overrides?: Partial<CreateOrderInput>
+): CreateOrderInput => ({
   cartItems: [
     { id: '1', name: 'Beef Empanadas', quantity: 2, price: 12.99, category: 'empanadas' },
-    { id: '2', name: 'Dulce de Leche Alfajores', quantity: 1, price: 15.99, category: 'alfajores' }
+    { id: '2', name: 'Dulce de Leche Alfajores', quantity: 1, price: 15.99, category: 'alfajores' },
   ],
   customer: {
     name: 'John Doe',
     email: 'john@example.com',
-    phone: '+1-555-0123'
+    phone: '+1-555-0123',
   },
   fulfillmentType: FulfillmentType.PICKUP,
   paymentMethod: 'SQUARE',
   specialInstructions: 'Handle with care',
-  ...overrides
+  ...overrides,
 });
 
 // ===== COMPLETE ORDER MOCK DATA =====
@@ -74,7 +76,7 @@ export const createMockOrder = (overrides?: any) => ({
   paymentUrlExpiresAt: null,
   retryCount: 0,
   lastRetryAt: null,
-  ...overrides
+  ...overrides,
 });
 
 // ===== ORDER WITH ITEMS =====
@@ -95,17 +97,17 @@ export const createMockOrderWithItems = (overrides?: any) => ({
         id: 'product-1',
         name: 'Beef Empanadas',
         price: new Decimal(12.99),
-        squareId: 'square-product-1'
+        squareId: 'square-product-1',
       },
       variant: {
         id: 'variant-1',
         name: 'Regular Size',
         price: new Decimal(12.99),
-        squareVariantId: 'square-variant-1'
-      }
-    }
+        squareVariantId: 'square-variant-1',
+      },
+    },
   ],
-  ...overrides
+  ...overrides,
 });
 
 // ===== ALERT DATA FACTORIES =====
@@ -117,7 +119,7 @@ export const createMockAlertData = (overrides?: any) => ({
   customerEmail: 'john@example.com',
   customerPhone: '+1-555-0123',
   fulfillmentMethod: 'pickup',
-  subtotal: { toNumber: () => 38.50 },
+  subtotal: { toNumber: () => 38.5 },
   taxAmount: { toNumber: () => 3.47 },
   serviceFee: { toNumber: () => 0 },
   total: { toNumber: () => 41.97 },
@@ -130,10 +132,10 @@ export const createMockAlertData = (overrides?: any) => ({
       name: 'Beef Empanadas',
       quantity: 2,
       price: 12.99,
-      product: { name: 'Beef Empanadas' }
-    }
+      product: { name: 'Beef Empanadas' },
+    },
   ],
-  ...overrides
+  ...overrides,
 });
 
 // ===== SHIPPING DATA FACTORIES =====
@@ -146,18 +148,18 @@ export const createMockShippingResponse = (overrides?: any): ShippingRateRespons
       id: 'rate_123',
       carrier: 'USPS',
       name: 'Priority Mail',
-      amount: 12.50,
+      amount: 12.5,
       currency: 'USD',
       estimatedDays: 2,
       serviceLevel: 'usps_priority',
       rateId: 'rate_123',
-    }
+    },
   ],
   addressValidation: {
     isValid: true,
-    messages: []
+    messages: [],
   },
-  ...overrides
+  ...overrides,
 });
 
 // Factory for creating mock Shippo shipment responses (used internally by shipping functions)
@@ -170,7 +172,7 @@ export const createMockShippoShipmentResponse = (overrides?: any) => ({
       provider: 'USPS',
       servicelevel: {
         name: 'Priority Mail',
-        token: 'usps_priority'
+        token: 'usps_priority',
       },
       amount: '12.50',
       currency: 'USD',
@@ -179,16 +181,16 @@ export const createMockShippoShipmentResponse = (overrides?: any) => ({
       provider_image_200: 'https://shippo.com/usps_200.png',
       attributes: ['FASTEST'],
       zone: 'Zone 1',
-      arrives_by: '2024-01-17T17:00:00Z'
-    }
+      arrives_by: '2024-01-17T17:00:00Z',
+    },
   ],
   address_to: {
     validation_results: {
       is_valid: true,
-      messages: []
-    }
+      messages: [],
+    },
   },
-  ...overrides
+  ...overrides,
 });
 
 export const createMockShippingTransaction = (overrides?: any) => ({
@@ -197,7 +199,7 @@ export const createMockShippingTransaction = (overrides?: any) => ({
   label_url: 'https://shippo.com/label_123.pdf',
   tracking_number: '1234567890123456',
   eta: '2024-01-17T17:00:00Z',
-  ...overrides
+  ...overrides,
 });
 
 // ===== CART ITEMS =====
@@ -209,15 +211,15 @@ export const createMockCartItems = () => [
     price: 12.99,
     quantity: 2,
     variantId: 'variant-1',
-    category: 'empanadas'
+    category: 'empanadas',
   },
   {
     id: 'product-2',
     name: 'Dulce de Leche Alfajores',
     price: 15.99,
     quantity: 1,
-    category: 'dessert'
-  }
+    category: 'dessert',
+  },
 ];
 
 // ===== CUSTOMER INFO =====
@@ -227,7 +229,7 @@ export const createMockCustomerInfo = (overrides?: any) => ({
   email: 'john@example.com',
   phone: '+1-555-0123',
   pickupTime: '2024-01-15T14:00:00.000Z',
-  ...overrides
+  ...overrides,
 });
 
 // ===== FULFILLMENT OPTIONS =====
@@ -235,7 +237,7 @@ export const createMockCustomerInfo = (overrides?: any) => ({
 export const createMockPickupFulfillment = (overrides?: any) => ({
   method: 'pickup' as const,
   pickupTime: '2024-01-15T14:00:00.000Z',
-  ...overrides
+  ...overrides,
 });
 
 export const createMockLocalDeliveryFulfillment = (overrides?: any) => ({
@@ -246,10 +248,10 @@ export const createMockLocalDeliveryFulfillment = (overrides?: any) => ({
     street: '123 Main St',
     city: 'San Francisco',
     state: 'CA',
-    postalCode: '94102'
+    postalCode: '94102',
   },
   deliveryInstructions: 'Leave at door',
-  ...overrides
+  ...overrides,
 });
 
 export const createMockNationwideShippingFulfillment = (overrides?: any) => ({
@@ -258,13 +260,13 @@ export const createMockNationwideShippingFulfillment = (overrides?: any) => ({
     street: '456 Oak Ave',
     city: 'Los Angeles',
     state: 'CA',
-    postalCode: '90210'
+    postalCode: '90210',
   },
   shippingMethod: 'USPS Priority',
   shippingCarrier: 'USPS',
-  shippingCost: 12.50,
+  shippingCost: 12.5,
   rateId: 'rate_123',
-  ...overrides
+  ...overrides,
 });
 
 // ===== SPLIT PAYMENT TYPES =====
@@ -284,7 +286,7 @@ export const createMockSplitPayment = (overrides?: Partial<SplitPayment>): Split
     { method: 'GIFT_CARD', amount: 1000, details: { code: 'GC123456' } },
   ],
   totalAmount: 3500,
-  ...overrides
+  ...overrides,
 });
 
 // ===== TYPE EXPORTS =====
@@ -292,4 +294,4 @@ export const createMockSplitPayment = (overrides?: Partial<SplitPayment>): Split
 export type MockOrder = ReturnType<typeof createMockOrder>;
 export type MockOrderWithItems = ReturnType<typeof createMockOrderWithItems>;
 export type MockShippingResponse = ReturnType<typeof createMockShippingResponse>;
-export type MockCartItems = ReturnType<typeof createMockCartItems>; 
+export type MockCartItems = ReturnType<typeof createMockCartItems>;

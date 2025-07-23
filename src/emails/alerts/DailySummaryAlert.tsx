@@ -167,11 +167,11 @@ export const DailySummaryAlert = ({
           </Section>
 
           <Section style={summarySection}>
-            <Heading style={h1}>
-              📊 Daily Sales Summary
-            </Heading>
-            
-            <Text style={{ ...text, textAlign: 'center' as const, fontSize: '16px', color: '#6b7280' }}>
+            <Heading style={h1}>📊 Daily Sales Summary</Heading>
+
+            <Text
+              style={{ ...text, textAlign: 'center' as const, fontSize: '16px', color: '#6b7280' }}
+            >
               {formatDate(summary.date)}
             </Text>
           </Section>
@@ -179,7 +179,7 @@ export const DailySummaryAlert = ({
           {/* Key Metrics */}
           <Section>
             <Heading style={h2}>📈 Key Metrics</Heading>
-            
+
             <Row>
               <Column style={{ width: '50%', paddingRight: '8px' }}>
                 <div style={metricBox}>
@@ -187,7 +187,8 @@ export const DailySummaryAlert = ({
                   <Text style={metricLabel}>Total Orders</Text>
                   {previousDayComparison && (
                     <Text style={changeIndicator(previousDayComparison.ordersChange)}>
-                      {previousDayComparison.ordersChange > 0 ? '+' : ''}{previousDayComparison.ordersChange}%
+                      {previousDayComparison.ordersChange > 0 ? '+' : ''}
+                      {previousDayComparison.ordersChange}%
                     </Text>
                   )}
                 </div>
@@ -198,7 +199,8 @@ export const DailySummaryAlert = ({
                   <Text style={metricLabel}>Total Revenue</Text>
                   {previousDayComparison && (
                     <Text style={changeIndicator(previousDayComparison.revenueChange)}>
-                      {previousDayComparison.revenueChange > 0 ? '+' : ''}{previousDayComparison.revenueChange}%
+                      {previousDayComparison.revenueChange > 0 ? '+' : ''}
+                      {previousDayComparison.revenueChange}%
                     </Text>
                   )}
                 </div>
@@ -224,23 +226,29 @@ export const DailySummaryAlert = ({
           {/* Fulfillment Breakdown */}
           <Section>
             <Heading style={h2}>🚚 Fulfillment Breakdown</Heading>
-            
+
             <Row>
               <Column style={{ width: '33.33%', paddingRight: '4px' }}>
                 <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>{summary.ordersByFulfillment.pickup}</Text>
+                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+                    {summary.ordersByFulfillment.pickup}
+                  </Text>
                   <Text style={metricLabel}>Pickup Orders</Text>
                 </div>
               </Column>
               <Column style={{ width: '33.33%', padding: '0 4px' }}>
                 <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>{summary.ordersByFulfillment.local_delivery}</Text>
+                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+                    {summary.ordersByFulfillment.local_delivery}
+                  </Text>
                   <Text style={metricLabel}>Local Delivery</Text>
                 </div>
               </Column>
               <Column style={{ width: '33.33%', paddingLeft: '4px' }}>
                 <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>{summary.ordersByFulfillment.nationwide_shipping}</Text>
+                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+                    {summary.ordersByFulfillment.nationwide_shipping}
+                  </Text>
                   <Text style={metricLabel}>Shipping Orders</Text>
                 </div>
               </Column>
@@ -251,7 +259,7 @@ export const DailySummaryAlert = ({
           {summary.topProducts.length > 0 && (
             <Section>
               <Heading style={h2}>🔥 Top Products</Heading>
-              
+
               {summary.topProducts.slice(0, 5).map((product, index) => (
                 <Row key={index}>
                   <Column style={{ width: '50%' }}>
@@ -260,9 +268,7 @@ export const DailySummaryAlert = ({
                     </Text>
                   </Column>
                   <Column style={{ width: '25%', textAlign: 'center' as const }}>
-                    <Text style={{ ...text, margin: '8px 0' }}>
-                      {product.quantity} sold
-                    </Text>
+                    <Text style={{ ...text, margin: '8px 0' }}>{product.quantity} sold</Text>
                   </Column>
                   <Column style={{ width: '25%', textAlign: 'right' as const }}>
                     <Text style={{ ...text, fontWeight: 'bold', margin: '8px 0' }}>
@@ -277,35 +283,43 @@ export const DailySummaryAlert = ({
           {/* System Health */}
           <Section>
             <Heading style={h2}>🔧 System Health</Heading>
-            
+
             <Row>
               <Column style={{ width: '33.33%', paddingRight: '4px' }}>
-                <div style={{
-                  ...metricBox,
-                  borderColor: summary.failedOrders > 0 ? '#dc2626' : '#10b981',
-                  backgroundColor: summary.failedOrders > 0 ? '#fef2f2' : '#f0fdf4',
-                }}>
-                  <Text style={{
-                    ...bigNumber,
-                    fontSize: '24px',
-                    color: summary.failedOrders > 0 ? '#dc2626' : '#059669',
-                  }}>
+                <div
+                  style={{
+                    ...metricBox,
+                    borderColor: summary.failedOrders > 0 ? '#dc2626' : '#10b981',
+                    backgroundColor: summary.failedOrders > 0 ? '#fef2f2' : '#f0fdf4',
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...bigNumber,
+                      fontSize: '24px',
+                      color: summary.failedOrders > 0 ? '#dc2626' : '#059669',
+                    }}
+                  >
                     {summary.failedOrders}
                   </Text>
                   <Text style={metricLabel}>Failed Orders</Text>
                 </div>
               </Column>
               <Column style={{ width: '33.33%', padding: '0 4px' }}>
-                <div style={{
-                  ...metricBox,
-                  borderColor: summary.systemErrors > 0 ? '#f59e0b' : '#10b981',
-                  backgroundColor: summary.systemErrors > 0 ? '#fffbeb' : '#f0fdf4',
-                }}>
-                  <Text style={{
-                    ...bigNumber,
-                    fontSize: '24px',
-                    color: summary.systemErrors > 0 ? '#f59e0b' : '#059669',
-                  }}>
+                <div
+                  style={{
+                    ...metricBox,
+                    borderColor: summary.systemErrors > 0 ? '#f59e0b' : '#10b981',
+                    backgroundColor: summary.systemErrors > 0 ? '#fffbeb' : '#f0fdf4',
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...bigNumber,
+                      fontSize: '24px',
+                      color: summary.systemErrors > 0 ? '#f59e0b' : '#059669',
+                    }}
+                  >
                     {summary.systemErrors}
                   </Text>
                   <Text style={metricLabel}>System Errors</Text>
@@ -331,16 +345,17 @@ export const DailySummaryAlert = ({
                 hour: '2-digit',
                 minute: '2-digit',
                 timeZoneName: 'short',
-              })}.
+              })}
+              .
             </Text>
-            
+
             {(summary.failedOrders > 0 || summary.systemErrors > 0) && (
               <Text style={{ ...text, fontSize: '12px', color: '#dc2626', marginTop: '10px' }}>
                 <strong>Action Required:</strong> There were{' '}
                 {summary.failedOrders > 0 && `${summary.failedOrders} failed orders`}
                 {summary.failedOrders > 0 && summary.systemErrors > 0 && ' and '}
-                {summary.systemErrors > 0 && `${summary.systemErrors} system errors`}{' '}
-                that need your attention.
+                {summary.systemErrors > 0 && `${summary.systemErrors} system errors`} that need your
+                attention.
               </Text>
             )}
           </Section>
@@ -350,4 +365,4 @@ export const DailySummaryAlert = ({
   );
 };
 
-export default DailySummaryAlert; 
+export default DailySummaryAlert;

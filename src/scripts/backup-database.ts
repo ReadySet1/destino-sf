@@ -2,10 +2,10 @@
 
 /**
  * Database Backup Script
- * 
+ *
  * This script creates full PostgreSQL database backups using pg_dump with compression
  * and verification. It's designed to be run before major operations like order cleanup.
- * 
+ *
  * Features:
  * - Full PostgreSQL database dumps using pg_dump
  * - Automatic compression with gzip
@@ -13,7 +13,7 @@
  * - Multiple backup formats (custom, sql, directory)
  * - Metadata tracking and reporting
  * - Integration with existing backup directory structure
- * 
+ *
  * Usage:
  *   pnpm tsx src/scripts/backup-database.ts --format=custom
  *   pnpm tsx src/scripts/backup-database.ts --format=sql --compress
@@ -109,7 +109,7 @@ function parseArgs(): BackupConfig {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     // Handle --key=value format
     if (arg.includes('=')) {
       const [key, value] = arg.split('=', 2);
@@ -143,8 +143,8 @@ function parseArgs(): BackupConfig {
       }
       continue;
     }
-    
-    // Handle --key value format  
+
+    // Handle --key value format
     switch (arg) {
       case '--format':
         const format = args[++i] as 'custom' | 'sql' | 'directory';
@@ -266,7 +266,7 @@ SAFETY FEATURES:
 function parseDatabaseUrl(databaseUrl: string): DatabaseConnectionInfo {
   try {
     const url = new URL(databaseUrl);
-    
+
     return {
       host: url.hostname,
       port: url.port || '5432',
@@ -276,7 +276,9 @@ function parseDatabaseUrl(databaseUrl: string): DatabaseConnectionInfo {
       sslMode: url.searchParams.get('sslmode') || 'require',
     };
   } catch (error) {
-    throw new Error(`Invalid database URL format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid database URL format: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -285,16 +287,18 @@ function parseDatabaseUrl(databaseUrl: string): DatabaseConnectionInfo {
  */
 function getDatabaseConnection(config: BackupConfig): DatabaseConnectionInfo {
   // Try DIRECT_URL first if requested (better for pg_dump), then DATABASE_URL
-  const databaseUrl = config.useDirectUrl 
-    ? (process.env.DIRECT_URL || process.env.DATABASE_URL)
+  const databaseUrl = config.useDirectUrl
+    ? process.env.DIRECT_URL || process.env.DATABASE_URL
     : process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     throw new Error('No database URL found. Set DATABASE_URL or DIRECT_URL environment variable.');
   }
 
-  console.log(`🔗 Using ${config.useDirectUrl && process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} for connection`);
-  
+  console.log(
+    `🔗 Using ${config.useDirectUrl && process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} for connection`
+  );
+
   return parseDatabaseUrl(databaseUrl);
 }
 
@@ -303,7 +307,7 @@ function getDatabaseConnection(config: BackupConfig): DatabaseConnectionInfo {
  */
 async function checkRequiredTools(): Promise<void> {
   console.log('🔧 Checking required tools...');
-  
+
   try {
     // Check pg_dump
     await execAsync('pg_dump --version');
@@ -347,9 +351,9 @@ function generateBackupFilename(config: BackupConfig, dbInfo: DatabaseConnection
   const formatExt = {
     custom: 'dump',
     sql: 'sql',
-    directory: 'dir'
+    directory: 'dir',
   };
-  
+
   const baseName = `${dbInfo.database}-${timestamp}.${formatExt[config.format]}`;
   return path.join(config.outputDir, baseName);
 }
@@ -358,8 +362,8 @@ function generateBackupFilename(config: BackupConfig, dbInfo: DatabaseConnection
  * Build pg_dump command based on configuration
  */
 function buildPgDumpCommand(
-  config: BackupConfig, 
-  dbInfo: DatabaseConnectionInfo, 
+  config: BackupConfig,
+  dbInfo: DatabaseConnectionInfo,
   outputPath: string
 ): string[] {
   const cmd = ['pg_dump'];
@@ -403,7 +407,7 @@ function buildPgDumpCommand(
   config.excludeTables.forEach(table => {
     cmd.push(`--exclude-table=${table}`);
   });
-  
+
   if (config.includeTables.length > 0) {
     config.includeTables.forEach(table => {
       cmd.push(`--table=${table}`);
@@ -426,13 +430,13 @@ async function executeBackup(
   outputPath: string
 ): Promise<{ duration: number; size: number }> {
   const startTime = Date.now();
-  
+
   console.log('🚀 Starting database backup...');
   console.log(`📄 Format: ${config.format}`);
   console.log(`📁 Output: ${outputPath}`);
 
   const cmd = buildPgDumpCommand(config, dbInfo, outputPath);
-  
+
   return new Promise((resolve, reject) => {
     // Set password environment variable
     const env = {
@@ -449,15 +453,15 @@ async function executeBackup(
       // For compressed SQL, pipe pg_dump output to gzip
       pgDumpProcess = spawn(cmd[0], cmd.slice(1), { env });
       gzipProcess = spawn('gzip', ['-9'], { stdio: ['pipe', 'pipe', 'inherit'] });
-      
+
       // Pipe pg_dump output to gzip
       pgDumpProcess.stdout.pipe(gzipProcess.stdin);
-      
+
       // Write gzip output to file
       const outputStream = fs.createWriteStream(outputPath + '.gz');
       gzipProcess.stdout.pipe(outputStream);
 
-      gzipProcess.on('close', (code) => {
+      gzipProcess.on('close', code => {
         if (code === 0) {
           const duration = Date.now() - startTime;
           const stats = fs.statSync(outputPath + '.gz');
@@ -467,19 +471,18 @@ async function executeBackup(
         }
       });
 
-      pgDumpProcess.on('error', (error) => {
+      pgDumpProcess.on('error', error => {
         reject(new Error(`pg_dump failed: ${error.message}`));
       });
 
-      gzipProcess.on('error', (error) => {
+      gzipProcess.on('error', error => {
         reject(new Error(`gzip failed: ${error.message}`));
       });
-
     } else {
       // For custom and directory formats, or uncompressed SQL
-      pgDumpProcess = spawn(cmd[0], cmd.slice(1), { 
+      pgDumpProcess = spawn(cmd[0], cmd.slice(1), {
         env,
-        stdio: config.format === 'sql' ? ['inherit', 'pipe', 'inherit'] : 'inherit'
+        stdio: config.format === 'sql' ? ['inherit', 'pipe', 'inherit'] : 'inherit',
       });
 
       if (config.format === 'sql' && !config.compress) {
@@ -490,25 +493,25 @@ async function executeBackup(
         }
       }
 
-      pgDumpProcess.on('close', (code) => {
+      pgDumpProcess.on('close', code => {
         if (code === 0) {
           const duration = Date.now() - startTime;
           let stats;
-          
+
           if (config.format === 'directory') {
             // For directory format, calculate total size
             stats = { size: calculateDirectorySize(outputPath) };
           } else {
             stats = fs.statSync(outputPath);
           }
-          
+
           resolve({ duration, size: stats.size });
         } else {
           reject(new Error(`pg_dump failed with exit code ${code}`));
         }
       });
 
-      pgDumpProcess.on('error', (error) => {
+      pgDumpProcess.on('error', error => {
         reject(new Error(`pg_dump failed: ${error.message}`));
       });
     }
@@ -520,7 +523,7 @@ async function executeBackup(
  */
 function calculateDirectorySize(dirPath: string): number {
   let totalSize = 0;
-  
+
   function calculateSize(itemPath: string) {
     const stats = fs.statSync(itemPath);
     if (stats.isDirectory()) {
@@ -532,7 +535,7 @@ function calculateDirectorySize(dirPath: string): number {
       totalSize += stats.size;
     }
   }
-  
+
   calculateSize(dirPath);
   return totalSize;
 }
@@ -543,7 +546,7 @@ function calculateDirectorySize(dirPath: string): number {
 async function compressBackup(backupPath: string): Promise<string> {
   const compressedPath = backupPath + '.gz';
   console.log('🗜️  Compressing backup...');
-  
+
   try {
     await execAsync(`gzip -9 "${backupPath}"`);
     console.log(`✅ Backup compressed: ${compressedPath}`);
@@ -551,12 +554,12 @@ async function compressBackup(backupPath: string): Promise<string> {
   } catch (error) {
     // Fallback to Node.js compression
     console.log('⚠️  gzip command failed, using Node.js compression...');
-    
+
     const data = fs.readFileSync(backupPath);
     const compressed = gzipSync(data, { level: 9 });
     fs.writeFileSync(compressedPath, compressed);
     fs.unlinkSync(backupPath); // Remove uncompressed file
-    
+
     console.log(`✅ Backup compressed with Node.js: ${compressedPath}`);
     return compressedPath;
   }
@@ -567,7 +570,7 @@ async function compressBackup(backupPath: string): Promise<string> {
  */
 async function verifyBackup(backupPath: string, config: BackupConfig): Promise<boolean> {
   console.log('🔍 Verifying backup integrity...');
-  
+
   try {
     switch (config.format) {
       case 'custom':
@@ -575,12 +578,12 @@ async function verifyBackup(backupPath: string, config: BackupConfig): Promise<b
         await execAsync(`pg_restore --list "${backupPath}"`);
         console.log('✅ Custom format backup verified');
         return true;
-        
+
       case 'sql':
         // Check if SQL file is valid by parsing first few lines
         const isCompressed = backupPath.endsWith('.gz');
         let content: string;
-        
+
         if (isCompressed) {
           const compressed = fs.readFileSync(backupPath);
           const decompressed = gunzipSync(compressed);
@@ -588,16 +591,18 @@ async function verifyBackup(backupPath: string, config: BackupConfig): Promise<b
         } else {
           content = fs.readFileSync(backupPath, 'utf8').substring(0, 1000);
         }
-        
-        if (content.includes('PostgreSQL database dump') || 
-            content.includes('-- Dumped from database version')) {
+
+        if (
+          content.includes('PostgreSQL database dump') ||
+          content.includes('-- Dumped from database version')
+        ) {
           console.log('✅ SQL backup verified');
           return true;
         } else {
           console.log('❌ SQL backup verification failed - invalid content');
           return false;
         }
-        
+
       case 'directory':
         // Check if directory contains expected files
         const files = fs.readdirSync(backupPath);
@@ -608,13 +613,16 @@ async function verifyBackup(backupPath: string, config: BackupConfig): Promise<b
           console.log('❌ Directory backup verification failed - missing files');
           return false;
         }
-        
+
       default:
         console.log('⚠️  Unknown format, skipping verification');
         return true;
     }
   } catch (error) {
-    console.error('❌ Backup verification failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      '❌ Backup verification failed:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return false;
   }
 }
@@ -634,7 +642,7 @@ async function getDatabaseStats(dbInfo: DatabaseConnectionInfo): Promise<{
     return {
       postgresVersion: 'Unknown',
       tableCount: 0,
-      recordCount: 0
+      recordCount: 0,
     };
   } catch (error) {
     console.log('⚠️  Could not gather database statistics');
@@ -646,8 +654,8 @@ async function getDatabaseStats(dbInfo: DatabaseConnectionInfo): Promise<{
  * Create backup metadata file
  */
 function createMetadataFile(
-  backupPath: string, 
-  result: BackupResult, 
+  backupPath: string,
+  result: BackupResult,
   config: BackupConfig,
   dbInfo: DatabaseConnectionInfo
 ): void {
@@ -665,7 +673,7 @@ function createMetadataFile(
     },
     created: new Date().toISOString(),
     command: 'backup-database.ts',
-    version: '1.0.0'
+    version: '1.0.0',
   };
 
   fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
@@ -677,7 +685,7 @@ function createMetadataFile(
  */
 async function cleanupOldBackups(config: BackupConfig): Promise<void> {
   console.log(`🧹 Cleaning up backups older than ${config.retentionDays} days...`);
-  
+
   try {
     const files = fs.readdirSync(config.outputDir);
     const cutoffDate = new Date();
@@ -689,7 +697,7 @@ async function cleanupOldBackups(config: BackupConfig): Promise<void> {
     for (const file of files) {
       const filePath = path.join(config.outputDir, file);
       const stats = fs.statSync(filePath);
-      
+
       if (stats.mtime < cutoffDate) {
         deletedSize += stats.size;
         fs.unlinkSync(filePath);
@@ -699,12 +707,17 @@ async function cleanupOldBackups(config: BackupConfig): Promise<void> {
     }
 
     if (deletedCount > 0) {
-      console.log(`✅ Cleaned up ${deletedCount} files (${(deletedSize / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(
+        `✅ Cleaned up ${deletedCount} files (${(deletedSize / 1024 / 1024).toFixed(2)} MB)`
+      );
     } else {
       console.log('✅ No old backups to clean up');
     }
   } catch (error) {
-    console.warn('⚠️  Failed to clean up old backups:', error instanceof Error ? error.message : 'Unknown error');
+    console.warn(
+      '⚠️  Failed to clean up old backups:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 
@@ -715,12 +728,12 @@ function formatFileSize(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(2)} ${units[unitIndex]}`;
 }
 
@@ -730,7 +743,7 @@ function formatFileSize(bytes: number): string {
 function generateReport(result: BackupResult, config: BackupConfig): void {
   console.log('\n📊 BACKUP REPORT');
   console.log('================');
-  
+
   console.log('\n🔧 Configuration:');
   console.log(`   Format: ${config.format}`);
   console.log(`   Compression: ${config.compress ? 'enabled' : 'disabled'}`);
@@ -750,7 +763,7 @@ function generateReport(result: BackupResult, config: BackupConfig): void {
   console.log(`   Status: ${result.success ? '✅ Success' : '❌ Failed'}`);
   console.log(`   Duration: ${(result.duration / 1000).toFixed(2)} seconds`);
   console.log(`   Size: ${formatFileSize(result.size)}`);
-  
+
   if (result.compressedSize) {
     console.log(`   Compressed size: ${formatFileSize(result.compressedSize)}`);
     console.log(`   Compression ratio: ${result.compressionRatio?.toFixed(1)}%`);
@@ -797,11 +810,11 @@ function generateReport(result: BackupResult, config: BackupConfig): void {
 async function askForConfirmation(message: string): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
+  return new Promise(resolve => {
+    rl.question(`${message} (y/N): `, answer => {
       rl.close();
       resolve(answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes');
     });
@@ -862,9 +875,9 @@ async function main(): Promise<void> {
         compressed: config.compress,
         size: 0,
         duration: 0,
-        config
+        config,
       },
-      errors: []
+      errors: [],
     };
 
     try {
@@ -908,7 +921,6 @@ async function main(): Promise<void> {
       await cleanupOldBackups(config);
 
       result.success = result.errors.length === 0;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       result.errors.push(errorMessage);
@@ -921,20 +933,19 @@ async function main(): Promise<void> {
     if (!result.success) {
       process.exit(1);
     }
-
   } catch (error) {
     console.error('\n💥 Database backup failed:', error);
-    
+
     if (error instanceof Error) {
       console.error('Error details:', error.message);
     }
-    
+
     process.exit(1);
   }
 }
 
 // Execute the script
-main().catch((error) => {
+main().catch(error => {
   console.error('Unhandled error:', error);
   process.exit(1);
-}); 
+});

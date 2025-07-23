@@ -79,7 +79,9 @@ jest.mock('@/lib/square/webhook-validator', () => ({
 
 // Mock labels action
 jest.mock('@/app/actions/labels', () => ({
-  purchaseShippingLabel: jest.fn().mockResolvedValue({ success: true, trackingNumber: 'test-tracking' }),
+  purchaseShippingLabel: jest
+    .fn()
+    .mockResolvedValue({ success: true, trackingNumber: 'test-tracking' }),
 }));
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
@@ -158,7 +160,10 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     // Mock database operations
@@ -171,7 +176,7 @@ describe('/api/webhooks/square - POST', () => {
     (mockPrisma.payment.upsert as jest.Mock).mockResolvedValue({
       id: 'payment-123',
       orderId: 'order-123',
-      amount: 25.00,
+      amount: 25.0,
       status: 'COMPLETED',
     });
 
@@ -222,7 +227,10 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     const response = await POST(request);
@@ -261,7 +269,10 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     const response = await POST(request);
@@ -293,7 +304,10 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     const response = await POST(request);
@@ -457,12 +471,17 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     // Mock database error in the webhook queue
     const { handleWebhookWithQueue } = require('@/lib/webhook-queue');
-    (handleWebhookWithQueue as jest.Mock).mockRejectedValueOnce(new Error('Database connection failed'));
+    (handleWebhookWithQueue as jest.Mock).mockRejectedValueOnce(
+      new Error('Database connection failed')
+    );
 
     const response = await POST(request);
     const data = await response.json();
@@ -503,7 +522,10 @@ describe('/api/webhooks/square - POST', () => {
         },
       };
 
-      const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+      const signature = createValidSignature(
+        JSON.stringify(webhookBody),
+        'http://localhost:3000/api/webhooks/square'
+      );
       const request = createMockRequest(webhookBody, signature);
 
       const response = await POST(request);
@@ -538,7 +560,10 @@ describe('/api/webhooks/square - POST', () => {
       },
     };
 
-    const signature = createValidSignature(JSON.stringify(webhookBody), 'http://localhost:3000/api/webhooks/square');
+    const signature = createValidSignature(
+      JSON.stringify(webhookBody),
+      'http://localhost:3000/api/webhooks/square'
+    );
     const request = createMockRequest(webhookBody, signature);
 
     const response = await POST(request);
@@ -594,7 +619,10 @@ describe('/api/webhooks/square - POST', () => {
     for (const event of events) {
       jest.clearAllMocks();
 
-      const signature = createValidSignature(JSON.stringify(event), 'http://localhost:3000/api/webhooks/square');
+      const signature = createValidSignature(
+        JSON.stringify(event),
+        'http://localhost:3000/api/webhooks/square'
+      );
       const request = createMockRequest(event, signature);
 
       const response = await POST(request);
@@ -612,4 +640,4 @@ describe('/api/webhooks/square - POST', () => {
       expect(handleWebhookWithQueue).toHaveBeenCalledWith(event, event.type);
     }
   }, 15000);
-}); 
+});

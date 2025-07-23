@@ -47,12 +47,14 @@ jest.mock('next/cache', () => ({
 }));
 
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => Promise.resolve({
-    get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
-    set: jest.fn(),
-    remove: jest.fn(),
-    getAll: () => []
-  })),
+  cookies: jest.fn(() =>
+    Promise.resolve({
+      get: jest.fn().mockReturnValue({ value: 'test-cookie' }),
+      set: jest.fn(),
+      remove: jest.fn(),
+      getAll: () => [],
+    })
+  ),
 }));
 
 jest.mock('@/utils/supabase/server', () => ({
@@ -83,48 +85,48 @@ const { validateOrderMinimums } = require('@/lib/cart-helpers');
 describe('Orders Actions - Basic Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up environment variables
     process.env.NEXT_PUBLIC_APP_URL = 'https://test.destinosf.com';
-    
+
     // Setup default Prisma mock responses
     prisma.storeSettings.findFirst.mockResolvedValue({
-      minOrderAmount: 25.00,
-      cateringMinimumAmount: 150.00,
+      minOrderAmount: 25.0,
+      cateringMinimumAmount: 150.0,
     });
-    
+
     prisma.product.findMany.mockResolvedValue([]);
-    
+
     prisma.order.create.mockResolvedValue({
       id: 'order-123',
       status: OrderStatus.PENDING,
       paymentStatus: 'PENDING',
     });
-    
+
     prisma.order.update.mockResolvedValue({
       id: 'order-123',
       status: OrderStatus.PROCESSING,
       paymentStatus: 'PAID',
     });
-    
+
     prisma.order.findUnique.mockResolvedValue({
       id: 'order-123',
       customerName: 'John Doe',
       status: 'PAID',
     });
-    
+
     // Mock delivery zone functions
     determineDeliveryZone.mockResolvedValue('zone-1');
     validateMinimumPurchase.mockResolvedValue({
       isValid: true,
       message: null,
       minimumRequired: 250,
-      currentAmount: 400
+      currentAmount: 400,
     });
-    
+
     // Mock cart validation
     validateOrderMinimums.mockResolvedValue({ isValid: true });
-    
+
     // Mock Square API
     (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
       ok: true,
@@ -146,22 +148,20 @@ describe('Orders Actions - Basic Tests', () => {
     test('should validate empty cart', async () => {
       // Import the function dynamically to avoid hoisting issues
       const { validateOrderMinimumsServer } = await import('@/app/actions/orders');
-      
+
       const result = await validateOrderMinimumsServer([]);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe('Your cart is empty');
     });
 
     test('should validate cart total below minimum', async () => {
       const { validateOrderMinimumsServer } = await import('@/app/actions/orders');
-      
-      const smallItems = [
-        { id: 'prod-1', name: 'Small Item', price: 10.00, quantity: 1 }
-      ];
-      
+
+      const smallItems = [{ id: 'prod-1', name: 'Small Item', price: 10.0, quantity: 1 }];
+
       const result = await validateOrderMinimumsServer(smallItems);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toContain('Orders require a minimum purchase');
       expect(result.currentAmount).toBe(10);
@@ -170,31 +170,27 @@ describe('Orders Actions - Basic Tests', () => {
 
     test('should handle missing store settings', async () => {
       const { validateOrderMinimumsServer } = await import('@/app/actions/orders');
-      
+
       prisma.storeSettings.findFirst.mockResolvedValue(null);
-      
-      const items = [
-        { id: 'prod-1', name: 'Item', price: 20.00, quantity: 1 }
-      ];
-      
+
+      const items = [{ id: 'prod-1', name: 'Item', price: 20.0, quantity: 1 }];
+
       const result = await validateOrderMinimumsServer(items);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeNull();
     });
 
     test('should handle database errors gracefully', async () => {
       const { validateOrderMinimumsServer } = await import('@/app/actions/orders');
-      
+
       prisma.storeSettings.findFirst.mockRejectedValue(new Error('Database error'));
-      
-      const items = [
-        { id: 'prod-1', name: 'Item', price: 20.00, quantity: 1 }
-      ];
-      
+
+      const items = [{ id: 'prod-1', name: 'Item', price: 20.0, quantity: 1 }];
+
       // The function catches database errors and assumes non-catering order
       const result = await validateOrderMinimumsServer(items);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeNull();
     });
@@ -203,13 +199,13 @@ describe('Orders Actions - Basic Tests', () => {
   describe('Order Creation Tests', () => {
     test('should create order successfully', async () => {
       const { createOrderAndGenerateCheckoutUrl } = await import('@/app/actions/orders');
-      
+
       const validFormData = {
         items: [
           {
             id: 'product-1',
             name: 'Dulce de Leche Alfajores',
-            price: 25.00,
+            price: 25.0,
             quantity: 2,
           },
         ],
@@ -234,7 +230,7 @@ describe('Orders Actions - Basic Tests', () => {
 
     test('should handle invalid form data', async () => {
       const { createOrderAndGenerateCheckoutUrl } = await import('@/app/actions/orders');
-      
+
       const invalidFormData = {
         items: [],
         customerInfo: { name: '', email: 'invalid-email', phone: '' },
@@ -252,8 +248,13 @@ describe('Orders Actions - Basic Tests', () => {
   describe('Order Management Tests', () => {
     test('should update order payment successfully', async () => {
       const { updateOrderPayment } = await import('@/app/actions/orders');
-      
-      const result = await updateOrderPayment('order-123', 'square-order-123', 'PAID', 'Payment completed');
+
+      const result = await updateOrderPayment(
+        'order-123',
+        'square-order-123',
+        'PAID',
+        'Payment completed'
+      );
 
       expect(prisma.order.update).toHaveBeenCalledWith({
         where: { id: 'order-123' },
@@ -268,7 +269,7 @@ describe('Orders Actions - Basic Tests', () => {
 
     test('should retrieve order successfully', async () => {
       const { getOrderById } = await import('@/app/actions/orders');
-      
+
       const result = await getOrderById('order-123');
 
       expect(prisma.order.findUnique).toHaveBeenCalledWith({
@@ -286,7 +287,7 @@ describe('Orders Actions - Basic Tests', () => {
           },
         },
       });
-      
+
       expect(result).toEqual({
         id: 'order-123',
         customerName: 'John Doe',
@@ -294,4 +295,4 @@ describe('Orders Actions - Basic Tests', () => {
       });
     });
   });
-}); 
+});

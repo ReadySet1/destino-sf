@@ -6,21 +6,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Upload, X, AlertTriangle, Square, Database, Image as ImageIcon } from 'lucide-react';
-import { 
-  type EnhancedCateringItem, 
+import {
+  Loader2,
+  Upload,
+  X,
+  AlertTriangle,
+  Square,
+  Database,
+  Image as ImageIcon,
+} from 'lucide-react';
+import {
+  type EnhancedCateringItem,
   type ItemEditCapabilities,
   CateringItemCategory,
-  ItemSource
+  ItemSource,
 } from '@/types/catering';
-import { 
-  getEnhancedCateringItem, 
+import {
+  getEnhancedCateringItem,
   getItemEditCapabilities,
-  updateCateringItemWithOverrides 
+  updateCateringItemWithOverrides,
 } from '@/actions/catering-overrides';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -34,7 +48,7 @@ interface SmartCateringItemFormProps {
 export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
   itemId,
   onSuccess,
-  onCancel
+  onCancel,
 }) => {
   const [item, setItem] = useState<EnhancedCateringItem | null>(null);
   const [capabilities, setCapabilities] = useState<ItemEditCapabilities | null>(null);
@@ -53,7 +67,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
     localIsGlutenFree: false,
     localServingSize: '',
     localImageUrl: '',
-    isActive: true
+    isActive: true,
   });
 
   // Override flags
@@ -61,18 +75,18 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
     overrideDescription: false,
     overrideImage: false,
     overrideDietary: false,
-    overrideServingSize: false
+    overrideServingSize: false,
   });
 
   // Load item data
   const loadItemData = useCallback(async () => {
     if (!itemId) return;
-    
+
     try {
       setLoading(true);
       const [itemData, capabilitiesData] = await Promise.all([
         getEnhancedCateringItem(itemId),
-        getItemEditCapabilities(itemId)
+        getItemEditCapabilities(itemId),
       ]);
 
       if (itemData) {
@@ -87,7 +101,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
           localIsGlutenFree: itemData.finalIsGlutenFree,
           localServingSize: itemData.finalServingSize || '',
           localImageUrl: itemData.finalImageUrl || '',
-          isActive: itemData.isActive
+          isActive: itemData.isActive,
         });
 
         // Set override flags based on existing overrides
@@ -96,7 +110,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
             overrideDescription: itemData.overrides.overrideDescription,
             overrideImage: itemData.overrides.overrideImage,
             overrideDietary: itemData.overrides.overrideDietary,
-            overrideServingSize: itemData.overrides.overrideServingSize
+            overrideServingSize: itemData.overrides.overrideServingSize,
           });
         }
       }
@@ -132,11 +146,11 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
 
       const response = await fetch('/api/admin/upload-image', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const result = await response.json();
-      
+
       if (result.success && result.url) {
         setFormData(prev => ({ ...prev, localImageUrl: result.url }));
         toast.success('Image uploaded successfully!', { id: 'upload-image' });
@@ -160,7 +174,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
 
     try {
       const updateData: any = {
-        isActive: formData.isActive
+        isActive: formData.isActive,
       };
 
       // Handle based on item source
@@ -172,7 +186,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
         updateData.localIsVegan = formData.localIsVegan;
         updateData.localIsGlutenFree = formData.localIsGlutenFree;
         updateData.localServingSize = formData.localServingSize;
-        
+
         // Set override flags
         updateData.overrideDescription = overrides.overrideDescription;
         updateData.overrideImage = overrides.overrideImage;
@@ -192,7 +206,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
       }
 
       const result = await updateCateringItemWithOverrides(itemId!, updateData);
-      
+
       if (result.success) {
         toast.success('Item updated successfully!', { id: 'save-item' });
         onSuccess?.();
@@ -220,9 +234,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
     return (
       <Alert>
         <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Unable to determine editing capabilities for this item.
-        </AlertDescription>
+        <AlertDescription>Unable to determine editing capabilities for this item.</AlertDescription>
       </Alert>
     );
   }
@@ -234,9 +246,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
       {/* Header with item source */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <h2 className="text-2xl font-bold">
-            {itemId ? 'Edit Item' : 'New Item'}
-          </h2>
+          <h2 className="text-2xl font-bold">{itemId ? 'Edit Item' : 'New Item'}</h2>
           {isSquareItem ? (
             <Badge variant="secondary" className="flex items-center space-x-1">
               <Square className="h-3 w-3" />
@@ -277,7 +287,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
               disabled={!capabilities.canEditName || saving}
               className={!capabilities.canEditName ? 'bg-gray-50' : ''}
             />
@@ -297,7 +307,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
               step="0.01"
               min="0"
               value={formData.price}
-              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
+              }
               disabled={!capabilities.canEditPrice || saving}
               className={!capabilities.canEditPrice ? 'bg-gray-50' : ''}
             />
@@ -313,14 +325,16 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as CateringItemCategory }))}
+              onValueChange={value =>
+                setFormData(prev => ({ ...prev, category: value as CateringItemCategory }))
+              }
               disabled={!capabilities.canEditCategory || saving}
             >
               <SelectTrigger className={!capabilities.canEditCategory ? 'bg-gray-50' : ''}>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(CateringItemCategory).map((category) => (
+                {Object.values(CateringItemCategory).map(category => (
                   <SelectItem key={category} value={category}>
                     {category.replace('_', ' ')}
                   </SelectItem>
@@ -339,7 +353,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
             <Switch
               id="isActive"
               checked={formData.isActive}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+              onCheckedChange={checked => setFormData(prev => ({ ...prev, isActive: checked }))}
               disabled={!capabilities.canEditActive || saving}
             />
             <Label htmlFor="isActive">Active</Label>
@@ -361,7 +375,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                   <Switch
                     id="override-description"
                     checked={overrides.overrideDescription}
-                    onCheckedChange={(checked) => setOverrides(prev => ({ ...prev, overrideDescription: checked }))}
+                    onCheckedChange={checked =>
+                      setOverrides(prev => ({ ...prev, overrideDescription: checked }))
+                    }
                     disabled={saving}
                   />
                 </div>
@@ -371,7 +387,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
           <CardContent>
             <Textarea
               value={formData.localDescription}
-              onChange={(e) => setFormData(prev => ({ ...prev, localDescription: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, localDescription: e.target.value }))}
               placeholder="Enter item description..."
               disabled={saving || (isSquareItem && !overrides.overrideDescription)}
               className={isSquareItem && !overrides.overrideDescription ? 'bg-gray-50' : ''}
@@ -400,7 +416,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                   <Switch
                     id="override-image"
                     checked={overrides.overrideImage}
-                    onCheckedChange={(checked) => setOverrides(prev => ({ ...prev, overrideImage: checked }))}
+                    onCheckedChange={checked =>
+                      setOverrides(prev => ({ ...prev, overrideImage: checked }))
+                    }
                     disabled={saving}
                   />
                 </div>
@@ -447,9 +465,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                 </div>
               )}
               {isSquareItem && !overrides.overrideImage && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Enable override to upload custom image
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Enable override to upload custom image</p>
               )}
             </div>
           </CardContent>
@@ -470,7 +486,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                   <Switch
                     id="override-dietary"
                     checked={overrides.overrideDietary}
-                    onCheckedChange={(checked) => setOverrides(prev => ({ ...prev, overrideDietary: checked }))}
+                    onCheckedChange={checked =>
+                      setOverrides(prev => ({ ...prev, overrideDietary: checked }))
+                    }
                     disabled={saving}
                   />
                 </div>
@@ -483,7 +501,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                 <Switch
                   id="vegetarian"
                   checked={formData.localIsVegetarian}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, localIsVegetarian: checked }))}
+                  onCheckedChange={checked =>
+                    setFormData(prev => ({ ...prev, localIsVegetarian: checked }))
+                  }
                   disabled={saving || (isSquareItem && !overrides.overrideDietary)}
                 />
                 <Label htmlFor="vegetarian">Vegetarian</Label>
@@ -492,7 +512,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                 <Switch
                   id="vegan"
                   checked={formData.localIsVegan}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, localIsVegan: checked }))}
+                  onCheckedChange={checked =>
+                    setFormData(prev => ({ ...prev, localIsVegan: checked }))
+                  }
                   disabled={saving || (isSquareItem && !overrides.overrideDietary)}
                 />
                 <Label htmlFor="vegan">Vegan</Label>
@@ -501,7 +523,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                 <Switch
                   id="glutenFree"
                   checked={formData.localIsGlutenFree}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, localIsGlutenFree: checked }))}
+                  onCheckedChange={checked =>
+                    setFormData(prev => ({ ...prev, localIsGlutenFree: checked }))
+                  }
                   disabled={saving || (isSquareItem && !overrides.overrideDietary)}
                 />
                 <Label htmlFor="glutenFree">Gluten Free</Label>
@@ -530,7 +554,9 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
                   <Switch
                     id="override-serving"
                     checked={overrides.overrideServingSize}
-                    onCheckedChange={(checked) => setOverrides(prev => ({ ...prev, overrideServingSize: checked }))}
+                    onCheckedChange={checked =>
+                      setOverrides(prev => ({ ...prev, overrideServingSize: checked }))
+                    }
                     disabled={saving}
                   />
                 </div>
@@ -540,7 +566,7 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
           <CardContent>
             <Input
               value={formData.localServingSize}
-              onChange={(e) => setFormData(prev => ({ ...prev, localServingSize: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, localServingSize: e.target.value }))}
               placeholder="e.g., Serves 2-3 people"
               disabled={saving || (isSquareItem && !overrides.overrideServingSize)}
               className={isSquareItem && !overrides.overrideServingSize ? 'bg-gray-50' : ''}
@@ -566,4 +592,4 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
       </div>
     </form>
   );
-}; 
+};

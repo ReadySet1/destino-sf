@@ -28,7 +28,7 @@ jest.mock('@/actions/catering', () => ({
 jest.mock('react-hook-form', () => ({
   useForm: () => ({
     control: {},
-    handleSubmit: jest.fn((onSubmit) => onSubmit),
+    handleSubmit: jest.fn(onSubmit => onSubmit),
     formState: { errors: {}, isSubmitting: false },
     setValue: jest.fn(),
     watch: jest.fn(),
@@ -39,11 +39,15 @@ jest.mock('react-hook-form', () => ({
 // Mock UI components with proper accessibility features
 jest.mock('@/components/ui/form', () => {
   const React = require('react');
-  
+
   const FormItemContext = React.createContext({ id: 'test-id' });
-  
+
   return {
-    Form: ({ children, ...props }: any) => <form {...props} role="form">{children}</form>,
+    Form: ({ children, ...props }: any) => (
+      <form {...props} role="form">
+        {children}
+      </form>
+    ),
     FormField: ({ children, render, name, defaultValue }: any) => {
       const field = {
         name,
@@ -68,14 +72,18 @@ jest.mock('@/components/ui/form', () => {
     },
     FormControl: ({ children }: any) => {
       const { id } = React.useContext(FormItemContext);
-      
+
       // Use a ref to track if we've assigned an ID yet
       const hasAssignedId = React.useRef(false);
-      
+
       const assignIdToElement = (element: any): any => {
         if (React.isValidElement(element)) {
           // Check if it's our mocked Input or Textarea component and we haven't assigned ID yet
-          if (!hasAssignedId.current && (element.props?.['data-testid'] === 'input' || element.props?.['data-testid'] === 'textarea')) {
+          if (
+            !hasAssignedId.current &&
+            (element.props?.['data-testid'] === 'input' ||
+              element.props?.['data-testid'] === 'textarea')
+          ) {
             hasAssignedId.current = true;
             return React.cloneElement(element, { id: `${id}-form-item` });
           }
@@ -89,12 +97,8 @@ jest.mock('@/components/ui/form', () => {
         }
         return element;
       };
-      
-      return (
-        <div className="form-control">
-          {assignIdToElement(children)}
-        </div>
-      );
+
+      return <div className="form-control">{assignIdToElement(children)}</div>;
     },
     FormDescription: ({ children }: any) => <div className="form-description">{children}</div>,
     FormMessage: ({ children }: any) => <div className="form-message">{children}</div>,
@@ -115,7 +119,7 @@ jest.mock('@/components/ui/textarea', () => ({
 
 jest.mock('@/components/ui/select', () => ({
   Select: ({ children, onValueChange, defaultValue }: any) => (
-    <select onChange={(e) => onValueChange?.(e.target.value)} defaultValue={defaultValue}>
+    <select onChange={e => onValueChange?.(e.target.value)} defaultValue={defaultValue}>
       {children}
     </select>
   ),
@@ -126,13 +130,16 @@ jest.mock('@/components/ui/select', () => ({
 }));
 
 jest.mock('@/components/ui/checkbox', () => ({
-  Checkbox: React.forwardRef<HTMLInputElement, any>(function Checkbox({ checked, onCheckedChange, ...props }, ref) {
+  Checkbox: React.forwardRef<HTMLInputElement, any>(function Checkbox(
+    { checked, onCheckedChange, ...props },
+    ref
+  ) {
     return (
       <input
         ref={ref}
         type="checkbox"
         checked={checked}
-        onChange={(e) => onCheckedChange?.(e.target.checked)}
+        onChange={e => onCheckedChange?.(e.target.checked)}
         {...props}
       />
     );
@@ -141,13 +148,7 @@ jest.mock('@/components/ui/checkbox', () => ({
 
 jest.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, type = 'button', disabled, variant, ...props }: any) => (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      data-variant={variant}
-      {...props}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} data-variant={variant} {...props}>
       {children}
     </button>
   ),
@@ -235,7 +236,7 @@ describe('ProductForm (CateringPackageForm)', () => {
         name: 'Test Package',
         description: 'A test catering package',
         minPeople: 10,
-        pricePerPerson: 15.00,
+        pricePerPerson: 15.0,
         type: CateringPackageType.BUFFET,
         imageUrl: '/images/test-package.jpg',
         isActive: true,
@@ -417,7 +418,7 @@ describe('ProductForm (CateringPackageForm)', () => {
         name: 'Existing Package',
         description: 'Existing description',
         minPeople: 10,
-        pricePerPerson: 15.00,
+        pricePerPerson: 15.0,
         type: CateringPackageType.BUFFET,
         isActive: true,
         dietaryOptions: [],
@@ -471,9 +472,9 @@ describe('ProductForm (CateringPackageForm)', () => {
 
     it('should handle submission errors', async () => {
       const user = userEvent.setup();
-      (createCateringPackage as jest.Mock).mockResolvedValue({ 
-        success: false, 
-        error: 'Package creation failed' 
+      (createCateringPackage as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Package creation failed',
       });
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -486,7 +487,10 @@ describe('ProductForm (CateringPackageForm)', () => {
       await user.click(screen.getByRole('button', { name: /create package/i }));
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Failed to create package:', 'Package creation failed');
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Failed to create package:',
+          'Package creation failed'
+        );
       });
 
       consoleSpy.mockRestore();
@@ -554,7 +558,7 @@ describe('ProductForm (CateringPackageForm)', () => {
         name: 'Test Package',
         description: 'Test description',
         minPeople: 10,
-        pricePerPerson: 10.00,
+        pricePerPerson: 10.0,
         type: CateringPackageType.BUFFET,
         isActive: true,
         dietaryOptions: [],
@@ -565,4 +569,4 @@ describe('ProductForm (CateringPackageForm)', () => {
       expect(screen.getByRole('button', { name: /update package/i })).toBeInTheDocument();
     });
   });
-}); 
+});

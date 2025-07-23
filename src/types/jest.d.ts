@@ -17,4 +17,4 @@ declare module '@jest/expect' {
   }
 }
 
-export {}; 
+export {};

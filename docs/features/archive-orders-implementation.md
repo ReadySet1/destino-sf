@@ -36,6 +36,7 @@ The Archive Orders feature allows admin users to hide testing orders and other o
 ## Database Schema
 
 ### Order Table Changes
+
 ```sql
 ALTER TABLE orders ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
 ALTER TABLE orders ADD COLUMN archived_at TIMESTAMP;
@@ -45,6 +46,7 @@ CREATE INDEX idx_orders_is_archived ON orders(is_archived);
 ```
 
 ### CateringOrder Table Changes
+
 ```sql
 ALTER TABLE catering_orders ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
 ALTER TABLE catering_orders ADD COLUMN archived_at TIMESTAMP;
@@ -58,31 +60,37 @@ CREATE INDEX idx_catering_orders_is_archived ON catering_orders(is_archived);
 ### Server Actions (src/app/actions/orders.ts)
 
 #### Archive Single Order
+
 ```typescript
 archiveOrder(orderId: string, reason?: string): Promise<{ success: boolean; error?: string }>
 ```
 
 #### Archive Single Catering Order
+
 ```typescript
 archiveCateringOrder(orderId: string, reason?: string): Promise<{ success: boolean; error?: string }>
 ```
 
 #### Bulk Archive Orders
+
 ```typescript
 archiveBulkOrders(orderIds: string[], reason?: string): Promise<{ success: boolean; count: number; errors?: string[] }>
 ```
 
 #### Unarchive Order
+
 ```typescript
 unarchiveOrder(orderId: string): Promise<{ success: boolean; error?: string }>
 ```
 
 #### Unarchive Catering Order
+
 ```typescript
 unarchiveCateringOrder(orderId: string): Promise<{ success: boolean; error?: string }>
 ```
 
 #### Get Archived Orders
+
 ```typescript
 getArchivedOrders(params: {
   page?: number;
@@ -104,6 +112,7 @@ getArchivedOrders(params: {
 ## Frontend Pages
 
 ### Main Orders Page (`/admin/orders`)
+
 - **Updated to exclude archived orders by default**
 - Added "View Archived Orders" link
 - Added individual archive buttons for each order
@@ -111,6 +120,7 @@ getArchivedOrders(params: {
 - Archive confirmation dialog with optional reason
 
 ### Archived Orders Page (`/admin/orders/archived`)
+
 - **New dedicated page for managing archived orders**
 - Comprehensive filtering:
   - Search by order ID, customer name, email
@@ -125,23 +135,27 @@ getArchivedOrders(params: {
 ## User Interface Features
 
 ### Archive Confirmation Dialog
+
 - Confirmation before archiving
 - Optional reason field
 - Clear explanation of what archiving does
 
 ### Bulk Archive Functionality
+
 - Checkbox selection for multiple orders
 - Bulk actions toolbar when orders are selected
 - Bulk archive confirmation dialog
 - Progress feedback during bulk operations
 
 ### Archive Metadata Display
+
 - Shows who archived the order
 - Shows when it was archived
 - Shows the archive reason
 - Formatted timestamps
 
 ### Filtering and Search
+
 - Real-time search across order details
 - Multiple filter types
 - Active filter indicators
@@ -150,46 +164,54 @@ getArchivedOrders(params: {
 ## Security Features
 
 ### Authentication & Authorization
+
 - All archive operations require valid authentication
 - Only users with ADMIN role can archive/unarchive orders
 - Proper error handling for unauthorized access
 
 ### Data Integrity
+
 - Soft delete approach (no data is actually deleted)
 - All relationships maintained
 - Orders can be restored at any time
 - Audit trail preserved
 
 ### Rate Limiting
+
 - Bulk operations limited to 100 orders at once
 - Prevents abuse of the system
 
 ## Testing
 
 ### Schema Tests
+
 - Verified database schema changes work correctly
 - Tested archive/unarchive operations
 - Confirmed proper indexing
 - Validated foreign key relationships
 
 ### Test Scripts
+
 - `scripts/test-archive-schema.ts` - Tests database schema functionality
 - Comprehensive test coverage of all archive operations
 
 ## Performance Considerations
 
 ### Database Optimization
+
 - Added indexes on `is_archived` columns
 - Efficient queries that exclude archived orders by default
 - Pagination for large datasets
 
 ### Caching Strategy
+
 - Revalidate relevant paths after archive operations
 - Cache invalidation for order lists
 
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Auto-Archive Rules**
    - Configurable rules for automatic archiving
    - Time-based archiving (e.g., archive orders older than X days)
@@ -213,6 +235,7 @@ getArchivedOrders(params: {
 ### For Administrators
 
 #### Archiving Individual Orders
+
 1. Navigate to `/admin/orders`
 2. Find the order you want to archive
 3. Click the "Archive" button
@@ -220,6 +243,7 @@ getArchivedOrders(params: {
 5. Confirm the action
 
 #### Bulk Archiving Orders
+
 1. Navigate to `/admin/orders`
 2. Select multiple orders using checkboxes
 3. Click "Archive Selected" in the toolbar
@@ -227,17 +251,20 @@ getArchivedOrders(params: {
 5. Confirm the action
 
 #### Viewing Archived Orders
+
 1. Navigate to `/admin/orders/archived`
 2. Use filters to find specific archived orders
 3. View archive metadata (who, when, why)
 
 #### Restoring Archived Orders
+
 1. Navigate to `/admin/orders/archived`
 2. Find the order you want to restore
 3. Click the "Unarchive" button
 4. The order will be restored to the main orders list
 
 ### Filtering Archived Orders
+
 - **Search**: Search by order ID, customer name, or email
 - **Type**: Filter by regular orders or catering orders
 - **Reason**: Search by archive reason
@@ -247,17 +274,22 @@ getArchivedOrders(params: {
 ## Technical Notes
 
 ### Database Migrations
+
 The schema changes were applied using `prisma db push` to avoid migration conflicts. In production, consider creating a proper migration file.
 
 ### Error Handling
+
 All archive operations include comprehensive error handling:
+
 - Validation of input parameters
 - Database constraint checks
 - Authentication and authorization checks
 - User-friendly error messages
 
 ### Performance Monitoring
+
 Monitor the following metrics:
+
 - Archive/unarchive operation frequency
 - Query performance on archived orders
 - Storage usage for archived data
@@ -265,4 +297,4 @@ Monitor the following metrics:
 
 ## Conclusion
 
-The Archive Orders feature provides a robust, secure, and user-friendly way to manage order visibility while maintaining data integrity. The implementation follows best practices for security, performance, and user experience, and provides a solid foundation for future enhancements. 
+The Archive Orders feature provides a robust, secure, and user-friendly way to manage order visibility while maintaining data integrity. The implementation follows best practices for security, performance, and user experience, and provides a solid foundation for future enhancements.

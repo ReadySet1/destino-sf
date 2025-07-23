@@ -37,7 +37,7 @@ jest.mock('@/lib/performance-monitor', () => ({
 }));
 
 jest.mock('@sentry/nextjs', () => ({
-  withScope: jest.fn((callback) => callback({ setTag: jest.fn(), setContext: jest.fn() })),
+  withScope: jest.fn(callback => callback({ setTag: jest.fn(), setContext: jest.fn() })),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
 }));
@@ -67,7 +67,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up mock Redis instance
     mockRedisInstance = {
       get: jest.fn(),
@@ -95,7 +95,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
     mockRedis.mockImplementation(() => mockRedisInstance);
     cacheService = CacheService.getInstance();
-    
+
     // Set up environment variables
     process.env.UPSTASH_REDIS_REST_URL = 'https://test-redis.upstash.io';
     process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
@@ -283,7 +283,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
         expect(result.value).toEqual(staleData); // Returns stale data immediately
         expect(result.stale).toBe(true);
-        
+
         // Should trigger background revalidation
         await new Promise(resolve => setTimeout(resolve, 100));
         expect(mockFetcher).toHaveBeenCalled();
@@ -367,8 +367,10 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
       it('should validate cache key length limits', async () => {
         const longKey = 'a'.repeat(300); // Exceeds 250 character limit
-        
-        await expect(cacheService.set(longKey, { test: 'data' })).rejects.toThrow('Cache key too long');
+
+        await expect(cacheService.set(longKey, { test: 'data' })).rejects.toThrow(
+          'Cache key too long'
+        );
       });
     });
 
@@ -378,11 +380,9 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
         // Product data - 30 minutes
         await cacheService.set(CacheKeys.product('1'), { id: '1' }, 1800);
-        expect(mockRedisInstance.set).toHaveBeenLastCalledWith(
-          'product:1',
-          expect.any(String),
-          { ex: 1800 }
-        );
+        expect(mockRedisInstance.set).toHaveBeenLastCalledWith('product:1', expect.any(String), {
+          ex: 1800,
+        });
 
         // Category data - 1 hour
         await cacheService.set(CacheKeys.categories(), [], 3600);
@@ -394,11 +394,9 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
         // Cart data - 5 minutes
         await cacheService.set(CacheKeys.cart('user-1'), [], 300);
-        expect(mockRedisInstance.set).toHaveBeenLastCalledWith(
-          'cart:user-1',
-          expect.any(String),
-          { ex: 300 }
-        );
+        expect(mockRedisInstance.set).toHaveBeenLastCalledWith('cart:user-1', expect.any(String), {
+          ex: 300,
+        });
 
         // Inventory data - 1 minute
         await cacheService.set(CacheKeys.inventory('product-1'), { stock: 10 }, 60);
@@ -501,7 +499,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
       it('should handle large pattern invalidations efficiently', async () => {
         const largeKeySet = Array.from({ length: 1000 }, (_, i) => `products:${i}:1:20`);
-        
+
         mockRedisInstance.keys.mockResolvedValue(largeKeySet);
         mockRedisInstance.del.mockResolvedValue(1000);
 
@@ -552,12 +550,10 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
         mockRedisInstance.set.mockResolvedValue('OK');
         mockRedisInstance.hset.mockResolvedValue(1);
 
-        await cacheService.setWithTags(
-          'product:1',
-          { id: '1', name: 'Product 1' },
-          3600,
-          ['product', 'alfajores']
-        );
+        await cacheService.setWithTags('product:1', { id: '1', name: 'Product 1' }, 3600, [
+          'product',
+          'alfajores',
+        ]);
 
         expect(mockRedisInstance.hset).toHaveBeenCalledWith(
           'cache:tags:product',
@@ -626,7 +622,8 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
         const popularProducts = ['1', '2', '3'];
         const trendingSearches = ['empanadas', 'alfajores'];
 
-        mockRedisInstance.zrevrange = jest.fn()
+        mockRedisInstance.zrevrange = jest
+          .fn()
           .mockResolvedValueOnce(popularProducts) // Popular products
           .mockResolvedValueOnce(trendingSearches); // Trending searches
 
@@ -694,7 +691,9 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
         const { analyzeCachePerformance } = await import('@/lib/cache-analytics');
         const analysis = await analyzeCachePerformance(performanceData);
 
-        expect(analysis.recommendations).toContain('Increase cache TTL for frequently accessed data');
+        expect(analysis.recommendations).toContain(
+          'Increase cache TTL for frequently accessed data'
+        );
         expect(analysis.recommendations).toContain('Implement cache warming for popular items');
         expect(analysis.severity).toBe('warning');
       });
@@ -702,15 +701,15 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
       it('should implement adaptive TTL based on access patterns', async () => {
         const accessCounts = {
           'product:1': 1000, // Highly accessed - longer TTL
-          'product:2': 10,   // Rarely accessed - shorter TTL
+          'product:2': 10, // Rarely accessed - shorter TTL
         };
 
-        mockRedisInstance.get.mockImplementation((key) => {
+        mockRedisInstance.get.mockImplementation(key => {
           return Promise.resolve(accessCounts[key]?.toString() || '0');
         });
 
         const { calculateAdaptiveTTL } = await import('@/lib/cache-ttl-optimizer');
-        
+
         const ttl1 = await calculateAdaptiveTTL('product:1');
         const ttl2 = await calculateAdaptiveTTL('product:2');
 
@@ -753,7 +752,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
       it('should implement cache eviction policies', async () => {
         const { implementLRUEviction } = await import('@/lib/cache-eviction');
-        
+
         mockRedisInstance.eval.mockResolvedValue(5); // Evicted 5 keys
 
         const evictedCount = await implementLRUEviction(1000); // Keep top 1000 keys
@@ -774,7 +773,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
         const product = {
           id: 'empanada-carne',
           name: 'Empanada de Carne',
-          price: 4.50,
+          price: 4.5,
           category: 'empanadas',
           images: ['empanada-carne.jpg'],
           inStock: true,
@@ -817,7 +816,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
           query: 'empanadas',
           results: [
             { id: '1', name: 'Empanada de Carne', relevance: 0.95 },
-            { id: '2', name: 'Empanada de Pollo', relevance: 0.90 },
+            { id: '2', name: 'Empanada de Pollo', relevance: 0.9 },
           ],
           total: 2,
           page: 1,
@@ -844,8 +843,8 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
         const order = {
           id: 'order-123',
           userId: 'user-456',
-          items: [{ productId: '1', quantity: 2, price: 9.00 }],
-          total: 18.00,
+          items: [{ productId: '1', quantity: 2, price: 9.0 }],
+          total: 18.0,
           status: 'pending',
           // Sensitive data should be excluded from cache
           paymentMethod: undefined, // Not cached
@@ -858,7 +857,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
         const setCall = mockRedisInstance.set.mock.calls[0];
         const cachedData = JSON.parse(setCall[1]);
-        
+
         expect(cachedData.value.id).toBe('order-123');
         expect(cachedData.value.paymentMethod).toBeUndefined();
         expect(cachedData.value.creditCardLast4).toBeUndefined();
@@ -867,8 +866,8 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
       it('should cache user order history with pagination', async () => {
         const orderHistory = {
           orders: [
-            { id: 'order-1', total: 25.50, status: 'completed' },
-            { id: 'order-2', total: 18.00, status: 'pending' },
+            { id: 'order-1', total: 25.5, status: 'completed' },
+            { id: 'order-2', total: 18.0, status: 'pending' },
           ],
           pagination: {
             page: 1,
@@ -901,11 +900,11 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
             {
               productId: 'empanada-carne',
               quantity: 3,
-              price: 4.50,
+              price: 4.5,
               variant: 'regular',
             },
           ],
-          total: 13.50,
+          total: 13.5,
           updatedAt: Date.now(),
         };
 
@@ -959,7 +958,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
       it('should cache pricing data with moderate TTL', async () => {
         const pricing = {
           productId: 'empanada-carne',
-          basePrice: 4.50,
+          basePrice: 4.5,
           discountedPrice: 4.05,
           discountPercentage: 10,
           validUntil: Date.now() + 3600000, // 1 hour
@@ -1008,7 +1007,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
     it('should alert on cache performance degradation', async () => {
       const performanceData = {
-        hitRate: 0.30, // Very low hit rate
+        hitRate: 0.3, // Very low hit rate
         errorRate: 0.15, // High error rate
         avgResponseTime: 500, // Slow response time
       };
@@ -1040,7 +1039,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
     it('should handle cache stampede scenarios', async () => {
       const mockFetcher = jest.fn().mockResolvedValue({ id: '1', name: 'Product' });
-      
+
       // Simulate multiple concurrent requests for the same key
       mockRedisInstance.get.mockResolvedValue(null); // Cache miss
       mockRedisInstance.set.mockResolvedValue('OK');
@@ -1096,7 +1095,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
       ];
 
       const queryHash = 'query:products:empanadas:active:true';
-      
+
       mockRedisInstance.set.mockResolvedValue('OK');
 
       await cacheService.cacheQueryResult(queryHash, queryResult, 600);
@@ -1151,7 +1150,7 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
 
     it('should implement cache key obfuscation for sensitive data', async () => {
       const sensitiveKey = cacheService.obfuscateKey('payment:user-123:card-456');
-      
+
       expect(sensitiveKey).not.toContain('user-123');
       expect(sensitiveKey).not.toContain('card-456');
       expect(sensitiveKey).toMatch(/^obf_[a-f0-9]{32}$/);
@@ -1168,4 +1167,4 @@ describe('Comprehensive Caching Strategy Tests - Phase 4', () => {
       expect(shouldCache).toBe(false);
     });
   });
-}); 
+});

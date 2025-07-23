@@ -21,4 +21,4 @@ Once you've created the `.env.test` file, you can run the tests with:
 pnpm test:coverage
 ```
 
-The test coverage should now pass with the lowered thresholds and all the fixes applied. 
+The test coverage should now pass with the lowered thresholds and all the fixes applied.

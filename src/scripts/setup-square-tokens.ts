@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Square Token Setup and Testing Utility
- * 
+ *
  * This script helps setup and test Square API tokens for the hybrid configuration
  * where catalog operations use production and transactions use sandbox.
  */
@@ -51,15 +51,17 @@ class SquareTokenSetup {
       USE_SQUARE_SANDBOX: process.env.USE_SQUARE_SANDBOX,
       SQUARE_CATALOG_USE_PRODUCTION: process.env.SQUARE_CATALOG_USE_PRODUCTION,
       SQUARE_TRANSACTIONS_USE_SANDBOX: process.env.SQUARE_TRANSACTIONS_USE_SANDBOX,
-      
+
       // Tokens (show length only for security)
       SQUARE_PRODUCTION_TOKEN: this.getTokenInfo('SQUARE_PRODUCTION_TOKEN'),
       SQUARE_SANDBOX_TOKEN: this.getTokenInfo('SQUARE_SANDBOX_TOKEN'),
       SQUARE_ACCESS_TOKEN: this.getTokenInfo('SQUARE_ACCESS_TOKEN'),
-      
+
       // Other configs
       SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID ? '✅ Configured' : '❌ Missing',
-      SQUARE_WEBHOOK_SIGNATURE_KEY: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY ? '✅ Configured' : '❌ Missing'
+      SQUARE_WEBHOOK_SIGNATURE_KEY: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY
+        ? '✅ Configured'
+        : '❌ Missing',
     };
 
     console.table(config);
@@ -79,22 +81,22 @@ class SquareTokenSetup {
         isConfigured: !!process.env.SQUARE_PRODUCTION_TOKEN,
         tokenLength: process.env.SQUARE_PRODUCTION_TOKEN?.length || 0,
         environment: 'production',
-        apiEndpoint: 'connect.squareup.com'
+        apiEndpoint: 'connect.squareup.com',
       },
       {
         tokenName: 'SQUARE_SANDBOX_TOKEN',
         isConfigured: !!process.env.SQUARE_SANDBOX_TOKEN,
         tokenLength: process.env.SQUARE_SANDBOX_TOKEN?.length || 0,
-                 environment: 'sandbox',
-         apiEndpoint: 'connect.squareupsandbox.com'
+        environment: 'sandbox',
+        apiEndpoint: 'connect.squareupsandbox.com',
       },
       {
         tokenName: 'SQUARE_ACCESS_TOKEN',
         isConfigured: !!process.env.SQUARE_ACCESS_TOKEN,
         tokenLength: process.env.SQUARE_ACCESS_TOKEN?.length || 0,
         environment: 'production',
-        apiEndpoint: 'connect.squareup.com'
-      }
+        apiEndpoint: 'connect.squareup.com',
+      },
     ];
 
     // Test each token
@@ -121,17 +123,21 @@ class SquareTokenSetup {
     }
   }
 
-  private async testTokenConnection(token: string, environment: 'production' | 'sandbox'): Promise<boolean> {
-    const apiHost = environment === 'sandbox' ? 'connect.squareupsandbox.com' : 'connect.squareup.com';
-    
+  private async testTokenConnection(
+    token: string,
+    environment: 'production' | 'sandbox'
+  ): Promise<boolean> {
+    const apiHost =
+      environment === 'sandbox' ? 'connect.squareupsandbox.com' : 'connect.squareup.com';
+
     try {
       const response = await fetch(`https://${apiHost}/v2/locations`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Square-Version': '2024-05-15',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       return response.status === 200;
@@ -155,12 +161,12 @@ class SquareTokenSetup {
 
     if (catalogProduction && transactionsSandbox) {
       console.log('✅ Hybrid mode configured (recommended for development)');
-      
+
       if (!hasProductionToken && !hasAccessToken) {
         console.log('❌ Missing production token for catalog operations');
         console.log('   → Add SQUARE_PRODUCTION_TOKEN to .env.local');
       }
-      
+
       if (!hasSandboxToken) {
         console.log('❌ Missing sandbox token for transaction testing');
         console.log('   → Add SQUARE_SANDBOX_TOKEN to .env.local');
@@ -221,10 +227,10 @@ USE_SQUARE_SANDBOX=false
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   const setup = new SquareTokenSetup();
-  
+
   // Check command line arguments
   const args = process.argv.slice(2);
-  
+
   if (args.includes('--create-template')) {
     setup.createTemplateEnvFile();
   } else {
@@ -232,4 +238,4 @@ if (isMainModule) {
   }
 }
 
-export { SquareTokenSetup }; 
+export { SquareTokenSetup };

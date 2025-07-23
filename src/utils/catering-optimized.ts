@@ -23,7 +23,7 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
 
     // Create a more efficient search strategy using array operations
     const itemNames = cateringItems.map(item => item.name.toLowerCase());
-    
+
     // Use efficient PostgreSQL query with array operations instead of multiple ILIKE
     const products = await db.$queryRaw<Array<{ id: string; name: string; images: string[] }>>`
       SELECT id, name, images 
@@ -39,9 +39,7 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
     `;
 
     // Create efficient lookup map
-    const productMap = new Map(
-      products.map(p => [p.name.toLowerCase(), p.images[0]])
-    );
+    const productMap = new Map(products.map(p => [p.name.toLowerCase(), p.images[0]]));
 
     // Map products to catering items efficiently
     return cateringItems.map(item => {
@@ -51,7 +49,7 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
       if (!imageUrl) {
         // Try exact match first
         imageUrl = productMap.get(itemKey) || null;
-        
+
         // If no exact match, try partial match with more intelligent matching
         if (!imageUrl) {
           imageUrl = findPartialMatch(item.name, products)?.images[0] || null;
@@ -61,10 +59,9 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
       return {
         ...item,
         price: Number(item.price),
-        imageUrl
+        imageUrl,
       };
     }) as CateringItemWithImage[];
-
   } catch (error) {
     console.error('Error fetching catering items with images:', error);
     throw new Error('Failed to fetch catering items');
@@ -74,14 +71,19 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
 /**
  * Intelligent partial matching for product names
  */
-function findPartialMatch(itemName: string, products: Array<{ name: string; images: string[] }>): { images: string[] } | undefined {
-  const searchTerms = itemName.toLowerCase().split(' ').filter(term => term.length > 3);
-  
+function findPartialMatch(
+  itemName: string,
+  products: Array<{ name: string; images: string[] }>
+): { images: string[] } | undefined {
+  const searchTerms = itemName
+    .toLowerCase()
+    .split(' ')
+    .filter(term => term.length > 3);
+
   return products.find(product => {
     const productNameLower = product.name.toLowerCase();
-    return searchTerms.some(term => 
-      productNameLower.includes(term) || 
-      term.includes(productNameLower.split(' ')[0]) // Match key product words
+    return searchTerms.some(
+      term => productNameLower.includes(term) || term.includes(productNameLower.split(' ')[0]) // Match key product words
     );
   });
 }
@@ -89,7 +91,9 @@ function findPartialMatch(itemName: string, products: Array<{ name: string; imag
 /**
  * Optimized function to get catering items by category
  */
-export async function getCateringItemsByCategory(category: string): Promise<CateringItemWithImage[]> {
+export async function getCateringItemsByCategory(
+  category: string
+): Promise<CateringItemWithImage[]> {
   try {
     const items = await db.cateringItem.findMany({
       where: {
@@ -100,10 +104,10 @@ export async function getCateringItemsByCategory(category: string): Promise<Cate
         name: 'asc',
       },
     });
-    
+
     return items.map(item => ({
       ...item,
-      price: Number(item.price)
+      price: Number(item.price),
     })) as CateringItemWithImage[];
   } catch (error) {
     console.error(`Error fetching catering items for category ${category}:`, error);
@@ -122,14 +126,14 @@ const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
  */
 export async function getCachedCateringItems(): Promise<CateringItemWithImage[]> {
   const now = Date.now();
-  
-  if (cateringItemsCache && (now - cateringItemsCache.timestamp) < CACHE_DURATION) {
+
+  if (cateringItemsCache && now - cateringItemsCache.timestamp < CACHE_DURATION) {
     return cateringItemsCache.data;
   }
-  
+
   const items = await getCateringItemsWithImages();
   cateringItemsCache = { data: items, timestamp: now };
-  
+
   return items;
 }
 
@@ -138,4 +142,4 @@ export async function getCachedCateringItems(): Promise<CateringItemWithImage[]>
  */
 export function clearCateringCache(): void {
   cateringItemsCache = null;
-} 
+}

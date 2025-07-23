@@ -17,14 +17,14 @@ export async function uploadCateringImage(
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return {
         success: false,
-        error: 'Invalid file type. Please upload a JPEG, PNG, or WebP image.'
+        error: 'Invalid file type. Please upload a JPEG, PNG, or WebP image.',
       };
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return {
         success: false,
-        error: 'File too large. Please upload an image under 5MB.'
+        error: 'File too large. Please upload an image under 5MB.',
       };
     }
 
@@ -40,32 +40,29 @@ export async function uploadCateringImage(
       .from(BUCKET_NAME)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false // Create new file, don't overwrite
+        upsert: false, // Create new file, don't overwrite
       });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
       return {
         success: false,
-        error: `Upload failed: ${uploadError.message}`
+        error: `Upload failed: ${uploadError.message}`,
       };
     }
 
     // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(filePath);
+    const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
 
     return {
       success: true,
-      url: urlData.publicUrl
+      url: urlData.publicUrl,
     };
-
   } catch (error) {
     console.error('Error uploading catering image:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown upload error'
+      error: error instanceof Error ? error.message : 'Unknown upload error',
     };
   }
 }
@@ -83,36 +80,33 @@ export async function deleteCateringImage(
     const url = new URL(imageUrl);
     const pathParts = url.pathname.split('/');
     const bucketIndex = pathParts.findIndex(part => part === BUCKET_NAME);
-    
+
     if (bucketIndex === -1) {
       return {
         success: false,
-        error: 'Invalid image URL - not from catering images bucket'
+        error: 'Invalid image URL - not from catering images bucket',
       };
     }
 
     const filePath = pathParts.slice(bucketIndex + 1).join('/');
 
     // Delete file
-    const { error: deleteError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([filePath]);
+    const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove([filePath]);
 
     if (deleteError) {
       console.error('Delete error:', deleteError);
       return {
         success: false,
-        error: `Delete failed: ${deleteError.message}`
+        error: `Delete failed: ${deleteError.message}`,
       };
     }
 
     return { success: true };
-
   } catch (error) {
     console.error('Error deleting catering image:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown delete error'
+      error: error instanceof Error ? error.message : 'Unknown delete error',
     };
   }
 }
@@ -120,18 +114,21 @@ export async function deleteCateringImage(
 /**
  * Initialize the catering images bucket if it doesn't exist (Server-side)
  */
-export async function initializeCateringImagesBucket(): Promise<{ success: boolean; error?: string }> {
+export async function initializeCateringImagesBucket(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   try {
     const supabase = await createClient();
 
     // Check if bucket exists
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    
+
     if (listError) {
       console.error('Error listing buckets:', listError);
       return {
         success: false,
-        error: `Failed to list buckets: ${listError.message}`
+        error: `Failed to list buckets: ${listError.message}`,
       };
     }
 
@@ -142,14 +139,14 @@ export async function initializeCateringImagesBucket(): Promise<{ success: boole
       const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
         public: true,
         allowedMimeTypes: ALLOWED_FILE_TYPES,
-        fileSizeLimit: MAX_FILE_SIZE
+        fileSizeLimit: MAX_FILE_SIZE,
       });
 
       if (createError) {
         console.error('Error creating bucket:', createError);
         return {
           success: false,
-          error: `Failed to create bucket: ${createError.message}`
+          error: `Failed to create bucket: ${createError.message}`,
         };
       }
 
@@ -157,12 +154,11 @@ export async function initializeCateringImagesBucket(): Promise<{ success: boole
     }
 
     return { success: true };
-
   } catch (error) {
     console.error('Error initializing catering images bucket:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown initialization error'
+      error: error instanceof Error ? error.message : 'Unknown initialization error',
     };
   }
 }
@@ -170,18 +166,21 @@ export async function initializeCateringImagesBucket(): Promise<{ success: boole
 /**
  * Initialize the catering images bucket (Client-side for scripts)
  */
-export async function initializeCateringImagesBucketClientSide(): Promise<{ success: boolean; error?: string }> {
+export async function initializeCateringImagesBucketClientSide(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   try {
     const supabase = createClientSide();
 
     // Check if bucket exists
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    
+
     if (listError) {
       console.error('Error listing buckets:', listError);
       return {
         success: false,
-        error: `Failed to list buckets: ${listError.message}`
+        error: `Failed to list buckets: ${listError.message}`,
       };
     }
 
@@ -192,14 +191,14 @@ export async function initializeCateringImagesBucketClientSide(): Promise<{ succ
       const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
         public: true,
         allowedMimeTypes: ALLOWED_FILE_TYPES,
-        fileSizeLimit: MAX_FILE_SIZE
+        fileSizeLimit: MAX_FILE_SIZE,
       });
 
       if (createError) {
         console.error('Error creating bucket:', createError);
         return {
           success: false,
-          error: `Failed to create bucket: ${createError.message}`
+          error: `Failed to create bucket: ${createError.message}`,
         };
       }
 
@@ -207,12 +206,11 @@ export async function initializeCateringImagesBucketClientSide(): Promise<{ succ
     }
 
     return { success: true };
-
   } catch (error) {
     console.error('Error initializing catering images bucket:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown initialization error'
+      error: error instanceof Error ? error.message : 'Unknown initialization error',
     };
   }
-} 
+}

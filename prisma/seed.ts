@@ -31,7 +31,7 @@ async function main() {
 
       if (existingAdmin) {
         console.log(`✅ Admin ${account.email} already exists`);
-        
+
         // Update role to ADMIN if not already
         if (existingAdmin.role !== 'ADMIN') {
           await prisma.profile.update({
@@ -60,7 +60,7 @@ async function main() {
   // Optional: Create default store settings if they don't exist
   try {
     const existingSettings = await prisma.storeSettings.findFirst();
-    
+
     if (!existingSettings) {
       await prisma.storeSettings.create({
         data: {
@@ -88,10 +88,10 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

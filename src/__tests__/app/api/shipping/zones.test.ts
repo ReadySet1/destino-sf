@@ -1,12 +1,21 @@
-import { getDeliveryZone, calculateDeliveryFee, getDeliveryFeeMessage, DeliveryZone } from '@/lib/deliveryUtils';
+import {
+  getDeliveryZone,
+  calculateDeliveryFee,
+  getDeliveryFeeMessage,
+  DeliveryZone,
+} from '@/lib/deliveryUtils';
 import { Address } from '@/types/address';
 
 // Mock the delivery utilities for API testing
 jest.mock('@/lib/deliveryUtils');
 
 const mockGetDeliveryZone = getDeliveryZone as jest.MockedFunction<typeof getDeliveryZone>;
-const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<typeof calculateDeliveryFee>;
-const mockGetDeliveryFeeMessage = getDeliveryFeeMessage as jest.MockedFunction<typeof getDeliveryFeeMessage>;
+const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<
+  typeof calculateDeliveryFee
+>;
+const mockGetDeliveryFeeMessage = getDeliveryFeeMessage as jest.MockedFunction<
+  typeof getDeliveryFeeMessage
+>;
 
 describe('/api/shipping/zones', () => {
   beforeEach(() => {
@@ -25,7 +34,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
 
       const zone = getDeliveryZone('San Francisco');
-      
+
       expect(mockGetDeliveryZone).toHaveBeenCalledWith('San Francisco');
       expect(zone).toBe(DeliveryZone.NEARBY);
     });
@@ -34,7 +43,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.DISTANT);
 
       const zone = getDeliveryZone('Oakland');
-      
+
       expect(mockGetDeliveryZone).toHaveBeenCalledWith('Oakland');
       expect(zone).toBe(DeliveryZone.DISTANT);
     });
@@ -43,7 +52,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(null);
 
       const zone = getDeliveryZone('Los Angeles');
-      
+
       expect(mockGetDeliveryZone).toHaveBeenCalledWith('Los Angeles');
       expect(zone).toBeNull();
     });
@@ -52,7 +61,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
 
       const zone = getDeliveryZone('san francisco');
-      
+
       expect(mockGetDeliveryZone).toHaveBeenCalledWith('san francisco');
       expect(zone).toBe(DeliveryZone.NEARBY);
     });
@@ -61,14 +70,14 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
 
       const zone = getDeliveryZone('  San Francisco  ');
-      
+
       expect(mockGetDeliveryZone).toHaveBeenCalledWith('  San Francisco  ');
       expect(zone).toBe(DeliveryZone.NEARBY);
     });
 
     test('should validate multiple nearby zone cities', async () => {
       const nearbyCities = ['San Francisco', 'South San Francisco', 'Daly City', 'San Mateo'];
-      
+
       nearbyCities.forEach(city => {
         mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
         const zone = getDeliveryZone(city);
@@ -80,7 +89,7 @@ describe('/api/shipping/zones', () => {
 
     test('should validate multiple distant zone cities', async () => {
       const distantCities = ['Oakland', 'San Jose', 'Berkeley', 'Palo Alto'];
-      
+
       distantCities.forEach(city => {
         mockGetDeliveryZone.mockReturnValue(DeliveryZone.DISTANT);
         const zone = getDeliveryZone(city);
@@ -111,7 +120,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 50);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 50);
       expect(result).toEqual(expectedResult);
     });
@@ -128,7 +137,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 100);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 100);
       expect(result).toEqual(expectedResult);
     });
@@ -144,7 +153,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 100);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 100);
       expect(result).toEqual(expectedResult);
     });
@@ -155,7 +164,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(null);
 
       const result = calculateDeliveryFee(address, 50);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 50);
       expect(result).toBeNull();
     });
@@ -172,7 +181,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 75);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 75);
       expect(result).toEqual(expectedResult);
     });
@@ -189,7 +198,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 500);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 500);
       expect(result).toEqual(expectedResult);
     });
@@ -206,7 +215,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, 0);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, 0);
       expect(result).toEqual(expectedResult);
     });
@@ -223,7 +232,7 @@ describe('/api/shipping/zones', () => {
       mockCalculateDeliveryFee.mockReturnValue(expectedResult);
 
       const result = calculateDeliveryFee(address, -10);
-      
+
       expect(mockCalculateDeliveryFee).toHaveBeenCalledWith(address, -10);
       expect(result).toEqual(expectedResult);
     });
@@ -241,7 +250,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
 
       const zone = getDeliveryZone(validAddress.city);
-      
+
       expect(zone).toBe(DeliveryZone.NEARBY);
       expect(validAddress.street).toBeTruthy();
       expect(validAddress.state).toBeTruthy();
@@ -259,7 +268,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.DISTANT);
 
       const zone = getDeliveryZone(minimalAddress.city);
-      
+
       expect(zone).toBe(DeliveryZone.DISTANT);
     });
 
@@ -274,13 +283,13 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(null);
 
       const zone = getDeliveryZone(invalidAddress.city);
-      
+
       expect(zone).toBeNull();
     });
 
     test('should validate San Francisco postal codes', async () => {
       const sfPostalCodes = ['94102', '94103', '94105', '94107', '94110'];
-      
+
       sfPostalCodes.forEach(postalCode => {
         const address: Address = {
           street: '123 Test St',
@@ -297,7 +306,7 @@ describe('/api/shipping/zones', () => {
 
     test('should validate Oakland postal codes', async () => {
       const oaklandPostalCodes = ['94601', '94602', '94605', '94610', '94612'];
-      
+
       oaklandPostalCodes.forEach(postalCode => {
         const address: Address = {
           street: '123 Test St',
@@ -324,7 +333,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(DeliveryZone.NEARBY);
 
       const zone = getDeliveryZone(address.city);
-      
+
       expect(zone).toBe(DeliveryZone.NEARBY);
     });
 
@@ -339,7 +348,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryZone.mockReturnValue(null);
 
       const zone = getDeliveryZone(outOfStateAddress.city);
-      
+
       expect(zone).toBeNull();
     });
   });
@@ -356,7 +365,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryFeeMessage.mockReturnValue('Free delivery for orders over $75!');
 
       const message = getDeliveryFeeMessage(feeResult);
-      
+
       expect(mockGetDeliveryFeeMessage).toHaveBeenCalledWith(feeResult);
       expect(message).toBe('Free delivery for orders over $75!');
     });
@@ -369,10 +378,12 @@ describe('/api/shipping/zones', () => {
         minOrderForFreeDelivery: 75,
       };
 
-      mockGetDeliveryFeeMessage.mockReturnValue('$15 delivery fee. Orders over $75 qualify for free delivery!');
+      mockGetDeliveryFeeMessage.mockReturnValue(
+        '$15 delivery fee. Orders over $75 qualify for free delivery!'
+      );
 
       const message = getDeliveryFeeMessage(feeResult);
-      
+
       expect(mockGetDeliveryFeeMessage).toHaveBeenCalledWith(feeResult);
       expect(message).toBe('$15 delivery fee. Orders over $75 qualify for free delivery!');
     });
@@ -387,7 +398,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryFeeMessage.mockReturnValue('$25 delivery fee for this area.');
 
       const message = getDeliveryFeeMessage(feeResult);
-      
+
       expect(mockGetDeliveryFeeMessage).toHaveBeenCalledWith(feeResult);
       expect(message).toBe('$25 delivery fee for this area.');
     });
@@ -396,7 +407,7 @@ describe('/api/shipping/zones', () => {
       mockGetDeliveryFeeMessage.mockReturnValue('This address is outside our delivery area.');
 
       const message = getDeliveryFeeMessage(null);
-      
+
       expect(mockGetDeliveryFeeMessage).toHaveBeenCalledWith(null);
       expect(message).toBe('This address is outside our delivery area.');
     });
@@ -486,4 +497,4 @@ describe('/api/shipping/zones', () => {
       expect(message).toBe('This address is outside our delivery area.');
     });
   });
-}); 
+});

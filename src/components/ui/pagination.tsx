@@ -11,17 +11,13 @@ interface PaginationProps {
   searchParams: Record<string, string | string[] | undefined>;
 }
 
-export default function Pagination({ 
-  currentPage, 
-  totalPages, 
-  searchParams 
-}: PaginationProps) {
+export default function Pagination({ currentPage, totalPages, searchParams }: PaginationProps) {
   const pathname = usePathname();
 
   // Create URL with preserved search params
   const createPageURL = (pageNumber: number | string) => {
     const params = new URLSearchParams();
-    
+
     // Add all existing search params
     Object.entries(searchParams).forEach(([key, value]) => {
       if (value) {
@@ -32,10 +28,10 @@ export default function Pagination({
         }
       }
     });
-    
+
     // Update page number
     params.set('page', pageNumber.toString());
-    
+
     return `${pathname}?${params.toString()}`;
   };
 
@@ -43,22 +39,26 @@ export default function Pagination({
   const generatePaginationItems = () => {
     // Always show first page, last page, current page, and pages immediately before and after current
     const pageItems = [];
-    
+
     // First page is always shown
     pageItems.push(1);
-    
+
     // Pages around current page
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       if (!pageItems.includes(i)) {
         pageItems.push(i);
       }
     }
-    
+
     // Last page is always shown if not already included
     if (totalPages > 1 && !pageItems.includes(totalPages)) {
       pageItems.push(totalPages);
     }
-    
+
     // Sort page numbers
     return pageItems.sort((a, b) => a - b);
   };
@@ -68,7 +68,10 @@ export default function Pagination({
   const hasNextPage = currentPage < totalPages;
 
   return (
-    <nav className="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6" aria-label="Pagination">
+    <nav
+      className="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6"
+      aria-label="Pagination"
+    >
       <div className="hidden sm:block">
         <p className="text-sm text-gray-700">
           Showing page <span className="font-medium">{currentPage}</span> of{' '}
@@ -111,7 +114,7 @@ export default function Pagination({
                     </span>
                   )}
                   <Button
-                    variant={currentPage === page ? "default" : "outline"}
+                    variant={currentPage === page ? 'default' : 'outline'}
                     size="sm"
                     className="w-8 h-8 p-0"
                     asChild={currentPage !== page}
@@ -151,4 +154,4 @@ export default function Pagination({
       </div>
     </nav>
   );
-} 
+}

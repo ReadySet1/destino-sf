@@ -28,9 +28,9 @@ export default async function CheckoutSuccess({ searchParams }: CheckoutSuccessP
       FROM orders 
       WHERE id = ${orderId}::uuid
     `;
-    
+
     const order = Array.isArray(orders) && orders.length > 0 ? orders[0] : null;
-    
+
     if (!order) {
       redirect('/checkout/failure');
     }
@@ -39,11 +39,11 @@ export default async function CheckoutSuccess({ searchParams }: CheckoutSuccessP
     if (order.paymentMethod === 'CASH') {
       redirect(`/checkout/success/manual?orderId=${orderId}&paymentMethod=${order.paymentMethod}`);
     }
-    
+
     // Continue with existing code for Square payments
     // ...
   } catch (error) {
     console.error('Error retrieving order:', error);
     redirect('/checkout/failure');
   }
-} 
+}

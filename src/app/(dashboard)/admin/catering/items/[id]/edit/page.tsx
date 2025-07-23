@@ -36,18 +36,15 @@ export default async function EditCateringItemPage({ params }: EditCateringItemP
         <CardHeader>
           <CardTitle>Edit Catering Item</CardTitle>
           <p className="text-sm text-gray-600">
-            {item.isSquareItem 
+            {item.isSquareItem
               ? 'This item syncs from Square. You can override description, images, and dietary information.'
-              : 'This is a local item. You have full editing control.'
-            }
+              : 'This is a local item. You have full editing control.'}
           </p>
         </CardHeader>
         <CardContent>
-          <SmartCateringItemForm 
-            itemId={id}
-          />
+          <SmartCateringItemForm itemId={id} />
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

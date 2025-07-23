@@ -27,9 +27,9 @@ export function FeaturedProducts() {
     const loadSpotlightPicks = async () => {
       try {
         setIsLoading(true);
-        
+
         const response = await fetch('/api/spotlight-picks');
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.length > 0) {
@@ -55,9 +55,10 @@ export function FeaturedProducts() {
   const ProductCard = ({ pick, className }: { pick: SpotlightPick; className?: string }) => {
     const productData = {
       name: pick.product?.name || 'Product',
-      price: pick.product?.price && pick.product.price > 0 ? `$${pick.product.price.toFixed(2)}` : '',
+      price:
+        pick.product?.price && pick.product.price > 0 ? `$${pick.product.price.toFixed(2)}` : '',
       imageUrl: getProductImage(pick),
-      slug: pick.product?.slug || '#'
+      slug: pick.product?.slug || '#',
     };
 
     const linkHref = pick.product?.slug ? `/products/${pick.product.slug}` : '#';
@@ -99,7 +100,7 @@ export function FeaturedProducts() {
             Loading our featured products...
           </p>
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="animate-pulse">
                 <div className="bg-gray-300 rounded-3xl" style={{ paddingBottom: '75%' }}></div>
                 <div className="mt-4">
@@ -144,17 +145,19 @@ export function FeaturedProducts() {
           Discover our carefully curated selection of premium Peruvian products
         </p>
 
-        <div className={`mt-12 ${
-          spotlightPicks.length <= 3 
-            ? 'flex justify-center gap-6 max-w-6xl mx-auto' // Single line for 1-3 items
-            : 'grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4' // Full grid for 4 items
-        }`}>
-          {spotlightPicks.map((pick) => (
+        <div
+          className={`mt-12 ${
+            spotlightPicks.length <= 3
+              ? 'flex justify-center gap-6 max-w-6xl mx-auto' // Single line for 1-3 items
+              : 'grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4' // Full grid for 4 items
+          }`}
+        >
+          {spotlightPicks.map(pick => (
             <ProductCard
               key={pick.id || pick.position}
               pick={pick}
               className={`group cursor-pointer ${
-                spotlightPicks.length <= 3 
+                spotlightPicks.length <= 3
                   ? 'flex-shrink-0 w-64 sm:w-72 lg:w-80' // Fixed width, no wrapping
                   : '' // Let grid handle sizing
               }`}

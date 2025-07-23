@@ -17,7 +17,7 @@ describe('Protein Image Mapping', () => {
 
   test('all protein options have image mappings', () => {
     const allProteins = Object.values(ProteinOption);
-    
+
     allProteins.forEach(protein => {
       const imagePath = getProteinImage(protein);
       expect(imagePath).not.toBeNull();
@@ -27,17 +27,17 @@ describe('Protein Image Mapping', () => {
 
   test('image paths are correctly formatted', () => {
     const allProteins = Object.values(ProteinOption);
-    
+
     allProteins.forEach(protein => {
       const imagePath = getProteinImage(protein);
-      
+
       if (imagePath) {
         // Should start with /images/boxedlunches/
         expect(imagePath).toMatch(/^\/images\/boxedlunches\//);
-        
+
         // Should end with a valid image extension
         expect(imagePath).toMatch(/\.(png|jpg|jpeg)$/i);
-        
+
         // Should not contain spaces or special characters
         expect(imagePath).not.toMatch(/\s/);
       }
@@ -46,19 +46,23 @@ describe('Protein Image Mapping', () => {
 
   test('specific protein mappings are correct', () => {
     expect(getProteinImage(ProteinOption.CARNE_ASADA)).toBe('/images/boxedlunches/carne-asada.png');
-    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe('/images/boxedlunches/pollo-carbon.png');
+    expect(getProteinImage(ProteinOption.POLLO_AL_CARBON)).toBe(
+      '/images/boxedlunches/pollo-carbon.png'
+    );
     expect(getProteinImage(ProteinOption.CARNITAS)).toBe('/images/boxedlunches/carnitas.png');
     expect(getProteinImage(ProteinOption.POLLO_ASADO)).toBe('/images/boxedlunches/pollo-asado.png');
     expect(getProteinImage(ProteinOption.PESCADO)).toBe('/images/boxedlunches/pescado.png');
-    expect(getProteinImage(ProteinOption.VEGETARIAN_OPTION)).toBe('/images/boxedlunches/vegetarian-option.png');
+    expect(getProteinImage(ProteinOption.VEGETARIAN_OPTION)).toBe(
+      '/images/boxedlunches/vegetarian-option.png'
+    );
   });
 
   test('all proteins have unique image files', () => {
     const allProteins = Object.values(ProteinOption);
     const imagePaths = allProteins.map(protein => getProteinImage(protein)).filter(Boolean);
-    
+
     const uniquePaths = new Set(imagePaths);
-    
+
     // We expect some overlap (like pollo.jpg being used for multiple proteins)
     // But we should have at least most paths be unique
     expect(uniquePaths.size).toBeGreaterThanOrEqual(4); // At least 4 unique images
@@ -76,12 +80,12 @@ describe('Protein Image Mapping', () => {
     ];
 
     const allProteins = Object.values(ProteinOption);
-    
+
     expect(mappedProteins.length).toBe(allProteins.length);
-    
+
     // Ensure every protein in the enum is covered
     allProteins.forEach(protein => {
       expect(mappedProteins).toContain(protein);
     });
   });
-}); 
+});

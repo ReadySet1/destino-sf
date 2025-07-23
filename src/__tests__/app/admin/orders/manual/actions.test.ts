@@ -1,4 +1,7 @@
-import { createManualOrder, updateOrderStatus } from '@/app/(dashboard)/admin/orders/manual/actions';
+import {
+  createManualOrder,
+  updateOrderStatus,
+} from '@/app/(dashboard)/admin/orders/manual/actions';
 import { prisma } from '@/lib/db';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { logger } from '@/utils/logger';
@@ -6,8 +9,8 @@ import { revalidatePath } from 'next/cache';
 
 // Define PaymentMethod enum to match the actions file
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 // Mock dependencies
@@ -65,7 +68,7 @@ describe('Admin Manual Order Actions', () => {
     customerName: 'John Doe',
     email: 'john@example.com',
     phone: '+1234567890',
-    total: 75.50,
+    total: 75.5,
     fulfillmentType: 'pickup',
     pickupTime: '2024-01-15T10:00:00Z',
     notes: 'Special instructions',
@@ -77,13 +80,13 @@ describe('Admin Manual Order Actions', () => {
         productId: 'prod-1',
         variantId: 'variant-1',
         quantity: 2,
-        price: 25.00,
+        price: 25.0,
       },
       {
         productId: 'prod-2',
         variantId: null,
         quantity: 1,
-        price: 25.50,
+        price: 25.5,
       },
     ],
   };
@@ -92,36 +95,36 @@ describe('Admin Manual Order Actions', () => {
     describe('Input Validation', () => {
       test('should reject order with missing customer name', async () => {
         const invalidData = { ...validOrderData, customerName: '' };
-        
+
         const result = await createManualOrder(invalidData);
-        
+
         expect(result).toEqual({ error: 'Customer information is required' });
         expect(mockPrisma.order.create).not.toHaveBeenCalled();
       });
 
       test('should reject order with missing email', async () => {
         const invalidData = { ...validOrderData, email: '' };
-        
+
         const result = await createManualOrder(invalidData);
-        
+
         expect(result).toEqual({ error: 'Customer information is required' });
         expect(mockPrisma.order.create).not.toHaveBeenCalled();
       });
 
       test('should reject order with missing phone', async () => {
         const invalidData = { ...validOrderData, phone: '' };
-        
+
         const result = await createManualOrder(invalidData);
-        
+
         expect(result).toEqual({ error: 'Customer information is required' });
         expect(mockPrisma.order.create).not.toHaveBeenCalled();
       });
 
       test('should reject order with no items', async () => {
         const invalidData = { ...validOrderData, items: [] };
-        
+
         const result = await createManualOrder(invalidData);
-        
+
         expect(result).toEqual({ error: 'At least one item is required' });
         expect(mockPrisma.order.create).not.toHaveBeenCalled();
       });
@@ -129,9 +132,9 @@ describe('Admin Manual Order Actions', () => {
       test('should reject order with missing items array', async () => {
         const invalidData = { ...validOrderData };
         delete (invalidData as any).items;
-        
+
         const result = await createManualOrder(invalidData);
-        
+
         expect(result).toEqual({ error: 'At least one item is required' });
         expect(mockPrisma.order.create).not.toHaveBeenCalled();
       });
@@ -156,7 +159,7 @@ describe('Admin Manual Order Actions', () => {
             customerName: 'John Doe',
             email: 'john@example.com',
             phone: '+1234567890',
-            total: 75.50,
+            total: 75.5,
             fulfillmentType: 'pickup',
             pickupTime: new Date('2024-01-15T10:00:00Z'),
             notes: 'Special instructions',
@@ -191,7 +194,7 @@ describe('Admin Manual Order Actions', () => {
             customerName: 'John Doe',
             email: 'john@example.com',
             phone: '+1234567890',
-            total: 75.50,
+            total: 75.5,
             fulfillmentType: 'pickup',
             pickupTime: undefined,
             notes: 'Special instructions',
@@ -221,7 +224,7 @@ describe('Admin Manual Order Actions', () => {
         ...validOrderData,
         existingOrderId: 'existing-order-123',
         customerName: 'Jane Smith',
-        total: 100.00,
+        total: 100.0,
       };
 
       test('should update existing order successfully', async () => {
@@ -255,7 +258,7 @@ describe('Admin Manual Order Actions', () => {
             customerName: 'Jane Smith',
             email: 'john@example.com',
             phone: '+1234567890',
-            total: 100.00,
+            total: 100.0,
             fulfillmentType: 'pickup',
             pickupTime: new Date('2024-01-15T10:00:00Z'),
             notes: 'Special instructions',
@@ -267,7 +270,9 @@ describe('Admin Manual Order Actions', () => {
         expect(mockPrisma.orderItem.deleteMany).toHaveBeenCalledWith({
           where: { orderId: 'existing-order-123' },
         });
-        expect(mockLogger.info).toHaveBeenCalledWith('Order existing-order-123 updated successfully');
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          'Order existing-order-123 updated successfully'
+        );
         expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/orders');
       });
 
@@ -434,7 +439,11 @@ describe('Admin Manual Order Actions', () => {
 
       mockPrisma.order.update.mockResolvedValue(mockUpdatedOrder as any);
 
-      const result = await updateOrderStatus('order-123', OrderStatus.COMPLETED, PaymentStatus.PAID);
+      const result = await updateOrderStatus(
+        'order-123',
+        OrderStatus.COMPLETED,
+        PaymentStatus.PAID
+      );
 
       expect(result).toEqual({ success: true, orderId: 'order-123' });
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
@@ -475,7 +484,10 @@ describe('Admin Manual Order Actions', () => {
       const result = await updateOrderStatus('order-123', OrderStatus.COMPLETED);
 
       expect(result).toEqual({ error: 'Failed to update order status' });
-      expect(mockLogger.error).toHaveBeenCalledWith('Error updating order order-123 status:', dbError);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error updating order order-123 status:',
+        dbError
+      );
     });
 
     test('should handle all order statuses', async () => {
@@ -548,7 +560,10 @@ describe('Admin Manual Order Actions', () => {
       const result = await createManualOrder(validOrderData);
 
       expect(result).toEqual({ error: 'Failed to create order. Please try again.' });
-      expect(mockLogger.error).toHaveBeenCalledWith('Error creating manual order:', constraintError);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error creating manual order:',
+        constraintError
+      );
     });
 
     test('should handle network timeout errors', async () => {
@@ -559,7 +574,10 @@ describe('Admin Manual Order Actions', () => {
       const result = await updateOrderStatus('order-123', OrderStatus.COMPLETED);
 
       expect(result).toEqual({ error: 'Failed to update order status' });
-      expect(mockLogger.error).toHaveBeenCalledWith('Error updating order order-123 status:', timeoutError);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error updating order order-123 status:',
+        timeoutError
+      );
     });
   });
-}); 
+});

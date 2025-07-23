@@ -1,15 +1,15 @@
 import * as React from 'react';
-import { 
-  Html, 
-  Body, 
-  Head, 
-  Heading, 
-  Container, 
-  Preview, 
-  Section, 
-  Text, 
+import {
+  Html,
+  Body,
+  Head,
+  Heading,
+  Container,
+  Preview,
+  Section,
+  Text,
   Hr,
-  Link
+  Link,
 } from '@react-email/components';
 import { OrderStatusChangeAlertData } from '@/types/alerts';
 
@@ -36,13 +36,13 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
 
   const statusMessages = {
     PENDING: "We've received your order and are preparing it for you.",
-    PROCESSING: "Your order is being processed and will be ready soon.",
-    READY: "Great news! Your order is ready for pickup.",
-    COMPLETED: "Your order has been completed. Thank you for choosing Destino SF!",
-    CANCELLED: "Your order has been cancelled. If you have any questions, please contact us.",
-    FULFILLMENT_UPDATED: "The fulfillment details for your order have been updated.",
+    PROCESSING: 'Your order is being processed and will be ready soon.',
+    READY: 'Great news! Your order is ready for pickup.',
+    COMPLETED: 'Your order has been completed. Thank you for choosing Destino SF!',
+    CANCELLED: 'Your order has been cancelled. If you have any questions, please contact us.',
+    FULFILLMENT_UPDATED: 'The fulfillment details for your order have been updated.',
     SHIPPING: "Your order is on its way! You'll receive tracking information soon.",
-    DELIVERED: "Your order has been delivered. We hope you enjoy your Argentine treats!",
+    DELIVERED: 'Your order has been delivered. We hope you enjoy your Argentine treats!',
   };
 
   const statusColors = {
@@ -70,7 +70,8 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
     return icons[status as keyof typeof icons] || '📦';
   };
 
-  const customerMessage = statusMessages[newStatus as keyof typeof statusMessages] || 
+  const customerMessage =
+    statusMessages[newStatus as keyof typeof statusMessages] ||
     `Your order status has been updated to ${newStatus}.`;
 
   return (
@@ -82,30 +83,31 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.header}>
-            <Heading style={styles.title}>
-              {getStatusIcon(newStatus)} Order Status Update
-            </Heading>
+            <Heading style={styles.title}>{getStatusIcon(newStatus)} Order Status Update</Heading>
             <Text style={styles.subtitle}>
               Order #{order.id} • {formattedTimestamp}
             </Text>
           </Section>
-          
+
           <Section style={styles.statusSection}>
             <Section style={styles.statusCard}>
               <Text style={styles.statusTitle}>Status Changed</Text>
               <Section style={styles.statusFlow}>
                 <Section style={styles.statusItem}>
-                  <Text style={{...styles.statusText, ...styles.oldStatus}}>
+                  <Text style={{ ...styles.statusText, ...styles.oldStatus }}>
                     {previousStatus}
                   </Text>
                 </Section>
                 <Text style={styles.arrow}>→</Text>
                 <Section style={styles.statusItem}>
-                  <Text style={{
-                    ...styles.statusText, 
-                    backgroundColor: statusColors[newStatus as keyof typeof statusColors] || '#6b7280',
-                    color: '#ffffff'
-                  }}>
+                  <Text
+                    style={{
+                      ...styles.statusText,
+                      backgroundColor:
+                        statusColors[newStatus as keyof typeof statusColors] || '#6b7280',
+                      color: '#ffffff',
+                    }}
+                  >
                     {newStatus}
                   </Text>
                 </Section>
@@ -116,17 +118,14 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           <Section style={styles.messageSection}>
             {isCustomer ? (
               <>
-                <Text style={styles.customerGreeting}>
-                  Hi {order.customerName},
-                </Text>
-                <Text style={styles.customerMessage}>
-                  {customerMessage}
-                </Text>
+                <Text style={styles.customerGreeting}>Hi {order.customerName},</Text>
+                <Text style={styles.customerMessage}>{customerMessage}</Text>
               </>
             ) : (
               <>
                 <Text style={styles.adminMessage}>
-                  <strong>Admin Alert:</strong> Order #{order.id} status changed from {previousStatus} to {newStatus}
+                  <strong>Admin Alert:</strong> Order #{order.id} status changed from{' '}
+                  {previousStatus} to {newStatus}
                 </Text>
                 <Text style={styles.customerInfo}>
                   Customer: {order.customerName} ({order.email})
@@ -136,7 +135,9 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           </Section>
 
           <Section style={styles.orderDetails}>
-            <Heading as="h3" style={styles.detailsTitle}>Order Details</Heading>
+            <Heading as="h3" style={styles.detailsTitle}>
+              Order Details
+            </Heading>
             <Text style={styles.detailItem}>
               <strong>Order Total:</strong> ${formattedTotal}
             </Text>
@@ -150,7 +151,8 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
             )}
             {order.pickupTime && (
               <Text style={styles.detailItem}>
-                <strong>Pickup Time:</strong> {new Date(order.pickupTime).toLocaleString('en-US', {
+                <strong>Pickup Time:</strong>{' '}
+                {new Date(order.pickupTime).toLocaleString('en-US', {
                   timeZone: 'America/Los_Angeles',
                   weekday: 'short',
                   month: 'short',
@@ -170,7 +172,8 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           {isCustomer && newStatus === 'READY' && (
             <Section style={styles.actionSection}>
               <Text style={styles.actionText}>
-                🏪 Your order is ready! Please visit us at our location to pick up your delicious Argentine treats.
+                🏪 Your order is ready! Please visit us at our location to pick up your delicious
+                Argentine treats.
               </Text>
             </Section>
           )}
@@ -185,7 +188,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
 
           {!isCustomer && (
             <Section style={styles.adminActionSection}>
-              <Link 
+              <Link
                 href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
                 style={styles.adminButton}
               >
@@ -195,7 +198,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           )}
 
           <Hr style={styles.hr} />
-          
+
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
               {isCustomer ? (
@@ -213,9 +216,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
                 'Automated alert from Destino SF order management system'
               )}
             </Text>
-            <Text style={styles.footerText}>
-              Updated at {formattedTimestamp} PST
-            </Text>
+            <Text style={styles.footerText}>Updated at {formattedTimestamp} PST</Text>
           </Section>
         </Container>
       </Body>
@@ -382,4 +383,4 @@ const styles = {
   },
 };
 
-export default OrderStatusChangeAlert; 
+export default OrderStatusChangeAlert;

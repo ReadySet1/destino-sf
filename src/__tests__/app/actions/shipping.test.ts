@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { getShippingRates, createShippingLabel } from '@/app/actions/shipping';
 import { Shippo } from 'shippo';
 import * as shippingUtils from '@/lib/shippingUtils';
-import { createMockShippingResponse, createMockShippoShipmentResponse, createMockShippingTransaction } from '@/__tests__/utils/test-factories';
+import {
+  createMockShippingResponse,
+  createMockShippoShipmentResponse,
+  createMockShippingTransaction,
+} from '@/__tests__/utils/test-factories';
 
 // Mock dependencies
 jest.mock('shippo');
@@ -27,12 +31,14 @@ const mockShippo: MockShippoClient = {
   },
 };
 
-const mockCalculateShippingWeight = shippingUtils.calculateShippingWeight as jest.MockedFunction<typeof shippingUtils.calculateShippingWeight>;
+const mockCalculateShippingWeight = shippingUtils.calculateShippingWeight as jest.MockedFunction<
+  typeof shippingUtils.calculateShippingWeight
+>;
 
 describe('Shipping Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment variables
     process.env.SHIPPO_API_KEY = 'test-api-key';
     process.env.SHIPPING_ORIGIN_NAME = 'Destino SF';
@@ -44,10 +50,10 @@ describe('Shipping Actions', () => {
     process.env.SHIPPING_ORIGIN_COUNTRY = 'US';
     process.env.SHIPPING_ORIGIN_PHONE = '555-0123';
     process.env.SHIPPING_ORIGIN_EMAIL = 'test@example.com';
-    
+
     // Mock Shippo constructor
     (Shippo as jest.MockedClass<typeof Shippo>).mockImplementation(() => mockShippo as any);
-    
+
     // Mock calculateShippingWeight
     mockCalculateShippingWeight.mockResolvedValue(2.5);
   });
@@ -87,9 +93,9 @@ describe('Shipping Actions', () => {
 
     it('should return error when Shippo API key is not configured', async () => {
       delete process.env.SHIPPO_API_KEY;
-      
+
       const result = await getShippingRates(mockShipmentInput);
-      
+
       expect(result).toEqual({
         success: false,
         error: 'Shipping provider configuration error.',
@@ -98,9 +104,9 @@ describe('Shipping Actions', () => {
 
     it('should return error when origin address is incomplete', async () => {
       delete process.env.SHIPPING_ORIGIN_STREET1;
-      
+
       const result = await getShippingRates(mockShipmentInput);
-      
+
       expect(result).toEqual({
         success: false,
         error: 'Shipping origin configuration error.',
@@ -108,9 +114,11 @@ describe('Shipping Actions', () => {
     });
 
     it('should calculate shipping weight correctly', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        rates: []
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          rates: [],
+        })
+      );
 
       await getShippingRates(mockShipmentInput);
 
@@ -121,9 +129,11 @@ describe('Shipping Actions', () => {
     });
 
     it('should create shipment with correct parameters', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        rates: []
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          rates: [],
+        })
+      );
 
       await getShippingRates(mockShipmentInput);
 
@@ -201,9 +211,11 @@ describe('Shipping Actions', () => {
         },
       ];
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        rates: mockRates
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          rates: mockRates,
+        })
+      );
 
       const result = await getShippingRates(mockShipmentInput);
 
@@ -228,16 +240,16 @@ describe('Shipping Actions', () => {
     });
 
     it('should handle address validation errors', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: {
-            is_valid: false,
-            messages: [
-              { type: 'address_error', text: 'Invalid address provided' },
-            ],
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: {
+              is_valid: false,
+              messages: [{ type: 'address_error', text: 'Invalid address provided' }],
+            },
           },
-        },
-      }));
+        })
+      );
 
       const result = await getShippingRates(mockShipmentInput);
 
@@ -246,16 +258,16 @@ describe('Shipping Actions', () => {
     });
 
     it('should handle address validation warnings', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: {
-            is_valid: true,
-            messages: [
-              { type: 'address_warning', text: 'Address may be incomplete' },
-            ],
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: {
+              is_valid: true,
+              messages: [{ type: 'address_warning', text: 'Address may be incomplete' }],
+            },
           },
-        },
-      }));
+        })
+      );
 
       const result = await getShippingRates(mockShipmentInput);
 
@@ -280,11 +292,13 @@ describe('Shipping Actions', () => {
         estimatedHeightIn: 6,
       };
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       await getShippingRates(customInput);
 
@@ -304,14 +318,16 @@ describe('Shipping Actions', () => {
     it('should handle insurance amount', async () => {
       const customInput = {
         ...mockShipmentInput,
-        insuranceAmount: 100.00,
+        insuranceAmount: 100.0,
       };
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       await getShippingRates(customInput);
 
@@ -324,11 +340,13 @@ describe('Shipping Actions', () => {
     });
 
     it('should calculate estimated value correctly', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       await getShippingRates(mockShipmentInput);
 
@@ -354,11 +372,13 @@ describe('Shipping Actions', () => {
         cartItems: itemsWithoutPrice,
       };
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       await getShippingRates(customInput);
 
@@ -391,17 +411,19 @@ describe('Shipping Actions', () => {
         },
       });
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       await getShippingRates(customInput);
 
       const createCall = mockShippo.shipments.create.mock.calls[0][0] as any;
       const metadata = JSON.parse(createCall.metadata);
-      
+
       expect(metadata.productTypes).toContain('alfajores');
       expect(metadata.productTypes).toContain('empanadas');
       expect(metadata.productTypes).toContain('other');
@@ -411,9 +433,9 @@ describe('Shipping Actions', () => {
   describe('createShippingLabel', () => {
     it('should return error when Shippo API key is not configured', async () => {
       delete process.env.SHIPPO_API_KEY;
-      
+
       const result = await createShippingLabel('rate-123');
-      
+
       expect(result).toEqual({
         success: false,
         error: 'Shipping provider configuration error.',
@@ -485,9 +507,7 @@ describe('Shipping Actions', () => {
       const mockTransaction = {
         object_id: 'transaction-123',
         status: 'ERROR',
-        messages: [
-          { text: 'Insufficient funds' },
-        ],
+        messages: [{ text: 'Insufficient funds' }],
       };
 
       mockShippo.transactions.create.mockResolvedValue(mockTransaction);
@@ -532,11 +552,13 @@ describe('Shipping Actions', () => {
     });
 
     it('should handle empty cart items', async () => {
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       const result = await getShippingRates({
         shippingAddress: {
@@ -557,11 +579,13 @@ describe('Shipping Actions', () => {
       delete process.env.SHIPPING_ORIGIN_PHONE;
       delete process.env.SHIPPING_ORIGIN_EMAIL;
 
-      mockShippo.shipments.create.mockResolvedValue(createMockShippoShipmentResponse({
-        address_to: {
-          validation_results: { is_valid: true, messages: [] },
-        },
-      }));
+      mockShippo.shipments.create.mockResolvedValue(
+        createMockShippoShipmentResponse({
+          address_to: {
+            validation_results: { is_valid: true, messages: [] },
+          },
+        })
+      );
 
       const result = await getShippingRates({
         shippingAddress: {
@@ -585,4 +609,4 @@ describe('Shipping Actions', () => {
       );
     });
   });
-}); 
+});

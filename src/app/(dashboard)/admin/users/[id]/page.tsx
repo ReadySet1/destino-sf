@@ -15,7 +15,7 @@ export const metadata = {
 type PageProps = {
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+};
 
 export default async function EditUserPage({ params, searchParams }: PageProps) {
   // params is now a Promise, need to await it
@@ -34,7 +34,7 @@ export default async function EditUserPage({ params, searchParams }: PageProps) 
 
   // Instead of trying to access addresses directly, let's check what models are available
   console.log('Available Prisma models:', Object.keys(prisma));
-  
+
   // Provide an empty array for addresses for now, we'll fix this in a more robust way
   const userData = {
     ...user,

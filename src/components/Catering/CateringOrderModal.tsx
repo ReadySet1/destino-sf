@@ -20,12 +20,11 @@ interface CateringOrderModalProps {
 export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrderModalProps) {
   const { addItem } = useCateringCartStore();
   const [quantity, setQuantity] = useState(1);
-  
+
   // For packages we need the per-person price
-  const itemPrice = type === 'package' 
-    ? (item as CateringPackage).pricePerPerson
-    : (item as CateringItem).price;
-  
+  const itemPrice =
+    type === 'package' ? (item as CateringPackage).pricePerPerson : (item as CateringItem).price;
+
   const handleDecreaseQuantity = () => {
     setQuantity(prev => Math.max(1, prev - 1));
   };
@@ -33,28 +32,34 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
   const handleIncreaseQuantity = () => {
     setQuantity(prev => prev + 1);
   };
-  
+
   // Function to get the correct image URL
   const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return '/images/catering/default-item.jpg';  // Default fallback image
-    
+    if (!url) return '/images/catering/default-item.jpg'; // Default fallback image
+
     // AWS S3 URLs already have proper format
-    if (url.includes('amazonaws.com') || url.includes('s3.') || 
-        url.startsWith('http://') || url.startsWith('https://')) {
+    if (
+      url.includes('amazonaws.com') ||
+      url.includes('s3.') ||
+      url.startsWith('http://') ||
+      url.startsWith('https://')
+    ) {
       return url;
     }
-    
+
     // For relative paths, ensure they start with a slash
     return url.startsWith('/') ? url : `/${url}`;
   };
-  
+
   const handleAddToCart = () => {
     // Don't allow adding items with $0 price directly to cart
     if (itemPrice === 0) {
-      toast.error('This item is only available as part of our appetizer packages. Please use the "Appetizers" tab to create a package.');
+      toast.error(
+        'This item is only available as part of our appetizer packages. Please use the "Appetizers" tab to create a package.'
+      );
       return;
     }
-    
+
     const cartItem = {
       id: item.id,
       name: toTitleCase(item.name),
@@ -64,22 +69,22 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
       // Store catering type for checkout process
       variantId: JSON.stringify({
         type,
-        minPeople: type === 'package' ? (item as CateringPackage).minPeople : undefined
-      })
+        minPeople: type === 'package' ? (item as CateringPackage).minPeople : undefined,
+      }),
     };
-    
+
     addItem(cartItem);
     toast.success(`${quantity} ${toTitleCase(item.name)} added to your catering cart`);
     onClose();
   };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Order {toTitleCase(item.name)}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="mt-4">
           {/* Item Image */}
           <div className="relative w-full aspect-square mb-6 rounded-md overflow-hidden bg-gray-50">
@@ -93,32 +98,30 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
               priority={false}
             />
           </div>
-          
-          <div className="text-sm text-gray-600 mb-4">
-            {item.description}
-          </div>
-          
+
+          <div className="text-sm text-gray-600 mb-4">{item.description}</div>
+
           {type === 'package' && (
             <div className="bg-gray-50 p-3 rounded-md mb-4 text-sm">
               <p>
-                <span className="font-semibold">Package Info:</span> 
-                {' '}${(item as CateringPackage).pricePerPerson.toFixed(2)} per person
+                <span className="font-semibold">Package Info:</span> $
+                {(item as CateringPackage).pricePerPerson.toFixed(2)} per person
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Minimum {(item as CateringPackage).minPeople} people required. 
-                You&apos;ll select the number of people at checkout.
+                Minimum {(item as CateringPackage).minPeople} people required. You&apos;ll select
+                the number of people at checkout.
               </p>
             </div>
           )}
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <div>
               <p className="font-medium text-sm mb-1">Quantity</p>
               <div className="flex items-center">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={handleDecreaseQuantity}
                   disabled={quantity <= 1}
                   className="h-8 w-8"
@@ -126,10 +129,10 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
                   <Minus className="h-3 w-3" />
                 </Button>
                 <span className="w-12 text-center">{quantity}</span>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={handleIncreaseQuantity}
                   className="h-8 w-8"
                 >
@@ -137,20 +140,19 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
                 </Button>
               </div>
             </div>
-            
+
             <div className="text-left sm:text-right">
               <p className="font-medium text-sm mb-1">Price</p>
               <div className="text-xl font-bold">
-                {type === 'package' 
+                {type === 'package'
                   ? `$${(item as CateringPackage).pricePerPerson.toFixed(2)} per person`
-                  : `$${(itemPrice * quantity).toFixed(2)}`
-                }
+                  : `$${(itemPrice * quantity).toFixed(2)}`}
               </div>
             </div>
           </div>
-          
-          <Button 
-            onClick={handleAddToCart} 
+
+          <Button
+            onClick={handleAddToCart}
             className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6"
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
@@ -162,4 +164,4 @@ export function CateringOrderModal({ item, type, isOpen, onClose }: CateringOrde
   );
 }
 
-export default CateringOrderModal; 
+export default CateringOrderModal;

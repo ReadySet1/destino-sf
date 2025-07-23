@@ -34,7 +34,7 @@ class TestDependencyUpdater {
       updated: [],
       failed: [],
       rollbacks: [],
-      testsPassed: false
+      testsPassed: false,
     };
 
     try {
@@ -76,7 +76,9 @@ class TestDependencyUpdater {
 
       // Process breaking changes individually with confirmation
       if (breakingUpdates.length > 0) {
-        console.log(`\n🔴 Found ${breakingUpdates.length} breaking updates - manual review required`);
+        console.log(
+          `\n🔴 Found ${breakingUpdates.length} breaking updates - manual review required`
+        );
         await this.reportBreakingChanges(breakingUpdates);
       }
 
@@ -99,7 +101,6 @@ class TestDependencyUpdater {
       await this.cleanup();
 
       return result;
-
     } catch (error) {
       console.error('❌ Dependency update failed:', error);
       await this.rollbackAllChanges();
@@ -109,9 +110,9 @@ class TestDependencyUpdater {
 
   private async createBackup(): Promise<void> {
     console.log('💾 Creating backup...');
-    
+
     await fs.mkdir(this.backupDir, { recursive: true });
-    
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = path.join(this.backupDir, `backup-${timestamp}`);
     await fs.mkdir(backupPath, { recursive: true });
@@ -123,7 +124,7 @@ class TestDependencyUpdater {
       'jest.config.ts',
       'playwright.config.ts',
       'tsconfig.json',
-      'tsconfig.test.json'
+      'tsconfig.test.json',
     ];
 
     for (const file of filesToBackup) {
@@ -145,9 +146,9 @@ class TestDependencyUpdater {
 
     try {
       // Get outdated packages
-      const output = execSync('pnpm outdated --format=json', { 
+      const output = execSync('pnpm outdated --format=json', {
         encoding: 'utf8',
-        stdio: 'pipe'
+        stdio: 'pipe',
       });
 
       const outdatedData = JSON.parse(output);
@@ -157,7 +158,7 @@ class TestDependencyUpdater {
       const packageJson = JSON.parse(await fs.readFile('package.json', 'utf8'));
       const testDependencies = new Set([
         ...Object.keys(packageJson.devDependencies || {}),
-        ...this.getTestSpecificDependencies()
+        ...this.getTestSpecificDependencies(),
       ]);
 
       for (const [name, info] of Object.entries(outdatedData)) {
@@ -171,7 +172,7 @@ class TestDependencyUpdater {
             latestVersion: depInfo.latest,
             type: this.getUpdateType(depInfo.current, depInfo.latest),
             category: this.categorizeUpdate(name, depInfo.current, depInfo.latest),
-            testDependency: true
+            testDependency: true,
           };
 
           updates.push(update);
@@ -179,7 +180,6 @@ class TestDependencyUpdater {
       }
 
       return updates;
-
     } catch (error) {
       console.warn('⚠️ Could not analyze outdated dependencies:', error);
       return [];
@@ -198,7 +198,7 @@ class TestDependencyUpdater {
       '@types/jest',
       'playwright',
       'vitest',
-      'cypress'
+      'cypress',
     ];
   }
 
@@ -213,7 +213,7 @@ class TestDependencyUpdater {
       /spec/,
       /playwright/,
       /cypress/,
-      /vitest/
+      /vitest/,
     ];
 
     return testPatterns.some(pattern => pattern.test(name));
@@ -226,9 +226,13 @@ class TestDependencyUpdater {
     return 'patch';
   }
 
-  private categorizeUpdate(name: string, current: string, latest: string): 'safe' | 'risky' | 'breaking' {
+  private categorizeUpdate(
+    name: string,
+    current: string,
+    latest: string
+  ): 'safe' | 'risky' | 'breaking' {
     const updateType = this.getUpdateType(current, latest);
-    
+
     // Breaking changes
     if (updateType === 'major') {
       return 'breaking';
@@ -249,20 +253,24 @@ class TestDependencyUpdater {
     return updateType === 'patch' ? 'safe' : 'risky';
   }
 
-  private async processBatchUpdates(updates: DependencyUpdate[], category: string): Promise<{ updated: string[], failed: string[] }> {
-    const result: { updated: string[], failed: string[] } = { updated: [], failed: [] };
+  private async processBatchUpdates(
+    updates: DependencyUpdate[],
+    category: string
+  ): Promise<{ updated: string[]; failed: string[] }> {
+    const result: { updated: string[]; failed: string[] } = { updated: [], failed: [] };
 
     for (const update of updates) {
       try {
-        console.log(`  📦 Updating ${update.name}: ${update.currentVersion} → ${update.latestVersion}`);
-        
+        console.log(
+          `  📦 Updating ${update.name}: ${update.currentVersion} → ${update.latestVersion}`
+        );
+
         execSync(`pnpm add -D ${update.name}@${update.latestVersion}`, {
           stdio: 'pipe',
-          timeout: 60000
+          timeout: 60000,
         });
 
         result.updated.push(update.name);
-
       } catch (error) {
         console.error(`  ❌ Failed to update ${update.name}:`, error);
         result.failed.push(update.name);
@@ -272,12 +280,18 @@ class TestDependencyUpdater {
     return result;
   }
 
-  private async processRiskyUpdates(updates: DependencyUpdate[]): Promise<{ updated: string[], failed: string[], rollbacks: string[] }> {
-    const result: { updated: string[], failed: string[], rollbacks: string[] } = { updated: [], failed: [], rollbacks: [] };
+  private async processRiskyUpdates(
+    updates: DependencyUpdate[]
+  ): Promise<{ updated: string[]; failed: string[]; rollbacks: string[] }> {
+    const result: { updated: string[]; failed: string[]; rollbacks: string[] } = {
+      updated: [],
+      failed: [],
+      rollbacks: [],
+    };
 
     for (const update of updates) {
       console.log(`\n🔄 Processing risky update: ${update.name}`);
-      
+
       try {
         // Create checkpoint
         const checkpoint = await this.createCheckpoint();
@@ -285,7 +299,7 @@ class TestDependencyUpdater {
         // Apply update
         execSync(`pnpm add -D ${update.name}@${update.latestVersion}`, {
           stdio: 'pipe',
-          timeout: 60000
+          timeout: 60000,
         });
 
         // Run relevant tests
@@ -300,7 +314,6 @@ class TestDependencyUpdater {
           result.rollbacks.push(update.name);
           result.failed.push(update.name);
         }
-
       } catch (error) {
         console.error(`  ❌ Failed to update ${update.name}:`, error);
         result.failed.push(update.name);
@@ -313,9 +326,9 @@ class TestDependencyUpdater {
   private async createCheckpoint(): Promise<string> {
     const timestamp = Date.now().toString();
     const checkpointPath = path.join(this.backupDir, `checkpoint-${timestamp}`);
-    
+
     await fs.mkdir(checkpointPath, { recursive: true });
-    
+
     // Backup current state
     const files = ['package.json', 'pnpm-lock.yaml'];
     for (const file of files) {
@@ -328,7 +341,7 @@ class TestDependencyUpdater {
 
   private async rollbackToCheckpoint(checkpointPath: string): Promise<void> {
     const files = ['package.json', 'pnpm-lock.yaml'];
-    
+
     for (const file of files) {
       const backupFile = path.join(checkpointPath, file);
       try {
@@ -347,10 +360,10 @@ class TestDependencyUpdater {
     try {
       // Determine which tests to run based on the package
       const testCommand = this.getRelevantTestCommand(packageName);
-      
+
       execSync(testCommand, {
         stdio: 'pipe',
-        timeout: this.testTimeout
+        timeout: this.testTimeout,
       });
 
       return true;
@@ -362,28 +375,24 @@ class TestDependencyUpdater {
   private getRelevantTestCommand(packageName: string): string {
     // Map packages to relevant test commands
     const testMappings: Record<string, string> = {
-      'jest': 'pnpm test:unit',
+      jest: 'pnpm test:unit',
       '@testing-library/react': 'pnpm test:components',
       '@playwright/test': 'pnpm test:e2e:critical',
-      'ts-jest': 'pnpm test:unit'
+      'ts-jest': 'pnpm test:unit',
     };
 
     return testMappings[packageName] || 'pnpm test:unit';
   }
 
   private async runComprehensiveTests(): Promise<boolean> {
-    const testCommands = [
-      'pnpm test:unit',
-      'pnpm test:components',
-      'pnpm test:integration'
-    ];
+    const testCommands = ['pnpm test:unit', 'pnpm test:components', 'pnpm test:integration'];
 
     for (const command of testCommands) {
       try {
         console.log(`  🧪 Running: ${command}`);
         execSync(command, {
           stdio: 'pipe',
-          timeout: this.testTimeout
+          timeout: this.testTimeout,
         });
       } catch (error) {
         console.error(`  ❌ Test failed: ${command}`);
@@ -401,12 +410,12 @@ class TestDependencyUpdater {
         name: update.name,
         currentVersion: update.currentVersion,
         latestVersion: update.latestVersion,
-        migrationGuide: this.getMigrationGuide(update.name)
-      }))
+        migrationGuide: this.getMigrationGuide(update.name),
+      })),
     };
 
     await fs.writeFile('breaking-changes-report.json', JSON.stringify(report, null, 2));
-    
+
     console.log('\n📋 Breaking Changes Report:');
     for (const update of updates) {
       console.log(`  🔴 ${update.name}: ${update.currentVersion} → ${update.latestVersion}`);
@@ -416,9 +425,9 @@ class TestDependencyUpdater {
 
   private getMigrationGuide(packageName: string): string {
     const guides: Record<string, string> = {
-      'jest': 'https://jestjs.io/docs/upgrading-to-jest29',
+      jest: 'https://jestjs.io/docs/upgrading-to-jest29',
       '@testing-library/react': 'https://testing-library.com/docs/react-testing-library/migration/',
-      '@playwright/test': 'https://playwright.dev/docs/release-notes'
+      '@playwright/test': 'https://playwright.dev/docs/release-notes',
     };
 
     return guides[packageName] || 'Check package changelog for migration instructions';
@@ -427,7 +436,7 @@ class TestDependencyUpdater {
   private async rollbackAllChanges(): Promise<void> {
     try {
       const backupPath = await fs.readFile('.dependency-backup-path', 'utf8');
-      
+
       const files = ['package.json', 'pnpm-lock.yaml'];
       for (const file of files) {
         const backupFile = path.join(backupPath, file);
@@ -437,7 +446,6 @@ class TestDependencyUpdater {
 
       execSync('pnpm install', { stdio: 'pipe' });
       console.log('✅ Successfully rolled back all changes');
-
     } catch (error) {
       console.error('❌ Failed to rollback changes:', error);
     }
@@ -447,15 +455,14 @@ class TestDependencyUpdater {
     try {
       // Remove temporary files
       await fs.unlink('.dependency-backup-path').catch(() => {});
-      
+
       // Keep only the 5 most recent backups
       const backups = await fs.readdir(this.backupDir);
       const sortedBackups = backups.sort().reverse();
-      
+
       for (const backup of sortedBackups.slice(5)) {
         await fs.rm(path.join(this.backupDir, backup), { recursive: true });
       }
-
     } catch (error) {
       console.warn('⚠️ Cleanup failed:', error);
     }
@@ -469,13 +476,13 @@ class TestDependencyUpdater {
         updated: result.updated.length,
         failed: result.failed.length,
         rolledBack: result.rollbacks.length,
-        testsPassed: result.testsPassed
+        testsPassed: result.testsPassed,
       },
       details: {
         updated: result.updated,
         failed: result.failed,
-        rollbacks: result.rollbacks
-      }
+        rollbacks: result.rollbacks,
+      },
     };
 
     await fs.writeFile('dependency-update-report.json', JSON.stringify(report, null, 2));
@@ -487,12 +494,12 @@ class TestDependencyUpdater {
     console.log(`🔄 Rolled back: ${result.rollbacks.length} packages`);
     console.log(`🧪 Tests passed: ${result.testsPassed ? 'Yes' : 'No'}`);
     console.log(`📋 Overall success: ${result.success ? 'Yes' : 'No'}`);
-    
+
     if (result.updated.length > 0) {
       console.log('\nUpdated packages:');
       result.updated.forEach(pkg => console.log(`  • ${pkg}`));
     }
-    
+
     if (result.failed.length > 0) {
       console.log('\nFailed packages:');
       result.failed.forEach(pkg => console.log(`  • ${pkg}`));
@@ -503,11 +510,11 @@ class TestDependencyUpdater {
 // CLI Interface
 async function main() {
   const updater = new TestDependencyUpdater();
-  
+
   try {
     const result = await updater.updateDependencies();
     await updater.generateUpdateReport(result);
-    
+
     process.exit(result.success ? 0 : 1);
   } catch (error) {
     console.error('❌ Dependency update process failed:', error);
@@ -519,4 +526,4 @@ if (require.main === module) {
   main();
 }
 
-export { TestDependencyUpdater }; 
+export { TestDependencyUpdater };

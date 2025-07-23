@@ -3,7 +3,9 @@ import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
 import { prisma } from '@/lib/db';
 
 // GET: Fetch active spotlight picks for public display
-export async function GET(request: NextRequest): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
   try {
     // Fetch spotlight picks with product data using Prisma
     const rawSpotlightPicks = await prisma.spotlightPick.findMany({
@@ -36,8 +38,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
 
     // Transform the data to match our interface
     const spotlightPicks: SpotlightPick[] = rawSpotlightPicks
-      .filter((pick) => pick.product && pick.productId) // Extra safety filter
-      .map((pick) => ({
+      .filter(pick => pick.product && pick.productId) // Extra safety filter
+      .map(pick => ({
         id: pick.id,
         position: pick.position as 1 | 2 | 3 | 4,
         productId: pick.productId!,
@@ -49,27 +51,34 @@ export async function GET(request: NextRequest): Promise<NextResponse<SpotlightA
           name: pick.product!.name,
           description: pick.product!.description,
           images: pick.product!.images || [],
-          price: typeof pick.product!.price === 'object' && pick.product!.price && 'toNumber' in pick.product!.price
-            ? pick.product!.price.toNumber()
-            : Number(pick.product!.price),
+          price:
+            typeof pick.product!.price === 'object' &&
+            pick.product!.price &&
+            'toNumber' in pick.product!.price
+              ? pick.product!.price.toNumber()
+              : Number(pick.product!.price),
           slug: pick.product!.slug,
-          category: pick.product!.category ? {
-            name: pick.product!.category.name,
-            slug: pick.product!.category.slug,
-          } : undefined,
+          category: pick.product!.category
+            ? {
+                name: pick.product!.category.name,
+                slug: pick.product!.category.slug,
+              }
+            : undefined,
         },
       }));
 
-    return NextResponse.json({ 
-      success: true, 
-      data: spotlightPicks 
+    return NextResponse.json({
+      success: true,
+      data: spotlightPicks,
     });
-
   } catch (error) {
     console.error('Error in GET /api/spotlight-picks:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

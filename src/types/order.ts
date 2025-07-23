@@ -8,7 +8,7 @@ export enum FulfillmentType {
   PICKUP = 'pickup',
   DELIVERY = 'local_delivery',
   LOCAL_DELIVERY = 'local_delivery',
-  NATIONWIDE_SHIPPING = 'nationwide_shipping'
+  NATIONWIDE_SHIPPING = 'nationwide_shipping',
 }
 
 // Extend PaymentMethod to include test values
@@ -91,7 +91,10 @@ export interface NationwideShippingFulfillment extends BaseFulfillment {
   rateId: string;
 }
 
-export type FulfillmentOptions = PickupFulfillment | LocalDeliveryFulfillment | NationwideShippingFulfillment;
+export type FulfillmentOptions =
+  | PickupFulfillment
+  | LocalDeliveryFulfillment
+  | NationwideShippingFulfillment;
 
 // Customer info type
 export interface CustomerInfo {
@@ -114,7 +117,7 @@ export interface OrderInput {
   customerInfo?: CustomerInfo;
   fulfillment?: FulfillmentOptions;
   paymentMethod?: PaymentMethod | ExtendedPaymentMethod;
-  
+
   // Legacy format for tests
   cartItems?: Array<{
     id: string;
@@ -156,4 +159,4 @@ export interface OrderCreationResult {
   orderId?: string;
   order?: any;
   error?: string;
-} 
+}

@@ -26,7 +26,11 @@ jest.mock('next/image', () => {
 // Mock the Select components
 jest.mock('@/components/ui/select', () => ({
   Select: ({ children, onValueChange, value }: any) => (
-    <div data-testid="product-select" data-value={value} onClick={() => onValueChange('product-123')}>
+    <div
+      data-testid="product-select"
+      data-value={value}
+      onClick={() => onValueChange('product-123')}
+    >
       {children}
     </div>
   ),

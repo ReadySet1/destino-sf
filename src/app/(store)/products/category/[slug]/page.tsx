@@ -82,12 +82,16 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     }
 
     // Get the category-specific description and title
-    const categoryDescription = CATEGORY_DESCRIPTIONS[slug] || category.description || `Discover our delicious ${category.name} collection.`;
-    const categoryTitle = slug === 'alfajores' 
-      ? 'Alfajores - Traditional Latin Cookies' 
-      : slug === 'empanadas' 
-        ? 'Empanadas - Handcrafted Latin Pastries'
-        : category.name;
+    const categoryDescription =
+      CATEGORY_DESCRIPTIONS[slug] ||
+      category.description ||
+      `Discover our delicious ${category.name} collection.`;
+    const categoryTitle =
+      slug === 'alfajores'
+        ? 'Alfajores - Traditional Latin Cookies'
+        : slug === 'empanadas'
+          ? 'Empanadas - Handcrafted Latin Pastries'
+          : category.name;
 
     return generateSEO({
       title: `${categoryTitle} | Destino SF`,
@@ -100,16 +104,15 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
         'latin food',
         'san francisco',
         'traditional',
-        'premium ingredients'
+        'premium ingredients',
       ],
       type: 'website',
       url: `/products/category/${slug}`,
       category: category.name,
     });
-
   } catch (error) {
     console.error('Error generating category metadata:', error);
-    
+
     return generateSEO({
       title: `${slug} | Destino SF`,
       description: 'Discover our handcrafted Latin cuisine collection.',
@@ -151,10 +154,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           NOT: {
             name: {
               startsWith: 'CATERING',
-              mode: 'insensitive'
-            }
-          }
-        }
+              mode: 'insensitive',
+            },
+          },
+        },
       },
       include: {
         variants: true, // Include variants if needed by ProductGrid
@@ -304,7 +307,7 @@ export async function generateStaticParams() {
       }));
   } catch (error) {
     console.error('Failed to generate static params for category pages:', error);
-    
+
     // Return fallback static params for essential categories
     // This ensures build doesn't fail and core pages are generated
     return [

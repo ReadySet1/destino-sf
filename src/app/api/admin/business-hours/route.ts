@@ -7,23 +7,37 @@ import { prisma } from '@/lib/db';
 const businessHourSchema = z.object({
   id: z.string().optional(),
   day: z.number().int().min(0).max(6),
-  openTime: z.string().nullable().refine(
-    (val) => val === null || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), 
-    { message: "Open time must be in HH:MM format" }
-  ),
-  closeTime: z.string().nullable().refine(
-    (val) => val === null || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), 
-    { message: "Close time must be in HH:MM format" }
-  ),
+  openTime: z
+    .string()
+    .nullable()
+    .refine(val => val === null || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
+      message: 'Open time must be in HH:MM format',
+    }),
+  closeTime: z
+    .string()
+    .nullable()
+    .refine(val => val === null || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val), {
+      message: 'Close time must be in HH:MM format',
+    }),
   isClosed: z.boolean(),
-  createdAt: z.union([
-    z.date(),
-    z.string().datetime().transform(val => new Date(val))
-  ]).optional(),
-  updatedAt: z.union([
-    z.date(),
-    z.string().datetime().transform(val => new Date(val))
-  ]).optional(),
+  createdAt: z
+    .union([
+      z.date(),
+      z
+        .string()
+        .datetime()
+        .transform(val => new Date(val)),
+    ])
+    .optional(),
+  updatedAt: z
+    .union([
+      z.date(),
+      z
+        .string()
+        .datetime()
+        .transform(val => new Date(val)),
+    ])
+    .optional(),
 });
 
 // Schema for the whole payload
@@ -64,19 +78,22 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    
+
     try {
       hoursPayloadSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ 
-          error: 'Validation failed', 
-          details: error.errors.map(e => ({
-            path: e.path,
-            message: e.message,
-            code: e.code
-          }))
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: error.errors.map(e => ({
+              path: e.path,
+              message: e.message,
+              code: e.code,
+            })),
+          },
+          { status: 400 }
+        );
       }
       throw error;
     }
@@ -88,16 +105,22 @@ export async function POST(request: NextRequest) {
       if (!hour.isClosed) {
         // Open and close times must be provided for open days
         if (!hour.openTime || !hour.closeTime) {
-          return NextResponse.json({
-            error: `Both opening and closing times are required for day ${hour.day}`,
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              error: `Both opening and closing times are required for day ${hour.day}`,
+            },
+            { status: 400 }
+          );
         }
-        
+
         // Open time must be before close time
         if (hour.openTime >= hour.closeTime) {
-          return NextResponse.json({
-            error: `Opening time must be before closing time for day ${hour.day}`,
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              error: `Opening time must be before closing time for day ${hour.day}`,
+            },
+            { status: 400 }
+          );
         }
       }
     }
@@ -139,9 +162,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating business hours:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

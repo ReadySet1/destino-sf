@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { 
-  Html, 
-  Body, 
-  Head, 
-  Heading, 
-  Container, 
-  Preview, 
-  Section, 
-  Text, 
+import {
+  Html,
+  Body,
+  Head,
+  Heading,
+  Container,
+  Preview,
+  Section,
+  Text,
   Hr,
   Link,
 } from '@react-email/components';
@@ -44,17 +44,20 @@ export const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Heading style={styles.header}>{shopName}</Heading>
-          <Heading as="h2" style={styles.subheader}>Order Confirmation</Heading>
-          
+          <Heading as="h2" style={styles.subheader}>
+            Order Confirmation
+          </Heading>
+
           <Section style={styles.section}>
-            <Heading as="h2" style={styles.orderNumber}>Order #{id}</Heading>
+            <Heading as="h2" style={styles.orderNumber}>
+              Order #{id}
+            </Heading>
+            <Text style={styles.paragraph}>Hi {customerName},</Text>
             <Text style={styles.paragraph}>
-              Hi {customerName},
+              Thank you for your order! We&apos;re processing it now and will keep you updated on
+              its status.
             </Text>
-            <Text style={styles.paragraph}>
-              Thank you for your order! We&apos;re processing it now and will keep you updated on its status.
-            </Text>
-            
+
             <Section style={styles.orderSummary}>
               <Text style={styles.summaryItem}>
                 <strong>Order Status:</strong> {status}
@@ -66,35 +69,40 @@ export const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
                 <strong>Payment Method:</strong> {paymentMethod}
               </Text>
             </Section>
-            
+
             {paymentInstructions && (
-              <Section style={
-                paymentMethod === 'CASH'
-                  ? {...styles.paymentInstructions, ...styles.cashInstructions}
-                  : styles.paymentInstructions
-              }>
+              <Section
+                style={
+                  paymentMethod === 'CASH'
+                    ? { ...styles.paymentInstructions, ...styles.cashInstructions }
+                    : styles.paymentInstructions
+                }
+              >
                 <Heading as="h3" style={styles.instructionsHeading}>
                   Payment Instructions
                 </Heading>
-                <Text style={styles.paragraph} dangerouslySetInnerHTML={{ __html: paymentInstructions }} />
+                <Text
+                  style={styles.paragraph}
+                  dangerouslySetInnerHTML={{ __html: paymentInstructions }}
+                />
               </Section>
             )}
-            
+
             <Text style={styles.paragraph}>
-              Please check your account for the most up-to-date information about your order.
-              If you have any questions, please contact our customer service.
+              Please check your account for the most up-to-date information about your order. If you
+              have any questions, please contact our customer service.
             </Text>
           </Section>
-          
+
           <Hr style={styles.hr} />
-          
+
           <Text style={styles.footer}>
             This is an automated message, please do not reply directly to this email.
           </Text>
           <Text style={styles.footer}>
             &copy; {currentYear} {shopName}. All rights reserved.
           </Text>
-          
+
           <Text style={styles.footer}>
             <Link href="https://destino-sf.com">Visit our website</Link>
           </Text>
@@ -182,4 +190,4 @@ const styles = {
   },
 };
 
-export default OrderConfirmationEmail; 
+export default OrderConfirmationEmail;

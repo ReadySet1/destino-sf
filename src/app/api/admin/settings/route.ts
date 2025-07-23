@@ -26,7 +26,9 @@ type SettingsData = z.infer<typeof settingsSchema>;
 
 // Check if user is admin
 async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return false;
@@ -57,16 +59,18 @@ export async function GET(request: NextRequest) {
       }),
       prisma.cateringDeliveryZone.findMany({
         orderBy: { displayOrder: 'asc' },
-      })
+      }),
     ]);
 
     // Convert Decimal objects to numbers for client compatibility
-    const processedSettings = storeSettings ? {
-      ...storeSettings,
-      taxRate: Number(storeSettings.taxRate),
-      minOrderAmount: Number(storeSettings.minOrderAmount),
-      cateringMinimumAmount: Number(storeSettings.cateringMinimumAmount),
-    } : null;
+    const processedSettings = storeSettings
+      ? {
+          ...storeSettings,
+          taxRate: Number(storeSettings.taxRate),
+          minOrderAmount: Number(storeSettings.minOrderAmount),
+          cateringMinimumAmount: Number(storeSettings.cateringMinimumAmount),
+        }
+      : null;
 
     const processedZones = deliveryZones.map(zone => ({
       ...zone,
@@ -80,10 +84,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -99,15 +100,18 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    
+
     try {
       settingsSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ 
-          error: 'Validation failed', 
-          details: error.errors 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
       }
       throw error;
     }
@@ -118,7 +122,7 @@ export async function POST(request: NextRequest) {
     const existingSettings = await prisma.storeSettings.findFirst();
 
     let updatedSettings;
-    
+
     if (existingSettings) {
       // Update existing settings
       updatedSettings = await prisma.storeSettings.update({
@@ -168,9 +172,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating settings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

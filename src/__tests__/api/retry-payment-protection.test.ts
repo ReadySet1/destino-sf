@@ -10,28 +10,30 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn(() => Promise.resolve({
-        data: { user: { id: 'test-user-id' } }
-      }))
-    }
-  }))
+      getUser: jest.fn(() =>
+        Promise.resolve({
+          data: { user: { id: 'test-user-id' } },
+        })
+      ),
+    },
+  })),
 }));
 
 jest.mock('@/lib/db', () => ({
   prisma: {
     order: {
       findUnique: jest.fn(),
-      update: jest.fn()
-    }
-  }
+      update: jest.fn(),
+    },
+  },
 }));
 
 jest.mock('@/middleware/rate-limit', () => ({
-  applyUserBasedRateLimit: jest.fn(() => Promise.resolve(null))
+  applyUserBasedRateLimit: jest.fn(() => Promise.resolve(null)),
 }));
 
 jest.mock('crypto', () => ({
-  randomUUID: jest.fn(() => 'mock-uuid')
+  randomUUID: jest.fn(() => 'mock-uuid'),
 }));
 
 describe('API Route: Retry Payment Protection', () => {
@@ -45,9 +47,12 @@ describe('API Route: Retry Payment Protection', () => {
     // Mock a CASH order
     mockPrisma.order.findUnique.mockResolvedValue(null); // No order found because query filters by paymentMethod: 'SQUARE'
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -72,15 +77,15 @@ describe('API Route: Retry Payment Protection', () => {
         {
           id: 'item-1',
           quantity: 2,
-          price: 18.00,
+          price: 18.0,
           product: { name: 'Test Product', images: [] },
-          variant: { name: 'Test Variant' }
-        }
+          variant: { name: 'Test Variant' },
+        },
       ],
-      total: 36.00,
+      total: 36.0,
       customerName: 'John Doe',
       email: 'john@example.com',
-      phone: '415-123-2323'
+      phone: '415-123-2323',
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
@@ -90,18 +95,22 @@ describe('API Route: Retry Payment Protection', () => {
     (global as any).fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          payment_link: {
-            url: 'https://square-checkout-url.com',
-            order_id: 'square-order-id'
-          }
-        }),
+        json: () =>
+          Promise.resolve({
+            payment_link: {
+              url: 'https://square-checkout-url.com',
+              order_id: 'square-order-id',
+            },
+          }),
       })
     );
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -121,15 +130,18 @@ describe('API Route: Retry Payment Protection', () => {
       paymentMethod: 'CASH',
       userId: 'test-user-id',
       retryCount: 0,
-      items: []
+      items: [],
     };
 
     // Temporarily make the query return a CASH order to test the additional safety check
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -148,14 +160,17 @@ describe('API Route: Retry Payment Protection', () => {
       paymentMethod: 'SQUARE',
       userId: 'test-user-id',
       retryCount: 3, // Maximum retries
-      items: []
+      items: [],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -170,15 +185,20 @@ describe('API Route: Retry Payment Protection', () => {
     const createClient = require('@/utils/supabase/server').createClient;
     createClient.mockReturnValue({
       auth: {
-        getUser: jest.fn(() => Promise.resolve({
-          data: { user: null }
-        }))
-      }
+        getUser: jest.fn(() =>
+          Promise.resolve({
+            data: { user: null },
+          })
+        ),
+      },
     });
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -202,14 +222,17 @@ describe('API Route: Retry Payment Protection', () => {
       retryCount: 1,
       paymentUrl: 'https://existing-checkout-url.com',
       paymentUrlExpiresAt: futureDate,
-      items: []
+      items: [],
     };
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
-    const request = new NextRequest('http://localhost:3000/api/orders/test-order-id/retry-payment', {
-      method: 'POST'
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      {
+        method: 'POST',
+      }
+    );
 
     const params = { orderId: 'test-order-id' };
     const response = await POST(request, { params });
@@ -220,4 +243,4 @@ describe('API Route: Retry Payment Protection', () => {
     expect(data.checkoutUrl).toBe('https://existing-checkout-url.com');
     expect(data.expiresAt).toBeDefined();
   });
-}); 
+});

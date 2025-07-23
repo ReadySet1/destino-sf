@@ -1,6 +1,7 @@
 # Destino SF - Production Deployment Implementation Plan
 
 ## 📊 **Implementation Progress**
+
 - ✅ **Rate Limiting System** - COMPLETED (January 2025)
 - ✅ **Security Headers Configuration** - COMPLETED (January 2025)
 - 🔄 **Webhook Signature Validation** - NEXT (Ready to start)
@@ -15,9 +16,11 @@
 ## 🔴 Critical Security & Infrastructure Tasks
 
 ### ✅ 1. Rate Limiting Implementation - COMPLETED
+
 **Time: 6-8 hours | Priority: CRITICAL | Status: ✅ DONE**
 
 #### ✅ Files Created:
+
 ```
 ✅ src/lib/rate-limit.ts                    # Rate limiting service with token bucket algorithm
 ✅ src/middleware/rate-limit.ts             # Rate limiting middleware functions
@@ -26,6 +29,7 @@
 ```
 
 #### ✅ Files Modified:
+
 ```
 ✅ src/middleware.ts                        # Integrated rate limiting before auth
 ✅ src/app/api/webhooks/square/route.ts     # Added webhook rate limiting (100/min)
@@ -37,6 +41,7 @@
 ```
 
 #### ✅ Implementation Completed:
+
 1. **✅ Rate Limiter Service** (`src/lib/rate-limit.ts`)
    - ✅ Token bucket algorithm using Upstash Redis
    - ✅ Different limits for different endpoints
@@ -54,6 +59,7 @@
    - ✅ `/api/orders/*/retry-payment` - 3 requests/minute per user
 
 #### ✅ Testing Infrastructure:
+
 - ✅ Test endpoint: `/api/test-rate-limit`
 - ✅ Testing script: `scripts/test-rate-limiting.sh`
 - ✅ Documentation: `RATE_LIMITING_TEST_GUIDE.md`
@@ -61,15 +67,18 @@
 ---
 
 ### ✅ 2. Security Headers Configuration - COMPLETED
+
 **Time: 2-3 hours | Priority: CRITICAL | Status: ✅ DONE**
 
 #### ✅ Files Created:
+
 ```
 ✅ src/lib/security/csp-config.ts           # Centralized CSP configuration
 ✅ src/app/api/security/headers-test/route.ts # Security headers validation endpoint
 ```
 
 #### ✅ Files Modified:
+
 ```
 ✅ next.config.js                           # Comprehensive security headers configuration
 ✅ src/middleware.ts                        # Enhanced security headers middleware
@@ -77,6 +86,7 @@
 ```
 
 #### ✅ Implementation Completed:
+
 1. **✅ Security Headers in `next.config.js`**
    - ✅ X-Frame-Options: DENY (prevent clickjacking)
    - ✅ X-Content-Type-Options: nosniff (prevent MIME sniffing)
@@ -89,8 +99,8 @@
 2. **✅ CSP Configuration**
    - ✅ Allow Square SDK (js.squareup.com, web.squarecdn.com)
    - ✅ Allow Google Maps & Fonts (maps.googleapis.com, fonts.googleapis.com)
-   - ✅ Allow Supabase (*.supabase.co)
-   - ✅ Allow AWS S3 (*.s3.amazonaws.com)
+   - ✅ Allow Supabase (\*.supabase.co)
+   - ✅ Allow AWS S3 (\*.s3.amazonaws.com)
    - ✅ Block dangerous inline scripts and external resources
    - ✅ Environment-specific CSP (development vs production)
 
@@ -101,6 +111,7 @@
    - ✅ Enhanced cache control for sensitive routes
 
 #### ✅ Testing Infrastructure:
+
 - ✅ Test endpoint: `/api/security/headers-test`
 - ✅ Testing script: `scripts/test-security-headers.sh`
 - ✅ Documentation: `docs/SECURITY_HEADERS_TEST_GUIDE.md`
@@ -109,9 +120,11 @@
 ---
 
 ### 🔄 3. Webhook Signature Validation Enhancement - NEXT
+
 **Time: 3-4 hours | Priority: CRITICAL | Status: 🔄 READY TO START**
 
 #### Files to Modify:
+
 ```
 src/app/api/webhooks/square/route.ts
 src/lib/square/webhook-validator.ts (create)
@@ -119,6 +132,7 @@ src/lib/crypto-utils.ts (create)
 ```
 
 #### Implementation:
+
 1. **Create Webhook Validator**
    - Constant-time comparison
    - Replay attack prevention (timestamp validation)
@@ -134,9 +148,11 @@ src/lib/crypto-utils.ts (create)
 ## 🟠 Monitoring & Error Handling
 
 ### 4. Sentry Integration
+
 **Time: 3-4 hours | Priority: HIGH**
 
 #### Files to Create:
+
 ```
 sentry.client.config.ts
 sentry.server.config.ts
@@ -145,6 +161,7 @@ src/lib/sentry.ts
 ```
 
 #### Files to Modify:
+
 ```
 src/lib/error-monitoring.ts
 src/app/layout.tsx
@@ -154,7 +171,9 @@ next.config.js
 ```
 
 #### Implementation:
+
 1. **Initialize Sentry**
+
    ```typescript
    // sentry.client.config.ts
    // Configure DSN, environment, integrations
@@ -163,11 +182,12 @@ next.config.js
    ```
 
 2. **Update Error Monitor** (`src/lib/error-monitoring.ts`)
+
    ```typescript
    // In logToExternalService method:
-   // Sentry.captureException(error, { 
+   // Sentry.captureException(error, {
    //   contexts: { custom: context },
-   //   level: severity 
+   //   level: severity
    // });
    ```
 
@@ -179,9 +199,11 @@ next.config.js
 ---
 
 ### 5. Performance Monitoring
+
 **Time: 4-5 hours | Priority: HIGH**
 
 #### Files to Create:
+
 ```
 src/lib/performance.ts
 src/lib/metrics.ts
@@ -189,6 +211,7 @@ src/components/PerformanceObserver.tsx
 ```
 
 #### Files to Modify:
+
 ```
 src/app/layout.tsx
 src/middleware.ts
@@ -196,6 +219,7 @@ next.config.js
 ```
 
 #### Implementation:
+
 1. **Web Vitals Tracking**
    - LCP, FID, CLS, TTFB
    - Custom metrics for checkout flow
@@ -213,9 +237,11 @@ next.config.js
 ## 🟡 Infrastructure & Reliability
 
 ### 6. Database Connection Pooling
+
 **Time: 2-3 hours | Priority: HIGH**
 
 #### Files to Modify:
+
 ```
 src/lib/db.ts
 prisma/schema.prisma
@@ -223,7 +249,9 @@ prisma/schema.prisma
 ```
 
 #### Implementation:
+
 1. **Update Prisma Client** (`src/lib/db.ts`)
+
    ```typescript
    // Add connection pool configuration
    // Implement retry logic
@@ -239,9 +267,11 @@ prisma/schema.prisma
 ---
 
 ### 7. Health Check System
+
 **Time: 2-3 hours | Priority: HIGH**
 
 #### Files to Create:
+
 ```
 src/app/api/health/route.ts
 src/app/api/health/detailed/route.ts
@@ -249,7 +279,9 @@ src/lib/health-checks.ts
 ```
 
 #### Implementation:
+
 1. **Basic Health Check** (`/api/health`)
+
    ```typescript
    // Return 200 OK for uptime monitoring
    // Include version info
@@ -267,9 +299,11 @@ src/lib/health-checks.ts
 ---
 
 ### 8. Caching Strategy
+
 **Time: 4-5 hours | Priority: MEDIUM**
 
 #### Files to Create:
+
 ```
 src/lib/cache.ts
 src/lib/cache-keys.ts
@@ -277,6 +311,7 @@ src/hooks/useCache.ts
 ```
 
 #### Files to Modify:
+
 ```
 src/app/api/products/route.ts
 src/app/api/categories/route.ts
@@ -284,6 +319,7 @@ src/lib/square/catalog.ts
 ```
 
 #### Implementation:
+
 1. **Cache Service**
    - Redis/Upstash integration
    - TTL management
@@ -303,9 +339,11 @@ src/lib/square/catalog.ts
 ## 🟢 Testing & Documentation
 
 ### 9. Load Testing Suite
+
 **Time: 4-5 hours | Priority: MEDIUM**
 
 #### Files to Create:
+
 ```
 tests/load/checkout-flow.js
 tests/load/webhook-processing.js
@@ -314,10 +352,12 @@ scripts/load-test.sh
 ```
 
 #### Tools:
+
 - K6 or Artillery for load testing
 - Grafana for visualization
 
 #### Test Scenarios:
+
 1. **Checkout Flow**
    - 100 concurrent users
    - Complete purchase flow
@@ -331,9 +371,11 @@ scripts/load-test.sh
 ---
 
 ### 10. API Documentation
+
 **Time: 3-4 hours | Priority: MEDIUM**
 
 #### Files to Create:
+
 ```
 docs/api/openapi.yaml
 src/lib/swagger.ts
@@ -341,6 +383,7 @@ src/app/api/docs/route.ts
 ```
 
 #### Implementation:
+
 1. **OpenAPI Specification**
    - Document all endpoints
    - Request/response schemas
@@ -357,6 +400,7 @@ src/app/api/docs/route.ts
 ## 📋 Environment Variables Checklist
 
 ### ✅ Implemented for Production:
+
 ```env
 # ✅ Rate Limiting (IMPLEMENTED)
 UPSTASH_REDIS_REST_URL=https://thorough-deer-37742.upstash.io
@@ -367,6 +411,7 @@ BYPASS_RATE_LIMIT=false  # Set to true only in development
 ```
 
 ### 🔄 Still Required for Production:
+
 ```env
 # 🔄 Security (NEXT - Webhook validation)
 NEXTAUTH_SECRET=
@@ -388,18 +433,21 @@ CONNECTION_POOL_SIZE=
 ## 🚀 Deployment Checklist
 
 ### ✅ Pre-deployment Completed:
+
 - [x] **All TypeScript errors resolved** ✅
 - [x] **Rate limiting environment variables configured** ✅
 - [x] **Rate limiting tested** ✅ (scripts/test-rate-limiting.sh)
 - [x] **Security headers verified** ✅ (scripts/test-security-headers.sh)
 
 ### 🔄 Pre-deployment Still Required:
+
 - [ ] **Webhook signature validation tested** 🔄 (NEXT TASK)
 - [ ] **Sentry error tracking confirmed** 🔄 (FUTURE)
 - [ ] **Health checks passing** 🔄 (FUTURE)
 - [ ] **Load tests completed** 🔄 (FUTURE)
 
 ### 🔄 Post-deployment Monitoring:
+
 - [ ] **Monitor error rates** 🔄 (Ready - rate limiting in place)
 - [ ] **Monitor rate limit hits** 🔄 (Ready - Redis monitoring available)
 - [ ] **Review security headers** 🔄 (Ready - testing scripts available)
@@ -413,6 +461,7 @@ CONNECTION_POOL_SIZE=
 ## 📊 Monitoring Dashboard Setup
 
 ### Key Metrics to Track:
+
 1. **Application Health**
    - Response times (p50, p95, p99)
    - Error rates by endpoint

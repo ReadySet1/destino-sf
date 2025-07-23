@@ -35,39 +35,62 @@ import Image from 'next/image';
 
 // Enhanced form schema with validation
 const formSchema = z.object({
-  name: z.string().min(3, {
-    message: 'Package name must be at least 3 characters.',
-  }).max(100, {
-    message: 'Package name must be less than 100 characters.',
-  }),
-  description: z.string().optional().refine((val) => {
-    if (val && val.length > 1000) {
-      return false;
-    }
-    return true;
-  }, {
-    message: 'Description must be less than 1000 characters.',
-  }),
-  minPeople: z.coerce.number().int().min(1, {
-    message: 'Minimum people must be at least 1.',
-  }).max(1000, {
-    message: 'Minimum people cannot exceed 1000.',
-  }),
-  pricePerPerson: z.coerce.number().min(0.01, {
-    message: 'Price per person must be greater than $0.00.',
-  }).max(1000, {
-    message: 'Price per person cannot exceed $1000.',
-  }),
+  name: z
+    .string()
+    .min(3, {
+      message: 'Package name must be at least 3 characters.',
+    })
+    .max(100, {
+      message: 'Package name must be less than 100 characters.',
+    }),
+  description: z
+    .string()
+    .optional()
+    .refine(
+      val => {
+        if (val && val.length > 1000) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: 'Description must be less than 1000 characters.',
+      }
+    ),
+  minPeople: z.coerce
+    .number()
+    .int()
+    .min(1, {
+      message: 'Minimum people must be at least 1.',
+    })
+    .max(1000, {
+      message: 'Minimum people cannot exceed 1000.',
+    }),
+  pricePerPerson: z.coerce
+    .number()
+    .min(0.01, {
+      message: 'Price per person must be greater than $0.00.',
+    })
+    .max(1000, {
+      message: 'Price per person cannot exceed $1000.',
+    }),
   type: z.nativeEnum(CateringPackageType, {
     message: 'Please select a valid package type.',
   }),
-  imageUrl: z.string().optional().refine((val) => {
-    if (!val) return true;
-    // Allow relative paths and full URLs
-    return val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://');
-  }, {
-    message: 'Image URL must be a valid path (starting with /) or full URL (starting with http:// or https://)',
-  }),
+  imageUrl: z
+    .string()
+    .optional()
+    .refine(
+      val => {
+        if (!val) return true;
+        // Allow relative paths and full URLs
+        return val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://');
+      },
+      {
+        message:
+          'Image URL must be a valid path (starting with /) or full URL (starting with http:// or https://)',
+      }
+    ),
   dietaryOptions: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
   featuredOrder: z.coerce.number().int().min(0).optional(),
@@ -90,14 +113,19 @@ const DIETARY_OPTIONS = [
   'Kosher',
 ];
 
-export default function CateringPackageForm({ package: cateringPackage, isEditing = false }: CateringPackageFormProps) {
+export default function CateringPackageForm({
+  package: cateringPackage,
+  isEditing = false,
+}: CateringPackageFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newOption, setNewOption] = useState('');
   const [dietaryOptions, setDietaryOptions] = useState<string[]>(
     cateringPackage?.dietaryOptions || []
   );
-  const [imagePreview, setImagePreview] = useState<string | null>(cateringPackage?.imageUrl || null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    cateringPackage?.imageUrl || null
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -157,7 +185,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
   };
 
   const removeDietaryOption = (option: string) => {
-    setDietaryOptions(dietaryOptions.filter((o) => o !== option));
+    setDietaryOptions(dietaryOptions.filter(o => o !== option));
   };
 
   const handlePredefinedOption = (option: string) => {
@@ -180,7 +208,8 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
         <AlertDescription>
           <strong>Local Catering Package Management</strong>
           <br />
-          This form manages packages stored locally in your database. These packages are separate from Square-synced products and will appear on your customer-facing catering menu.
+          This form manages packages stored locally in your database. These packages are separate
+          from Square-synced products and will appear on your customer-facing catering menu.
         </AlertDescription>
       </Alert>
 
@@ -189,7 +218,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Basic Information</h3>
-            
+
             <FormField
               control={form.control}
               name="name"
@@ -199,9 +228,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                   <FormControl>
                     <Input placeholder="e.g., Appetizer Selection Package" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    The name that will appear on the catering menu
-                  </FormDescription>
+                  <FormDescription>The name that will appear on the catering menu</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -221,9 +248,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                       value={field.value || ''}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Detailed description that customers will see
-                  </FormDescription>
+                  <FormDescription>Detailed description that customers will see</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -233,7 +258,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Package Type */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Package Type</h3>
-            
+
             <FormField
               control={form.control}
               name="type"
@@ -255,7 +280,8 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                             Individual Packaging
                           </FormLabel>
                           <FormDescription>
-                            Each guest receives their own individually packaged meal. Perfect for corporate meetings and events requiring individual portions.
+                            Each guest receives their own individually packaged meal. Perfect for
+                            corporate meetings and events requiring individual portions.
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -264,37 +290,40 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                           <RadioGroupItem value={CateringPackageType.BUFFET} className="mt-1" />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="font-normal text-base">
-                            Buffet Style
-                          </FormLabel>
+                          <FormLabel className="font-normal text-base">Buffet Style</FormLabel>
                           <FormDescription>
-                            Large format, self-serve setup. Great for casual gatherings and events where guests can serve themselves.
+                            Large format, self-serve setup. Great for casual gatherings and events
+                            where guests can serve themselves.
                           </FormDescription>
                         </div>
                       </FormItem>
                       <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <RadioGroupItem value={CateringPackageType.FAMILY_STYLE} className="mt-1" />
+                          <RadioGroupItem
+                            value={CateringPackageType.FAMILY_STYLE}
+                            className="mt-1"
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="font-normal text-base">
-                            Family Style
-                          </FormLabel>
+                          <FormLabel className="font-normal text-base">Family Style</FormLabel>
                           <FormDescription>
-                            Served in shared platters at the table. Creates a more intimate dining experience for smaller groups.
+                            Served in shared platters at the table. Creates a more intimate dining
+                            experience for smaller groups.
                           </FormDescription>
                         </div>
                       </FormItem>
                       <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <RadioGroupItem value={CateringPackageType.BOXED_LUNCH} className="mt-1" />
+                          <RadioGroupItem
+                            value={CateringPackageType.BOXED_LUNCH}
+                            className="mt-1"
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="font-normal text-base">
-                            Boxed Lunch
-                          </FormLabel>
+                          <FormLabel className="font-normal text-base">Boxed Lunch</FormLabel>
                           <FormDescription>
-                            Individual boxed meals with protein choices and sides. Perfect for business lunches and grab-and-go events.
+                            Individual boxed meals with protein choices and sides. Perfect for
+                            business lunches and grab-and-go events.
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -309,7 +338,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Pricing */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Pricing & Requirements</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -319,19 +348,19 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                     <FormLabel>Price Per Person *</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          placeholder="0.00" 
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          $
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
                           className="pl-8"
-                          {...field} 
+                          {...field}
                         />
                       </div>
                     </FormControl>
-                    <FormDescription>
-                      Price per person in USD
-                    </FormDescription>
+                    <FormDescription>Price per person in USD</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -359,7 +388,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Dietary Options */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Dietary Options</h3>
-            
+
             <FormField
               control={form.control}
               name="dietaryOptions"
@@ -368,11 +397,11 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                   <FormLabel>Available Dietary Accommodations</FormLabel>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {DIETARY_OPTIONS.map((option) => (
+                      {DIETARY_OPTIONS.map(option => (
                         <Button
                           key={option}
                           type="button"
-                          variant={dietaryOptions.includes(option) ? "default" : "outline"}
+                          variant={dietaryOptions.includes(option) ? 'default' : 'outline'}
                           size="sm"
                           className="justify-start"
                           onClick={() => handlePredefinedOption(option)}
@@ -381,14 +410,14 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                         </Button>
                       ))}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Input
                         placeholder="Add custom dietary option"
                         value={newOption}
-                        onChange={(e) => setNewOption(e.target.value)}
+                        onChange={e => setNewOption(e.target.value)}
                         className="flex-1"
-                        onKeyPress={(e) => {
+                        onKeyPress={e => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             addDietaryOption();
@@ -404,12 +433,12 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                         Add
                       </Button>
                     </div>
-                    
+
                     {dietaryOptions.length > 0 && (
                       <div className="mt-4">
                         <p className="text-sm font-medium mb-2">Selected Options:</p>
                         <div className="flex flex-wrap gap-2">
-                          {dietaryOptions.map((option) => (
+                          {dietaryOptions.map(option => (
                             <Badge key={option} className="flex items-center gap-1">
                               {option}
                               <X
@@ -434,7 +463,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Image */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Package Image</h3>
-            
+
             <FormField
               control={form.control}
               name="imageUrl"
@@ -443,16 +472,16 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                   <FormLabel>Image URL</FormLabel>
                   <FormControl>
                     <div className="space-y-3">
-                      <Input 
-                        placeholder="/images/catering/package-name.jpg or https://example.com/image.jpg" 
-                        {...field} 
+                      <Input
+                        placeholder="/images/catering/package-name.jpg or https://example.com/image.jpg"
+                        {...field}
                         value={field.value || ''}
-                        onChange={(e) => {
+                        onChange={e => {
                           field.onChange(e);
                           handleImageUrlChange(e.target.value);
                         }}
                       />
-                      
+
                       {/* Image Preview */}
                       {imagePreview && (
                         <div className="mt-3">
@@ -474,7 +503,9 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Provide a URL to an image of this package (optional). Use full URLs (https://...) for external images or paths (/images/catering/...) for images in your public directory. Recommended size: 800x600px or larger.
+                    Provide a URL to an image of this package (optional). Use full URLs
+                    (https://...) for external images or paths (/images/catering/...) for images in
+                    your public directory. Recommended size: 800x600px or larger.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -485,7 +516,7 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
           {/* Advanced Options */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Advanced Options</h3>
-            
+
             <FormField
               control={form.control}
               name="featuredOrder"
@@ -509,15 +540,13 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Active Package</FormLabel>
                     <FormDescription>
-                      When checked, this package will be visible and available for ordering on the catering menu
+                      When checked, this package will be visible and available for ordering on the
+                      catering menu
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -536,14 +565,17 @@ export default function CateringPackageForm({ package: cateringPackage, isEditin
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting 
-                ? (isEditing ? 'Updating...' : 'Creating...') 
-                : (isEditing ? 'Update Package' : 'Create Package')
-              }
+              {isSubmitting
+                ? isEditing
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEditing
+                  ? 'Update Package'
+                  : 'Create Package'}
             </Button>
           </div>
         </form>
       </Form>
     </div>
   );
-} 
+}

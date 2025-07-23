@@ -226,7 +226,8 @@ export const mockSanityClient = () => {
       {
         _id: 'cat-1',
         name: 'Alfajores',
-        description: 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you\'re gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+        description:
+          "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
       },
     ],
   };
@@ -425,4 +426,4 @@ export const setupAllMocks = () => {
     email,
     router,
   };
-}; 
+};

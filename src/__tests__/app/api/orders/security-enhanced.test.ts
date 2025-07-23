@@ -5,8 +5,8 @@ jest.mock('@/env', () => ({
   env: {
     DATABASE_URL: 'mock-database-url',
     SQUARE_ACCESS_TOKEN: 'mock-access-token',
-    SQUARE_ENVIRONMENT: 'sandbox'
-  }
+    SQUARE_ENVIRONMENT: 'sandbox',
+  },
 }));
 
 jest.mock('@/lib/db', () => ({
@@ -79,13 +79,19 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default successful mocks
     mockPrisma.order.findUnique.mockResolvedValue(validOrder);
     mockPrisma.order.findMany.mockResolvedValue([validOrder]);
     mockPrisma.order.update.mockResolvedValue({ ...validOrder, status: 'CONFIRMED' });
-    mockCheckRateLimit.mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: new Date(), count: 1 });
-    
+    mockCheckRateLimit.mockResolvedValue({
+      success: true,
+      limit: 100,
+      remaining: 99,
+      reset: new Date(),
+      count: 1,
+    });
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -186,14 +192,14 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
     it('should validate order state transitions', async () => {
       const validateStateTransition = (currentStatus: string, newStatus: string): boolean => {
         const validTransitions: Record<string, string[]> = {
-          'PENDING': ['CONFIRMED', 'CANCELLED'],
-          'CONFIRMED': ['PROCESSING', 'CANCELLED'],
-          'PROCESSING': ['READY', 'CANCELLED'],
-          'READY': ['OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'],
-          'OUT_FOR_DELIVERY': ['COMPLETED', 'FAILED'],
-          'COMPLETED': [], // Terminal state
-          'CANCELLED': [], // Terminal state
-          'FAILED': ['PENDING'], // Can retry
+          PENDING: ['CONFIRMED', 'CANCELLED'],
+          CONFIRMED: ['PROCESSING', 'CANCELLED'],
+          PROCESSING: ['READY', 'CANCELLED'],
+          READY: ['OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'],
+          OUT_FOR_DELIVERY: ['COMPLETED', 'FAILED'],
+          COMPLETED: [], // Terminal state
+          CANCELLED: [], // Terminal state
+          FAILED: ['PENDING'], // Can retry
         };
 
         return validTransitions[currentStatus]?.includes(newStatus) || false;
@@ -212,10 +218,10 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
     it('should prevent concurrent order status updates', async () => {
       let updateCount = 0;
-      
-      mockPrisma.order.update.mockImplementation(async (params) => {
+
+      mockPrisma.order.update.mockImplementation(async params => {
         updateCount++;
-        
+
         if (updateCount === 1) {
           // First update succeeds
           return { ...validOrder, status: params.data.status };
@@ -237,11 +243,11 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
         // Update with optimistic locking
         return await prisma.order.update({
-          where: { 
+          where: {
             id: orderId,
             updatedAt: currentOrder.updatedAt, // Optimistic lock
           },
-          data: { 
+          data: {
             status: newStatus,
             updatedAt: new Date(),
           },
@@ -269,9 +275,9 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
       }> = [];
 
       const updateOrderWithHistory = async (
-        orderId: string, 
-        newStatus: string, 
-        userId: string, 
+        orderId: string,
+        newStatus: string,
+        userId: string,
         reason?: string
       ) => {
         const currentOrder = await prisma.order.findUnique({
@@ -326,7 +332,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         // Update order status
         const updatedOrder = await prisma.order.update({
           where: { id: orderId },
-          data: { 
+          data: {
             status: 'CANCELLED',
             notes: `Cancelled: ${reason}`,
             cancelledAt: new Date(),
@@ -335,7 +341,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         });
 
         // Would also restore inventory, process refunds, etc.
-        
+
         return updatedOrder;
       };
 
@@ -356,8 +362,9 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         const errors: string[] = [];
 
         // Check if subtotal + tax + fees = total
-        const calculatedTotal = (order.subtotal || 0) + (order.taxAmount || 0) + (order.deliveryFee || 0);
-        
+        const calculatedTotal =
+          (order.subtotal || 0) + (order.taxAmount || 0) + (order.deliveryFee || 0);
+
         if (Math.abs(calculatedTotal - order.total) > 0.01) {
           errors.push(`Total mismatch: calculated ${calculatedTotal}, stored ${order.total}`);
         }
@@ -372,7 +379,8 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         }
 
         // Check reasonable limits
-        if (order.total > 1000000) { // $10,000 limit
+        if (order.total > 1000000) {
+          // $10,000 limit
           errors.push('Order total exceeds maximum allowed amount');
         }
 
@@ -382,9 +390,9 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
       // Valid order
       const validOrderData = {
         subtotal: 4500, // $45.00
-        taxAmount: 365,  // $3.65
+        taxAmount: 365, // $3.65
         deliveryFee: 500, // $5.00
-        total: 5365,     // $53.65
+        total: 5365, // $53.65
       };
 
       const validResult = validateOrderTotals(validOrderData);
@@ -516,14 +524,21 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
   describe('Admin Order Management Functions', () => {
     it('should allow admin to bulk update order statuses', async () => {
       const bulkUpdateOrders = async (orderIds: string[], newStatus: string, adminId: string) => {
-        const validStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'];
-        
+        const validStatuses = [
+          'PENDING',
+          'CONFIRMED',
+          'PROCESSING',
+          'READY',
+          'COMPLETED',
+          'CANCELLED',
+        ];
+
         if (!validStatuses.includes(newStatus)) {
           throw new Error('Invalid status');
         }
 
         const results = [];
-        
+
         for (const orderId of orderIds) {
           const order = await prisma.order.findUnique({
             where: { id: orderId },
@@ -532,7 +547,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
           if (order) {
             const updated = await prisma.order.update({
               where: { id: orderId },
-              data: { 
+              data: {
                 status: newStatus,
                 lastModifiedBy: adminId,
                 updatedAt: new Date(),
@@ -570,15 +585,24 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         const analytics = {
           totalOrders: orders.length,
           totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
-          averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length : 0,
-          statusBreakdown: orders.reduce((acc, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
-          fulfillmentBreakdown: orders.reduce((acc, order) => {
-            acc[order.fulfillmentType] = (acc[order.fulfillmentType] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>),
+          averageOrderValue:
+            orders.length > 0
+              ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length
+              : 0,
+          statusBreakdown: orders.reduce(
+            (acc, order) => {
+              acc[order.status] = (acc[order.status] || 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
+          fulfillmentBreakdown: orders.reduce(
+            (acc, order) => {
+              acc[order.fulfillmentType] = (acc[order.fulfillmentType] || 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
         };
 
         return analytics;
@@ -586,7 +610,13 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
       const sampleOrders = [
         { ...validOrder, total: 5000, status: 'COMPLETED', fulfillmentType: 'pickup' },
-        { ...validOrder, id: 'order-456', total: 7500, status: 'PENDING', fulfillmentType: 'delivery' },
+        {
+          ...validOrder,
+          id: 'order-456',
+          total: 7500,
+          status: 'PENDING',
+          fulfillmentType: 'delivery',
+        },
       ];
 
       mockPrisma.order.findMany.mockResolvedValue(sampleOrders);
@@ -662,7 +692,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
     it('should monitor order processing performance', async () => {
       const processOrderWithMetrics = async (orderId: string) => {
         const startTime = Date.now();
-        
+
         try {
           const order = await prisma.order.findUnique({
             where: { id: orderId },
@@ -732,7 +762,7 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
             if (attempt === maxRetries) {
               throw new Error(`Failed to get order after ${maxRetries} attempts: ${error.message}`);
             }
-            
+
             // Wait before retry
             await new Promise(resolve => setTimeout(resolve, attempt * 100));
           }
@@ -749,8 +779,8 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
         const alerts = [];
 
         // Check for rapid order creation from same customer
-        const recentOrders = orders.filter(order => 
-          Date.now() - new Date(order.createdAt).getTime() < 300000 // 5 minutes
+        const recentOrders = orders.filter(
+          order => Date.now() - new Date(order.createdAt).getTime() < 300000 // 5 minutes
         );
 
         const customerOrderCounts = recentOrders.reduce((acc, order) => {
@@ -771,7 +801,8 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
 
         // Check for unusually high value orders
         orders.forEach(order => {
-          if (order.total > 100000) { // $1000+
+          if (order.total > 100000) {
+            // $1000+
             alerts.push({
               type: 'HIGH_VALUE_ORDER',
               orderId: order.id,
@@ -803,4 +834,4 @@ describe('Order Management Security & Enhanced Coverage (Phase 1 - 85%+ Target)'
       expect(alerts[1].amount).toBe(150000);
     });
   });
-}); 
+});

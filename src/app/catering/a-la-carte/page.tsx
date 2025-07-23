@@ -22,8 +22,8 @@ const ALaCartePage = async () => {
             A La Carte Menu
           </h1>
           <p className="text-center text-gray-600 max-w-3xl mx-auto mb-12">
-            If our catering packages don&apos;t fit your needs, Destino also offers a la carte ordering.
-            Select individual items for your event based on your specific requirements.
+            If our catering packages don&apos;t fit your needs, Destino also offers a la carte
+            ordering. Select individual items for your event based on your specific requirements.
           </p>
 
           <ALaCarteMenu items={cateringItems} />
@@ -41,4 +41,4 @@ const ALaCartePage = async () => {
   );
 };
 
-export default ALaCartePage; 
+export default ALaCartePage;

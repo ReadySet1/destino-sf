@@ -2,7 +2,7 @@
 
 /**
  * Catering Images Monitoring Script
- * 
+ *
  * This script monitors catering items for missing images and provides
  * detailed reporting for production environments. It can be run as a
  * health check or scheduled via cron to ensure catering items always
@@ -46,12 +46,14 @@ async function generateCateringImagesReport(): Promise<MonitoringReport> {
         name: true,
         category: true,
         imageUrl: true,
-        squareProductId: true
-      }
+        squareProductId: true,
+      },
     });
 
     const totalItems = allItems.length;
-    const itemsWithImages = allItems.filter(item => item.imageUrl && item.imageUrl.trim() !== '').length;
+    const itemsWithImages = allItems.filter(
+      item => item.imageUrl && item.imageUrl.trim() !== ''
+    ).length;
     const itemsWithoutImages = totalItems - itemsWithImages;
     const itemsWithSquareId = allItems.filter(item => item.squareProductId).length;
     const itemsWithoutSquareId = totalItems - itemsWithSquareId;
@@ -63,14 +65,14 @@ async function generateCateringImagesReport(): Promise<MonitoringReport> {
         name: item.name,
         category: item.category,
         hasSquareId: !!item.squareProductId,
-        squareProductId: item.squareProductId || undefined
+        squareProductId: item.squareProductId || undefined,
       }));
 
     const healthScore = totalItems > 0 ? Math.round((itemsWithImages / totalItems) * 100) : 100;
 
     // Generate recommendations based on the data
     const recommendations: string[] = [];
-    
+
     if (healthScore < 80) {
       recommendations.push('🚨 URGENT: Health score below 80%. Run image sync immediately.');
     } else if (healthScore < 95) {
@@ -78,11 +80,15 @@ async function generateCateringImagesReport(): Promise<MonitoringReport> {
     }
 
     if (itemsWithoutSquareId > 0) {
-      recommendations.push(`📝 INFO: ${itemsWithoutSquareId} items don't have Square product IDs. These may be custom items.`);
+      recommendations.push(
+        `📝 INFO: ${itemsWithoutSquareId} items don't have Square product IDs. These may be custom items.`
+      );
     }
 
     if (missingImageItems.filter(item => item.hasSquareId).length > 0) {
-      recommendations.push('🔄 SYNC: Some items with Square IDs are missing images. Run sync-catering-images script.');
+      recommendations.push(
+        '🔄 SYNC: Some items with Square IDs are missing images. Run sync-catering-images script.'
+      );
     }
 
     if (missingImageItems.filter(item => !item.hasSquareId).length > 0) {
@@ -97,9 +103,8 @@ async function generateCateringImagesReport(): Promise<MonitoringReport> {
       itemsWithoutSquareId,
       missingImageItems,
       healthScore,
-      recommendations
+      recommendations,
     };
-
   } catch (error) {
     logger.error('Error generating monitoring report:', error);
     throw error;
@@ -123,15 +128,15 @@ async function checkMissingCateringItems(): Promise<{
         category: {
           name: {
             contains: 'CATERING',
-            mode: 'insensitive'
-          }
-        }
+            mode: 'insensitive',
+          },
+        },
       },
       include: {
         category: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     // Check which ones don't have catering items
@@ -139,29 +144,28 @@ async function checkMissingCateringItems(): Promise<{
     for (const product of cateringProducts) {
       const existingCateringItem = await prisma.cateringItem.findFirst({
         where: {
-          squareProductId: product.squareId
-        }
+          squareProductId: product.squareId,
+        },
       });
 
       if (!existingCateringItem) {
         productsWithoutCateringItems.push({
           name: product.name,
           squareId: product.squareId || '',
-          category: product.category?.name || 'Unknown'
+          category: product.category?.name || 'Unknown',
         });
       }
     }
 
     return {
       squareProductsWithoutCateringItems: productsWithoutCateringItems.length,
-      exampleProducts: productsWithoutCateringItems.slice(0, 5) // Show first 5 as examples
+      exampleProducts: productsWithoutCateringItems.slice(0, 5), // Show first 5 as examples
     };
-
   } catch (error) {
     logger.error('Error checking missing catering items:', error);
     return {
       squareProductsWithoutCateringItems: 0,
-      exampleProducts: []
+      exampleProducts: [],
     };
   }
 }
@@ -181,13 +185,13 @@ async function validateImageUrls(): Promise<{
       where: {
         isActive: true,
         imageUrl: {
-          not: null
-        }
+          not: null,
+        },
       },
       select: {
         name: true,
-        imageUrl: true
-      }
+        imageUrl: true,
+      },
     });
 
     let validUrls = 0;
@@ -199,20 +203,24 @@ async function validateImageUrls(): Promise<{
 
       try {
         // Basic URL validation
-        new URL(item.imageUrl.startsWith('/') ? `https://example.com${item.imageUrl}` : item.imageUrl);
-        
+        new URL(
+          item.imageUrl.startsWith('/') ? `https://example.com${item.imageUrl}` : item.imageUrl
+        );
+
         // Check for known good patterns
-        if (item.imageUrl.includes('items-images-production.s3') || 
-            item.imageUrl.includes('squarecdn.com') ||
-            item.imageUrl.startsWith('/images/') ||
-            item.imageUrl.includes('square-marketplace')) {
+        if (
+          item.imageUrl.includes('items-images-production.s3') ||
+          item.imageUrl.includes('squarecdn.com') ||
+          item.imageUrl.startsWith('/images/') ||
+          item.imageUrl.includes('square-marketplace')
+        ) {
           validUrls++;
         } else {
           invalidUrls++;
           brokenUrls.push({
             itemName: item.name,
             url: item.imageUrl,
-            error: 'Unknown URL pattern'
+            error: 'Unknown URL pattern',
           });
         }
       } catch (urlError) {
@@ -220,7 +228,7 @@ async function validateImageUrls(): Promise<{
         brokenUrls.push({
           itemName: item.name,
           url: item.imageUrl,
-          error: 'Invalid URL format'
+          error: 'Invalid URL format',
         });
       }
     }
@@ -228,15 +236,14 @@ async function validateImageUrls(): Promise<{
     return {
       validUrls,
       invalidUrls,
-      brokenUrls: brokenUrls.slice(0, 10) // Show first 10 broken URLs
+      brokenUrls: brokenUrls.slice(0, 10), // Show first 10 broken URLs
     };
-
   } catch (error) {
     logger.error('Error validating image URLs:', error);
     return {
       validUrls: 0,
       invalidUrls: 0,
-      brokenUrls: []
+      brokenUrls: [],
     };
   }
 }
@@ -250,10 +257,10 @@ async function monitorCateringImages(): Promise<void> {
 
     // Generate main report
     const report = await generateCateringImagesReport();
-    
+
     // Check for missing catering items
     const missingItems = await checkMissingCateringItems();
-    
+
     // Validate existing URLs
     const urlValidation = await validateImageUrls();
 
@@ -266,11 +273,13 @@ async function monitorCateringImages(): Promise<void> {
     logger.info(`❌ Items without Images: ${report.itemsWithoutImages}`);
     logger.info(`🔗 Items with Square ID: ${report.itemsWithSquareId}`);
     logger.info(`🚫 Items without Square ID: ${report.itemsWithoutSquareId}`);
-    
+
     if (report.missingImageItems.length > 0) {
       logger.info(`\n❌ ITEMS MISSING IMAGES (${report.missingImageItems.length}):`);
       report.missingImageItems.slice(0, 10).forEach(item => {
-        const squareInfo = item.hasSquareId ? `(Square ID: ${item.squareProductId})` : '(No Square ID)';
+        const squareInfo = item.hasSquareId
+          ? `(Square ID: ${item.squareProductId})`
+          : '(No Square ID)';
         logger.info(`   • ${item.name} [${item.category}] ${squareInfo}`);
       });
       if (report.missingImageItems.length > 10) {
@@ -279,7 +288,9 @@ async function monitorCateringImages(): Promise<void> {
     }
 
     if (missingItems.squareProductsWithoutCateringItems > 0) {
-      logger.info(`\n🔄 SQUARE PRODUCTS WITHOUT CATERING ITEMS (${missingItems.squareProductsWithoutCateringItems}):`);
+      logger.info(
+        `\n🔄 SQUARE PRODUCTS WITHOUT CATERING ITEMS (${missingItems.squareProductsWithoutCateringItems}):`
+      );
       missingItems.exampleProducts.forEach(product => {
         logger.info(`   • ${product.name} [${product.category}] (Square ID: ${product.squareId})`);
       });
@@ -291,7 +302,7 @@ async function monitorCateringImages(): Promise<void> {
     logger.info(`\n🔗 URL VALIDATION:`);
     logger.info(`   ✅ Valid URLs: ${urlValidation.validUrls}`);
     logger.info(`   ❌ Invalid URLs: ${urlValidation.invalidUrls}`);
-    
+
     if (urlValidation.brokenUrls.length > 0) {
       logger.info(`\n❌ BROKEN URLS:`);
       urlValidation.brokenUrls.forEach(broken => {
@@ -327,7 +338,6 @@ async function monitorCateringImages(): Promise<void> {
       logger.info('✅ All systems healthy!');
       process.exit(0);
     }
-
   } catch (error) {
     logger.error('❌ Fatal error in monitoring:', error);
     process.exit(1);
@@ -341,10 +351,10 @@ export {
   generateCateringImagesReport,
   checkMissingCateringItems,
   validateImageUrls,
-  monitorCateringImages
+  monitorCateringImages,
 };
 
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   monitorCateringImages();
-} 
+}

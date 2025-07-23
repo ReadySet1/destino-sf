@@ -6,31 +6,40 @@ import { addDays, subDays, format } from 'date-fns';
 // For this test, we'll define them here to demonstrate the validation logic
 
 // Phone number validation for catering orders
-const cateringPhoneSchema = z.string()
+const cateringPhoneSchema = z
+  .string()
   .min(7, 'Phone number must be at least 7 digits')
   .max(20, 'Phone number is too long')
-  .refine((phone) => {
-    // Remove all non-digit characters for validation
-    const digitsOnly = phone.replace(/\D/g, '');
-    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
-  }, {
-    message: 'Please enter a valid phone number (7-15 digits)'
-  });
+  .refine(
+    phone => {
+      // Remove all non-digit characters for validation
+      const digitsOnly = phone.replace(/\D/g, '');
+      return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+    },
+    {
+      message: 'Please enter a valid phone number (7-15 digits)',
+    }
+  );
 
 // Customer information form schema
 const customerInfoSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   phone: cateringPhoneSchema,
-  eventDate: z.date({
-    required_error: 'Please select an event date',
-  }).refine((date) => {
-    const minDate = addDays(new Date(), 5);
-    minDate.setHours(0, 0, 0, 0);
-    return date >= minDate;
-  }, {
-    message: 'Catering orders must be confirmed 5 days in advance',
-  }),
+  eventDate: z
+    .date({
+      required_error: 'Please select an event date',
+    })
+    .refine(
+      date => {
+        const minDate = addDays(new Date(), 5);
+        minDate.setHours(0, 0, 0, 0);
+        return date >= minDate;
+      },
+      {
+        message: 'Catering orders must be confirmed 5 days in advance',
+      }
+    ),
   specialRequests: z.string().optional(),
 });
 
@@ -44,51 +53,61 @@ const deliveryAddressSchema = z.object({
 });
 
 // Fulfillment method validation
-const fulfillmentSchema = z.object({
-  method: z.enum(['pickup', 'local_delivery'], {
-    required_error: 'Please select a fulfillment method',
-  }),
-  pickupDate: z.string().optional(),
-  pickupTime: z.string().optional(),
-  deliveryAddress: deliveryAddressSchema.optional(),
-  deliveryDate: z.string().optional(),
-  deliveryTime: z.string().optional(),
-}).refine((data) => {
-  // If delivery method is selected, delivery address is required
-  if (data.method === 'local_delivery') {
-    return data.deliveryAddress && data.deliveryDate && data.deliveryTime;
-  }
-  // If pickup method is selected, pickup details are required
-  if (data.method === 'pickup') {
-    return data.pickupDate && data.pickupTime;
-  }
-  return true;
-}, {
-  message: 'Please provide all required details for your selected fulfillment method',
-});
+const fulfillmentSchema = z
+  .object({
+    method: z.enum(['pickup', 'local_delivery'], {
+      required_error: 'Please select a fulfillment method',
+    }),
+    pickupDate: z.string().optional(),
+    pickupTime: z.string().optional(),
+    deliveryAddress: deliveryAddressSchema.optional(),
+    deliveryDate: z.string().optional(),
+    deliveryTime: z.string().optional(),
+  })
+  .refine(
+    data => {
+      // If delivery method is selected, delivery address is required
+      if (data.method === 'local_delivery') {
+        return data.deliveryAddress && data.deliveryDate && data.deliveryTime;
+      }
+      // If pickup method is selected, pickup details are required
+      if (data.method === 'pickup') {
+        return data.pickupDate && data.pickupTime;
+      }
+      return true;
+    },
+    {
+      message: 'Please provide all required details for your selected fulfillment method',
+    }
+  );
 
 // Order item validation
-const orderItemSchema = z.object({
-  itemType: z.enum(['package', 'item']),
-  itemId: z.string().optional().nullable(),
-  packageId: z.string().optional().nullable(),
-  name: z.string().min(1, 'Item name is required'),
-  quantity: z.number().int().positive('Quantity must be a positive number'),
-  pricePerUnit: z.number().positive('Price must be positive'),
-  totalPrice: z.number().positive('Total price must be positive'),
-  notes: z.string().optional().nullable(),
-}).refine((data) => {
-  // Either itemId or packageId should be present based on itemType
-  if (data.itemType === 'item') {
-    return data.itemId !== null;
-  }
-  if (data.itemType === 'package') {
-    return data.packageId !== null;
-  }
-  return true;
-}, {
-  message: 'Item ID is required for items and Package ID is required for packages',
-});
+const orderItemSchema = z
+  .object({
+    itemType: z.enum(['package', 'item']),
+    itemId: z.string().optional().nullable(),
+    packageId: z.string().optional().nullable(),
+    name: z.string().min(1, 'Item name is required'),
+    quantity: z.number().int().positive('Quantity must be a positive number'),
+    pricePerUnit: z.number().positive('Price must be positive'),
+    totalPrice: z.number().positive('Total price must be positive'),
+    notes: z.string().optional().nullable(),
+  })
+  .refine(
+    data => {
+      // Either itemId or packageId should be present based on itemType
+      if (data.itemType === 'item') {
+        return data.itemId !== null;
+      }
+      if (data.itemType === 'package') {
+        return data.packageId !== null;
+      }
+      return true;
+    },
+    {
+      message: 'Item ID is required for items and Package ID is required for packages',
+    }
+  );
 
 // Complete catering order validation
 const cateringOrderSchema = z.object({
@@ -103,34 +122,43 @@ const cateringOrderSchema = z.object({
 const validateDeliveryZone = (address: { city: string; postalCode: string }) => {
   const supportedZones = [
     { name: 'San Francisco', cities: ['san francisco'], zipRanges: ['94102-94199'] },
-    { name: 'South Bay', cities: ['san jose', 'santa clara', 'sunnyvale'], zipRanges: ['95110-95199'] },
-    { name: 'Peninsula', cities: ['palo alto', 'mountain view', 'redwood city'], zipRanges: ['94301-94399'] },
+    {
+      name: 'South Bay',
+      cities: ['san jose', 'santa clara', 'sunnyvale'],
+      zipRanges: ['95110-95199'],
+    },
+    {
+      name: 'Peninsula',
+      cities: ['palo alto', 'mountain view', 'redwood city'],
+      zipRanges: ['94301-94399'],
+    },
   ];
 
   const cityLower = address.city.toLowerCase();
   const zipCode = parseInt(address.postalCode.replace(/\D/g, '').substring(0, 5));
 
-  return supportedZones.some(zone => 
-    zone.cities.some(city => cityLower.includes(city)) ||
-    zone.zipRanges.some(range => {
-      const [min, max] = range.split('-').map(Number);
-      return zipCode >= min && zipCode <= max;
-    })
+  return supportedZones.some(
+    zone =>
+      zone.cities.some(city => cityLower.includes(city)) ||
+      zone.zipRanges.some(range => {
+        const [min, max] = range.split('-').map(Number);
+        return zipCode >= min && zipCode <= max;
+      })
   );
 };
 
 const validateMinimumOrder = (items: any[], deliveryZone?: string) => {
   const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
-  
+
   const minimums: Record<string, number> = {
     'San Francisco': 250,
     'South Bay': 350,
-    'Peninsula': 400,
-    'pickup': 0, // No minimum for pickup
+    Peninsula: 400,
+    pickup: 0, // No minimum for pickup
   };
 
   const requiredMinimum = minimums[deliveryZone || 'pickup'] || 0;
-  
+
   return {
     isValid: subtotal >= requiredMinimum,
     currentAmount: subtotal,
@@ -155,7 +183,7 @@ describe('Catering Form Validation', () => {
       };
 
       const result = customerInfoSchema.safeParse(validCustomerInfo);
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.name).toBe('John Catering');
@@ -178,9 +206,12 @@ describe('Catering Form Validation', () => {
         const result = customerInfoSchema.safeParse(customerInfo);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes('name') && issue.message.includes('at least 2 characters')
-          )).toBe(true);
+          expect(
+            result.error.issues.some(
+              issue =>
+                issue.path.includes('name') && issue.message.includes('at least 2 characters')
+            )
+          ).toBe(true);
         }
       });
     });
@@ -206,9 +237,11 @@ describe('Catering Form Validation', () => {
         const result = customerInfoSchema.safeParse(customerInfo);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes('email') && issue.message.includes('valid email')
-          )).toBe(true);
+          expect(
+            result.error.issues.some(
+              issue => issue.path.includes('email') && issue.message.includes('valid email')
+            )
+          ).toBe(true);
         }
       });
     });
@@ -238,11 +271,11 @@ describe('Catering Form Validation', () => {
 
     test('should reject invalid phone numbers', () => {
       const invalidPhones = [
-        '123',           // Too short
-        '',              // Empty
-        'not-a-number',  // No digits
+        '123', // Too short
+        '', // Empty
+        'not-a-number', // No digits
         '12345678901234567890', // Too long
-        '123-45',        // Too few digits
+        '123-45', // Too few digits
       ];
 
       invalidPhones.forEach(phone => {
@@ -256,9 +289,7 @@ describe('Catering Form Validation', () => {
         const result = customerInfoSchema.safeParse(customerInfo);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes('phone')
-          )).toBe(true);
+          expect(result.error.issues.some(issue => issue.path.includes('phone'))).toBe(true);
         }
       });
     });
@@ -282,9 +313,12 @@ describe('Catering Form Validation', () => {
         const result = customerInfoSchema.safeParse(customerInfo);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes('eventDate') && issue.message.includes('5 days in advance')
-          )).toBe(true);
+          expect(
+            result.error.issues.some(
+              issue =>
+                issue.path.includes('eventDate') && issue.message.includes('5 days in advance')
+            )
+          ).toBe(true);
         }
       });
     });
@@ -322,7 +356,7 @@ describe('Catering Form Validation', () => {
       };
 
       const result = deliveryAddressSchema.safeParse(validAddress);
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.street).toBe('123 Business Street');
@@ -438,8 +472,8 @@ describe('Catering Form Validation', () => {
         itemId: null,
         name: 'Executive Package',
         quantity: 25,
-        pricePerUnit: 45.00,
-        totalPrice: 1125.00,
+        pricePerUnit: 45.0,
+        totalPrice: 1125.0,
         notes: null,
       };
 
@@ -454,8 +488,8 @@ describe('Catering Form Validation', () => {
         packageId: null,
         name: 'Gourmet Appetizer Tray',
         quantity: 3,
-        pricePerUnit: 85.00,
-        totalPrice: 255.00,
+        pricePerUnit: 85.0,
+        totalPrice: 255.0,
         notes: 'Extra vegetarian options',
       };
 
@@ -470,8 +504,8 @@ describe('Catering Form Validation', () => {
         packageId: null,
         name: 'Invalid Item',
         quantity: 1,
-        pricePerUnit: 50.00,
-        totalPrice: 50.00,
+        pricePerUnit: 50.0,
+        totalPrice: 50.0,
       };
 
       const result = orderItemSchema.safeParse(itemWithoutId);
@@ -488,8 +522,8 @@ describe('Catering Form Validation', () => {
           packageId: null,
           name: 'Test Item',
           quantity,
-          pricePerUnit: 50.00,
-          totalPrice: 50.00 * quantity,
+          pricePerUnit: 50.0,
+          totalPrice: 50.0 * quantity,
         };
 
         const result = orderItemSchema.safeParse(item);
@@ -545,8 +579,8 @@ describe('Catering Form Validation', () => {
             itemId: null,
             name: 'Executive Package',
             quantity: 30,
-            pricePerUnit: 45.00,
-            totalPrice: 1350.00,
+            pricePerUnit: 45.0,
+            totalPrice: 1350.0,
           },
           {
             itemType: 'item' as const,
@@ -554,11 +588,11 @@ describe('Catering Form Validation', () => {
             packageId: null,
             name: 'Wine Service',
             quantity: 30,
-            pricePerUnit: 25.00,
-            totalPrice: 750.00,
+            pricePerUnit: 25.0,
+            totalPrice: 750.0,
           },
         ],
-        totalAmount: 2100.00,
+        totalAmount: 2100.0,
         paymentMethod: 'SQUARE' as const,
       };
 
@@ -587,9 +621,11 @@ describe('Catering Form Validation', () => {
       const result = cateringOrderSchema.safeParse(orderWithoutItems);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues.some(issue => 
-          issue.path.includes('items') && issue.message.includes('At least one item')
-        )).toBe(true);
+        expect(
+          result.error.issues.some(
+            issue => issue.path.includes('items') && issue.message.includes('At least one item')
+          )
+        ).toBe(true);
       }
     });
 
@@ -616,8 +652,8 @@ describe('Catering Form Validation', () => {
               packageId: null,
               name: 'Test Item',
               quantity: 1,
-              pricePerUnit: 50.00,
-              totalPrice: 50.00,
+              pricePerUnit: 50.0,
+              totalPrice: 50.0,
             },
           ],
           totalAmount,
@@ -664,21 +700,21 @@ describe('Catering Form Validation', () => {
           itemType: 'package',
           name: 'Test Package',
           quantity: 10,
-          pricePerUnit: 30.00,
-          totalPrice: 300.00,
+          pricePerUnit: 30.0,
+          totalPrice: 300.0,
         },
       ];
 
       // San Francisco minimum: $250 - should pass
       const sfValidation = validateMinimumOrder(items, 'San Francisco');
       expect(sfValidation.isValid).toBe(true);
-      expect(sfValidation.currentAmount).toBe(300.00);
+      expect(sfValidation.currentAmount).toBe(300.0);
       expect(sfValidation.minimumRequired).toBe(250);
 
       // South Bay minimum: $350 - should fail
       const southBayValidation = validateMinimumOrder(items, 'South Bay');
       expect(southBayValidation.isValid).toBe(false);
-      expect(southBayValidation.currentAmount).toBe(300.00);
+      expect(southBayValidation.currentAmount).toBe(300.0);
       expect(southBayValidation.minimumRequired).toBe(350);
       expect(southBayValidation.shortfall).toBe(50);
 
@@ -694,14 +730,14 @@ describe('Catering Form Validation', () => {
           itemType: 'item',
           name: 'Small Item',
           quantity: 1,
-          pricePerUnit: 100.00,
-          totalPrice: 100.00,
+          pricePerUnit: 100.0,
+          totalPrice: 100.0,
         },
       ];
 
       const peninsulaValidation = validateMinimumOrder(smallOrder, 'Peninsula');
       expect(peninsulaValidation.isValid).toBe(false);
-      expect(peninsulaValidation.currentAmount).toBe(100.00);
+      expect(peninsulaValidation.currentAmount).toBe(100.0);
       expect(peninsulaValidation.minimumRequired).toBe(400);
       expect(peninsulaValidation.shortfall).toBe(300);
     });
@@ -723,7 +759,7 @@ describe('Catering Form Validation', () => {
 
       const result = cateringOrderSchema.safeParse(malformedData);
       expect(result.success).toBe(false);
-      
+
       if (!result.success) {
         expect(result.error.issues.length).toBeGreaterThan(0);
       }
@@ -748,10 +784,10 @@ describe('Catering Form Validation', () => {
 
       const result = cateringOrderSchema.safeParse(invalidOrder);
       expect(result.success).toBe(false);
-      
+
       if (!result.success) {
         const errorMessages = result.error.issues.map(issue => issue.message);
-        
+
         expect(errorMessages.some(msg => msg.includes('at least 2 characters'))).toBe(true);
         expect(errorMessages.some(msg => msg.includes('valid email'))).toBe(true);
         expect(errorMessages.some(msg => msg.includes('5 days in advance'))).toBe(true);
@@ -779,22 +815,20 @@ describe('Catering Form Validation', () => {
             packageId: null,
             name: 'Concurrent Test Item',
             quantity: 5,
-            pricePerUnit: 60.00,
-            totalPrice: 300.00,
+            pricePerUnit: 60.0,
+            totalPrice: 300.0,
           },
         ],
-        totalAmount: 300.00,
+        totalAmount: 300.0,
         paymentMethod: 'SQUARE' as const,
       };
 
       // Simulate multiple rapid validations
-      const results = Array.from({ length: 10 }, () => 
-        cateringOrderSchema.safeParse(validOrder)
-      );
+      const results = Array.from({ length: 10 }, () => cateringOrderSchema.safeParse(validOrder));
 
       results.forEach(result => {
         expect(result.success).toBe(true);
       });
     });
   });
-}); 
+});

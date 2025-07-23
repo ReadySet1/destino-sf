@@ -48,7 +48,7 @@ export class MockSyncManager {
    */
   async startMockSync(options: MockSyncOptions): Promise<{ syncId: string; status: string }> {
     const syncId = `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     logger.info('🧪 Starting Mock Sync', { syncId, options });
 
     // Create initial sync log
@@ -61,8 +61,8 @@ export class MockSyncManager {
         progress: 0,
         message: 'Mock sync started...',
         currentStep: 'initialization',
-        options: options as any
-      }
+        options: options as any,
+      },
     });
 
     // Start mock sync process in background
@@ -74,7 +74,10 @@ export class MockSyncManager {
   /**
    * Execute mock sync with realistic timing and progress updates
    */
-  private async executeMockSyncInBackground(syncId: string, options: MockSyncOptions): Promise<void> {
+  private async executeMockSyncInBackground(
+    syncId: string,
+    options: MockSyncOptions
+  ): Promise<void> {
     try {
       // Calculate mock duration based on batch size
       const baseDuration = options.customDuration || this.getMockDuration(options.batchSize);
@@ -84,7 +87,8 @@ export class MockSyncManager {
       logger.info(`🧪 Mock sync ${syncId} will take ${baseDuration} seconds`);
 
       // Simulate error early if requested
-      if (options.simulateError && Math.random() < 0.3) { // 30% chance early error
+      if (options.simulateError && Math.random() < 0.3) {
+        // 30% chance early error
         await this.delay(2000); // Wait 2 seconds
         throw new Error('Mock API connection failed');
       }
@@ -94,7 +98,7 @@ export class MockSyncManager {
         // Check if sync was cancelled before each step
         const currentSync = await prisma.userSyncLog.findUnique({
           where: { syncId },
-          select: { status: true }
+          select: { status: true },
         });
 
         if (!currentSync) {
@@ -117,7 +121,7 @@ export class MockSyncManager {
             message,
             currentStep: step,
             processed: Math.floor((i / steps) * 150), // Mock 150 total products
-            total: 150
+            total: 150,
           });
         } catch (error) {
           logger.warn(`🧪 Mock sync ${syncId} progress update failed:`, error);
@@ -129,7 +133,8 @@ export class MockSyncManager {
           throw new Error('Mock sync failed during processing');
         }
 
-        if (i < steps) { // Don't delay after the last step
+        if (i < steps) {
+          // Don't delay after the last step
           await this.delay(stepDuration);
         }
       }
@@ -137,9 +142,8 @@ export class MockSyncManager {
       // Complete mock sync - add small delay to ensure final update is processed
       await this.delay(1000); // Increase delay to 1 second
       await this.completeMockSync(syncId, options);
-      
-      logger.info(`🧪 Mock sync ${syncId} completed successfully`);
 
+      logger.info(`🧪 Mock sync ${syncId} completed successfully`);
     } catch (error) {
       logger.error(`🧪 Mock sync ${syncId} failed:`, error);
       await this.failMockSync(syncId, error);
@@ -149,20 +153,23 @@ export class MockSyncManager {
   /**
    * Update mock progress
    */
-  private async updateMockProgress(syncId: string, progress: {
-    percentage: number;
-    message: string;
-    currentStep: string;
-    processed?: number;
-    total?: number;
-  }): Promise<void> {
+  private async updateMockProgress(
+    syncId: string,
+    progress: {
+      percentage: number;
+      message: string;
+      currentStep: string;
+      processed?: number;
+      total?: number;
+    }
+  ): Promise<void> {
     await prisma.userSyncLog.update({
       where: { syncId },
       data: {
         progress: progress.percentage,
         message: progress.message,
-        currentStep: progress.currentStep
-      }
+        currentStep: progress.currentStep,
+      },
     });
 
     logger.debug(`🧪 Mock progress: ${progress.percentage}% - ${progress.message}`);
@@ -183,8 +190,8 @@ export class MockSyncManager {
         created: 5,
         updated: this.getMockProductCount(options.batchSize) - 5,
         withImages: options.includeImages ? 85 : 0,
-        withoutImages: options.includeImages ? 15 : this.getMockProductCount(options.batchSize)
-      }
+        withoutImages: options.includeImages ? 15 : this.getMockProductCount(options.batchSize),
+      },
     };
 
     await prisma.userSyncLog.update({
@@ -195,8 +202,8 @@ export class MockSyncManager {
         progress: 100,
         message: 'Mock sync completed successfully! 🎉',
         currentStep: 'completed',
-        results: mockResults as any
-      }
+        results: mockResults as any,
+      },
     });
 
     logger.info('🧪 Mock sync completed', { syncId, results: mockResults });
@@ -209,7 +216,7 @@ export class MockSyncManager {
     const userFriendlyError = {
       title: 'Mock Sync Failed',
       message: error.message || 'Mock sync encountered an error',
-      action: 'This is a simulated error for testing'
+      action: 'This is a simulated error for testing',
     };
 
     await prisma.userSyncLog.update({
@@ -219,8 +226,8 @@ export class MockSyncManager {
         endTime: new Date(),
         message: userFriendlyError.message,
         currentStep: 'failed',
-        errors: [userFriendlyError]
-      }
+        errors: [userFriendlyError],
+      },
     });
 
     logger.error('🧪 Mock sync failed', { syncId, error: error.message });
@@ -236,8 +243,8 @@ export class MockSyncManager {
         status: 'CANCELLED',
         endTime: new Date(),
         message: 'Mock sync cancelled by user',
-        currentStep: 'cancelled'
-      }
+        currentStep: 'cancelled',
+      },
     });
 
     logger.info('🧪 Mock sync cancelled', { syncId });
@@ -246,19 +253,27 @@ export class MockSyncManager {
   // Helper methods for mock behavior
   private getMockDuration(batchSize: string): number {
     switch (batchSize) {
-      case 'small': return 15; // 15 seconds
-      case 'medium': return 25; // 25 seconds  
-      case 'large': return 40; // 40 seconds
-      default: return 25;
+      case 'small':
+        return 15; // 15 seconds
+      case 'medium':
+        return 25; // 25 seconds
+      case 'large':
+        return 40; // 40 seconds
+      default:
+        return 25;
     }
   }
 
   private getMockProductCount(batchSize: string): number {
     switch (batchSize) {
-      case 'small': return 25;
-      case 'medium': return 50;
-      case 'large': return 100;
-      default: return 50;
+      case 'small':
+        return 25;
+      case 'medium':
+        return 50;
+      case 'large':
+        return 100;
+      default:
+        return 50;
     }
   }
 
@@ -290,4 +305,4 @@ export class MockSyncManager {
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-} 
+}

@@ -35,8 +35,19 @@ describe('Square Phone Number Formatting', () => {
     });
 
     it('should reject invalid area codes (000-009)', () => {
-      const invalidAreaCodes = ['000', '001', '002', '003', '004', '005', '006', '007', '008', '009'];
-      
+      const invalidAreaCodes = [
+        '000',
+        '001',
+        '002',
+        '003',
+        '004',
+        '005',
+        '006',
+        '007',
+        '008',
+        '009',
+      ];
+
       invalidAreaCodes.forEach(areaCode => {
         const result = formatPhoneForSquarePaymentLink(`${areaCode}1234567`);
         expect(result).toBeNull();
@@ -44,8 +55,19 @@ describe('Square Phone Number Formatting', () => {
     });
 
     it('should reject special service area codes', () => {
-      const serviceAreaCodes = ['911', '555', '800', '888', '877', '866', '855', '844', '833', '822'];
-      
+      const serviceAreaCodes = [
+        '911',
+        '555',
+        '800',
+        '888',
+        '877',
+        '866',
+        '855',
+        '844',
+        '833',
+        '822',
+      ];
+
       serviceAreaCodes.forEach(areaCode => {
         const result = formatPhoneForSquarePaymentLink(`${areaCode}1234567`);
         expect(result).toBeNull();
@@ -111,7 +133,9 @@ describe('Square Phone Number Formatting', () => {
     });
 
     it('should throw error for numbers starting with 0', () => {
-      expect(() => formatPhoneForSquare('+01234567890')).toThrow('Invalid phone number: country codes cannot start with 0');
+      expect(() => formatPhoneForSquare('+01234567890')).toThrow(
+        'Invalid phone number: country codes cannot start with 0'
+      );
     });
 
     it('should throw error for unclear format', () => {
@@ -131,24 +155,24 @@ describe('Square Phone Number Formatting', () => {
     it('should format phone numbers for Square sandbox requirements', () => {
       // Mock console.log to capture the formatting message
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       const result = formatPhoneForSquare('415-123-4567');
-      
+
       // Should return a sandbox-formatted number
       expect(result).toMatch(/^\+1\d{3}555\d{4}$/);
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Sandbox: Phone formatted'));
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should handle invalid area codes in sandbox mode', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       const result = formatPhoneForSquare('000-123-4567');
-      
+
       // Should use default area code (425) for invalid input
       expect(result).toBe('+14255551234');
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -160,12 +184,14 @@ describe('Square Phone Number Formatting', () => {
 
     it('should use production formatting for valid numbers', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       const result = formatPhoneForSquare('415-123-4567');
-      
+
       expect(result).toBe('+14151234567');
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Production: Using email as provided'));
-      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Production: Using email as provided')
+      );
+
       consoleSpy.mockRestore();
     });
   });
@@ -185,7 +211,7 @@ describe('Square Phone Number Formatting', () => {
       // Test the specific validation that caused the original error
       const validPhone = formatPhoneForSquarePaymentLink('415-123-2323');
       expect(validPhone).toBe('+14151232323');
-      
+
       // Test that invalid phones are rejected
       const invalidPhone = formatPhoneForSquarePaymentLink('555-123-4567');
       expect(invalidPhone).toBeNull();
@@ -193,14 +219,14 @@ describe('Square Phone Number Formatting', () => {
 
     it('should log warnings for rejected phone numbers', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       formatPhoneForSquarePaymentLink('555-123-4567');
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('has potentially invalid area code 555 for Square payment links')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
-}); 
+});

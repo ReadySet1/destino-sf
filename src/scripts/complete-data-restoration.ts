@@ -2,13 +2,13 @@
 
 /**
  * Complete Data Restoration Script
- * 
+ *
  * This is the master script that restores ALL data for Destino SF:
  * 1. Square product synchronization (store products with proper categories)
  * 2. Catering packages and items
  * 3. Store configuration
  * 4. Category slug fixes
- * 
+ *
  * Use this script to completely restore the application data after any database issues.
  */
 
@@ -23,14 +23,14 @@ const prisma = new PrismaClient();
  */
 async function syncSquareData() {
   console.log('🔄 Syncing Square products...');
-  
+
   try {
     const result = await syncSquareProducts();
     console.log(`✅ Square sync completed: ${JSON.stringify(result)}`);
-    
+
     // Fix category slugs that might be null
     await fixCategorySlugs();
-    
+
     return result;
   } catch (error) {
     console.error('❌ Error syncing Square data:', error);
@@ -43,16 +43,17 @@ async function syncSquareData() {
  */
 async function fixCategorySlugs() {
   console.log('🔧 Fixing category slugs...');
-  
+
   const categoriesWithNullSlugs = await prisma.category.findMany({
     where: {
-      slug: null
-    }
+      slug: null,
+    },
   });
 
   let fixed = 0;
   for (const category of categoriesWithNullSlugs) {
-    const slug = category.name.toLowerCase()
+    const slug = category.name
+      .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
@@ -60,9 +61,9 @@ async function fixCategorySlugs() {
 
     await prisma.category.update({
       where: { id: category.id },
-      data: { slug }
+      data: { slug },
     });
-    
+
     console.log(`  ✅ Fixed slug for ${category.name} → ${slug}`);
     fixed++;
   }
@@ -88,18 +89,18 @@ async function verifyDataIntegrity() {
   // Check products
   const products = await prisma.product.count();
   const alfajoresProducts = await prisma.product.count({
-    where: { categoryId: alfajoresCategory?.id }
+    where: { categoryId: alfajoresCategory?.id },
   });
   const empanadasProducts = await prisma.product.count({
-    where: { categoryId: empanadasCategory?.id }
+    where: { categoryId: empanadasCategory?.id },
   });
 
   // Check catering data
   const cateringPackages = await prisma.cateringPackage.count();
   const appetizerPackages = await prisma.cateringPackage.count({
     where: {
-      type: 'INDIVIDUAL'
-    }
+      type: 'INDIVIDUAL',
+    },
   });
   const cateringItems = await prisma.cateringItem.count();
 
@@ -122,18 +123,18 @@ async function verifyDataIntegrity() {
     {
       route: '/products/category/alfajores',
       category: alfajoresCategory,
-      productCount: alfajoresProducts
+      productCount: alfajoresProducts,
     },
     {
-      route: '/products/category/empanadas', 
+      route: '/products/category/empanadas',
       category: empanadasCategory,
-      productCount: empanadasProducts
+      productCount: empanadasProducts,
     },
     {
       route: '/catering (appetizer section)',
       category: { name: 'Appetizer Packages' },
-      productCount: appetizerPackages
-    }
+      productCount: appetizerPackages,
+    },
   ];
 
   console.log('🌐 Route Status:');
@@ -148,7 +149,7 @@ async function verifyDataIntegrity() {
     cateringPackages,
     appetizerPackages,
     cateringItems,
-    routesWorking: routeChecks.filter(c => c.category && c.productCount > 0).length
+    routesWorking: routeChecks.filter(c => c.category && c.productCount > 0).length,
   };
 }
 
@@ -182,7 +183,7 @@ async function completeDataRestoration() {
     console.log('🎉 COMPLETE DATA RESTORATION FINISHED!');
     console.log('=====================================');
     console.log('');
-    
+
     if (verification.routesWorking === 3) {
       console.log('✅ ALL ROUTES SHOULD NOW BE WORKING:');
       console.log('   • http://localhost:3000/products/category/alfajores');
@@ -200,7 +201,6 @@ async function completeDataRestoration() {
     console.log('');
 
     return verification;
-
   } catch (error) {
     console.error('❌ Error during complete data restoration:', error);
     throw error;
@@ -224,4 +224,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { completeDataRestoration, syncSquareData, fixCategorySlugs }; 
+export { completeDataRestoration, syncSquareData, fixCategorySlugs };

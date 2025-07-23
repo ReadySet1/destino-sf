@@ -1,13 +1,13 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { NextRequest } from 'next/server';
-import { 
-  RateLimitConfig, 
-  RateLimitResult, 
-  RateLimitOptions, 
+import {
+  RateLimitConfig,
+  RateLimitResult,
+  RateLimitOptions,
   RateLimitEndpoint,
   EndpointRateLimits,
-  RateLimitResponse 
+  RateLimitResponse,
 } from '@/types/rate-limit';
 
 /**
@@ -25,32 +25,32 @@ export const ENDPOINT_RATE_LIMITS: EndpointRateLimits = {
     id: 'webhooks',
     limit: 100, // 100 requests per minute for webhooks
     window: 60 * 1000, // 1 minute
-    prefix: 'webhook_rl'
+    prefix: 'webhook_rl',
   },
   checkout: {
     id: 'checkout',
     limit: 10, // 10 requests per minute per IP for checkout
     window: 60 * 1000, // 1 minute
-    prefix: 'checkout_rl'
+    prefix: 'checkout_rl',
   },
   orders: {
     id: 'orders',
     limit: 30, // 30 requests per minute per user for orders
     window: 60 * 1000, // 1 minute
-    prefix: 'orders_rl'
+    prefix: 'orders_rl',
   },
   api: {
     id: 'api',
     limit: 60, // 60 requests per minute for general API
     window: 60 * 1000, // 1 minute
-    prefix: 'api_rl'
+    prefix: 'api_rl',
   },
   admin: {
     id: 'admin',
     limit: 120, // 120 requests per minute for admin endpoints
     window: 60 * 1000, // 1 minute
-    prefix: 'admin_rl'
-  }
+    prefix: 'admin_rl',
+  },
 };
 
 /**
@@ -63,7 +63,7 @@ const rateLimiters = new Map<string, Ratelimit>();
  */
 function getRateLimiter(config: RateLimitConfig): Ratelimit {
   const key = `${config.id}_${config.limit}_${config.window}`;
-  
+
   if (!rateLimiters.has(key)) {
     const limiter = new Ratelimit({
       redis,
@@ -71,10 +71,10 @@ function getRateLimiter(config: RateLimitConfig): Ratelimit {
       prefix: config.prefix || 'rl',
       analytics: true, // Enable analytics for monitoring
     });
-    
+
     rateLimiters.set(key, limiter);
   }
-  
+
   return rateLimiters.get(key)!;
 }
 
@@ -87,24 +87,24 @@ export function getClientIp(request: NextRequest): string {
   const xRealIp = request.headers.get('x-real-ip');
   const cfConnectingIp = request.headers.get('cf-connecting-ip'); // Cloudflare
   const xClientIp = request.headers.get('x-client-ip');
-  
+
   if (xForwardedFor) {
     // X-Forwarded-For can contain multiple IPs, take the first one
     return xForwardedFor.split(',')[0].trim();
   }
-  
+
   if (cfConnectingIp) {
     return cfConnectingIp;
   }
-  
+
   if (xRealIp) {
     return xRealIp;
   }
-  
+
   if (xClientIp) {
     return xClientIp;
   }
-  
+
   // Fallback to host header if no other IP headers are available
   return request.headers.get('host') || 'unknown';
 }
@@ -112,14 +112,11 @@ export function getClientIp(request: NextRequest): string {
 /**
  * Get rate limit identifier based on request and options
  */
-function getRateLimitIdentifier(
-  request: NextRequest, 
-  options: RateLimitOptions = {}
-): string {
+function getRateLimitIdentifier(request: NextRequest, options: RateLimitOptions = {}): string {
   if (options.identifier) {
     return options.identifier;
   }
-  
+
   // Default to IP-based rate limiting
   return getClientIp(request);
 }
@@ -140,34 +137,33 @@ export async function checkRateLimit(
         remaining: 999,
         reset: new Date(Date.now() + 60000),
         limit: 999,
-        count: 0
+        count: 0,
       };
     }
-    
+
     // Get configuration for the endpoint
     const baseConfig = ENDPOINT_RATE_LIMITS[endpoint];
     const config = { ...baseConfig, ...options.config };
-    
+
     // Get rate limiter instance
     const limiter = getRateLimiter(config);
-    
+
     // Get identifier for rate limiting
     const identifier = getRateLimitIdentifier(request, options);
-    
+
     // Check rate limit
     const result = await limiter.limit(identifier);
-    
+
     return {
       success: result.success,
       remaining: result.remaining,
       reset: new Date(result.reset),
       limit: result.limit,
-      count: result.limit - result.remaining
+      count: result.limit - result.remaining,
     };
-    
   } catch (error) {
     console.error(`Rate limit check failed for endpoint ${endpoint}:`, error);
-    
+
     // On error, allow the request but log it
     // This prevents rate limiting failures from breaking the API
     return {
@@ -175,7 +171,7 @@ export async function checkRateLimit(
       remaining: 999,
       reset: new Date(Date.now() + 60000),
       limit: 999,
-      count: 0
+      count: 0,
     };
   }
 }
@@ -187,19 +183,19 @@ export function getEndpointFromPath(pathname: string): RateLimitEndpoint {
   if (pathname.startsWith('/api/webhooks/')) {
     return 'webhooks';
   }
-  
+
   if (pathname.startsWith('/api/checkout')) {
     return 'checkout';
   }
-  
+
   if (pathname.startsWith('/api/orders')) {
     return 'orders';
   }
-  
+
   if (pathname.startsWith('/api/admin')) {
     return 'admin';
   }
-  
+
   // Default to general API rate limit
   return 'api';
 }
@@ -214,9 +210,9 @@ export function createRateLimitResponse(result: RateLimitResult): Response {
     limit: result.limit,
     remaining: result.remaining,
     reset: Math.floor(result.reset.getTime() / 1000),
-    retryAfter: Math.ceil((result.reset.getTime() - Date.now()) / 1000)
+    retryAfter: Math.ceil((result.reset.getTime() - Date.now()) / 1000),
   };
-  
+
   return new Response(JSON.stringify(response), {
     status: 429,
     headers: {
@@ -225,7 +221,7 @@ export function createRateLimitResponse(result: RateLimitResult): Response {
       'X-RateLimit-Remaining': result.remaining.toString(),
       'X-RateLimit-Reset': Math.floor(result.reset.getTime() / 1000).toString(),
       'Retry-After': Math.ceil((result.reset.getTime() - Date.now()) / 1000).toString(),
-    }
+    },
   });
 }
 
@@ -234,15 +230,15 @@ export function createRateLimitResponse(result: RateLimitResult): Response {
  */
 export function addRateLimitHeaders(response: Response, result: RateLimitResult): Response {
   const newHeaders = new Headers(response.headers);
-  
+
   newHeaders.set('X-RateLimit-Limit', result.limit.toString());
   newHeaders.set('X-RateLimit-Remaining', result.remaining.toString());
   newHeaders.set('X-RateLimit-Reset', Math.floor(result.reset.getTime() / 1000).toString());
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers: newHeaders
+    headers: newHeaders,
   });
 }
 
@@ -251,46 +247,43 @@ export function addRateLimitHeaders(response: Response, result: RateLimitResult)
  */
 export class RateLimitService {
   private static instance: RateLimitService;
-  
+
   static getInstance(): RateLimitService {
     if (!RateLimitService.instance) {
       RateLimitService.instance = new RateLimitService();
     }
     return RateLimitService.instance;
   }
-  
+
   /**
    * Check rate limit with custom configuration
    */
-  async checkCustomLimit(
-    identifier: string, 
-    config: RateLimitConfig
-  ): Promise<RateLimitResult> {
+  async checkCustomLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitResult> {
     try {
       const limiter = getRateLimiter(config);
       const result = await limiter.limit(identifier);
-      
+
       return {
         success: result.success,
         remaining: result.remaining,
         reset: new Date(result.reset),
         limit: result.limit,
-        count: result.limit - result.remaining
+        count: result.limit - result.remaining,
       };
     } catch (error) {
       console.error('Custom rate limit check failed:', error);
-      
+
       // Return permissive result on error
       return {
         success: true,
         remaining: 999,
         reset: new Date(Date.now() + 60000),
         limit: 999,
-        count: 0
+        count: 0,
       };
     }
   }
-  
+
   /**
    * Get rate limit status without incrementing counter
    */
@@ -301,17 +294,17 @@ export class RateLimitService {
     try {
       const config = ENDPOINT_RATE_LIMITS[endpoint];
       const key = `${config.prefix || 'rl'}:${identifier}`;
-      
+
       // Get current count from Redis without incrementing
-      const count = await redis.get(key) as number || 0;
+      const count = ((await redis.get(key)) as number) || 0;
       const remaining = Math.max(0, config.limit - count);
-      
+
       return {
         success: remaining > 0,
         remaining,
         reset: new Date(Date.now() + config.window),
         limit: config.limit,
-        count
+        count,
       };
     } catch (error) {
       console.error('Failed to get rate limit status:', error);
@@ -323,4 +316,4 @@ export class RateLimitService {
 /**
  * Export default service instance
  */
-export const rateLimitService = RateLimitService.getInstance(); 
+export const rateLimitService = RateLimitService.getInstance();

@@ -14,7 +14,7 @@ const BoxedLunchAdminPage = () => {
   const handleInitialize = async (action: string) => {
     setStatus('loading');
     setMessage(`Initializing ${action}...`);
-    
+
     try {
       // For now, just simulate the action
       setTimeout(() => {
@@ -39,9 +39,23 @@ const BoxedLunchAdminPage = () => {
       </div>
 
       {message && (
-        <Alert className={`mb-6 ${status === 'error' ? 'border-red-200 bg-red-50' : status === 'success' ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
-          {status === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-          <AlertDescription className={status === 'error' ? 'text-red-700' : status === 'success' ? 'text-green-700' : 'text-blue-700'}>
+        <Alert
+          className={`mb-6 ${status === 'error' ? 'border-red-200 bg-red-50' : status === 'success' ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}
+        >
+          {status === 'error' ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertDescription
+            className={
+              status === 'error'
+                ? 'text-red-700'
+                : status === 'success'
+                  ? 'text-green-700'
+                  : 'text-blue-700'
+            }
+          >
             {message}
           </AlertDescription>
         </Alert>
@@ -118,7 +132,10 @@ const BoxedLunchAdminPage = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleInitialize('All Components')}>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleInitialize('All Components')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Package className="h-4 w-4" />
@@ -133,7 +150,10 @@ const BoxedLunchAdminPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleInitialize('Packages')}>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleInitialize('Packages')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Package className="h-4 w-4" />
@@ -142,11 +162,16 @@ const BoxedLunchAdminPage = () => {
               <CardDescription>Create tier packages only</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled={status === 'loading'}>Initialize</Button>
+              <Button className="w-full" disabled={status === 'loading'}>
+                Initialize
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleInitialize('Proteins')}>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleInitialize('Proteins')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Utensils className="h-4 w-4" />
@@ -155,11 +180,16 @@ const BoxedLunchAdminPage = () => {
               <CardDescription>Create protein options</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled={status === 'loading'}>Initialize</Button>
+              <Button className="w-full" disabled={status === 'loading'}>
+                Initialize
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleInitialize('Salads')}>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleInitialize('Salads')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Salad className="h-4 w-4" />
@@ -168,11 +198,16 @@ const BoxedLunchAdminPage = () => {
               <CardDescription>Create side salad options</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled={status === 'loading'}>Initialize</Button>
+              <Button className="w-full" disabled={status === 'loading'}>
+                Initialize
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleInitialize('Add-Ons')}>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleInitialize('Add-Ons')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Plus className="h-4 w-4" />
@@ -181,7 +216,9 @@ const BoxedLunchAdminPage = () => {
               <CardDescription>Create service add-ons</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled={status === 'loading'}>Initialize</Button>
+              <Button className="w-full" disabled={status === 'loading'}>
+                Initialize
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -199,7 +236,9 @@ const BoxedLunchAdminPage = () => {
                     <h4 className="font-semibold">Browse Options Page</h4>
                     <p className="text-sm text-gray-600">Main customer-facing interface</p>
                   </div>
-                  <Badge variant="default" className="bg-green-600">Working</Badge>
+                  <Badge variant="default" className="bg-green-600">
+                    Working
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -211,7 +250,9 @@ const BoxedLunchAdminPage = () => {
                     <h4 className="font-semibold">Protein Selection</h4>
                     <p className="text-sm text-gray-600">Interactive protein chooser</p>
                   </div>
-                  <Badge variant="default" className="bg-green-600">Working</Badge>
+                  <Badge variant="default" className="bg-green-600">
+                    Working
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -223,7 +264,9 @@ const BoxedLunchAdminPage = () => {
                     <h4 className="font-semibold">Cart Integration</h4>
                     <p className="text-sm text-gray-600">Add to cart functionality</p>
                   </div>
-                  <Badge variant="default" className="bg-green-600">Working</Badge>
+                  <Badge variant="default" className="bg-green-600">
+                    Working
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -238,7 +281,8 @@ const BoxedLunchAdminPage = () => {
                 <div>
                   <h4 className="font-semibold">1. Initialize Data</h4>
                   <p className="text-sm text-gray-600 mt-1">
-                    Use the &quot;Initialize All&quot; button to create the boxed lunch items in the database
+                    Use the &quot;Initialize All&quot; button to create the boxed lunch items in the
+                    database
                   </p>
                 </div>
               </CardContent>
@@ -249,7 +293,11 @@ const BoxedLunchAdminPage = () => {
                 <div>
                   <h4 className="font-semibold">2. Test the Interface</h4>
                   <p className="text-sm text-gray-600 mt-1">
-                    Visit <a href="/catering/browse-options" className="text-blue-600 underline">/catering/browse-options</a> to test the user interface
+                    Visit{' '}
+                    <a href="/catering/browse-options" className="text-blue-600 underline">
+                      /catering/browse-options
+                    </a>{' '}
+                    to test the user interface
                   </p>
                 </div>
               </CardContent>
@@ -272,4 +320,4 @@ const BoxedLunchAdminPage = () => {
   );
 };
 
-export default BoxedLunchAdminPage; 
+export default BoxedLunchAdminPage;

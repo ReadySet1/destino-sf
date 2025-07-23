@@ -108,11 +108,7 @@ describe('/api/checkout/payment - POST', () => {
       });
 
       // Verify Square payment creation
-      expect(mockCreatePayment).toHaveBeenCalledWith(
-        'card-nonce-12345',
-        'square-order-456',
-        7500
-      );
+      expect(mockCreatePayment).toHaveBeenCalledWith('card-nonce-12345', 'square-order-456', 7500);
     });
 
     test('should handle successful gift card payment', async () => {
@@ -540,11 +536,13 @@ describe('/api/checkout/payment - POST', () => {
         status: 'PROCESSING',
       } as any);
 
-      const requests = Array.from({ length: 3 }, () =>
-        new NextRequest('http://localhost:3000/api/checkout/payment', {
-          method: 'POST',
-          body: JSON.stringify(validPaymentRequest),
-        })
+      const requests = Array.from(
+        { length: 3 },
+        () =>
+          new NextRequest('http://localhost:3000/api/checkout/payment', {
+            method: 'POST',
+            body: JSON.stringify(validPaymentRequest),
+          })
       );
 
       const responses = await Promise.all(requests.map(req => POST(req)));
@@ -555,4 +553,4 @@ describe('/api/checkout/payment - POST', () => {
       });
     }, 15000); // Increase timeout to 15 seconds for concurrent operations
   });
-}); 
+});

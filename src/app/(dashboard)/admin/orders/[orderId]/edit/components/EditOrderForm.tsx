@@ -14,40 +14,45 @@ const convertDecimalToNumber = (decimal: unknown): number => {
     return isNaN(decimal) ? 0 : decimal;
   }
   // Check if it looks like a Decimal object (has toFixed method)
-  if (decimal !== null && typeof decimal === 'object' && 'toFixed' in decimal && typeof decimal.toFixed === 'function') {
+  if (
+    decimal !== null &&
+    typeof decimal === 'object' &&
+    'toFixed' in decimal &&
+    typeof decimal.toFixed === 'function'
+  ) {
     // Convert Decimal to string, then parse as float
     const num = parseFloat(decimal.toFixed());
     return isNaN(num) ? 0 : num;
   }
-   // Check if it's a string representation of a number
-   if (typeof decimal === 'string') {
-     const num = parseFloat(decimal);
-     return isNaN(num) ? 0 : num;
-   }
+  // Check if it's a string representation of a number
+  if (typeof decimal === 'string') {
+    const num = parseFloat(decimal);
+    return isNaN(num) ? 0 : num;
+  }
   // Default to 0 if it's none of the above or conversion failed
   return 0;
 };
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 // Helper function to safely format price
 const formatPrice = (price: any): string => {
   // Handle null or undefined
   if (price === null || price === undefined) return '0.00';
-  
+
   // If it's already a number, format it
   if (typeof price === 'number') return price.toFixed(2);
-  
+
   // If it's a string that can be parsed as a number
   if (typeof price === 'string') {
     const parsedPrice = parseFloat(price);
     return isNaN(parsedPrice) ? '0.00' : parsedPrice.toFixed(2);
   }
-  
+
   // For objects (like Decimal) try to convert to number
   if (typeof price === 'object') {
     try {
@@ -55,7 +60,7 @@ const formatPrice = (price: any): string => {
       if (typeof price.toNumber === 'function') {
         return price.toNumber().toFixed(2);
       }
-      
+
       // If it has a toString method
       if (typeof price.toString === 'function') {
         const parsedPrice = parseFloat(price.toString());
@@ -65,7 +70,7 @@ const formatPrice = (price: any): string => {
       console.error('Error formatting price:', e);
     }
   }
-  
+
   // Fallback
   return '0.00';
 };
@@ -128,7 +133,7 @@ interface EditOrderFormProps {
 
 export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
   const router = useRouter();
-  
+
   // Initialize form with the existing order data
   const [formState, setFormState] = useState<FormState>({
     customerName: initialOrder.customerName,
@@ -145,19 +150,19 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity,
-      price: typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0),
+      price: typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0,
       productName: item.productName,
       variantName: item.variantName,
     })),
     existingOrderId: initialOrder.id,
   });
-  
+
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -184,7 +189,9 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
   }, []);
 
   // Handle form field changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormState(prev => ({
       ...prev,
@@ -197,7 +204,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     const productId = e.target.value;
     setSelectedProduct(productId);
     setSelectedVariant('');
-    
+
     // Set default price from the selected product
     if (productId) {
       const product = products.find(p => p.id === productId);
@@ -213,7 +220,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
   const handleVariantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const variantId = e.target.value;
     setSelectedVariant(variantId);
-    
+
     // Update price if variant has custom price
     if (variantId) {
       const product = products.find(p => p.id === selectedProduct);
@@ -231,20 +238,20 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
   // Add item to order
   const addItem = () => {
     if (!selectedProduct) return;
-    
+
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
-    
+
     let variantName: string | null = null;
     if (selectedVariant) {
       const variant = product.variants.find(v => v.id === selectedVariant);
       variantName = variant ? variant.name : null;
     }
-    
+
     // Ensure price is a number
-    const itemPrice = typeof price === 'number' ? price : 
-                     (typeof price === 'string' ? parseFloat(price) || 0 : 0);
-    
+    const itemPrice =
+      typeof price === 'number' ? price : typeof price === 'string' ? parseFloat(price) || 0 : 0;
+
     const newItem: OrderItem = {
       productId: selectedProduct,
       variantId: selectedVariant || null,
@@ -253,39 +260,44 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       productName: product.name,
       variantName,
     };
-    
+
     setFormState(prev => ({
       ...prev,
-      items: [...prev.items, newItem]
+      items: [...prev.items, newItem],
     }));
-    
+
     // Reset item selection
     setSelectedProduct('');
     setSelectedVariant('');
     setQuantity(1);
     setPrice(0);
   };
-  
+
   // Remove item from order
   const removeItem = (index: number) => {
     setFormState(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index)
+      items: prev.items.filter((_, i) => i !== index),
     }));
   };
 
   // Calculate order total
-  const orderTotal = formState.items.reduce(
-    (total, item) => {
-      // Ensure both price and quantity are treated as numbers
-      const itemPrice = typeof item.price === 'number' ? item.price : 
-                        (typeof item.price === 'string' ? parseFloat(item.price) || 0 : 0);
-      const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 
-                          (typeof item.quantity === 'string' ? parseInt(item.quantity) || 0 : 0);
-      return total + (itemPrice * itemQuantity);
-    },
-    0
-  );
+  const orderTotal = formState.items.reduce((total, item) => {
+    // Ensure both price and quantity are treated as numbers
+    const itemPrice =
+      typeof item.price === 'number'
+        ? item.price
+        : typeof item.price === 'string'
+          ? parseFloat(item.price) || 0
+          : 0;
+    const itemQuantity =
+      typeof item.quantity === 'number'
+        ? item.quantity
+        : typeof item.quantity === 'string'
+          ? parseInt(item.quantity) || 0
+          : 0;
+    return total + itemPrice * itemQuantity;
+  }, 0);
 
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -293,34 +305,33 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     setIsSubmitting(true);
     setError('');
     setSuccess('');
-    
+
     try {
       // Validation
       if (formState.items.length === 0) {
         throw new Error('Please add at least one item to the order');
       }
-      
+
       if (!formState.customerName || !formState.email || !formState.phone) {
         throw new Error('Please fill in all required customer information');
       }
-      
+
       // Submit the order update
       const result = await createManualOrder({
         ...formState,
         total: orderTotal,
       });
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
-      
+
       setSuccess(`Order ${result.orderId} updated successfully!`);
-      
+
       // Navigate back to the order details after success
       setTimeout(() => {
         router.push(`/admin/orders/${result.orderId}`);
       }, 1500);
-      
     } catch (err) {
       console.error('Error updating order:', err);
       setError(err instanceof Error ? err.message : 'Failed to update order');
@@ -328,7 +339,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       setIsSubmitting(false);
     }
   };
-  
+
   // Handle cancel button
   const handleCancel = () => {
     router.back();
@@ -350,7 +361,10 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
           <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="customerName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Customer Name *
               </label>
               <input
@@ -399,7 +413,10 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
           <h2 className="text-xl font-semibold mb-4">Order Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="fulfillmentType" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="fulfillmentType"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Fulfillment Type
               </label>
               <select
@@ -438,7 +455,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
-                {Object.values(OrderStatus).map((status) => (
+                {Object.values(OrderStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -449,14 +466,14 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                 Order Notes
               </label>
-              
+
               {/* Show formatted notes if they exist */}
               {formState.notes && (
                 <div className="mb-3">
                   <FormattedNotes notes={formState.notes} />
                 </div>
               )}
-              
+
               <textarea
                 id="notes"
                 name="notes"
@@ -467,7 +484,8 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                 placeholder="Enter order notes, special requests, or shipping information..."
               />
               <p className="text-xs text-gray-500 mt-1">
-                For shipping orders, the system will automatically format addresses. You can edit the raw JSON if needed.
+                For shipping orders, the system will automatically format addresses. You can edit
+                the raw JSON if needed.
               </p>
             </div>
           </div>
@@ -478,7 +496,10 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
           <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="paymentMethod"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Payment Method
               </label>
               <select
@@ -493,7 +514,10 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               </select>
             </div>
             <div>
-              <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="paymentStatus"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Payment Status
               </label>
               <select
@@ -503,7 +527,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
-                {Object.values(PaymentStatus).map((status) => (
+                {Object.values(PaymentStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -516,7 +540,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
         {/* Order Items */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Order Items</h2>
-          
+
           {/* Add new item */}
           <div className="bg-gray-50 p-4 rounded-md mb-4">
             <h3 className="text-md font-medium mb-3">Add Item</h3>
@@ -532,14 +556,14 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
                   <option value="">Select a product</option>
-                  {products.map((product) => (
+                  {products.map(product => (
                     <option key={product.id} value={product.id}>
                       {product.name} - ${formatPrice(product.price)}
                     </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label htmlFor="variant" className="block text-sm font-medium text-gray-700 mb-1">
                   Variant
@@ -549,20 +573,24 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   value={selectedVariant}
                   onChange={handleVariantChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  disabled={!selectedProduct || products.find(p => p.id === selectedProduct)?.variants.length === 0}
+                  disabled={
+                    !selectedProduct ||
+                    products.find(p => p.id === selectedProduct)?.variants.length === 0
+                  }
                 >
                   <option value="">No variant</option>
                   {selectedProduct &&
                     products
                       .find(p => p.id === selectedProduct)
-                      ?.variants.map((variant) => (
+                      ?.variants.map(variant => (
                         <option key={variant.id} value={variant.id}>
-                          {variant.name} {variant.price !== null ? `- $${formatPrice(variant.price)}` : ''}
+                          {variant.name}{' '}
+                          {variant.price !== null ? `- $${formatPrice(variant.price)}` : ''}
                         </option>
                       ))}
                 </select>
               </div>
-              
+
               <div>
                 <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
                   Quantity
@@ -571,12 +599,12 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   type="number"
                   id="quantity"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                   min="1"
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                   Price ($)
@@ -585,13 +613,13 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   type="number"
                   id="price"
                   value={price}
-                  onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                  onChange={e => setPrice(parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
               </div>
-              
+
               <div className="flex items-end">
                 <button
                   type="button"
@@ -604,7 +632,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               </div>
             </div>
           </div>
-          
+
           {/* Item list */}
           {formState.items.length > 0 ? (
             <div className="border rounded-md overflow-hidden">
@@ -636,8 +664,12 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                     <tr key={index}>
                       <td className="px-4 py-3 text-sm text-gray-900">{item.productName}</td>
                       <td className="px-4 py-3 text-sm text-gray-500">{item.variantName || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">${formatPrice(item.price)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">{item.quantity}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                        ${formatPrice(item.price)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                        {item.quantity}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right">
                         ${formatPrice(item.price * item.quantity)}
                       </td>
@@ -670,17 +702,9 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
         </div>
 
         {/* Error and Success Messages */}
-        {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-md">
-            {error}
-          </div>
-        )}
-        
-        {success && (
-          <div className="bg-green-50 text-green-700 p-3 rounded-md">
-            {success}
-          </div>
-        )}
+        {error && <div className="bg-red-50 text-red-700 p-3 rounded-md">{error}</div>}
+
+        {success && <div className="bg-green-50 text-green-700 p-3 rounded-md">{success}</div>}
 
         {/* Buttons */}
         <div className="flex justify-end space-x-3">
@@ -708,4 +732,4 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       </form>
     </div>
   );
-} 
+}

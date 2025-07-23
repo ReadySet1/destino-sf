@@ -5,6 +5,7 @@ This guide helps you test and set up your new test database connection.
 ## Database Configuration
 
 **Connection Details:**
+
 - Host: `5.78.141.250`
 - Port: `5433`
 - Database: `postgres`
@@ -12,6 +13,7 @@ This guide helps you test and set up your new test database connection.
 - SSL Mode: `require`
 
 **Connection String:**
+
 ```
 postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require
 ```
@@ -19,6 +21,7 @@ postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79a
 ## Available Testing Scripts
 
 ### 1. Quick Connection Test
+
 Test basic database connectivity:
 
 ```bash
@@ -30,6 +33,7 @@ pnpm test-new-db-ts
 ```
 
 **What it tests:**
+
 - ✅ Basic database connection
 - ✅ SSL connectivity
 - ✅ Database version and current time
@@ -39,6 +43,7 @@ pnpm test-new-db-ts
 - ✅ Migration status
 
 ### 2. Database Setup
+
 Set up the database schema if it's a fresh database:
 
 ```bash
@@ -46,6 +51,7 @@ pnpm setup-test-db
 ```
 
 **What it does:**
+
 - ✅ Tests connection
 - ✅ Generates Prisma client
 - ✅ Deploys migrations or pushes schema
@@ -55,14 +61,17 @@ pnpm setup-test-db
 ## Testing Scenarios
 
 ### Scenario 1: Fresh Database
+
 If this is a completely new database:
 
 1. **Test connection first:**
+
    ```bash
    pnpm test-new-db-ts
    ```
 
 2. **If schema is missing, set it up:**
+
    ```bash
    pnpm setup-test-db
    ```
@@ -73,9 +82,11 @@ If this is a completely new database:
    ```
 
 ### Scenario 2: Existing Database
+
 If the database already has tables:
 
 1. **Test connection and operations:**
+
    ```bash
    pnpm test-new-db-ts
    ```
@@ -83,9 +94,11 @@ If the database already has tables:
 2. **Check for any issues and follow suggested steps**
 
 ### Scenario 3: Integration Testing
+
 To use this database for your test suite:
 
 1. **Set environment variable:**
+
    ```bash
    export DATABASE_URL="postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require"
    ```
@@ -98,6 +111,7 @@ To use this database for your test suite:
 ## Expected Output
 
 ### Successful Connection Test
+
 ```
 🔍 Testing new test database connection...
 Database Host: 5.78.141.250:5433
@@ -148,55 +162,65 @@ Database version: PostgreSQL 15.x on x86_64-pc-linux-gnu
 ### Common Issues
 
 #### 1. Connection Timeout
+
 ```
 ❌ Database connection failed:
 Error: connect ETIMEDOUT 5.78.141.250:5433
 ```
 
 **Solutions:**
+
 - Check your internet connection
 - Verify firewall settings
 - Ensure the database server is running
 - Try connecting from a different network
 
 #### 2. SSL Certificate Issues
+
 ```
 ❌ Database connection failed:
 Error: self signed certificate in certificate chain
 ```
 
 **Solutions:**
+
 - The connection string already includes `sslmode=require`
 - If issues persist, try adding `&sslcert=disable` (not recommended for production)
 
 #### 3. Authentication Failed
+
 ```
 ❌ Database connection failed:
 Error: password authentication failed for user "destino_test"
 ```
 
 **Solutions:**
+
 - Verify the connection string is exactly as provided
 - Check if the user credentials have changed
 - Ensure the database user has proper permissions
 
 #### 4. Schema Missing
+
 ```
 ⚠️ Schema not found or incomplete. This might be a fresh database.
 Error: Table 'public.Category' doesn't exist
 ```
 
 **Solutions:**
+
 - Run the setup script: `pnpm setup-test-db`
 - Or manually run: `DATABASE_URL="..." npx prisma migrate deploy`
 
 #### 5. Permission Denied
+
 ```
-❌ Database operations test failed: 
+❌ Database operations test failed:
 Error: permission denied for table Category
 ```
 
 **Solutions:**
+
 - Verify the user has CREATE, SELECT, INSERT, UPDATE, DELETE permissions
 - Check if the user can create/drop tables if needed for testing
 
@@ -229,12 +253,14 @@ npx prisma migrate reset
 To use this database with your existing test suite, you can:
 
 1. **Update test environment variables:**
+
    ```javascript
    // In your test setup files
-   process.env.DATABASE_URL = "postgresql://destino_test:...";
+   process.env.DATABASE_URL = 'postgresql://destino_test:...';
    ```
 
 2. **Create environment-specific test scripts:**
+
    ```json
    {
      "scripts": {
@@ -266,4 +292,4 @@ After successful testing:
 2. **Use for staging:** Deploy your application with this database for staging tests
 3. **Set up CI/CD:** Use this database for automated testing in your CI pipeline
 4. **Monitor performance:** Test query performance and optimization
-5. **Backup strategy:** Consider backup procedures for important test data 
+5. **Backup strategy:** Consider backup procedures for important test data

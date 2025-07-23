@@ -7,8 +7,8 @@ import { revalidatePath } from 'next/cache';
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
-  SQUARE = "SQUARE",
-  CASH = "CASH"
+  SQUARE = 'SQUARE',
+  CASH = 'CASH',
 }
 
 interface OrderItemInput {
@@ -101,7 +101,7 @@ export async function createManualOrder(data: ManualOrderInput) {
       revalidatePath('/admin/orders');
       return { orderId: updatedOrder.id };
     }
-    
+
     // Creating a new order
     const newOrder = await prisma.order.create({
       data: {
@@ -164,4 +164,4 @@ export async function updateOrderStatus(
     logger.error(`Error updating order ${orderId} status:`, error);
     return { error: 'Failed to update order status' };
   }
-} 
+}

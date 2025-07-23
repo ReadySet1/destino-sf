@@ -8,16 +8,16 @@ import { ShoppingCart } from 'lucide-react';
 
 export function CateringCartButton() {
   const { items, totalItems } = useCateringCartStore();
-  
+
   if (totalItems === 0) {
     return null;
   }
-  
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <Link href="/catering/checkout">
-        <Button 
-          size="lg" 
+        <Button
+          size="lg"
           className="bg-[#2d3538] hover:bg-[#2d3538]/90 rounded-full shadow-lg px-5 py-6"
         >
           <ShoppingCart className="mr-2 h-5 w-5" />
@@ -31,4 +31,4 @@ export function CateringCartButton() {
   );
 }
 
-export default CateringCartButton; 
+export default CateringCartButton;

@@ -1,15 +1,15 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { 
-  type CateringPackage, 
-  type CateringItem, 
-  CateringPackageType, 
+import {
+  type CateringPackage,
+  type CateringItem,
+  CateringPackageType,
   CateringItemCategory,
   DeliveryZone,
   determineDeliveryZone,
   validateMinimumPurchase,
-  getZoneConfig
+  getZoneConfig,
 } from '@/types/catering';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
@@ -17,7 +17,11 @@ import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createCateringOrderTipSettings } from '@/lib/square/tip-settings';
-import { formatPhoneForSquare, formatEmailForSquare, formatCustomerDataForSquarePaymentLink } from '@/lib/square/formatting';
+import {
+  formatPhoneForSquare,
+  formatEmailForSquare,
+  formatCustomerDataForSquarePaymentLink,
+} from '@/lib/square/formatting';
 
 /**
  * Fetches all active catering packages using Prisma
@@ -25,7 +29,7 @@ import { formatPhoneForSquare, formatEmailForSquare, formatCustomerDataForSquare
 export async function getCateringPackages(): Promise<CateringPackage[]> {
   try {
     console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
-    
+
     const packages = await db.cateringPackage.findMany({
       where: {
         isActive: true,
@@ -36,12 +40,13 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
     });
 
     console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
-    
-    return packages?.map((pkg: any) => ({
-      ...pkg,
-      pricePerPerson: Number(pkg.pricePerPerson),
-    })) as CateringPackage[] || [];
 
+    return (
+      (packages?.map((pkg: any) => ({
+        ...pkg,
+        pricePerPerson: Number(pkg.pricePerPerson),
+      })) as CateringPackage[]) || []
+    );
   } catch (error) {
     console.error('❌ [CATERING] Error fetching catering packages:', error);
     return [];
@@ -66,25 +71,27 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
         },
       },
     });
-    
+
     if (!cateringPackage) {
       return null;
     }
-    
+
     return {
       ...cateringPackage,
       pricePerPerson: Number(cateringPackage.pricePerPerson),
       items: cateringPackage.items.map((item: any) => ({
         ...item,
-        cateringItem: item.cateringItem ? {
-          ...item.cateringItem,
-          price: Number(item.cateringItem.price)
-        } : undefined
-      }))
+        cateringItem: item.cateringItem
+          ? {
+              ...item.cateringItem,
+              price: Number(item.cateringItem.price),
+            }
+          : undefined,
+      })),
     } as unknown as CateringPackage;
   } catch (error) {
     console.error(`Error fetching catering package with ID ${packageId}:`, error);
-    
+
     // More specific error handling
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2021') {
@@ -92,7 +99,7 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
         throw new Error(`Catering package table does not exist. Error code: ${error.code}`);
       }
     }
-    
+
     throw error; // Re-throw the error to be handled by the calling component
   }
 }
@@ -100,34 +107,36 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
 /**
  * Fetches a single catering item by ID
  */
-export async function getCateringItem(itemId: string): Promise<{ success: boolean; data?: CateringItem; error?: string }> {
+export async function getCateringItem(
+  itemId: string
+): Promise<{ success: boolean; data?: CateringItem; error?: string }> {
   try {
     const item = await db.cateringItem.findUnique({
       where: {
         id: itemId,
       },
     });
-    
+
     if (!item) {
       return { success: false, error: 'Catering item not found' };
     }
-    
+
     return {
       success: true,
       data: {
         ...item,
         price: Number(item.price),
-      } as unknown as CateringItem
+      } as unknown as CateringItem,
     };
   } catch (error) {
     console.error(`Error fetching catering item with ID ${itemId}:`, error);
-    
+
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2021') {
         return { success: false, error: 'Catering items table does not exist' };
       }
     }
-    
+
     return { success: false, error: 'Failed to fetch catering item' };
   }
 }
@@ -139,7 +148,7 @@ export async function getCateringItem(itemId: string): Promise<{ success: boolea
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
     console.log('🔧 [CATERING] Fetching catering items via Prisma...');
-    
+
     const items = await db.cateringItem.findMany({
       where: {
         isActive: true,
@@ -149,12 +158,15 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       },
     });
 
-    console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items from CateringItem table`);
-    
-    const cateringItems = items?.map((item: any) => ({
-      ...item,
-      price: Number(item.price),
-    })) as CateringItem[] || [];
+    console.log(
+      `✅ [CATERING] Successfully fetched ${items?.length || 0} catering items from CateringItem table`
+    );
+
+    const cateringItems =
+      (items?.map((item: any) => ({
+        ...item,
+        price: Number(item.price),
+      })) as CateringItem[]) || [];
 
     // Also fetch products from Product table that belong to catering categories
     try {
@@ -167,38 +179,38 @@ export async function getCateringItems(): Promise<CateringItem[]> {
               category: {
                 name: {
                   contains: 'CATERING',
-                  mode: 'insensitive'
-                }
-              }
+                  mode: 'insensitive',
+                },
+              },
             },
             {
               category: {
                 name: {
                   contains: 'SHARE PLATTERS',
-                  mode: 'insensitive'
-                }
-              }
-            }
-          ]
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
         },
         include: {
           category: {
             select: {
-              name: true
-            }
-          }
+              name: true,
+            },
+          },
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: 'asc',
+        },
       });
-      
+
       console.log(`✅ [CATERING] Found ${cateringProducts.length} products in catering categories`);
 
       // Create a map of real images from Product table
       const productImageMap = new Map();
       cateringProducts.forEach(product => {
-        const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : null;
+        const imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
         if (imageUrl && product.squareId) {
           productImageMap.set(product.squareId, imageUrl);
         }
@@ -218,7 +230,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       let updatedCount = 0;
       const updatedCateringItems = cateringItems.map(cateringItem => {
         let realImageUrl = null;
-        
+
         // First try: Direct squareProductId match
         if (cateringItem.squareProductId && productImageMap.has(cateringItem.squareProductId)) {
           realImageUrl = productImageMap.get(cateringItem.squareProductId);
@@ -230,43 +242,46 @@ export async function getCateringItems(): Promise<CateringItem[]> {
             realImageUrl = baseItemImageMap.get(baseName);
           }
         }
-        
+
         if (realImageUrl) {
-          const isGenericImage = cateringItem.imageUrl?.includes('/images/catering/') && 
-                                 (cateringItem.imageUrl.includes('appetizer-package') || 
-                                  cateringItem.imageUrl.includes('default-item'));
-          
+          const isGenericImage =
+            cateringItem.imageUrl?.includes('/images/catering/') &&
+            (cateringItem.imageUrl.includes('appetizer-package') ||
+              cateringItem.imageUrl.includes('default-item'));
+
           if (isGenericImage || !cateringItem.imageUrl) {
             updatedCount++;
             return {
               ...cateringItem,
-              imageUrl: realImageUrl
+              imageUrl: realImageUrl,
             };
           }
         }
-        
+
         return cateringItem;
       });
-      
+
       if (updatedCount > 0) {
-        console.log(`🔄 [CATERING] Updated ${updatedCount} items with real images from Product table`);
+        console.log(
+          `🔄 [CATERING] Updated ${updatedCount} items with real images from Product table`
+        );
       }
 
       // Convert remaining Product items that don't have CateringItem equivalents
       const productAsCateringItems: CateringItem[] = cateringProducts
         .filter(product => {
-          // Skip products that already have CateringItem equivalents  
-          const existsInCateringItems = cateringItems.some(cateringItem => 
-            cateringItem.squareProductId === product.squareId
+          // Skip products that already have CateringItem equivalents
+          const existsInCateringItems = cateringItems.some(
+            cateringItem => cateringItem.squareProductId === product.squareId
           );
-          
+
           return !existsInCateringItems;
         })
         .map(product => {
           // Determine category based on the Square category name
           let category = 'STARTER'; // default
           const categoryName = product.category?.name?.toUpperCase() || '';
-          
+
           if (categoryName.includes('DESSERT')) {
             category = 'DESSERT';
           } else if (categoryName.includes('ENTREE') || categoryName.includes('BUFFET')) {
@@ -280,7 +295,10 @@ export async function getCateringItems(): Promise<CateringItem[]> {
           }
 
           // Same logic as admin: get first image if available
-          const firstImage = (product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : null;
+          const firstImage =
+            product.images && product.images.length > 0 && product.images[0]
+              ? product.images[0]
+              : null;
 
           return {
             id: product.id,
@@ -297,25 +315,27 @@ export async function getCateringItems(): Promise<CateringItem[]> {
             squareCategory: product.category?.name || null,
             squareProductId: product.squareId,
             createdAt: product.createdAt,
-            updatedAt: product.updatedAt
+            updatedAt: product.updatedAt,
           } as CateringItem;
         });
 
-      console.log(`✅ [CATERING] Converted ${productAsCateringItems.length} products to catering items`);
+      console.log(
+        `✅ [CATERING] Converted ${productAsCateringItems.length} products to catering items`
+      );
 
       // Merge the results - updated catering items first, then new products
       const allItems = [...updatedCateringItems, ...productAsCateringItems];
-      
-      console.log(`✅ [CATERING] Total items returned: ${allItems.length} (${updatedCateringItems.length} from CateringItem + ${productAsCateringItems.length} from Product)`);
-      
-      return allItems;
 
+      console.log(
+        `✅ [CATERING] Total items returned: ${allItems.length} (${updatedCateringItems.length} from CateringItem + ${productAsCateringItems.length} from Product)`
+      );
+
+      return allItems;
     } catch (productError) {
       console.error('❌ [CATERING] Error fetching products from Product table:', productError);
       // Return just the catering items if product fetch fails
       return cateringItems;
     }
-
   } catch (error) {
     console.error('❌ [CATERING] Unexpected error fetching catering items:', error);
     return [];
@@ -325,7 +345,9 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 /**
  * Fetches catering items by category
  */
-export async function getCateringItemsByCategory(category: CateringItemCategory): Promise<CateringItem[]> {
+export async function getCateringItemsByCategory(
+  category: CateringItemCategory
+): Promise<CateringItem[]> {
   try {
     const items = await db.cateringItem.findMany({
       where: {
@@ -336,10 +358,10 @@ export async function getCateringItemsByCategory(category: CateringItemCategory)
         name: 'asc',
       },
     });
-    
+
     return items.map((item: any) => ({
       ...item,
-      price: Number(item.price)
+      price: Number(item.price),
     })) as unknown as CateringItem[];
   } catch (error) {
     console.error(`Error fetching catering items for category ${category}:`, error);
@@ -375,7 +397,7 @@ export async function createCateringPackage(data: {
         ...(data.items && data.items.length > 0
           ? {
               items: {
-                create: data.items.map((item) => ({
+                create: data.items.map(item => ({
                   quantity: item.quantity,
                   cateringItem: {
                     connect: {
@@ -388,10 +410,10 @@ export async function createCateringPackage(data: {
           : {}),
       },
     });
-    
+
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
-    
+
     return { success: true, id: newPackage.id };
   } catch (error) {
     console.error('Error creating catering package:', error);
@@ -423,10 +445,10 @@ export async function updateCateringPackage(
       },
       data,
     });
-    
+
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
-    
+
     return { success: true };
   } catch (error) {
     console.error(`Error updating catering package with ID ${packageId}:`, error);
@@ -455,10 +477,10 @@ export async function createCateringItem(data: {
         isActive: true,
       },
     });
-    
+
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
-    
+
     return { success: true, id: newItem.id };
   } catch (error) {
     console.error('Error creating catering item:', error);
@@ -491,10 +513,10 @@ export async function updateCateringItem(
       },
       data,
     });
-    
+
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
-    
+
     return { success: true };
   } catch (error) {
     console.error(`Error updating catering item with ID ${itemId}:`, error);
@@ -520,9 +542,9 @@ export async function addCateringPackageRating(data: {
         reviewerName: data.reviewerName,
       },
     });
-    
+
     revalidatePath('/catering');
-    
+
     return { success: true };
   } catch (error) {
     console.error('Error adding rating to catering package:', error);
@@ -556,7 +578,7 @@ export async function submitCateringInquiry(data: {
         status: 'PENDING',
       },
     });
-    
+
     revalidatePath('/catering');
     return { success: true };
   } catch (error) {
@@ -574,29 +596,29 @@ export async function getProductsBySquareCategory(categoryName: string): Promise
     // First, find the category by name
     const category = await db.category.findFirst({
       where: {
-        name: categoryName
-      }
+        name: categoryName,
+      },
     });
-    
+
     if (!category) {
       console.warn(`Square category ${categoryName} not found`);
       return [];
     }
-    
+
     // Get products that belong to this category
     const products = await db.product.findMany({
       where: {
         categoryId: category.id,
-        active: true
+        active: true,
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
-    
+
     return products.map((product: any) => ({
       ...product,
-      price: Number(product.price)
+      price: Number(product.price),
     }));
   } catch (error) {
     console.error(`Error fetching products for Square category ${categoryName}:`, error);
@@ -613,14 +635,14 @@ export async function getCateringCategories(): Promise<any[]> {
     const categories = await db.category.findMany({
       where: {
         name: {
-          startsWith: 'CATERING-'
-        }
+          startsWith: 'CATERING-',
+        },
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
-    
+
     return categories;
   } catch (error) {
     console.error('Error fetching catering categories:', error);
@@ -629,34 +651,46 @@ export async function getCateringCategories(): Promise<any[]> {
 }
 
 // Schema for catering order validation
-const CateringOrderItemSchema = z.object({
-  itemType: z.enum(['package', 'item']),
-  itemId: z.string().uuid().optional().nullable(),
-  packageId: z.string().uuid().optional().nullable(),
-  name: z.string(),
-  quantity: z.number().int().positive(),
-  pricePerUnit: z.number().positive(),
-  totalPrice: z.number().positive(),
-  notes: z.string().optional().nullable(),
-}).refine((data) => {
-  // Either itemId or packageId should be present, or neither for synthetic items
-  return data.itemType === 'item' ? data.itemId !== null : 
-         data.itemType === 'package' ? data.packageId !== null : true;
-}, {
-  message: "itemId is required for items and packageId is required for packages"
-});
+const CateringOrderItemSchema = z
+  .object({
+    itemType: z.enum(['package', 'item']),
+    itemId: z.string().uuid().optional().nullable(),
+    packageId: z.string().uuid().optional().nullable(),
+    name: z.string(),
+    quantity: z.number().int().positive(),
+    pricePerUnit: z.number().positive(),
+    totalPrice: z.number().positive(),
+    notes: z.string().optional().nullable(),
+  })
+  .refine(
+    data => {
+      // Either itemId or packageId should be present, or neither for synthetic items
+      return data.itemType === 'item'
+        ? data.itemId !== null
+        : data.itemType === 'package'
+          ? data.packageId !== null
+          : true;
+    },
+    {
+      message: 'itemId is required for items and packageId is required for packages',
+    }
+  );
 
 // Phone number validation for catering orders
-const cateringPhoneSchema = z.string()
+const cateringPhoneSchema = z
+  .string()
   .min(7, 'Phone number must be at least 7 digits')
   .max(20, 'Phone number is too long')
-  .refine((phone) => {
-    // Remove all non-digit characters for validation
-    const digitsOnly = phone.replace(/\D/g, '');
-    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
-  }, {
-    message: 'Please enter a valid phone number (7-15 digits)'
-  });
+  .refine(
+    phone => {
+      // Remove all non-digit characters for validation
+      const digitsOnly = phone.replace(/\D/g, '');
+      return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+    },
+    {
+      message: 'Please enter a valid phone number (7-15 digits)',
+    }
+  );
 
 const CateringOrderSchema = z.object({
   customerInfo: z.object({
@@ -674,13 +708,15 @@ const CateringOrderSchema = z.object({
     method: z.enum(['pickup', 'local_delivery']),
     pickupDate: z.string().optional(),
     pickupTime: z.string().optional(),
-    deliveryAddress: z.object({
-      street: z.string(),
-      street2: z.string().optional(),
-      city: z.string(),
-      state: z.string(),
-      postalCode: z.string(),
-    }).optional(),
+    deliveryAddress: z
+      .object({
+        street: z.string(),
+        street2: z.string().optional(),
+        city: z.string(),
+        state: z.string(),
+        postalCode: z.string(),
+      })
+      .optional(),
     deliveryDate: z.string().optional(),
     deliveryTime: z.string().optional(),
   }),
@@ -690,11 +726,8 @@ const CateringOrderSchema = z.object({
 });
 
 export type ServerActionResult<T = unknown> = Promise<
-  | { success: true; data: T }
-  | { success: false; error: string }
+  { success: true; data: T } | { success: false; error: string }
 >;
-
-
 
 /**
  * Saves contact information immediately to capture leads
@@ -718,7 +751,7 @@ export async function saveContactInfo(data: {
     });
 
     let profile;
-    
+
     if (existingProfile) {
       // Update existing profile with new information
       profile = await db.profile.update({
@@ -729,7 +762,7 @@ export async function saveContactInfo(data: {
           updated_at: new Date(),
         },
       });
-      
+
       console.log(`Updated existing profile for email: ${data.email}`);
     } else {
       // Create new profile
@@ -742,26 +775,26 @@ export async function saveContactInfo(data: {
           role: 'CUSTOMER',
         },
       });
-      
+
       console.log(`Created new profile for email: ${data.email}`);
     }
 
     return {
       success: true,
-      data: { profileId: profile.id }
+      data: { profileId: profile.id },
     };
   } catch (error) {
     console.error('Error saving contact info:', error);
-    
+
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return { success: false, error: 'This email is already registered' };
       }
     }
-    
-    return { 
-      success: false, 
-      error: 'Failed to save contact information' 
+
+    return {
+      success: false,
+      error: 'Failed to save contact information',
     };
   }
 }
@@ -780,41 +813,41 @@ export async function createCateringOrderAndProcessPayment(
 ): Promise<ServerActionResult<{ orderId: string; checkoutUrl?: string }>> {
   try {
     const { customerInfo, eventDetails, fulfillment, items, totalAmount, paymentMethod } = formData;
-    
+
     console.log(`Creating catering order with ${paymentMethod} payment method...`);
-    
+
     // Validate delivery zone if it's a delivery order
     let deliveryZone = null;
     let deliveryFee = 0;
-    
+
     if (fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress) {
       const validation = await validateCateringOrderWithDeliveryZone(
         items.map(item => ({
           id: item.itemId || item.packageId || `synthetic-${Date.now()}-${Math.random()}`,
           quantity: item.quantity,
-          price: item.pricePerUnit
+          price: item.pricePerUnit,
         })),
         {
           city: fulfillment.deliveryAddress.city,
-          postalCode: fulfillment.deliveryAddress.postalCode
+          postalCode: fulfillment.deliveryAddress.postalCode,
         }
       );
-      
+
       if (!validation.isValid) {
         return {
           success: false,
-          error: validation.errorMessage || 'Delivery validation failed'
+          error: validation.errorMessage || 'Delivery validation failed',
         };
       }
-      
+
       deliveryZone = validation.deliveryZone;
       deliveryFee = validation.deliveryFee || 0;
-      
+
       // Update total amount to include delivery fee
       const updatedTotalAmount = totalAmount + deliveryFee;
       formData.totalAmount = updatedTotalAmount;
     }
-    
+
     // 1. Create the catering order in our database
     const cateringOrder = await db.cateringOrder.create({
       data: {
@@ -827,9 +860,10 @@ export async function createCateringOrderAndProcessPayment(
         specialRequests: eventDetails.specialRequests || undefined,
         totalAmount: formData.totalAmount,
         deliveryZone: deliveryZone || undefined,
-        deliveryAddress: fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress
-          ? `${fulfillment.deliveryAddress.street} ${fulfillment.deliveryAddress.street2 || ''} ${fulfillment.deliveryAddress.city}, ${fulfillment.deliveryAddress.state} ${fulfillment.deliveryAddress.postalCode}`.trim()
-          : undefined,
+        deliveryAddress:
+          fulfillment.method === 'local_delivery' && fulfillment.deliveryAddress
+            ? `${fulfillment.deliveryAddress.street} ${fulfillment.deliveryAddress.street2 || ''} ${fulfillment.deliveryAddress.city}, ${fulfillment.deliveryAddress.state} ${fulfillment.deliveryAddress.postalCode}`.trim()
+            : undefined,
         deliveryFee: deliveryFee > 0 ? deliveryFee : undefined,
         status: paymentMethod === 'CASH' ? CateringStatus.CONFIRMED : CateringStatus.PENDING,
         paymentStatus: paymentMethod === 'CASH' ? PaymentStatus.PENDING : PaymentStatus.PENDING,
@@ -848,96 +882,98 @@ export async function createCateringOrderAndProcessPayment(
         },
       },
     });
-    
-    console.log(`Catering order created with ID: ${cateringOrder.id} (delivery zone: ${deliveryZone})`);
-    
+
+    console.log(
+      `Catering order created with ID: ${cateringOrder.id} (delivery zone: ${deliveryZone})`
+    );
+
     // For cash payments, don't create a Square payment link
     if (paymentMethod === 'CASH') {
       revalidatePath('/catering');
       revalidatePath('/admin/catering/orders');
-      
+
       return {
         success: true,
         data: {
-          orderId: cateringOrder.id
-        }
+          orderId: cateringOrder.id,
+        },
       };
     }
-    
+
     // Only proceed with Square payment processing for SQUARE payment method
     // 2. Get Square configuration
     const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
-    const accessToken = squareEnv === 'sandbox' 
-      ? process.env.SQUARE_SANDBOX_TOKEN 
-      : process.env.SQUARE_ACCESS_TOKEN;
+    const accessToken =
+      squareEnv === 'sandbox' ? process.env.SQUARE_SANDBOX_TOKEN : process.env.SQUARE_ACCESS_TOKEN;
     const locationId = process.env.SQUARE_LOCATION_ID;
     const supportEmail = process.env.SUPPORT_EMAIL || 'info@destinosf.com';
-    
+
     console.log(`Using Square ${squareEnv} environment with location ID: ${locationId}`);
-    
+
     if (!locationId || !accessToken) {
       console.error('Server Action Config Error: Missing Square Location ID or Access Token.');
-      
+
       // Update order status to indicate failure
       await db.cateringOrder.update({
         where: { id: cateringOrder.id },
-        data: { 
+        data: {
           status: CateringStatus.CANCELLED,
           paymentStatus: PaymentStatus.FAILED,
-          notes: 'Square config error (missing credentials)'
-        }
+          notes: 'Square config error (missing credentials)',
+        },
       });
-      
-      return { 
-        success: false, 
-        error: 'Payment provider configuration error.'
+
+      return {
+        success: false,
+        error: 'Payment provider configuration error.',
       };
     }
-    
+
     // 3. Set up Square API base URL
-    const BASE_URL = squareEnv === 'sandbox'
-      ? 'https://connect.squareupsandbox.com'
-      : 'https://connect.squareup.com';
-      
+    const BASE_URL =
+      squareEnv === 'sandbox'
+        ? 'https://connect.squareupsandbox.com'
+        : 'https://connect.squareup.com';
+
     // 4. Prepare Square Line Items
     const squareLineItems = items.map(item => ({
       quantity: item.quantity.toString(),
       base_price_money: {
         amount: Math.round(item.pricePerUnit * 100), // Convert to cents
-        currency: "USD"
+        currency: 'USD',
       },
       name: item.name,
     }));
-    
+
     // 5. Set up redirect URLs
     const origin = process.env.NEXT_PUBLIC_APP_URL;
     if (!origin) {
       console.error('Server Action Config Error: NEXT_PUBLIC_APP_URL is not set.');
-      
+
       await db.cateringOrder.update({
         where: { id: cateringOrder.id },
-        data: { 
+        data: {
           status: CateringStatus.CANCELLED,
           paymentStatus: PaymentStatus.FAILED,
-          notes: 'Missing base URL config'
-        }
+          notes: 'Missing base URL config',
+        },
       });
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         error: 'Server configuration error: Base URL missing.',
       };
     }
-    
+
     // Build redirect URLs
     const redirectUrl = new URL('/catering/confirmation', origin);
     redirectUrl.searchParams.set('status', 'success');
     redirectUrl.searchParams.set('orderId', cateringOrder.id);
-    
+
     const cancelUrl = new URL('/catering', origin);
     cancelUrl.searchParams.set('status', 'cancelled');
     cancelUrl.searchParams.set('orderId', cateringOrder.id);
-    
+
     // 6. Configure Square Checkout Options
     const squareCheckoutOptions = {
       allow_tipping: true,
@@ -949,41 +985,41 @@ export async function createCateringOrderAndProcessPayment(
         google_pay: true,
         cash_app_pay: false,
         afterpay_clearpay: false,
-        venmo: false
+        venmo: false,
       },
       // Custom tip settings with 5%, 10%, and 15% instead of default 15%, 20%, 25%
-      tip_settings: createCateringOrderTipSettings()
+      tip_settings: createCateringOrderTipSettings(),
     };
-    
+
     // 7. Format and validate customer data for Square Payment Link API
     let formattedCustomerData: { buyer_email: string; buyer_phone_number?: string };
     try {
       formattedCustomerData = formatCustomerDataForSquarePaymentLink({
         email: customerInfo.email,
         phone: customerInfo.phone,
-        name: customerInfo.name
+        name: customerInfo.name,
       });
-      
+
       console.log('Formatted customer data for Square Payment Link:', {
         buyer_email: formattedCustomerData.buyer_email,
-        buyer_phone_number: formattedCustomerData.buyer_phone_number || 'null (optional due to validation)',
-        originalPhone: customerInfo.phone
+        buyer_phone_number:
+          formattedCustomerData.buyer_phone_number || 'null (optional due to validation)',
+        originalPhone: customerInfo.phone,
       });
-      
     } catch (emailError) {
       console.error('Email address formatting error:', emailError);
-      
+
       await db.cateringOrder.update({
         where: { id: cateringOrder.id },
-        data: { 
+        data: {
           status: CateringStatus.CANCELLED,
           paymentStatus: PaymentStatus.FAILED,
-          notes: `Email address formatting error: ${emailError instanceof Error ? emailError.message : 'Invalid email format'}`
-        }
+          notes: `Email address formatting error: ${emailError instanceof Error ? emailError.message : 'Invalid email format'}`,
+        },
       });
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         error: `Invalid email address format: ${emailError instanceof Error ? emailError.message : 'Please provide a valid email address'}`,
       };
     }
@@ -995,148 +1031,166 @@ export async function createCateringOrderAndProcessPayment(
         location_id: locationId,
         reference_id: cateringOrder.id, // Link to our DB order
         line_items: squareLineItems,
-        metadata: customerInfo.customerId 
-          ? { customerId: customerInfo.customerId } 
-          : undefined,
+        metadata: customerInfo.customerId ? { customerId: customerInfo.customerId } : undefined,
       },
       checkout_options: squareCheckoutOptions,
-      pre_populated_data: formattedCustomerData
+      pre_populated_data: formattedCustomerData,
     };
-    
+
     // 10. Call Square API to create payment link
-    console.log("Calling Square Create Payment Link API for catering order...");
+    console.log('Calling Square Create Payment Link API for catering order...');
     const fetchResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
       method: 'POST',
       headers: {
         'Square-Version': '2025-05-21',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(squareRequestBody),
     });
-    
+
     const responseData = await fetchResponse.json();
-    
+
     // 11. Handle Square API response
-    if (!fetchResponse.ok || responseData.errors || !responseData.payment_link?.url || !responseData.payment_link?.order_id) {
-      const errorDetail = responseData.errors?.[0]?.detail || 'Failed to create Square payment link';
+    if (
+      !fetchResponse.ok ||
+      responseData.errors ||
+      !responseData.payment_link?.url ||
+      !responseData.payment_link?.order_id
+    ) {
+      const errorDetail =
+        responseData.errors?.[0]?.detail || 'Failed to create Square payment link';
       const squareErrorCode = responseData.errors?.[0]?.code;
-      
-      console.error(`Square API Error (${fetchResponse.status} - ${squareErrorCode}):`, JSON.stringify(responseData, null, 2));
-      
+
+      console.error(
+        `Square API Error (${fetchResponse.status} - ${squareErrorCode}):`,
+        JSON.stringify(responseData, null, 2)
+      );
+
       // Special handling for phone number validation errors
       if (squareErrorCode === 'INVALID_PHONE_NUMBER' && formattedCustomerData.buyer_phone_number) {
         console.log('Retrying Square payment link creation without phone number...');
-        
+
         // Retry without phone number
         const retryCustomerData = {
-          buyer_email: formattedCustomerData.buyer_email
+          buyer_email: formattedCustomerData.buyer_email,
           // Omit buyer_phone_number entirely
         };
-        
+
         const retryRequestBody = {
           ...squareRequestBody,
-          pre_populated_data: retryCustomerData
+          pre_populated_data: retryCustomerData,
         };
-        
-        console.log('Retry request without phone number:', JSON.stringify(retryRequestBody, null, 2));
-        
+
+        console.log(
+          'Retry request without phone number:',
+          JSON.stringify(retryRequestBody, null, 2)
+        );
+
         const retryResponse = await fetch(`${BASE_URL}/v2/online-checkout/payment-links`, {
           method: 'POST',
           headers: {
             'Square-Version': '2025-05-21',
-            'Authorization': `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(retryRequestBody),
         });
-        
+
         const retryResponseData = await retryResponse.json();
-        
-        if (retryResponse.ok && retryResponseData.payment_link?.url && retryResponseData.payment_link?.order_id) {
+
+        if (
+          retryResponse.ok &&
+          retryResponseData.payment_link?.url &&
+          retryResponseData.payment_link?.order_id
+        ) {
           console.log('Square payment link created successfully after removing phone number');
-          
+
           // Update the order with Square information
           await db.cateringOrder.update({
             where: { id: cateringOrder.id },
             data: {
               squareOrderId: retryResponseData.payment_link.order_id,
               squareCheckoutUrl: retryResponseData.payment_link.url,
-              notes: `Phone number ${customerInfo.phone} was invalid for Square, proceeded without it`
-            }
+              notes: `Phone number ${customerInfo.phone} was invalid for Square, proceeded without it`,
+            },
           });
-          
+
           // Revalidate paths
           revalidatePath('/catering');
           revalidatePath('/admin/catering/orders');
-          
-          return { 
-            success: true, 
-            data: { 
-              orderId: cateringOrder.id, 
-              checkoutUrl: retryResponseData.payment_link.url 
-            } 
+
+          return {
+            success: true,
+            data: {
+              orderId: cateringOrder.id,
+              checkoutUrl: retryResponseData.payment_link.url,
+            },
           };
         } else {
           console.error('Retry also failed:', JSON.stringify(retryResponseData, null, 2));
-          const retryErrorDetail = retryResponseData.errors?.[0]?.detail || 'Failed to create Square payment link after retry';
-          
+          const retryErrorDetail =
+            retryResponseData.errors?.[0]?.detail ||
+            'Failed to create Square payment link after retry';
+
           await db.cateringOrder.update({
             where: { id: cateringOrder.id },
-            data: { 
+            data: {
               status: CateringStatus.CANCELLED,
               paymentStatus: PaymentStatus.FAILED,
-              notes: `Square API Error (retry failed): ${retryErrorDetail}`
-            }
+              notes: `Square API Error (retry failed): ${retryErrorDetail}`,
+            },
           });
-          
-          return { 
-            success: false, 
+
+          return {
+            success: false,
             error: `Payment provider error: ${retryErrorDetail}`,
           };
         }
       }
-      
+
       await db.cateringOrder.update({
         where: { id: cateringOrder.id },
-        data: { 
+        data: {
           status: CateringStatus.CANCELLED,
           paymentStatus: PaymentStatus.FAILED,
-          notes: `Square API Error: ${errorDetail} (Code: ${squareErrorCode})`
-        }
+          notes: `Square API Error: ${errorDetail} (Code: ${squareErrorCode})`,
+        },
       });
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         error: `Payment provider error: ${errorDetail}`,
       };
     }
-    
+
     // 12. Store Square checkout info and return success
     const checkoutUrl = responseData.payment_link.url;
     const squareOrderId = responseData.payment_link.order_id;
-    
-    console.log(`Square Checkout URL for catering order: ${checkoutUrl}, Square Order ID: ${squareOrderId}`);
-    
+
+    console.log(
+      `Square Checkout URL for catering order: ${checkoutUrl}, Square Order ID: ${squareOrderId}`
+    );
+
     // Update the order with Square information
     await db.cateringOrder.update({
       where: { id: cateringOrder.id },
       data: {
         squareOrderId,
         squareCheckoutUrl: checkoutUrl,
-      }
+      },
     });
-    
+
     // Revalidate paths
     revalidatePath('/catering');
     revalidatePath('/admin/catering/orders');
-    
+
     return {
       success: true,
       data: {
         orderId: cateringOrder.id,
         checkoutUrl,
-      }
+      },
     };
   } catch (error) {
     console.error('Error creating catering order with Square payment:', error);
@@ -1148,21 +1202,25 @@ export async function createCateringOrderAndProcessPayment(
 /**
  * Creates boxed lunch packages based on the tier system
  */
-export async function createBoxedLunchPackages(): Promise<{ success: boolean; error?: string; created?: number }> {
+export async function createBoxedLunchPackages(): Promise<{
+  success: boolean;
+  error?: string;
+  created?: number;
+}> {
   try {
     const { BOXED_LUNCH_TIERS } = await import('@/types/catering');
-    
+
     let createdCount = 0;
-    
+
     for (const [tierKey, tierConfig] of Object.entries(BOXED_LUNCH_TIERS)) {
       // Check if this tier package already exists
       const existingPackage = await db.cateringPackage.findFirst({
         where: {
           name: tierConfig.name,
-          type: 'BOXED_LUNCH' as any // Cast to bypass TypeScript check
-        }
+          type: 'BOXED_LUNCH' as any, // Cast to bypass TypeScript check
+        },
       });
-      
+
       if (!existingPackage) {
         await db.cateringPackage.create({
           data: {
@@ -1174,18 +1232,18 @@ export async function createBoxedLunchPackages(): Promise<{ success: boolean; er
             isActive: true,
             featuredOrder: Object.keys(BOXED_LUNCH_TIERS).indexOf(tierKey),
             dietaryOptions: [], // You can customize this based on protein options
-          }
+          },
         });
         createdCount++;
       }
     }
-    
+
     return { success: true, created: createdCount };
   } catch (error) {
     console.error('Error creating boxed lunch packages:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create boxed lunch packages' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch packages',
     };
   }
 }
@@ -1193,21 +1251,25 @@ export async function createBoxedLunchPackages(): Promise<{ success: boolean; er
 /**
  * Creates boxed lunch protein options
  */
-export async function createBoxedLunchProteins(): Promise<{ success: boolean; error?: string; created?: number }> {
+export async function createBoxedLunchProteins(): Promise<{
+  success: boolean;
+  error?: string;
+  created?: number;
+}> {
   try {
     const { PROTEIN_OPTIONS } = await import('@/types/catering');
-    
+
     let createdCount = 0;
-    
+
     for (const [proteinKey, proteinInfo] of Object.entries(PROTEIN_OPTIONS)) {
       // Check if this protein already exists
       const existingItem = await db.cateringItem.findFirst({
         where: {
           name: proteinInfo.name,
-          category: 'ENTREE' as any // Use existing ENTREE category
-        }
+          category: 'ENTREE' as any, // Use existing ENTREE category
+        },
       });
-      
+
       if (!existingItem) {
         await db.cateringItem.create({
           data: {
@@ -1220,19 +1282,19 @@ export async function createBoxedLunchProteins(): Promise<{ success: boolean; er
             isGlutenFree: proteinInfo.dietary.includes('gluten-free'),
             servingSize: 'Varies by tier',
             isActive: true,
-            squareCategory: 'BOXED_LUNCH_PROTEINS'
-          }
+            squareCategory: 'BOXED_LUNCH_PROTEINS',
+          },
         });
         createdCount++;
       }
     }
-    
+
     return { success: true, created: createdCount };
   } catch (error) {
     console.error('Error creating boxed lunch proteins:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create boxed lunch proteins' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch proteins',
     };
   }
 }
@@ -1240,21 +1302,25 @@ export async function createBoxedLunchProteins(): Promise<{ success: boolean; er
 /**
  * Creates boxed lunch add-on items
  */
-export async function createBoxedLunchAddOns(): Promise<{ success: boolean; error?: string; created?: number }> {
+export async function createBoxedLunchAddOns(): Promise<{
+  success: boolean;
+  error?: string;
+  created?: number;
+}> {
   try {
     const { BOXED_LUNCH_ADD_ONS } = await import('@/types/catering');
-    
+
     let createdCount = 0;
-    
+
     for (const addOn of Object.values(BOXED_LUNCH_ADD_ONS)) {
       // Check if this add-on already exists
       const existingItem = await db.cateringItem.findFirst({
         where: {
           name: addOn.name,
-          category: 'SIDE' as any // Use existing SIDE category
-        }
+          category: 'SIDE' as any, // Use existing SIDE category
+        },
       });
-      
+
       if (!existingItem) {
         await db.cateringItem.create({
           data: {
@@ -1267,19 +1333,19 @@ export async function createBoxedLunchAddOns(): Promise<{ success: boolean; erro
             isGlutenFree: true,
             servingSize: '1 item',
             isActive: true,
-            squareCategory: 'BOXED_LUNCH_ADD_ONS'
-          }
+            squareCategory: 'BOXED_LUNCH_ADD_ONS',
+          },
         });
         createdCount++;
       }
     }
-    
+
     return { success: true, created: createdCount };
   } catch (error) {
     console.error('Error creating boxed lunch add-ons:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create boxed lunch add-ons' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch add-ons',
     };
   }
 }
@@ -1287,21 +1353,25 @@ export async function createBoxedLunchAddOns(): Promise<{ success: boolean; erro
 /**
  * Creates boxed lunch salad options
  */
-export async function createBoxedLunchSalads(): Promise<{ success: boolean; error?: string; created?: number }> {
+export async function createBoxedLunchSalads(): Promise<{
+  success: boolean;
+  error?: string;
+  created?: number;
+}> {
   try {
     const { BOXED_LUNCH_SALADS } = await import('@/types/catering');
-    
+
     let createdCount = 0;
-    
+
     for (const [saladKey, salad] of Object.entries(BOXED_LUNCH_SALADS)) {
       // Check if this salad already exists
       const existingItem = await db.cateringItem.findFirst({
         where: {
           name: salad.name,
-          category: 'SALAD' as any
-        }
+          category: 'SALAD' as any,
+        },
       });
-      
+
       if (!existingItem) {
         await db.cateringItem.create({
           data: {
@@ -1314,19 +1384,19 @@ export async function createBoxedLunchSalads(): Promise<{ success: boolean; erro
             isGlutenFree: true,
             servingSize: '3oz salad + 1oz dressing',
             isActive: true,
-            squareCategory: 'BOXED_LUNCH_SALADS'
-          }
+            squareCategory: 'BOXED_LUNCH_SALADS',
+          },
         });
         createdCount++;
       }
     }
-    
+
     return { success: true, created: createdCount };
   } catch (error) {
     console.error('Error creating boxed lunch salads:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create boxed lunch salads' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create boxed lunch salads',
     };
   }
 }
@@ -1346,55 +1416,55 @@ export async function getBoxedLunchData(): Promise<{
       db.cateringPackage.findMany({
         where: {
           type: 'BOXED_LUNCH' as any, // Cast to bypass TypeScript check
-          isActive: true
+          isActive: true,
         },
         orderBy: {
-          featuredOrder: 'asc'
-        }
+          featuredOrder: 'asc',
+        },
       }),
       // Get all salads with the square category
       db.cateringItem.findMany({
         where: {
           category: 'SALAD' as any,
           squareCategory: 'BOXED_LUNCH_SALADS',
-          isActive: true
-        }
+          isActive: true,
+        },
       }),
-      // Get all add-ons with the square category  
+      // Get all add-ons with the square category
       db.cateringItem.findMany({
         where: {
           category: 'SIDE' as any, // Use existing SIDE category
           squareCategory: 'BOXED_LUNCH_ADD_ONS',
-          isActive: true
-        }
+          isActive: true,
+        },
       }),
       // Get all proteins with the square category
       db.cateringItem.findMany({
         where: {
           category: 'ENTREE' as any, // Use existing ENTREE category
           squareCategory: 'BOXED_LUNCH_PROTEINS',
-          isActive: true
-        }
-      })
+          isActive: true,
+        },
+      }),
     ]);
 
     return {
       packages: packages.map((pkg: any) => ({
         ...pkg,
-        pricePerPerson: Number(pkg.pricePerPerson)
+        pricePerPerson: Number(pkg.pricePerPerson),
       })) as unknown as CateringPackage[],
       salads: salads.map((item: any) => ({
         ...item,
-        price: Number(item.price)
+        price: Number(item.price),
       })) as unknown as CateringItem[],
       addOns: addOns.map((item: any) => ({
         ...item,
-        price: Number(item.price)
+        price: Number(item.price),
       })) as unknown as CateringItem[],
       proteins: proteins.map((item: any) => ({
         ...item,
-        price: Number(item.price)
-      })) as unknown as CateringItem[]
+        price: Number(item.price),
+      })) as unknown as CateringItem[],
     };
   } catch (error) {
     console.error('Error fetching boxed lunch data:', error);
@@ -1402,7 +1472,7 @@ export async function getBoxedLunchData(): Promise<{
       packages: [],
       salads: [],
       addOns: [],
-      proteins: []
+      proteins: [],
     };
   }
 }
@@ -1410,40 +1480,49 @@ export async function getBoxedLunchData(): Promise<{
 /**
  * Initialize all boxed lunch data (packages, salads, add-ons, proteins)
  */
-export async function initializeBoxedLunchData(): Promise<{ success: boolean; error?: string; summary?: string }> {
+export async function initializeBoxedLunchData(): Promise<{
+  success: boolean;
+  error?: string;
+  summary?: string;
+}> {
   try {
     const [packagesResult, saladsResult, addOnsResult, proteinsResult] = await Promise.all([
       createBoxedLunchPackages(),
       createBoxedLunchSalads(),
       createBoxedLunchAddOns(),
-      createBoxedLunchProteins()
+      createBoxedLunchProteins(),
     ]);
 
-    if (!packagesResult.success || !saladsResult.success || !addOnsResult.success || !proteinsResult.success) {
+    if (
+      !packagesResult.success ||
+      !saladsResult.success ||
+      !addOnsResult.success ||
+      !proteinsResult.success
+    ) {
       const errors = [
         !packagesResult.success && packagesResult.error,
         !saladsResult.success && saladsResult.error,
         !addOnsResult.success && addOnsResult.error,
-        !proteinsResult.success && proteinsResult.error
+        !proteinsResult.success && proteinsResult.error,
       ].filter(Boolean);
-      
+
       return {
         success: false,
-        error: `Some items failed to create: ${errors.join(', ')}`
+        error: `Some items failed to create: ${errors.join(', ')}`,
       };
     }
 
     const summary = `Created ${packagesResult.created} packages, ${saladsResult.created} salads, ${addOnsResult.created} add-ons, ${proteinsResult.created} proteins`;
-    
+
     return {
       success: true,
-      summary
+      summary,
     };
   } catch (error) {
     console.error('Error initializing boxed lunch data:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data'
+      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data',
     };
   }
 }
@@ -1466,35 +1545,33 @@ export async function validateCateringOrderWithDeliveryZone(
     if (!items || items.length === 0) {
       return { isValid: false, errorMessage: 'Your cart is empty' };
     }
-    
+
     // Calculate cart total
-    const cartTotal = items.reduce(
-      (sum, item) => sum + item.price * item.quantity, 
-      0
-    );
-    
+    const cartTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     // For pickup orders, no delivery zone validation needed
     if (!deliveryAddress) {
       return { isValid: true, currentAmount: cartTotal };
     }
-    
+
     // Determine delivery zone from address
     const deliveryZone = determineDeliveryZone(
-      deliveryAddress.postalCode || '', 
+      deliveryAddress.postalCode || '',
       deliveryAddress.city
     );
-    
+
     if (!deliveryZone) {
       return {
         isValid: false,
-        errorMessage: 'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.'
+        errorMessage:
+          'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.',
       };
     }
-    
+
     // Validate minimum purchase for the zone
     const validation = validateMinimumPurchase(cartTotal, deliveryZone);
     const zoneConfig = getZoneConfig(deliveryZone);
-    
+
     if (!validation.isValid) {
       return {
         isValid: false,
@@ -1502,23 +1579,22 @@ export async function validateCateringOrderWithDeliveryZone(
         deliveryZone,
         minimumRequired: validation.minimumRequired,
         currentAmount: validation.currentAmount,
-        deliveryFee: zoneConfig.deliveryFee
+        deliveryFee: zoneConfig.deliveryFee,
       };
     }
-    
-    return { 
+
+    return {
       isValid: true,
       deliveryZone,
       minimumRequired: validation.minimumRequired,
       currentAmount: validation.currentAmount,
-      deliveryFee: zoneConfig.deliveryFee
+      deliveryFee: zoneConfig.deliveryFee,
     };
-    
   } catch (error) {
     console.error('Error validating catering order:', error);
     return {
       isValid: false,
-      errorMessage: 'An error occurred while validating your order. Please try again.'
+      errorMessage: 'An error occurred while validating your order. Please try again.',
     };
   }
 }
@@ -1526,29 +1602,29 @@ export async function validateCateringOrderWithDeliveryZone(
 /**
  * Server action to initialize boxed lunch data from the admin UI
  */
-export async function initializeBoxedLunchDataAction(): Promise<{ 
-  success: boolean; 
-  error?: string; 
-  summary?: string 
+export async function initializeBoxedLunchDataAction(): Promise<{
+  success: boolean;
+  error?: string;
+  summary?: string;
 }> {
   'use server';
-  
+
   try {
     const result = await initializeBoxedLunchData();
-    
+
     if (result.success) {
       // Revalidate admin catering pages to show updated data
       revalidatePath('/admin/catering');
       revalidatePath('/admin/catering/boxed-lunch');
       revalidatePath('/catering');
     }
-    
+
     return result;
   } catch (error) {
     console.error('Error in initializeBoxedLunchDataAction:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data'
+      error: error instanceof Error ? error.message : 'Failed to initialize boxed lunch data',
     };
   }
-} 
+}

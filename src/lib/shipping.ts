@@ -117,7 +117,8 @@ function getShippoConfig() {
     fromAddress: {
       name: process.env.SHIPPING_FROM_NAME || 'Destino SF',
       company: process.env.SHIPPING_FROM_COMPANY || 'Destino SF',
-      street1: process.env.SHIPPING_FROM_STREET1 || process.env.SHIPPING_FROM_STREET || '123 Mission St',
+      street1:
+        process.env.SHIPPING_FROM_STREET1 || process.env.SHIPPING_FROM_STREET || '123 Mission St',
       city: process.env.SHIPPING_FROM_CITY || 'San Francisco',
       state: process.env.SHIPPING_FROM_STATE || 'CA',
       zip: process.env.SHIPPING_FROM_POSTAL_CODE || process.env.SHIPPING_FROM_ZIP || '94105',
@@ -135,44 +136,49 @@ const rateCache = new Map<string, ShippingRate[]>();
 /** Helper to create or reuse Shippo client */
 function getShippoClient(apiKey: string): any {
   if (mockShippoClient) return mockShippoClient;
-  
-  console.log('Initializing Shippo client with API key:', apiKey ? `${apiKey.substring(0, 15)}...` : 'MISSING');
-  
+
+  console.log(
+    'Initializing Shippo client with API key:',
+    apiKey ? `${apiKey.substring(0, 15)}...` : 'MISSING'
+  );
+
   if (!apiKey) {
     throw new Error('Shippo API key is required');
   }
-  
+
   // Dynamically require shippo to avoid compile-time dependency issues in tests.
   const { Shippo } = require('shippo') as any;
-  
+
   // For Shippo SDK v2.15.0+, use the correct initialization pattern
   try {
     console.log('Trying Shippo v2.15+ initialization pattern...');
     const client = new Shippo({
       apiKeyHeader: apiKey,
-      serverURL: "https://api.goshippo.com",
+      serverURL: 'https://api.goshippo.com',
     });
-    
+
     console.log('Shippo client initialized successfully');
     return client;
   } catch (error) {
     console.error('Modern Shippo initialization failed:', error);
-    
+
     // Fallback to older patterns
     try {
       console.log('Trying simple API key constructor...');
       return new Shippo(apiKey);
     } catch (error2) {
       console.error('Simple constructor failed:', error2);
-      
+
       try {
         console.log('Trying configuration object with apiKey...');
         return new Shippo({
           apiKey: apiKey,
         });
       } catch (error3) {
-                 console.error('All initialization methods failed:', error3);
-         throw new Error(`Failed to initialize Shippo client: ${error3 instanceof Error ? error3.message : 'Unknown error'}`);
+        console.error('All initialization methods failed:', error3);
+        throw new Error(
+          `Failed to initialize Shippo client: ${error3 instanceof Error ? error3.message : 'Unknown error'}`
+        );
       }
     }
   }
@@ -199,7 +205,9 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
     // Debug environment variable loading
     console.log('Environment check:', {
       hasShippoKey: !!process.env.SHIPPO_API_KEY,
-      shippoKeyPrefix: process.env.SHIPPO_API_KEY ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...' : 'MISSING',
+      shippoKeyPrefix: process.env.SHIPPO_API_KEY
+        ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...'
+        : 'MISSING',
       configApiKey: config.apiKey ? config.apiKey.substring(0, 15) + '...' : 'MISSING',
     });
 
@@ -208,7 +216,12 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       return { success: false, error: 'Shipping provider configuration error.' };
     }
 
-    if (!config.fromAddress.street1 || !config.fromAddress.city || !config.fromAddress.state || !config.fromAddress.zip) {
+    if (
+      !config.fromAddress.street1 ||
+      !config.fromAddress.city ||
+      !config.fromAddress.state ||
+      !config.fromAddress.zip
+    ) {
       return { success: false, error: 'Shipping origin configuration error.' };
     }
 
@@ -235,11 +248,11 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       })),
       'nationwide_shipping'
     );
-    
+
     console.log('📦 Shipping calculation details:', {
       cartItems: cartItems.map((item: any) => ({ name: item.name, quantity: item.quantity })),
       calculatedWeight: weightLbs,
-      fulfillmentMethod: 'nationwide_shipping'
+      fulfillmentMethod: 'nationwide_shipping',
     });
 
     // Build parcel dimensions with required units (Shippo expects camelCase field names)
@@ -253,13 +266,13 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       // Don't include template when using custom dimensions
       metadata: `Destino SF shipment - ${cartItems.length} items`,
     };
-    
+
     console.log('📦 Parcel being sent to Shippo:', parcel);
 
     // Calculate estimated value for insurance/customs
     const estimatedValue = cartItems.reduce((total: number, item: any) => {
       const itemPrice = item.price ?? 25; // Default price if not provided
-      return total + (itemPrice * item.quantity);
+      return total + itemPrice * item.quantity;
     }, 0);
 
     const shipmentPayload = {
@@ -279,7 +292,8 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       addressTo: {
         name: shippingAddress.recipientName ?? shippingAddress.name ?? '',
         company: '',
-        street1: shippingAddress.street ?? shippingAddress.street1 ?? shippingAddress.street_1 ?? '',
+        street1:
+          shippingAddress.street ?? shippingAddress.street1 ?? shippingAddress.street_1 ?? '',
         street2: shippingAddress.street2 ?? '',
         city: shippingAddress.city ?? '',
         state: shippingAddress.state ?? '',
@@ -375,10 +389,14 @@ export async function createShippingLabel(
 ): Promise<ShippingLabelResponse> {
   try {
     const config = getShippoConfig();
-    
+
     // For testing purposes, return mock response
     if (process.env.NODE_ENV === 'test' || mockShippoClient) {
-      if (mockShippoClient && mockShippoClient.transactions && mockShippoClient.transactions.create) {
+      if (
+        mockShippoClient &&
+        mockShippoClient.transactions &&
+        mockShippoClient.transactions.create
+      ) {
         const tx = await mockShippoClient.transactions.create({ rate: rateId, metadata });
         if (tx.status === 'SUCCESS') {
           return {
@@ -387,14 +405,17 @@ export async function createShippingLabel(
               transactionId: tx.object_id ?? 'transaction-label-123',
               trackingNumber: tx.tracking_number ?? '9405511899564540000123',
               labelUrl: tx.label_url ?? 'https://shippo-delivery.s3.amazonaws.com/label-123.pdf',
-              trackingUrl: tx.tracking_url ?? 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
+              trackingUrl:
+                tx.tracking_url ??
+                'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
               estimatedDelivery: tx.eta ?? '2024-12-05T17:00:00Z',
             },
           };
         }
         return {
           success: false,
-          error: tx.messages?.map((m: any) => m.text).join(', ') || 'Unable to generate shipping label',
+          error:
+            tx.messages?.map((m: any) => m.text).join(', ') || 'Unable to generate shipping label',
           errorCode: 'TRANSACTION_FAILED',
         };
       }
@@ -405,7 +426,8 @@ export async function createShippingLabel(
           transactionId: 'transaction-label-123',
           trackingNumber: '9405511899564540000123',
           labelUrl: 'https://shippo-delivery.s3.amazonaws.com/label-123.pdf',
-          trackingUrl: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
+          trackingUrl:
+            'https://tools.usps.com/go/TrackConfirmAction?tLabels=9405511899564540000123',
           estimatedDelivery: '2024-12-05T17:00:00Z',
           commercialInvoiceUrl: 'https://shippo-delivery.s3.amazonaws.com/invoice-456.pdf',
           customsForms: [
@@ -417,10 +439,10 @@ export async function createShippingLabel(
         },
       };
     }
-    
+
     // In production, this would call the Shippo API
     logger.info('Creating shipping label', { rateId });
-    
+
     return {
       success: true,
       label: {
@@ -443,7 +465,10 @@ export async function createShippingLabel(
 /**
  * Track shipment by tracking number
  */
-export async function trackShipment(trackingNumber: string, carrier: string): Promise<TrackingResponse> {
+export async function trackShipment(
+  trackingNumber: string,
+  carrier: string
+): Promise<TrackingResponse> {
   try {
     const client = mockShippoClient ?? getShippoClient(process.env.SHIPPO_API_KEY || '');
 
@@ -452,7 +477,10 @@ export async function trackShipment(trackingNumber: string, carrier: string): Pr
       if (mockShippoClient.tracks.retrieve) {
         trackResp = await mockShippoClient.tracks.retrieve(trackingNumber, carrier);
       } else if (mockShippoClient.tracks.create) {
-        trackResp = await mockShippoClient.tracks.create({ tracking_number: trackingNumber, carrier });
+        trackResp = await mockShippoClient.tracks.create({
+          tracking_number: trackingNumber,
+          carrier,
+        });
       }
     }
 
@@ -471,20 +499,24 @@ export async function trackShipment(trackingNumber: string, carrier: string): Pr
       status: h.status,
       statusDetails: h.status_details,
       timestamp: h.status_date,
-      location: h.location ? {
-        city: h.location.city,
-        state: h.location.state,
-        zip: h.location.zip,
-        country: h.location.country,
-      } : undefined,
+      location: h.location
+        ? {
+            city: h.location.city,
+            state: h.location.state,
+            zip: h.location.zip,
+            country: h.location.country,
+          }
+        : undefined,
     }));
 
-    const currentLocation = trackResp.tracking_status?.location ? {
-      city: trackResp.tracking_status.location.city,
-      state: trackResp.tracking_status.location.state,
-      zip: trackResp.tracking_status.location.zip,
-      country: trackResp.tracking_status.location.country,
-    } : undefined;
+    const currentLocation = trackResp.tracking_status?.location
+      ? {
+          city: trackResp.tracking_status.location.city,
+          state: trackResp.tracking_status.location.state,
+          zip: trackResp.tracking_status.location.zip,
+          country: trackResp.tracking_status.location.country,
+        }
+      : undefined;
 
     // If tracking error present
     if (trackResp.messages && trackResp.messages.some((m: any) => m.type === 'tracking_error')) {
@@ -529,4 +561,4 @@ export async function trackShipment(trackingNumber: string, carrier: string): Pr
       error: error instanceof Error ? error.message : 'Unknown error tracking shipment',
     };
   }
-} 
+}

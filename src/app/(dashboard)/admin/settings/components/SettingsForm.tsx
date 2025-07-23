@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 
-
 interface StoreSettingsProps {
   settings: {
     id: string;
@@ -37,26 +36,11 @@ const settingsSchema = z.object({
   zipCode: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   email: z.string().email('Invalid email format').optional().nullable(),
-  taxRate: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)),
-    z.number().min(0).max(100)
-  ),
-  minAdvanceHours: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)),
-    z.number().int().min(0)
-  ),
-  minOrderAmount: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)), 
-    z.number().min(0)
-  ),
-  cateringMinimumAmount: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)), 
-    z.number().min(0)
-  ),
-  maxDaysInAdvance: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)),
-    z.number().int().min(1)
-  ),
+  taxRate: z.preprocess(val => (val === '' ? 0 : Number(val)), z.number().min(0).max(100)),
+  minAdvanceHours: z.preprocess(val => (val === '' ? 0 : Number(val)), z.number().int().min(0)),
+  minOrderAmount: z.preprocess(val => (val === '' ? 0 : Number(val)), z.number().min(0)),
+  cateringMinimumAmount: z.preprocess(val => (val === '' ? 0 : Number(val)), z.number().min(0)),
+  maxDaysInAdvance: z.preprocess(val => (val === '' ? 0 : Number(val)), z.number().int().min(1)),
   isStoreOpen: z.boolean(),
   temporaryClosureMsg: z.string().optional().nullable(),
 });
@@ -66,9 +50,9 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 export default function SettingsForm({ settings }: StoreSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { 
-    register, 
-    handleSubmit, 
+  const {
+    register,
+    handleSubmit,
     formState: { errors },
     watch,
   } = useForm<SettingsFormData>({
@@ -121,9 +105,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
             {...register('name')}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
           />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-          )}
+          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
         </div>
 
         <div>
@@ -136,9 +118,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
             {...register('email')}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
           />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -151,9 +131,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
             {...register('phone')}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
           />
-          {errors.phone && (
-            <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-          )}
+          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
         </div>
 
         <div>
@@ -222,9 +200,7 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
             {...register('taxRate')}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
           />
-          {errors.taxRate && (
-            <p className="mt-1 text-sm text-red-600">{errors.taxRate.message}</p>
-          )}
+          {errors.taxRate && <p className="mt-1 text-sm text-red-600">{errors.taxRate.message}</p>}
         </div>
 
         <div>
@@ -245,7 +221,10 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
         </div>
 
         <div>
-          <label htmlFor="cateringMinimumAmount" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="cateringMinimumAmount"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             General Catering Minimum Order Amount ($)
           </label>
           <input
@@ -284,7 +263,10 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
         </div>
 
         <div>
-          <label htmlFor="maxDaysInAdvance" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="maxDaysInAdvance"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Maximum Days in Advance
           </label>
           <input
@@ -321,7 +303,10 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
 
         {!isStoreOpen && (
           <div className="col-span-2">
-            <label htmlFor="temporaryClosureMsg" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="temporaryClosureMsg"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Temporary Closure Message
             </label>
             <textarea
@@ -348,4 +333,4 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
       </div>
     </form>
   );
-} 
+}

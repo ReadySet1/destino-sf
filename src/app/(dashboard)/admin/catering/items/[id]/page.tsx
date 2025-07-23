@@ -19,7 +19,7 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
   const { id } = await params;
   const [item, capabilities] = await Promise.all([
     getEnhancedCateringItem(id),
-    getItemEditCapabilities(id)
+    getItemEditCapabilities(id),
   ]);
 
   if (!item) {
@@ -66,8 +66,8 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
                         <span>Local Item</span>
                       </Badge>
                     )}
-                    <Badge variant={item.isActive ? "default" : "secondary"}>
-                      {item.isActive ? "Active" : "Inactive"}
+                    <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                      {item.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 </div>
@@ -75,20 +75,14 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
                   <div className="text-3xl font-bold text-green-600">
                     ${Number(item.price).toFixed(2)}
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {item.category.replace('_', ' ')}
-                  </div>
+                  <div className="text-sm text-gray-500">{item.category.replace('_', ' ')}</div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700">
-                {item.finalDescription || 'No description available'}
-              </p>
+              <p className="text-gray-700">{item.finalDescription || 'No description available'}</p>
               {item.finalServingSize && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Serving size: {item.finalServingSize}
-                </p>
+                <p className="text-sm text-gray-500 mt-2">Serving size: {item.finalServingSize}</p>
               )}
             </CardContent>
           </Card>
@@ -132,42 +126,55 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-sm font-medium">Description Override:</span>
-                    <Badge variant={item.overrides.overrideDescription ? "default" : "secondary"} className="ml-2">
-                      {item.overrides.overrideDescription ? "Active" : "Inactive"}
+                    <Badge
+                      variant={item.overrides.overrideDescription ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {item.overrides.overrideDescription ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
                     <span className="text-sm font-medium">Image Override:</span>
-                    <Badge variant={item.overrides.overrideImage ? "default" : "secondary"} className="ml-2">
-                      {item.overrides.overrideImage ? "Active" : "Inactive"}
+                    <Badge
+                      variant={item.overrides.overrideImage ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {item.overrides.overrideImage ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
                     <span className="text-sm font-medium">Dietary Override:</span>
-                    <Badge variant={item.overrides.overrideDietary ? "default" : "secondary"} className="ml-2">
-                      {item.overrides.overrideDietary ? "Active" : "Inactive"}
+                    <Badge
+                      variant={item.overrides.overrideDietary ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {item.overrides.overrideDietary ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
                     <span className="text-sm font-medium">Serving Size Override:</span>
-                    <Badge variant={item.overrides.overrideServingSize ? "default" : "secondary"} className="ml-2">
-                      {item.overrides.overrideServingSize ? "Active" : "Inactive"}
+                    <Badge
+                      variant={item.overrides.overrideServingSize ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {item.overrides.overrideServingSize ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 </div>
-                
-                {item.overrides.localDietaryOptions && item.overrides.localDietaryOptions.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium">Local Dietary Options:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {item.overrides.localDietaryOptions.map((option, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {option}
-                        </Badge>
-                      ))}
+
+                {item.overrides.localDietaryOptions &&
+                  item.overrides.localDietaryOptions.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium">Local Dietary Options:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.overrides.localDietaryOptions.map((option, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {option}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </CardContent>
             </Card>
           )}
@@ -194,9 +201,7 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
                     className="w-full h-48 object-cover rounded-lg border"
                   />
                   {isSquareItem && item.overrides?.overrideImage && (
-                    <p className="text-xs text-blue-600">
-                      Using local override image
-                    </p>
+                    <p className="text-xs text-blue-600">Using local override image</p>
                   )}
                 </div>
               ) : (
@@ -219,40 +224,38 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                             {item.overrides && (
-                 <>
-                   <div>
-                     <span className="text-sm font-medium">Override Created:</span>
-                     <p className="text-sm text-gray-600">
-                       {new Date(item.overrides.createdAt).toLocaleDateString()}
-                     </p>
-                   </div>
-                   <div>
-                     <span className="text-sm font-medium">Override Updated:</span>
-                     <p className="text-sm text-gray-600">
-                       {new Date(item.overrides.updatedAt).toLocaleDateString()}
-                     </p>
-                   </div>
-                 </>
-               )}
-               {isSquareItem && (
-                 <>
-                   <div>
-                     <span className="text-sm font-medium">Item Source:</span>
-                     <p className="text-sm text-gray-600">
-                       Square Product
-                     </p>
-                   </div>
-                   {item.squareData?.lastSyncedAt && (
-                     <div>
-                       <span className="text-sm font-medium">Last Synced:</span>
-                       <p className="text-sm text-gray-600">
-                         {new Date(item.squareData.lastSyncedAt).toLocaleDateString()}
-                       </p>
-                     </div>
-                   )}
-                 </>
-               )}
+              {item.overrides && (
+                <>
+                  <div>
+                    <span className="text-sm font-medium">Override Created:</span>
+                    <p className="text-sm text-gray-600">
+                      {new Date(item.overrides.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium">Override Updated:</span>
+                    <p className="text-sm text-gray-600">
+                      {new Date(item.overrides.updatedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </>
+              )}
+              {isSquareItem && (
+                <>
+                  <div>
+                    <span className="text-sm font-medium">Item Source:</span>
+                    <p className="text-sm text-gray-600">Square Product</p>
+                  </div>
+                  {item.squareData?.lastSyncedAt && (
+                    <div>
+                      <span className="text-sm font-medium">Last Synced:</span>
+                      <p className="text-sm text-gray-600">
+                        {new Date(item.squareData.lastSyncedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -265,26 +268,38 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="flex justify-between">
                   <span>Name:</span>
-                  <Badge variant={capabilities.canEditName ? "default" : "secondary"} className="text-xs">
-                    {capabilities.canEditName ? "Yes" : "No"}
+                  <Badge
+                    variant={capabilities.canEditName ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {capabilities.canEditName ? 'Yes' : 'No'}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span>Price:</span>
-                  <Badge variant={capabilities.canEditPrice ? "default" : "secondary"} className="text-xs">
-                    {capabilities.canEditPrice ? "Yes" : "No"}
+                  <Badge
+                    variant={capabilities.canEditPrice ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {capabilities.canEditPrice ? 'Yes' : 'No'}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span>Description:</span>
-                  <Badge variant={capabilities.canEditDescription ? "default" : "secondary"} className="text-xs">
-                    {capabilities.canEditDescription ? "Yes" : "No"}
+                  <Badge
+                    variant={capabilities.canEditDescription ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {capabilities.canEditDescription ? 'Yes' : 'No'}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span>Image:</span>
-                  <Badge variant={capabilities.canEditImage ? "default" : "secondary"} className="text-xs">
-                    {capabilities.canEditImage ? "Yes" : "No"}
+                  <Badge
+                    variant={capabilities.canEditImage ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {capabilities.canEditImage ? 'Yes' : 'No'}
                   </Badge>
                 </div>
               </div>
@@ -304,4 +319,4 @@ export default async function ViewCateringItemPage({ params }: ViewCateringItemP
       </div>
     </div>
   );
-} 
+}

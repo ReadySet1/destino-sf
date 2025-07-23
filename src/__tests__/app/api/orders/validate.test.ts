@@ -6,12 +6,12 @@ import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Import our new test utilities
-import { 
+import {
   TestData,
   createValidationResult,
   setupMockPrisma,
   mockConsole,
-  restoreConsole 
+  restoreConsole,
 } from '@/__tests__/setup/test-utils';
 // Note: @/lib/db is mocked globally in jest.setup.js
 
@@ -20,10 +20,16 @@ jest.mock('@/app/actions/orders');
 jest.mock('@/lib/deliveryUtils');
 jest.mock('@/lib/shippingUtils');
 
-const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
+const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<
+  typeof validateOrderMinimumsServer
+>;
 const mockGetDeliveryZone = getDeliveryZone as jest.MockedFunction<typeof getDeliveryZone>;
-const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<typeof calculateDeliveryFee>;
-const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<typeof calculateShippingWeight>;
+const mockCalculateDeliveryFee = calculateDeliveryFee as jest.MockedFunction<
+  typeof calculateDeliveryFee
+>;
+const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
+  typeof calculateShippingWeight
+>;
 const mockPrisma = prisma as any;
 
 describe('/api/orders/validate', () => {
@@ -43,13 +49,13 @@ describe('/api/orders/validate', () => {
         id: 'prod-1',
         name: 'Dulce de Leche Alfajores',
         quantity: 2,
-        price: 25.00,
+        price: 25.0,
       },
       {
         id: 'prod-2',
         name: 'Beef Empanadas',
         quantity: 1,
-        price: 45.00,
+        price: 45.0,
       },
     ];
 
@@ -70,7 +76,10 @@ describe('/api/orders/validate', () => {
 
       const result = await validateOrderMinimumsServer(validOrderItems, deliveryAddress);
 
-      expect(mockValidateOrderMinimumsServer).toHaveBeenCalledWith(validOrderItems, deliveryAddress);
+      expect(mockValidateOrderMinimumsServer).toHaveBeenCalledWith(
+        validOrderItems,
+        deliveryAddress
+      );
       expect(result.isValid).toBe(true);
       expect(result.currentAmount).toBeGreaterThanOrEqual(result.minimumRequired!);
     });
@@ -81,7 +90,7 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Small Item',
           quantity: 1,
-          price: 10.00,
+          price: 10.0,
         },
       ];
 
@@ -112,7 +121,7 @@ describe('/api/orders/validate', () => {
           id: 'catering-1',
           name: 'Catering Alfajores Platter',
           quantity: 1,
-          price: 400.00,
+          price: 400.0,
         },
       ];
 
@@ -144,7 +153,7 @@ describe('/api/orders/validate', () => {
           id: 'catering-1',
           name: 'Small Catering Platter',
           quantity: 1,
-          price: 200.00,
+          price: 200.0,
         },
       ];
 
@@ -176,7 +185,7 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Single Alfajor',
           quantity: 1,
-          price: 5.00,
+          price: 5.0,
         },
       ];
 
@@ -213,13 +222,13 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Dulce de Leche Alfajores',
           quantity: 2,
-          price: 25.00,
+          price: 25.0,
         },
         {
           id: 'catering-1',
           name: 'Small Catering Add-on',
           quantity: 1,
-          price: 150.00,
+          price: 150.0,
         },
       ];
 
@@ -401,13 +410,13 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Dulce de Leche Alfajores',
           quantity: 2,
-          price: 25.00,
+          price: 25.0,
         },
         {
           id: 'prod-2',
           name: 'Beef Empanadas',
           quantity: 1,
-          price: 45.00,
+          price: 45.0,
         },
       ];
 
@@ -417,14 +426,14 @@ describe('/api/orders/validate', () => {
           name: 'Dulce de Leche Alfajores',
           isActive: true,
           inventory: 50,
-          price: 25.00,
+          price: 25.0,
         },
         {
           id: 'prod-2',
           name: 'Beef Empanadas',
           isActive: true,
           inventory: 30,
-          price: 45.00,
+          price: 45.0,
         },
       ]);
 
@@ -438,7 +447,7 @@ describe('/api/orders/validate', () => {
 
       expect(products).toHaveLength(2);
       expect(products.every(product => product.isActive)).toBe(true);
-      
+
       // Check inventory availability
       const hasInventory = products.every(product => {
         const orderItem = orderItems.find(item => item.id === product.id);
@@ -471,7 +480,7 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Limited Stock Item',
           quantity: 10,
-          price: 25.00,
+          price: 25.0,
         },
       ];
 
@@ -481,7 +490,7 @@ describe('/api/orders/validate', () => {
           name: 'Limited Stock Item',
           isActive: true,
           inventory: 5, // Insufficient for order of 10
-          price: 25.00,
+          price: 25.0,
         },
       ]);
 
@@ -507,7 +516,7 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Dulce de Leche Alfajores',
           quantity: 3,
-          price: 25.00,
+          price: 25.0,
           variantId: 'variant-6pack',
         },
       ];
@@ -518,7 +527,7 @@ describe('/api/orders/validate', () => {
         name: '6-pack',
         isActive: true,
         inventory: 10,
-        price: 25.00,
+        price: 25.0,
       });
 
       const variant = await prisma.productVariant.findUnique({
@@ -535,7 +544,7 @@ describe('/api/orders/validate', () => {
           id: 'non-existent-product',
           name: 'Non-existent Product',
           quantity: 1,
-          price: 25.00,
+          price: 25.0,
         },
       ];
 
@@ -549,7 +558,7 @@ describe('/api/orders/validate', () => {
         },
       });
 
-      const allProductsFound = orderItems.every(item => 
+      const allProductsFound = orderItems.every(item =>
         products.some(product => product.id === item.id)
       );
 
@@ -583,7 +592,7 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Popular Item',
           quantity: 1,
-          price: 25.00,
+          price: 25.0,
         },
       ];
 
@@ -595,7 +604,7 @@ describe('/api/orders/validate', () => {
             name: 'Popular Item',
             isActive: true,
             inventory: 1, // Available during first check
-            price: 25.00,
+            price: 25.0,
           },
         ])
         .mockResolvedValueOnce([
@@ -604,7 +613,7 @@ describe('/api/orders/validate', () => {
             name: 'Popular Item',
             isActive: true,
             inventory: 0, // Sold out during second check
-            price: 25.00,
+            price: 25.0,
           },
         ]);
 
@@ -754,8 +763,9 @@ describe('/api/orders/validate', () => {
 
       mockCalculateShippingWeight.mockRejectedValue(new Error('Weight calculation failed'));
 
-      await expect(calculateShippingWeight(orderItems, 'nationwide_shipping'))
-        .rejects.toThrow('Weight calculation failed');
+      await expect(calculateShippingWeight(orderItems, 'nationwide_shipping')).rejects.toThrow(
+        'Weight calculation failed'
+      );
     });
   });
 
@@ -767,13 +777,13 @@ describe('/api/orders/validate', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 3,
-            price: 25.00,
+            price: 25.0,
           },
           {
             id: 'prod-2',
             name: 'Beef Empanadas',
             quantity: 2,
-            price: 22.50,
+            price: 22.5,
           },
         ],
         deliveryAddress: {
@@ -822,14 +832,14 @@ describe('/api/orders/validate', () => {
           name: 'Dulce de Leche Alfajores',
           isActive: true,
           inventory: 50,
-          price: 25.00,
+          price: 25.0,
         },
         {
           id: 'prod-2',
           name: 'Beef Empanadas',
           isActive: true,
           inventory: 30,
-          price: 22.50,
+          price: 22.5,
         },
       ]);
 
@@ -846,10 +856,7 @@ describe('/api/orders/validate', () => {
       // 4. Calculate shipping weight
       mockCalculateShippingWeight.mockResolvedValue(4.1);
 
-      const shippingWeight = await calculateShippingWeight(
-        orderData.items,
-        'local_delivery'
-      );
+      const shippingWeight = await calculateShippingWeight(orderData.items, 'local_delivery');
 
       expect(shippingWeight).toBe(4.1);
 
@@ -867,7 +874,7 @@ describe('/api/orders/validate', () => {
             id: 'prod-1',
             name: 'Expensive Item',
             quantity: 1,
-            price: 15.00,
+            price: 15.0,
           },
         ],
         deliveryAddress: {
@@ -909,13 +916,13 @@ describe('/api/orders/validate', () => {
             id: 'catering-1',
             name: 'Large Alfajores Platter',
             quantity: 2,
-            price: 200.00,
+            price: 200.0,
           },
           {
             id: 'catering-2',
             name: 'Empanadas Catering Box',
             quantity: 1,
-            price: 180.00,
+            price: 180.0,
           },
         ],
         deliveryAddress: {
@@ -953,19 +960,21 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Test Product',
           quantity: 1,
-          price: 25.00,
+          price: 25.0,
         },
       ];
 
       mockPrisma.product.findMany.mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(prisma.product.findMany({
-        where: {
-          id: {
-            in: orderItems.map(item => item.id),
+      await expect(
+        prisma.product.findMany({
+          where: {
+            id: {
+              in: orderItems.map(item => item.id),
+            },
           },
-        },
-      })).rejects.toThrow('Database connection failed');
+        })
+      ).rejects.toThrow('Database connection failed');
     });
 
     test('should handle validation service timeouts', async () => {
@@ -974,14 +983,15 @@ describe('/api/orders/validate', () => {
           id: 'prod-1',
           name: 'Test Product',
           quantity: 1,
-          price: 25.00,
+          price: 25.0,
         },
       ];
 
       mockValidateOrderMinimumsServer.mockRejectedValue(new Error('Validation service timeout'));
 
-      await expect(validateOrderMinimumsServer(orderItems))
-        .rejects.toThrow('Validation service timeout');
+      await expect(validateOrderMinimumsServer(orderItems)).rejects.toThrow(
+        'Validation service timeout'
+      );
     });
 
     test('should handle malformed validation requests', async () => {
@@ -994,13 +1004,11 @@ describe('/api/orders/validate', () => {
       ];
 
       // Validate request structure
-      const hasValidStructure = malformedItems.every(item => 
-        item.id && 
-        typeof item.quantity === 'number' && 
-        typeof item.price === 'number'
+      const hasValidStructure = malformedItems.every(
+        item => item.id && typeof item.quantity === 'number' && typeof item.price === 'number'
       );
 
       expect(hasValidStructure).toBe(false);
     });
   });
-}); 
+});

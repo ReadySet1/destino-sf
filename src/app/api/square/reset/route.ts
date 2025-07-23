@@ -10,24 +10,27 @@ export async function GET(request: NextRequest) {
       SET "squareId" = '', "updatedAt" = NOW() 
       WHERE "squareId" IS NOT NULL
     `;
-    
+
     logger.info('Successfully reset all Square IDs');
-    
+
     // Now check how many products still have Square IDs (not empty)
     const productsWithSquareId = await prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*) FROM "Product" WHERE "squareId" <> ''
     `;
-    
+
     return NextResponse.json({
       success: true,
       message: 'All Square IDs have been reset',
-      remainingWithSquareId: Number(productsWithSquareId[0].count)
+      remainingWithSquareId: Number(productsWithSquareId[0].count),
     });
   } catch (error) {
     logger.error('Error resetting Square IDs:', error);
     return NextResponse.json(
-      { error: 'Failed to reset Square IDs', details: error instanceof Error ? error.message : String(error) },
+      {
+        error: 'Failed to reset Square IDs',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
-} 
+}

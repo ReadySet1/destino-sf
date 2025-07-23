@@ -25,7 +25,7 @@ We've made the following code changes to fix these issues:
 
 ### 1. Update Your API Tokens
 
-You need to update your Square API tokens in your `.env.local` file. 
+You need to update your Square API tokens in your `.env.local` file.
 
 Create or edit your `.env.local` file with the following variables:
 
@@ -96,7 +96,8 @@ npm run script -- src/scripts/update-square-token.ts --sandbox --token YOUR_NEW_
 ## Need Further Help?
 
 If you continue to experience issues:
+
 - Check the Square Developer status page for any outages
 - Verify your token permissions have the necessary scopes (ITEMS_READ, MERCHANT_PROFILE_READ, etc.)
 - Consider regenerating your tokens if they are older than 30 days
-- Check your Square app settings to ensure the correct redirect URLs are configured 
+- Check your Square app settings to ensure the correct redirect URLs are configured

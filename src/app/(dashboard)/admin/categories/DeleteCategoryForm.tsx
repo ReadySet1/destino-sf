@@ -14,10 +14,10 @@ const initialState: ActionResult = {
   message: '',
 };
 
-export default function DeleteCategoryForm({ 
-  categoryId, 
-  categoryName, 
-  productCount 
+export default function DeleteCategoryForm({
+  categoryId,
+  categoryName,
+  productCount,
 }: DeleteCategoryFormProps) {
   // useActionState manages state returned from the server action
   const [state, formAction] = useActionState(deleteCategoryAction, initialState);
@@ -40,8 +40,8 @@ export default function DeleteCategoryForm({
       >
         Delete
       </button>
-      {/* Optionally display feedback based on state */} 
+      {/* Optionally display feedback based on state */}
       {/* {state.message && <p className={`text-sm ml-2 ${state.success ? 'text-green-600' : 'text-red-600'}`}>{state.message}</p>} */}
     </form>
   );
-} 
+}

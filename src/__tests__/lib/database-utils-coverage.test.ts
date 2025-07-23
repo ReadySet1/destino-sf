@@ -1,17 +1,13 @@
 // Note: Only importing functions that actually exist
 import { prisma } from '@/lib/db';
-import { 
-  calculateShippingWeight, 
+import {
+  calculateShippingWeight,
   getShippingWeightConfig,
   getAllShippingConfigurations,
-  type CartItemForShipping 
+  type CartItemForShipping,
 } from '@/lib/shippingUtils';
 import { DeliveryZone } from '@/lib/deliveryUtils';
-import { 
-  calculateDeliveryFee, 
-  getDeliveryZone, 
-  getDeliveryFeeMessage,
-} from '@/lib/deliveryUtils';
+import { calculateDeliveryFee, getDeliveryZone, getDeliveryFeeMessage } from '@/lib/deliveryUtils';
 
 // Mock the global Prisma client
 jest.mock('@/lib/db');
@@ -36,7 +32,7 @@ const validCartItems: CartItemForShipping[] = [
     variantId: 'variant-1',
   },
   {
-    id: 'product-2', 
+    id: 'product-2',
     name: 'Empanadas- Beef (frozen- 4 pack)',
     quantity: 1,
   },
@@ -45,7 +41,7 @@ const validCartItems: CartItemForShipping[] = [
 describe('Database Utilities Comprehensive Coverage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -205,13 +201,18 @@ describe('Database Utilities Comprehensive Coverage', () => {
     });
 
     test('should handle database connection errors gracefully', async () => {
-      mockPrisma.shippingConfiguration.findFirst.mockRejectedValue(new Error('Database connection failed'));
+      mockPrisma.shippingConfiguration.findFirst.mockRejectedValue(
+        new Error('Database connection failed')
+      );
 
       const result = await calculateShippingWeight(validCartItems, 'nationwide_shipping');
 
       // Should fall back to default configurations
       expect(result).toBeGreaterThan(0);
-      expect(console.error).toHaveBeenCalledWith('Error fetching shipping weight config:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Error fetching shipping weight config:',
+        expect.any(Error)
+      );
     });
 
     test('should handle inactive shipping configurations', async () => {
@@ -269,7 +270,10 @@ describe('Database Utilities Comprehensive Coverage', () => {
         isActive: true,
         applicableForNationwideOnly: true,
       });
-      expect(console.error).toHaveBeenCalledWith('Error fetching shipping weight config:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Error fetching shipping weight config:',
+        expect.any(Error)
+      );
     });
 
     test('should return null for unknown product types', async () => {
@@ -326,7 +330,10 @@ describe('Database Utilities Comprehensive Coverage', () => {
       const result = await getAllShippingConfigurations();
 
       expect(result.length).toBeGreaterThan(0); // Should return default configurations
-      expect(console.error).toHaveBeenCalledWith('Error fetching shipping configurations:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Error fetching shipping configurations:',
+        expect.any(Error)
+      );
     });
 
     test('should merge database and default configurations without duplicates', async () => {
@@ -350,7 +357,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
 
   describe('calculateDeliveryFee', () => {
     test('should calculate fee for nearby zone (San Francisco)', () => {
-      const result = calculateDeliveryFee(validShippingAddress, 50.00); // $50 subtotal
+      const result = calculateDeliveryFee(validShippingAddress, 50.0); // $50 subtotal
 
       expect(result).toEqual({
         zone: DeliveryZone.NEARBY,
@@ -361,7 +368,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
     });
 
     test('should provide free delivery for qualifying nearby orders', () => {
-      const result = calculateDeliveryFee(validShippingAddress, 100.00); // $100 subtotal
+      const result = calculateDeliveryFee(validShippingAddress, 100.0); // $100 subtotal
 
       expect(result).toEqual({
         zone: DeliveryZone.NEARBY,
@@ -377,7 +384,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: 'Oakland',
       };
 
-      const result = calculateDeliveryFee(oaklandAddress, 50.00);
+      const result = calculateDeliveryFee(oaklandAddress, 50.0);
 
       expect(result).toEqual({
         zone: DeliveryZone.DISTANT,
@@ -392,13 +399,13 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: 'Los Angeles',
       };
 
-      const result = calculateDeliveryFee(unsupportedAddress, 50.00);
+      const result = calculateDeliveryFee(unsupportedAddress, 50.0);
 
       expect(result).toBeNull();
     });
 
     test('should handle edge case of exactly minimum order amount', () => {
-      const result = calculateDeliveryFee(validShippingAddress, 75.00); // Exactly $75
+      const result = calculateDeliveryFee(validShippingAddress, 75.0); // Exactly $75
 
       expect(result?.isFreeDelivery).toBe(true);
       expect(result?.fee).toBe(0);
@@ -410,7 +417,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: 'San Mateo',
       };
 
-      const result = calculateDeliveryFee(sanMateoAddress, 50.00);
+      const result = calculateDeliveryFee(sanMateoAddress, 50.0);
 
       expect(result?.zone).toBe(DeliveryZone.NEARBY);
       expect(result?.fee).toBe(15);
@@ -422,7 +429,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: 'Sausalito',
       };
 
-      const result = calculateDeliveryFee(marinAddress, 50.00);
+      const result = calculateDeliveryFee(marinAddress, 50.0);
 
       expect(result?.zone).toBe(DeliveryZone.DISTANT);
       expect(result?.fee).toBe(25);
@@ -434,7 +441,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: 'SaN FrAnCiScO',
       };
 
-      const result = calculateDeliveryFee(mixedCaseAddress, 50.00);
+      const result = calculateDeliveryFee(mixedCaseAddress, 50.0);
 
       expect(result?.zone).toBe(DeliveryZone.NEARBY);
     });
@@ -445,7 +452,7 @@ describe('Database Utilities Comprehensive Coverage', () => {
         city: '  San Francisco  ',
       };
 
-      const result = calculateDeliveryFee(whitespaceAddress, 50.00);
+      const result = calculateDeliveryFee(whitespaceAddress, 50.0);
 
       expect(result?.zone).toBe(DeliveryZone.NEARBY);
     });
@@ -528,9 +535,9 @@ describe('Database Utilities Comprehensive Coverage', () => {
 
   describe('Edge Cases and Error Handling', () => {
     test('should handle concurrent shipping weight calculations', async () => {
-      const promises = Array(5).fill(null).map(() => 
-        calculateShippingWeight(validCartItems, 'nationwide_shipping')
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map(() => calculateShippingWeight(validCartItems, 'nationwide_shipping'));
 
       const results = await Promise.all(promises);
 
@@ -616,16 +623,16 @@ describe('Database Utilities Comprehensive Coverage', () => {
 // Mock Decimal type for Prisma
 class Decimal {
   private value: number;
-  
+
   constructor(value: number | string) {
     this.value = typeof value === 'string' ? parseFloat(value) : value;
   }
-  
+
   valueOf() {
     return this.value;
   }
-  
+
   toString() {
     return this.value.toString();
   }
-} 
+}

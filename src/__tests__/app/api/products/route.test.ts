@@ -451,7 +451,9 @@ describe('/api/products - GET', () => {
     (mockPrisma.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
     (mockPrisma.product.count as jest.Mock).mockResolvedValue(1);
 
-    const request = new NextRequest('http://localhost:3000/api/products?includePagination=true&page=2&limit=10');
+    const request = new NextRequest(
+      'http://localhost:3000/api/products?includePagination=true&page=2&limit=10'
+    );
     const response = await GET(request);
     const data = await response.json();
 
@@ -546,7 +548,9 @@ describe('/api/products - GET', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    (mockPrisma.product.findMany as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
+    (mockPrisma.product.findMany as jest.Mock).mockRejectedValue(
+      new Error('Database connection failed')
+    );
 
     const request = new NextRequest('http://localhost:3000/api/products');
     const response = await GET(request);
@@ -654,4 +658,4 @@ describe('/api/products - GET', () => {
     expect(response.status).toBe(200);
     expect(data).toEqual([]);
   });
-}); 
+});

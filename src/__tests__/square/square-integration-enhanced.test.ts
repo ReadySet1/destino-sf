@@ -1,5 +1,9 @@
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { createPayment, processGiftCardPayment, handlePaymentWebhook } from '@/lib/square/payments-api';
+import {
+  createPayment,
+  processGiftCardPayment,
+  handlePaymentWebhook,
+} from '@/lib/square/payments-api';
 import { createOrder, createPayment as createOrderPayment } from '@/lib/square/orders';
 import { handleSquareWebhook } from '@/lib/square/webhooks';
 import { syncSquareProducts } from '@/lib/square/sync';
@@ -93,12 +97,12 @@ const mockEnv = {
 describe('Square API Integration Enhancement Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up environment variables
     Object.entries(mockEnv).forEach(([key, value]) => {
       process.env[key] = value;
     });
-    
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -107,7 +111,7 @@ describe('Square API Integration Enhancement Tests', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    
+
     // Clean up environment variables
     Object.keys(mockEnv).forEach(key => {
       delete process.env[key];
@@ -128,7 +132,7 @@ describe('Square API Integration Enhancement Tests', () => {
 
       // Mock the createPayment function
       const createPaymentSpy = jest.fn().mockResolvedValue(mockPaymentResponse);
-      
+
       const paymentRequest = {
         source_id: 'card-nonce-123',
         idempotency_key: 'payment-123-456',
@@ -162,7 +166,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const createPaymentSpy = jest.fn().mockResolvedValue(mockPaymentError);
-      
+
       const paymentRequest = {
         source_id: 'invalid-card-nonce',
         idempotency_key: 'payment-error-123',
@@ -192,7 +196,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const processGiftCardSpy = jest.fn().mockResolvedValue(mockGiftCardResponse);
-      
+
       const giftCardRequest = {
         giftCardNonce: 'gift-card-nonce-123',
         amountMoney: {
@@ -218,7 +222,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const processGiftCardSpy = jest.fn().mockResolvedValue(mockInsufficientFundsResponse);
-      
+
       const giftCardRequest = {
         giftCardNonce: 'gift-card-low-balance',
         amountMoney: {
@@ -245,7 +249,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const processGiftCardSpy = jest.fn().mockResolvedValue(mockInactiveCardResponse);
-      
+
       const giftCardRequest = {
         giftCardNonce: 'inactive-gift-card',
         amountMoney: {
@@ -274,7 +278,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const createPaymentSpy = jest.fn().mockResolvedValue(mockPaymentWithTip);
-      
+
       const paymentWithTipRequest = {
         source_id: 'card-nonce-tip',
         idempotency_key: 'payment-tip-123',
@@ -316,7 +320,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const createOrderSpy = jest.fn().mockResolvedValue(mockOrderResponse);
-      
+
       const orderRequest = {
         locationId: 'location-123',
         lineItems: [
@@ -360,7 +364,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const createOrderSpy = jest.fn().mockResolvedValue(mockOrderWithModifiers);
-      
+
       const orderRequest = {
         locationId: 'location-123',
         lineItems: [
@@ -386,10 +390,8 @@ describe('Square API Integration Enhancement Tests', () => {
     });
 
     test('should handle order creation errors', async () => {
-      const createOrderSpy = jest.fn().mockRejectedValue(
-        new Error('Invalid location ID')
-      );
-      
+      const createOrderSpy = jest.fn().mockRejectedValue(new Error('Invalid location ID'));
+
       const invalidOrderRequest = {
         locationId: 'invalid-location',
         lineItems: [],
@@ -409,7 +411,7 @@ describe('Square API Integration Enhancement Tests', () => {
       };
 
       const createOrderPaymentSpy = jest.fn().mockResolvedValue(mockOrderPaymentResponse);
-      
+
       const result = await createOrderPaymentSpy('card-nonce-456', 'order-123', 2598);
 
       expect(result.payment.order_id).toBe('order-123');
@@ -716,7 +718,9 @@ describe('Square API Integration Enhancement Tests', () => {
         },
       };
 
-      const syncProductsSpy = jest.spyOn(mockProductionSync, 'syncProducts').mockResolvedValue(mockBatchSyncResult);
+      const syncProductsSpy = jest
+        .spyOn(mockProductionSync, 'syncProducts')
+        .mockResolvedValue(mockBatchSyncResult);
 
       const result = await mockProductionSync.syncProducts();
 
@@ -769,7 +773,8 @@ describe('Square API Integration Enhancement Tests', () => {
     });
 
     test('should switch between sandbox and production environments', () => {
-      const mockGetSquareConfig = jest.fn()
+      const mockGetSquareConfig = jest
+        .fn()
         .mockReturnValueOnce({
           environment: 'sandbox',
           accessToken: 'sandbox-token',
@@ -801,15 +806,15 @@ describe('Square API Integration Enhancement Tests', () => {
     test('should validate required configuration values', () => {
       const validateSquareConfig = (config: any) => {
         const errors: string[] = [];
-        
+
         if (!config.accessToken) {
           errors.push('Access token is required');
         }
-        
+
         if (!config.locationId) {
           errors.push('Location ID is required');
         }
-        
+
         if (!config.webhookSecret) {
           errors.push('Webhook secret is required');
         }
@@ -826,7 +831,7 @@ describe('Square API Integration Enhancement Tests', () => {
         locationId: 'valid-location',
         webhookSecret: 'valid-secret',
       };
-      
+
       const validResult = validateSquareConfig(validConfig);
       expect(validResult.isValid).toBe(true);
 
@@ -836,7 +841,7 @@ describe('Square API Integration Enhancement Tests', () => {
         locationId: '',
         webhookSecret: '',
       };
-      
+
       const invalidResult = validateSquareConfig(invalidConfig);
       expect(invalidResult.isValid).toBe(false);
       expect(invalidResult.errors).toContain('Access token is required');
@@ -861,7 +866,7 @@ describe('Square API Integration Enhancement Tests', () => {
       const getSquareServiceSpy = jest.fn().mockReturnValue(mockSquareService);
 
       const service = getSquareServiceSpy();
-      
+
       const catalogItems = await service.getCatalogItems();
       expect(catalogItems).toHaveLength(2);
       expect(catalogItems[0].name).toBe('Product 1');
@@ -941,7 +946,7 @@ describe('Square API Integration Enhancement Tests', () => {
     });
 
     test('should handle Square API specific errors', async () => {
-      const handleSquareErrorSpy = jest.fn().mockImplementation((error) => {
+      const handleSquareErrorSpy = jest.fn().mockImplementation(error => {
         if (error.code === 'INVALID_REQUEST_ERROR') {
           return {
             userMessage: 'Invalid request. Please check your input.',
@@ -949,7 +954,7 @@ describe('Square API Integration Enhancement Tests', () => {
             retryable: false,
           };
         }
-        
+
         if (error.code === 'SERVICE_UNAVAILABLE') {
           return {
             userMessage: 'Payment service is temporarily unavailable.',
@@ -970,7 +975,7 @@ describe('Square API Integration Enhancement Tests', () => {
         code: 'INVALID_REQUEST_ERROR',
         detail: 'Missing required field: amount_money',
       };
-      
+
       const invalidResult = handleSquareErrorSpy(invalidRequestError);
       expect(invalidResult.retryable).toBe(false);
       expect(invalidResult.userMessage).toContain('Invalid request');
@@ -980,7 +985,7 @@ describe('Square API Integration Enhancement Tests', () => {
         code: 'SERVICE_UNAVAILABLE',
         detail: 'Service temporarily unavailable',
       };
-      
+
       const serviceResult = handleSquareErrorSpy(serviceError);
       expect(serviceResult.retryable).toBe(true);
       expect(serviceResult.userMessage).toContain('temporarily unavailable');
@@ -1006,13 +1011,11 @@ describe('Square API Integration Enhancement Tests', () => {
     });
 
     test('should handle concurrent API requests', async () => {
-      const mockConcurrentCalls = Array.from({ length: 5 }, (_, i) => 
+      const mockConcurrentCalls = Array.from({ length: 5 }, (_, i) =>
         jest.fn().mockResolvedValue({ id: `result-${i}`, success: true })
       );
 
-      const results = await Promise.all(
-        mockConcurrentCalls.map(call => call())
-      );
+      const results = await Promise.all(mockConcurrentCalls.map(call => call()));
 
       expect(results).toHaveLength(5);
       results.forEach((result, index) => {
@@ -1127,7 +1130,7 @@ describe('Square API Integration Enhancement Tests', () => {
         const now = Date.now();
         const cached = mockApiCache.get(cacheKey);
 
-        if (cached && (now - cached.timestamp) < CACHE_TTL) {
+        if (cached && now - cached.timestamp < CACHE_TTL) {
           return {
             data: cached.data,
             fromCache: true,
@@ -1163,4 +1166,4 @@ describe('Square API Integration Enhancement Tests', () => {
       expect(mockApiCall).toHaveBeenCalledTimes(1); // Still only one API call
     });
   });
-}); 
+});

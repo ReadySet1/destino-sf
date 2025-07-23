@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         id: updatedOrder.id,
         status: updatedOrder.status,
         paymentStatus: updatedOrder.paymentStatus,
-      }
+      },
     });
   } catch (error: Error | unknown) {
     console.error('Manual checkout processing error:', error);
@@ -83,4 +83,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

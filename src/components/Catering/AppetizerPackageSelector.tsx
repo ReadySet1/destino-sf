@@ -40,16 +40,16 @@ interface SelectionProgress {
 // Utility function for throttling scroll events
 const useThrottledScroll = (callback: () => void, delay: number) => {
   const throttleRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const throttledCallback = useCallback(() => {
     if (throttleRef.current) return;
-    
+
     throttleRef.current = setTimeout(() => {
       callback();
       throttleRef.current = null;
     }, delay);
   }, [callback, delay]);
-  
+
   useEffect(() => {
     return () => {
       if (throttleRef.current) {
@@ -57,7 +57,7 @@ const useThrottledScroll = (callback: () => void, delay: number) => {
       }
     };
   }, []);
-  
+
   return throttledCallback;
 };
 
@@ -68,7 +68,7 @@ const SelectionProgressIndicator: React.FC<{
   peopleCount: number;
 }> = ({ progress, currentPackage, peopleCount }) => {
   const totalPrice = currentPackage ? currentPackage.pricePerPerson * peopleCount : 0;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -78,33 +78,31 @@ const SelectionProgressIndicator: React.FC<{
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-amber-600" />
-          <span className="text-sm font-medium text-gray-700">
-            Selection Progress
-          </span>
+          <span className="text-sm font-medium text-gray-700">Selection Progress</span>
         </div>
         <div className="text-sm text-gray-600">
           {progress.current} of {progress.required} selected
         </div>
       </div>
-      
+
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
         <motion.div
           className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress.percentage}%` }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         />
       </div>
-      
+
       {/* Price Information */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-600">
-          {progress.isComplete ? 'Ready to add!' : `Need ${progress.required - progress.current} more`}
+          {progress.isComplete
+            ? 'Ready to add!'
+            : `Need ${progress.required - progress.current} more`}
         </span>
-        <span className="font-semibold text-amber-700">
-          Total: ${totalPrice.toFixed(2)}
-        </span>
+        <span className="font-semibold text-amber-700">Total: ${totalPrice.toFixed(2)}</span>
       </div>
     </motion.div>
   );
@@ -117,7 +115,7 @@ const StickyAddToCartButton: React.FC<StickyButtonProps> = ({
   onClick,
   totalPrice,
   itemCount,
-  isLoading
+  isLoading,
 }) => {
   return (
     <AnimatePresence>
@@ -126,47 +124,43 @@ const StickyAddToCartButton: React.FC<StickyButtonProps> = ({
           initial={{ opacity: 0, y: 100, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 100, scale: 0.9 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 300, 
+          transition={{
+            type: 'spring',
+            stiffness: 300,
             damping: 30,
-            opacity: { duration: 0.2 }
+            opacity: { duration: 0.2 },
           }}
           className="fixed bottom-4 left-4 right-4 z-50 md:bottom-6 md:left-auto md:right-6 md:max-w-sm"
         >
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <div className="text-sm text-gray-600">
-                  {itemCount} appetizers selected
-                </div>
-                <div className="text-lg font-bold text-amber-600">
-                  ${totalPrice.toFixed(2)}
-                </div>
+                <div className="text-sm text-gray-600">{itemCount} appetizers selected</div>
+                <div className="text-lg font-bold text-amber-600">${totalPrice.toFixed(2)}</div>
               </div>
               <ShoppingCart className="h-6 w-6 text-amber-600" />
             </div>
-            
+
             <Button
               onClick={onClick}
               disabled={disabled || isLoading}
               className={cn(
-                "w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 text-base",
-                "transition-all duration-200 transform",
-                "hover:scale-105 active:scale-95",
-                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                "focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                'w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 text-base',
+                'transition-all duration-200 transform',
+                'hover:scale-105 active:scale-95',
+                'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
+                'focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
               )}
               aria-label={`Add package to cart for $${totalPrice.toFixed(2)}`}
             >
               {isLoading ? (
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                 />
               ) : (
-                "Add Package to Cart"
+                'Add Package to Cart'
               )}
             </Button>
           </div>
@@ -186,7 +180,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
   const [peopleCount, setPeopleCount] = useState<number>(2);
   const [showStickyButton, setShowStickyButton] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
-  
+
   // Refs for scroll detection
   const originalButtonRef = useRef<HTMLDivElement>(null);
 
@@ -207,7 +201,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
     current: currentSelectedItems.length,
     required: requiredItemCount,
     percentage: requiredItemCount > 0 ? (currentSelectedItems.length / requiredItemCount) * 100 : 0,
-    isComplete: currentSelectedItems.length === requiredItemCount
+    isComplete: currentSelectedItems.length === requiredItemCount,
   };
 
   // Scroll detection for sticky button
@@ -219,7 +213,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
 
     const rect = originalButtonRef.current.getBoundingClientRect();
     const windowHeight = window.innerHeight;
-    
+
     // Show sticky button when original button is below the viewport
     const shouldShow = rect.top > windowHeight - 100;
     setShowStickyButton(shouldShow);
@@ -340,10 +334,10 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
       };
 
       addItem(cartItem);
-      
+
       // Success feedback with animation delay
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       toast.success(
         `${toTitleCase(currentPackage.name)} added to catering cart for ${peopleCount} people`,
         {
@@ -599,14 +593,11 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                 />
 
                 {/* Live Region for Screen Readers */}
-                <div 
-                  aria-live="polite" 
-                  aria-atomic="true" 
-                  className="sr-only"
-                >
-                  {currentSelectedItems.length} of {requiredItemCount} appetizers selected. 
-                  {selectionProgress.isComplete ? 'Selection complete, ready to add to cart.' : 
-                   `Please select ${requiredItemCount - currentSelectedItems.length} more appetizers.`}
+                <div aria-live="polite" aria-atomic="true" className="sr-only">
+                  {currentSelectedItems.length} of {requiredItemCount} appetizers selected.
+                  {selectionProgress.isComplete
+                    ? 'Selection complete, ready to add to cart.'
+                    : `Please select ${requiredItemCount - currentSelectedItems.length} more appetizers.`}
                 </div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -627,7 +618,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                         tabIndex={canSelect ? 0 : -1}
                         aria-pressed={isSelected}
                         aria-label={`${isSelected ? 'Remove' : 'Add'} ${toTitleCase(item.name)} ${isSelected ? 'from' : 'to'} selection`}
-                        onKeyDown={(e) => {
+                        onKeyDown={e => {
                           if ((e.key === 'Enter' || e.key === ' ') && canSelect) {
                             e.preventDefault();
                             handleItemToggle(item.id);
@@ -689,10 +680,10 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     onClick={handleAddToCart}
                     disabled={!selectionProgress.isComplete || isAddingToCart}
                     className={cn(
-                      "bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg",
-                      "transition-all duration-200 transform hover:scale-105",
-                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                      "focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                      'bg-amber-600 hover:bg-amber-700 px-8 py-3 text-lg',
+                      'transition-all duration-200 transform hover:scale-105',
+                      'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
+                      'focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
                     )}
                     aria-describedby="cart-button-description"
                   >
@@ -700,7 +691,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                       <div className="flex items-center gap-2">
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                           className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                         />
                         Adding to Cart...
@@ -717,8 +708,8 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                     )}
                   </Button>
                   <div id="cart-button-description" className="sr-only">
-                    {selectionProgress.isComplete 
-                      ? `Add ${requiredItemCount} selected appetizers to cart for ${peopleCount} people` 
+                    {selectionProgress.isComplete
+                      ? `Add ${requiredItemCount} selected appetizers to cart for ${peopleCount} people`
                       : `Select ${requiredItemCount - currentSelectedItems.length} more appetizers to enable adding to cart`}
                   </div>
                 </div>

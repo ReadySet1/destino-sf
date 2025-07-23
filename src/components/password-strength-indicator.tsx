@@ -12,27 +12,31 @@ interface PasswordRequirement {
 export function PasswordStrengthIndicator() {
   const [password, setPassword] = useState('');
   const [requirements, setRequirements] = useState<PasswordRequirement[]>([
-    { label: 'At least 8 characters', test: (pwd) => pwd.length >= 8, met: false },
-    { label: 'Contains uppercase letter', test: (pwd) => /[A-Z]/.test(pwd), met: false },
-    { label: 'Contains lowercase letter', test: (pwd) => /[a-z]/.test(pwd), met: false },
-    { label: 'Contains number', test: (pwd) => /\d/.test(pwd), met: false },
-    { label: 'Contains special character', test: (pwd) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), met: false },
+    { label: 'At least 8 characters', test: pwd => pwd.length >= 8, met: false },
+    { label: 'Contains uppercase letter', test: pwd => /[A-Z]/.test(pwd), met: false },
+    { label: 'Contains lowercase letter', test: pwd => /[a-z]/.test(pwd), met: false },
+    { label: 'Contains number', test: pwd => /\d/.test(pwd), met: false },
+    {
+      label: 'Contains special character',
+      test: pwd => /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+      met: false,
+    },
   ]);
 
   useEffect(() => {
     // Listen for password input changes
     const passwordInput = document.getElementById('password') as HTMLInputElement;
-    
+
     const handlePasswordChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       const newPassword = target.value;
       setPassword(newPassword);
-      
+
       // Update requirements
-      setRequirements(prev => 
+      setRequirements(prev =>
         prev.map(req => ({
           ...req,
-          met: req.test(newPassword)
+          met: req.test(newPassword),
         }))
       );
     };
@@ -63,17 +67,24 @@ export function PasswordStrengthIndicator() {
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-gray-600">Password strength</span>
-          <span className={`font-medium ${
-            strength.level === 'weak' ? 'text-red-600' :
-            strength.level === 'fair' ? 'text-yellow-600' :
-            strength.level === 'good' ? 'text-blue-600' :
-            strength.level === 'strong' ? 'text-green-600' : 'text-gray-600'
-          }`}>
+          <span
+            className={`font-medium ${
+              strength.level === 'weak'
+                ? 'text-red-600'
+                : strength.level === 'fair'
+                  ? 'text-yellow-600'
+                  : strength.level === 'good'
+                    ? 'text-blue-600'
+                    : strength.level === 'strong'
+                      ? 'text-green-600'
+                      : 'text-gray-600'
+            }`}
+          >
             {strength.text}
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full transition-all duration-300 ${strength.color}`}
             style={{ width: `${(metCount / requirements.length) * 100}%` }}
           />
@@ -89,12 +100,10 @@ export function PasswordStrengthIndicator() {
             ) : (
               <X className="h-3 w-3 text-gray-400" />
             )}
-            <span className={req.met ? 'text-green-600' : 'text-gray-500'}>
-              {req.label}
-            </span>
+            <span className={req.met ? 'text-green-600' : 'text-gray-500'}>{req.label}</span>
           </div>
         ))}
       </div>
     </div>
   );
-} 
+}

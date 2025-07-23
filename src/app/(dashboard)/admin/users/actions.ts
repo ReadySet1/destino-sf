@@ -27,7 +27,7 @@ export async function createUserAction(formData: FormData) {
   const city = formData.get('city') as string;
   const state = formData.get('state') as string;
   const postalCode = formData.get('postalCode') as string;
-  const country = formData.get('country') as string || 'US';
+  const country = (formData.get('country') as string) || 'US';
   const isDefaultShipping = formData.get('isDefaultShipping') === 'on';
   const isDefaultBilling = formData.get('isDefaultBilling') === 'on';
 
@@ -47,14 +47,17 @@ export async function createUserAction(formData: FormData) {
     // 1. Create user in Supabase Auth using Admin client and send invitation email
     // This will send an invitation email to the user to set their password.
     logger.info(`Attempting to create Supabase Auth user and send invitation for: ${email}`);
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: { 
-        name: name || '', 
-        phone: phone || '',
-        // Note: Avoid storing 'role' directly in user_metadata if you manage it in Prisma
-      },
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(email)}`,
-    });
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      email,
+      {
+        data: {
+          name: name || '',
+          phone: phone || '',
+          // Note: Avoid storing 'role' directly in user_metadata if you manage it in Prisma
+        },
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(email)}`,
+      }
+    );
 
     if (authError) {
       logger.error('Supabase Auth user creation failed:', authError);
@@ -72,7 +75,9 @@ export async function createUserAction(formData: FormData) {
 
     const supabaseUserId = authData.user.id;
     const supabaseUserEmail = authData.user.email; // Use email confirmed by Supabase
-    logger.info(`Supabase Auth user created successfully: ${supabaseUserId} (${supabaseUserEmail})`);
+    logger.info(
+      `Supabase Auth user created successfully: ${supabaseUserId} (${supabaseUserEmail})`
+    );
 
     // 2. Create the user profile in the Prisma database
     logger.info(`Creating Prisma profile for user ID: ${supabaseUserId}`);
@@ -108,20 +113,22 @@ export async function createUserAction(formData: FormData) {
       });
       logger.info(`Address created successfully for user ID: ${supabaseUserId}`);
       */
-      logger.info('Address creation skipped temporarily - uncomment the code block above when ready.');
+      logger.info(
+        'Address creation skipped temporarily - uncomment the code block above when ready.'
+      );
     }
 
     logger.info(`User process completed successfully for: ${supabaseUserEmail}`);
 
     // Return success
     return { success: true };
-
   } catch (error) {
     logger.error('Error in createUserAction:', error);
     // Return error object instead of throwing to allow the form to display it
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred during user creation.'
+      error:
+        error instanceof Error ? error.message : 'An unknown error occurred during user creation.',
     };
   }
 }
@@ -158,7 +165,7 @@ export async function updateUserAction(formData: FormData) {
     //   id,
     //   { email: email, user_metadata: { name: name || '', phone: phone || '' } }
     // );
-    // if (authUpdateError) { 
+    // if (authUpdateError) {
     //   logger.error('Supabase Auth user update failed:', authUpdateError);
     //   throw new Error(`Failed to update authentication user: ${authUpdateError.message}`);
     // }
@@ -185,27 +192,35 @@ export async function updateUserAction(formData: FormData) {
       // Address logic using `id` (Supabase User ID)
       // ... (address update/create logic as before, ensuring userId is `id`)
       */
-      logger.info('Address update/creation skipped temporarily - uncomment the code block when ready.');
+      logger.info(
+        'Address update/creation skipped temporarily - uncomment the code block when ready.'
+      );
     }
 
     logger.info(`User update process completed successfully for ID: ${id}`);
     return { success: true };
-
   } catch (error) {
     logger.error('Error updating user:', error);
-     // Provide more specific error message for duplicate email (from Prisma update)
-    if (error instanceof Error && error.message.includes('Unique constraint failed') && error.message.includes('email')) {
-       return { success: false, error: 'A user with this email already exists.' };
+    // Provide more specific error message for duplicate email (from Prisma update)
+    if (
+      error instanceof Error &&
+      error.message.includes('Unique constraint failed') &&
+      error.message.includes('email')
+    ) {
+      return { success: false, error: 'A user with this email already exists.' };
     }
     // Return error object
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred during user update.'
+      error:
+        error instanceof Error ? error.message : 'An unknown error occurred during user update.',
     };
   }
 }
 
-export async function deleteUserAction(userId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteUserAction(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
   if (!userId) {
     logger.warn('deleteUserAction called without userId.');
     return { success: false, error: 'User ID is required for deletion.' };
@@ -219,16 +234,16 @@ export async function deleteUserAction(userId: string): Promise<{ success: boole
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     // Check for specific error (user not found) - treat as success if goal is deletion
-    if (authError && authError.message !== 'User not found') { 
+    if (authError && authError.message !== 'User not found') {
       logger.error(`Supabase Auth deletion failed for user ${userId}:`, authError);
       throw new Error(`Failed to delete authentication user: ${authError.message}`);
     }
     if (authError && authError.message === 'User not found') {
       logger.warn(`User ${userId} not found in Supabase Auth, proceeding to delete profile.`);
     } else {
-       logger.info(`User ${userId} deleted successfully from Supabase Auth.`);
+      logger.info(`User ${userId} deleted successfully from Supabase Auth.`);
     }
-   
+
     // 2. Delete from Prisma Database
     logger.info(`Deleting profile for user ${userId} from Prisma database...`);
     await prisma.profile.delete({
@@ -239,27 +254,29 @@ export async function deleteUserAction(userId: string): Promise<{ success: boole
     // If we reach here, both deletions were successful or handled gracefully
     logger.info(`User ${userId} deleted successfully from all systems.`);
     return { success: true };
-
   } catch (error) {
     logger.error(`Error during deleteUserAction for user ${userId}:`, error);
 
     // Handle potential Prisma error (e.g., profile already deleted)
     if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-       logger.warn(`Profile for user ${userId} already deleted from Prisma.`);
-       // If Auth deletion succeeded or user wasn't found, consider this overall success.
-       // Re-check the specific authError condition if needed for stricter handling.
-       return { success: true }; // Or return specific state if needed
+      logger.warn(`Profile for user ${userId} already deleted from Prisma.`);
+      // If Auth deletion succeeded or user wasn't found, consider this overall success.
+      // Re-check the specific authError condition if needed for stricter handling.
+      return { success: true }; // Or return specific state if needed
     }
 
     // Return a generic error for other issues
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred during user deletion.'
+      error:
+        error instanceof Error ? error.message : 'An unknown error occurred during user deletion.',
     };
   }
 }
 
-export async function resendPasswordSetupAction(userId: string): Promise<{ success: boolean; error?: string }> {
+export async function resendPasswordSetupAction(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
   if (!userId) {
     logger.warn('resendPasswordSetupAction called without userId.');
     return { success: false, error: 'User ID is required.' };
@@ -282,8 +299,8 @@ export async function resendPasswordSetupAction(userId: string): Promise<{ succe
     // Send invitation email using Supabase Admin
     logger.info(`Sending password setup invitation to: ${profile.email}`);
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(profile.email, {
-      data: { 
-        name: profile.name || '', 
+      data: {
+        name: profile.name || '',
         phone: profile.phone || '',
       },
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(profile.email)}`,
@@ -296,12 +313,14 @@ export async function resendPasswordSetupAction(userId: string): Promise<{ succe
 
     logger.info(`Password setup invitation sent successfully for user ${userId}`);
     return { success: true };
-
   } catch (error) {
     logger.error(`Error in resendPasswordSetupAction for user ${userId}:`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred while sending the invitation.'
+      error:
+        error instanceof Error
+          ? error.message
+          : 'An unknown error occurred while sending the invitation.',
     };
   }
-} 
+}

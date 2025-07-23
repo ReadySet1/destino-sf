@@ -32,12 +32,8 @@ const useUserManagement = (initialUsers: User[] = []) => {
   }, []);
 
   const toggleUserStatus = useCallback((userId: number) => {
-    setUsers(prev => 
-      prev.map(user => 
-        user.id === userId 
-          ? { ...user, isActive: !user.isActive }
-          : user
-      )
+    setUsers(prev =>
+      prev.map(user => (user.id === userId ? { ...user, isActive: !user.isActive } : user))
     );
   }, []);
 
@@ -54,7 +50,7 @@ const useUserManagement = (initialUsers: User[] = []) => {
 
 /**
  * TestComponent - A demonstration component showcasing modern TypeScript + React patterns
- * 
+ *
  * Features:
  * - Type-safe props and state management
  * - Custom hooks for business logic separation
@@ -68,21 +64,14 @@ const TestComponent: React.FC<TestComponentProps> = ({
   onUserSelect,
   className = '',
 }) => {
-  const {
-    users,
-    selectedUser,
-    setSelectedUser,
-    loading,
-    setLoading,
-    addUser,
-    toggleUserStatus,
-  } = useUserManagement(initialUsers);
+  const { users, selectedUser, setSelectedUser, loading, setLoading, addUser, toggleUserStatus } =
+    useUserManagement(initialUsers);
 
   // Simulate API call effect
   useEffect(() => {
     if (initialUsers.length === 0) {
       setLoading(true);
-      
+
       // Simulate API delay
       const timer = setTimeout(() => {
         const mockUsers: User[] = [
@@ -90,7 +79,7 @@ const TestComponent: React.FC<TestComponentProps> = ({
           { id: 2, name: 'Jane Smith', email: 'jane@example.com', isActive: false },
           { id: 3, name: 'Bob Johnson', email: 'bob@example.com', isActive: true },
         ];
-        
+
         mockUsers.forEach(user => addUser(user));
         setLoading(false);
       }, 1000);
@@ -99,15 +88,18 @@ const TestComponent: React.FC<TestComponentProps> = ({
     }
   }, [initialUsers.length, addUser, setLoading]);
 
-  const handleUserClick = useCallback((user: User) => {
-    setSelectedUser(user);
-    onUserSelect?.(user);
-  }, [setSelectedUser, onUserSelect]);
+  const handleUserClick = useCallback(
+    (user: User) => {
+      setSelectedUser(user);
+      onUserSelect?.(user);
+    },
+    [setSelectedUser, onUserSelect]
+  );
 
   const handleAddNewUser = useCallback(() => {
     const name = prompt('Enter user name:');
     const email = prompt('Enter user email:');
-    
+
     if (name && email) {
       addUser({
         name: name.trim(),
@@ -130,18 +122,14 @@ const TestComponent: React.FC<TestComponentProps> = ({
     <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
       <header className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
-        <p className="text-gray-600">
-          Demonstrating TypeScript + Next.js best practices
-        </p>
+        <p className="text-gray-600">Demonstrating TypeScript + Next.js best practices</p>
       </header>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* User List Section */}
         <section className="flex-1">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-700">
-              Users ({users.length})
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-700">Users ({users.length})</h3>
             <button
               onClick={handleAddNewUser}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
@@ -152,7 +140,7 @@ const TestComponent: React.FC<TestComponentProps> = ({
           </div>
 
           <div className="space-y-2">
-            {users.map((user) => (
+            {users.map(user => (
               <div
                 key={user.id}
                 className={`p-3 border rounded-md cursor-pointer transition-all duration-200 ${
@@ -163,7 +151,7 @@ const TestComponent: React.FC<TestComponentProps> = ({
                 onClick={() => handleUserClick(user)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     handleUserClick(user);
                   }
@@ -177,15 +165,13 @@ const TestComponent: React.FC<TestComponentProps> = ({
                   <div className="flex items-center gap-2">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
-                        user.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}
                     >
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         toggleUserStatus(user.id);
                       }}
@@ -203,10 +189,8 @@ const TestComponent: React.FC<TestComponentProps> = ({
 
         {/* Selected User Details */}
         <aside className="flex-1 lg:max-w-md">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">
-            Selected User Details
-          </h3>
-          
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Selected User Details</h3>
+
           {selectedUser ? (
             <div className="bg-gray-50 rounded-md p-4">
               <dl className="space-y-2">
@@ -239,9 +223,7 @@ const TestComponent: React.FC<TestComponentProps> = ({
               </dl>
             </div>
           ) : (
-            <p className="text-gray-500 italic">
-              Select a user to view details
-            </p>
+            <p className="text-gray-500 italic">Select a user to view details</p>
           )}
         </aside>
       </div>

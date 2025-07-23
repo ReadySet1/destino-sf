@@ -9,6 +9,7 @@ Unit tests form the foundation of our testing strategy, providing fast feedback 
 ## Setup and Configuration
 
 ### Jest Configuration
+
 Our Jest setup uses multiple projects to handle different testing environments:
 
 ```typescript
@@ -35,11 +36,7 @@ const config: Config = {
       testMatch: ['<rootDir>/src/__tests__/components/**/*.test.{ts,tsx}'],
     },
   ],
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/__tests__/**/*',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/__tests__/**/*'],
   coverageThreshold: {
     global: {
       branches: 80,
@@ -107,7 +104,7 @@ describe('ProductCard', () => {
 
   it('displays product information correctly', () => {
     render(<ProductCard {...defaultProps} />);
-    
+
     expect(screen.getByText(defaultProps.product.name)).toBeInTheDocument();
     expect(screen.getByText(`$${defaultProps.product.price}`)).toBeInTheDocument();
     expect(screen.getByAltText(defaultProps.product.images[0].alt)).toBeInTheDocument();
@@ -119,17 +116,17 @@ describe('ProductCard', () => {
     });
 
     render(<ProductCard {...defaultProps} product={outOfStockProduct} />);
-    
+
     expect(screen.getByText('Out of Stock')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add to cart/i })).toBeDisabled();
   });
 
   it('calls onAddToCart with correct parameters', async () => {
     render(<ProductCard {...defaultProps} />);
-    
+
     const addButton = screen.getByRole('button', { name: /add to cart/i });
     fireEvent.click(addButton);
-    
+
     await waitFor(() => {
       expect(defaultProps.onAddToCart).toHaveBeenCalledWith(
         defaultProps.product.id,
@@ -157,7 +154,7 @@ const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 describe('useCart', () => {
   it('starts with empty cart', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
-    
+
     expect(result.current.items).toEqual([]);
     expect(result.current.total).toBe(0);
     expect(result.current.itemCount).toBe(0);
@@ -166,11 +163,11 @@ describe('useCart', () => {
   it('adds items to cart', () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     const product = mockProduct();
-    
+
     act(() => {
       result.current.addItem(product.id, 2, 'DOZEN');
     });
-    
+
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0]).toMatchObject({
       productId: product.id,
@@ -202,20 +199,15 @@ describe('Validation Utilities', () => {
         'user.name@domain.co.uk',
         'firstname+lastname@example.com',
       ];
-      
+
       validEmails.forEach(email => {
         expect(validateEmail(email)).toBe(true);
       });
     });
 
     it('rejects invalid email addresses', () => {
-      const invalidEmails = [
-        'invalid-email',
-        '@example.com',
-        'test@',
-        'test..test@example.com',
-      ];
-      
+      const invalidEmails = ['invalid-email', '@example.com', 'test@', 'test..test@example.com'];
+
       invalidEmails.forEach(email => {
         expect(validateEmail(email)).toBe(false);
       });
@@ -242,7 +234,7 @@ describe('Validation Utilities', () => {
           zipCode: '94107',
         },
       };
-      
+
       expect(validateCateringInquiry(validInquiry)).toEqual({ valid: true });
     });
 
@@ -259,7 +251,7 @@ describe('Validation Utilities', () => {
           phone: '',
         },
       };
-      
+
       const result = validateCateringInquiry(invalidInquiry);
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Event date is required');
@@ -490,12 +482,12 @@ pnpm test --testNamePattern="cart functionality"
 it('debugs test data', () => {
   const product = mockProduct();
   console.log('Product data:', JSON.stringify(product, null, 2));
-  
+
   render(<ProductCard product={product} />);
-  
+
   // Use screen.debug() to see rendered HTML
   screen.debug();
-  
+
   expect(screen.getByText(product.name)).toBeInTheDocument();
 });
 
@@ -575,7 +567,7 @@ it('handles async operations', async () => {
   global.fetch = mockFetch;
 
   render(<AsyncComponent />);
-  
+
   await waitFor(() => {
     expect(screen.getByText('Loaded data')).toBeInTheDocument();
   });

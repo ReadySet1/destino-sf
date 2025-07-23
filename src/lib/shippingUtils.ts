@@ -52,22 +52,24 @@ const DEFAULT_PRODUCT_WEIGHT_LB = 0.5;
  */
 function getProductType(productName: string): string {
   const name = productName.toLowerCase();
-  
+
   if (name.includes('alfajor')) {
     return 'alfajores';
   }
-  
+
   if (name.includes('empanada')) {
     return 'empanadas';
   }
-  
+
   return 'default';
 }
 
 /**
  * Gets shipping weight configuration from database or defaults
  */
-export async function getShippingWeightConfig(productType: string): Promise<ShippingWeightConfig | null> {
+export async function getShippingWeightConfig(
+  productType: string
+): Promise<ShippingWeightConfig | null> {
   try {
     // Try to get from database first
     const dbConfig = await prisma.shippingConfiguration.findFirst({
@@ -116,11 +118,11 @@ export async function calculateShippingWeight(
 
   for (const item of items) {
     const productType = getProductType(item.name);
-    
+
     if (!itemsByType.has(productType)) {
       itemsByType.set(productType, { items: [], totalQuantity: 0 });
     }
-    
+
     const typeGroup = itemsByType.get(productType)!;
     typeGroup.items.push(item);
     typeGroup.totalQuantity += item.quantity;
@@ -129,40 +131,49 @@ export async function calculateShippingWeight(
   // Calculate weight for each product type
   for (const [productType, { totalQuantity }] of itemsByType) {
     const weightConfig = await getShippingWeightConfig(productType);
-    
+
     if (weightConfig && weightConfig.isActive) {
       // Check if this configuration applies to the fulfillment method
       if (weightConfig.applicableForNationwideOnly && fulfillmentMethod !== 'nationwide_shipping') {
         // Use default weight for non-nationwide shipping
         const defaultWeight = totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
-        console.log(`⚖️ ${productType}: Using default weight for ${fulfillmentMethod} (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`);
+        console.log(
+          `⚖️ ${productType}: Using default weight for ${fulfillmentMethod} (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`
+        );
         totalWeight += defaultWeight;
         continue;
       }
-      
+
       // Use configured weight calculation
       if (totalQuantity > 0) {
         // Base weight for first unit + additional weight for extra units
         const additionalUnits = Math.max(0, totalQuantity - 1);
-        const productWeight = weightConfig.baseWeightLb + (additionalUnits * weightConfig.weightPerUnitLb);
-        console.log(`⚖️ ${productType}: Configured weight calculation (${weightConfig.baseWeightLb} + ${additionalUnits} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`);
+        const productWeight =
+          weightConfig.baseWeightLb + additionalUnits * weightConfig.weightPerUnitLb;
+        console.log(
+          `⚖️ ${productType}: Configured weight calculation (${weightConfig.baseWeightLb} + ${additionalUnits} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`
+        );
         totalWeight += productWeight;
       }
     } else {
       // Use default weight for products without specific configuration
       const defaultWeight = totalQuantity * DEFAULT_PRODUCT_WEIGHT_LB;
-      console.log(`⚖️ ${productType}: No active config, using default (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`);
+      console.log(
+        `⚖️ ${productType}: No active config, using default (${totalQuantity} × ${DEFAULT_PRODUCT_WEIGHT_LB} = ${defaultWeight}lb)`
+      );
       totalWeight += defaultWeight;
     }
   }
 
   // Ensure minimum weight for shipping (most carriers require at least 0.5 lb for small packages)
   const finalWeight = Math.max(totalWeight, 0.5);
-  
+
   // Round to 2 decimal places to avoid floating point precision issues
   const roundedWeight = Math.round(finalWeight * 100) / 100;
-  
-  console.log(`📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb → ${roundedWeight}lb (rounded for API)`);
+
+  console.log(
+    `📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb → ${roundedWeight}lb (rounded for API)`
+  );
   return roundedWeight;
 }
 
@@ -229,4 +240,4 @@ export async function updateShippingConfiguration(
     isActive: updatedConfig.isActive,
     applicableForNationwideOnly: updatedConfig.applicableForNationwideOnly,
   };
-} 
+}

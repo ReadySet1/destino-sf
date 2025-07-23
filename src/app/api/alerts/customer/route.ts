@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { alertService } from '@/lib/alerts';
 import { prisma } from '@/lib/db';
-import type { 
+import type {
   CustomerOrderConfirmationData,
   CustomerOrderStatusData,
   CustomerPickupReadyData,
   CustomerFeedbackRequestData,
-  ContactFormReceivedData 
+  ContactFormReceivedData,
 } from '@/types/alerts';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     switch (type) {
       case 'order_confirmation':
         if (!orderId) {
-          return NextResponse.json({ error: 'orderId required for order confirmation' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'orderId required for order confirmation' },
+            { status: 400 }
+          );
         }
 
         const orderForConfirmation = await prisma.order.findUnique({
@@ -51,7 +54,10 @@ export async function POST(request: NextRequest) {
 
       case 'order_status_update':
         if (!orderId) {
-          return NextResponse.json({ error: 'orderId required for status update' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'orderId required for status update' },
+            { status: 400 }
+          );
         }
 
         const orderForUpdate = await prisma.order.findUnique({
@@ -77,10 +83,7 @@ export async function POST(request: NextRequest) {
           nextSteps: data.nextSteps,
         };
 
-        result = await alertService.sendCustomerOrderStatusUpdate(
-          statusData,
-          data.customerEmail
-        );
+        result = await alertService.sendCustomerOrderStatusUpdate(statusData, data.customerEmail);
         break;
 
       case 'pickup_ready':
@@ -111,15 +114,15 @@ export async function POST(request: NextRequest) {
           parkingInfo: data.parkingInfo,
         };
 
-        result = await alertService.sendCustomerPickupReady(
-          pickupData,
-          data.customerEmail
-        );
+        result = await alertService.sendCustomerPickupReady(pickupData, data.customerEmail);
         break;
 
       case 'feedback_request':
         if (!orderId) {
-          return NextResponse.json({ error: 'orderId required for feedback request' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'orderId required for feedback request' },
+            { status: 400 }
+          );
         }
 
         const orderForFeedback = await prisma.order.findUnique({
@@ -153,9 +156,12 @@ export async function POST(request: NextRequest) {
 
       case 'contact_form':
         if (!data.name || !data.email || !data.message) {
-          return NextResponse.json({ 
-            error: 'name, email, and message required for contact form' 
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              error: 'name, email, and message required for contact form',
+            },
+            { status: 400 }
+          );
         }
 
         const contactData: ContactFormReceivedData = {
@@ -175,24 +181,29 @@ export async function POST(request: NextRequest) {
     }
 
     if (result.success) {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         messageId: result.messageId,
-        message: `Customer alert sent successfully` 
+        message: `Customer alert sent successfully`,
       });
     } else {
-      return NextResponse.json({ 
-        success: false, 
-        error: result.error 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: 500 }
+      );
     }
-
   } catch (error) {
     console.error('Error in customer alerts API:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -205,11 +216,11 @@ export async function GET(request: NextRequest) {
   try {
     // Get customer alert history
     const whereClause: any = {};
-    
+
     if (orderId) {
       whereClause.relatedOrderId = orderId;
     }
-    
+
     if (customerEmail) {
       whereClause.recipientEmail = customerEmail;
     }
@@ -225,7 +236,7 @@ export async function GET(request: NextRequest) {
         'CUSTOMER_FEEDBACK_REQUEST',
         'CONTACT_FORM_RECEIVED',
       ];
-      
+
       if (customerTypes.includes(type.toUpperCase())) {
         whereClause.type = type.toUpperCase();
       }
@@ -255,12 +266,14 @@ export async function GET(request: NextRequest) {
       alerts,
       total: alerts.length,
     });
-
   } catch (error) {
     console.error('Error fetching customer alerts:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch customer alerts',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch customer alerts',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
-} 
+}

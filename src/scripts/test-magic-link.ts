@@ -7,14 +7,14 @@
 
 async function testMagicLinkConfig() {
   console.log('🧪 Testing Magic Link Configuration');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   // Test environment variables
   console.log('\n🔍 Environment Check:');
   const requiredEnvVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    'NEXT_PUBLIC_APP_URL'
+    'NEXT_PUBLIC_APP_URL',
   ];
 
   const missingVars: string[] = [];
@@ -38,9 +38,12 @@ async function testMagicLinkConfig() {
   // Test URLs
   console.log('\n🔗 Expected Magic Link Flow:');
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
+
   console.log('1. User requests magic link at:', `${baseUrl}/sign-in`);
-  console.log('2. Magic link email contains link to:', `${baseUrl}/auth/callback?token_hash=...&type=magiclink`);
+  console.log(
+    '2. Magic link email contains link to:',
+    `${baseUrl}/auth/callback?token_hash=...&type=magiclink`
+  );
   console.log('3. After verification, redirects to:', `${baseUrl}/protected or ${baseUrl}/admin`);
 
   console.log('\n📧 Supabase Settings to Verify:');
@@ -48,7 +51,7 @@ async function testMagicLinkConfig() {
   console.log(`Redirect URLs:`);
   console.log(`  - ${baseUrl}/auth/callback`);
   console.log(`  - ${baseUrl}/auth/callback/**`);
-  
+
   if (baseUrl.includes('localhost')) {
     console.log('\n💡 For production, also add:');
     console.log('  - https://your-production-domain.vercel.app/auth/callback');
@@ -62,4 +65,4 @@ async function testMagicLinkConfig() {
   console.log('4. Test with different browsers/incognito mode');
 }
 
-testMagicLinkConfig().catch(console.error); 
+testMagicLinkConfig().catch(console.error);

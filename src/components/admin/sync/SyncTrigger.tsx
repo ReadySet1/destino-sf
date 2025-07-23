@@ -29,7 +29,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
     includeImages: true,
     batchSize: 'medium',
     notifyOnComplete: true,
-    autoRetry: true
+    autoRetry: true,
   });
 
   const handleTriggerSync = async () => {
@@ -63,9 +63,9 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
 
       setSyncId(data.syncId);
       setSyncState('started');
-      
+
       toast({
-        title: "Sync Started! 🚀",
+        title: 'Sync Started! 🚀',
         description: `${data.message} Estimated duration: ${data.estimatedDuration}`,
       });
 
@@ -73,7 +73,6 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
       if (onSyncStarted) {
         onSyncStarted(data.syncId);
       }
-
     } catch (error) {
       console.error('Error triggering sync:', error);
       setError('Network error. Please check your connection and try again.');
@@ -106,7 +105,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
         {/* Sync Options */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Sync Options</h4>
-          
+
           {/* Include Images */}
           <div className="flex items-center justify-between">
             <Label htmlFor="include-images" className="text-sm">
@@ -115,9 +114,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
             <Switch
               id="include-images"
               checked={options.includeImages}
-              onCheckedChange={(checked) => 
-                setOptions(prev => ({ ...prev, includeImages: checked }))
-              }
+              onCheckedChange={checked => setOptions(prev => ({ ...prev, includeImages: checked }))}
               disabled={isLoading || hasStarted}
             />
           </div>
@@ -125,9 +122,9 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
           {/* Batch Size */}
           <div className="space-y-2">
             <Label className="text-sm">Sync Speed</Label>
-            <RadioGroup 
-              value={options.batchSize} 
-              onValueChange={(value) => 
+            <RadioGroup
+              value={options.batchSize}
+              onValueChange={value =>
                 setOptions(prev => ({ ...prev, batchSize: value as 'small' | 'medium' | 'large' }))
               }
               disabled={isLoading || hasStarted}
@@ -162,7 +159,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
             <Switch
               id="notify-complete"
               checked={options.notifyOnComplete}
-              onCheckedChange={(checked) => 
+              onCheckedChange={checked =>
                 setOptions(prev => ({ ...prev, notifyOnComplete: checked }))
               }
               disabled={isLoading || hasStarted}
@@ -190,7 +187,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button 
+          <Button
             onClick={handleTriggerSync}
             disabled={disabled || isLoading || hasStarted}
             className="flex-1"
@@ -215,11 +212,7 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
           </Button>
 
           {(hasError || hasStarted) && (
-            <Button 
-              variant="outline" 
-              onClick={resetState}
-              size="lg"
-            >
+            <Button variant="outline" onClick={resetState} size="lg">
               Reset
             </Button>
           )}
@@ -235,4 +228,4 @@ export function SyncTrigger({ onSyncStarted, disabled = false }: SyncTriggerProp
       </CardContent>
     </Card>
   );
-} 
+}

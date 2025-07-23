@@ -12,7 +12,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Arepas',
@@ -22,7 +22,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Camotitos',
@@ -32,17 +32,17 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Mt. Tam Montado',
-    description: 'cowgirl creamery\'s mt. tam / jalea de aji / crostini',
+    description: "cowgirl creamery's mt. tam / jalea de aji / crostini",
     price: 0,
     category: 'STARTER',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Quinoa Arancini Balls',
@@ -52,7 +52,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Causa',
@@ -62,7 +62,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Bocadillo de Boquerones',
@@ -72,7 +72,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Peruvian Ceviche',
@@ -82,7 +82,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Tiger Prawns',
@@ -92,7 +92,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Salmon Carpaccio',
@@ -102,7 +102,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Churrasco',
@@ -112,7 +112,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Pan con Tomate',
@@ -122,7 +122,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Anticuchos de Pollo',
@@ -132,7 +132,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Sliders',
@@ -142,7 +142,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Albondigas',
@@ -152,27 +152,29 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Oxtail',
-    description: 'braised oxtail / pine nuts / golden raisins / mint / queso cotija / plantain crisps',
+    description:
+      'braised oxtail / pine nuts / golden raisins / mint / queso cotija / plantain crisps',
     price: 0,
     category: 'STARTER',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Empanada - Pork',
-    description: 'ground hampshire pork / manzanilla olives / black mission figs / caribbean spices',
+    description:
+      'ground hampshire pork / manzanilla olives / black mission figs / caribbean spices',
     price: 0,
     category: 'STARTER',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Empanada - Vegetarian',
@@ -182,7 +184,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Tamal Verde',
@@ -192,7 +194,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Empanada - Beef',
@@ -202,7 +204,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Empanada - Chicken',
@@ -212,7 +214,7 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
+    squareCategory: 'CATERING- APPETIZERS',
   },
   {
     name: 'Empanada - Salmon',
@@ -222,8 +224,8 @@ const APPETIZER_ITEMS = [
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- APPETIZERS'
-  }
+    squareCategory: 'CATERING- APPETIZERS',
+  },
 ];
 
 // Define the platter items with specific pricing
@@ -231,69 +233,73 @@ const PLATTER_ITEMS = [
   {
     name: 'Plantain Chips Platter - Small',
     description: 'yellow pepper cream sauce (approximately 10-20 people)',
-    price: 45.00,
+    price: 45.0,
     category: 'STARTER',
     servingSize: '10-20 people',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- SHARE PLATTERS'
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     name: 'Plantain Chips Platter - Large',
     description: 'yellow pepper cream sauce (approximately 25-40 people)',
-    price: 80.00,
+    price: 80.0,
     category: 'STARTER',
     servingSize: '25-40 people',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- SHARE PLATTERS'
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     name: 'Cheese & Charcuterie Platter - Small',
-    description: 'selection of local & imported artisan - 8oz portions of 4 offerings (approximately 10-20 people)',
-    price: 150.00,
+    description:
+      'selection of local & imported artisan - 8oz portions of 4 offerings (approximately 10-20 people)',
+    price: 150.0,
     category: 'STARTER',
     servingSize: '10-20 people',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- SHARE PLATTERS'
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     name: 'Cheese & Charcuterie Platter - Large',
-    description: 'selection of local & imported artisan - 8oz portions of 6 offerings (approximately 25-40 people)',
-    price: 280.00,
+    description:
+      'selection of local & imported artisan - 8oz portions of 6 offerings (approximately 25-40 people)',
+    price: 280.0,
     category: 'STARTER',
     servingSize: '25-40 people',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- SHARE PLATTERS'
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     name: 'Cocktail Prawn Platter - Small',
-    description: 'jumbo tiger prawns / zesty cocktail sauce - 25 prawns (approximately 10-20 people)',
-    price: 80.00,
+    description:
+      'jumbo tiger prawns / zesty cocktail sauce - 25 prawns (approximately 10-20 people)',
+    price: 80.0,
     category: 'STARTER',
     servingSize: '10-20 people',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- SHARE PLATTERS'
+    squareCategory: 'CATERING- SHARE PLATTERS',
   },
   {
     name: 'Cocktail Prawn Platter - Large',
-    description: 'jumbo tiger prawns / zesty cocktail sauce - 50 prawns (approximately 25-40 people)',
-    price: 150.00,
+    description:
+      'jumbo tiger prawns / zesty cocktail sauce - 50 prawns (approximately 25-40 people)',
+    price: 150.0,
     category: 'STARTER',
     servingSize: '25-40 people',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- SHARE PLATTERS'
-  }
+    squareCategory: 'CATERING- SHARE PLATTERS',
+  },
 ];
 
 // Define dessert items
@@ -301,121 +307,122 @@ const DESSERT_ITEMS = [
   {
     name: 'Alfajores - Classic',
     description: 'south american butter cookies: shortbread / dulce de leche',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Alfajores - Chocolate',
     description: 'dulce de leche / dark chocolate / peruvian sea salt',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Alfajores - Lemon',
     description: 'shortbread / dulce de leche / lemon royal icing',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Alfajores - Gluten-Free',
     description: 'gluten-free dulce de leche butter cookies',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Mini Cupcakes',
     description: 'selection of dark chocolate or vanilla buttercream',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Lemon Bars',
     description: 'meyer lemon zest, blueberry compote',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
+    squareCategory: 'CATERING- DESSERTS',
   },
   {
     name: 'Brownie Bites',
     description: 'double dark chocolate brownie, candied hot pepper jelly',
-    price: 2.50,
+    price: 2.5,
     category: 'DESSERT',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- DESSERTS'
-  }
+    squareCategory: 'CATERING- DESSERTS',
+  },
 ];
 
 // Define buffet starter items (3oz portion)
 const BUFFET_STARTERS = [
   {
     name: 'Ensalada de Destino',
-    description: 'baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette',
-    price: 8.00,
+    description:
+      'baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette',
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, STARTERS'
+    squareCategory: 'CATERING- BUFFET, STARTERS',
   },
   {
     name: 'Quinoa Salad',
     description: 'light quinoa salad / jicama / seasonal vegetables / mint mojo',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, STARTERS'
+    squareCategory: 'CATERING- BUFFET, STARTERS',
   },
   {
     name: 'Causa',
     description: 'yukon potato / lime / sweet 100 tomatoes / don alfonso olives',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, STARTERS'
+    squareCategory: 'CATERING- BUFFET, STARTERS',
   },
   {
     name: 'Arugula-Jicama Salad',
     description: 'baby arugula / jicama / lemon / radish / honey / olive oil',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, STARTERS'
-  }
+    squareCategory: 'CATERING- BUFFET, STARTERS',
+  },
 ];
 
 // Define buffet entree items (6oz portion)
@@ -423,91 +430,92 @@ const BUFFET_ENTREES = [
   {
     name: 'Peruvian Ceviche',
     description: 'wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts',
-    price: 12.00,
+    price: 12.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Salmon Carpaccio',
     description: 'local wild king salmon / ginger / creamy pepper reduction / poppyseed',
-    price: 14.00,
+    price: 14.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Pollo con Mojo',
     description: 'grilled chicken breast / piquillo pepper / onions / orange-garlic sauce',
-    price: 10.00,
+    price: 10.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Lomo Saltado',
-    description: 'angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes',
-    price: 15.00,
+    description:
+      'angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes',
+    price: 15.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Aji de Gallina',
     description: 'free-range chicken breast / cream–aji chile reduction / parmesan',
-    price: 11.00,
+    price: 11.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Ropa Vieja',
     description: 'slow-braised pork shoulder / roma tomatoes / queso fresco',
-    price: 12.00,
+    price: 12.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Capon de Ayuama',
     description: 'roasted acorn squash / sweet potato puree / coconut milk / bell pepper couli',
-    price: 9.00,
+    price: 9.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
+    squareCategory: 'CATERING- BUFFET, ENTREES',
   },
   {
     name: 'Grilled Veggie Skewers',
     description: 'seasonal veggies / soy-honey glaze',
-    price: 8.00,
+    price: 8.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: false,
-    squareCategory: 'CATERING- BUFFET, ENTREES'
-  }
+    squareCategory: 'CATERING- BUFFET, ENTREES',
+  },
 ];
 
 // Define buffet side items (4oz portion)
@@ -515,220 +523,222 @@ const BUFFET_SIDES = [
   {
     name: 'Kale',
     description: 'white quinoa / raisins / pine nuts',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Black Beans',
     description: 'caribbean black beans',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Gallo Pinto',
     description: 'black beans / white rice / herbs',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Arroz Blanco',
     description: 'white rice / garlic / peruvian choclo',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Arroz Rojo',
     description: 'tomato sofrito rice / oregano / english peas',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Arroz Verde',
     description: 'cilantro infused rice / bell pepper / spices',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
+    squareCategory: 'CATERING- BUFFET, SIDES',
   },
   {
     name: 'Garlic-Chipotle Mashed Potatoes',
     description: 'yukon potato / chipotle / garlic / cream',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- BUFFET, SIDES'
-  }
+    squareCategory: 'CATERING- BUFFET, SIDES',
+  },
 ];
 
 // Define lunch starter items (same as buffet starters but different category)
 const LUNCH_STARTERS = [
   {
     name: 'Ensalada de Destino',
-    description: 'baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette',
-    price: 8.00,
+    description:
+      'baby arugula / hearts of palms / brazilian mango / sweet drop peppers / roasted pepitas / lemon vinaigrette',
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, STARTERS'
+    squareCategory: 'CATERING- LUNCH, STARTERS',
   },
   {
     name: 'Quinoa Salad',
     description: 'light quinoa salad / jicama / seasonal vegetables / mint mojo',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, STARTERS'
+    squareCategory: 'CATERING- LUNCH, STARTERS',
   },
   {
     name: 'Causa',
     description: 'yukon potato / lime / sweet 100 tomatoes / don alfonso olives',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, STARTERS'
+    squareCategory: 'CATERING- LUNCH, STARTERS',
   },
   {
     name: 'Arugula-Jicama Salad',
     description: 'baby arugula / jicama / lemon / radish / honey / olive oil',
-    price: 8.00,
+    price: 8.0,
     category: 'STARTER',
     servingSize: '3oz portion',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, STARTERS'
-  }
+    squareCategory: 'CATERING- LUNCH, STARTERS',
+  },
 ];
 
-// Define lunch entree items (same as buffet entrees but different category)  
+// Define lunch entree items (same as buffet entrees but different category)
 const LUNCH_ENTREES = [
   {
     name: 'Peruvian Ceviche',
     description: 'wild ecuadorian corvina / aji amarillo / cilantro / lime / corn nuts',
-    price: 12.00,
+    price: 12.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Salmon Carpaccio',
     description: 'local wild king salmon / ginger / creamy pepper reduction / poppyseed',
-    price: 14.00,
+    price: 14.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Pollo con Mojo',
     description: 'grilled chicken breast / piquillo pepper / onions / orange-garlic sauce',
-    price: 10.00,
+    price: 10.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Lomo Saltado',
-    description: 'angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes',
-    price: 15.00,
+    description:
+      'angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction / roasted potatoes',
+    price: 15.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Aji de Gallina',
     description: 'free-range chicken breast / cream–aji chile reduction / parmesan',
-    price: 11.00,
+    price: 11.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: false,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Ropa Vieja',
     description: 'slow-braised pork shoulder / roma tomatoes / queso fresco',
-    price: 12.00,
+    price: 12.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: false,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Capon de Ayuama',
     description: 'roasted acorn squash / sweet potato puree / coconut milk / bell pepper couli',
-    price: 9.00,
+    price: 9.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
+    squareCategory: 'CATERING- LUNCH, ENTREES',
   },
   {
     name: 'Grilled Veggie Skewers',
     description: 'seasonal veggies / soy-honey glaze',
-    price: 8.00,
+    price: 8.0,
     category: 'ENTREE',
     servingSize: '6oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: false,
-    squareCategory: 'CATERING- LUNCH, ENTREES'
-  }
+    squareCategory: 'CATERING- LUNCH, ENTREES',
+  },
 ];
 
 // Define lunch side items (same as buffet sides but different category)
@@ -736,80 +746,80 @@ const LUNCH_SIDES = [
   {
     name: 'Kale',
     description: 'white quinoa / raisins / pine nuts',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Black Beans',
     description: 'caribbean black beans',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Gallo Pinto',
     description: 'black beans / white rice / herbs',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Arroz Blanco',
     description: 'white rice / garlic / peruvian choclo',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Arroz Rojo',
     description: 'tomato sofrito rice / oregano / english peas',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Arroz Verde',
     description: 'cilantro infused rice / bell pepper / spices',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: true,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
+    squareCategory: 'CATERING- LUNCH, SIDES',
   },
   {
     name: 'Garlic-Chipotle Mashed Potatoes',
     description: 'yukon potato / chipotle / garlic / cream',
-    price: 4.00,
+    price: 4.0,
     category: 'SIDE',
     servingSize: '4oz portion',
     isVegetarian: true,
     isVegan: false,
     isGlutenFree: true,
-    squareCategory: 'CATERING- LUNCH, SIDES'
-  }
+    squareCategory: 'CATERING- LUNCH, SIDES',
+  },
 ];
 
 // Define the appetizer packages
@@ -818,34 +828,34 @@ const APPETIZER_PACKAGES = [
     name: 'Appetizer Selection - 5 Items',
     description: 'Selection of 5 appetizer items from our 2025 menu',
     minPeople: 2,
-    pricePerPerson: 22.00,
+    pricePerPerson: 22.0,
     type: 'INDIVIDUAL',
     imageUrl: null,
-    dietaryOptions: ['Customizable for all dietary needs']
+    dietaryOptions: ['Customizable for all dietary needs'],
   },
   {
     name: 'Appetizer Selection - 7 Items',
     description: 'Selection of 7 appetizer items from our 2025 menu',
     minPeople: 2,
-    pricePerPerson: 34.00,
+    pricePerPerson: 34.0,
     type: 'INDIVIDUAL',
     imageUrl: null,
-    dietaryOptions: ['Customizable for all dietary needs']
+    dietaryOptions: ['Customizable for all dietary needs'],
   },
   {
     name: 'Appetizer Selection - 9 Items',
     description: 'Selection of 9 appetizer items from our 2025 menu',
     minPeople: 2,
-    pricePerPerson: 46.00,
+    pricePerPerson: 46.0,
     type: 'INDIVIDUAL',
     imageUrl: null,
-    dietaryOptions: ['Customizable for all dietary needs']
-  }
+    dietaryOptions: ['Customizable for all dietary needs'],
+  },
 ];
 
 /**
  * POST /api/catering/setup-menu
- * 
+ *
  * Restores the 2025 catering menu including appetizer packages and items.
  * This endpoint is called after Square sync to ensure all catering data is properly restored.
  */
@@ -864,7 +874,7 @@ export async function POST(request: NextRequest) {
     for (const item of APPETIZER_ITEMS) {
       try {
         const existingItem = await prisma.cateringItem.findFirst({
-          where: { name: item.name }
+          where: { name: item.name },
         });
 
         if (existingItem) {
@@ -874,8 +884,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -885,8 +895,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -903,7 +913,7 @@ export async function POST(request: NextRequest) {
     for (const item of PLATTER_ITEMS) {
       try {
         const existingItem = await prisma.cateringItem.findFirst({
-          where: { name: item.name }
+          where: { name: item.name },
         });
 
         if (existingItem) {
@@ -913,8 +923,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -924,8 +934,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -942,7 +952,7 @@ export async function POST(request: NextRequest) {
     for (const item of DESSERT_ITEMS) {
       try {
         const existingItem = await prisma.cateringItem.findFirst({
-          where: { name: item.name }
+          where: { name: item.name },
         });
 
         if (existingItem) {
@@ -952,8 +962,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -963,8 +973,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -976,16 +986,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create buffet starter items
-     console.log('📝 Creating buffet starter items...');
-     for (const item of BUFFET_STARTERS) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create buffet starter items
+    console.log('📝 Creating buffet starter items...');
+    for (const item of BUFFET_STARTERS) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -994,8 +1004,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1005,8 +1015,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1018,16 +1028,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create buffet entree items
-     console.log('📝 Creating buffet entree items...');
-     for (const item of BUFFET_ENTREES) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create buffet entree items
+    console.log('📝 Creating buffet entree items...');
+    for (const item of BUFFET_ENTREES) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -1036,8 +1046,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1047,8 +1057,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1060,16 +1070,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create buffet side items
-     console.log('📝 Creating buffet side items...');
-     for (const item of BUFFET_SIDES) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create buffet side items
+    console.log('📝 Creating buffet side items...');
+    for (const item of BUFFET_SIDES) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -1078,8 +1088,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1089,8 +1099,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1102,16 +1112,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create lunch starter items
-     console.log('📝 Creating lunch starter items...');
-     for (const item of LUNCH_STARTERS) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create lunch starter items
+    console.log('📝 Creating lunch starter items...');
+    for (const item of LUNCH_STARTERS) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -1120,8 +1130,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1131,8 +1141,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1144,16 +1154,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create lunch entree items
-     console.log('📝 Creating lunch entree items...');
-     for (const item of LUNCH_ENTREES) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create lunch entree items
+    console.log('📝 Creating lunch entree items...');
+    for (const item of LUNCH_ENTREES) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -1162,8 +1172,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1173,8 +1183,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1186,16 +1196,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-         // Create lunch side items
-     console.log('📝 Creating lunch side items...');
-     for (const item of LUNCH_SIDES) {
-       try {
-         const existingItem = await prisma.cateringItem.findFirst({
-           where: { 
-             name: item.name,
-             squareCategory: item.squareCategory 
-           }
-         });
+    // Create lunch side items
+    console.log('📝 Creating lunch side items...');
+    for (const item of LUNCH_SIDES) {
+      try {
+        const existingItem = await prisma.cateringItem.findFirst({
+          where: {
+            name: item.name,
+            squareCategory: item.squareCategory,
+          },
+        });
 
         if (existingItem) {
           await prisma.cateringItem.update({
@@ -1204,8 +1214,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedItems++;
           console.log(`  ✅ Updated: ${item.name}`);
@@ -1215,8 +1225,8 @@ export async function POST(request: NextRequest) {
               ...item,
               price: new Decimal(item.price),
               category: item.category as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdItems++;
           console.log(`  🆕 Created: ${item.name}`);
@@ -1233,7 +1243,7 @@ export async function POST(request: NextRequest) {
     for (const pkg of APPETIZER_PACKAGES) {
       try {
         const existingPackage = await prisma.cateringPackage.findFirst({
-          where: { name: pkg.name }
+          where: { name: pkg.name },
         });
 
         if (existingPackage) {
@@ -1243,8 +1253,8 @@ export async function POST(request: NextRequest) {
               ...pkg,
               pricePerPerson: new Decimal(pkg.pricePerPerson),
               type: pkg.type as any,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
           updatedPackages++;
           console.log(`  ✅ Updated package: ${pkg.name}`);
@@ -1254,8 +1264,8 @@ export async function POST(request: NextRequest) {
               ...pkg,
               pricePerPerson: new Decimal(pkg.pricePerPerson),
               type: pkg.type as any,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
           createdPackages++;
           console.log(`  🆕 Created package: ${pkg.name}`);
@@ -1271,15 +1281,15 @@ export async function POST(request: NextRequest) {
     console.log('⚙️ Updating store settings...');
     try {
       const existingSettings = await prisma.storeSettings.findFirst();
-      
+
       if (existingSettings) {
         await prisma.storeSettings.update({
           where: { id: existingSettings.id },
           data: {
             cateringMinimumAmount: new Decimal(0), // No minimum for now
             minAdvanceHours: 120, // 5 days = 120 hours
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
         console.log('  ✅ Updated store settings');
       } else {
@@ -1289,8 +1299,8 @@ export async function POST(request: NextRequest) {
             cateringMinimumAmount: new Decimal(0),
             taxRate: new Decimal(8.25),
             minAdvanceHours: 120, // 5 days = 120 hours
-            isStoreOpen: true
-          }
+            isStoreOpen: true,
+          },
         });
         console.log('  ✅ Created store settings');
       }
@@ -1304,7 +1314,7 @@ export async function POST(request: NextRequest) {
     console.log(`📊 Summary:`);
     console.log(`   Items: ${createdItems} created, ${updatedItems} updated`);
     console.log(`   Packages: ${createdPackages} created, ${updatedPackages} updated`);
-    
+
     if (errors.length > 0) {
       console.log(`   ⚠️ Errors: ${errors.length}`);
     }
@@ -1318,19 +1328,21 @@ export async function POST(request: NextRequest) {
       itemsUpdated: updatedItems,
       totalItemsProcessed: createdItems + updatedItems,
       totalPackagesProcessed: createdPackages + updatedPackages,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     });
-
   } catch (error) {
     console.error('❌ Error setting up catering menu:', error);
-    return NextResponse.json({
-      success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
-      packagesCreated: 0,
-      itemsCreated: 0,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        packagesCreated: 0,
+        itemsCreated: 0,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   } finally {
     await prisma.$disconnect();
   }
-} 
+}

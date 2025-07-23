@@ -17,27 +17,27 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateClient.mockResolvedValue(mockSupabase);
-    
+
     // Default successful auth response
     mockSupabase.auth.getUser.mockResolvedValue({
-      data: { 
-        user: { 
-          id: 'user-123', 
+      data: {
+        user: {
+          id: 'user-123',
           email: 'test@example.com',
           user_metadata: {},
           app_metadata: {},
-        } 
+        },
       },
       error: null,
     });
-    
+
     // Setup default profile query chain
     const mockQueryChain = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn(),
     };
-    
+
     mockSupabase.from.mockReturnValue(mockQueryChain);
     mockQueryChain.single.mockResolvedValue({
       data: { role: 'ADMIN' },
@@ -134,7 +134,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -149,7 +149,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'Profile not found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -164,7 +164,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -176,7 +176,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockRejectedValue(new Error('Database connection lost')),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Database connection lost');
@@ -191,7 +191,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await requireAdmin();
@@ -217,7 +217,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       const isAdmin = await checkIsAdmin('user-456');
@@ -234,7 +234,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'Profile not found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       const isAdmin = await checkIsAdmin('user-456');
@@ -251,7 +251,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       const isAdmin = await checkIsAdmin('user-456');
@@ -277,7 +277,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'No user found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       const isAdmin = await checkIsAdmin('');
@@ -295,7 +295,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'No user found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       const isAdmin = await checkIsAdmin(null as any);
@@ -312,7 +312,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await checkIsAdmin('specific-user-id');
@@ -324,9 +324,9 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
   describe('Security Edge Cases', () => {
     it('should handle concurrent authentication checks', async () => {
       const promises = Array.from({ length: 10 }, () => getCurrentUser());
-      
+
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(10);
       expect(results.every(user => user?.id === 'user-123')).toBe(true);
     });
@@ -334,9 +334,9 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle admin check race conditions', async () => {
       const userIds = ['user-1', 'user-2', 'user-3'];
       const promises = userIds.map(id => checkIsAdmin(id));
-      
+
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(3);
       expect(results.every(result => typeof result === 'boolean')).toBe(true);
     });
@@ -344,7 +344,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle malformed JWT tokens', async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: { 
+        error: {
           message: 'Invalid JWT: malformed token',
           status: 401,
         },
@@ -358,7 +358,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle expired tokens', async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: { 
+        error: {
           message: 'JWT expired',
           status: 401,
         },
@@ -372,7 +372,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle network timeouts gracefully', async () => {
       const timeoutError = new Error('Network timeout');
       timeoutError.name = 'TimeoutError';
-      
+
       mockSupabase.auth.getUser.mockRejectedValue(timeoutError);
 
       await expect(getCurrentUser()).rejects.toThrow('Network timeout');
@@ -387,7 +387,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -402,7 +402,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -417,7 +417,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: null,
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Admin access required');
@@ -427,29 +427,27 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
   describe('Performance and Caching', () => {
     it('should perform authentication check efficiently', async () => {
       const startTime = Date.now();
-      
+
       await getCurrentUser();
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       // Should complete quickly (under 100ms in test environment)
       expect(executionTime).toBeLessThan(100);
     });
 
     it('should handle high-volume admin checks', async () => {
       const startTime = Date.now();
-      
+
       // Simulate checking admin status for 50 users
-      const promises = Array.from({ length: 50 }, (_, i) => 
-        checkIsAdmin(`user-${i}`)
-      );
-      
+      const promises = Array.from({ length: 50 }, (_, i) => checkIsAdmin(`user-${i}`));
+
       await Promise.all(promises);
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       // Should handle volume efficiently (under 500ms for 50 checks)
       expect(executionTime).toBeLessThan(500);
     });
@@ -472,7 +470,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should propagate authentication errors for monitoring', async () => {
       const authError = new Error('Authentication service unavailable');
       authError.name = 'AuthServiceError';
-      
+
       mockSupabase.auth.getUser.mockRejectedValue(authError);
 
       await expect(getCurrentUser()).rejects.toThrow('Authentication service unavailable');
@@ -481,13 +479,13 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should propagate database errors for monitoring', async () => {
       const dbError = new Error('Database connection pool exhausted');
       dbError.name = 'DatabaseError';
-      
+
       const mockQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockRejectedValue(dbError),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Database connection pool exhausted');
@@ -496,13 +494,13 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
     it('should handle permission errors appropriately', async () => {
       const permissionError = new Error('Insufficient privileges');
       permissionError.name = 'PermissionError';
-      
+
       const mockQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockRejectedValue(permissionError),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
       await expect(requireAdmin()).rejects.toThrow('Insufficient privileges');
@@ -512,14 +510,14 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
   describe('Data Validation and Sanitization', () => {
     it('should handle user data with XSS attempts', async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
-        data: { 
-          user: { 
+        data: {
+          user: {
             id: 'user-123',
             email: '<script>alert("xss")</script>@test.com',
             user_metadata: {
               name: '<img src=x onerror=alert(1)>',
             },
-          } 
+          },
         },
         error: null,
       });
@@ -533,7 +531,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
 
     it('should handle SQL injection attempts in user ID', async () => {
       const maliciousUserId = "'; DROP TABLE profiles; --";
-      
+
       // Override the default mock to return no data for malicious user ID
       const mockQueryChain = {
         select: jest.fn().mockReturnThis(),
@@ -543,9 +541,9 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'No user found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
-      
+
       // Should not cause SQL injection (parameterized queries should protect)
       const isAdmin = await checkIsAdmin(maliciousUserId);
 
@@ -555,7 +553,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
 
     it('should handle extremely long user IDs', async () => {
       const longUserId = 'a'.repeat(10000);
-      
+
       // Override the default mock to return no data for long user ID
       const mockQueryChain = {
         select: jest.fn().mockReturnThis(),
@@ -565,9 +563,9 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'No user found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
-      
+
       const isAdmin = await checkIsAdmin(longUserId);
 
       expect(isAdmin).toBe(false);
@@ -575,7 +573,7 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
 
     it('should handle unicode characters in user IDs', async () => {
       const unicodeUserId = '用户-123-🚀';
-      
+
       // Override the default mock to return no data for unicode user ID
       const mockQueryChain = {
         select: jest.fn().mockReturnThis(),
@@ -585,12 +583,12 @@ describe('Authentication System (Phase 2 - Security & Access Control)', () => {
           error: { message: 'No user found' },
         }),
       };
-      
+
       mockSupabase.from.mockReturnValue(mockQueryChain);
-      
+
       const isAdmin = await checkIsAdmin(unicodeUserId);
 
       expect(isAdmin).toBe(false);
     });
   });
-}); 
+});

@@ -12,7 +12,7 @@ async function initializeCateringData() {
         data: {
           name: 'Classic Empanadas',
           description: 'Traditional Argentine empanadas with beef and onions',
-          price: 3.50,
+          price: 3.5,
           category: 'STARTER',
           isVegetarian: false,
           isVegan: false,
@@ -25,7 +25,7 @@ async function initializeCateringData() {
         data: {
           name: 'Vegetarian Empanadas',
           description: 'Delicious empanadas filled with spinach and cheese',
-          price: 3.50,
+          price: 3.5,
           category: 'STARTER',
           isVegetarian: true,
           isVegan: false,
@@ -38,7 +38,7 @@ async function initializeCateringData() {
         data: {
           name: 'Quinoa Salad',
           description: 'Fresh quinoa salad with vegetables and herbs',
-          price: 8.00,
+          price: 8.0,
           category: 'SALAD',
           isVegetarian: true,
           isVegan: true,
@@ -51,7 +51,7 @@ async function initializeCateringData() {
         data: {
           name: 'Alfajores',
           description: 'Traditional Argentine cookies with dulce de leche',
-          price: 2.50,
+          price: 2.5,
           category: 'DESSERT',
           isVegetarian: true,
           isVegan: false,
@@ -71,7 +71,7 @@ async function initializeCateringData() {
           name: 'Appetizer Package',
           description: 'Perfect for cocktail hours and networking events',
           minPeople: 10,
-          pricePerPerson: 12.00,
+          pricePerPerson: 12.0,
           type: 'INDIVIDUAL',
           isActive: true,
           featuredOrder: 1,
@@ -83,7 +83,7 @@ async function initializeCateringData() {
           name: 'Boxed Lunch Package',
           description: 'Individual boxed lunches perfect for corporate events',
           minPeople: 5,
-          pricePerPerson: 18.00,
+          pricePerPerson: 18.0,
           type: 'BOXED_LUNCH',
           isActive: true,
           featuredOrder: 2,
@@ -109,10 +109,10 @@ if (require.main === module) {
       console.log('✅ Script completed successfully');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Script failed:', error);
       process.exit(1);
     });
 }
 
-export { initializeCateringData }; 
+export { initializeCateringData };

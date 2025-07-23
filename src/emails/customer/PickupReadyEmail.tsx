@@ -181,7 +181,7 @@ const mapSection = {
 
 const formatDateTime = (date: Date | string | null) => {
   if (!date) return null;
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -192,7 +192,7 @@ const formatDateTime = (date: Date | string | null) => {
     minute: '2-digit',
     hour12: true,
   };
-  
+
   return dateObj.toLocaleDateString('en-US', options);
 };
 
@@ -219,15 +219,11 @@ export const PickupReadyEmail = ({
 
           {/* Ready for Pickup Section */}
           <Section style={readySection}>
-            <Text style={readyTitle}>
-              🎉 Your Order is Ready!
-            </Text>
+            <Text style={readyTitle}>🎉 Your Order is Ready!</Text>
             <Text style={readyText}>
               Hi {order.customerName}, your delicious order is ready for pickup!
             </Text>
-            <div style={orderIdText}>
-              Order #{order.id}
-            </div>
+            <div style={orderIdText}>Order #{order.id}</div>
             <Text style={{ ...readyText, fontSize: '16px', marginTop: '16px' }}>
               Please come by when convenient to pick up your fresh, hot meal.
             </Text>
@@ -235,14 +231,15 @@ export const PickupReadyEmail = ({
 
           {/* Pickup Information */}
           <Section style={infoSection}>
-            <Text style={infoTitle}>
-              📍 Pickup Information
-            </Text>
+            <Text style={infoTitle}>📍 Pickup Information</Text>
             <Text style={infoText}>
               <strong>Location:</strong> {shopAddress}
             </Text>
             <Text style={infoText}>
-              <strong>Phone:</strong> <Link href={`tel:${shopPhone}`} style={{ color: '#92400e' }}>{shopPhone}</Link>
+              <strong>Phone:</strong>{' '}
+              <Link href={`tel:${shopPhone}`} style={{ color: '#92400e' }}>
+                {shopPhone}
+              </Link>
             </Text>
             {order.pickupTime && (
               <Text style={infoText}>
@@ -250,7 +247,8 @@ export const PickupReadyEmail = ({
               </Text>
             )}
             <Text style={infoText}>
-              <strong>Order ready since:</strong> {new Date().toLocaleTimeString('en-US', {
+              <strong>Order ready since:</strong>{' '}
+              {new Date().toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
                 hour12: true,
@@ -260,27 +258,18 @@ export const PickupReadyEmail = ({
 
           {/* Pickup Instructions */}
           <Section style={instructionsSection}>
-            <Text style={instructionsTitle}>
-              📋 Pickup Instructions
-            </Text>
-            <Text style={instructionsText}>
-              {pickupInstructions}
-            </Text>
+            <Text style={instructionsTitle}>📋 Pickup Instructions</Text>
+            <Text style={instructionsText}>{pickupInstructions}</Text>
             {parkingInfo && (
               <>
-                <Text style={instructionsTitle}>
-                  🅿️ Parking Information
-                </Text>
-                <Text style={instructionsText}>
-                  {parkingInfo}
-                </Text>
+                <Text style={instructionsTitle}>🅿️ Parking Information</Text>
+                <Text style={instructionsText}>{parkingInfo}</Text>
               </>
             )}
-            <Text style={instructionsTitle}>
-              ⏰ Keep in Mind
-            </Text>
+            <Text style={instructionsTitle}>⏰ Keep in Mind</Text>
             <Text style={instructionsText}>
-              For food safety and optimal taste, we recommend picking up your order within 30 minutes of this notification.
+              For food safety and optimal taste, we recommend picking up your order within 30
+              minutes of this notification.
             </Text>
           </Section>
 
@@ -302,7 +291,10 @@ export const PickupReadyEmail = ({
                 <Button href={`tel:${shopPhone}`} style={primaryButton}>
                   📞 Call if Questions
                 </Button>
-                <Button href={`https://maps.google.com/?q=${encodeURIComponent(shopAddress)}`} style={secondaryButton}>
+                <Button
+                  href={`https://maps.google.com/?q=${encodeURIComponent(shopAddress)}`}
+                  style={secondaryButton}
+                >
                   📍 Get Directions
                 </Button>
               </Column>
@@ -311,18 +303,25 @@ export const PickupReadyEmail = ({
 
           {/* Map/Directions Section */}
           <Section style={mapSection}>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '0 0 8px 0', fontWeight: 'bold' }}>
+            <Text
+              style={{
+                fontSize: '14px',
+                color: '#4a5568',
+                margin: '0 0 8px 0',
+                fontWeight: 'bold',
+              }}
+            >
               Need directions?
             </Text>
             <Text style={{ fontSize: '12px', color: '#6b7280', margin: '0' }}>
-              <Link 
+              <Link
                 href={`https://maps.google.com/?q=${encodeURIComponent(shopAddress)}`}
                 style={{ color: '#0891b2' }}
               >
                 Open in Google Maps
               </Link>
               {' | '}
-              <Link 
+              <Link
                 href={`https://maps.apple.com/?q=${encodeURIComponent(shopAddress)}`}
                 style={{ color: '#0891b2' }}
               >
@@ -337,12 +336,18 @@ export const PickupReadyEmail = ({
               Unable to pick up right now or have questions?
             </Text>
             <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Call us at <Link href={`tel:${shopPhone}`} style={{ color: '#16a34a' }}>{shopPhone}</Link> or 
-              email <Link href={`mailto:${supportEmail}`} style={{ color: '#16a34a' }}>{supportEmail}</Link>
+              Call us at{' '}
+              <Link href={`tel:${shopPhone}`} style={{ color: '#16a34a' }}>
+                {shopPhone}
+              </Link>{' '}
+              or email{' '}
+              <Link href={`mailto:${supportEmail}`} style={{ color: '#16a34a' }}>
+                {supportEmail}
+              </Link>
             </Text>
           </Section>
 
-          <EmailFooter 
+          <EmailFooter
             shopName={shopName}
             unsubscribeUrl={`${websiteUrl}/unsubscribe?email=${encodeURIComponent(order.email)}`}
           />
@@ -352,4 +357,4 @@ export const PickupReadyEmail = ({
   );
 };
 
-export default PickupReadyEmail; 
+export default PickupReadyEmail;

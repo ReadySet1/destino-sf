@@ -23,9 +23,9 @@ export const TestData = {
       variantId: 'variant-1',
     },
     {
-      id: 'product-2', 
+      id: 'product-2',
       name: 'Empanada Beef',
-      price: 4.50,
+      price: 4.5,
       quantity: 6,
       variantId: undefined, // Explicitly undefined for type safety
     },
@@ -50,7 +50,7 @@ export const TestData = {
       deliveryTime: '18:00',
       deliveryAddress: {
         street: '123 Delivery St',
-        city: 'San Francisco', 
+        city: 'San Francisco',
         state: 'CA',
         postalCode: '94105',
       },
@@ -61,7 +61,7 @@ export const TestData = {
       shippingAddress: {
         street: '456 Ship St',
         city: 'Los Angeles',
-        state: 'CA', 
+        state: 'CA',
         postalCode: '90210',
       },
       shippingMethod: 'ground',
@@ -87,7 +87,7 @@ export const TestData = {
     },
   },
 
-  // Common product data  
+  // Common product data
   products: {
     active: {
       id: 'product-1',
@@ -117,12 +117,14 @@ export const TestData = {
 };
 
 // Helper to create properly typed form data
-export const createFormData = (overrides: {
-  fulfillment?: any;
-  paymentMethod?: PaymentMethod;
-  items?: any[];
-  customerInfo?: any;
-} = {}) => ({
+export const createFormData = (
+  overrides: {
+    fulfillment?: any;
+    paymentMethod?: PaymentMethod;
+    items?: any[];
+    customerInfo?: any;
+  } = {}
+) => ({
   items: overrides.items || TestData.validCartItems,
   customerInfo: overrides.customerInfo || TestData.validCustomerInfo,
   paymentMethod: overrides.paymentMethod || TestData.PaymentMethods.SQUARE,
@@ -158,7 +160,7 @@ export const setupMockPrisma = (mockPrisma: MockPrismaClient) => {
     ...TestData.products.active,
     inventory: 48, // Decremented by 2
   });
-  
+
   return mockPrisma;
 };
 
@@ -211,7 +213,7 @@ export const createMockDeliveryZone = (zone: 'nearby' | 'distant' | 'extended') 
       active: true,
     },
     distant: {
-      zone: 'distant', 
+      zone: 'distant',
       name: 'Extended Delivery',
       minimumAmount: new Decimal('50.00'),
       deliveryFee: new Decimal('10.00'),
@@ -225,6 +227,6 @@ export const createMockDeliveryZone = (zone: 'nearby' | 'distant' | 'extended') 
       active: true,
     },
   };
-  
+
   return zones[zone];
-}; 
+};

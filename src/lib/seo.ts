@@ -22,14 +22,24 @@ export interface SEOConfig {
   noFollow?: boolean;
 }
 
-const baseUrl = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000' 
-  : 'https://development.destinosf.com';
+const baseUrl =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : 'https://development.destinosf.com';
 
 export const defaultSEO: SEOConfig = {
   title: 'Destino SF - Authentic Handcrafted Empanadas & Alfajores',
-  description: 'Experience authentic Latin flavors with our handcrafted empanadas and alfajores. Premium catering services available in San Francisco.',
-  keywords: ['empanadas', 'alfajores', 'latin food', 'catering', 'san francisco', 'handcrafted', 'authentic'],
+  description:
+    'Experience authentic Latin flavors with our handcrafted empanadas and alfajores. Premium catering services available in San Francisco.',
+  keywords: [
+    'empanadas',
+    'alfajores',
+    'latin food',
+    'catering',
+    'san francisco',
+    'handcrafted',
+    'authentic',
+  ],
   author: 'Destino SF',
   type: 'restaurant',
   image: '/opengraph-image',
@@ -60,9 +70,10 @@ export function generateSEO(config: SEOConfig): Metadata {
   } = config;
 
   // Generate dynamic OpenGraph image URL if not provided
-  const ogImageUrl = image?.startsWith('/') 
+  const ogImageUrl = image?.startsWith('/')
     ? `${baseUrl}${image}`
-    : image || `${baseUrl}/api/og?title=${encodeURIComponent(title!)}&description=${encodeURIComponent(description!)}`;
+    : image ||
+      `${baseUrl}/api/og?title=${encodeURIComponent(title!)}&description=${encodeURIComponent(description!)}`;
 
   const metadata: Metadata = {
     metadataBase: new URL(baseUrl),
@@ -73,7 +84,7 @@ export function generateSEO(config: SEOConfig): Metadata {
     creator: author,
     publisher: 'Destino SF',
     category,
-    
+
     // OpenGraph
     openGraph: {
       type: type === 'article' ? 'article' : 'website',
@@ -125,7 +136,7 @@ export function generateSEO(config: SEOConfig): Metadata {
       'og:image:height': '630',
       'og:image:type': 'image/jpeg',
       'og:image:alt': imageAlt || 'Destino SF - Handcrafted Empanadas & Alfajores',
-      
+
       // Restaurant-specific metadata
       ...(type === 'restaurant' && {
         'business:contact_data:street_address': '377 Corbett Avenue',
@@ -141,16 +152,17 @@ export function generateSEO(config: SEOConfig): Metadata {
       }),
 
       // Product-specific metadata
-      ...(type === 'product' && price && {
-        'product:price:amount': price,
-        'product:price:currency': 'USD',
-        'product:availability': availability || 'in_stock',
-      }),
+      ...(type === 'product' &&
+        price && {
+          'product:price:amount': price,
+          'product:price:currency': 'USD',
+          'product:availability': availability || 'in_stock',
+        }),
 
       // SEO directives
-      ...(noIndex && { 'robots': 'noindex' }),
-      ...(noFollow && { 'robots': 'nofollow' }),
-      ...(noIndex && noFollow && { 'robots': 'noindex, nofollow' }),
+      ...(noIndex && { robots: 'noindex' }),
+      ...(noFollow && { robots: 'nofollow' }),
+      ...(noIndex && noFollow && { robots: 'noindex, nofollow' }),
     },
 
     // Schema.org structured data will be added via generateStructuredData function
@@ -206,18 +218,15 @@ export function generateStructuredData(config: SEOConfig): object {
       },
       telephone: '+1-415-525-4448',
       email: 'james@destinosf.com',
-      openingHours: [
-        'Mo-Fr 08:00-18:00',
-        'Sa 09:00-17:00',
-        'Su 09:00-16:00',
-      ],
-      ...(rating && reviewCount && {
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: rating,
-          reviewCount: reviewCount,
-        },
-      }),
+      openingHours: ['Mo-Fr 08:00-18:00', 'Sa 09:00-17:00', 'Su 09:00-16:00'],
+      ...(rating &&
+        reviewCount && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: rating,
+            reviewCount: reviewCount,
+          },
+        }),
       priceRange: '$$',
       hasMenu: `${baseUrl}/menu`,
       acceptsReservations: true,
@@ -241,19 +250,23 @@ export function generateStructuredData(config: SEOConfig): object {
         '@type': 'Offer',
         price: price,
         priceCurrency: 'USD',
-        availability: availability === 'in_stock' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        availability:
+          availability === 'in_stock'
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
         seller: {
           '@type': 'Organization',
           name: 'Destino SF',
         },
       },
-      ...(rating && reviewCount && {
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: rating,
-          reviewCount: reviewCount,
-        },
-      }),
+      ...(rating &&
+        reviewCount && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: rating,
+            reviewCount: reviewCount,
+          },
+        }),
     };
   }
 
@@ -293,43 +306,85 @@ export function generatePageSEO(
   const pageConfigs = {
     home: {
       title: 'Destino SF - Authentic Handcrafted Empanadas & Alfajores',
-      description: 'Experience authentic Latin flavors with our handcrafted empanadas and alfajores. Premium catering services available in San Francisco.',
-      keywords: ['empanadas', 'alfajores', 'latin food', 'catering', 'san francisco', 'handcrafted', 'authentic'],
+      description:
+        'Experience authentic Latin flavors with our handcrafted empanadas and alfajores. Premium catering services available in San Francisco.',
+      keywords: [
+        'empanadas',
+        'alfajores',
+        'latin food',
+        'catering',
+        'san francisco',
+        'handcrafted',
+        'authentic',
+      ],
       type: 'website' as const,
       url: '/',
     },
     menu: {
       title: 'Our Menu - Authentic Empanadas & Alfajores | Destino SF',
-      description: 'Explore our delicious selection of handcrafted empanadas and alfajores. Traditional recipes with premium ingredients.',
-      keywords: ['menu', 'empanadas', 'alfajores', 'food menu', 'latin cuisine', 'traditional recipes'],
+      description:
+        'Explore our delicious selection of handcrafted empanadas and alfajores. Traditional recipes with premium ingredients.',
+      keywords: [
+        'menu',
+        'empanadas',
+        'alfajores',
+        'food menu',
+        'latin cuisine',
+        'traditional recipes',
+      ],
       type: 'restaurant' as const,
       url: '/menu',
     },
     catering: {
       title: 'Catering Services - Premium Latin Cuisine | Destino SF',
-      description: 'Elevate your event with our premium catering services. Authentic empanadas, alfajores, and Latin cuisine for any occasion.',
-      keywords: ['catering', 'event catering', 'corporate catering', 'latin catering', 'empanadas catering', 'sf catering'],
+      description:
+        'Elevate your event with our premium catering services. Authentic empanadas, alfajores, and Latin cuisine for any occasion.',
+      keywords: [
+        'catering',
+        'event catering',
+        'corporate catering',
+        'latin catering',
+        'empanadas catering',
+        'sf catering',
+      ],
       type: 'restaurant' as const,
       url: '/catering',
     },
     about: {
       title: 'About Us - Our Story & Mission | Destino SF',
-      description: 'Learn about our passion for authentic Latin cuisine and our commitment to bringing traditional flavors to San Francisco.',
-      keywords: ['about', 'story', 'mission', 'latin cuisine', 'authentic food', 'san francisco restaurant'],
+      description:
+        'Learn about our passion for authentic Latin cuisine and our commitment to bringing traditional flavors to San Francisco.',
+      keywords: [
+        'about',
+        'story',
+        'mission',
+        'latin cuisine',
+        'authentic food',
+        'san francisco restaurant',
+      ],
       type: 'website' as const,
       url: '/about',
     },
     contact: {
       title: 'Contact Us - Get in Touch | Destino SF',
-      description: 'Get in touch with us for orders, catering inquiries, or any questions. We\'re here to help bring authentic Latin flavors to your table.',
+      description:
+        "Get in touch with us for orders, catering inquiries, or any questions. We're here to help bring authentic Latin flavors to your table.",
       keywords: ['contact', 'get in touch', 'orders', 'catering inquiries', 'location', 'hours'],
       type: 'website' as const,
       url: '/contact',
     },
     product: {
       title: 'Premium Latin Products | Destino SF',
-      description: 'Discover our premium selection of handcrafted empanadas and alfajores made with traditional recipes and finest ingredients.',
-      keywords: ['products', 'empanadas', 'alfajores', 'latin food', 'handcrafted', 'premium ingredients'],
+      description:
+        'Discover our premium selection of handcrafted empanadas and alfajores made with traditional recipes and finest ingredients.',
+      keywords: [
+        'products',
+        'empanadas',
+        'alfajores',
+        'latin food',
+        'handcrafted',
+        'premium ingredients',
+      ],
       type: 'product' as const,
       url: '/products',
     },
@@ -344,4 +399,4 @@ export function generatePageSEO(
 
   const config = { ...pageConfigs[pageType], ...customConfig };
   return generateSEO(config);
-} 
+}

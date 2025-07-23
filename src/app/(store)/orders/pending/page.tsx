@@ -5,7 +5,9 @@ import { PendingOrdersList } from '@/components/Orders/PendingOrdersList';
 
 export default async function PendingOrdersPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/sign-in?redirect=/orders/pending');
@@ -15,7 +17,7 @@ export default async function PendingOrdersPage() {
     where: {
       userId: user.id,
       status: { in: ['PENDING', 'PAYMENT_FAILED'] },
-      paymentStatus: { in: ['PENDING', 'FAILED'] }
+      paymentStatus: { in: ['PENDING', 'FAILED'] },
     },
     select: {
       id: true,
@@ -30,13 +32,13 @@ export default async function PendingOrdersPage() {
       items: {
         include: {
           product: true,
-          variant: true
-        }
-      }
+          variant: true,
+        },
+      },
     },
     orderBy: {
-      updatedAt: 'desc'
-    }
+      updatedAt: 'desc',
+    },
   });
 
   // Convert Decimal types to numbers for client component
@@ -46,20 +48,18 @@ export default async function PendingOrdersPage() {
     retryCount: order.retryCount || 0,
     items: order.items.map(item => ({
       ...item,
-      price: Number(item.price)
-    }))
+      price: Number(item.price),
+    })),
   }));
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Pending Orders</h1>
-        <p className="text-gray-600 mt-2">
-          Complete your pending orders by retrying payment
-        </p>
+        <p className="text-gray-600 mt-2">Complete your pending orders by retrying payment</p>
       </div>
 
       <PendingOrdersList orders={pendingOrders} />
     </div>
   );
-} 
+}

@@ -25,18 +25,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { 
-      hasError: true, 
-      error 
+    return {
+      hasError: true,
+      error,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
     console.error('Error caught by boundary:', error, errorInfo);
-    
+
     this.setState({
       error,
-      errorInfo
+      errorInfo,
     });
 
     // Call custom error handler if provided
@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString(),
         url: window.location.href,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
       });
     }
   }
@@ -94,18 +94,11 @@ export class ErrorBoundary extends Component<Props, State> {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={this.handleRetry}
-                    variant="outline"
-                    className="flex-1"
-                  >
+                  <Button onClick={this.handleRetry} variant="outline" className="flex-1">
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again
                   </Button>
-                  <Button 
-                    onClick={this.handleReload}
-                    className="flex-1"
-                  >
+                  <Button onClick={this.handleReload} className="flex-1">
                     Reload Page
                   </Button>
                 </div>
@@ -122,17 +115,13 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="h-5 w-5 text-red-500" />
               <h3 className="font-medium text-red-800">Error in this section</h3>
             </div>
-                         <p className="text-sm text-red-700 mb-3">
-               This section encountered an error and couldn&apos;t load properly.
-             </p>
+            <p className="text-sm text-red-700 mb-3">
+              This section encountered an error and couldn&apos;t load properly.
+            </p>
             {process.env.NODE_ENV === 'development' && error && (
               <p className="text-xs text-red-600 font-mono mb-3">{error.message}</p>
             )}
-            <Button 
-              onClick={this.handleRetry}
-              size="sm"
-              variant="outline"
-            >
+            <Button onClick={this.handleRetry} size="sm" variant="outline">
               <RefreshCw className="mr-2 h-3 w-3" />
               Try Again
             </Button>
@@ -148,7 +137,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <span className="text-sm text-yellow-800">Component error</span>
             </div>
-            <Button 
+            <Button
               onClick={this.handleRetry}
               size="sm"
               variant="ghost"
@@ -169,20 +158,38 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 // Convenient wrapper components for different levels
-export const PageErrorBoundary = ({ children, onError }: { children: ReactNode; onError?: Props['onError'] }) => (
+export const PageErrorBoundary = ({
+  children,
+  onError,
+}: {
+  children: ReactNode;
+  onError?: Props['onError'];
+}) => (
   <ErrorBoundary level="page" onError={onError}>
     {children}
   </ErrorBoundary>
 );
 
-export const SectionErrorBoundary = ({ children, onError }: { children: ReactNode; onError?: Props['onError'] }) => (
+export const SectionErrorBoundary = ({
+  children,
+  onError,
+}: {
+  children: ReactNode;
+  onError?: Props['onError'];
+}) => (
   <ErrorBoundary level="section" onError={onError}>
     {children}
   </ErrorBoundary>
 );
 
-export const ComponentErrorBoundary = ({ children, onError }: { children: ReactNode; onError?: Props['onError'] }) => (
+export const ComponentErrorBoundary = ({
+  children,
+  onError,
+}: {
+  children: ReactNode;
+  onError?: Props['onError'];
+}) => (
   <ErrorBoundary level="component" onError={onError}>
     {children}
   </ErrorBoundary>
-); 
+);

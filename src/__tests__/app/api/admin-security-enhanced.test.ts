@@ -13,7 +13,7 @@ describe('Admin API Routes - Security & Validation', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up environment
     process.env.NEXTAUTH_SECRET = 'test-secret';
     process.env.ADMIN_EMAIL = 'admin@destinosf.com';
@@ -33,10 +33,10 @@ describe('Admin API Routes - Security & Validation', () => {
       const authenticateAdmin = async (req: NextRequest) => {
         const session = await getServerSession();
         if (!session) {
-          return new Response(
-            JSON.stringify({ error: 'Authentication required' }),
-            { status: 401, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Authentication required' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         return null;
       };
@@ -62,10 +62,10 @@ describe('Admin API Routes - Security & Validation', () => {
       const authorizeAdmin = async (req: NextRequest) => {
         const session = await getServerSession();
         if (!session?.user?.email || session.user.email !== process.env.ADMIN_EMAIL) {
-          return new Response(
-            JSON.stringify({ error: 'Insufficient permissions' }),
-            { status: 403, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         return null;
       };
@@ -91,10 +91,10 @@ describe('Admin API Routes - Security & Validation', () => {
       const authorizeAdmin = async (req: NextRequest) => {
         const session = await getServerSession();
         if (!session?.user?.email || session.user.email !== process.env.ADMIN_EMAIL) {
-          return new Response(
-            JSON.stringify({ error: 'Insufficient permissions' }),
-            { status: 403, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         return null;
       };
@@ -114,10 +114,10 @@ describe('Admin API Routes - Security & Validation', () => {
           const session = await getServerSession();
           return session;
         } catch (error) {
-          return new Response(
-            JSON.stringify({ error: 'Authentication service unavailable' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Authentication service unavailable' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
       };
 
@@ -226,8 +226,8 @@ describe('Admin API Routes - Security & Validation', () => {
       const maliciousInputs = [
         "'; DROP TABLE products; --",
         "1' OR '1'='1",
-        "UNION SELECT * FROM users",
-        "/* comment */ SELECT password",
+        'UNION SELECT * FROM users',
+        '/* comment */ SELECT password',
       ];
 
       safeInputs.forEach(input => {
@@ -259,10 +259,10 @@ describe('Admin API Routes - Security & Validation', () => {
           }
 
           const userRequests = this.requests.get(identifier)!;
-          
+
           // Remove old requests outside the window
           const validRequests = userRequests.filter(time => time > windowStart);
-          
+
           if (validRequests.length >= this.maxRequests) {
             return false;
           }
@@ -358,7 +358,7 @@ describe('Admin API Routes - Security & Validation', () => {
     it('should include security headers in responses', async () => {
       const addSecurityHeaders = (response: Response): Response => {
         const headers = new Headers(response.headers);
-        
+
         headers.set('X-Content-Type-Options', 'nosniff');
         headers.set('X-Frame-Options', 'DENY');
         headers.set('X-XSS-Protection', '1; mode=block');
@@ -383,13 +383,15 @@ describe('Admin API Routes - Security & Validation', () => {
       expect(secureResponse.headers.get('X-Content-Type-Options')).toBe('nosniff');
       expect(secureResponse.headers.get('X-Frame-Options')).toBe('DENY');
       expect(secureResponse.headers.get('X-XSS-Protection')).toBe('1; mode=block');
-      expect(secureResponse.headers.get('Strict-Transport-Security')).toBe('max-age=31536000; includeSubDomains');
+      expect(secureResponse.headers.get('Strict-Transport-Security')).toBe(
+        'max-age=31536000; includeSubDomains'
+      );
     });
 
     it('should handle error responses without exposing sensitive information', async () => {
       const createErrorResponse = (error: Error, isDevelopment: boolean = false): Response => {
         const publicMessage = 'An error occurred while processing your request';
-        
+
         const errorResponse = {
           error: publicMessage,
           timestamp: new Date().toISOString(),
@@ -462,14 +464,9 @@ describe('Admin API Routes - Security & Validation', () => {
         },
       });
 
-      const auditLog = logAdminAction(
-        'admin-123',
-        'CREATE',
-        'PRODUCT',
-        mockRequest,
-        'SUCCESS',
-        { productId: 'prod-456' }
-      );
+      const auditLog = logAdminAction('admin-123', 'CREATE', 'PRODUCT', mockRequest, 'SUCCESS', {
+        productId: 'prod-456',
+      });
 
       expect(auditLog.userId).toBe('admin-123');
       expect(auditLog.action).toBe('CREATE');
@@ -506,4 +503,4 @@ describe('Admin API Routes - Security & Validation', () => {
       expect(cleanedLogs[0].id).toBe('3');
     });
   });
-}); 
+});

@@ -11,4 +11,4 @@ export default async function NewUserPage() {
       <UserForm />
     </div>
   );
-} 
+}

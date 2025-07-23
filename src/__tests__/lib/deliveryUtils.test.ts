@@ -27,12 +27,7 @@ describe('DeliveryUtils', () => {
       });
 
       test('should identify other nearby cities correctly', () => {
-        const nearbyCities = [
-          'Daly City',
-          'Brisbane',
-          'Millbrae',
-          'Burlingame',
-        ];
+        const nearbyCities = ['Daly City', 'Brisbane', 'Millbrae', 'Burlingame'];
 
         nearbyCities.forEach(city => {
           expect(getDeliveryZone(city)).toBe(DeliveryZone.NEARBY);
@@ -406,4 +401,4 @@ describe('DeliveryUtils', () => {
       expect(getDeliveryFeeMessage(result)).toBe('This address is outside our delivery area.');
     });
   });
-}); 
+});

@@ -77,4 +77,4 @@ describe('Formatting Utilities', () => {
       expect(result).toMatch(/Dec 31, 2024/);
     });
   });
-}); 
+});

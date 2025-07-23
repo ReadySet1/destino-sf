@@ -75,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
 
         // Retry based on alert type
         let result;
-        
+
         switch (alert.type) {
           case 'NEW_ORDER':
             if (alert.relatedOrder) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
             if (alert.relatedOrder && alert.metadata) {
               const metadata = alert.metadata as any;
               result = await alertService.sendOrderStatusChangeAlert(
-                alert.relatedOrder, 
+                alert.relatedOrder,
                 metadata.previousStatus || 'UNKNOWN'
               );
             } else {
@@ -134,11 +134,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
             data: {
               status: AlertStatus.SENT,
               sentAt: new Date(),
-                             metadata: {
-                 ...(alert.metadata as object || {}),
-                 retrySuccessful: true,
-                 retryMessageId: result.messageId,
-               },
+              metadata: {
+                ...((alert.metadata as object) || {}),
+                retrySuccessful: true,
+                retryMessageId: result.messageId,
+              },
             },
           });
           retried++;
@@ -149,11 +149,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
             data: {
               status: AlertStatus.FAILED,
               failedAt: new Date(),
-                             metadata: {
-                 ...(alert.metadata as object || {}),
-                 lastRetryError: result.error,
-                 lastRetryAt: new Date().toISOString(),
-               },
+              metadata: {
+                ...((alert.metadata as object) || {}),
+                lastRetryError: result.error,
+                lastRetryAt: new Date().toISOString(),
+              },
             },
           });
           errors.push(`Alert ${alert.id}: ${result.error}`);
@@ -162,25 +162,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
 
         // Add delay between retries to avoid overwhelming email service
         await new Promise(resolve => setTimeout(resolve, 1000));
-
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push(`Alert ${alert.id}: ${errorMessage}`);
-        
+
         // Mark as failed with error
         await prisma.emailAlert.update({
           where: { id: alert.id },
           data: {
             status: AlertStatus.FAILED,
             failedAt: new Date(),
-                         metadata: {
-               ...(alert.metadata as object || {}),
-               retryError: errorMessage,
-               lastRetryAt: new Date().toISOString(),
-             },
+            metadata: {
+              ...((alert.metadata as object) || {}),
+              retryError: errorMessage,
+              lastRetryAt: new Date().toISOString(),
+            },
           },
         });
-        
+
         console.error(`❌ Error retrying alert ${alert.id}:`, error);
       }
     }
@@ -190,23 +189,30 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
       retried,
       errors,
     });
-
   } catch (error) {
     console.error('❌ Error in retry operation:', error);
-    
+
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        retried: 0,
-        errors: ['Invalid request data: ' + error.errors.map(e => e.message).join(', ')],
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          retried: 0,
+          errors: ['Invalid request data: ' + error.errors.map(e => e.message).join(', ')],
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: false,
-      retried: 0,
-      errors: ['Failed to retry alerts: ' + (error instanceof Error ? error.message : 'Unknown error')],
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        retried: 0,
+        errors: [
+          'Failed to retry alerts: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        ],
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -214,19 +220,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<RetryResp
  * GET /api/alerts/retry/stats
  * Get retry statistics and eligibility
  */
-export async function GET(request: NextRequest): Promise<NextResponse<{
-  eligibleForRetry: number;
-  totalFailed: number;
-  exceeededMaxRetries: number;
-  stats: Array<{
-    type: string;
-    failed: number;
+export async function GET(request: NextRequest): Promise<
+  NextResponse<{
     eligibleForRetry: number;
-  }>;
-}>> {
+    totalFailed: number;
+    exceeededMaxRetries: number;
+    stats: Array<{
+      type: string;
+      failed: number;
+      eligibleForRetry: number;
+    }>;
+  }>
+> {
   try {
     const maxRetries = 3; // Default max retries
-    
+
     // Get failed alerts eligible for retry
     const eligibleForRetry = await prisma.emailAlert.count({
       where: {
@@ -256,7 +264,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<{
     });
 
     const eligibleByType = await Promise.all(
-      statsByType.map(async (stat) => {
+      statsByType.map(async stat => {
         const eligible = await prisma.emailAlert.count({
           where: {
             type: stat.type,
@@ -264,7 +272,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<{
             retryCount: { lt: maxRetries },
           },
         });
-        
+
         return {
           type: stat.type,
           failed: stat._count.type,
@@ -279,14 +287,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<{
       exceeededMaxRetries,
       stats: eligibleByType,
     });
-
   } catch (error) {
     console.error('❌ Error fetching retry stats:', error);
-    return NextResponse.json({
-      eligibleForRetry: 0,
-      totalFailed: 0,
-      exceeededMaxRetries: 0,
-      stats: [],
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        eligibleForRetry: 0,
+        totalFailed: 0,
+        exceeededMaxRetries: 0,
+        stats: [],
+      },
+      { status: 500 }
+    );
   }
-} 
+}

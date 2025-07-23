@@ -42,11 +42,11 @@ describe('/api/spotlight-picks API Route', () => {
               id: 'product-2',
               name: 'Peruvian Coffee',
               description: 'Rich and aromatic coffee beans',
-              price: 18.50,
+              price: 18.5,
               slug: 'peruvian-coffee',
             }),
           }),
-        ])
+        ]),
       });
     });
 
@@ -60,21 +60,23 @@ describe('/api/spotlight-picks API Route', () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({
         success: true,
-        data: []
+        data: [],
       });
     });
 
     it('should handle database errors gracefully', async () => {
-      (prismaMock.spotlightPick.findMany as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
+      (prismaMock.spotlightPick.findMany as jest.Mock).mockRejectedValue(
+        new Error('Database connection failed')
+      );
 
       const request = new NextRequest('http://localhost:3000/api/spotlight-picks');
       const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
-      expect(data).toEqual({ 
-        success: false, 
-        error: 'Database connection failed' 
+      expect(data).toEqual({
+        success: false,
+        error: 'Database connection failed',
       });
     });
 
@@ -106,7 +108,9 @@ describe('/api/spotlight-picks API Route', () => {
         },
       };
 
-      (prismaMock.spotlightPick.findMany as jest.Mock).mockResolvedValue([mockPickWithDecimalPrice]);
+      (prismaMock.spotlightPick.findMany as jest.Mock).mockResolvedValue([
+        mockPickWithDecimalPrice,
+      ]);
 
       const request = new NextRequest('http://localhost:3000/api/spotlight-picks');
       const response = await GET(request);
@@ -133,7 +137,7 @@ describe('/api/spotlight-picks API Route', () => {
       // The API filters out picks with null products, so this should return empty array
       expect(data).toEqual({
         success: true,
-        data: []
+        data: [],
       });
     });
 
@@ -143,7 +147,9 @@ describe('/api/spotlight-picks API Route', () => {
         personalizeText: null,
       };
 
-      (prismaMock.spotlightPick.findMany as jest.Mock).mockResolvedValue([mockPickWithoutPersonalizeText]);
+      (prismaMock.spotlightPick.findMany as jest.Mock).mockResolvedValue([
+        mockPickWithoutPersonalizeText,
+      ]);
 
       const request = new NextRequest('http://localhost:3000/api/spotlight-picks');
       const response = await GET(request);
@@ -155,4 +161,4 @@ describe('/api/spotlight-picks API Route', () => {
       expect(data.data).toHaveLength(1);
     });
   });
-}); 
+});

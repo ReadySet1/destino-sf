@@ -72,6 +72,7 @@ Created `src/scripts/init-catering-data.ts` to initialize sample catering data f
 ### For Development
 
 1. **Run migrations** (already applied):
+
    ```bash
    pnpm prisma migrate dev
    ```
@@ -95,6 +96,7 @@ The migrations will be applied automatically during deployment. The catering pag
 ## Testing
 
 The fix ensures that:
+
 - The catering page loads without errors even with an empty database
 - Appropriate messages are shown when no catering data is available
 - The page maintains its layout and functionality
@@ -104,4 +106,4 @@ The fix ensures that:
 
 1. **Add Catering Data**: Use the admin panel or scripts to add actual catering packages and items
 2. **Configure Square Integration**: Set up Square product syncing for catering items
-3. **Test Order Flow**: Verify the complete catering order process works end-to-end 
+3. **Test Order Flow**: Verify the complete catering order process works end-to-end

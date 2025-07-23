@@ -56,10 +56,10 @@ interface UnifiedOrder {
 // Safe conversion of Decimal to number
 function decimalToNumber(value: Decimal | number | null | undefined): number {
   if (value === null || value === undefined) return 0;
-  
+
   // If it's already a number
   if (typeof value === 'number') return isNaN(value) ? 0 : value;
-  
+
   // If it's a Decimal
   if (typeof value === 'object') {
     try {
@@ -70,7 +70,7 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
       console.error('Error converting Decimal to number:', e);
     }
   }
-  
+
   // Fallback
   return 0;
 }
@@ -79,24 +79,26 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
 function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
   return orders.map(order => {
     const itemsCount = order.items?.length || 0;
-    const totalItems = order.items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
-    
+    const totalItems =
+      order.items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
+
     return {
       id: order.id,
       status: order.status,
       customerName: order.customerName,
       total: Number(order.total || 0),
-      items: order.items?.map((item: any) => ({
-        id: item.id,
-        quantity: item.quantity,
-        price: Number(item.price || 0),
-      })) || [],
+      items:
+        order.items?.map((item: any) => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: Number(item.price || 0),
+        })) || [],
       pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
       createdAt: order.createdAt.toISOString(),
       trackingNumber: order.trackingNumber || null,
       shippingCarrier: order.shippingCarrier || null,
       type: order.isCateringOrder ? 'catering' : 'regular',
-      paymentStatus: order.paymentStatus
+      paymentStatus: order.paymentStatus,
     };
   });
 }
@@ -105,12 +107,13 @@ function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
 function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
   return orders.map(order => {
     // Serialize items
-    const serializedItems = order.items?.map((item: any) => ({
-      id: item.id,
-      quantity: item.quantity,
-      price: decimalToNumber(item.totalPrice)
-    })) || [];
-    
+    const serializedItems =
+      order.items?.map((item: any) => ({
+        id: item.id,
+        quantity: item.quantity,
+        price: decimalToNumber(item.totalPrice),
+      })) || [];
+
     return {
       id: order.id,
       status: order.status,
@@ -123,25 +126,25 @@ function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
       trackingNumber: null,
       shippingCarrier: null,
       type: 'catering',
-      paymentStatus: order.paymentStatus
+      paymentStatus: order.paymentStatus,
     };
   });
 }
 
 // Helper function to get the correct orderBy clause for database queries
-function getOrderByClause(sortField: string, sortDirection: 'asc' | 'desc', orderType: 'regular' | 'catering') {
+function getOrderByClause(
+  sortField: string,
+  sortDirection: 'asc' | 'desc',
+  orderType: 'regular' | 'catering'
+) {
   const direction = sortDirection;
-  
+
   // Map sort fields to actual database fields
   switch (sortField) {
     case 'customerName':
-      return orderType === 'regular' 
-        ? { customerName: direction }
-        : { name: direction };
+      return orderType === 'regular' ? { customerName: direction } : { name: direction };
     case 'total':
-      return orderType === 'regular'
-        ? { total: direction }
-        : { totalAmount: direction };
+      return orderType === 'regular' ? { total: direction } : { totalAmount: direction };
     case 'status':
       return { status: direction };
     case 'paymentStatus':
@@ -150,9 +153,7 @@ function getOrderByClause(sortField: string, sortDirection: 'asc' | 'desc', orde
       return { createdAt: direction };
     case 'date':
       // For 'date', use pickupTime for regular orders and eventDate for catering
-      return orderType === 'regular'
-        ? { pickupTime: direction }
-        : { eventDate: direction };
+      return orderType === 'regular' ? { pickupTime: direction } : { eventDate: direction };
     default:
       return { createdAt: 'desc' as const };
   }
@@ -160,10 +161,10 @@ function getOrderByClause(sortField: string, sortDirection: 'asc' | 'desc', orde
 
 export default async function OrdersPage({ params, searchParams }: OrderPageProps) {
   await params; // We're not using the params, but we need to await the promise
-  
+
   // Await the searchParams promise
   const searchParamsResolved = await searchParams;
-  
+
   // Parse search params
   const currentPage = Number(searchParamsResolved?.page || 1);
   const searchQuery = searchParamsResolved?.search || '';
@@ -172,7 +173,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
   const paymentFilter = searchParamsResolved?.payment || 'all';
   const sortField = searchParamsResolved?.sort || 'createdAt';
   const sortDirection = searchParamsResolved?.direction || 'desc';
-  
+
   const itemsPerPage = 15;
   const skip = (currentPage - 1) * itemsPerPage;
 
@@ -181,7 +182,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     const regularOrdersWhere: any = {
       isArchived: false, // Exclude archived orders by default
     };
-    
+
     if (searchQuery) {
       regularOrdersWhere.OR = [
         { customerName: { contains: searchQuery, mode: 'insensitive' } },
@@ -189,11 +190,11 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         { trackingNumber: { contains: searchQuery, mode: 'insensitive' } },
       ];
     }
-    
+
     if (statusFilter && statusFilter !== 'all') {
       regularOrdersWhere.status = statusFilter;
     }
-    
+
     if (paymentFilter && paymentFilter !== 'all') {
       regularOrdersWhere.paymentStatus = paymentFilter;
     }
@@ -202,7 +203,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     const cateringOrdersWhere: any = {
       isArchived: false, // Exclude archived orders by default
     };
-    
+
     if (searchQuery) {
       cateringOrdersWhere.OR = [
         { name: { contains: searchQuery, mode: 'insensitive' } },
@@ -210,11 +211,11 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         { email: { contains: searchQuery, mode: 'insensitive' } },
       ];
     }
-    
+
     if (statusFilter && statusFilter !== 'all') {
       cateringOrdersWhere.status = statusFilter;
     }
-    
+
     if (paymentFilter && paymentFilter !== 'all') {
       cateringOrdersWhere.paymentStatus = paymentFilter;
     }
@@ -261,7 +262,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       // Sort based on the selected field and direction
       allOrders.sort((a, b) => {
         let aValue: any, bValue: any;
-        
+
         switch (sortField) {
           case 'customerName':
             aValue = a.customerName || '';
@@ -281,8 +282,8 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
             break;
           case 'date':
             // Use eventDate for catering orders, pickupTime for regular orders
-            aValue = a.type === 'catering' ? (a.eventDate || '') : (a.pickupTime || '');
-            bValue = b.type === 'catering' ? (b.eventDate || '') : (b.pickupTime || '');
+            aValue = a.type === 'catering' ? a.eventDate || '' : a.pickupTime || '';
+            bValue = b.type === 'catering' ? b.eventDate || '' : b.pickupTime || '';
             break;
           case 'createdAt':
           default:
@@ -290,25 +291,25 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
             bValue = b.createdAt;
             break;
         }
-        
+
         // Handle string comparison
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const result = aValue.localeCompare(bValue);
           return sortDirection === 'asc' ? result : -result;
         }
-        
+
         // Handle number/date comparison
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
-      
+
       totalCount = allOrders.length;
       allOrders = allOrders.slice(skip, skip + itemsPerPage);
     }
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
-    
+
     logger.info(`Found ${allOrders.length} orders for display (page ${currentPage}/${totalPages})`);
 
     return (
@@ -332,7 +333,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         </div>
 
         {/* Filters Section */}
-        <OrderFilters 
+        <OrderFilters
           currentSearch={searchQuery}
           currentType={typeFilter}
           currentStatus={statusFilter}
@@ -349,10 +350,10 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
-                searchParams={searchParamsResolved || {}} 
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                searchParams={searchParamsResolved || {}}
               />
             )}
           </>
@@ -364,14 +365,12 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-4">Order Management</h1>
-        <ErrorDisplay 
+        <ErrorDisplay
           title="Failed to Load Orders"
           message="There was an error loading the orders. Please try again later."
-          returnLink={{ href: "/admin", label: "Return to dashboard" }}
+          returnLink={{ href: '/admin', label: 'Return to dashboard' }}
         />
       </div>
     );
   }
 }
-
-

@@ -16,24 +16,25 @@ const testUsers = {
   admin: {
     email: 'test@destino-sf.com',
     password: 'password123',
-    role: 'admin'
+    role: 'admin',
   },
   customer: {
-    email: 'customer@test.com', 
+    email: 'customer@test.com',
     password: 'password123',
-    role: 'customer'
+    role: 'customer',
   },
   cateringCustomer: {
     email: 'catering@company.com',
-    password: 'password123', 
-    role: 'customer'
-  }
+    password: 'password123',
+    role: 'customer',
+  },
 };
 ```
 
 ### Authentication Methods
 
 **1. Login with Credentials:**
+
 ```typescript
 import { AuthHelpers } from './utils/auth-helpers';
 
@@ -49,11 +50,12 @@ await AuthHelpers.loginAsCateringCustomer(page);
 // Custom login
 await AuthHelpers.loginWithPassword(page, {
   email: 'custom@example.com',
-  password: 'password123'
+  password: 'password123',
 });
 ```
 
 **2. Handle Different Auth States:**
+
 ```typescript
 // Check if logged in
 const isLoggedIn = await AuthHelpers.isLoggedIn(page);
@@ -73,7 +75,7 @@ await AuthHelpers.logout(page);
 # Run all enhanced catering tests
 pnpm exec playwright test tests/e2e/06-catering-inquiry-enhanced.spec.ts
 
-# Run original catering tests  
+# Run original catering tests
 pnpm exec playwright test tests/e2e/04-catering-inquiry.spec.ts
 
 # Run both catering test suites
@@ -142,12 +144,14 @@ The catering inquiry form triggers two types of notifications:
 ### Email System Verification
 
 **Current Implementation:**
+
 - Form submission calls `submitCateringInquiry` server action
 - Creates `CateringOrder` record in database
-- Triggers `AlertService.sendContactFormReceived()` 
+- Triggers `AlertService.sendContactFormReceived()`
 - Uses Resend API to send emails
 
 **Testing Approach:**
+
 ```typescript
 // In tests, we verify:
 1. Form submission success (no errors)
@@ -164,6 +168,7 @@ The catering inquiry form triggers two types of notifications:
 ### Pre-configured Test Scenarios
 
 **Corporate Event (Default):**
+
 ```typescript
 {
   contact: {
@@ -182,6 +187,7 @@ The catering inquiry form triggers two types of notifications:
 ```
 
 **Wedding Event:**
+
 ```typescript
 {
   contact: {
@@ -201,6 +207,7 @@ The catering inquiry form triggers two types of notifications:
 ### Common Issues
 
 **1. Authentication Failures**
+
 ```bash
 # If login fails, check:
 - Are test users created in your database?
@@ -212,6 +219,7 @@ await AuthHelpers.ensureLoggedOut(page);
 ```
 
 **2. Form Submission Issues**
+
 ```bash
 # If form doesn't submit:
 - Check network tab for API errors
@@ -221,6 +229,7 @@ await AuthHelpers.ensureLoggedOut(page);
 ```
 
 **3. Email Notification Issues**
+
 ```bash
 # To verify emails are sent:
 - Check Resend dashboard (if configured)
@@ -230,6 +239,7 @@ await AuthHelpers.ensureLoggedOut(page);
 ```
 
 **4. Test Data Issues**
+
 ```bash
 # If test data doesn't match:
 - Update test-data.ts with current content
@@ -240,6 +250,7 @@ await AuthHelpers.ensureLoggedOut(page);
 ### Debug Mode
 
 **Run with Debug Information:**
+
 ```bash
 # Enable verbose logging
 DEBUG=pw:test pnpm exec playwright test tests/e2e/06-catering-inquiry-enhanced.spec.ts
@@ -256,23 +267,27 @@ pnpm exec playwright test -g "should complete full catering inquiry flow" --head
 ### Success Criteria
 
 ✅ **Navigation & Display**
+
 - Catering page loads without errors
 - Package options display correctly
 - Pricing shows per-person costs
 - Images load properly
 
-✅ **Form Functionality** 
+✅ **Form Functionality**
+
 - Form accepts valid input
 - Validation works for required fields
 - Success message appears after submission
 - Form resets after successful submission
 
 ✅ **Data Verification**
+
 - Contact information displays correctly
 - FAQ section works properly
 - All package types are visible
 
 ✅ **Authentication Integration**
+
 - Login flow works for test users
 - Authenticated users can submit inquiries
 - Form pre-fills for logged-in users (if implemented)
@@ -283,7 +298,7 @@ pnpm exec playwright test -g "should complete full catering inquiry flow" --head
 Running 5 tests using 1 worker
 
 ✓ should complete full catering inquiry flow with admin notification (15.2s)
-✓ should validate catering form fields and show errors (3.1s) 
+✓ should validate catering form fields and show errors (3.1s)
 ✓ should display all catering package options correctly (2.8s)
 ✓ should display contact information and FAQ section (2.5s)
 ✓ should handle catering inquiry with user authentication (8.7s)
@@ -294,6 +309,7 @@ Running 5 tests using 1 worker
 ## 🚀 Next Steps
 
 1. **Run the Enhanced Test:**
+
    ```bash
    pnpm exec playwright test tests/e2e/06-catering-inquiry-enhanced.spec.ts
    ```
@@ -311,4 +327,4 @@ Running 5 tests using 1 worker
 4. **Extend Testing:**
    - Add email content verification
    - Test with different event types
-   - Add mobile responsiveness tests 
+   - Add mobile responsiveness tests

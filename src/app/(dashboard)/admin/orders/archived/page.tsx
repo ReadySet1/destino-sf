@@ -29,10 +29,10 @@ interface ArchivedOrderPageProps {
 
 export default async function ArchivedOrdersPage({ params, searchParams }: ArchivedOrderPageProps) {
   await params; // We're not using the params, but we need to await the promise
-  
+
   // Await the searchParams promise
   const searchParamsResolved = await searchParams;
-  
+
   // Parse search params
   const currentPage = Number(searchParamsResolved?.page || 1);
   const searchQuery = searchParamsResolved?.search || '';
@@ -59,8 +59,10 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
     }
 
     const { orders, totalCount, totalPages } = result;
-    
-    logger.info(`Found ${orders.length} archived orders for display (page ${currentPage}/${totalPages})`);
+
+    logger.info(
+      `Found ${orders.length} archived orders for display (page ${currentPage}/${totalPages})`
+    );
 
     return (
       <div className="p-4 max-w-7xl mx-auto">
@@ -77,7 +79,7 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
         </div>
 
         {/* Filters Section */}
-        <ArchivedOrdersFilters 
+        <ArchivedOrdersFilters
           currentSearch={searchQuery}
           currentType={typeFilter}
           currentReason={reasonFilter}
@@ -96,10 +98,10 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
-                searchParams={searchParamsResolved || {}} 
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                searchParams={searchParamsResolved || {}}
               />
             )}
           </>
@@ -111,12 +113,12 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-4">Archived Orders</h1>
-        <ErrorDisplay 
+        <ErrorDisplay
           title="Failed to Load Archived Orders"
           message="There was an error loading the archived orders. Please try again later."
-          returnLink={{ href: "/admin/orders", label: "Return to orders" }}
+          returnLink={{ href: '/admin/orders', label: 'Return to orders' }}
         />
       </div>
     );
   }
-} 
+}

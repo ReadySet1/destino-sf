@@ -23,14 +23,14 @@ export async function GET(request: NextRequest) {
     const products = await prisma.product.findMany({
       where: {
         squareId: {
-          not: undefined
-        }
+          not: undefined,
+        },
       },
       select: {
         id: true,
         name: true,
-        squareId: true
-      }
+        squareId: true,
+      },
     });
 
     logger.info(`Found ${products.length} products with Square IDs`);
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       total: products.length,
       reset: 0,
       valid: 0,
-      details: []
+      details: [],
     };
 
     // Process each product
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         id: product.id,
         name: product.name,
         squareId: product.squareId,
-        status: 'checking'
+        status: 'checking',
       };
 
       // Skip products with no Square ID (shouldn't happen due to filter, but just in case)
@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
           result.details.push(detail);
           continue;
         }
-        
+
         const itemResponse = await squareClient.catalogApi.retrieveCatalogObject(product.squareId);
         const item = itemResponse.result?.object;
-        
+
         if (item) {
           // Square ID is valid
           detail.status = 'valid';
@@ -85,10 +85,10 @@ export async function GET(request: NextRequest) {
             where: { id: product.id },
             data: {
               squareId: undefined, // Reset to null/undefined
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
-          
+
           detail.status = 'reset: no item found';
           result.reset++;
         }
@@ -100,22 +100,22 @@ export async function GET(request: NextRequest) {
         } else {
           errorMessage = String(error);
         }
-        
+
         // Only reset the ID if this is a 404/NOT_FOUND error
         if (errorMessage.includes('NOT_FOUND') || errorMessage.includes('404')) {
           await prisma.product.update({
             where: { id: product.id },
             data: {
-              squareId: "", // Set to empty string
-              updatedAt: new Date()
-            }
+              squareId: '', // Set to empty string
+              updatedAt: new Date(),
+            },
           });
-          
+
           detail.status = 'reset: invalid ID';
           detail.error = errorMessage;
           result.reset++;
         } else {
-          // Other types of errors could be temporary API issues, 
+          // Other types of errors could be temporary API issues,
           // so we don't reset the ID in those cases
           detail.status = 'error: API issue';
           detail.error = errorMessage;
@@ -131,4 +131,4 @@ export async function GET(request: NextRequest) {
     logger.error('Error in reset-invalid-ids endpoint:', error);
     return NextResponse.json({ error: 'Failed to reset invalid Square IDs' }, { status: 500 });
   }
-} 
+}

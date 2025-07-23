@@ -5,14 +5,14 @@ import { validateOrderMinimumsServer } from '@/app/actions/orders';
 import { PaymentMethod } from '@prisma/client';
 
 // Import our new test utilities
-import { 
-  TestData, 
-  createFormData, 
-  createValidationResult, 
-  createMockOrder, 
+import {
+  TestData,
+  createFormData,
+  createValidationResult,
+  createMockOrder,
   setupMockPrisma,
   mockConsole,
-  restoreConsole 
+  restoreConsole,
 } from '@/__tests__/setup/test-utils';
 // Note: @/lib/db is mocked globally in jest.setup.js
 
@@ -21,7 +21,9 @@ jest.mock('@/app/actions/orders');
 
 const mockPrisma = prisma as any;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
-const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<typeof validateOrderMinimumsServer>;
+const mockValidateOrderMinimumsServer = validateOrderMinimumsServer as jest.MockedFunction<
+  typeof validateOrderMinimumsServer
+>;
 
 // Mock Supabase client
 const mockSupabaseClient = {
@@ -37,14 +39,14 @@ const validOrderData = {
       id: 'prod-1',
       name: 'Dulce de Leche Alfajores',
       quantity: 2,
-      price: 25.00,
+      price: 25.0,
       variantId: 'variant-1',
     },
     {
       id: 'prod-2',
       name: 'Beef Empanadas',
       quantity: 1,
-      price: 45.00,
+      price: 45.0,
       variantId: 'variant-2',
     },
   ],
@@ -63,7 +65,7 @@ const validOrderData = {
   deliveryTime: '2024-01-16T14:00:00Z',
   specialInstructions: 'Leave at door',
   paymentMethod: PaymentMethod.SQUARE,
-  subtotal: 95.00,
+  subtotal: 95.0,
   taxAmount: 8.55,
   deliveryFee: 0, // Free delivery for SF orders over $75
   total: 103.55,
@@ -103,7 +105,6 @@ describe('/api/orders/create', () => {
   });
 
   describe('Order creation flow', () => {
-
     test('should create order successfully with valid data', async () => {
       // Mock order minimum validation
       mockValidateOrderMinimumsServer.mockResolvedValue({
@@ -256,8 +257,8 @@ describe('/api/orders/create', () => {
           customerName: pickupOrderData.customerInfo.name,
           email: pickupOrderData.customerInfo.email,
           phone: pickupOrderData.customerInfo.phone,
-                      fulfillmentType: 'pickup',
-            taxAmount: pickupOrderData.taxAmount,
+          fulfillmentType: 'pickup',
+          taxAmount: pickupOrderData.taxAmount,
           total: pickupOrderData.total,
         },
       });
@@ -273,12 +274,12 @@ describe('/api/orders/create', () => {
             id: 'catering-1',
             name: 'Catering Alfajores Platter',
             quantity: 1,
-            price: 350.00,
+            price: 350.0,
             variantId: 'catering-variant-1',
           },
         ],
-        subtotal: 350.00,
-        total: 378.50,
+        subtotal: 350.0,
+        total: 378.5,
       };
 
       mockValidateOrderMinimumsServer.mockResolvedValue({
@@ -306,7 +307,9 @@ describe('/api/orders/create', () => {
 
       expect(validationResult.isValid).toBe(true);
       expect(validationResult.deliveryZone).toBe('SAN_FRANCISCO');
-      expect(validationResult.currentAmount).toBeGreaterThanOrEqual(validationResult.minimumRequired!);
+      expect(validationResult.currentAmount).toBeGreaterThanOrEqual(
+        validationResult.minimumRequired!
+      );
     });
 
     test('should create order with multiple variants of same product', async () => {
@@ -317,18 +320,18 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 1,
-            price: 15.00,
+            price: 15.0,
             variantId: 'variant-1-small', // 3-pack
           },
           {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 2,
-            price: 25.00,
+            price: 25.0,
             variantId: 'variant-1-large', // 6-pack
           },
         ],
-        subtotal: 65.00,
+        subtotal: 65.0,
         total: 73.55,
       };
 
@@ -365,7 +368,7 @@ describe('/api/orders/create', () => {
       const multiVariantOrder = {
         ...mockCreatedOrder,
         items: multiVariantOrderData.items,
-        subtotal: 65.00,
+        subtotal: 65.0,
         total: 73.55,
       };
 
@@ -406,7 +409,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 1,
-            price: 15.00,
+            price: 15.0,
           },
         ],
         deliveryAddress: {
@@ -441,7 +444,7 @@ describe('/api/orders/create', () => {
             id: 'catering-1',
             name: 'Small Catering Platter',
             quantity: 1,
-            price: 150.00,
+            price: 150.0,
           },
         ],
         deliveryAddress: {
@@ -477,7 +480,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 2,
-            price: 25.00,
+            price: 25.0,
           },
         ],
         deliveryAddress: {
@@ -501,7 +504,9 @@ describe('/api/orders/create', () => {
       );
 
       expect(validationResult.isValid).toBe(true);
-      expect(validationResult.currentAmount).toBeGreaterThanOrEqual(validationResult.minimumRequired!);
+      expect(validationResult.currentAmount).toBeGreaterThanOrEqual(
+        validationResult.minimumRequired!
+      );
     });
 
     test('should handle unsupported delivery areas', async () => {
@@ -511,7 +516,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 3,
-            price: 25.00,
+            price: 25.0,
           },
         ],
         deliveryAddress: {
@@ -524,7 +529,8 @@ describe('/api/orders/create', () => {
 
       mockValidateOrderMinimumsServer.mockResolvedValue({
         isValid: false,
-        errorMessage: 'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.',
+        errorMessage:
+          'Sorry, we currently do not deliver to this location. Please check our delivery zones or contact us for assistance.',
       });
 
       const validationResult = await validateOrderMinimumsServer(
@@ -599,7 +605,7 @@ describe('/api/orders/create', () => {
 
       // Order should not be created if payment fails
       const paymentError = new Error('Payment processing failed');
-      
+
       // Simulate payment failure before order creation
       expect(() => {
         if (orderWithFailedPayment.paymentStatus === 'failed') {
@@ -678,7 +684,7 @@ describe('/api/orders/create', () => {
         });
 
         expect(order.paymentMethod).toBe(method);
-        
+
         if (method === 'cash') {
           expect(order.status).toBe('PENDING');
         } else {
@@ -696,7 +702,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 5,
-            price: 25.00,
+            price: 25.0,
           },
         ],
       };
@@ -719,8 +725,9 @@ describe('/api/orders/create', () => {
         },
       });
 
-      const hasInventory = products.every(product => 
-        product.inventory >= orderData.items.find(item => item.id === product.id)!.quantity
+      const hasInventory = products.every(
+        product =>
+          product.inventory >= orderData.items.find(item => item.id === product.id)!.quantity
       );
 
       expect(hasInventory).toBe(true);
@@ -733,7 +740,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 15,
-            price: 25.00,
+            price: 25.0,
           },
         ],
       };
@@ -756,8 +763,9 @@ describe('/api/orders/create', () => {
         },
       });
 
-      const hasInventory = products.every(product => 
-        product.inventory >= orderData.items.find(item => item.id === product.id)!.quantity
+      const hasInventory = products.every(
+        product =>
+          product.inventory >= orderData.items.find(item => item.id === product.id)!.quantity
       );
 
       expect(hasInventory).toBe(false);
@@ -770,7 +778,7 @@ describe('/api/orders/create', () => {
             id: 'prod-1',
             name: 'Dulce de Leche Alfajores',
             quantity: 3,
-            price: 25.00,
+            price: 25.0,
             variantId: 'variant-1',
           },
         ],
@@ -788,7 +796,8 @@ describe('/api/orders/create', () => {
         where: { id: 'variant-1' },
       });
 
-      const hasVariantInventory = variant && 
+      const hasVariantInventory =
+        variant &&
         variant.inventory >= orderData.items.find(item => item.variantId === variant.id)!.quantity;
 
       expect(hasVariantInventory).toBe(true);
@@ -801,7 +810,7 @@ describe('/api/orders/create', () => {
             id: 'prod-inactive',
             name: 'Discontinued Product',
             quantity: 1,
-            price: 25.00,
+            price: 25.0,
           },
         ],
       };
@@ -835,7 +844,7 @@ describe('/api/orders/create', () => {
             id: 'non-existent-product',
             name: 'Non-existent Product',
             quantity: 1,
-            price: 25.00,
+            price: 25.0,
           },
         ],
       };
@@ -850,7 +859,7 @@ describe('/api/orders/create', () => {
         },
       });
 
-      const allProductsFound = orderData.items.every(item => 
+      const allProductsFound = orderData.items.every(item =>
         products.some(product => product.id === item.id)
       );
 
@@ -861,7 +870,7 @@ describe('/api/orders/create', () => {
   describe('Email notifications', () => {
     test('should trigger order confirmation email on successful order', async () => {
       const orderData = validOrderData;
-      
+
       mockValidateOrderMinimumsServer.mockResolvedValue({
         isValid: true,
         errorMessage: null,
@@ -916,7 +925,7 @@ describe('/api/orders/create', () => {
 
     test('should send admin notification for new orders', async () => {
       const orderData = validOrderData;
-      
+
       mockValidateOrderMinimumsServer.mockResolvedValue({
         isValid: true,
         errorMessage: null,
@@ -963,7 +972,7 @@ describe('/api/orders/create', () => {
 
     test('should handle email notification failures gracefully', async () => {
       const orderData = validOrderData;
-      
+
       mockValidateOrderMinimumsServer.mockResolvedValue({
         isValid: true,
         errorMessage: null,
@@ -1008,7 +1017,10 @@ describe('/api/orders/create', () => {
         error: new Error('Not authenticated'),
       });
 
-      const { data: { user }, error } = await mockSupabaseClient.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await mockSupabaseClient.auth.getUser();
 
       expect(user).toBeNull();
       expect(error).toBeTruthy();
@@ -1022,13 +1034,15 @@ describe('/api/orders/create', () => {
 
       mockPrisma.order.create.mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(prisma.order.create({
-        data: {
-          userId: 'user-123',
-          status: 'PENDING',
-          total: 100,
-        },
-      })).rejects.toThrow('Database connection failed');
+      await expect(
+        prisma.order.create({
+          data: {
+            userId: 'user-123',
+            status: 'PENDING',
+            total: 100,
+          },
+        })
+      ).rejects.toThrow('Database connection failed');
     });
 
     test('should handle malformed request data', async () => {
@@ -1053,7 +1067,7 @@ describe('/api/orders/create', () => {
 
     test('should handle concurrent order creation', async () => {
       const orderData = validOrderData;
-      
+
       mockValidateOrderMinimumsServer.mockResolvedValue({
         isValid: true,
         errorMessage: null,
@@ -1085,13 +1099,15 @@ describe('/api/orders/create', () => {
       // Second concurrent order should fail due to inventory constraint
       mockPrisma.order.create.mockRejectedValueOnce(new Error('Insufficient inventory'));
 
-      await expect(prisma.order.create({
-        data: {
-          userId: 'user-456',
-          status: 'CONFIRMED',
-          total: orderData.total,
-        },
-      })).rejects.toThrow('Insufficient inventory');
+      await expect(
+        prisma.order.create({
+          data: {
+            userId: 'user-456',
+            status: 'CONFIRMED',
+            total: orderData.total,
+          },
+        })
+      ).rejects.toThrow('Insufficient inventory');
     });
   });
 });
@@ -1125,7 +1141,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: validCartItems,
         customerInfo: validCustomerInfo,
         fulfillment: validPickupFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1148,7 +1164,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: validCartItems,
         customerInfo: validCustomerInfo,
         fulfillment: validLocalDeliveryFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1167,7 +1183,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
             fulfillmentType: 'local_delivery',
             deliveryDate: expect.any(Date),
             deliveryTime: '18:00',
-          })
+          }),
         })
       );
     });
@@ -1177,7 +1193,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: validCartItems,
         customerInfo: validCustomerInfo,
         fulfillment: validNationwideShippingFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1196,7 +1212,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
             fulfillmentType: 'nationwide_shipping',
             shippingCarrier: 'USPS',
             shippingCostCents: 1250,
-          })
+          }),
         })
       );
     });
@@ -1207,7 +1223,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
       const invalidRequest = {
         customerInfo: validCustomerInfo,
         fulfillment: validPickupFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1228,7 +1244,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: validCartItems,
         customerInfo: { name: '', email: 'invalid-email' },
         fulfillment: validPickupFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1245,15 +1261,13 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
     });
 
     test('should return 400 for order below minimum', async () => {
-      const smallItems = [
-        { id: 'prod-1', name: 'Small Item', price: 10.00, quantity: 1 }
-      ];
+      const smallItems = [{ id: 'prod-1', name: 'Small Item', price: 10.0, quantity: 1 }];
 
       const belowMinimumRequest = {
         items: smallItems,
         customerInfo: validCustomerInfo,
         fulfillment: validPickupFulfillment,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1274,7 +1288,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: validCartItems,
         customerInfo: validCustomerInfo,
         fulfillment: { method: 'invalid_method' },
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1300,7 +1314,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'SQUARE'
+          paymentMethod: 'SQUARE',
         }),
       });
 
@@ -1321,7 +1335,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'SQUARE'
+          paymentMethod: 'SQUARE',
         }),
       });
 
@@ -1349,7 +1363,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'SQUARE'
+          paymentMethod: 'SQUARE',
         }),
       });
 
@@ -1393,7 +1407,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
         items: null,
         customerInfo: undefined,
         fulfillment: null,
-        paymentMethod: 'SQUARE'
+        paymentMethod: 'SQUARE',
       };
 
       const request = new NextRequest('http://localhost:3000/api/orders/create', {
@@ -1417,7 +1431,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'SQUARE'
+          paymentMethod: 'SQUARE',
         }),
       });
 
@@ -1432,7 +1446,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'CASH'
+          paymentMethod: 'CASH',
         }),
       });
 
@@ -1447,7 +1461,7 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
           items: validCartItems,
           customerInfo: validCustomerInfo,
           fulfillment: validPickupFulfillment,
-          paymentMethod: 'INVALID_METHOD'
+          paymentMethod: 'INVALID_METHOD',
         }),
       });
 
@@ -1458,4 +1472,4 @@ describe('Order Creation API Route - Comprehensive Coverage', () => {
       expect(data.error).toContain('Invalid payment method');
     });
   });
-}); 
+});

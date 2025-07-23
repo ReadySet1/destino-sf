@@ -12,15 +12,12 @@ export async function GET(
   try {
     const { orderId } = await params;
     logger.info(`Fetching order details for order: ${orderId}`);
-    
+
     const result = await getOrderById(orderId);
-    
+
     // Handle the different return types from getOrderById
     if (!result) {
-      return NextResponse.json(
-        { success: false, error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
     // Check if it's an error object
@@ -30,15 +27,15 @@ export async function GET(
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ success: true, order: result });
   } catch (error) {
     logger.error('Error retrieving order details:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to retrieve order details',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

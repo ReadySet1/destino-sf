@@ -1,4 +1,8 @@
-import { createPayment, handleGiftCardPaymentError, formatGiftCardErrorMessage } from '@/lib/square/payments-api';
+import {
+  createPayment,
+  handleGiftCardPaymentError,
+  formatGiftCardErrorMessage,
+} from '@/lib/square/payments-api';
 import https from 'https';
 
 // Mock the https module
@@ -70,7 +74,7 @@ describe('Square Payments API', () => {
       USE_SQUARE_SANDBOX: 'true',
       SQUARE_SANDBOX_TOKEN: 'sandbox-token-123',
       SQUARE_ACCESS_TOKEN: 'access-token-456',
-      NODE_ENV: 'test'
+      NODE_ENV: 'test',
     });
   });
 
@@ -90,11 +94,11 @@ describe('Square Payments API', () => {
         // Simulate successful response
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           // Simulate data and end events
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(mockSuccessfulPayment));
           }
@@ -123,7 +127,7 @@ describe('Square Payments API', () => {
           path: '/v2/payments',
           method: 'POST',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer sandbox-token-123',
+            Authorization: 'Bearer sandbox-token-123',
             'Square-Version': '2025-05-21',
             'Content-Type': 'application/json',
           }),
@@ -132,9 +136,7 @@ describe('Square Payments API', () => {
       );
 
       // Verify request body was written
-      expect(mockRequest.write).toHaveBeenCalledWith(
-        JSON.stringify(validPaymentRequest)
-      );
+      expect(mockRequest.write).toHaveBeenCalledWith(JSON.stringify(validPaymentRequest));
       expect(mockRequest.end).toHaveBeenCalled();
     });
 
@@ -160,10 +162,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(giftCardPayment));
           }
@@ -194,10 +196,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(mockGiftCardInsufficientFundsError));
           }
@@ -237,10 +239,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(authError));
           }
@@ -283,10 +285,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler('invalid-json-response');
           }
@@ -316,10 +318,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(mockSuccessfulPayment));
           }
@@ -337,7 +339,7 @@ describe('Square Payments API', () => {
         expect.objectContaining({
           hostname: 'sandbox.squareup.com',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer sandbox-token-123',
+            Authorization: 'Bearer sandbox-token-123',
           }),
         }),
         expect.any(Function)
@@ -348,7 +350,7 @@ describe('Square Payments API', () => {
       Object.assign(process.env, {
         USE_SQUARE_SANDBOX: 'false',
         NODE_ENV: 'production',
-        SQUARE_PRODUCTION_TOKEN: 'production-token-456'
+        SQUARE_PRODUCTION_TOKEN: 'production-token-456',
       });
 
       mockHttps.request.mockImplementation((options, callback) => {
@@ -359,10 +361,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(mockSuccessfulPayment));
           }
@@ -380,7 +382,7 @@ describe('Square Payments API', () => {
         expect.objectContaining({
           hostname: 'connect.squareup.com',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer production-token-456',
+            Authorization: 'Bearer production-token-456',
           }),
         }),
         expect.any(Function)
@@ -510,10 +512,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(partialPaymentResponse));
           }
@@ -548,10 +550,10 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
             dataHandler(JSON.stringify(mockSuccessfulPayment));
           }
@@ -566,9 +568,7 @@ describe('Square Payments API', () => {
       const result = await createPayment(paymentWithTip);
 
       expect(result.result?.payment).toBeDefined();
-      expect(mockRequest.write).toHaveBeenCalledWith(
-        JSON.stringify(paymentWithTip)
-      );
+      expect(mockRequest.write).toHaveBeenCalledWith(JSON.stringify(paymentWithTip));
     });
 
     test('should handle delayed capture payments', async () => {
@@ -586,17 +586,19 @@ describe('Square Payments API', () => {
 
         setTimeout(() => {
           if (callback) callback(mockResponse as any);
-          
+
           const dataHandler = mockResponse.on.mock.calls.find(call => call[0] === 'data')?.[1];
           const endHandler = mockResponse.on.mock.calls.find(call => call[0] === 'end')?.[1];
-          
+
           if (dataHandler) {
-            dataHandler(JSON.stringify({
-              payment: {
-                ...mockSuccessfulPayment.payment,
-                status: 'APPROVED', // Not yet captured
-              },
-            }));
+            dataHandler(
+              JSON.stringify({
+                payment: {
+                  ...mockSuccessfulPayment.payment,
+                  status: 'APPROVED', // Not yet captured
+                },
+              })
+            );
           }
           if (endHandler) {
             endHandler();
@@ -611,4 +613,4 @@ describe('Square Payments API', () => {
       expect(result.result?.payment.status).toBe('APPROVED');
     });
   });
-}); 
+});

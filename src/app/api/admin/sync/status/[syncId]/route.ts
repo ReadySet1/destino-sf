@@ -10,11 +10,14 @@ export async function GET(
 ) {
   // Get syncId first for error logging
   const { syncId } = await params;
-  
+
   try {
     // 1. Authenticate user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -23,7 +26,7 @@ export async function GET(
     // 2. Check admin access
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },
-      select: { role: true, name: true, email: true }
+      select: { role: true, name: true, email: true },
     });
 
     if (!profile || profile.role !== 'ADMIN') {
@@ -32,16 +35,19 @@ export async function GET(
 
     // 3. Validate syncId parameter
     if (!syncId) {
-      return NextResponse.json({ 
-        error: 'Missing sync ID' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Missing sync ID',
+        },
+        { status: 400 }
+      );
     }
 
     // 4. Get sync status from database
     const syncLog = await prisma.userSyncLog.findUnique({
-      where: { 
+      where: {
         syncId,
-        userId: user.id // Ensure user can only see their own syncs
+        userId: user.id, // Ensure user can only see their own syncs
       },
       select: {
         id: true,
@@ -55,15 +61,18 @@ export async function GET(
         results: true,
         errors: true,
         options: true,
-        startedBy: true
-      }
+        startedBy: true,
+      },
     });
 
     if (!syncLog) {
-      return NextResponse.json({ 
-        error: 'Sync not found',
-        message: 'The sync ID was not found or you do not have permission to view it.'
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: 'Sync not found',
+          message: 'The sync ID was not found or you do not have permission to view it.',
+        },
+        { status: 404 }
+      );
     }
 
     // 4.1. Check if sync is stale (older than 45 minutes and still running)
@@ -79,12 +88,14 @@ export async function GET(
           status: 'FAILED',
           endTime: new Date(),
           message: 'Sync timed out - exceeded maximum duration',
-          progress: syncLog.progress
-        }
+          progress: syncLog.progress,
+        },
       });
 
-      logger.warn(`Marked stale sync ${syncId} as failed (age: ${Math.floor(syncAge / 60000)} minutes)`);
-      
+      logger.warn(
+        `Marked stale sync ${syncId} as failed (age: ${Math.floor(syncAge / 60000)} minutes)`
+      );
+
       // Return the updated status
       return NextResponse.json({
         syncId: syncLog.syncId,
@@ -97,7 +108,7 @@ export async function GET(
         duration: Math.round(syncAge / 1000),
         startedBy: syncLog.startedBy,
         errors: ['Sync exceeded maximum allowed duration and was automatically terminated'],
-        options: syncLog.options
+        options: syncLog.options,
       });
     }
 
@@ -117,7 +128,7 @@ export async function GET(
     }
 
     // 6. Calculate duration
-    const duration = syncLog.endTime 
+    const duration = syncLog.endTime
       ? Math.round((syncLog.endTime.getTime() - syncLog.startTime.getTime()) / 1000)
       : Math.round((new Date().getTime() - syncLog.startTime.getTime()) / 1000);
 
@@ -132,36 +143,38 @@ export async function GET(
       endTime: syncLog.endTime,
       duration: duration,
       startedBy: syncLog.startedBy,
-      
+
       // Detailed progress info (if available)
       ...(detailedProgress && {
         processed: detailedProgress.processed,
         total: detailedProgress.total,
-        currentProduct: detailedProgress.currentProduct
+        currentProduct: detailedProgress.currentProduct,
       }),
 
       // Results (if completed)
       ...(syncLog.results && {
-        results: syncLog.results
+        results: syncLog.results,
       }),
 
       // Errors (if failed)
       ...(syncLog.errors && {
-        errors: syncLog.errors
+        errors: syncLog.errors,
       }),
 
       // Original options
-      options: syncLog.options
+      options: syncLog.options,
     };
 
     return NextResponse.json(response);
-
   } catch (error) {
     logger.error(`Error getting sync status for ${syncId}:`, error);
-    return NextResponse.json({
-      error: 'Internal server error',
-      message: 'Failed to get sync status. Please try again.'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: 'Failed to get sync status. Please try again.',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -171,28 +184,29 @@ export async function HEAD(
   { params }: { params: Promise<{ syncId: string }> }
 ) {
   const { syncId } = await params;
-  
+
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return new Response(null, { status: 401 });
     }
 
     const syncExists = await prisma.userSyncLog.findUnique({
-      where: { 
+      where: {
         syncId: syncId,
-        userId: user.id
+        userId: user.id,
       },
-      select: { id: true }
+      select: { id: true },
     });
 
-    return new Response(null, { 
-      status: syncExists ? 200 : 404 
+    return new Response(null, {
+      status: syncExists ? 200 : 404,
     });
-
   } catch (error) {
     return new Response(null, { status: 500 });
   }
-} 
+}

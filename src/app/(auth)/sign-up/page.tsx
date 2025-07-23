@@ -21,14 +21,16 @@ export default function Signup() {
   async function handleSubmit(formData: FormData) {
     try {
       setIsLoading(true);
-      const result = await signUpAction(formData) as SignUpResult;
-      
+      const result = (await signUpAction(formData)) as SignUpResult;
+
       if (result?.error) {
         toast.error(result.error);
         return;
       }
 
-      toast.success('Account created successfully! Please check your email to verify your account.');
+      toast.success(
+        'Account created successfully! Please check your email to verify your account.'
+      );
       router.push('/sign-in');
     } catch (error) {
       toast.error('Something went wrong. Please try again.');
@@ -39,10 +41,7 @@ export default function Signup() {
   }
 
   return (
-    <AuthContainer 
-      title="Create an Account" 
-      subtitle="Sign up to experience Destino SF"
-    >
+    <AuthContainer title="Create an Account" subtitle="Sign up to experience Destino SF">
       <div className="pt-2">
         <form action={handleSubmit} className="space-y-5">
           <div className="space-y-4">
@@ -63,7 +62,7 @@ export default function Signup() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -133,7 +132,7 @@ export default function Signup() {
           </button>
         </form>
       </div>
-      
+
       <div className="flex flex-col space-y-4 pt-6">
         <div className="text-center text-sm">
           Already have an account?{' '}

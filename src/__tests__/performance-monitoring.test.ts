@@ -44,7 +44,7 @@ jest.mock('@sentry/nextjs', () => ({
   })),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
-  withScope: jest.fn((callback) => callback({ setTag: jest.fn(), setContext: jest.fn() })),
+  withScope: jest.fn(callback => callback({ setTag: jest.fn(), setContext: jest.fn() })),
 }));
 
 jest.mock('@upstash/redis', () => ({
@@ -77,25 +77,37 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 // Mock load testing libraries
-jest.mock('k6', () => ({
-  check: jest.fn(),
-  group: jest.fn(),
-  sleep: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'k6',
+  () => ({
+    check: jest.fn(),
+    group: jest.fn(),
+    sleep: jest.fn(),
+  }),
+  { virtual: true }
+);
 
-jest.mock('k6/http', () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  del: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'k6/http',
+  () => ({
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    del: jest.fn(),
+  }),
+  { virtual: true }
+);
 
-jest.mock('k6/metrics', () => ({
-  Counter: jest.fn(),
-  Rate: jest.fn(),
-  Gauge: jest.fn(),
-  Trend: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'k6/metrics',
+  () => ({
+    Counter: jest.fn(),
+    Rate: jest.fn(),
+    Gauge: jest.fn(),
+    Trend: jest.fn(),
+  }),
+  { virtual: true }
+);
 
 // Import modules
 import { PerformanceMonitor, performanceMonitor } from '@/lib/performance-monitor';
@@ -113,7 +125,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up mock Redis instance
     mockRedisInstance = {
       get: jest.fn(),
@@ -135,7 +147,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
     describe('API Performance Tracking', () => {
       it('should track API call response times accurately', async () => {
         const mockApiCall = jest.fn().mockResolvedValue({ data: 'test' });
-        
+
         mockPerformanceMonitor.trackApiCall.mockResolvedValue(undefined);
         mockPerformanceMonitor.startTiming.mockReturnValue('timer-123');
         mockPerformanceMonitor.endTiming.mockReturnValue(250);
@@ -154,11 +166,11 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
       it('should track API error rates and status codes', async () => {
         const mockFailingCall = jest.fn().mockRejectedValue(new Error('API Error'));
-        
+
         mockPerformanceMonitor.trackApiCall.mockResolvedValue(undefined);
 
         const { measureApiPerformance } = await import('@/lib/performance/api-metrics');
-        
+
         try {
           await measureApiPerformance('/api/orders', 'POST', mockFailingCall);
         } catch (error) {
@@ -175,7 +187,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
       it('should calculate accurate performance percentiles', () => {
         const responseTimes = [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000];
-        
+
         mockPerformanceMonitor.calculatePercentile.mockImplementation((values, percentile) => {
           const sorted = [...values].sort((a, b) => a - b);
           const index = Math.ceil((percentile / 100) * sorted.length) - 1;
@@ -213,7 +225,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
           businessMetrics: {
             ordersPerHour: 50,
             conversionRate: 0.85,
-            averageOrderValue: 45.50,
+            averageOrderValue: 45.5,
             failedPayments: 2,
             cartAbandonmentRate: 0.15,
           },
@@ -230,21 +242,23 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         expect(summary.apiPerformance.endpointMetrics['/api/products'].avgTime).toBe(150);
         expect(summary.apiPerformance.endpointMetrics['/api/orders'].avgTime).toBe(300);
         expect(summary.apiPerformance.endpointMetrics['/api/checkout'].avgTime).toBe(450);
-        
+
         // Checkout should be flagged as potentially slow
-        expect(summary.apiPerformance.endpointMetrics['/api/checkout'].avgTime).toBeGreaterThan(400);
+        expect(summary.apiPerformance.endpointMetrics['/api/checkout'].avgTime).toBeGreaterThan(
+          400
+        );
       });
     });
 
     describe('Database Performance Monitoring', () => {
       it('should track database query performance', async () => {
         const mockQuery = jest.fn().mockResolvedValue([{ id: 1, name: 'Test' }]);
-        
+
         mockDbManager.measureQueryPerformance.mockImplementation(async (queryName, queryFn) => {
           const start = Date.now();
           const result = await queryFn();
           const duration = Date.now() - start;
-          
+
           mockPerformanceMonitor.trackDatabaseQuery(queryName, duration, true);
           return result;
         });
@@ -261,15 +275,15 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       });
 
       it('should detect slow database queries', async () => {
-        const slowQuery = jest.fn().mockImplementation(() => 
-          new Promise(resolve => setTimeout(() => resolve([]), 600)) // 600ms - slow
+        const slowQuery = jest.fn().mockImplementation(
+          () => new Promise(resolve => setTimeout(() => resolve([]), 600)) // 600ms - slow
         );
 
         mockDbManager.measureQueryPerformance.mockImplementation(async (queryName, queryFn) => {
           const start = Date.now();
           const result = await queryFn();
           const duration = Date.now() - start;
-          
+
           mockPerformanceMonitor.trackDatabaseQuery(queryName, duration, true);
           return { result, duration };
         });
@@ -331,9 +345,21 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       it('should monitor memory usage and detect leaks', () => {
         const memorySnapshots = [
           { heapUsed: 50 * 1024 * 1024, heapTotal: 100 * 1024 * 1024, timestamp: Date.now() },
-          { heapUsed: 75 * 1024 * 1024, heapTotal: 120 * 1024 * 1024, timestamp: Date.now() + 60000 },
-          { heapUsed: 95 * 1024 * 1024, heapTotal: 140 * 1024 * 1024, timestamp: Date.now() + 120000 },
-          { heapUsed: 110 * 1024 * 1024, heapTotal: 160 * 1024 * 1024, timestamp: Date.now() + 180000 },
+          {
+            heapUsed: 75 * 1024 * 1024,
+            heapTotal: 120 * 1024 * 1024,
+            timestamp: Date.now() + 60000,
+          },
+          {
+            heapUsed: 95 * 1024 * 1024,
+            heapTotal: 140 * 1024 * 1024,
+            timestamp: Date.now() + 120000,
+          },
+          {
+            heapUsed: 110 * 1024 * 1024,
+            heapTotal: 160 * 1024 * 1024,
+            timestamp: Date.now() + 180000,
+          },
         ];
 
         const { analyzeMemoryTrend } = require('@/lib/performance/memory-analysis');
@@ -348,8 +374,20 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       it('should track garbage collection performance', () => {
         const gcEvents = [
           { type: 'major', duration: 50, heapBefore: 100, heapAfter: 60, timestamp: Date.now() },
-          { type: 'minor', duration: 10, heapBefore: 65, heapAfter: 62, timestamp: Date.now() + 30000 },
-          { type: 'major', duration: 80, heapBefore: 120, heapAfter: 70, timestamp: Date.now() + 60000 },
+          {
+            type: 'minor',
+            duration: 10,
+            heapBefore: 65,
+            heapAfter: 62,
+            timestamp: Date.now() + 30000,
+          },
+          {
+            type: 'major',
+            duration: 80,
+            heapBefore: 120,
+            heapAfter: 70,
+            timestamp: Date.now() + 60000,
+          },
         ];
 
         const { analyzeGCPerformance } = require('@/lib/performance/gc-analysis');
@@ -385,7 +423,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         const businessMetrics = {
           ordersPerHour: 45,
           conversionRate: 0.78,
-          averageOrderValue: 42.50,
+          averageOrderValue: 42.5,
           failedPayments: 3,
           cartAbandonmentRate: 0.22,
           customerSatisfactionScore: 4.2,
@@ -402,15 +440,21 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         });
 
         expect(mockPerformanceMonitor.trackBusinessMetric).toHaveBeenCalledTimes(7);
-        expect(mockPerformanceMonitor.trackBusinessMetric).toHaveBeenCalledWith('ordersPerHour', 45);
-        expect(mockPerformanceMonitor.trackBusinessMetric).toHaveBeenCalledWith('conversionRate', 0.78);
+        expect(mockPerformanceMonitor.trackBusinessMetric).toHaveBeenCalledWith(
+          'ordersPerHour',
+          45
+        );
+        expect(mockPerformanceMonitor.trackBusinessMetric).toHaveBeenCalledWith(
+          'conversionRate',
+          0.78
+        );
       });
 
       it('should detect business performance anomalies', () => {
         const currentMetrics = {
           ordersPerHour: 15, // Low compared to typical 45
           conversionRate: 0.45, // Low compared to typical 0.78
-          averageOrderValue: 42.50, // Normal
+          averageOrderValue: 42.5, // Normal
           failedPayments: 15, // High compared to typical 3
           cartAbandonmentRate: 0.65, // High compared to typical 0.22
         };
@@ -418,7 +462,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         const historicalBaseline = {
           ordersPerHour: 45,
           conversionRate: 0.78,
-          averageOrderValue: 42.00,
+          averageOrderValue: 42.0,
           failedPayments: 3,
           cartAbandonmentRate: 0.22,
         };
@@ -436,7 +480,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
       it('should calculate performance trends over time', () => {
         const weeklyMetrics = [
-          { week: 1, ordersPerHour: 30, conversionRate: 0.70 },
+          { week: 1, ordersPerHour: 30, conversionRate: 0.7 },
           { week: 2, ordersPerHour: 35, conversionRate: 0.72 },
           { week: 3, ordersPerHour: 40, conversionRate: 0.75 },
           { week: 4, ordersPerHour: 45, conversionRate: 0.78 },
@@ -501,7 +545,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         });
 
         // Even under extreme load, critical endpoints should remain functional
-        expect(stressTestResults.healthEndpoint.availability).toBeGreaterThan(0.90); // >90% availability
+        expect(stressTestResults.healthEndpoint.availability).toBeGreaterThan(0.9); // >90% availability
         expect(stressTestResults.healthEndpoint.p99ResponseTime).toBeLessThan(2000); // <2s p99
         expect(stressTestResults.systemStability.memoryLeaks).toBe(false);
         expect(stressTestResults.systemStability.connectionExhaustion).toBe(false);
@@ -518,7 +562,9 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
         expect(rateLimitResults.rateLimitTriggered).toBe(true);
         expect(rateLimitResults.rateLimitResponseCode).toBe(429);
-        expect(rateLimitResults.successfulRequests).toBeLessThanOrEqual(rateLimitResults.expectedLimit);
+        expect(rateLimitResults.successfulRequests).toBeLessThanOrEqual(
+          rateLimitResults.expectedLimit
+        );
         expect(rateLimitResults.rateLimitHeaders).toHaveProperty('X-RateLimit-Remaining');
       });
     });
@@ -536,7 +582,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         expect(productLoadResults.averageResponseTime).toBeLessThan(300); // <300ms
         expect(productLoadResults.p95ResponseTime).toBeLessThan(500); // <500ms p95
         expect(productLoadResults.successRate).toBeGreaterThan(0.98); // >98% success
-        expect(productLoadResults.cacheHitRate).toBeGreaterThan(0.80); // >80% cache hits
+        expect(productLoadResults.cacheHitRate).toBeGreaterThan(0.8); // >80% cache hits
         expect(productLoadResults.databaseConnections.peak).toBeLessThan(15); // <15 DB connections
       });
 
@@ -632,7 +678,9 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       });
 
       it('should test cache invalidation performance', async () => {
-        const { testCacheInvalidation } = await import('@/lib/load-testing/cache-invalidation-scenarios');
+        const { testCacheInvalidation } = await import(
+          '@/lib/load-testing/cache-invalidation-scenarios'
+        );
         const invalidationResults = await testCacheInvalidation({
           duration: '30s',
           invalidationsPerSecond: 10,
@@ -697,7 +745,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         };
 
         const { checkPerformanceThresholds } = await import('@/lib/performance/alerting');
-        
+
         const warningAlerts = await checkPerformanceThresholds(warningData);
         const criticalAlerts = await checkPerformanceThresholds(criticalData);
 
@@ -713,7 +761,7 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         };
 
         const { checkPerformanceThresholds } = await import('@/lib/performance/alerting');
-        
+
         // First alert should be sent
         const firstAlert = await checkPerformanceThresholds(alertData);
         expect(firstAlert.sent).toBe(true);
@@ -759,13 +807,13 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       it('should calculate performance trend analysis', () => {
         const performanceHistory = [
           { timestamp: Date.now() - 86400000 * 7, responseTime: 180, errorRate: 0.008 }, // 7 days ago
-          { timestamp: Date.now() - 86400000 * 6, responseTime: 190, errorRate: 0.010 }, // 6 days ago
+          { timestamp: Date.now() - 86400000 * 6, responseTime: 190, errorRate: 0.01 }, // 6 days ago
           { timestamp: Date.now() - 86400000 * 5, responseTime: 200, errorRate: 0.012 }, // 5 days ago
           { timestamp: Date.now() - 86400000 * 4, responseTime: 220, errorRate: 0.015 }, // 4 days ago
           { timestamp: Date.now() - 86400000 * 3, responseTime: 240, errorRate: 0.018 }, // 3 days ago
           { timestamp: Date.now() - 86400000 * 2, responseTime: 270, errorRate: 0.022 }, // 2 days ago
           { timestamp: Date.now() - 86400000 * 1, responseTime: 300, errorRate: 0.025 }, // 1 day ago
-          { timestamp: Date.now(), responseTime: 350, errorRate: 0.030 }, // Now
+          { timestamp: Date.now(), responseTime: 350, errorRate: 0.03 }, // Now
         ];
 
         const { analyzeTrends } = require('@/lib/performance/trend-analysis');
@@ -823,11 +871,13 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         expect(dashboardData.charts.errorRate).toBeDefined();
         expect(dashboardData.charts.throughput).toBeDefined();
         expect(dashboardData.alerts.active).toHaveLength(0); // No alerts for healthy metrics
-        expect(dashboardData.recommendations).toContain('System performing within normal parameters');
+        expect(dashboardData.recommendations).toContain(
+          'System performing within normal parameters'
+        );
       });
 
       it('should provide real-time performance metrics', async () => {
-        mockRedisInstance.get.mockImplementation((key) => {
+        mockRedisInstance.get.mockImplementation(key => {
           const mockData = {
             'metrics:realtime:responseTime': '275',
             'metrics:realtime:errorRate': '0.018',
@@ -876,10 +926,10 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         expect(recommendations.immediate).toContain('Optimize slow API endpoints');
         expect(recommendations.immediate).toContain('Increase cache TTL for frequent data');
         expect(recommendations.immediate).toContain('Optimize slow database queries');
-        
+
         expect(recommendations.shortTerm).toContain('Increase database connection pool size');
         expect(recommendations.shortTerm).toContain('Implement API response compression');
-        
+
         expect(recommendations.longTerm).toContain('Consider horizontal scaling');
         expect(recommendations.longTerm).toContain('Implement CDN for static assets');
       });
@@ -889,7 +939,12 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
           { action: 'Add database index', impact: 'high', effort: 'low', type: 'database' },
           { action: 'Implement caching', impact: 'high', effort: 'medium', type: 'cache' },
           { action: 'Optimize algorithm', impact: 'medium', effort: 'high', type: 'code' },
-          { action: 'Scale infrastructure', impact: 'high', effort: 'high', type: 'infrastructure' },
+          {
+            action: 'Scale infrastructure',
+            impact: 'high',
+            effort: 'high',
+            type: 'infrastructure',
+          },
         ];
 
         const { prioritizeRecommendations } = require('@/lib/performance/recommendation-engine');
@@ -904,7 +959,9 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
 
     describe('Performance Testing Automation', () => {
       it('should automate performance regression testing', async () => {
-        const { runPerformanceRegressionSuite } = await import('@/lib/testing/performance-regression');
+        const { runPerformanceRegressionSuite } = await import(
+          '@/lib/testing/performance-regression'
+        );
         const regressionResults = await runPerformanceRegressionSuite({
           baselineVersion: 'v1.0.0',
           currentVersion: 'v1.1.0',
@@ -916,7 +973,9 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         expect(regressionResults.apiPerformance.degradation).toBeLessThan(0.2);
         expect(regressionResults.databasePerformance.degradation).toBeLessThan(0.2);
         expect(regressionResults.cachePerformance.degradation).toBeLessThan(0.2);
-        expect(regressionResults.recommendations).toContain('No significant performance regressions detected');
+        expect(regressionResults.recommendations).toContain(
+          'No significant performance regressions detected'
+        );
       });
 
       it('should integrate with CI/CD pipeline for performance gates', async () => {
@@ -953,7 +1012,9 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
         uptime: 1.0,
       };
 
-      const { integrateWithProductionMonitoring } = await import('@/lib/monitoring/production-integration');
+      const { integrateWithProductionMonitoring } = await import(
+        '@/lib/monitoring/production-integration'
+      );
       const integration = await integrateWithProductionMonitoring(mockMonitoringData);
 
       expect(integration.status).toBe('healthy');
@@ -974,4 +1035,4 @@ describe('Performance Monitoring & Load Testing - Phase 4', () => {
       expect(config.dashboards.updateInterval).toBe(60000); // 1 minute
     });
   });
-}); 
+});

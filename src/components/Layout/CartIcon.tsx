@@ -5,11 +5,11 @@ import { useSmartCart } from '@/hooks/useSmartCart';
 export function CartIcon() {
   const { getTotalItemCount, regularCart, cateringCart } = useSmartCart();
   const totalCount = getTotalItemCount();
-  
+
   // Determine if we have items in either cart
   const hasRegularItems = regularCart.items.length > 0;
   const hasCateringItems = cateringCart.items.length > 0;
-  
+
   return (
     <Link href="/cart" className="relative">
       <ShoppingCart className="h-6 w-6" />
@@ -23,4 +23,4 @@ export function CartIcon() {
       )}
     </Link>
   );
-} 
+}

@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  CheckCircle2, 
-  User, 
-  ShoppingBag, 
-  CalendarDays, 
-  FileText, 
+import {
+  CheckCircle2,
+  User,
+  ShoppingBag,
+  CalendarDays,
+  FileText,
   Eye,
   ArrowRight,
   Phone,
@@ -21,14 +21,14 @@ import {
   Truck,
   Package,
   ExternalLink,
-  Copy
+  Copy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import type { 
-  OrderConfirmationProps, 
-  StoreOrderData, 
-  CateringOrderData
+import type {
+  OrderConfirmationProps,
+  StoreOrderData,
+  CateringOrderData,
 } from '@/types/confirmation';
 import { isStoreOrder, isCateringOrder } from '@/types/confirmation';
 
@@ -37,7 +37,7 @@ export function OrderConfirmationLayout({
   status,
   orderData,
   customerData,
-  paymentDetails
+  paymentDetails,
 }: OrderConfirmationProps) {
   // Helper function to format dates safely
   const safeFormat = (dateString: string | null | undefined, formatString: string): string => {
@@ -45,7 +45,7 @@ export function OrderConfirmationLayout({
     try {
       return format(new Date(dateString), formatString);
     } catch (error) {
-      console.error("Error formatting date:", error);
+      console.error('Error formatting date:', error);
       return 'Invalid date';
     }
   };
@@ -53,12 +53,16 @@ export function OrderConfirmationLayout({
   // Helper function to get fulfillment title for store orders
   const getFulfillmentTitle = (fulfillment?: StoreOrderData['fulfillment']): string => {
     if (!fulfillment || !fulfillment.type) return 'Order Details';
-    
+
     switch (fulfillment.type.toLowerCase()) {
-      case 'pickup': return 'Pickup Details';
-      case 'delivery': return 'Delivery Details';
-      case 'shipment': return 'Shipping Details';
-      default: return 'Order Details';
+      case 'pickup':
+        return 'Pickup Details';
+      case 'delivery':
+        return 'Delivery Details';
+      case 'shipment':
+        return 'Shipping Details';
+      default:
+        return 'Order Details';
     }
   };
 
@@ -75,9 +79,9 @@ export function OrderConfirmationLayout({
   // Helper function to get tracking URL
   const getTrackingUrl = (trackingNumber: string, carrier?: string) => {
     if (!trackingNumber) return null;
-    
+
     const lowerCarrier = carrier?.toLowerCase() || '';
-    
+
     if (lowerCarrier.includes('usps')) {
       return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`;
     } else if (lowerCarrier.includes('ups')) {
@@ -87,7 +91,7 @@ export function OrderConfirmationLayout({
     } else if (lowerCarrier.includes('dhl')) {
       return `https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=${trackingNumber}`;
     }
-    
+
     // Generic tracking search if carrier not recognized
     return `https://www.google.com/search?q=track+package+${trackingNumber}`;
   };
@@ -104,10 +108,9 @@ export function OrderConfirmationLayout({
             {status === 'success' ? 'Thank You for Your Order!' : 'Order Status'}
           </h1>
           <p className="text-gray-600">
-            {orderType === 'catering' 
+            {orderType === 'catering'
               ? 'Your catering order has been received and is being processed.'
-              : 'Thank you for your order. We&apos;ll send you updates about your order status.'
-            }
+              : 'Thank you for your order. We&apos;ll send you updates about your order status.'}
           </p>
         </div>
 
@@ -116,72 +119,90 @@ export function OrderConfirmationLayout({
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="font-semibold text-green-800">Your payment has been processed successfully!</span>
+              <span className="font-semibold text-green-800">
+                Your payment has been processed successfully!
+              </span>
             </div>
             {paymentDetails.squareOrderId && (
               <p className="text-sm text-green-700 mt-1">
-                Order ID: <code className="bg-green-200 px-2 py-1 rounded text-xs">{paymentDetails.squareOrderId}</code>
+                Order ID:{' '}
+                <code className="bg-green-200 px-2 py-1 rounded text-xs">
+                  {paymentDetails.squareOrderId}
+                </code>
               </p>
             )}
           </div>
         )}
 
         {/* Tracking Information - Prominent display for shipped orders */}
-        {orderData && isStoreOrder(orderData) && orderData.fulfillment?.type === 'shipment' && orderData.fulfillment.trackingNumber && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <Truck className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                  Your Order Has Shipped!
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-blue-800">Tracking Number:</span>
-                    <code className="bg-blue-100 px-3 py-1 rounded text-sm font-mono">
-                      {orderData.fulfillment.trackingNumber}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyTrackingNumber(orderData.fulfillment!.trackingNumber!)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {orderData.fulfillment.shippingCarrier && (
+        {orderData &&
+          isStoreOrder(orderData) &&
+          orderData.fulfillment?.type === 'shipment' &&
+          orderData.fulfillment.trackingNumber && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <Truck className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                    Your Order Has Shipped!
+                  </h3>
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-blue-800">Carrier:</span>
-                      <span className="text-sm text-blue-700">{orderData.fulfillment.shippingCarrier}</span>
-                    </div>
-                  )}
-                  {getTrackingUrl(orderData.fulfillment.trackingNumber, orderData.fulfillment.shippingCarrier) && (
-                    <div className="mt-3">
+                      <span className="text-sm font-medium text-blue-800">Tracking Number:</span>
+                      <code className="bg-blue-100 px-3 py-1 rounded text-sm font-mono">
+                        {orderData.fulfillment.trackingNumber}
+                      </code>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        asChild
-                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                        onClick={() => copyTrackingNumber(orderData.fulfillment!.trackingNumber!)}
+                        className="h-8 w-8 p-0"
                       >
-                        <a
-                          href={getTrackingUrl(orderData.fulfillment.trackingNumber, orderData.fulfillment.shippingCarrier)!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Track Your Package
-                        </a>
+                        <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                  )}
+                    {orderData.fulfillment.shippingCarrier && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-blue-800">Carrier:</span>
+                        <span className="text-sm text-blue-700">
+                          {orderData.fulfillment.shippingCarrier}
+                        </span>
+                      </div>
+                    )}
+                    {getTrackingUrl(
+                      orderData.fulfillment.trackingNumber,
+                      orderData.fulfillment.shippingCarrier
+                    ) && (
+                      <div className="mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                        >
+                          <a
+                            href={
+                              getTrackingUrl(
+                                orderData.fulfillment.trackingNumber,
+                                orderData.fulfillment.shippingCarrier
+                              )!
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Track Your Package
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {orderData && (
           <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -205,7 +226,7 @@ export function OrderConfirmationLayout({
                           <p className="text-gray-900 font-mono text-sm">{orderData.id}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <CalendarDays className="h-5 w-5 text-gray-600" />
                         <div>
@@ -215,47 +236,59 @@ export function OrderConfirmationLayout({
                           <p className="text-gray-900">
                             {orderType === 'catering' && isCateringOrder(orderData)
                               ? formatDate(new Date(orderData.eventDetails.eventDate))
-                              : orderData.createdAt ? format(new Date(orderData.createdAt), 'PPP') : 'N/A'
-                            }
+                              : orderData.createdAt
+                                ? format(new Date(orderData.createdAt), 'PPP')
+                                : 'N/A'}
                           </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Catering-specific: Special Requests */}
-                    {orderType === 'catering' && isCateringOrder(orderData) && orderData.eventDetails.specialRequests && (
-                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <FileText className="h-5 w-5 text-gray-600 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-600 font-medium">Special Requests</p>
-                          <p className="text-gray-900 text-sm">{orderData.eventDetails.specialRequests}</p>
+                    {orderType === 'catering' &&
+                      isCateringOrder(orderData) &&
+                      orderData.eventDetails.specialRequests && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <FileText className="h-5 w-5 text-gray-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Special Requests</p>
+                            <p className="text-gray-900 text-sm">
+                              {orderData.eventDetails.specialRequests}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Store-specific: Fulfillment Details */}
                     {orderType === 'store' && isStoreOrder(orderData) && orderData.fulfillment && (
                       <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-900">{getFulfillmentTitle(orderData.fulfillment)}</h4>
-                        
+                        <h4 className="font-semibold text-gray-900">
+                          {getFulfillmentTitle(orderData.fulfillment)}
+                        </h4>
+
                         {/* Pickup Details */}
                         {orderData.fulfillment.type === 'pickup' && orderData.pickupTime && (
                           <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                             <CalendarDays className="h-5 w-5 text-gray-600 mt-0.5" />
                             <div>
                               <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
-                              <p className="text-gray-900">{safeFormat(orderData.pickupTime, 'PPP p')}</p>
+                              <p className="text-gray-900">
+                                {safeFormat(orderData.pickupTime, 'PPP p')}
+                              </p>
                             </div>
                           </div>
                         )}
 
                         {/* Delivery/Shipping Address */}
-                        {(orderData.fulfillment.type === 'delivery' || orderData.fulfillment.type === 'shipment') && (
+                        {(orderData.fulfillment.type === 'delivery' ||
+                          orderData.fulfillment.type === 'shipment') && (
                           <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                             <MapPin className="h-5 w-5 text-gray-600 mt-0.5" />
                             <div>
                               <p className="text-sm text-gray-600 font-medium">
-                                {orderData.fulfillment.type === 'delivery' ? 'Delivery Address' : 'Shipping Address'}
+                                {orderData.fulfillment.type === 'delivery'
+                                  ? 'Delivery Address'
+                                  : 'Shipping Address'}
                               </p>
                               {/* Display address details */}
                               {/* ... address rendering logic ... */}
@@ -269,9 +302,13 @@ export function OrderConfirmationLayout({
                             <Truck className="h-5 w-5 text-blue-600 mt-0.5" />
                             <div>
                               <p className="text-sm text-blue-600 font-medium">Tracking Number</p>
-                              <p className="text-blue-900 font-mono">{orderData.fulfillment.trackingNumber}</p>
+                              <p className="text-blue-900 font-mono">
+                                {orderData.fulfillment.trackingNumber}
+                              </p>
                               {orderData.fulfillment.shippingCarrier && (
-                                <p className="text-sm text-blue-700">({orderData.fulfillment.shippingCarrier})</p>
+                                <p className="text-sm text-blue-700">
+                                  ({orderData.fulfillment.shippingCarrier})
+                                </p>
                               )}
                             </div>
                           </div>
@@ -285,10 +322,14 @@ export function OrderConfirmationLayout({
                       <div className="space-y-3">
                         {orderData.items.map((item, index) => {
                           const pricePerUnit = item.pricePerUnit || item.price || 0;
-                          const totalPrice = item.totalPrice || item.finalPrice || (pricePerUnit * item.quantity);
-                          
+                          const totalPrice =
+                            item.totalPrice || item.finalPrice || pricePerUnit * item.quantity;
+
                           return (
-                            <div key={item.id || index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                            <div
+                              key={item.id || index}
+                              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                            >
                               <div className="flex-1">
                                 <h5 className="font-medium text-gray-900">
                                   {item.name || item.product?.name || 'Unknown Item'}
@@ -300,7 +341,9 @@ export function OrderConfirmationLayout({
                                       {item.metadata.type === 'package' ? 'Package' : 'Item'}
                                     </Badge>
                                   )}
-                                  <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                                  <span className="text-sm text-gray-500">
+                                    Qty: {item.quantity}
+                                  </span>
                                 </div>
                               </div>
                               <div className="text-right ml-4">
@@ -315,12 +358,14 @@ export function OrderConfirmationLayout({
                           );
                         })}
                       </div>
-                      
+
                       <div className="border-t border-gray-200 mt-4 pt-4">
                         <div className="flex justify-between items-center">
                           <span className="text-lg font-bold text-gray-900">Total:</span>
                           <span className="text-lg font-bold text-gray-900">
-                            {formatCurrency(isCateringOrder(orderData) ? orderData.totalAmount : orderData.total)}
+                            {formatCurrency(
+                              isCateringOrder(orderData) ? orderData.totalAmount : orderData.total
+                            )}
                           </span>
                         </div>
                       </div>
@@ -377,20 +422,26 @@ export function OrderConfirmationLayout({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {orderData.fulfillment.type === 'pickup' && orderData.fulfillment.pickupTime && (
-                        <div>
-                          <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
-                          <p className="text-gray-900">{safeFormat(orderData.fulfillment.pickupTime, 'PPP p')}</p>
-                        </div>
-                      )}
-                      
+                      {orderData.fulfillment.type === 'pickup' &&
+                        orderData.fulfillment.pickupTime && (
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
+                            <p className="text-gray-900">
+                              {safeFormat(orderData.fulfillment.pickupTime, 'PPP p')}
+                            </p>
+                          </div>
+                        )}
+
                       {orderData.fulfillment.type === 'shipment' && (
                         <div className="space-y-3">
                           {orderData.fulfillment.trackingNumber ? (
                             <>
                               <div>
                                 <p className="text-sm text-gray-600 font-medium">Status</p>
-                                <Badge variant="outline" className="text-green-700 border-green-300">
+                                <Badge
+                                  variant="outline"
+                                  className="text-green-700 border-green-300"
+                                >
                                   Shipped
                                 </Badge>
                               </div>
@@ -403,7 +454,9 @@ export function OrderConfirmationLayout({
                               {orderData.fulfillment.shippingCarrier && (
                                 <div>
                                   <p className="text-sm text-gray-600 font-medium">Carrier</p>
-                                  <p className="text-gray-900">{orderData.fulfillment.shippingCarrier}</p>
+                                  <p className="text-gray-900">
+                                    {orderData.fulfillment.shippingCarrier}
+                                  </p>
                                 </div>
                               )}
                             </>
@@ -438,16 +491,18 @@ export function OrderConfirmationLayout({
                     {isStoreOrder(orderData) && orderData.fulfillment?.type === 'shipment' ? (
                       orderData.fulfillment.trackingNumber ? (
                         <p className="text-sm text-gray-600">
-                          Your order has shipped! Use the tracking information above to monitor your package&apos;s progress.
+                          Your order has shipped! Use the tracking information above to monitor your
+                          package&apos;s progress.
                         </p>
                       ) : (
                         <p className="text-sm text-gray-600">
-                          We&apos;re preparing your order for shipment. You&apos;ll receive tracking information via email once it ships.
+                          We&apos;re preparing your order for shipment. You&apos;ll receive tracking
+                          information via email once it ships.
                         </p>
                       )
                     ) : isStoreOrder(orderData) && orderData.fulfillment?.type === 'pickup' ? (
                       <p className="text-sm text-gray-600">
-                        Please bring your ID and order confirmation when picking up your order. 
+                        Please bring your ID and order confirmation when picking up your order.
                         We&apos;ll notify you when your order is ready for pickup.
                       </p>
                     ) : (
@@ -467,7 +522,7 @@ export function OrderConfirmationLayout({
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                
+
                 <Button variant="outline" asChild className="w-full">
                   <Link href="/contact">
                     <FileText className="mr-2 h-4 w-4" />
@@ -483,7 +538,8 @@ export function OrderConfirmationLayout({
         {status === 'success' && !orderData && (
           <Alert className="mb-8">
             <AlertDescription>
-              Could not retrieve order details at this time. Please check your email for order confirmation.
+              Could not retrieve order details at this time. Please check your email for order
+              confirmation.
             </AlertDescription>
           </Alert>
         )}
@@ -495,4 +551,4 @@ export function OrderConfirmationLayout({
       </div>
     </div>
   );
-} 
+}

@@ -12,7 +12,7 @@ const mockFs = fs as jest.Mocked<typeof fs>;
 describe('CI/CD Integration & Automation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -41,7 +41,7 @@ describe('CI/CD Integration & Automation', () => {
       const workflow = await generateDeploymentWorkflow();
 
       expect(workflow).toContain('name: Deploy to Production');
-      expect(workflow).toContain('if: github.ref == \'refs/heads/main\'');
+      expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
       expect(workflow).toContain('needs: [test, build]');
       expect(workflow).toContain('environment: production');
       expect(workflow).toContain('pnpm test:critical');
@@ -74,10 +74,20 @@ describe('CI/CD Integration & Automation', () => {
       const coverageData = {
         global: { lines: 88.5, functions: 85.2, branches: 82.1, statements: 87.3 },
         critical: {
-          'src/app/api/checkout': { lines: 92.0, functions: 90.0, branches: 88.0, statements: 91.5 },
+          'src/app/api/checkout': {
+            lines: 92.0,
+            functions: 90.0,
+            branches: 88.0,
+            statements: 91.5,
+          },
           'src/lib/square': { lines: 89.5, functions: 87.0, branches: 85.0, statements: 88.2 },
-          'src/app/actions/orders.ts': { lines: 94.0, functions: 92.0, branches: 90.0, statements: 93.5 }
-        }
+          'src/app/actions/orders.ts': {
+            lines: 94.0,
+            functions: 92.0,
+            branches: 90.0,
+            statements: 93.5,
+          },
+        },
       };
 
       const evaluation = await evaluateCoverageGates(coverageData);
@@ -92,10 +102,20 @@ describe('CI/CD Integration & Automation', () => {
       const lowCoverageData = {
         global: { lines: 88.5, functions: 85.2, branches: 82.1, statements: 87.3 },
         critical: {
-          'src/app/api/checkout': { lines: 75.0, functions: 70.0, branches: 65.0, statements: 72.0 }, // Below threshold
+          'src/app/api/checkout': {
+            lines: 75.0,
+            functions: 70.0,
+            branches: 65.0,
+            statements: 72.0,
+          }, // Below threshold
           'src/lib/square': { lines: 89.5, functions: 87.0, branches: 85.0, statements: 88.2 },
-          'src/app/actions/orders.ts': { lines: 94.0, functions: 92.0, branches: 90.0, statements: 93.5 }
-        }
+          'src/app/actions/orders.ts': {
+            lines: 94.0,
+            functions: 92.0,
+            branches: 90.0,
+            statements: 93.5,
+          },
+        },
       };
 
       const evaluation = await evaluateCoverageGates(lowCoverageData);
@@ -112,19 +132,19 @@ describe('CI/CD Integration & Automation', () => {
           performance: 92,
           accessibility: 95,
           bestPractices: 88,
-          seo: 90
+          seo: 90,
         },
         webVitals: {
           lcp: 1200, // ms
-          fid: 45,   // ms
-          cls: 0.08  // score
+          fid: 45, // ms
+          cls: 0.08, // score
         },
         loadTesting: {
           averageResponseTime: 180, // ms
-          p95ResponseTime: 350,     // ms
-          throughput: 1200,         // requests/min
-          errorRate: 0.02          // 2%
-        }
+          p95ResponseTime: 350, // ms
+          throughput: 1200, // requests/min
+          errorRate: 0.02, // 2%
+        },
       };
 
       const evaluation = await evaluatePerformanceGates(performanceMetrics);
@@ -139,18 +159,18 @@ describe('CI/CD Integration & Automation', () => {
       const securityScan = {
         vulnerabilities: {
           critical: 0,
-          high: 1,     // Acceptable if in dev dependencies
+          high: 1, // Acceptable if in dev dependencies
           medium: 3,
-          low: 8
+          low: 8,
         },
         dependencyCheck: {
           outdated: ['@testing-library/react'], // Dev dependency
-          vulnerable: []
+          vulnerable: [],
         },
         codeQL: {
           alerts: 0,
-          passed: true
-        }
+          passed: true,
+        },
       };
 
       const evaluation = await evaluateSecurityGates(securityScan);
@@ -184,7 +204,9 @@ describe('CI/CD Integration & Automation', () => {
       mockExecSync
         .mockReturnValueOnce(Buffer.from('Staging deployment successful'))
         .mockReturnValueOnce(Buffer.from('Smoke tests passed'))
-        .mockImplementationOnce(() => { throw deploymentError; })
+        .mockImplementationOnce(() => {
+          throw deploymentError;
+        })
         .mockReturnValueOnce(Buffer.from('Rollback completed'));
 
       const deployment = await executeDeploymentPipeline('production');
@@ -214,12 +236,12 @@ describe('CI/CD Integration & Automation', () => {
       const migrationPlan = {
         migrations: [
           '20250125000000_add_personalize_text_to_spotlight_picks',
-          '20250130000000_optimize_product_indexes'
+          '20250130000000_optimize_product_indexes',
         ],
         rollbackPlan: [
           '20250130000000_optimize_product_indexes_rollback',
-          '20250125000000_add_personalize_text_to_spotlight_picks_rollback'
-        ]
+          '20250125000000_add_personalize_text_to_spotlight_picks_rollback',
+        ],
       };
 
       mockExecSync
@@ -244,8 +266,8 @@ describe('CI/CD Integration & Automation', () => {
           'database-connection',
           'external-services',
           'feature-flags',
-          'configuration-validation'
-        ]
+          'configuration-validation',
+        ],
       };
 
       mockExecSync.mockReturnValue(Buffer.from('All staging tests passed'));
@@ -264,7 +286,7 @@ describe('CI/CD Integration & Automation', () => {
         'critical-user-flows',
         'payment-processing',
         'order-creation',
-        'email-notifications'
+        'email-notifications',
       ];
 
       mockExecSync.mockReturnValue(Buffer.from('Smoke tests completed successfully'));
@@ -284,7 +306,7 @@ describe('CI/CD Integration & Automation', () => {
         throughput: 1500,
         memoryUsage: 65,
         cpuUsage: 45,
-        databaseConnections: 15
+        databaseConnections: 15,
       };
 
       const monitoring = await monitorPostDeploymentHealth(healthMetrics);
@@ -304,7 +326,7 @@ describe('CI/CD Integration & Automation', () => {
         success: true,
         duration: 480000, // 8 minutes
         testsRun: 485,
-        coverage: 86.3
+        coverage: 86.3,
       };
 
       const notifications = await sendDeploymentNotifications(deploymentResult);
@@ -326,8 +348,8 @@ describe('CI/CD Integration & Automation', () => {
           testsPassed: 483,
           testsFailed: 2,
           coverage: 86.3,
-          performanceScore: 92
-        }
+          performanceScore: 92,
+        },
       };
 
       const report = await generateDeploymentReport(deploymentData);
@@ -343,7 +365,7 @@ describe('CI/CD Integration & Automation', () => {
       const historicalDeployments = [
         { date: '2024-02-01', duration: 420000, success: true },
         { date: '2024-02-08', duration: 390000, success: true },
-        { date: '2024-02-15', duration: 480000, success: true }
+        { date: '2024-02-15', duration: 480000, success: true },
       ];
 
       mockFs.readFile.mockResolvedValue(JSON.stringify(historicalDeployments));
@@ -428,15 +450,17 @@ steps:
 
 async function evaluateCoverageGates(coverageData: any) {
   const globalPassed = coverageData.global.lines >= 85;
-  const criticalPassed = Object.values(coverageData.critical).every((path: any) => path.lines >= 85);
-  
+  const criticalPassed = Object.values(coverageData.critical).every(
+    (path: any) => path.lines >= 85
+  );
+
   return {
     passed: globalPassed && criticalPassed,
     globalThresholdMet: globalPassed,
     criticalPathsThresholdMet: criticalPassed,
     deploymentApproved: globalPassed && criticalPassed,
     failedPaths: criticalPassed ? [] : ['src/app/api/checkout'],
-    reason: criticalPassed ? 'All thresholds met' : 'Critical path coverage below threshold'
+    reason: criticalPassed ? 'All thresholds met' : 'Critical path coverage below threshold',
   };
 }
 
@@ -445,7 +469,7 @@ async function evaluatePerformanceGates(metrics: any) {
     passed: true,
     lighthousePassed: metrics.lighthouse.performance >= 90,
     webVitalsPassed: metrics.webVitals.lcp <= 2500,
-    loadTestPassed: metrics.loadTesting.errorRate <= 0.05
+    loadTestPassed: metrics.loadTesting.errorRate <= 0.05,
   };
 }
 
@@ -454,7 +478,7 @@ async function evaluateSecurityGates(scan: any) {
     passed: scan.vulnerabilities.critical === 0 && scan.codeQL.passed,
     criticalVulnerabilities: scan.vulnerabilities.critical,
     codeQLPassed: scan.codeQL.passed,
-    deploymentApproved: scan.vulnerabilities.critical === 0
+    deploymentApproved: scan.vulnerabilities.critical === 0,
   };
 }
 
@@ -498,7 +522,7 @@ async function executeBlueGreenDeployment() {
     strategy: 'blue-green',
     greenEnvironment: { healthy: true },
     trafficSwitched: true,
-    blueEnvironment: { status: 'standby' }
+    blueEnvironment: { status: 'standby' },
   };
 }
 
@@ -507,7 +531,7 @@ async function validateAndExecuteMigrations(plan: any) {
     validated: true,
     applied: plan.migrations,
     rollbackReady: true,
-    success: true
+    success: true,
   };
 }
 
@@ -516,7 +540,7 @@ async function runStagingValidation(tests: any) {
     environment: tests.environment,
     testsRun: tests.tests,
     allPassed: true,
-    readyForProduction: true
+    readyForProduction: true,
   };
 }
 
@@ -525,7 +549,7 @@ async function runProductionSmokeTests(tests: string[]) {
     testsExecuted: tests,
     criticalFlowsWorking: true,
     paymentProcessingWorking: true,
-    deploymentValidated: true
+    deploymentValidated: true,
   };
 }
 
@@ -534,21 +558,23 @@ async function monitorPostDeploymentHealth(metrics: any) {
     healthy: true,
     responseTimeAcceptable: metrics.responseTime <= 200,
     errorRateAcceptable: metrics.errorRate <= 0.02,
-    resourceUsageNormal: metrics.memoryUsage <= 80
+    resourceUsageNormal: metrics.memoryUsage <= 80,
   };
 }
 
 async function sendDeploymentNotifications(result: any) {
   return {
     sent: ['slack', 'email'],
-    content: `Production deployment successful - Version ${result.version} - Coverage: ${result.coverage}%`
+    content: `Production deployment successful - Version ${result.version} - Coverage: ${result.coverage}%`,
   };
 }
 
 async function generateDeploymentReport(data: any) {
-  const duration = Math.round((new Date(data.endTime).getTime() - new Date(data.startTime).getTime()) / 60000);
+  const duration = Math.round(
+    (new Date(data.endTime).getTime() - new Date(data.startTime).getTime()) / 60000
+  );
   const successRate = ((data.metrics.testsPassed / data.metrics.testsRun) * 100).toFixed(1);
-  
+
   return `
 # Deployment Report
 Duration: ${duration} minutes
@@ -563,6 +589,6 @@ async function analyzeDeploymentTrends() {
     averageDuration: 430000,
     successRate: 100,
     frequency: 'weekly',
-    trendDirection: 'stable'
+    trendDirection: 'stable',
   };
-} 
+}

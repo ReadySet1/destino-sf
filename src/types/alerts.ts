@@ -1,4 +1,13 @@
-import { Order, OrderItem, Product, Variant, EmailAlert, AlertType, AlertPriority, AlertStatus } from '@prisma/client';
+import {
+  Order,
+  OrderItem,
+  Product,
+  Variant,
+  EmailAlert,
+  AlertType,
+  AlertPriority,
+  AlertStatus,
+} from '@prisma/client';
 
 // Extended Order type with relations for alert context
 export type OrderWithItems = Order & {
@@ -117,10 +126,10 @@ export interface RevenueMilestoneData {
 }
 
 // Alert data union type
-export type AlertData = 
-  | NewOrderAlertData 
-  | OrderStatusChangeAlertData 
-  | PaymentFailedAlertData 
+export type AlertData =
+  | NewOrderAlertData
+  | OrderStatusChangeAlertData
+  | PaymentFailedAlertData
   | SystemErrorAlertData
   | CustomerOrderConfirmationData
   | CustomerOrderStatusData
@@ -151,4 +160,4 @@ export interface RetryConfig {
   maxRetries: number;
   retryDelayMs: number;
   exponentialBackoff: boolean;
-} 
+}

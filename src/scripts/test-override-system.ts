@@ -13,8 +13,8 @@ async function testOverrideSystem() {
     // 1. Find a Square item to test with
     const squareItem = await prisma.cateringItem.findFirst({
       where: {
-        squareProductId: { not: null }
-      }
+        squareProductId: { not: null },
+      },
     });
 
     if (!squareItem) {
@@ -28,17 +28,18 @@ async function testOverrideSystem() {
     // 2. Create an override for this item
     const testOverride = {
       itemId: squareItem.id,
-      localDescription: '🌟 Premium locally-sourced ingredients with authentic Latin flavors. This enhanced description was added via the override system!',
+      localDescription:
+        '🌟 Premium locally-sourced ingredients with authentic Latin flavors. This enhanced description was added via the override system!',
       localDietaryOptions: ['Locally Sourced', 'Chef Recommended'],
       overrideDescription: true,
       overrideDietary: true,
       overrideImage: false,
-      overrideServingSize: false
+      overrideServingSize: false,
     };
 
     // Check if override already exists
     const existingOverride = await prisma.cateringItemOverrides.findUnique({
-      where: { itemId: squareItem.id }
+      where: { itemId: squareItem.id },
     });
 
     let override;
@@ -46,12 +47,12 @@ async function testOverrideSystem() {
       console.log('📝 Updating existing override...');
       override = await prisma.cateringItemOverrides.update({
         where: { itemId: squareItem.id },
-        data: testOverride
+        data: testOverride,
       });
     } else {
       console.log('✨ Creating new override...');
       override = await prisma.cateringItemOverrides.create({
-        data: testOverride
+        data: testOverride,
       });
     }
 
@@ -60,26 +61,34 @@ async function testOverrideSystem() {
     // 3. Test the enhanced item fetching
     const enhancedItem = await prisma.cateringItem.findUnique({
       where: { id: squareItem.id },
-      include: { overrides: true }
+      include: { overrides: true },
     });
 
     if (enhancedItem) {
       console.log('\n📊 Enhanced Item Details:');
       console.log(`   Name: ${enhancedItem.name} (Protected - Square item)`);
       console.log(`   Price: $${enhancedItem.price} (Protected - Square item)`);
-      console.log(`   Description: ${(enhancedItem.overrides as any)?.localDescription || enhancedItem.description}`);
+      console.log(
+        `   Description: ${(enhancedItem.overrides as any)?.localDescription || enhancedItem.description}`
+      );
       console.log(`   Square Product ID: ${enhancedItem.squareProductId}`);
       console.log(`   Override Active: ${enhancedItem.overrides ? 'Yes' : 'No'}`);
-      
+
       if (enhancedItem.overrides) {
         console.log('\n🔧 Override Controls:');
-        console.log(`   Override Description: ${(enhancedItem.overrides as any).overrideDescription}`);
+        console.log(
+          `   Override Description: ${(enhancedItem.overrides as any).overrideDescription}`
+        );
         console.log(`   Override Image: ${(enhancedItem.overrides as any).overrideImage}`);
         console.log(`   Override Dietary: ${(enhancedItem.overrides as any).overrideDietary}`);
-        console.log(`   Override Serving Size: ${(enhancedItem.overrides as any).overrideServingSize}`);
-        
+        console.log(
+          `   Override Serving Size: ${(enhancedItem.overrides as any).overrideServingSize}`
+        );
+
         if ((enhancedItem.overrides as any).localDietaryOptions?.length > 0) {
-          console.log(`   Local Dietary Options: ${(enhancedItem.overrides as any).localDietaryOptions.join(', ')}`);
+          console.log(
+            `   Local Dietary Options: ${(enhancedItem.overrides as any).localDietaryOptions.join(', ')}`
+          );
         }
       }
     }
@@ -87,18 +96,19 @@ async function testOverrideSystem() {
     // 4. Test fetching all items with overrides
     const allItemsWithOverrides = await prisma.cateringItem.findMany({
       include: { overrides: true },
-      take: 5
+      take: 5,
     });
 
     console.log('\n📋 Sample Items with Override Status:');
     allItemsWithOverrides.forEach(item => {
       const hasOverrides = !!item.overrides;
       const isSquareItem = !!item.squareProductId;
-      console.log(`   ${item.name}: ${isSquareItem ? 'Square' : 'Local'} item ${hasOverrides ? 'WITH overrides' : 'without overrides'}`);
+      console.log(
+        `   ${item.name}: ${isSquareItem ? 'Square' : 'Local'} item ${hasOverrides ? 'WITH overrides' : 'without overrides'}`
+      );
     });
 
     console.log('\n✨ Override system test completed successfully!');
-
   } catch (error) {
     console.error('❌ Override system test failed:', error);
   } finally {
@@ -111,4 +121,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   testOverrideSystem();
 }
 
-export { testOverrideSystem }; 
+export { testOverrideSystem };

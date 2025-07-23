@@ -80,7 +80,7 @@ describe('Serialization', () => {
       test('should use toNumber method when available', () => {
         const decimalLike = {
           toNumber: jest.fn().mockReturnValue(42.5),
-          toString: jest.fn().mockReturnValue('42.5')
+          toString: jest.fn().mockReturnValue('42.5'),
         };
 
         const result = serializeDecimal(decimalLike);
@@ -91,7 +91,7 @@ describe('Serialization', () => {
 
       test('should fallback to toString when toNumber not available', () => {
         const decimalLike = {
-          toString: jest.fn().mockReturnValue('123.45')
+          toString: jest.fn().mockReturnValue('123.45'),
         };
 
         const result = serializeDecimal(decimalLike);
@@ -101,7 +101,7 @@ describe('Serialization', () => {
 
       test('should use value property when available', () => {
         const decimalLike = {
-          value: 67.89
+          value: 67.89,
         };
 
         const result = serializeDecimal(decimalLike);
@@ -110,7 +110,7 @@ describe('Serialization', () => {
 
       test('should handle objects with invalid toString', () => {
         const decimalLike = {
-          toString: jest.fn().mockReturnValue('invalid number')
+          toString: jest.fn().mockReturnValue('invalid number'),
         };
 
         const result = serializeDecimal(decimalLike);
@@ -124,7 +124,7 @@ describe('Serialization', () => {
           toNumber: jest.fn().mockImplementation(() => {
             throw new Error('Conversion failed');
           }),
-          toString: jest.fn().mockReturnValue('fallback')
+          toString: jest.fn().mockReturnValue('fallback'),
         };
 
         const result = serializeDecimal(problematicObject);
@@ -176,12 +176,12 @@ describe('Serialization', () => {
           name: 'Alfajores',
           quantity: 2,
           price: {
-            toNumber: jest.fn().mockReturnValue(15.99)
+            toNumber: jest.fn().mockReturnValue(15.99),
           },
           total: {
-            toNumber: jest.fn().mockReturnValue(31.98)
+            toNumber: jest.fn().mockReturnValue(31.98),
           },
-          description: 'Delicious alfajores'
+          description: 'Delicious alfajores',
         };
 
         const result = serializeObject(cartItem);
@@ -192,7 +192,7 @@ describe('Serialization', () => {
           quantity: 2,
           price: 15.99,
           total: 31.98,
-          description: 'Delicious alfajores'
+          description: 'Delicious alfajores',
         });
       });
 
@@ -201,28 +201,28 @@ describe('Serialization', () => {
           items: [
             {
               id: 'item-1',
-              price: { toNumber: () => 10.50 },
+              price: { toNumber: () => 10.5 },
               variant: {
                 name: 'Large',
-                priceAdjustment: { toNumber: () => 2.00 }
-              }
+                priceAdjustment: { toNumber: () => 2.0 },
+              },
             },
             {
               id: 'item-2',
               price: { toNumber: () => 8.75 },
-              variant: null
-            }
+              variant: null,
+            },
           ],
           subtotal: { toNumber: () => 21.25 },
           tax: { toNumber: () => 1.91 },
-          total: { toNumber: () => 23.16 }
+          total: { toNumber: () => 23.16 },
         };
 
         const result = serializeObject(cart);
 
         expect(result.items).toHaveLength(2);
-        expect(result.items[0].price).toBe(10.50);
-        expect(result.items[0].variant.priceAdjustment).toBe(2.00);
+        expect(result.items[0].price).toBe(10.5);
+        expect(result.items[0].variant.priceAdjustment).toBe(2.0);
         expect(result.items[1].price).toBe(8.75);
         expect(result.items[1].variant).toBeNull();
         expect(result.subtotal).toBe(21.25);
@@ -236,7 +236,7 @@ describe('Serialization', () => {
         const order = {
           id: 'order-123',
           customerId: 'customer-456',
-          total: { toNumber: () => 75.50 },
+          total: { toNumber: () => 75.5 },
           taxAmount: { toNumber: () => 6.79 },
           shippingCostCents: { toNumber: () => 1500 },
           status: 'pending',
@@ -245,21 +245,21 @@ describe('Serialization', () => {
               productId: 'prod-1',
               quantity: 3,
               price: { toNumber: () => 12.99 },
-              total: { toNumber: () => 38.97 }
-            }
+              total: { toNumber: () => 38.97 },
+            },
           ],
           createdAt: new Date('2024-01-15T10:00:00Z'),
           address: {
             street: '123 Main St',
             city: 'San Francisco',
             state: 'CA',
-            postalCode: '94105'
-          }
+            postalCode: '94105',
+          },
         };
 
         const result = serializeObject(order);
 
-        expect(result.total).toBe(75.50);
+        expect(result.total).toBe(75.5);
         expect(result.taxAmount).toBe(6.79);
         expect(result.shippingCostCents).toBe(1500);
         expect(result.items[0].price).toBe(12.99);
@@ -269,7 +269,7 @@ describe('Serialization', () => {
           street: '123 Main St',
           city: 'San Francisco',
           state: 'CA',
-          postalCode: '94105'
+          postalCode: '94105',
         });
       });
 
@@ -280,7 +280,7 @@ describe('Serialization', () => {
           shippingCostCents: { toNumber: () => null },
           amount: 'invalid',
           price: { toString: () => 'not a number' },
-          regularField: null
+          regularField: null,
         };
 
         const result = serializeObject(order);
@@ -299,35 +299,30 @@ describe('Serialization', () => {
     describe('Array handling', () => {
       test('should serialize arrays with mixed content', () => {
         const arrayData = [
-          { price: { toNumber: () => 10.00 } },
+          { price: { toNumber: () => 10.0 } },
           'string value',
           42,
-          { nested: { amount: { toNumber: () => 25.50 } } },
-          null
+          { nested: { amount: { toNumber: () => 25.5 } } },
+          null,
         ];
 
         const result = serializeObject(arrayData);
 
         expect(result).toEqual([
-          { price: 10.00 },
+          { price: 10.0 },
           'string value',
           42,
-          { nested: { amount: 25.50 } },
-          null
+          { nested: { amount: 25.5 } },
+          null,
         ]);
       });
 
       test('should handle deeply nested arrays', () => {
         const nestedArray = {
           data: [
-            [
-              { value: { toNumber: () => 1.5 } },
-              { value: { toNumber: () => 2.5 } }
-            ],
-            [
-              { value: { toNumber: () => 3.5 } }
-            ]
-          ]
+            [{ value: { toNumber: () => 1.5 } }, { value: { toNumber: () => 2.5 } }],
+            [{ value: { toNumber: () => 3.5 } }],
+          ],
         };
 
         const result = serializeObject(nestedArray);
@@ -344,8 +339,8 @@ describe('Serialization', () => {
           createdAt: new Date('2024-01-15T10:00:00Z'),
           updatedAt: new Date('2024-01-16T15:30:00Z'),
           metadata: {
-            lastLogin: new Date('2024-01-14T09:15:00Z')
-          }
+            lastLogin: new Date('2024-01-14T09:15:00Z'),
+          },
         };
 
         const result = serializeObject(dataWithDates);
@@ -362,14 +357,16 @@ describe('Serialization', () => {
           name: 'test',
           calculate: () => 42,
           value: { toNumber: () => 10 },
-          process: function() { return 'result'; }
+          process: function () {
+            return 'result';
+          },
         };
 
         const result = serializeObject(objectWithFunctions);
 
         expect(result).toEqual({
           name: 'test',
-          value: 10
+          value: 10,
         });
         expect(result.calculate).toBeUndefined();
         expect(result.process).toBeUndefined();
@@ -380,7 +377,7 @@ describe('Serialization', () => {
       test('should handle objects with circular references gracefully', () => {
         const circular: any = {
           name: 'circular',
-          price: { toNumber: () => 15.99 }
+          price: { toNumber: () => 15.99 },
         };
         circular.self = circular;
 
@@ -398,7 +395,7 @@ describe('Serialization', () => {
           get price() {
             throw new Error('Getter failed');
           },
-          validField: { toNumber: () => 10 }
+          validField: { toNumber: () => 10 },
         };
 
         // Should not throw and should handle valid fields
@@ -412,8 +409,8 @@ describe('Serialization', () => {
           undefinedObject: undefined,
           nestedWithNulls: {
             value: null,
-            price: { toNumber: () => 5.99 }
-          }
+            price: { toNumber: () => 5.99 },
+          },
         };
 
         const result = serializeObject(dataWithNulls);
@@ -439,7 +436,7 @@ describe('Serialization', () => {
         const objWithSymbol = {
           [sym]: 'symbol value',
           regularKey: 'regular value',
-          price: { toNumber: () => 10 }
+          price: { toNumber: () => 10 },
         };
 
         const result = serializeObject(objWithSymbol);
@@ -458,12 +455,12 @@ describe('Serialization', () => {
                 level4: {
                   level5: {
                     price: { toNumber: () => 99.99 },
-                    name: 'deep value'
-                  }
-                }
-              }
-            }
-          }
+                    name: 'deep value',
+                  },
+                },
+              },
+            },
+          },
         };
 
         const result = serializeObject(deepObject);
@@ -473,4 +470,4 @@ describe('Serialization', () => {
       });
     });
   });
-}); 
+});

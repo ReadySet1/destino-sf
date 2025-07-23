@@ -123,7 +123,7 @@ export const mockAddresses = {
 export const mockOrders = [
   {
     id: 'order-1',
-    subtotal: 100.00,
+    subtotal: 100.0,
     tax: 8.25,
     total: 108.25,
     status: 'pending',
@@ -132,7 +132,7 @@ export const mockOrders = [
   },
   {
     id: 'order-2',
-    subtotal: 75.00,
+    subtotal: 75.0,
     tax: 6.19,
     total: 81.19,
     status: 'completed',
@@ -206,7 +206,7 @@ export function createMockPrismaClient(): MockPrismaClient {
     $executeRaw: jest.fn() as jest.MockedFunction<any>,
     $queryRaw: jest.fn() as jest.MockedFunction<any>,
   };
-  
+
   return mockPrisma;
 }
 
@@ -215,7 +215,9 @@ export function setupShippingConfigMocks(mockPrisma: MockPrismaClient) {
   // Mock successful shipping config retrieval
   mockPrisma.shippingConfiguration.findFirst.mockImplementation(({ where }: any) => {
     const productName = where?.productName;
-    return Promise.resolve(mockShippingConfigurations[productName as keyof typeof mockShippingConfigurations] || null);
+    return Promise.resolve(
+      mockShippingConfigurations[productName as keyof typeof mockShippingConfigurations] || null
+    );
   });
 
   // Mock get all configurations
@@ -242,7 +244,7 @@ export function setupOrderMocks(mockPrisma: MockPrismaClient) {
   mockPrisma.order.findUnique.mockImplementation(({ where }: any) => {
     return Promise.resolve(mockOrders.find(order => order.id === where?.id) || null);
   });
-  
+
   mockPrisma.order.create.mockImplementation(({ data }: any) => {
     const newOrder = {
       id: `order-${Date.now()}`,

@@ -9,28 +9,28 @@ import { logger } from '../../utils/logger';
  */
 async function testSquareApiConnection(): Promise<void> {
   logger.info('Starting Square API connection test...');
-  
+
   try {
     // Test the catalog search API
     logger.info('Testing catalog search API...');
-    
+
     // Use snake_case for consistency with the Square API
     const requestBody = {
       object_types: ['ITEM'],
       include_related_objects: true,
-      include_deleted_objects: false
+      include_deleted_objects: false,
     };
-    
+
     if (!squareClient.catalogApi?.searchCatalogObjects) {
       throw new Error('Square catalog API not available');
     }
     const catalogResult = await squareClient.catalogApi.searchCatalogObjects(requestBody);
-    
+
     // Check if we got a valid response
     if (catalogResult && catalogResult.result && catalogResult.result.objects) {
       const items = catalogResult.result.objects;
       logger.info(`Successfully retrieved ${items.length} catalog items`);
-      
+
       // Log the first item if available
       if (items.length > 0) {
         logger.info('Sample item:', JSON.stringify(items[0], null, 2));
@@ -38,7 +38,7 @@ async function testSquareApiConnection(): Promise<void> {
     } else {
       logger.info('Received valid response but no catalog items were found');
     }
-    
+
     logger.info('Square API connection test completed successfully');
   } catch (error) {
     logger.error('Error testing Square API connection:', error);
@@ -52,7 +52,7 @@ testSquareApiConnection()
     logger.info('Test script completed');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     logger.error('Unhandled error in test script:', error);
     process.exit(1);
-  }); 
+  });

@@ -44,7 +44,7 @@ export const mockAddresses = {
     postalCode: '94102',
     country: 'US',
   } as Address,
-  
+
   distantAddress: {
     recipientName: 'Jane Smith',
     street: '456 Broadway',
@@ -96,7 +96,7 @@ export const mockOrders = {
     customerName: 'Satisfied Customer',
     email: 'satisfied@example.com',
     phone: '+14155551235',
-    total: 45.50,
+    total: 45.5,
     status: OrderStatus.COMPLETED,
     paymentStatus: PaymentStatus.PAID,
     fulfillmentType: 'pickup',
@@ -129,7 +129,8 @@ export const mockProducts = {
     id: 'prod-alfajores-dulce',
     squareId: 'sq-alfajores-dulce-001',
     name: 'Dulce de Leche Alfajores',
-    description: 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you\'re gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+    description:
+      "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
     price: 12.99,
     images: ['/images/menu/alfajores.png'],
     categoryId: 'cat-alfajores',
@@ -155,7 +156,8 @@ export const mockProducts = {
     id: 'prod-empanadas-beef',
     squareId: 'sq-empanadas-beef-001',
     name: 'Beef Empanadas (6 pack)',
-    description: 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
+    description:
+      'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
     price: 18.99,
     images: ['/images/empanadas-beef.jpg'],
     categoryId: 'cat-empanadas',
@@ -185,7 +187,8 @@ export const mockCategories = {
   alfajores: {
     id: 'cat-alfajores',
     name: 'Alfajores',
-    description: 'Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you\'re gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.',
+    description:
+      "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
     order: 1,
     isActive: true,
     slug: 'alfajores',
@@ -195,7 +198,8 @@ export const mockCategories = {
   empanadas: {
     id: 'cat-empanadas',
     name: 'Empanadas',
-    description: 'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
+    description:
+      'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
     order: 2,
     isActive: true,
     slug: 'empanadas',
@@ -266,7 +270,7 @@ export const mockPayments = {
   pendingPayment: {
     id: 'payment-pending-001',
     squarePaymentId: 'sq-payment-pending-001',
-    amount: 45.50,
+    amount: 45.5,
     status: PaymentStatus.PENDING,
     rawData: {
       squareResponse: {
@@ -305,21 +309,21 @@ export const mockDeliveryZones = {
   nearby: {
     name: 'San Francisco',
     fee: 5.99,
-    minOrder: 25.00,
+    minOrder: 25.0,
     estimatedTime: '30-45 minutes',
   },
 
   distant: {
     name: 'Oakland',
     fee: 8.99,
-    minOrder: 50.00,
+    minOrder: 50.0,
     estimatedTime: '45-60 minutes',
   },
 
   premium: {
     name: 'Peninsula',
     fee: 12.99,
-    minOrder: 75.00,
+    minOrder: 75.0,
     estimatedTime: '60-90 minutes',
   },
 };
@@ -370,4 +374,4 @@ export const mockScenarios = {
       address: mockAddresses.internationalAddress,
     },
   },
-}; 
+};

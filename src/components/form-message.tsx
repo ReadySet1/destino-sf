@@ -10,10 +10,13 @@ interface FormMessageProps {
 export function FormMessage({ message, type = 'error', className }: FormMessageProps) {
   if (!message) return null;
 
-  const isEmailSent = message.toLowerCase().includes('magic link') || message.toLowerCase().includes('check your email');
-  const isPasswordReset = message.toLowerCase().includes('reset') || message.toLowerCase().includes('password');
+  const isEmailSent =
+    message.toLowerCase().includes('magic link') ||
+    message.toLowerCase().includes('check your email');
+  const isPasswordReset =
+    message.toLowerCase().includes('reset') || message.toLowerCase().includes('password');
   const isMagicLink = message.toLowerCase().includes('magic link');
-  
+
   const getIcon = () => {
     if (type === 'success') {
       if (isMagicLink) return <Mail className="h-5 w-5" />;
@@ -46,25 +49,18 @@ export function FormMessage({ message, type = 'error', className }: FormMessageP
         type === 'error' && 'bg-red-50 text-red-700 border-red-200',
         type === 'success' && isMagicLink && 'bg-blue-50 text-blue-700 border-blue-200',
         type === 'success' && isPasswordReset && 'bg-orange-50 text-orange-700 border-orange-200',
-        type === 'success' && !isMagicLink && !isPasswordReset && 'bg-green-50 text-green-700 border-green-200',
+        type === 'success' &&
+          !isMagicLink &&
+          !isPasswordReset &&
+          'bg-green-50 text-green-700 border-green-200',
         className
       )}
     >
-      <div className="flex-shrink-0 mt-0.5">
-        {getIcon()}
-      </div>
+      <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
       <div className="flex-1">
-        <p className="font-medium">
-          {getTitle()}
-        </p>
-        <p className="mt-1 text-sm opacity-90">
-          {message}
-        </p>
-        {getTip() && (
-          <p className="mt-2 text-xs opacity-75">
-            {getTip()}
-          </p>
-        )}
+        <p className="font-medium">{getTitle()}</p>
+        <p className="mt-1 text-sm opacity-90">{message}</p>
+        {getTip() && <p className="mt-2 text-xs opacity-75">{getTip()}</p>}
       </div>
     </div>
   );

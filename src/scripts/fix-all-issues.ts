@@ -2,10 +2,10 @@
 
 /**
  * Fix All Issues Script
- * 
+ *
  * This script addresses all the main issues reported:
  * 1. ✅ Fixed: Category routes (alfajores/empanadas) - already working
- * 2. ✅ Fixed: Appetizer packages missing - restored successfully  
+ * 2. ✅ Fixed: Appetizer packages missing - restored successfully
  * 3. Sync Square products to ensure everything is up to date
  * 4. Check auth configuration
  */
@@ -34,30 +34,30 @@ async function verifyAllSystems() {
   const categories = await prisma.category.findMany({
     where: {
       slug: {
-        in: ['alfajores', 'empanadas']
-      }
+        in: ['alfajores', 'empanadas'],
+      },
     },
     include: {
       _count: {
-        select: { products: true }
-      }
-    }
+        select: { products: true },
+      },
+    },
   });
 
-  // Check appetizer packages  
+  // Check appetizer packages
   const appetizerPackages = await prisma.cateringPackage.count({
     where: {
       type: 'INDIVIDUAL',
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   // Check catering items
   const cateringItems = await prisma.cateringItem.count({
     where: {
       squareCategory: 'CATERING- APPETIZERS',
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   console.log('📊 System Status:');
@@ -82,7 +82,7 @@ async function verifyAllSystems() {
   return {
     categoriesWorking: categories.filter(c => c._count.products > 0).length,
     appetizerPackages,
-    cateringItems
+    cateringItems,
   };
 }
 
@@ -91,7 +91,7 @@ async function verifyAllSystems() {
  */
 async function optionalSquareSync() {
   console.log('🔄 Running optional Square sync...');
-  
+
   try {
     const result = await syncSquareProducts();
     console.log(`✅ Square sync completed successfully`);
@@ -115,7 +115,7 @@ async function fixAllIssues() {
   try {
     // Step 1: Verify current status
     const verification = await verifyAllSystems();
-    
+
     // Step 2: Sync Square if needed
     console.log('OPTIONAL SYNC:');
     console.log('---------------');
@@ -154,7 +154,6 @@ async function fixAllIssues() {
     console.log('   1. Start dev server: pnpm dev');
     console.log('   2. Test the routes above');
     console.log('   3. Report any remaining issues');
-
   } catch (error) {
     console.error('❌ Error during system check:', error);
     throw error;
@@ -178,4 +177,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { fixAllIssues, verifyAllSystems }; 
+export { fixAllIssues, verifyAllSystems };

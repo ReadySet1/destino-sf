@@ -2,7 +2,8 @@ import { execSync } from 'child_process';
 import * as net from 'net';
 import { promisify } from 'util';
 
-const TEST_DATABASE_URL = "postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require";
+const TEST_DATABASE_URL =
+  'postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require';
 
 console.log('🔍 Database Connection Diagnostics');
 console.log('================================');
@@ -14,42 +15,42 @@ function parseConnectionUrl(url: string) {
   if (!match) {
     throw new Error('Invalid connection URL format');
   }
-  
+
   return {
     username: match[1],
     password: match[2],
     host: match[3],
     port: parseInt(match[4]),
-    database: match[5]
+    database: match[5],
   };
 }
 
 // Test network connectivity
 async function testNetworkConnectivity(host: string, port: number): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const socket = new net.Socket();
     const timeout = 10000; // 10 seconds
-    
+
     socket.setTimeout(timeout);
-    
+
     socket.on('connect', () => {
       console.log(`✅ Network connection successful to ${host}:${port}`);
       socket.destroy();
       resolve(true);
     });
-    
+
     socket.on('timeout', () => {
       console.log(`❌ Network connection timeout to ${host}:${port} (${timeout}ms)`);
       socket.destroy();
       resolve(false);
     });
-    
+
     socket.on('error', (error: any) => {
       console.log(`❌ Network connection failed to ${host}:${port}`);
       console.log(`   Error: ${error.message}`);
       resolve(false);
     });
-    
+
     socket.connect(port, host);
   });
 }
@@ -93,10 +94,10 @@ function testTelnet(host: string, port: number): boolean {
   try {
     console.log(`⏳ Testing telnet to ${host}:${port}...`);
     // This will timeout after 5 seconds
-    const result = execSync(`timeout 5s telnet ${host} ${port}`, { 
-      encoding: 'utf8', 
+    const result = execSync(`timeout 5s telnet ${host} ${port}`, {
+      encoding: 'utf8',
       timeout: 6000,
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
     console.log('✅ Telnet connection successful');
     return true;
@@ -110,9 +111,9 @@ function testTelnet(host: string, port: number): boolean {
 function testNetcat(host: string, port: number): boolean {
   try {
     console.log(`⏳ Testing netcat to ${host}:${port}...`);
-    const result = execSync(`nc -z -v -w5 ${host} ${port}`, { 
-      encoding: 'utf8', 
-      timeout: 6000
+    const result = execSync(`nc -z -v -w5 ${host} ${port}`, {
+      encoding: 'utf8',
+      timeout: 6000,
     });
     console.log('✅ Netcat connection successful');
     console.log(`   ${result.trim()}`);
@@ -126,7 +127,7 @@ function testNetcat(host: string, port: number): boolean {
 // Check local network configuration
 function checkNetworkConfig(): void {
   console.log('\n🌐 Network Configuration:');
-  
+
   try {
     // Check network interfaces
     console.log('\n📡 Network Interfaces:');
@@ -143,7 +144,7 @@ function checkNetworkConfig(): void {
   } catch (error) {
     console.log('❌ Could not get network interface information');
   }
-  
+
   try {
     // Check default gateway (macOS/Linux)
     console.log('\n🚪 Default Gateway:');
@@ -164,14 +165,14 @@ function checkNetworkConfig(): void {
 async function runDiagnostics(): Promise<void> {
   try {
     const config = parseConnectionUrl(TEST_DATABASE_URL);
-    
+
     console.log('🎯 Target Database:');
     console.log(`   Host: ${config.host}`);
     console.log(`   Port: ${config.port}`);
     console.log(`   Database: ${config.database}`);
     console.log(`   Username: ${config.username}`);
     console.log('');
-    
+
     // 1. DNS Resolution Test
     console.log('1️⃣ DNS Resolution Test');
     console.log('=====================');
@@ -181,37 +182,37 @@ async function runDiagnostics(): Promise<void> {
       console.log('⚠️  DNS resolution failed - this might be the issue');
     }
     console.log('');
-    
+
     // 2. Network connectivity tests
     console.log('2️⃣ Network Connectivity Tests');
     console.log('============================');
-    
+
     // Test basic network connectivity
     console.log('⏳ Testing socket connection...');
     const networkOk = await testNetworkConnectivity(config.host, config.port);
     console.log('');
-    
+
     // Test ping
     testPing(config.host);
     console.log('');
-    
+
     // Test with external tools
     console.log('3️⃣ External Tool Tests');
     console.log('====================');
     testNetcat(config.host, config.port);
     testTelnet(config.host, config.port);
     console.log('');
-    
+
     // 4. Network configuration
     console.log('4️⃣ Local Network Configuration');
     console.log('==============================');
     checkNetworkConfig();
     console.log('');
-    
+
     // 5. Recommendations
     console.log('5️⃣ Recommendations');
     console.log('=================');
-    
+
     if (!networkOk) {
       console.log('❌ Network connectivity failed. Possible causes:');
       console.log('   1. Database server is down or not running');
@@ -234,11 +235,10 @@ async function runDiagnostics(): Promise<void> {
       console.log('   3. Database permissions');
       console.log('   4. Connection string format');
     }
-    
   } catch (error: any) {
     console.error('❌ Diagnostic failed:', error.message);
   }
 }
 
 // Run diagnostics
-runDiagnostics().catch(console.error); 
+runDiagnostics().catch(console.error);

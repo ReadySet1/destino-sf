@@ -196,4 +196,4 @@ describe('BoxedLunchMenu - Protein Image Functionality', () => {
       expect(tier3Section).toBeInTheDocument();
     });
   });
-}); 
+});

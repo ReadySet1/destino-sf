@@ -13,7 +13,7 @@ export const revalidate = 0;
 type PageProps = {
   params: Promise<{ id: string }>; // params is now a Promise
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // searchParams is also a Promise
-}
+};
 
 export default async function EditProductPage({ params, searchParams }: PageProps) {
   // Need to await params and searchParams since they're Promises
@@ -69,8 +69,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         logger.error('Error parsing image URLs data:', e);
       }
     } else {
-       logger.info('No image URLs provided in form data.');
-       prismaImageUrls = product && Array.isArray(product.images) ? product.images : [];
+      logger.info('No image URLs provided in form data.');
+      prismaImageUrls = product && Array.isArray(product.images) ? product.images : [];
     }
 
     try {
@@ -217,10 +217,18 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
             {/* Image Upload Section */}
             <div>
-              <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">Images</label>
+              <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
+                Images
+              </label>
               <div className="p-4 border border-dashed border-red-400 bg-red-50 rounded">
-                <p className="text-red-700 text-sm font-medium">Placeholder: Replace SanityImageInput</p>
-                <p className="text-red-600 text-xs mt-1">Implement your image upload component here. It should accept `initialImageUrls` (value: `{JSON.stringify(initialImageUrls)}`) and submit the final array of URLs as a JSON string in a form field named `imageUrls`.</p>
+                <p className="text-red-700 text-sm font-medium">
+                  Placeholder: Replace SanityImageInput
+                </p>
+                <p className="text-red-600 text-xs mt-1">
+                  Implement your image upload component here. It should accept `initialImageUrls`
+                  (value: `{JSON.stringify(initialImageUrls)}`) and submit the final array of URLs
+                  as a JSON string in a form field named `imageUrls`.
+                </p>
               </div>
             </div>
 

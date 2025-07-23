@@ -20,13 +20,13 @@ jest.mock('@prisma/client', () => ({
 }));
 
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { 
-  getCateringPackages, 
+import {
+  getCateringPackages,
   getCateringItems,
   createCateringOrderAndProcessPayment,
   validateCateringOrderWithDeliveryZone,
   saveContactInfo,
-  submitCateringInquiry
+  submitCateringInquiry,
 } from '@/actions/catering';
 import { db } from '@/lib/db';
 import { DeliveryZone } from '@/types/catering';
@@ -114,12 +114,12 @@ const mockDb = db as any;
 describe('Catering System Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods to suppress logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     // Set up environment variables for testing
     process.env.USE_SQUARE_SANDBOX = 'true';
     process.env.SQUARE_SANDBOX_TOKEN = 'mock-sandbox-token';
@@ -130,7 +130,7 @@ describe('Catering System Integration Tests', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    
+
     // Clean up environment variables
     delete process.env.USE_SQUARE_SANDBOX;
     delete process.env.SQUARE_SANDBOX_TOKEN;
@@ -146,7 +146,7 @@ describe('Catering System Integration Tests', () => {
           id: 'pkg-1',
           name: 'Executive Package',
           description: 'Premium catering for corporate events',
-          pricePerPerson: 45.00,
+          pricePerPerson: 45.0,
           minPeople: 10,
           maxPeople: 50,
           isActive: true,
@@ -157,7 +157,7 @@ describe('Catering System Integration Tests', () => {
           id: 'pkg-2',
           name: 'Family Package',
           description: 'Casual catering for family gatherings',
-          pricePerPerson: 25.00,
+          pricePerPerson: 25.0,
           minPeople: 5,
           maxPeople: 25,
           isActive: true,
@@ -172,10 +172,10 @@ describe('Catering System Integration Tests', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Executive Package');
-      expect(result[0].pricePerPerson).toBe(45.00);
+      expect(result[0].pricePerPerson).toBe(45.0);
       expect(result[1].name).toBe('Family Package');
-      expect(result[1].pricePerPerson).toBe(25.00);
-      
+      expect(result[1].pricePerPerson).toBe(25.0);
+
       expect(mockDb.cateringPackage.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         orderBy: { featuredOrder: 'asc' },
@@ -208,7 +208,7 @@ describe('Catering System Integration Tests', () => {
           id: 'item-1',
           name: 'Gourmet Appetizer Tray',
           description: 'Assorted premium appetizers',
-          price: 85.00,
+          price: 85.0,
           category: 'APPETIZERS',
           isActive: true,
           imageUrl: '/images/catering/appetizers.jpg',
@@ -220,7 +220,7 @@ describe('Catering System Integration Tests', () => {
           id: 'prod-1',
           name: 'Empanada Party Pack',
           description: '50 assorted empanadas',
-          price: 150.00,
+          price: 150.0,
           categoryId: 'catering-category-1',
           images: ['/images/catering/empanadas.jpg'],
           active: true,
@@ -234,8 +234,8 @@ describe('Catering System Integration Tests', () => {
 
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].name).toBe('Gourmet Appetizer Tray');
-      expect(result[0].price).toBe(85.00);
-      
+      expect(result[0].price).toBe(85.0);
+
       expect(mockDb.cateringItem.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         orderBy: { category: 'asc' },
@@ -266,8 +266,8 @@ describe('Catering System Integration Tests', () => {
   describe('Delivery Zone Validation', () => {
     test('should validate order with valid delivery zone', async () => {
       const orderItems = [
-        { id: 'item-1', quantity: 2, price: 150.00 },
-        { id: 'item-2', quantity: 1, price: 200.00 },
+        { id: 'item-1', quantity: 2, price: 150.0 },
+        { id: 'item-2', quantity: 1, price: 200.0 },
       ];
 
       const deliveryAddress = {
@@ -278,13 +278,13 @@ describe('Catering System Integration Tests', () => {
       const result = await validateCateringOrderWithDeliveryZone(orderItems, deliveryAddress);
 
       expect(result.isValid).toBe(true);
-      expect(result.currentAmount).toBe(500.00); // (150 * 2) + (200 * 1)
+      expect(result.currentAmount).toBe(500.0); // (150 * 2) + (200 * 1)
       expect(result.deliveryZone).toBeTruthy();
     });
 
     test('should reject order below zone minimum', async () => {
       const orderItems = [
-        { id: 'item-1', quantity: 1, price: 100.00 }, // Below SF minimum of $250
+        { id: 'item-1', quantity: 1, price: 100.0 }, // Below SF minimum of $250
       ];
 
       const deliveryAddress = {
@@ -296,14 +296,12 @@ describe('Catering System Integration Tests', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toContain('Minimum order');
-      expect(result.currentAmount).toBe(100.00);
+      expect(result.currentAmount).toBe(100.0);
       expect(result.minimumRequired).toBeGreaterThan(100);
     });
 
     test('should reject delivery to unsupported zone', async () => {
-      const orderItems = [
-        { id: 'item-1', quantity: 1, price: 500.00 },
-      ];
+      const orderItems = [{ id: 'item-1', quantity: 1, price: 500.0 }];
 
       const deliveryAddress = {
         city: 'Los Angeles', // Not in delivery zone
@@ -318,13 +316,13 @@ describe('Catering System Integration Tests', () => {
 
     test('should handle pickup orders without delivery validation', async () => {
       const orderItems = [
-        { id: 'item-1', quantity: 1, price: 50.00 }, // Below minimums but pickup is allowed
+        { id: 'item-1', quantity: 1, price: 50.0 }, // Below minimums but pickup is allowed
       ];
 
       const result = await validateCateringOrderWithDeliveryZone(orderItems); // No delivery address
 
       expect(result.isValid).toBe(true);
-      expect(result.currentAmount).toBe(50.00);
+      expect(result.currentAmount).toBe(50.0);
     });
 
     test('should handle empty cart validation', async () => {
@@ -358,7 +356,7 @@ describe('Catering System Integration Tests', () => {
       if (isProfileSuccess(result)) {
         expect(result.data.profileId).toBe('profile-123');
       }
-      
+
       expect(mockDb.profile.create).toHaveBeenCalledWith({
         data: {
           id: 'mock-uuid-123',
@@ -398,7 +396,7 @@ describe('Catering System Integration Tests', () => {
       if (isProfileSuccess(result)) {
         expect(result.data.profileId).toBe('existing-profile');
       }
-      
+
       expect(mockDb.profile.update).toHaveBeenCalledWith({
         where: { id: 'existing-profile' },
         data: {
@@ -447,7 +445,7 @@ describe('Catering System Integration Tests', () => {
       const result = await submitCateringInquiry(inquiryData);
 
       expect(result.success).toBe(true);
-      
+
       expect(mockDb.cateringOrder.create).toHaveBeenCalledWith({
         data: {
           name: inquiryData.name,
@@ -506,11 +504,11 @@ describe('Catering System Integration Tests', () => {
             itemId: null,
             name: 'Executive Package',
             quantity: 1,
-            pricePerUnit: 1350.00, // 30 people * $45
-            totalPrice: 1350.00,
+            pricePerUnit: 1350.0, // 30 people * $45
+            totalPrice: 1350.0,
           },
         ],
-        totalAmount: 1350.00,
+        totalAmount: 1350.0,
         paymentMethod: 'SQUARE' as const,
       };
 
@@ -551,14 +549,14 @@ describe('Catering System Integration Tests', () => {
         expect(result.data?.orderId).toBe('order-123');
         expect(result.data?.checkoutUrl).toBe('https://sandbox.square.link/u/abc123');
       }
-      
+
       // Verify order creation
       expect(mockDb.cateringOrder.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           email: 'jane@events.com',
           name: 'Jane Catering',
           phone: '+1-415-555-0200',
-          totalAmount: 1350.00,
+          totalAmount: 1350.0,
           paymentMethod: PaymentMethod.SQUARE,
           status: CateringStatus.PENDING,
         }),
@@ -570,7 +568,7 @@ describe('Catering System Integration Tests', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer mock-sandbox-token',
+            Authorization: 'Bearer mock-sandbox-token',
             'Content-Type': 'application/json',
           }),
         })
@@ -602,11 +600,11 @@ describe('Catering System Integration Tests', () => {
             packageId: null,
             name: 'Appetizer Tray',
             quantity: 2,
-            pricePerUnit: 85.00,
-            totalPrice: 170.00,
+            pricePerUnit: 85.0,
+            totalPrice: 170.0,
           },
         ],
-        totalAmount: 170.00,
+        totalAmount: 170.0,
         paymentMethod: 'CASH' as const,
       };
 
@@ -622,10 +620,10 @@ describe('Catering System Integration Tests', () => {
       expect(result.success).toBe(true);
       expect(result.data.orderId).toBe('cash-order-123');
       expect(result.data.checkoutUrl).toBeUndefined(); // No Square URL for cash orders
-      
+
       // Verify no Square API call for cash orders
       expect(fetch).not.toHaveBeenCalled();
-      
+
       // Verify order created with correct status
       expect(mockDb.cateringOrder.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -668,18 +666,18 @@ describe('Catering System Integration Tests', () => {
             itemId: null,
             name: 'Executive Package',
             quantity: 1,
-            pricePerUnit: 1800.00, // 40 people * $45
-            totalPrice: 1800.00,
+            pricePerUnit: 1800.0, // 40 people * $45
+            totalPrice: 1800.0,
           },
         ],
-        totalAmount: 1850.00, // Including delivery fee
+        totalAmount: 1850.0, // Including delivery fee
         paymentMethod: 'SQUARE' as const,
       };
 
       mockDb.cateringOrder.create.mockResolvedValue({
         id: 'delivery-order-123',
         deliveryZone: DeliveryZone.SAN_FRANCISCO,
-        deliveryFee: 50.00,
+        deliveryFee: 50.0,
         deliveryAddress: '123 Business St Suite 200 San Francisco, CA 94105',
       });
 
@@ -699,7 +697,7 @@ describe('Catering System Integration Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.orderId).toBe('delivery-order-123');
-      
+
       // Verify delivery information was stored
       expect(mockDb.cateringOrder.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -735,11 +733,11 @@ describe('Catering System Integration Tests', () => {
             packageId: null,
             name: 'Test Item',
             quantity: 1,
-            pricePerUnit: 100.00,
-            totalPrice: 100.00,
+            pricePerUnit: 100.0,
+            totalPrice: 100.0,
           },
         ],
-        totalAmount: 100.00,
+        totalAmount: 100.0,
         paymentMethod: 'SQUARE' as const,
       };
 
@@ -767,7 +765,7 @@ describe('Catering System Integration Tests', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Payment provider error');
-      
+
       // Verify order was marked as cancelled due to Square error
       expect(mockDb.cateringOrder.update).toHaveBeenCalledWith({
         where: { id: 'error-order-123' },
@@ -806,11 +804,11 @@ describe('Catering System Integration Tests', () => {
             packageId: null,
             name: 'Test Item',
             quantity: 1,
-            pricePerUnit: 50.00,
-            totalPrice: 50.00,
+            pricePerUnit: 50.0,
+            totalPrice: 50.0,
           },
         ],
-        totalAmount: 50.00,
+        totalAmount: 50.0,
         paymentMethod: 'SQUARE' as const,
       };
 
@@ -824,7 +822,7 @@ describe('Catering System Integration Tests', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Payment provider configuration error');
-      
+
       // Verify order was marked as cancelled due to config error
       expect(mockDb.cateringOrder.update).toHaveBeenCalledWith({
         where: { id: 'config-error-order-123' },
@@ -845,7 +843,7 @@ describe('Catering System Integration Tests', () => {
       expect(packages).toEqual([]);
 
       mockDb.cateringItem.findMany.mockRejectedValue(new Error('Connection timeout'));
-      
+
       const items = await getCateringItems();
       expect(items).toEqual([]);
     });
@@ -879,4 +877,4 @@ describe('Catering System Integration Tests', () => {
       expect(result.error).toBeTruthy();
     });
   });
-}); 
+});

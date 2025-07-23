@@ -11,9 +11,9 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  */
 export async function getDeliveryZones(): Promise<ZoneMinimumConfig[]> {
   const now = Date.now();
-  
+
   // Return cached data if still valid
-  if (zonesCache && (now - cacheTimestamp) < CACHE_DURATION) {
+  if (zonesCache && now - cacheTimestamp < CACHE_DURATION) {
     return zonesCache;
   }
 
@@ -40,7 +40,7 @@ export async function getDeliveryZones(): Promise<ZoneMinimumConfig[]> {
     return zonesCache;
   } catch (error) {
     console.error('Error fetching delivery zones from database:', error);
-    
+
     // Fallback to hardcoded values if database is unavailable
     return getFallbackDeliveryZones();
   }
@@ -65,7 +65,10 @@ export async function getActiveDeliveryZones(): Promise<ZoneMinimumConfig[]> {
 /**
  * Determine delivery zone from postal code and city
  */
-export async function determineDeliveryZone(postalCode: string, city?: string): Promise<DeliveryZone | null> {
+export async function determineDeliveryZone(
+  postalCode: string,
+  city?: string
+): Promise<DeliveryZone | null> {
   try {
     const zones = await prisma.cateringDeliveryZone.findMany({
       where: {
@@ -74,9 +77,7 @@ export async function determineDeliveryZone(postalCode: string, city?: string): 
     });
 
     // Find zone that matches postal code
-    const postalMatch = zones.find(zone => 
-      zone.postalCodes.includes(postalCode)
-    );
+    const postalMatch = zones.find(zone => zone.postalCodes.includes(postalCode));
 
     if (postalMatch) {
       return postalMatch.zone as DeliveryZone;
@@ -84,10 +85,8 @@ export async function determineDeliveryZone(postalCode: string, city?: string): 
 
     // Find zone that matches city (case-insensitive)
     if (city) {
-      const cityMatch = zones.find(zone => 
-        zone.cities.some(zoneCity => 
-          zoneCity.toLowerCase() === city.toLowerCase()
-        )
+      const cityMatch = zones.find(zone =>
+        zone.cities.some(zoneCity => zoneCity.toLowerCase() === city.toLowerCase())
       );
 
       if (cityMatch) {
@@ -124,17 +123,17 @@ export async function validateMinimumPurchase(
       currentAmount: orderAmount,
       minimumRequired: 0,
       zone,
-      message: 'Invalid delivery zone'
+      message: 'Invalid delivery zone',
     };
   }
 
   const isValid = orderAmount >= zoneConfig.minimumAmount;
-  
+
   const validation = {
     isValid,
     currentAmount: orderAmount,
     minimumRequired: zoneConfig.minimumAmount,
-    zone
+    zone,
   };
 
   if (!isValid) {
@@ -142,7 +141,7 @@ export async function validateMinimumPurchase(
     return {
       ...validation,
       shortfall,
-      message: `Minimum order of $${zoneConfig.minimumAmount.toFixed(2)} required for ${zoneConfig.name}. You need $${shortfall.toFixed(2)} more.`
+      message: `Minimum order of $${zoneConfig.minimumAmount.toFixed(2)} required for ${zoneConfig.name}. You need $${shortfall.toFixed(2)} more.`,
     };
   }
 
@@ -192,38 +191,38 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
     {
       zone: DeliveryZone.SAN_FRANCISCO,
       name: 'San Francisco',
-      minimumAmount: 250.00,
+      minimumAmount: 250.0,
       description: 'San Francisco and surrounding areas',
-      deliveryFee: 50.00,
+      deliveryFee: 50.0,
       estimatedDeliveryTime: '1-2 hours',
-      active: true
+      active: true,
     },
     {
       zone: DeliveryZone.SOUTH_BAY,
       name: 'South Bay',
-      minimumAmount: 350.00,
+      minimumAmount: 350.0,
       description: 'San José, Santa Clara, Sunnyvale and surrounding areas',
-      deliveryFee: 75.00,
+      deliveryFee: 75.0,
       estimatedDeliveryTime: '2-3 hours',
-      active: true
+      active: true,
     },
     {
       zone: DeliveryZone.LOWER_PENINSULA,
       name: 'Lower Peninsula',
-      minimumAmount: 400.00,
+      minimumAmount: 400.0,
       description: 'Redwood City, Palo Alto, Mountain View and surrounding areas',
-      deliveryFee: 100.00,
+      deliveryFee: 100.0,
       estimatedDeliveryTime: '2-3 hours',
-      active: true
+      active: true,
     },
     {
       zone: DeliveryZone.PENINSULA,
       name: 'Peninsula',
-      minimumAmount: 500.00,
+      minimumAmount: 500.0,
       description: 'San Ramón, Walnut Creek and far Peninsula areas',
-      deliveryFee: 150.00,
+      deliveryFee: 150.0,
       estimatedDeliveryTime: '3-4 hours',
-      active: true
-    }
+      active: true,
+    },
   ];
-} 
+}
