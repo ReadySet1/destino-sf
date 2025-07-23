@@ -56,6 +56,10 @@ const nextConfig = {
         module: /node_modules\/utf-8-validate/,
         message: /Critical dependency/,
       },
+      {
+        module: /node_modules\/@opentelemetry\/instrumentation/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
     ];
     
     return config;
