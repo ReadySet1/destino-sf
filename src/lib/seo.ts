@@ -128,6 +128,7 @@ export function generateSEO(config: SEOConfig): Metadata {
       'og:locale': 'en_US',
       'og:type': type || 'website',
       'theme-color': '#f77c22',
+      'mobile-web-app-capable': 'yes',
       'apple-mobile-web-app-capable': 'yes',
       'apple-mobile-web-app-status-bar-style': 'default',
       'og:image': ogImageUrl,

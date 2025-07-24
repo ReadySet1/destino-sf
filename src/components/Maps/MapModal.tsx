@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GoogleMapsErrorBoundary from './GoogleMapsErrorBoundary';
 
 // Add TypeScript declaration for the Google Maps API
 declare global {
@@ -79,7 +80,15 @@ const GoogleMapsComponent: React.FC<{
 
   // Function to initialize the map and add all markers
   const initMap = useCallback(() => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current || !window.google || !window.google.maps) return;
+
+    // Check if all required Google Maps classes are available
+    if (!window.google.maps.Map || !window.google.maps.Marker || !window.google.maps.InfoWindow || !window.google.maps.Geocoder || !window.google.maps.LatLngBounds) {
+      console.log('Google Maps API classes not yet available, retrying...');
+      // Retry after a short delay
+      setTimeout(() => initMap(), 100);
+      return;
+    }
 
     // Avoid re-initializing the map if it already exists
     if (mapInstance.current) {
@@ -87,7 +96,8 @@ const GoogleMapsComponent: React.FC<{
       return;
     }
 
-    const map = new window.google.maps.Map(mapRef.current, {
+    try {
+      const map = new window.google.maps.Map(mapRef.current, {
       center: { lat: 37.7749, lng: -122.4194 }, // Default center, will be overridden by fitBounds
       zoom: 11,
       mapTypeControl: false,
@@ -156,6 +166,11 @@ const GoogleMapsComponent: React.FC<{
         }
       );
     });
+    } catch (error) {
+      console.error('Error initializing Google Maps:', error);
+      // Retry after a longer delay if there's an error
+      setTimeout(() => initMap(), 500);
+    }
   }, [locations]);
 
   // Load Google Maps script and initialize map
@@ -163,14 +178,17 @@ const GoogleMapsComponent: React.FC<{
     if (!apiKey) return;
 
     if (window.google && window.google.maps) {
-      initMap();
+      // Add a small delay to ensure API is fully ready
+      setTimeout(() => initMap(), 100);
       return;
     }
 
     const scriptId = 'google-maps-script';
     if (document.getElementById(scriptId)) {
+      // Script is already loading or loaded, wait for it
       if (!mapLoaded && window.google && window.google.maps) {
-        initMap();
+        // Add a small delay to ensure API is fully ready
+        setTimeout(() => initMap(), 100);
       }
       return;
     }
@@ -181,11 +199,14 @@ const GoogleMapsComponent: React.FC<{
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      if (window.google && window.google.maps) {
-        initMap();
-      } else {
-        console.error('Google Maps API did not load correctly.');
-      }
+      // Add a small delay to ensure the API is fully loaded
+      setTimeout(() => {
+        if (window.google && window.google.maps) {
+          initMap();
+        } else {
+          console.error('Google Maps API did not load correctly.');
+        }
+      }, 100);
     };
     script.onerror = error => {
       console.error('Failed to load Google Maps script:', error);
@@ -479,11 +500,13 @@ const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-col md:flex-row h-[70vh]">
           {/* Map container */}
           <div className="w-full md:w-2/3 h-full relative">
-            <GoogleMapsComponent
-              apiKey={apiKey}
-              locations={storeLocations}
-              selectedLocationIndex={selectedLocationIndex}
-            />
+            <GoogleMapsErrorBoundary>
+              <GoogleMapsComponent
+                apiKey={apiKey}
+                locations={storeLocations}
+                selectedLocationIndex={selectedLocationIndex}
+              />
+            </GoogleMapsErrorBoundary>
           </div>
 
           {/* Location list sidebar */}

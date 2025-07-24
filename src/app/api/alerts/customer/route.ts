@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         const contactData: ContactFormReceivedData = {
           name: data.name,
           email: data.email,
-          subject: data.subject,
+          subject: data.subject || `${data.contactType || 'general'} inquiry from ${data.name}`,
           message: data.message,
           type: data.contactType || 'general',
           timestamp: new Date(),

@@ -54,7 +54,7 @@ declare global {
 export const UMAMI_CONFIG: UmamiConfig = {
   websiteId: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID || '5a0ae847-dbb0-456c-b972-9e29944de4b2',
   src: process.env.NEXT_PUBLIC_UMAMI_SRC || 'https://analytics.readysetllc.com/script.js',
-  domains: ['destinosf.com', 'www.destinosf.com'],
+  domains: ['destinosf.com', 'www.destinosf.com', 'development.destinosf.com'],
   autoTrack: true,
   dataCache: true,
 };

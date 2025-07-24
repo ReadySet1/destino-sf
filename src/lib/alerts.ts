@@ -747,11 +747,29 @@ export class AlertService {
   }
 
   /**
+   * Sanitize email subject to remove newlines and ensure it's valid
+   */
+  private sanitizeEmailSubject(subject: string | undefined): string {
+    if (!subject) {
+      return 'General inquiry';
+    }
+    
+    // Remove newline characters and trim whitespace
+    const sanitized = subject.replace(/[\r\n]+/g, ' ').trim();
+    
+    // Limit length to 78 characters (email subject best practice)
+    return sanitized.length > 78 ? sanitized.substring(0, 75) + '...' : sanitized;
+  }
+
+  /**
    * Send contact form auto-reply and admin notification
    */
   async sendContactFormReceived(data: ContactFormReceivedData): Promise<AlertResult> {
     try {
       const shopName = env.SHOP_NAME || 'Destino SF';
+      
+      // Sanitize the subject to prevent email sending issues
+      const sanitizedSubject = this.sanitizeEmailSubject(data.subject);
 
       // Auto-reply to customer
       const { data: customerEmailData, error: customerError } = await resend.emails.send({
@@ -777,19 +795,19 @@ export class AlertService {
       const { data: adminEmailData, error: adminError } = await resend.emails.send({
         from: `${shopName} Alerts <${env.FROM_EMAIL}>`,
         to: [adminRecipientEmail],
-        subject: `New Contact Form: ${data.type} - ${data.name}`,
+        subject: `New Contact Form: ${data.type} - ${data.name}${sanitizedSubject !== 'General inquiry' ? ` - ${sanitizedSubject}` : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">New Contact Form Submission</h2>
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
               <p><strong>From:</strong> ${data.name} (${data.email})</p>
               <p><strong>Type:</strong> ${data.type}</p>
-              ${data.subject ? `<p><strong>Subject:</strong> ${data.subject}</p>` : ''}
+              ${sanitizedSubject !== 'General inquiry' ? `<p><strong>Subject:</strong> ${sanitizedSubject}</p>` : ''}
               <p><strong>Message:</strong></p>
               <p>${data.message}</p>
               <p><strong>Received:</strong> ${data.timestamp.toLocaleString()}</p>
             </div>
-            <p><a href="mailto:${data.email}?subject=Re: ${data.subject || 'Your inquiry'}" style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Reply to Customer</a></p>
+            <p><a href="mailto:${data.email}?subject=Re: ${sanitizedSubject}" style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Reply to Customer</a></p>
           </div>
         `,
       });
@@ -809,7 +827,7 @@ export class AlertService {
         subject: `Contact form submission from ${data.name}`,
         metadata: {
           type: data.type,
-          subject: data.subject,
+          subject: sanitizedSubject,
           message: data.message.substring(0, 500), // Truncate for storage
         },
       });
