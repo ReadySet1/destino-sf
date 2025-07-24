@@ -7,8 +7,16 @@ import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
 import { Toaster } from 'sonner';
 import { AuthHandler } from '@/components/auth-handler';
+import { useUmamiPageTracking } from '@/lib/analytics';
 import './styles/globals.css';
 import { usePathname } from 'next/navigation';
+import { Suspense } from 'react';
+
+function AnalyticsWrapper() {
+  // Initialize Umami page tracking
+  useUmamiPageTracking();
+  return null;
+}
 
 export default function ClientLayout({
   children,
@@ -16,7 +24,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-
+  
   // Check for admin and auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
   const isAuthRoute =
@@ -30,6 +38,11 @@ export default function ClientLayout({
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       {/* Auth handler for magic links */}
       <AuthHandler />
+
+      {/* Analytics tracking with Suspense boundary */}
+      <Suspense fallback={null}>
+        <AnalyticsWrapper />
+      </Suspense>
 
       <div className="flex min-h-screen flex-col">
         {!hideNavigation && <Navbar />}

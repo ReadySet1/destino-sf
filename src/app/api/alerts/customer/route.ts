@@ -11,8 +11,12 @@ import type {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST request received to /api/alerts/customer');
+    
     const body = await request.json();
     const { type, orderId, ...data } = body;
+
+    console.log('Request body:', { type, orderId, ...data });
 
     let result;
 
@@ -155,7 +159,10 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'contact_form':
+        console.log('Processing contact form submission:', data);
+        
         if (!data.name || !data.email || !data.message) {
+          console.log('Missing required fields:', { name: !!data.name, email: !!data.email, message: !!data.message });
           return NextResponse.json(
             {
               error: 'name, email, and message required for contact form',
@@ -173,20 +180,25 @@ export async function POST(request: NextRequest) {
           timestamp: new Date(),
         };
 
+        console.log('Sending contact form data:', contactData);
         result = await alertService.sendContactFormReceived(contactData);
+        console.log('Contact form result:', result);
         break;
 
       default:
+        console.log('Invalid alert type:', type);
         return NextResponse.json({ error: 'Invalid alert type' }, { status: 400 });
     }
 
     if (result.success) {
+      console.log('Alert sent successfully:', { type, messageId: result.messageId });
       return NextResponse.json({
         success: true,
         messageId: result.messageId,
         message: `Customer alert sent successfully`,
       });
     } else {
+      console.error('Alert failed:', result.error);
       return NextResponse.json(
         {
           success: false,
@@ -205,6 +217,19 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Handle OPTIONS requests for CORS
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
 }
 
 export async function GET(request: NextRequest) {

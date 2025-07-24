@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Package } from 'lucide-react';
+import { Suspense } from 'react';
 
 export default async function OrdersPage() {
   const supabase = await createClient();
@@ -60,7 +61,16 @@ export default async function OrdersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <OrderHistory userId={user.id} />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center space-x-2 py-12">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
+                  <span className="text-gray-600">Loading orders...</span>
+                </div>
+              }
+            >
+              <OrderHistory userId={user.id} />
+            </Suspense>
           </CardContent>
         </Card>
 

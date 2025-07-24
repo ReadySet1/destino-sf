@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ type ServerDebugData = {
   [key: string]: unknown;
 };
 
-export default function AdminDebugPage() {
+function AdminDebugContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serverDebugData, setServerDebugData] = useState<ServerDebugData | null>(null);
@@ -227,5 +227,22 @@ export default function AdminDebugPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function AdminDebugPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto py-10">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <span className="text-gray-600">Loading debug page...</span>
+          </div>
+        </div>
+      }
+    >
+      <AdminDebugContent />
+    </Suspense>
   );
 }

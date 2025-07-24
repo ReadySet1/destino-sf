@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { useUmamiFormTracking, useUmamiTracking } from '@/lib/analytics';
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -26,6 +27,11 @@ export interface ContactFormProps {
 export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Initialize analytics tracking
+  const { trackFormStart, trackFormSubmit, trackFormFieldInteraction } = useUmamiFormTracking();
+  const { trackButtonClick } = useUmamiTracking();
 
   // Initialize the form
   const form = useForm<ContactFormValues>({
@@ -37,24 +43,63 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
     },
   });
 
+  // Track form start when component mounts
+  useEffect(() => {
+    trackFormStart('contact_form');
+  }, [trackFormStart]);
+
   // Handle form submission
   const onSubmit = async (data: ContactFormValues) => {
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
-      // Here you would typically send the data to your API endpoint
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/alerts/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'contact_form',
+          name: data.name,
+          email: data.email,
+          message: data.message,
+          contactType: 'general',
+        }),
+      });
 
-      console.log('Form submitted:', data);
-      setSubmitSuccess(true);
-      form.reset();
-      onSubmitSuccess?.();
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message');
+      }
+
+      if (result.success) {
+        setSubmitSuccess(true);
+        form.reset();
+        onSubmitSuccess?.();
+        
+        // Track successful form submission
+        trackFormSubmit('contact_form', true);
+        trackButtonClick('contact_form_submit', 'contact_page');
+      } else {
+        throw new Error(result.error || 'Failed to send message');
+      }
     } catch (error) {
       console.error('Error submitting form:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      setSubmitError(errorMessage);
+      
+      // Track failed form submission
+      trackFormSubmit('contact_form', false, errorMessage);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Track field interactions
+  const handleFieldFocus = (fieldName: string) => {
+    trackFormFieldInteraction('contact_form', fieldName);
   };
 
   return (
@@ -73,6 +118,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
                     {...field}
                     disabled={isSubmitting}
                     className="rounded-md border-gray-200"
+                    onFocus={() => handleFieldFocus('name')}
                   />
                 </FormControl>
                 <FormMessage />
@@ -93,6 +139,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
                     {...field}
                     disabled={isSubmitting}
                     className="rounded-md border-gray-200"
+                    onFocus={() => handleFieldFocus('email')}
                   />
                 </FormControl>
                 <FormMessage />
@@ -112,6 +159,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
                     {...field}
                     disabled={isSubmitting}
                     className="rounded-md border-gray-200 min-h-[120px] resize-none"
+                    onFocus={() => handleFieldFocus('message')}
                   />
                 </FormControl>
                 <FormMessage />
@@ -124,6 +172,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
           type="submit"
           disabled={isSubmitting}
           className="bg-[#fab526] hover:bg-[#fab526]/90 text-black rounded-md px-6 py-2 text-sm font-normal"
+          onClick={() => trackButtonClick('contact_form_submit_button', 'contact_page')}
         >
           {isSubmitting ? 'Sending...' : 'Send Message'}
         </Button>
@@ -131,6 +180,12 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
         {submitSuccess && (
           <div className="rounded-md bg-green-50 p-4 text-green-800">
             Thank you! Your message has been sent successfully.
+          </div>
+        )}
+
+        {submitError && (
+          <div className="rounded-md bg-red-50 p-4 text-red-800">
+            Error: {submitError}
           </div>
         )}
       </form>

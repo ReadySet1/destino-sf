@@ -9,6 +9,7 @@ import { PasswordStrengthIndicator } from '@/components/password-strength-indica
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { ToastHandler } from '@/components/auth/ToastHandler';
+import { Suspense } from 'react';
 
 // Updated PageProps type for Next.js 15.3+
 type PageProps = {
@@ -40,7 +41,9 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
 
   return (
     <AuthContainer title="Reset Your Password" subtitle="Enter your new password below">
-      <ToastHandler />
+      <Suspense fallback={null}>
+        <ToastHandler />
+      </Suspense>
       <div className="pt-2">
         {user.email && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">

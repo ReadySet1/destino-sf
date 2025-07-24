@@ -1,6 +1,11 @@
 import React from 'react';
-import Head from 'next/head';
 import { twMerge } from 'tailwind-merge';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Refund Policy | Destino',
+  description: 'Refund Policy for CHASQUI LLC (dba DESTINO)',
+};
 
 const RefundPolicyPage: React.FC = () => {
   // Helper component for sections for structure
@@ -13,11 +18,6 @@ const RefundPolicyPage: React.FC = () => {
 
   return (
     <div className={twMerge('w-full px-4 py-12 bg-white text-gray-900 font-quicksand')}>
-      <Head>
-        <title>Refund Policy | Destino</title>
-        <meta name="description" content="Refund Policy for CHASQUI LLC (dba DESTINO)" />
-      </Head>
-
       <main className={twMerge('flex flex-col gap-8')}>
         <h1 className={twMerge('text-4xl font-bold mb-6 text-center')}>Refund Policy</h1>
 
