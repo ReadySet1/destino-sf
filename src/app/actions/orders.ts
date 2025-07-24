@@ -15,6 +15,7 @@ import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the valida
 import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
+import { env } from '@/env'; // Import the validated environment configuration
 
 // Re-add BigInt patch if needed directly in actions, or ensure it runs globally
 (BigInt.prototype as any).toJSON = function () {
@@ -859,7 +860,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     // --- Prepare Square Checkout Options ---
-    const origin = process.env.NEXT_PUBLIC_APP_URL;
+    const origin = env.NEXT_PUBLIC_APP_URL;
     if (!origin) {
       console.error('Server Action Config Error: NEXT_PUBLIC_APP_URL is not set.');
       if (dbOrder?.id) {
@@ -1268,7 +1269,7 @@ export async function createManualPaymentOrder(formData: {
   }
 
   // Generate a payment page URL
-  const origin = process.env.NEXT_PUBLIC_APP_URL;
+  const origin = env.NEXT_PUBLIC_APP_URL;
   if (!origin) {
     console.error('Server Action Config Error: NEXT_PUBLIC_APP_URL is not set.');
     if (dbOrder?.id) {

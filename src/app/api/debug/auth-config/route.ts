@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { env } from '@/env'; // Import the validated environment configuration
 
 interface Recommendation {
   issue: string;
@@ -14,15 +15,15 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       environment: {
         NODE_ENV: process.env.NODE_ENV,
-        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+        NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         SUPABASE_ANON_KEY_SET: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         SUPABASE_SERVICE_KEY_SET: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
       urls: {
-        current_site_url: process.env.NEXT_PUBLIC_APP_URL || 'NOT_SET',
-        callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
-        magic_link_redirect: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/admin`,
+        current_site_url: env.NEXT_PUBLIC_APP_URL,
+        callback_url: `${env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        magic_link_redirect: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?redirect_to=/admin`,
       },
       supabase_config_check: {},
       recommendations: [] as Recommendation[],
@@ -49,7 +50,7 @@ export async function GET() {
     // Generate recommendations
     const recommendations: Recommendation[] = [];
 
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
+    if (!env.NEXT_PUBLIC_APP_URL) {
       recommendations.push({
         issue: 'Missing NEXT_PUBLIC_APP_URL',
         fix: 'Add NEXT_PUBLIC_APP_URL=https://development.destinosf.com to your Vercel environment variables',
@@ -58,8 +59,8 @@ export async function GET() {
     }
 
     if (
-      process.env.NEXT_PUBLIC_APP_URL &&
-      !process.env.NEXT_PUBLIC_APP_URL.startsWith('https://')
+      env.NEXT_PUBLIC_APP_URL &&
+      !env.NEXT_PUBLIC_APP_URL.startsWith('https://')
     ) {
       recommendations.push({
         issue: 'APP_URL not using HTTPS',

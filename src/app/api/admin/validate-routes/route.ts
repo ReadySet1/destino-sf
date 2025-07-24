@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
+import { env } from '@/env'; // Import the validated environment configuration
 
 interface RouteValidation {
   path: string;
@@ -83,7 +84,7 @@ export async function GET() {
 async function validateSquareRoutes(validations: RouteValidation[], criticalIssues: string[]) {
   // Validate Square sync route
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/square/sync`, {
+    const response = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/square/sync`, {
       method: 'HEAD',
     });
 
@@ -142,7 +143,7 @@ async function validateSquareRoutes(validations: RouteValidation[], criticalIssu
 async function validateProductRoutes(validations: RouteValidation[], criticalIssues: string[]) {
   // Validate products API
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/products?limit=1`, {
+    const response = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/products?limit=1`, {
       method: 'GET',
     });
 

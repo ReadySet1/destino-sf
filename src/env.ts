@@ -33,7 +33,7 @@ export const env = createEnv({
     BYPASS_RATE_LIMIT: z.string().optional(),
   },
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+    NEXT_PUBLIC_APP_URL: z.string().url(),
     // Supabase Configuration
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),

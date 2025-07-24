@@ -22,6 +22,7 @@ import {
   formatEmailForSquare,
   formatCustomerDataForSquarePaymentLink,
 } from '@/lib/square/formatting';
+import { env } from '@/env'; // Import the validated environment configuration
 
 /**
  * Fetches all active catering packages using Prisma
@@ -946,7 +947,7 @@ export async function createCateringOrderAndProcessPayment(
     }));
 
     // 5. Set up redirect URLs
-    const origin = process.env.NEXT_PUBLIC_APP_URL;
+    const origin = env.NEXT_PUBLIC_APP_URL;
     if (!origin) {
       console.error('Server Action Config Error: NEXT_PUBLIC_APP_URL is not set.');
 

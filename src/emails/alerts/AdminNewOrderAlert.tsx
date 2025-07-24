@@ -13,6 +13,7 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 import { formatOrderNotes } from '@/lib/email-utils';
+import { env } from '@/env'; // Import the validated environment configuration
 
 interface OrderItem {
   id: string;
@@ -232,7 +233,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
 
           <Section style={styles.actionSection}>
             <Link
-              href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+              href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
               style={styles.actionButton}
             >
               View Order in Admin

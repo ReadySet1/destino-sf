@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { randomUUID } from 'crypto';
 import { applyUserBasedRateLimit } from '@/middleware/rate-limit';
+import { env } from '@/env'; // Import the validated environment configuration
 
 const MAX_RETRY_ATTEMPTS = 3;
 const CHECKOUT_URL_EXPIRY_HOURS = 24;
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
         phone: order.phone,
       },
       total: order.total,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}?payment=cancelled`,
+      redirectUrl: `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}`,
+      cancelUrl: `${env.NEXT_PUBLIC_APP_URL}/orders/${order.id}?payment=cancelled`,
     });
 
     if (!squareResult.success || !squareResult.checkoutUrl) {

@@ -12,6 +12,7 @@ import {
   Link,
 } from '@react-email/components';
 import { OrderStatusChangeAlertData } from '@/types/alerts';
+import { env } from '@/env'; // Import the validated environment configuration
 
 interface OrderStatusChangeAlertProps extends OrderStatusChangeAlertData {
   isCustomer: boolean;
@@ -189,7 +190,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           {!isCustomer && (
             <Section style={styles.adminActionSection}>
               <Link
-                href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+                href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
                 style={styles.adminButton}
               >
                 View Order in Admin

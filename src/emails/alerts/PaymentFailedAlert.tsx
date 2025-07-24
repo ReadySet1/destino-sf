@@ -14,6 +14,7 @@ import {
   Column,
 } from '@react-email/components';
 import { PaymentFailedAlertData } from '@/types/alerts';
+import { env } from '@/env'; // Import the validated environment configuration
 
 interface PaymentFailedAlertProps extends PaymentFailedAlertData {}
 
@@ -186,7 +187,7 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
 
           <Section style={styles.quickActions}>
             <Link
-              href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+              href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
               style={styles.primaryButton}
             >
               View Order in Admin

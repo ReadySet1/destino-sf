@@ -1,7 +1,9 @@
 // src/app/(dashboard)/admin/products/[id]/page.tsx
 
+import { Suspense } from 'react';
+import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { redirect, notFound } from 'next/navigation';
+import { env } from '@/env'; // Import the validated environment configuration
 import Link from 'next/link';
 import { Category } from '@/types/product';
 import { logger } from '@/utils/logger';
@@ -93,9 +95,9 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
       // Revalidate both pages
       await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products`),
+        fetch(`${env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products`),
         fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`
+          `${env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`
         ),
       ]);
 

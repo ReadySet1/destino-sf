@@ -2,12 +2,18 @@
 
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-
-// Define our own PaymentMethod enum to match the Prisma schema
-enum PaymentMethod {
-  SQUARE = 'SQUARE',
-  CASH = 'CASH',
-}
+import { OrderStatus, PaymentMethod } from '@prisma/client';
+import { z } from 'zod';
+import { formatISO } from 'date-fns';
+import { randomUUID } from 'crypto';
+import Decimal from 'decimal.js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import type { Database } from '@/types/supabase';
+import { validateOrderMinimums } from '@/lib/cart-helpers';
+import { AlertService } from '@/lib/alerts';
+import { errorMonitor } from '@/lib/error-monitoring';
+import { env } from '@/env'; // Import the validated environment configuration
 
 /**
  * Updates an order to use a manual payment method like Cash
@@ -47,7 +53,7 @@ export async function updateOrderWithManualPayment(
     });
 
     // Get app URL for generating the payment page URL
-    const origin = process.env.NEXT_PUBLIC_APP_URL;
+    const origin = env.NEXT_PUBLIC_APP_URL;
     if (!origin) {
       return {
         success: false,
