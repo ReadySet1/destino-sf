@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { logger } from '@/utils/logger';
+import { ResponsivePageHeader } from '@/components/ui/responsive-page-header';
 
 export default async function AdminDashboard() {
   // Create the Supabase client for authentication
@@ -68,8 +69,11 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-10">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Admin Dashboard</h1>
+    <div className="space-y-6 md:space-y-8">
+      <ResponsivePageHeader
+        title="Admin Dashboard"
+        subtitle="Manage your store operations and settings"
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <DashboardCard title="Orders" href="/admin/orders" description="Manage customer orders" />
@@ -102,13 +106,13 @@ export default async function AdminDashboard() {
         {/* <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" /> */}
       </div>
 
-      <div className="mt-6 md:mt-10 p-3 md:p-4 bg-gray-100 rounded-lg">
-        <p className="text-xs md:text-sm text-gray-600 mb-2">Debug Info:</p>
-        <p className="text-xs md:text-sm">
-          User: {user.email} (ID: {user.id})
-        </p>
-        <p className="text-xs md:text-sm">Role Value: {profileRole}</p>
-        <p className="text-xs md:text-sm">Is Admin: {isUserAdmin ? 'Yes' : 'No'}</p>
+      <div className="mt-6 md:mt-8 p-4 md:p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <p className="text-sm md:text-base text-gray-600 mb-3 font-medium">Debug Info:</p>
+        <div className="space-y-2 text-sm md:text-base">
+          <p>User: {user.email} (ID: {user.id})</p>
+          <p>Role Value: {profileRole}</p>
+          <p>Is Admin: {isUserAdmin ? 'Yes' : 'No'}</p>
+        </div>
       </div>
     </div>
   );
@@ -126,10 +130,14 @@ function DashboardCard({
   return (
     <Link
       href={href}
-      className="block p-4 md:p-6 bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-50 transition-colors duration-200"
+      className="block p-4 md:p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 group"
     >
-      <h5 className="mb-2 text-lg md:text-xl font-bold tracking-tight">{title}</h5>
-      <p className="text-sm md:text-base text-gray-600">{description}</p>
+      <h5 className="mb-2 text-lg md:text-xl font-bold tracking-tight text-gray-900 group-hover:text-gray-700">
+        {title}
+      </h5>
+      <p className="text-sm md:text-base text-gray-600 group-hover:text-gray-500">
+        {description}
+      </p>
     </Link>
   );
 }

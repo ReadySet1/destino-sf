@@ -1905,16 +1905,22 @@ export async function getArchivedOrders(params: {
         ...(type === 'regular' ? { skip, take: itemsPerPage } : {}),
       });
 
-      const serializedRegularOrders = regularOrders.map(order => ({
-        ...order,
-        type: 'regular' as const,
-        total: order.total.toNumber(),
-        taxAmount: order.taxAmount.toNumber(),
-        items: order.items.map(item => ({
-          ...item,
-          price: item.price.toNumber(),
-        })),
-      }));
+      const serializedRegularOrders = regularOrders.map(order => {
+        const { total, taxAmount, items, ...rest } = order;
+        return {
+          ...rest,
+          type: 'regular' as const,
+          total: total.toNumber(),
+          taxAmount: taxAmount.toNumber(),
+          items: items.map(item => {
+            const { price, ...itemRest } = item;
+            return {
+              ...itemRest,
+              price: price.toNumber(),
+            };
+          }),
+        };
+      });
 
       allOrders.push(...serializedRegularOrders);
 
@@ -1936,12 +1942,23 @@ export async function getArchivedOrders(params: {
         ...(type === 'catering' ? { skip, take: itemsPerPage } : {}),
       });
 
-      const serializedCateringOrders = cateringOrders.map(order => ({
-        ...order,
-        type: 'catering' as const,
-        total: order.totalAmount.toNumber(),
-        deliveryFee: order.deliveryFee?.toNumber(),
-      }));
+      const serializedCateringOrders = cateringOrders.map(order => {
+        const { totalAmount, deliveryFee, items, ...rest } = order;
+        return {
+          ...rest,
+          type: 'catering' as const,
+          total: totalAmount.toNumber(),
+          deliveryFee: deliveryFee?.toNumber(),
+          items: items.map(item => {
+            const { pricePerUnit, totalPrice, ...itemRest } = item;
+            return {
+              ...itemRest,
+              pricePerUnit: pricePerUnit.toNumber(),
+              totalPrice: totalPrice.toNumber(),
+            };
+          }),
+        };
+      });
 
       allOrders.push(...serializedCateringOrders);
 

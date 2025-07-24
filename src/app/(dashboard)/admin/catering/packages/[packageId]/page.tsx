@@ -5,17 +5,17 @@ import { getCateringPackageById } from '@/actions/catering';
 
 interface PageProps {
   params: Promise<{
-    id: string;
+    packageId: string;
   }>;
 }
 
 export const dynamic = 'force-dynamic';
 
 export default async function EditCateringPackagePage({ params }: PageProps) {
-  const { id } = await params;
+  const { packageId } = await params;
 
   // Fetch the catering package
-  const cateringPackage = await getCateringPackageById(id);
+  const cateringPackage = await getCateringPackageById(packageId);
 
   // If the package doesn't exist, redirect to the 404 page
   if (!cateringPackage) {
@@ -30,4 +30,4 @@ export default async function EditCateringPackagePage({ params }: PageProps) {
       </div>
     </div>
   );
-}
+} 

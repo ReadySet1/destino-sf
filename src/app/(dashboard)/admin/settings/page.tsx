@@ -1,9 +1,9 @@
+import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
-
-// Force dynamic rendering to avoid build-time database queries
-export const dynamic = 'force-dynamic';
-import SettingsForm from './components/SettingsForm';
+import { redirect } from 'next/navigation';
+import SettingsFormWrapper from './components/SettingsForm';
 import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
+import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
 import { Separator } from '@/components/ui/separator';
 
 export const metadata = {
@@ -12,53 +12,44 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  // Fetch store settings from database with retry logic for prepared statement issues
-  let rawStoreSettings;
+  // Check authentication
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  try {
-    rawStoreSettings = await prisma.storeSettings.findFirst({
-      orderBy: { createdAt: 'asc' },
-    });
-  } catch (error) {
-    console.error('Error fetching store settings:', error);
-    // If there's a database error, try to reconnect and retry once
-    try {
-      await prisma.$disconnect();
-      await prisma.$connect();
-      rawStoreSettings = await prisma.storeSettings.findFirst({
-        orderBy: { createdAt: 'asc' },
-      });
-    } catch (retryError) {
-      console.error('Retry failed:', retryError);
-      rawStoreSettings = null;
-    }
+  if (!user) {
+    redirect('/auth/login');
   }
 
-  // Convert Decimal objects to numbers for client component compatibility
-  const storeSettings = rawStoreSettings
+  // Check if user is admin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    redirect('/');
+  }
+
+  // Fetch store settings and delivery zones
+  const [storeSettings, deliveryZones] = await Promise.all([
+    prisma.storeSettings.findFirst({
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.cateringDeliveryZone.findMany({
+      orderBy: { displayOrder: 'asc' },
+    }),
+  ]);
+
+  // Convert Decimal objects to numbers for client compatibility
+  const processedSettings = storeSettings
     ? {
-        ...rawStoreSettings,
-        taxRate: Number(rawStoreSettings.taxRate),
-        minOrderAmount: Number(rawStoreSettings.minOrderAmount),
-        cateringMinimumAmount: Number(rawStoreSettings.cateringMinimumAmount),
+        ...storeSettings,
+        taxRate: Number(storeSettings.taxRate),
+        minOrderAmount: Number(storeSettings.minOrderAmount),
+        cateringMinimumAmount: Number(storeSettings.cateringMinimumAmount),
       }
-    : {
-        id: '',
-        name: 'Destino SF',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        phone: '',
-        email: '',
-        taxRate: 8.25,
-        minAdvanceHours: 2,
-        minOrderAmount: 0,
-        cateringMinimumAmount: 150,
-        maxDaysInAdvance: 7,
-        isStoreOpen: true,
-        temporaryClosureMsg: null,
-      };
+    : null;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -70,11 +61,16 @@ export default async function SettingsPage() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <p className="text-gray-500">Configure your store&apos;s basic information.</p>
         <Separator className="mb-6" />
-        <SettingsForm settings={storeSettings} />
+        <SettingsFormWrapper settings={processedSettings} />
       </div>
 
       {/* Delivery Zone Management */}
       <DeliveryZoneManager />
+      
+      {/* Debugger for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <DeliveryZoneDebugger />
+      )}
     </div>
   );
 }

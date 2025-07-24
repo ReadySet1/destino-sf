@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "noImplicitAny": false,
     "resolveJsonModule": true,
     "allowJs": true,

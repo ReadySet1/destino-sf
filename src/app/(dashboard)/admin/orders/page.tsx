@@ -8,7 +8,8 @@ import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import Pagination from '@/components/ui/pagination';
 import OrderFilters from './components/OrderFilters';
-import OrdersTable from './components/OrdersTable';
+import ResponsiveOrdersTable from './components/ResponsiveOrdersTable';
+import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -313,24 +314,34 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     logger.info(`Found ${allOrders.length} orders for display (page ${currentPage}/${totalPages})`);
 
     return (
-      <div className="p-4 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold uppercase tracking-wide">Order Management</h1>
-          <div className="flex gap-2">
-            <Link
-              href="/admin/orders/archived"
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-            >
-              View Archived Orders
-            </Link>
-            <Link
-              href="/admin/orders/manual"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-            >
-              Add Manual Order
-            </Link>
-          </div>
-        </div>
+      <div className="space-y-6 md:space-y-8">
+        <ResponsivePageHeader
+          title="Order Management"
+          subtitle="Manage and track customer orders"
+          breadcrumbs={
+            <>
+              <BreadcrumbItem href="/admin">Dashboard</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem isCurrent>Orders</BreadcrumbItem>
+            </>
+          }
+          actions={
+            <>
+              <Link
+                href="/admin/orders/archived"
+                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 text-center transition-colors duration-200"
+              >
+                View Archived Orders
+              </Link>
+              <Link
+                href="/admin/orders/manual"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-center transition-colors duration-200"
+              >
+                Add Manual Order
+              </Link>
+            </>
+          }
+        />
 
         {/* Filters Section */}
         <OrderFilters
@@ -346,7 +357,17 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
           </div>
         ) : (
           <>
-            <OrdersTable orders={allOrders} />
+            <ResponsiveOrdersTable 
+              orders={allOrders}
+              onSort={(key, direction) => {
+                const params = new URLSearchParams(searchParamsResolved || {});
+                params.set('sort', key);
+                params.set('direction', direction);
+                window.location.search = params.toString();
+              }}
+              sortKey={sortField}
+              sortDirection={sortDirection}
+            />
 
             {/* Pagination */}
             {totalPages > 1 && (

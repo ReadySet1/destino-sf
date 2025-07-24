@@ -6,24 +6,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 
+interface StoreSettings {
+  id: string;
+  name: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  taxRate: number;
+  minAdvanceHours: number;
+  minOrderAmount: number;
+  cateringMinimumAmount: number;
+  maxDaysInAdvance: number;
+  isStoreOpen: boolean;
+  temporaryClosureMsg?: string | null;
+}
+
 interface StoreSettingsProps {
-  settings: {
-    id: string;
-    name: string;
-    address?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipCode?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    taxRate: number;
-    minAdvanceHours: number;
-    minOrderAmount: number;
-    cateringMinimumAmount: number;
-    maxDaysInAdvance: number;
-    isStoreOpen: boolean;
-    temporaryClosureMsg?: string | null;
-  };
+  settings: StoreSettings;
 }
 
 // Schema for form validation
@@ -47,7 +49,7 @@ const settingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
-export default function SettingsForm({ settings }: StoreSettingsProps) {
+function SettingsForm({ settings }: StoreSettingsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -333,4 +335,9 @@ export default function SettingsForm({ settings }: StoreSettingsProps) {
       </div>
     </form>
   );
+}
+
+export default function SettingsFormWrapper({ settings }: { settings: StoreSettings | null }) {
+  if (!settings) return <div className="text-red-600">No store settings found.</div>;
+  return <SettingsForm settings={settings} />;
 }
