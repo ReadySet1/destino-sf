@@ -1393,9 +1393,15 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
       console.log('✅ Webhook signature verified with enhanced security');
     } else {
       console.warn('⚠️ Webhook signature verification skipped - missing secret or headers');
-      if (process.env.NODE_ENV === 'production') {
-        console.error('🔒 Webhook signature verification is required in production');
+      
+      // Allow development/preview environments to process webhooks without signatures for debugging
+      const isProductionEnvironment = process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production';
+      
+      if (isProductionEnvironment) {
+        console.error('🔒 Webhook signature verification is required in true production environment');
         return;
+      } else {
+        console.warn('🚧 Development/Preview: Processing webhook without signature verification');
       }
     }
 
