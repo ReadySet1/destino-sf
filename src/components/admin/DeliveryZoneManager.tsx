@@ -55,11 +55,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     displayOrder: 0,
   });
 
-  // Load delivery zones
-  useEffect(() => {
-    loadDeliveryZones();
-  }, []);
-
   const loadDeliveryZones = useCallback(async () => {
     try {
       console.log('🔄 Loading delivery zones...');
@@ -77,6 +72,11 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       setLoading(false);
     }
   }, []);
+
+  // Load delivery zones
+  useEffect(() => {
+    loadDeliveryZones();
+  }, [loadDeliveryZones]);
 
   const resetForm = () => {
     setFormData({

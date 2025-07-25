@@ -751,11 +751,19 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
   const squarePaymentId = data.id;
   const squareOrderId = paymentData?.order_id;
   const paymentStatus = paymentData?.status?.toUpperCase();
-  console.log(`Processing payment.updated event: ${squarePaymentId}`);
+  
+  console.log(`🔄 Processing payment.updated event: ${squarePaymentId}`);
+  console.log(`📋 Payment data:`, {
+    squarePaymentId,
+    squareOrderId,
+    paymentStatus,
+    amount: paymentData?.amount_money?.amount,
+    currency: paymentData?.amount_money?.currency,
+  });
 
   if (!squareOrderId) {
     console.warn(
-      `No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`
+      `⚠️ No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`
     );
     return;
   }
@@ -763,6 +771,8 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
   try {
     // First check for a catering order with this Square order ID using simpler query approach
     try {
+      console.log(`🔍 Checking for catering order with squareOrderId: ${squareOrderId}`);
+      
       // Check if a catering order with this Square order ID exists using Prisma
       const cateringOrder = await prisma.cateringOrder.findUnique({
         where: { squareOrderId },
@@ -770,7 +780,11 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       });
 
       if (cateringOrder) {
-        console.log(`Detected catering order with squareOrderId ${squareOrderId}`);
+        console.log(`✅ Found catering order with squareOrderId ${squareOrderId}:`, {
+          id: cateringOrder.id,
+          currentPaymentStatus: cateringOrder.paymentStatus,
+          currentStatus: cateringOrder.status,
+        });
 
         // Map Square payment status to our status values using proper mapping
         let updatedPaymentStatus: Prisma.CateringOrderUpdateInput['paymentStatus'] = 'PENDING';
@@ -780,23 +794,23 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
           updatedPaymentStatus = 'PAID';
           updatedOrderStatus = 'CONFIRMED';
           console.log(
-            `Payment completed/approved for catering order ${squareOrderId}, updating to CONFIRMED status`
+            `💰 Payment completed/approved for catering order ${squareOrderId}, updating to CONFIRMED status`
           );
         } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELED') {
           updatedPaymentStatus = 'FAILED';
           updatedOrderStatus = 'CANCELLED';
           console.log(
-            `Payment failed/canceled for catering order ${squareOrderId}, updating to CANCELLED status`
+            `❌ Payment failed/canceled for catering order ${squareOrderId}, updating to CANCELLED status`
           );
         } else if (paymentStatus === 'REFUNDED') {
           updatedPaymentStatus = 'REFUNDED';
           updatedOrderStatus = 'CANCELLED';
           console.log(
-            `Payment refunded for catering order ${squareOrderId}, updating to CANCELLED status`
+            `🔄 Payment refunded for catering order ${squareOrderId}, updating to CANCELLED status`
           );
         } else {
           console.log(
-            `Other payment status ${paymentStatus} for catering order ${squareOrderId}, keeping as PENDING`
+            `ℹ️ Other payment status ${paymentStatus} for catering order ${squareOrderId}, keeping as PENDING`
           );
         }
 
@@ -809,7 +823,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
           (cateringOrder.paymentStatus === 'FAILED' && updatedPaymentStatus !== 'FAILED')
         ) {
           console.log(
-            `Preventing payment status downgrade for catering order ${cateringOrder.id}. Current: ${cateringOrder.paymentStatus}, Proposed: ${updatedPaymentStatus}`
+            `🚫 Preventing payment status downgrade for catering order ${cateringOrder.id}. Current: ${cateringOrder.paymentStatus}, Proposed: ${updatedPaymentStatus}`
           );
           updatedPaymentStatus = cateringOrder.paymentStatus;
         }
@@ -823,23 +837,29 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
           cateringUpdateData.status = updatedOrderStatus;
         }
 
+        console.log(`💾 Updating catering order ${cateringOrder.id} with:`, cateringUpdateData);
+
         await prisma.cateringOrder.update({
           where: { id: cateringOrder.id },
           data: cateringUpdateData,
         });
 
         console.log(
-          `Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`
+          `✅ Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`
         );
 
         return; // Exit after handling catering order
+      } else {
+        console.log(`❌ No catering order found with squareOrderId: ${squareOrderId}`);
       }
     } catch (err) {
-      console.error('Error checking/updating catering order:', err);
+      console.error('❌ Error checking/updating catering order:', err);
       // Continue to regular order processing even if catering check fails
     }
 
     // If not a catering order, find our internal order using the Square Order ID
+    console.log(`🔍 Checking for regular order with squareOrderId: ${squareOrderId}`);
+    
     const order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
       select: {
@@ -852,9 +872,31 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     });
 
     if (!order) {
-      console.warn(`Order with squareOrderId ${squareOrderId} not found for payment update.`);
+      console.warn(`❌ Order with squareOrderId ${squareOrderId} not found for payment update. Available orders:`);
+      
+      // Debug: List recent orders to help identify the issue
+      const recentOrders = await prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          squareOrderId: true,
+          status: true,
+          paymentStatus: true,
+          createdAt: true,
+        },
+      });
+      
+      console.log(`📋 Recent orders for comparison:`, recentOrders);
       return;
     }
+
+    console.log(`✅ Found regular order with squareOrderId ${squareOrderId}:`, {
+      id: order.id,
+      currentStatus: order.status,
+      currentPaymentStatus: order.paymentStatus,
+      fulfillmentType: order.fulfillmentType,
+    });
 
     // Update payment status based on Square's status using proper mapping
     function mapSquarePaymentStatus(status: string): 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' {
@@ -875,6 +917,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     }
     
     let updatedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
+    console.log(`📊 Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus}`);
 
     // Prevent downgrading status
     if (
@@ -885,7 +928,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       (order.paymentStatus === 'FAILED' && updatedPaymentStatus !== 'FAILED')
     ) {
       console.log(
-        `Preventing payment status downgrade for order ${order.id}. Current: ${order.paymentStatus}, Proposed: ${updatedPaymentStatus}`
+        `🚫 Preventing payment status downgrade for order ${order.id}. Current: ${order.paymentStatus}, Proposed: ${updatedPaymentStatus}`
       );
       updatedPaymentStatus = order.paymentStatus; // Keep current status
     }
@@ -896,6 +939,9 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
         ? OrderStatus.PROCESSING // Update to PROCESSING when paid
         : order.status; // Otherwise keep current status
 
+    console.log(`📊 Order status update: ${order.status} → ${updatedOrderStatus}`);
+    console.log(`💾 Updating order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus}`);
+
     await prisma.order.update({
       where: { id: order.id },
       data: {
@@ -905,8 +951,9 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
         updatedAt: new Date(),
       },
     });
+    
     console.log(
-      `Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`
+      `✅ Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`
     );
 
     // Send payment failed alert if payment failed
@@ -1021,7 +1068,44 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     }
     // --- End Purchase Shipping Label ---
   } catch (error: any) {
-    console.error(`Error processing payment.updated event for order ${squareOrderId}:`, error);
+    console.error(`❌ Error in handlePaymentUpdated for payment ${squarePaymentId}:`, error);
+    
+    // Enhanced error logging for different types of database errors
+    if (error.code === 'P2025') {
+      console.error('🔍 Record not found error - the order might have been deleted or never created');
+    } else if (error.code === 'P2002') {
+      console.error('🔒 Unique constraint violation - potential data integrity issue');
+    } else if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+      console.error('🚨 Database connection error:', {
+        errorCode: error.code,
+        message: error.message,
+        squareOrderId,
+        squarePaymentId,
+        timestamp: new Date().toISOString(),
+        databaseUrl: process.env.DATABASE_URL?.replace(/:[^:]*@/, ':****@'),
+      });
+    } else {
+      console.error('💥 Unexpected error in payment update:', {
+        errorCode: error.code,
+        message: error.message,
+        stack: error.stack,
+        squareOrderId,
+        squarePaymentId,
+      });
+    }
+
+    // Capture error for monitoring
+    await errorMonitor.captureWebhookError(
+      error,
+      'payment.updated',
+      { squarePaymentId, squareOrderId },
+      payload.event_id
+    );
+    
+    // Re-throw to trigger webhook retry for transient errors
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+      throw error;
+    }
   }
 }
 
