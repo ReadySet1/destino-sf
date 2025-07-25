@@ -418,6 +418,61 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
     // Optionally update paymentStatus if not already handled by payment webhooks
     // updateData.paymentStatus = 'PAID';
   }
+
+  // FALLBACK: Check for payment status in order data when payment.updated webhooks are missing
+  // This handles cases where Square doesn't send payment.updated webhooks properly
+  const tenders = orderUpdateData?.tenders;
+  if (tenders && Array.isArray(tenders) && tenders.length > 0) {
+    const paymentTender = tenders.find((tender: any) => tender.type === 'CARD' || tender.type === 'CASH');
+    if (paymentTender?.card_details?.status === 'COMPLETED' || paymentTender?.cash_details?.buyer_tendered_money) {
+      console.log(`🔄 FALLBACK: Detected completed payment in order.updated for ${data.id}`);
+      
+      // Check if we need to update payment status
+      const currentOrder = await prisma.order.findUnique({
+        where: { squareOrderId: data.id },
+        select: { 
+          id: true, 
+          paymentStatus: true, 
+          status: true, 
+          fulfillmentType: true, 
+          shippingRateId: true 
+        },
+      });
+
+      if (currentOrder && currentOrder.paymentStatus !== 'PAID') {
+        console.log(`💳 FALLBACK: Updating payment status to PAID for order ${currentOrder.id}`);
+        updateData.paymentStatus = 'PAID';
+        
+        // Update order status to PROCESSING if not already
+        if (currentOrder.status === 'PENDING') {
+          updateData.status = OrderStatus.PROCESSING;
+        }
+
+        // TRIGGER SHIPPO LABEL CREATION for national shipping orders
+        if (
+          currentOrder.fulfillmentType === 'nationwide_shipping' && 
+          currentOrder.shippingRateId
+        ) {
+          console.log(`📦 FALLBACK: Triggering label purchase for shipping order ${currentOrder.id}`);
+          
+          // Use setTimeout to trigger label creation after the database update
+          setTimeout(async () => {
+            try {
+              const labelResult = await purchaseShippingLabel(currentOrder.id, currentOrder.shippingRateId!);
+              if (labelResult.success) {
+                console.log(`✅ FALLBACK: Successfully purchased label for order ${currentOrder.id}. Tracking: ${labelResult.trackingNumber}`);
+              } else {
+                console.error(`❌ FALLBACK: Failed to purchase label for order ${currentOrder.id}: ${labelResult.error}`);
+              }
+            } catch (labelError: any) {
+              console.error(`❌ FALLBACK: Error purchasing label for order ${currentOrder.id}:`, labelError);
+            }
+          }, 1000); // Wait 1 second for database update to complete
+        }
+      }
+    }
+  }
+
   // If mappedStatus is PROCESSING (from OPEN), we DO NOT update the status here,
   // allowing the fulfillment handler to correctly set READY.
 
@@ -536,11 +591,32 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
 
   const internalOrderId = order.id;
   const paymentAmount = paymentData?.amount_money?.amount;
+  const paymentStatus = paymentData?.status?.toUpperCase();
 
   if (paymentAmount === undefined || paymentAmount === null) {
     console.warn(`⚠️ Payment ${data.id} received without an amount.`);
     return;
   }
+
+  // Map Square payment status using the same logic as payment.updated
+  function mapSquarePaymentStatus(status: string): 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' {
+    switch (status?.toUpperCase()) {
+      case 'APPROVED':    // ← Handles APPROVED payments correctly!
+      case 'COMPLETED':
+      case 'CAPTURED':
+        return 'PAID';
+      case 'FAILED':
+        return 'FAILED';
+      case 'CANCELED':
+        return 'FAILED';
+      case 'REFUNDED':
+        return 'REFUNDED';
+      default:
+        return 'PENDING';
+    }
+  }
+  
+  const mappedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
 
   console.log(
     `🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}`
@@ -552,7 +628,7 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
       where: { squarePaymentId: data.id },
       update: {
         amount: paymentAmount / 100, // Convert from cents to dollars
-        status: 'PAID', // Payment created = paid
+        status: mappedPaymentStatus, // Use mapped status from Square
         rawData: {
           ...data.object,
           lastProcessedEventId: eventId,
@@ -564,7 +640,7 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
       create: {
         squarePaymentId: data.id,
         amount: paymentAmount / 100, // Convert from cents to dollars
-        status: 'PAID',
+        status: mappedPaymentStatus, // Use mapped status from Square
         rawData: {
           ...data.object,
           lastProcessedEventId: eventId,
@@ -608,7 +684,7 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
     };
 
     // Update payment status if not already paid
-    if (currentOrder.paymentStatus !== 'PAID') {
+    if (currentOrder.paymentStatus !== 'PAID' && mappedPaymentStatus === 'PAID') {
       updateData.paymentStatus = 'PAID';
       updateData.status = 'PROCESSING';
     }
@@ -696,15 +772,15 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       if (cateringOrder) {
         console.log(`Detected catering order with squareOrderId ${squareOrderId}`);
 
-        // Map Square payment status to our status values
+        // Map Square payment status to our status values using proper mapping
         let updatedPaymentStatus: Prisma.CateringOrderUpdateInput['paymentStatus'] = 'PENDING';
         let updatedOrderStatus: Prisma.CateringOrderUpdateInput['status'] | undefined;
 
-        if (paymentStatus === 'COMPLETED') {
+        if (paymentStatus === 'COMPLETED' || paymentStatus === 'APPROVED' || paymentStatus === 'CAPTURED') {
           updatedPaymentStatus = 'PAID';
           updatedOrderStatus = 'CONFIRMED';
           console.log(
-            `Payment completed for catering order ${squareOrderId}, updating to CONFIRMED status`
+            `Payment completed/approved for catering order ${squareOrderId}, updating to CONFIRMED status`
           );
         } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELED') {
           updatedPaymentStatus = 'FAILED';
@@ -780,14 +856,25 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       return;
     }
 
-    // Update payment status based on Square's status
-    let updatedPaymentStatus: Prisma.PaymentUpdateInput['status'] = undefined;
-    if (paymentStatus === 'COMPLETED') updatedPaymentStatus = 'PAID';
-    else if (paymentStatus === 'FAILED') updatedPaymentStatus = 'FAILED';
-    else if (paymentStatus === 'CANCELED')
-      updatedPaymentStatus = 'FAILED'; // Treat canceled payment as failed
-    else if (paymentStatus === 'REFUNDED') updatedPaymentStatus = 'REFUNDED';
-    else updatedPaymentStatus = 'PENDING';
+    // Update payment status based on Square's status using proper mapping
+    function mapSquarePaymentStatus(status: string): 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' {
+      switch (status?.toUpperCase()) {
+        case 'APPROVED':    // ← Now handles APPROVED payments correctly!
+        case 'COMPLETED':
+        case 'CAPTURED':
+          return 'PAID';
+        case 'FAILED':
+          return 'FAILED';
+        case 'CANCELED':
+          return 'FAILED';
+        case 'REFUNDED':
+          return 'REFUNDED';
+        default:
+          return 'PENDING';
+      }
+    }
+    
+    let updatedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
 
     // Prevent downgrading status
     if (
