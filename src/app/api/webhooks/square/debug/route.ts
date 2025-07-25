@@ -39,7 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('=== WEBHOOK DEBUG MODE ===');
   
-  const debug = {
+  const debug: any = {
     timestamp: new Date().toISOString(),
     environment: {
       NODE_ENV: process.env.NODE_ENV,
