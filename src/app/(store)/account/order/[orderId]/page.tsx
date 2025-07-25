@@ -477,14 +477,16 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     key={item.id}
                     className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
                   >
-                    {/* Item Image */}
-                    <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <OrderItemImage
-                        src={(item as any).imageUrl ?? getBoxedLunchImage(item.productName)}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    {/* Item Image - Only show for regular orders, not catering orders */}
+                    {!isCateringOrder && (
+                      <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
+                        <OrderItemImage
+                          src={(item as any).imageUrl ?? getBoxedLunchImage(item.productName)}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
 
                     {/* Item Details */}
                     <div className="flex-1">
