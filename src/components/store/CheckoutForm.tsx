@@ -39,6 +39,8 @@ import { AddressForm } from '@/components/Store/AddressForm';
 import { createOrderAndGenerateCheckoutUrl, getShippingRates } from '@/app/actions';
 import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
 import type { FulfillmentData, ShippingRate } from '@/app/actions';
+import { checkForDuplicateOrders } from '@/app/actions/duplicate-prevention';
+import PendingOrderAlert from './PendingOrderAlert';
 // --- Import Date Utilities ---
 import {
   getEarliestPickupDate,
@@ -191,6 +193,23 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [deliveryFee, setDeliveryFee] = useState<DeliveryFeeResult | null>(null);
   // Contact info saving state
   const [contactSaved, setContactSaved] = useState(false);
+  // Duplicate order prevention state
+  const [pendingOrderCheck, setPendingOrderCheck] = useState<{
+    isChecking: boolean;
+    hasPendingOrder: boolean;
+    existingOrder?: {
+      id: string;
+      total: number;
+      createdAt: Date;
+      paymentUrl?: string;
+      paymentUrlExpiresAt?: Date;
+      retryCount: number;
+    };
+  }>({
+    isChecking: false,
+    hasPendingOrder: false,
+  });
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   // Client Supabase needed only if performing client-side auth actions, otherwise remove
   // const supabase = createClient();
 
@@ -497,6 +516,60 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     return () => subscription.unsubscribe();
   }, [watch, contactSaved, saveContactInfoImmediately]);
 
+  // Function to check for duplicate orders
+  const checkForDuplicates = async (email: string) => {
+    setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
+    
+    try {
+      const duplicateCheck = await checkForDuplicateOrders(items, email);
+      
+      if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
+        setPendingOrderCheck({
+          isChecking: false,
+          hasPendingOrder: true,
+          existingOrder: duplicateCheck.existingOrder,
+        });
+        setShowDuplicateAlert(true);
+        return true; // Has duplicate
+      }
+      
+      setPendingOrderCheck({
+        isChecking: false,
+        hasPendingOrder: false,
+      });
+      return false; // No duplicate
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+      setPendingOrderCheck({
+        isChecking: false,
+        hasPendingOrder: false,
+      });
+      return false; // Continue on error
+    }
+  };
+
+  // Handlers for pending order alert
+  const handleContinueExisting = () => {
+    const orderId = pendingOrderCheck.existingOrder?.id;
+    if (orderId) {
+      router.push(`/orders/${orderId}`);
+    }
+  };
+
+  const handleCreateNew = () => {
+    setShowDuplicateAlert(false);
+    setPendingOrderCheck({
+      isChecking: false,
+      hasPendingOrder: false,
+    });
+    // Continue with normal checkout flow
+    handleSubmit(onSubmit)();
+  };
+
+  const handleDismissAlert = () => {
+    setShowDuplicateAlert(false);
+  };
+
   // --- Keep onSubmit function ---
   const onSubmit = async (formData: CheckoutFormData) => {
     setIsSubmitting(true);
@@ -509,6 +582,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         toast.error('Your cart is empty.');
         setIsSubmitting(false);
         return;
+      }
+
+      // Check for duplicate orders before proceeding
+      const hasDuplicate = await checkForDuplicates(formData.email);
+      if (hasDuplicate) {
+        setIsSubmitting(false);
+        return; // Stop here and show duplicate alert
       }
 
       // Validate minimum order requirements
@@ -729,6 +809,18 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   return (
     <>
+      {/* Pending Order Alert */}
+      {showDuplicateAlert && pendingOrderCheck.existingOrder && (
+        <div className="mb-6">
+          <PendingOrderAlert
+            existingOrder={pendingOrderCheck.existingOrder}
+            onContinueExisting={handleContinueExisting}
+            onCreateNew={handleCreateNew}
+            onDismiss={handleDismissAlert}
+          />
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="lg:col-span-2 space-y-6">
         {/* Fulfillment Method Selector */}
         <FulfillmentSelector
@@ -1040,13 +1132,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         <Button
           type="submit"
           className="w-full"
-          disabled={isSubmitting || !isMounted || items.length === 0 || !isValid}
+          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
         >
-          {isSubmitting
-            ? 'Processing...'
-            : currentPaymentMethod === PaymentMethod.SQUARE
-              ? 'Continue to Payment'
-              : 'Place Order'}
+          {pendingOrderCheck.isChecking
+            ? 'Checking for existing orders...'
+            : isSubmitting
+              ? 'Processing...'
+              : currentPaymentMethod === PaymentMethod.SQUARE
+                ? 'Continue to Payment'
+                : 'Place Order'}
         </Button>
       </form>
 

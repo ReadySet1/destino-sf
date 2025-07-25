@@ -8,7 +8,7 @@ import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import Pagination from '@/components/ui/pagination';
 import OrderFilters from './components/OrderFilters';
-import ResponsiveOrdersTable from './components/ResponsiveOrdersTable';
+import OrdersTableWrapper from './components/OrdersTableWrapper';
 import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
 
 // Force dynamic rendering to avoid build-time database queries
@@ -357,14 +357,8 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
           </div>
         ) : (
           <>
-            <ResponsiveOrdersTable 
+            <OrdersTableWrapper 
               orders={allOrders}
-              onSort={(key, direction) => {
-                const params = new URLSearchParams(searchParamsResolved || {});
-                params.set('sort', key);
-                params.set('direction', direction);
-                window.location.search = params.toString();
-              }}
               sortKey={sortField}
               sortDirection={sortDirection}
             />

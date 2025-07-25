@@ -38,6 +38,8 @@ interface Order {
   deliveryDate?: string | null;
   deliveryTime?: string | null;
   notes?: string | null;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'COMPLETED';
+  paymentMethod: 'SQUARE' | 'CASH' | 'VENMO';
   items: OrderItem[];
 }
 
@@ -65,6 +67,64 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
 
   // Format notes to extract shipping address and other information
   const formattedNotes = formatOrderNotes(order.notes || null);
+
+  // Format payment status for display
+  const formatPaymentStatus = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Pending Payment';
+      case 'PAID':
+        return 'Paid';
+      case 'FAILED':
+        return 'Payment Failed';
+      case 'REFUNDED':
+        return 'Refunded';
+      case 'COMPLETED':
+        return 'Payment Completed';
+      default:
+        return status;
+    }
+  };
+
+  // Format payment method for display
+  const formatPaymentMethod = (method: string) => {
+    switch (method) {
+      case 'SQUARE':
+        return 'Credit Card (Square)';
+      case 'CASH':
+        return 'Cash';
+      case 'VENMO':
+        return 'Venmo';
+      default:
+        return method;
+    }
+  };
+
+  // Get payment status styling
+  const getPaymentStatusStyle = (status: string) => {
+    const baseStyle = {
+      fontSize: '14px',
+      fontWeight: '600',
+      margin: '8px 0',
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'inline-block',
+    };
+
+    switch (status) {
+      case 'PAID':
+      case 'COMPLETED':
+        return { ...baseStyle, backgroundColor: '#dcfce7', color: '#166534' };
+      case 'PENDING':
+        return { ...baseStyle, backgroundColor: '#fef3c7', color: '#92400e' };
+      case 'FAILED':
+        return { ...baseStyle, backgroundColor: '#fee2e2', color: '#dc2626' };
+      case 'REFUNDED':
+        return { ...baseStyle, backgroundColor: '#f3f4f6', color: '#374151' };
+      default:
+        return { ...baseStyle, backgroundColor: '#f9fafb', color: '#6b7280' };
+    }
+  };
 
   return (
     <Html>
@@ -134,6 +194,26 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                       : order.total.toNumber()
                     ).toFixed(2)}
                   </Text>
+                </Column>
+              </Row>
+
+              <Row>
+                <Column style={styles.labelColumn}>
+                  <Text style={styles.label}>Payment Status:</Text>
+                </Column>
+                <Column>
+                  <Text style={getPaymentStatusStyle(order.paymentStatus)}>
+                    {formatPaymentStatus(order.paymentStatus)}
+                  </Text>
+                </Column>
+              </Row>
+
+              <Row>
+                <Column style={styles.labelColumn}>
+                  <Text style={styles.label}>Payment Method:</Text>
+                </Column>
+                <Column>
+                  <Text style={styles.value}>{formatPaymentMethod(order.paymentMethod)}</Text>
                 </Column>
               </Row>
 

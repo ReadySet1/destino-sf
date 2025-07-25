@@ -77,11 +77,11 @@ function mapSquareFulfillmentToStatus(
 
 // Square webhook signature verification
 export function verifySquareSignature(signatureHeader: string | undefined, body: string): boolean {
-  if (!signatureHeader || !env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
+  if (!signatureHeader || !env.SQUARE_WEBHOOK_SECRET) {
     return false;
   }
 
-  const hmac = crypto.createHmac('sha256', env.SQUARE_WEBHOOK_SIGNATURE_KEY);
+  const hmac = crypto.createHmac('sha256', env.SQUARE_WEBHOOK_SECRET);
   const signature = hmac.update(body).digest('base64');
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(signatureHeader));
 }
