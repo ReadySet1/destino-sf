@@ -113,7 +113,8 @@
     "seed-test-data": "tsx tests/setup/seed-database.ts",
     "check-test-images": "tsx tests/utils/check-images.ts",
     "sync-test-data": "tsx tests/utils/sync-production-data.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:square": "NODE_ENV=development tsx --env-file=.env.local src/scripts/diagnose-square-sync.ts"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.8",

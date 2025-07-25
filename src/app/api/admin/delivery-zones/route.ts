@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
+import { UserRole } from '@prisma/client';
 
 // Schema for delivery zone validation
 const deliveryZoneSchema = z.object({
@@ -32,7 +33,7 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
       .eq('id', user.id)
       .single();
 
-    return profile?.role === 'admin';
+    return profile?.role === UserRole.ADMIN;
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;

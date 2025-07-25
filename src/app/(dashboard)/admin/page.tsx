@@ -105,15 +105,6 @@ export default async function AdminDashboard() {
         <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
         {/* <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" /> */}
       </div>
-
-      <div className="mt-6 md:mt-8 p-4 md:p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-sm md:text-base text-gray-600 mb-3 font-medium">Debug Info:</p>
-        <div className="space-y-2 text-sm md:text-base">
-          <p>User: {user.email} (ID: {user.id})</p>
-          <p>Role Value: {profileRole}</p>
-          <p>Is Admin: {isUserAdmin ? 'Yes' : 'No'}</p>
-        </div>
-      </div>
     </div>
   );
 }

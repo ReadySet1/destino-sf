@@ -1,16 +1,28 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, X, Calendar, User, FileText } from 'lucide-react';
 
-interface ArchivedOrdersFiltersProps {
+type ArchivedOrdersFiltersProps = {
   currentSearch: string;
   currentType: string;
   currentReason: string;
   currentArchivedBy: string;
   currentStartDate: string;
   currentEndDate: string;
-}
+};
 
 export default function ArchivedOrdersFilters({
   currentSearch,
@@ -21,239 +33,242 @@ export default function ArchivedOrdersFilters({
   currentEndDate,
 }: ArchivedOrdersFiltersProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(currentSearch);
-  const [type, setType] = useState(currentType);
+  const [type, setType] = useState(currentType || 'all');
   const [reason, setReason] = useState(currentReason);
   const [archivedBy, setArchivedBy] = useState(currentArchivedBy);
   const [startDate, setStartDate] = useState(currentStartDate);
   const [endDate, setEndDate] = useState(currentEndDate);
 
-  // Update local state when props change
+  // Function to create new URL with updated search params
+  const applyFilters = useCallback(
+    (updates: {
+      search?: string;
+      type?: string;
+      reason?: string;
+      archivedBy?: string;
+      startDate?: string;
+      endDate?: string;
+      page?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      // Update search params with new values
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+      });
+
+      // Reset page to 1 when filters change, unless explicitly set
+      if (!updates.page && params.has('page')) {
+        params.set('page', '1');
+      }
+
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, searchParams]
+  );
+
+  // Update search term with debounce
   useEffect(() => {
-    setSearch(currentSearch);
-    setType(currentType);
-    setReason(currentReason);
-    setArchivedBy(currentArchivedBy);
-    setStartDate(currentStartDate);
-    setEndDate(currentEndDate);
-  }, [
-    currentSearch,
-    currentType,
-    currentReason,
-    currentArchivedBy,
-    currentStartDate,
-    currentEndDate,
-  ]);
+    const timer = setTimeout(() => {
+      if (search !== currentSearch) {
+        applyFilters({ search });
+      }
+    }, 500);
 
-  const updateFilters = () => {
-    const params = new URLSearchParams(searchParams);
+    return () => clearTimeout(timer);
+  }, [search, currentSearch, applyFilters]);
 
-    // Update or remove search parameter
-    if (search.trim()) {
-      params.set('search', search.trim());
-    } else {
-      params.delete('search');
-    }
-
-    // Update or remove type parameter
-    if (type && type !== 'all') {
-      params.set('type', type);
-    } else {
-      params.delete('type');
-    }
-
-    // Update or remove reason parameter
-    if (reason.trim()) {
-      params.set('reason', reason.trim());
-    } else {
-      params.delete('reason');
-    }
-
-    // Update or remove archivedBy parameter
-    if (archivedBy.trim()) {
-      params.set('archivedBy', archivedBy.trim());
-    } else {
-      params.delete('archivedBy');
-    }
-
-    // Update or remove date parameters
-    if (startDate) {
-      params.set('startDate', startDate);
-    } else {
-      params.delete('startDate');
-    }
-
-    if (endDate) {
-      params.set('endDate', endDate);
-    } else {
-      params.delete('endDate');
-    }
-
-    // Reset to page 1 when filters change
-    params.delete('page');
-
-    router.push(`/admin/orders/archived?${params.toString()}`);
-  };
-
-  const clearFilters = () => {
+  const resetFilters = () => {
     setSearch('');
     setType('all');
     setReason('');
     setArchivedBy('');
     setStartDate('');
     setEndDate('');
-    router.push('/admin/orders/archived');
+    router.push(pathname);
   };
 
   const hasActiveFilters = search || type !== 'all' || reason || archivedBy || startDate || endDate;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {/* Search */}
-        <div>
-          <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-            Search
-          </label>
-          <input
-            type="text"
-            id="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Order ID, customer, email..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+      <div className="space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Search orders..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-        {/* Type Filter */}
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-            Order Type
-          </label>
-          <select
-            id="type"
-            value={type}
-            onChange={e => setType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="all">All Types</option>
-            <option value="regular">Regular Orders</option>
-            <option value="catering">Catering Orders</option>
-          </select>
-        </div>
+          {/* Type Filter */}
+          <div className="w-full lg:w-1/5">
+            <Select
+              value={type}
+              onValueChange={value => {
+                setType(value);
+                applyFilters({ type: value });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Order Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Order Type</SelectLabel>
+                  <SelectItem value="all">All Orders</SelectItem>
+                  <SelectItem value="regular">Regular Orders</SelectItem>
+                  <SelectItem value="catering">Catering Orders</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Reason Filter */}
-        <div>
-          <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
-            Archive Reason
-          </label>
-          <input
-            type="text"
-            id="reason"
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-            placeholder="Search by reason..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+          {/* Archive Reason Filter */}
+          <div className="relative w-full lg:w-1/4">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FileText className="h-4 w-4 text-gray-400" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Archive reason..."
+              value={reason}
+              onChange={e => {
+                setReason(e.target.value);
+              }}
+              className="pl-10"
+            />
+          </div>
 
-        {/* Archived By Filter */}
-        <div>
-          <label htmlFor="archivedBy" className="block text-sm font-medium text-gray-700 mb-1">
-            Archived By
-          </label>
-          <input
-            type="text"
-            id="archivedBy"
-            value={archivedBy}
-            onChange={e => setArchivedBy(e.target.value)}
-            placeholder="Admin email or name..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-
-        {/* Start Date */}
-        <div>
-          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-            From Date
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-
-        {/* End Date */}
-        <div>
-          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-            To Date
-          </label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-        <button
-          onClick={updateFilters}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Apply Filters
-        </button>
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
-
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-700">Active Filters:</span>
-            {search && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Search: {search}
-              </span>
-            )}
-            {type !== 'all' && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Type: {type}
-              </span>
-            )}
-            {reason && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                Reason: {reason}
-              </span>
-            )}
-            {archivedBy && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                By: {archivedBy}
-              </span>
-            )}
-            {(startDate || endDate) && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                Date: {startDate || 'Any'} - {endDate || 'Any'}
-              </span>
-            )}
+          {/* Archived By Filter */}
+          <div className="relative w-full lg:w-1/4">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <User className="h-4 w-4 text-gray-400" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Archived by..."
+              value={archivedBy}
+              onChange={e => {
+                setArchivedBy(e.target.value);
+              }}
+              className="pl-10"
+            />
           </div>
         </div>
-      )}
+
+        {/* Date Range Filters */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Calendar className="h-4 w-4 text-gray-400" />
+              </div>
+              <Input
+                type="date"
+                placeholder="From date"
+                value={startDate}
+                onChange={e => {
+                  setStartDate(e.target.value);
+                }}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Calendar className="h-4 w-4 text-gray-400" />
+              </div>
+              <Input
+                type="date"
+                placeholder="To date"
+                value={endDate}
+                onChange={e => {
+                  setEndDate(e.target.value);
+                }}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Apply Filters Button for Date and Text Filters */}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                applyFilters({ reason, archivedBy, startDate, endDate });
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+
+        {/* Reset Filters Button - Only show if filters are active */}
+        {hasActiveFilters && (
+          <div className="flex justify-end pt-2 border-t border-gray-200">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+              className="flex items-center gap-1"
+            >
+              <X className="h-4 w-4" /> Reset Filters
+            </Button>
+          </div>
+        )}
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="pt-3 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700">Active Filters:</span>
+              {search && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Search: {search}
+                </span>
+              )}
+              {type !== 'all' && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Type: {type}
+                </span>
+              )}
+              {reason && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  Reason: {reason}
+                </span>
+              )}
+              {archivedBy && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  By: {archivedBy}
+                </span>
+              )}
+              {(startDate || endDate) && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  Date: {startDate || 'Any'} - {endDate || 'Any'}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

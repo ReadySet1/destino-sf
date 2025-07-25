@@ -171,6 +171,16 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Monitor for undefined subjects (as per production fix plan)
+        if (!data.subject) {
+          console.warn('Contact form submitted without subject', { 
+            name: data.name, 
+            email: data.email,
+            contactType: data.contactType,
+            timestamp: new Date().toISOString()
+          });
+        }
+
         const contactData: ContactFormReceivedData = {
           name: data.name,
           email: data.email,

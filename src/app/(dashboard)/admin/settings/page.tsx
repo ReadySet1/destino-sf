@@ -20,17 +20,6 @@ export default async function SettingsPage() {
     redirect('/auth/login');
   }
 
-  // Check if user is admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin') {
-    redirect('/');
-  }
-
   // Fetch store settings and delivery zones
   const [storeSettings, deliveryZones] = await Promise.all([
     prisma.storeSettings.findFirst({

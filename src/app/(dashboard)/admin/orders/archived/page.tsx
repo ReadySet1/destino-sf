@@ -10,12 +10,19 @@ import Pagination from '@/components/ui/pagination';
 import { getArchivedOrders } from '@/app/actions/orders';
 import ArchivedOrdersTable from './components/ArchivedOrdersTable';
 import ArchivedOrdersFilters from './components/ArchivedOrdersFilters';
+import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
 
-interface ArchivedOrderPageProps {
-  params: Promise<{}>;
+// Define the shape of the resolved params
+type ResolvedParams = {
+  [key: string]: string | string[] | undefined;
+};
+
+// Define page props type
+type ArchivedOrderPageProps = {
+  params: Promise<ResolvedParams>;
   searchParams: Promise<{
     page?: string;
     search?: string;
@@ -25,7 +32,7 @@ interface ArchivedOrderPageProps {
     startDate?: string;
     endDate?: string;
   }>;
-}
+};
 
 export default async function ArchivedOrdersPage({ params, searchParams }: ArchivedOrderPageProps) {
   await params; // We're not using the params, but we need to await the promise
@@ -65,18 +72,30 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
     );
 
     return (
-      <div className="p-4 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold uppercase tracking-wide">Archived Orders</h1>
-          <div className="flex gap-2">
-            <Link
-              href="/admin/orders"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-            >
-              Back to Orders
-            </Link>
-          </div>
-        </div>
+      <div className="space-y-6 md:space-y-8">
+        <ResponsivePageHeader
+          title="Archived Orders"
+          subtitle="View and manage archived customer orders"
+          breadcrumbs={
+            <>
+              <BreadcrumbItem href="/admin">Dashboard</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem href="/admin/orders">Orders</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem isCurrent>Archived</BreadcrumbItem>
+            </>
+          }
+          actions={
+            <>
+              <Link
+                href="/admin/orders"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-center transition-colors duration-200"
+              >
+                Back to Orders
+              </Link>
+            </>
+          }
+        />
 
         {/* Filters Section */}
         <ArchivedOrdersFilters
@@ -111,8 +130,19 @@ export default async function ArchivedOrdersPage({ params, searchParams }: Archi
   } catch (error) {
     logger.error('Error fetching archived orders:', error);
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Archived Orders</h1>
+      <div className="space-y-6 md:space-y-8">
+        <ResponsivePageHeader
+          title="Archived Orders"
+          breadcrumbs={
+            <>
+              <BreadcrumbItem href="/admin">Dashboard</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem href="/admin/orders">Orders</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem isCurrent>Archived</BreadcrumbItem>
+            </>
+          }
+        />
         <ErrorDisplay
           title="Failed to Load Archived Orders"
           message="There was an error loading the archived orders. Please try again later."
