@@ -2,6 +2,22 @@
 
 - [Welcome](README.md)
 
+## User Guides
+
+- [User Guides Overview](user-guides/README.md)
+
+### Customer Guides
+- [Getting Started](user-guides/customer/getting-started.md)
+- [Placing Orders](user-guides/customer/placing-orders.md)
+- [Catering Orders](user-guides/customer/catering-orders.md)
+- [Account Management](user-guides/customer/account-management.md)
+- [Order Tracking](user-guides/customer/order-tracking.md)
+
+### Admin Guides
+- [Admin Dashboard](user-guides/admin/dashboard-overview.md)
+- [Order Management](user-guides/admin/order-management.md)
+- [Product Management](user-guides/admin/product-management.md)
+
 ## Getting Started
 
 - [Quick Start](getting-started/quick-start.md)
