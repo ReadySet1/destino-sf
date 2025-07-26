@@ -23,6 +23,7 @@
   - [Shopping Cart](features/ecommerce/shopping-cart.md)
   - [Checkout Process](features/ecommerce/checkout-process.md)
   - [Order Management](features/ecommerce/order-management.md)
+  - [Product Recommendations](features/ecommerce/product-recommendations.md)
 - [Catering System](features/catering/README.md)
   - [Package System](features/catering/package-system.md)
   - [Delivery Zones](features/catering/delivery-zones.md)
@@ -30,12 +31,9 @@
   - [Order Filters](features/catering/order-filters.md)
 - [Payment Processing](features/payments/README.md)
   - [Square Integration](features/payments/square-integration.md)
-  - [Payment Methods](features/payments/payment-methods.md)
-  - [Webhook Handling](features/payments/webhook-handling.md)
 - [Shipping & Fulfillment](features/shipping/README.md)
   - [Shippo Integration](features/shipping/shippo-integration.md)
-  - [Rate Calculation](features/shipping/rate-calculation.md)
-  - [Label Generation](features/shipping/label-generation.md)
+- [Admin Features](features/admin-responsive-layout.md)
 
 ## API Reference
 
@@ -45,9 +43,6 @@
   - [Orders API](api/rest-api/orders.md)
   - [Catering API](api/rest-api/catering.md)
   - [Admin API](api/rest-api/admin.md)
-- [Webhooks](api/webhooks/README.md)
-  - [Square Webhooks](api/webhooks/square-webhooks.md)
-  - [Shippo Webhooks](api/webhooks/shippo-webhooks.md)
 
 ## Testing
 
@@ -59,6 +54,7 @@
   - [Test Data Setup](testing/e2e-testing/test-data-setup.md)
   - [Catering Tests](testing/e2e-testing/catering-tests.md)
 - [Production Testing](testing/production-testing.md)
+- [QA Testing](testing/qa-testing.md)
 
 ## Deployment
 
@@ -67,18 +63,19 @@
 - [Environment Configuration](deployment/environment-configuration.md)
 - [Vercel Deployment](deployment/vercel-deployment.md)
 - [Database Migrations](deployment/database-migrations.md)
+- [Vercel Sandbox Setup](deployment/vercel-sandbox-setup.md)
+- [Square Sandbox Implementation](deployment/square-sandbox-implementation-plan.md)
 
 ## Operations
 
-- [Daily Operations](operations/daily-operations.md)
 - [Product Sync](operations/product-sync/README.md)
   - [Square Sync Process](operations/product-sync/square-sync.md)
   - [Image Protection](operations/product-sync/image-protection.md)
   - [Sync Optimizations](operations/product-sync/optimizations.md)
+- [Database Backup](operations/database-backup.md)
+- [Order Cleanup](operations/order-cleanup.md)
 - [Monitoring](operations/monitoring/README.md)
   - [Performance Monitoring](operations/monitoring/performance.md)
-  - [Error Tracking](operations/monitoring/error-tracking.md)
-  - [Business Metrics](operations/monitoring/business-metrics.md)
 
 ## Troubleshooting
 
@@ -95,9 +92,12 @@
 - [Rate Limiting](security/rate-limiting.md)
 - [Security Headers](security/security-headers.md)
 
+## Analytics
+
+- [Umami Setup](analytics/umami-setup.md)
+- [Umami CSP Fix](analytics/umami-csp-fix.md)
+- [Implementation Summary](analytics/implementation-summary.md)
+
 ## Appendix
 
 - [Environment Variables](appendix/environment-variables.md)
-- [Database Schema](appendix/database-schema.md)
-- [Error Codes](appendix/error-codes.md)
-- [Glossary](appendix/glossary.md)

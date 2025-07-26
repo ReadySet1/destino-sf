@@ -1,446 +1,234 @@
 # REST API Documentation
 
-Complete API reference for the Destino SF platform. All endpoints are built with TypeScript and follow RESTful conventions with comprehensive error handling and validation.
+## Overview
 
-## Base URL
+Destino SF provides a comprehensive REST API for managing e-commerce operations, catering orders, and administrative functions.
 
+## Base Configuration
+
+### API Base URL
 ```
+Production: https://destino-sf.vercel.app/api
 Development: http://localhost:3000/api
-Production: https://destinosf.com/api
 ```
 
-## Authentication
-
-Most endpoints require authentication using JWT tokens. Include the token in the Authorization header:
-
+### Authentication
 ```typescript
-headers: {
-  'Authorization': `Bearer ${token}`,
-  'Content-Type': 'application/json'
-}
+// API client setup
+const apiClient = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}` // When authenticated
+  }
+});
 ```
+
+## Core Endpoints
+
+### Health Check
+```http
+GET /api/health
+```
+Returns API status and version information.
+
+### Version Information
+```http
+GET /api/version
+```
+Returns current API version and build information.
+
+## Endpoint Categories
+
+### Product Management
+- **Products API**: Complete product catalog management
+- **Categories API**: Product categorization system
+- **Inventory API**: Stock management and availability
+
+### Order Processing
+- **Orders API**: Order creation, retrieval, and management
+- **Cart API**: Shopping cart operations
+- **Checkout API**: Payment processing and order completion
+
+### Catering System
+- **Catering API**: Specialized catering order handling
+- **Packages API**: Catering package management
+- **Delivery Zones API**: Geographic service area management
+
+### User Management
+- **Authentication API**: Login, registration, and session management
+- **Profile API**: User profile and preferences
+- **Address API**: Delivery address management
+
+### Administrative
+- **Admin API**: Administrative operations and reporting
+- **Analytics API**: Business intelligence and metrics
+- **Configuration API**: System settings and parameters
 
 ## Response Format
 
-All API responses follow a consistent format:
-
+### Standard Response Structure
 ```typescript
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: {
-    message: string;
     code: string;
+    message: string;
     details?: any;
   };
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-    timestamp: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
+  meta?: {
+    timestamp: string;
+    requestId: string;
+    version: string;
+  };
+}
+```
+
+### Success Response Example
+```json
+{
+  "success": true,
+  "data": {
+    "id": "prod_123",
+    "name": "Signature Pasta",
+    "price": 24.99
+  },
+  "meta": {
+    "timestamp": "2025-01-25T10:00:00Z",
+    "requestId": "req_abc123",
+    "version": "1.0.0"
+  }
+}
+```
+
+### Error Response Example
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PRODUCT_NOT_FOUND",
+    "message": "The requested product could not be found",
+    "details": {
+      "productId": "prod_123"
+    }
+  }
 }
 ```
 
 ## Error Handling
 
-Standard HTTP status codes are used:
+### HTTP Status Codes
+- **200 OK**: Successful request
+- **201 Created**: Resource created successfully
+- **400 Bad Request**: Invalid request parameters
+- **401 Unauthorized**: Authentication required
+- **403 Forbidden**: Insufficient permissions
+- **404 Not Found**: Resource not found
+- **422 Unprocessable Entity**: Validation errors
+- **500 Internal Server Error**: Server error
 
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `422` - Validation Error
-- `429` - Rate Limited
-- `500` - Internal Server Error
-
-### Error Response Example
-
+### Error Code Standards
 ```typescript
-{
-  "success": false,
-  "error": {
-    "message": "Validation failed",
-    "code": "VALIDATION_ERROR",
-    "details": {
-      "field": "email",
-      "message": "Invalid email format"
-    }
-  },
-  "meta": {
-    "timestamp": "2025-01-17T10:30:00Z"
-  }
+enum ErrorCodes {
+  // Authentication
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  
+  // Products
+  PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
+  PRODUCT_UNAVAILABLE = 'PRODUCT_UNAVAILABLE',
+  INVALID_PRODUCT_DATA = 'INVALID_PRODUCT_DATA',
+  
+  // Orders
+  ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
+  INVALID_ORDER_STATUS = 'INVALID_ORDER_STATUS',
+  MINIMUM_ORDER_NOT_MET = 'MINIMUM_ORDER_NOT_MET',
+  
+  // Payments
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
+  INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
+  
+  // Delivery
+  DELIVERY_ZONE_INVALID = 'DELIVERY_ZONE_INVALID',
+  ADDRESS_VALIDATION_FAILED = 'ADDRESS_VALIDATION_FAILED'
 }
 ```
 
 ## Rate Limiting
 
-API endpoints are rate limited to ensure fair usage:
-
-- **Public endpoints**: 100 requests per hour per IP
-- **Authenticated endpoints**: 1000 requests per hour per user
-- **Admin endpoints**: 5000 requests per hour per admin
-
-Rate limit headers are included in responses:
-
-```
+### Rate Limit Headers
+```http
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
-X-RateLimit-Reset: 1642694400
+X-RateLimit-Reset: 1643673600
 ```
 
-## API Endpoints Overview
+### Rate Limits by Endpoint Type
+- **Public Endpoints**: 100 requests per minute
+- **Authenticated Endpoints**: 1000 requests per minute
+- **Admin Endpoints**: 5000 requests per minute
+- **Webhook Endpoints**: 10000 requests per minute
 
-### Core E-commerce
+## Request/Response Examples
 
-- [Products API](products.md) - Product catalog and search
-- [Orders API](orders.md) - Order management and tracking
-- [Checkout API](#checkout) - Payment processing and order creation
+### Create Order Example
+```http
+POST /api/orders
+Content-Type: application/json
+Authorization: Bearer your-jwt-token
 
-### Catering System
-
-- [Catering API](catering.md) - Catering packages and inquiries
-- [Categories API](#categories) - Product and catering categories
-
-### Admin Operations
-
-- [Admin API](admin.md) - Administrative functions
-- [Spotlight Picks API](#spotlight) - Featured product management
-- [Square Sync API](#square) - Product synchronization
-
-### System APIs
-
-- [Health Check](#health) - System status monitoring
-- [Webhooks](../webhooks/README.md) - External service integrations
-
-## Quick Reference
-
-### Products
-
-```typescript
-// Get products with filters
-GET /api/products?category=pastries&limit=12&page=1
-
-// Get single product
-GET /api/products/[productId]
-
-// Search products
-GET /api/products/search?q=empanadas
-```
-
-### Orders
-
-```typescript
-// Create order
-POST /api/checkout
 {
   "items": [
     {
       "productId": "prod_123",
       "quantity": 2,
-      "packageSize": "DOZEN"
+      "variantId": "var_456"
     }
   ],
-  "customerInfo": {
-    "email": "customer@example.com",
-    "phone": "+1234567890"
-  },
-  "shippingAddress": {
-    "street": "123 Main St",
-    "city": "San Francisco",
-    "state": "CA",
-    "zipCode": "94105"
-  },
-  "paymentMethodId": "pm_123456789"
-}
-
-// Get order status
-GET /api/orders/[orderId]
-
-// Get user orders
-GET /api/orders?userId=user_123
-```
-
-### Catering
-
-```typescript
-// Submit catering inquiry
-POST /api/catering
-{
-  "eventDetails": {
-    "eventDate": "2025-02-15T18:00:00Z",
-    "guestCount": 50,
-    "eventType": "CORPORATE"
-  },
-  "contactInfo": {
-    "name": "John Doe",
-    "email": "john@company.com",
-    "phone": "+1234567890"
-  },
   "deliveryAddress": {
-    "street": "456 Business Ave",
+    "streetAddress": "123 Main St",
     "city": "San Francisco",
     "state": "CA",
-    "zipCode": "94107"
+    "zipCode": "94102"
   },
-  "requirements": {
-    "dietaryRestrictions": ["VEGETARIAN"],
-    "serviceStyle": "BUFFET",
-    "additionalNotes": "Please include serving utensils"
-  }
-}
-
-// Get catering packages
-GET /api/catering/packages?guestCount=25&deliveryZone=SF
-```
-
-## Type Definitions
-
-### Common Types
-
-```typescript
-// Product types
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  categoryId: string;
-  images: ProductImage[];
-  inventory: {
-    inStock: boolean;
-    quantity: number;
-    lowStockThreshold: number;
-  };
-  packageSizes: PackageSize[];
-  tags: string[];
-  nutritionalInfo?: NutritionalInfo;
-  allergens: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PackageSize {
-  id: string;
-  name: string;
-  servingSize: number;
-  priceMultiplier: number;
-  isDefault: boolean;
-}
-
-// Order types
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: OrderStatus;
-  customerInfo: CustomerInfo;
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  total: number;
-  paymentStatus: PaymentStatus;
-  shippingAddress: Address;
-  billingAddress?: Address;
-  trackingNumber?: string;
-  estimatedDelivery?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-enum OrderStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED',
-}
-
-// Catering types
-interface CateringInquiry {
-  id: string;
-  status: CateringStatus;
-  eventDetails: EventDetails;
-  contactInfo: ContactInfo;
-  deliveryAddress: Address;
-  requirements: CateringRequirements;
-  estimatedCost?: number;
-  proposedMenu?: MenuItem[];
-  internalNotes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface EventDetails {
-  eventDate: string;
-  guestCount: number;
-  eventType: EventType;
-  duration?: number;
-  setupTime?: string;
-}
-
-enum EventType {
-  CORPORATE = 'CORPORATE',
-  WEDDING = 'WEDDING',
-  BIRTHDAY = 'BIRTHDAY',
-  ANNIVERSARY = 'ANNIVERSARY',
-  GRADUATION = 'GRADUATION',
-  OTHER = 'OTHER',
+  "paymentMethodId": "pm_card_123"
 }
 ```
 
-## Authentication Types
-
-```typescript
-interface AuthToken {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  tokenType: 'Bearer';
-}
-
-interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  role: UserRole;
-  preferences: UserPreferences;
-  addresses: Address[];
-  createdAt: string;
-  lastLoginAt?: string;
-}
-
-enum UserRole {
-  CUSTOMER = 'CUSTOMER',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-}
+### Get Products Example
+```http
+GET /api/products?category=appetizers&limit=20&page=1
 ```
 
-## Testing the API
+## API Versioning
 
-### Using cURL
+### Version Strategy
+- **URL Versioning**: `/api/v1/products`
+- **Header Versioning**: `Accept: application/vnd.api+json;version=1`
+- **Backward Compatibility**: Minimum 6 months support for deprecated versions
 
-```bash
-# Get products
-curl -X GET "http://localhost:3000/api/products" \
-  -H "Accept: application/json"
+### Migration Guidelines
+- Deprecation notices 30 days before removal
+- New feature additions are non-breaking
+- Breaking changes require version increment
+- Migration guides provided for major versions
 
-# Create order (requires auth)
-curl -X POST "http://localhost:3000/api/checkout" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "items": [{"productId": "prod_123", "quantity": 2}],
-    "customerInfo": {"email": "test@example.com"},
-    "paymentMethodId": "pm_test"
-  }'
-```
+## Development Tools
 
-### Using TypeScript/JavaScript
+### API Documentation
+- **OpenAPI 3.0**: Complete API specification
+- **Swagger UI**: Interactive API explorer
+- **Postman Collection**: Ready-to-use API collection
 
-```typescript
-// API client example
-class DestinoApiClient {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-  private token?: string;
-
-  setAuthToken(token: string) {
-    this.token = token;
-  }
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    return response.json();
-  }
-
-  async getProducts(params?: ProductFilters): Promise<ApiResponse<Product[]>> {
-    const queryString = params ? new URLSearchParams(params).toString() : '';
-    return this.request<Product[]>(`/products?${queryString}`);
-  }
-
-  async createOrder(orderData: CreateOrderRequest): Promise<ApiResponse<Order>> {
-    return this.request<Order>('/checkout', {
-      method: 'POST',
-      body: JSON.stringify(orderData),
-    });
-  }
-
-  async submitCateringInquiry(
-    inquiryData: CreateCateringInquiryRequest
-  ): Promise<ApiResponse<CateringInquiry>> {
-    return this.request<CateringInquiry>('/catering', {
-      method: 'POST',
-      body: JSON.stringify(inquiryData),
-    });
-  }
-}
-```
-
-## Environment Configuration
-
-```typescript
-// API configuration
-interface ApiConfig {
-  baseUrl: string;
-  timeout: number;
-  retryAttempts: number;
-  rateLimit: {
-    windowMs: number;
-    maxRequests: number;
-  };
-}
-
-// Environment-specific settings
-const config: Record<string, ApiConfig> = {
-  development: {
-    baseUrl: 'http://localhost:3000/api',
-    timeout: 10000,
-    retryAttempts: 3,
-    rateLimit: {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 1000,
-    },
-  },
-  production: {
-    baseUrl: 'https://destinosf.com/api',
-    timeout: 5000,
-    retryAttempts: 2,
-    rateLimit: {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 100,
-    },
-  },
-};
-```
-
-## Next Steps
-
-- [Products API Documentation](products.md)
-- [Orders API Documentation](orders.md)
-- [Catering API Documentation](catering.md)
-- [Admin API Documentation](admin.md)
-- [Webhook Documentation](../webhooks/README.md)
-- [Authentication Guide](authentication.md)
-
----
-
-For implementation examples and testing guides, see the individual endpoint documentation linked above.
+### Testing
+- **Mock Server**: Development testing environment
+- **Test Data**: Predefined test datasets
+- **Validation**: Request/response validation tools

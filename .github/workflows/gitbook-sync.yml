@@ -1,0 +1,36 @@
+name: Sync Documentation to GitBook
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+  workflow_dispatch:
+
+jobs:
+  sync-gitbook:
+    name: Sync to GitBook
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to GitBook
+        uses: GitbookIO/gitbook-action@v1
+        with:
+          docs_root: docs/
+          token: ${{ secrets.GITBOOK_TOKEN }}
+          # space_id: ${{ secrets.GITBOOK_SPACE_ID }}
+
+      - name: Comment on PR if applicable
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📚 **Documentation Updated**\n\nDocumentation changes have been synced to GitBook.\n\n[View Updated Docs →](https://destino-sf.gitbook.io/)'
+            })
