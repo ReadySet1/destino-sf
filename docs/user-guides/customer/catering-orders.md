@@ -1,322 +1,240 @@
-# Catering Orders - Customer Guide
+# 🍽️ Catering Orders - Customer Guide
 
-Planning an event, office meeting, or party? Destino SF's catering service makes feeding groups easy and delicious! This guide covers everything you need to know about ordering catering.
+Planning an event, office meeting, or party? Destino SF's catering service brings authentic Argentine flavors to your gathering! This guide covers everything you need to know about ordering catering.
 
-## 🎯 What You'll Learn
+## 🎯 **What You'll Learn**
 
 - Understanding catering packages and options
 - Planning and timing your catering order
 - Customizing orders for your group
 - Delivery and setup requirements
 
-## 🍽️ Catering Overview
+---
 
-### What Makes Catering Different?
-**Larger Quantities**: Designed to feed groups of 10-200+ people
-**Package Options**: Pre-designed menus for easy ordering
-**Advanced Planning**: Orders require 24-48 hours notice
-**Special Delivery**: Coordinated delivery and setup options
-**Bulk Pricing**: Better per-person value for larger groups
+## 🍽️ **Catering Overview**
 
-### Perfect For:
-- 🏢 **Office meetings and lunches**
-- 🎉 **Parties and celebrations**
-- 🏠 **Family gatherings and reunions**
-- 🎓 **Corporate events and conferences**
-- 💒 **Wedding parties and rehearsals**
-- 🏥 **Hospital and care facility meals**
+### **What Makes Catering Different?**
+- **Larger Quantities**: Designed to feed groups of 10-200+ people
+- **Package Options**: Pre-designed menus for easy ordering
+- **Advanced Planning**: Orders require advance notice
+- **Special Delivery**: Coordinated delivery options
+- **Bulk Pricing**: Better per-person value for larger groups
 
-## 📦 Catering Packages
+### **Perfect For:**
+- 🏢 **Corporate Luncheons**: Business meetings and office events
+- 🍸 **Cocktail Receptions**: Professional networking events
+- 🎉 **Birthday Celebrations & Dinner Parties**: Personal celebrations
+- 🍻 **Happy Hour Events**: After-work gatherings
+- 🤝 **Corporate Meet & Greets**: Team building and client events
 
-### Executive Lunch Package
-**Perfect for**: Business meetings, office lunches
-**Serves**: 10-50 people
-**Includes**:
-- Choice of 2 main dishes
-- 1 appetizer selection
-- Side salads and bread
-- Beverages (coffee, tea, water)
-- Disposable plates, utensils, napkins
+---
 
-**Price**: Starting at $18 per person
-**Lead Time**: 24 hours minimum
+## 📦 **Catering Menu Options**
 
-### Party Celebration Package
-**Perfect for**: Birthday parties, celebrations
-**Serves**: 15-75 people
-**Includes**:
-- Choice of 3 main dishes
-- 2 appetizer selections
-- Dessert platter
-- Beverages and soft drinks
-- Party setup supplies
+### **Individual Packages**
+Pre-designed packages for easy ordering:
+- **Empanada Packages**: Assorted flavors for groups
+- **Alfajores Platters**: Sweet treats for events
+- **Combination Packages**: Mix of empanadas and alfajores
 
-**Price**: Starting at $22 per person
-**Lead Time**: 48 hours minimum
+### **Boxed Lunch Options**
+Individual meals perfect for:
+- Corporate meetings
+- Training sessions
+- Working lunches
+- Conferences
 
-### Family Gathering Package
-**Perfect for**: Reunions, holidays, family events
-**Serves**: 20-100 people
-**Includes**:
-- Choice of 4 main dishes
-- 3 appetizer selections
-- Family-style sides
-- Dessert options
-- Complete serving setup
+### **À La Carte Menu**
+Build your own catering order from our full menu:
+- **Empanadas**: Choose from Beef, Pork, Lomo Saltado, and Salmon
+- **Alfajores**: Multiple flavors including gluten-free options
+- **Custom Combinations**: Mix and match for your event
 
-**Price**: Starting at $25 per person
-**Lead Time**: 48 hours minimum
+### **Dietary Accommodations**
+Our menus include options for:
+- **🌱 Vegetarian**: Plant-based options clearly marked
+- **🌿 Vegan**: Dairy-free and egg-free choices
+- **🌾 Gluten-Free**: Certified gluten-free preparations
 
-### Custom Corporate Package
-**Perfect for**: Large corporate events
-**Serves**: 50-200+ people
-**Includes**:
-- Fully customizable menu
-- Professional presentation
-- Setup and breakdown service
-- Dedicated event coordinator
-- Premium beverage options
+---
 
-**Price**: Custom pricing based on requirements
-**Lead Time**: 1 week minimum
+## 📅 **Planning Your Catering Order**
 
-## 📅 Planning Your Catering Order
+### **Timing Requirements**
+- **Standard Orders**: Advance notice recommended
+- **Large Events (50+ people)**: Additional planning time needed
+- **Custom Requests**: Contact us for timeline
+- **Holiday Periods**: Plan well in advance
 
-### Timing Requirements
-**Standard Catering**: 24 hours advance notice
-**Large Events (50+ people)**: 48 hours minimum
-**Custom Menus**: 1 week advance notice
-**Holiday Periods**: 2 weeks advance notice
-**Same-Day Catering**: Limited availability, call to check
-
-### Guest Count Planning
+### **Guest Count Planning**
 **How to Estimate**:
 - **Confirmed attendees**: Count people you know are coming
 - **Add 10-15%**: Account for last-minute additions
-- **Consider appetites**: Business lunch vs. dinner party
-- **Plan for leftovers**: Better to have too much than too little
+- **Consider event type**: Light reception vs. full meal
+- **Plan appropriately**: Better to have sufficient quantity
 
 **Portion Guidelines**:
-- **Light lunch**: 1-1.5 servings per person
-- **Full meal**: 1.5-2 servings per person
-- **All-day event**: 2-2.5 servings per person
-- **Dinner party**: 2-3 servings per person
+- **Light reception**: 2-3 items per person
+- **Full meal replacement**: 4-6 items per person
+- **Extended event**: 6-8 items per person
+- **Mixed appetizers**: Variety of options
 
-### Menu Selection Tips
-**Consider Your Group**:
-- **Dietary restrictions**: Vegetarian, vegan, gluten-free options
-- **Cultural preferences**: Familiar vs. adventurous foods
-- **Age demographics**: Kid-friendly vs. sophisticated options
-- **Event timing**: Light lunch vs. hearty dinner
+---
 
-**Balance Your Menu**:
-- **Variety**: Mix of proteins, vegetables, and starches
-- **Temperature**: Combination of hot and cold items
-- **Texture**: Different textures for interesting meal
-- **Spice levels**: Include mild options for sensitive palates
+## 🛒 **Placing Your Catering Order**
 
-## 🛒 Placing Your Catering Order
-
-### Step 1: Browse Catering Packages
+### **Step 1: Browse Catering Options**
 1. **Visit** the catering section on our website
-2. **Review** available packages and pricing
-3. **Check** sample menus and photos
-4. **Consider** your event requirements
+2. **View** available packages and individual items
+3. **Check** dietary options and restrictions
+4. **Review** pricing and quantities
 
-### Step 2: Get a Quote
-1. **Select** your preferred package
-2. **Enter** guest count and event date
-3. **Choose** delivery location
-4. **Add** any special requirements
-5. **Review** pricing breakdown
+### **Step 2: Use Our Catering Cart**
+- **Separate Cart**: Catering items use a dedicated cart system
+- **Quantity Management**: Easy to adjust quantities for large orders
+- **Package Selection**: Choose between packages and individual items
+- **Real-time Pricing**: See totals as you build your order
 
-### Step 3: Customize Your Order
-**Menu Customization**:
-- **Substitute items** within the same category
-- **Add extra appetizers** or desserts
-- **Include beverage upgrades**
-- **Request special dietary options**
+### **Step 3: Submit Catering Inquiry**
+- **Contact Form**: Submit detailed event information
+- **Event Details**: Date, time, location, guest count
+- **Special Requests**: Dietary restrictions, setup needs
+- **Contact Information**: Phone and email for coordination
 
-**Service Customization**:
-- **Delivery only**: We drop off the food
-- **Setup service**: We arrange everything for you
-- **Full service**: Includes serving staff (additional cost)
-- **Cleanup service**: We handle cleanup after your event
+### **Step 4: Receive Custom Quote**
+- **Personalized Pricing**: Based on your specific needs
+- **Menu Recommendations**: Suggestions based on event type
+- **Delivery Options**: Coordinated delivery scheduling
+- **Confirmation Process**: Final details and payment
 
-### Step 4: Confirm Details
-**Review Carefully**:
-- **Event date and time**
-- **Delivery address and contact**
-- **Guest count and menu selections**
-- **Special instructions and requirements**
-- **Total cost and payment method**
+---
 
-## 🚚 Delivery and Setup
+## 🚚 **Delivery and Setup**
 
-### Delivery Information
-**Delivery Windows**:
-- **Breakfast events**: 7:00 AM - 10:00 AM
-- **Lunch events**: 10:30 AM - 2:00 PM
-- **Dinner events**: 4:00 PM - 8:00 PM
-- **Weekend events**: Flexible timing available
+### **Delivery Information**
+**Delivery Options**:
+- **Standard Delivery**: Drop-off at specified location
+- **Coordinated Timing**: Delivery scheduled for your event
+- **Location Requirements**: Clear access and contact person needed
+- **Special Instructions**: Accommodate specific delivery needs
 
-**Delivery Requirements**:
-- **Clear access**: Ensure delivery vehicle can reach location
-- **Contact person**: Someone available to receive delivery
-- **Setup space**: Adequate table space for food layout
-- **Power access**: If warming equipment is needed
+**Delivery Areas**:
+- **Local Delivery**: San Francisco Bay Area
+- **Extended Areas**: Contact us for availability
+- **Setup Requirements**: Tables and space for food arrangement
 
-### Setup Options
-**Basic Delivery** (Included):
-- Food delivered in labeled containers
+### **Catering Setup**
+**What's Included**:
+- Food delivered in appropriate containers
 - Serving utensils provided
-- Setup instructions included
-- Disposable plates and utensils
+- Basic setup instructions
+- Dietary labels for special restrictions
 
-**Professional Setup** (+$50-100):
-- Food arranged on serving platters
-- Attractive presentation setup
-- Warming equipment if needed
-- Professional serving tools
+**Additional Services** (Available upon request):
+- Professional food arrangement
+- Extended setup assistance
+- Coordination with your event team
 
-**Full Service** (+$200-500):
-- Complete event setup
-- Dedicated serving staff
-- Beverage service
-- Cleanup after event
+---
 
-## 💰 Pricing and Payment
+## 💳 **Pricing and Payment**
 
-### Pricing Structure
-**Per-Person Packages**: Includes food, basic setup, disposable items
-**Additional Services**: Setup, staff, premium items charged separately
-**Delivery Fees**: Vary by location ($25-75)
-**Service Charges**: 18% service charge on orders over $500
-**Taxes**: Added based on delivery location
+### **Catering Pricing**
+- **Package Pricing**: Pre-set pricing for popular combinations
+- **Individual Item Pricing**: Build your own order
+- **Volume Discounts**: Better pricing for larger quantities
+- **Custom Quotes**: Personalized pricing for specific needs
 
-### Payment Options
-**Corporate Accounts**: Net 15 payment terms available
-**Credit Cards**: All major cards accepted
-**Online Payment**: Secure payment at time of ordering
-**Payment Plans**: Available for orders over $1,000
+### **Payment Process**
+- **Quote Approval**: Confirm pricing before final order
+- **Secure Payment**: Process payment through our system
+- **Payment Timing**: Payment required to confirm order
+- **Corporate Accounts**: Available for regular customers
 
-### Cancellation Policy
-**24+ hours before**: Full refund available
-**12-24 hours before**: 50% refund (preparation costs)
-**Less than 12 hours**: No refund (food already prepared)
-**Weather cancellations**: Full refund if we cannot deliver
+---
 
-## 🌮 Special Dietary Accommodations
+## 🌮 **Special Dietary Accommodations**
 
-### Dietary Options Available
-**Vegetarian**: Plant-based proteins and abundant vegetables
-**Vegan**: No animal products whatsoever
-**Gluten-Free**: Certified gluten-free preparation
-**Dairy-Free**: No milk, cheese, or dairy ingredients
-**Nut-Free**: Safe preparation for nut allergies
-**Low-Sodium**: Heart-healthy, reduced sodium options
+### **Available Options**
+- **Vegetarian**: Clearly marked plant-based options
+- **Vegan**: Dairy-free and egg-free selections
+- **Gluten-Free**: Certified preparation available
+- **Custom Requests**: Contact us for specific dietary needs
 
-### How to Request Accommodations
-1. **Specify requirements** when placing order
-2. **Indicate percentage** of guests with each dietary need
-3. **Provide details** about severity (allergies vs. preferences)
-4. **Confirm arrangements** 24 hours before delivery
+### **How to Request**
+1. **Specify requirements** in catering inquiry form
+2. **Indicate quantities** needed for each dietary restriction
+3. **Provide details** about restrictions or allergies
+4. **Confirm arrangements** during quote process
 
-### Cross-Contamination Prevention
-- **Separate preparation areas** for allergen-free items
-- **Dedicated serving utensils** to prevent mixing
+### **Labeling and Safety**
 - **Clear labeling** of all dietary restriction items
-- **Staff training** on proper handling procedures
+- **Separate preparation** when required
+- **Ingredient information** available upon request
 
-## 📋 Day-of-Event Checklist
+---
 
-### Before Delivery
-- ✅ **Confirm delivery time** with our team
-- ✅ **Prepare setup space** with tables and access
-- ✅ **Designate contact person** to receive delivery
-- ✅ **Clear delivery path** for our team
-- ✅ **Prepare payment** if paying on delivery
+## 📞 **Catering Support**
 
-### During Delivery
-- ✅ **Be available** to greet delivery team
-- ✅ **Review order contents** for completeness
-- ✅ **Ask questions** about setup or serving
-- ✅ **Take photos** if you want to remember the setup
-- ✅ **Tip delivery team** if service was excellent
+### **How to Get Help**
+- **Catering Contact Form**: Available on our website
+- **Event Planning**: Assistance with menu selection
+- **Custom Requests**: Special accommodations and requirements
+- **Day-of Support**: Contact information for event day
 
-### During Your Event
-- ✅ **Keep hot foods hot** (use warming equipment)
-- ✅ **Refrigerate cold items** if event is long
-- ✅ **Replenish serving utensils** as needed
-- ✅ **Monitor food safety** (don't leave perishables out)
-- ✅ **Save contact info** for future events
+### **Information to Provide**
+- **Event date and time**
+- **Expected guest count**
+- **Event type and style**
+- **Dietary restrictions**
+- **Delivery location**
+- **Special requirements**
 
-## 🎉 Making Your Event Special
+---
 
-### Presentation Tips
-**Food Display**:
-- **Use tiered servers** for visual interest
-- **Add fresh garnishes** (we can provide these)
-- **Keep foods at proper temperatures**
-- **Refresh platters** as they empty
-
-**Table Setup**:
-- **Start with appetizers** as guests arrive
-- **Place main dishes** in logical flow
-- **End with desserts** for natural progression
-- **Provide napkins and utensils** at multiple stations
-
-### Event Flow Suggestions
-**Business Meetings**:
-- **Light breakfast**: Pastries and coffee for morning meetings
-- **Working lunch**: Easy-to-eat items that don't distract
-- **Break refreshments**: Energizing snacks and beverages
-
-**Celebrations**:
-- **Welcome appetizers**: As guests arrive
-- **Main celebration**: Full meal service
-- **Dessert finale**: Special treats to end the event
-
-## ❓ Frequently Asked Questions
+## ❓ **Frequently Asked Questions**
 
 **Q: How far in advance should I order catering?**
-A: Minimum 24 hours for standard packages, 48 hours for large orders, 1 week for custom menus.
+A: We recommend ordering as early as possible, especially for large events or during busy periods.
 
-**Q: Can I modify a package to fit my needs?**
-A: Yes! Most packages can be customized. Contact us to discuss specific modifications.
+**Q: Can I customize the catering packages?**
+A: Yes! Contact us through our catering inquiry form to discuss customizations.
 
-**Q: Do you provide serving staff?**
-A: We offer professional serving staff for an additional fee. Great for large or formal events.
+**Q: Do you accommodate dietary restrictions?**
+A: Absolutely! We offer vegetarian, vegan, and gluten-free options. Specify needs in your inquiry.
 
-**Q: What if some guests have food allergies?**
-A: We take allergies seriously. Specify all allergies when ordering, and we'll prepare safe options.
+**Q: What areas do you deliver to?**
+A: We primarily serve the San Francisco Bay Area. Contact us to confirm delivery to your location.
 
-**Q: Can I see the food before my event?**
-A: We offer tastings for large orders (50+ people) or custom menus. Schedule in advance.
+**Q: Can I place a catering order online?**
+A: Use our catering cart to select items, then submit an inquiry form for a custom quote.
 
-**Q: What happens if it rains on my outdoor event?**
-A: We'll work with you to modify delivery or setup. Weather protection for food is available.
+**Q: What's included with catering delivery?**
+A: Food in appropriate containers, serving utensils, and basic setup instructions.
 
-## 📞 Catering Support
+---
 
-### Dedicated Catering Team
-- **Email**: catering@destino-sf.com
-- **Phone**: (415) 555-CATER (22837)
-- **Hours**: Monday-Friday, 8 AM - 6 PM
-- **Emergency Line**: For day-of-event issues
+## 🎉 **Making Your Event Special**
 
-### Event Planning Consultation
-**Free for orders over $500**:
-- Menu planning assistance
-- Guest count guidance
-- Dietary accommodation planning
-- Setup and flow recommendations
+### **Event Types We Serve**
+- **Corporate Events**: Professional meetings and conferences
+- **Private Parties**: Birthdays, celebrations, family gatherings
+- **Business Functions**: Networking events and client entertainment
+- **Holiday Parties**: Seasonal celebrations and office events
 
-## 🔜 What's Next?
+### **Menu Planning Tips**
+- **Consider your audience**: Familiar vs. adventurous flavors
+- **Plan for variety**: Mix of empanadas and alfajores
+- **Account for dietary needs**: Include vegetarian and gluten-free options
+- **Think about timing**: When food will be served during your event
 
-Ready to place your catering order?
+---
+
+## 🔜 **Next Steps**
+
+Ready to plan your catering event?
 - **[Account Management](account-management.md)**: Set up your profile for easier ordering
 - **[Order Tracking](order-tracking.md)**: Follow your catering order progress
-- **Browse our catering menu** at destino-sf.com/catering
+- **[Placing Orders](placing-orders.md)**: Learn about our regular ordering process
 
-Make your next event unforgettable with Destino SF catering! 🎉
+**Visit our catering section** to start planning your authentic Argentine event! 🇦🇷✨

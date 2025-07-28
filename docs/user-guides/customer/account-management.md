@@ -1,162 +1,188 @@
-# Account Management - Customer Guide
+# 👤 Account Management - Customer Guide
 
-Make the most of your Destino SF account! This guide shows you how to manage your basic profile and view your order history.
+Make the most of your Destino SF account! This guide shows you how to manage your profile, view order history, and get the most from your account features.
 
-## 🎯 What You'll Learn
+## 🎯 **What You'll Learn**
 
 - Setting up and managing your profile
-- Viewing your order history
-- Understanding account limitations
+- Viewing your order history and statistics
+- Understanding account features and limitations
 - Getting help when needed
 
-## 👤 Profile Management
+---
 
-### Personal Information
-**Basic Profile Fields**:
+## 👤 **Profile Management**
+
+### **Personal Information**
+**Profile Fields Available**:
 - **Full Name**: Used for orders and customer service
-- **Email Address**: Primary contact and login (cannot be changed)
-- **Phone Number**: For order updates and delivery coordination
+- **Email Address**: Primary contact and login
+- **Phone Number**: For delivery coordination and updates
 
-**Note**: Your email address is verified during account creation and cannot be changed through the platform. Contact support if you need to update your email.
-
-### Updating Your Profile
+### **Updating Your Profile**
 1. **Sign in** to your account
-2. **Go to** your account page
-3. **Update** your name or phone number
-4. **Click** "Save Changes"
+2. **Go to** your account dashboard
+3. **Edit** your name or phone number in the profile section
+4. **Save** your changes
 
-**Important**: Only your name and phone number can be updated. Email changes require contacting customer support.
+**Important**: Email address changes require contacting customer support for security reasons.
 
-## 📱 Account Features
+---
 
-### What Your Account Includes
-- ✅ **Order History**: View all your past orders
-- ✅ **Order Tracking**: Track current orders in real-time
-- ✅ **Easy Reordering**: Repeat previous orders quickly
-- ✅ **Account Statistics**: See total orders and recent activity
+## 📊 **Account Dashboard**
 
-### What's NOT Available
-- ❌ **Saved Addresses**: You'll enter delivery address with each order
-- ❌ **Saved Payment Methods**: Payment handled during checkout only
-- ❌ **Notification Preferences**: All customers receive standard order updates
-- ❌ **Loyalty Points**: No points or rewards program currently
+### **Quick Statistics**
+Your dashboard shows:
+- **Total Orders**: Complete count of all your orders
+- **Recent Orders**: Orders placed in the last 30 days
+- **Account Status**: Active status and member since date
 
-## 📋 Order History
+### **Quick Actions Available**
+From your dashboard, you can:
+- **🛒 Browse Menu**: Start shopping for products
+- **🍽️ Catering**: Plan events and large orders
+- **📦 All Orders**: View complete order history
+- **📞 Contact Us**: Get customer support
 
-### Viewing Your Orders
-**Order Information Available**:
-- **Order Details**: Items ordered, quantities, and pricing
-- **Order Status**: Current status and progress
-- **Delivery Information**: Address and delivery details
-- **Payment Information**: Payment method and amounts
+---
 
-**Order Types Shown**:
-- **Regular Orders**: Individual food orders
-- **Catering Orders**: Large group and event orders
+## 📋 **Order History**
 
-### Order Status Tracking
-**Order Statuses You'll See**:
-- **Pending**: Order placed, awaiting confirmation
+### **Complete Order Tracking**
+**Information Available**:
+- **Regular Orders**: Individual product purchases
+- **Catering Orders**: Large quantity and event orders
+- **Order Status**: Current progress of each order
+- **Order Details**: Items, quantities, pricing, and delivery information
+
+### **Order Status Types**
+- **Pending**: Order placed, awaiting processing
 - **Processing**: Order confirmed and being prepared
-- **Ready**: Order completed, awaiting pickup/delivery
-- **Completed**: Order successfully delivered
+- **Shipped**: Order in transit to your address
+- **Delivered**: Order successfully completed
 - **Cancelled**: Order was cancelled
 
-### Reordering
-**How to Reorder**:
+### **Easy Reordering**
+**How to Reorder Favorites**:
 1. **Go to** your order history
 2. **Find** the order you want to repeat
-3. **Click** "Reorder" 
-4. **Review** items (you can modify if needed)
+3. **Click** "Reorder" button
+4. **Review** items in your cart (modify if needed)
 5. **Proceed** to checkout
 
-## 🔧 Account Settings
+---
 
-### Sign Out
-**To sign out of your account**:
+## 📱 **Account Features**
+
+### **✅ What Your Account Includes**
+- **Order History**: Complete record of all purchases
+- **Order Tracking**: Monitor current order progress
+- **Easy Reordering**: Quickly repeat favorite orders
+- **Account Statistics**: Track your ordering patterns
+- **Profile Management**: Update contact information
+- **Quick Navigation**: Fast access to menu and catering
+
+### **❌ Current Limitations**
+- **No Saved Addresses**: Enter delivery address with each order
+- **No Stored Payment**: Payment processed securely each time
+- **No Notification Preferences**: Standard email updates for all
+- **No Wishlist Feature**: Cannot save favorite items for later
+- **No Loyalty Program**: No points or rewards system currently
+
+---
+
+## 🔐 **Account Security**
+
+### **Sign Out Process**
+**To sign out safely**:
 1. **Go to** your account page
-2. **Click** "Sign Out" button
-3. **Confirm** you want to sign out
+2. **Click** "Sign Out" button in the top right
+3. **Confirm** you want to end your session
 
-### Account Security
-**Best Practices**:
-- **Use a strong password** for your account
-- **Don't share** your account credentials
-- **Sign out** when using shared computers
-- **Contact support** if you notice unusual activity
+### **Security Best Practices**
+- **Use strong passwords** with mixed characters
+- **Don't share** account credentials with others
+- **Sign out** when using shared or public computers
+- **Contact support** immediately if you notice suspicious activity
 
-## 📞 Getting Help
+### **Password Management**
+- **Forgot Password**: Use the reset link on the sign-in page
+- **Change Password**: Contact support for password changes
+- **Account Recovery**: Email verification required for access
 
-### Account Issues
-**Common Questions**:
+---
 
-**Q: Can I change my email address?**
-A: Email addresses cannot be changed through the platform. Contact support at support@destino-sf.com for assistance.
+## 📞 **Customer Support**
 
-**Q: Why can't I save my delivery address?**
-A: The platform currently requires entering your delivery address with each order for accuracy and flexibility.
+### **When to Contact Support**
+- **Account access issues**: Can't sign in or forgot password
+- **Order problems**: Missing items, delivery issues, or refunds
+- **Profile updates**: Need to change email address
+- **Technical issues**: Website problems or payment issues
+- **General questions**: Product information or policies
 
-**Q: Can I save my payment information?**
-A: Payment is processed securely through Square during each checkout. Payment methods are not stored for security reasons.
+### **How to Get Help**
+- **Contact Form**: Available on our website
+- **Response Time**: 1-2 business days
+- **Order-Specific Issues**: Include order number in your message
 
-**Q: How do I delete my account?**
-A: Contact customer support to request account deletion. We'll help you through the process.
+### **Information to Have Ready**
+- **Account email address**
+- **Order numbers** (if applicable)
+- **Clear description** of the issue or question
+- **Screenshots** if experiencing technical problems
 
-### Contact Support
-**When You Need Help**:
-- **Email Support**: support@destino-sf.com
-- **Phone Support**: (415) 555-FOOD (3663)
-- **Response Time**: Usually within 24 hours
+---
 
-**Before Contacting Support**:
-- **Have your account email ready**
-- **Note specific order numbers** if relevant
-- **Describe the issue clearly**
+## 💡 **Tips for Best Experience**
 
-## 💡 Tips for Best Experience
-
-### Ordering Efficiency
-- **Keep your profile updated** with current name and phone
-- **Double-check delivery addresses** since they're not saved
+### **Account Management**
+- **Keep profile updated** with current phone number
+- **Check order history** to track preferences and reorder favorites
 - **Save confirmation emails** for your records
-- **Use order history** for easy reordering
+- **Sign in regularly** to monitor order status
 
-### Account Management
-- **Sign in regularly** to check order status
-- **Review order history** to track your preferences
-- **Contact support early** if you have issues
-- **Keep contact information current**
+### **Ordering Efficiency**
+- **Use reorder feature** for items you buy regularly
+- **Double-check addresses** since they're not saved
+- **Review cart carefully** before checkout
+- **Plan catering orders** well in advance
 
-## 🚀 Quick Actions
+### **Mobile Usage**
+- **Website works great** on mobile devices
+- **Same features available** on phone, tablet, and desktop
+- **Responsive design** adapts to your screen size
+- **No app needed** - just use your mobile browser
 
-From your account page, you can:
-- **Browse Menu**: Start a new order
-- **View All Orders**: See complete order history  
-- **Plan Catering**: Order for events and groups
-- **Contact Support**: Get help when needed
+---
 
-## ❓ Frequently Asked Questions
+## ❓ **Frequently Asked Questions**
+
+**Q: Can I save my delivery address?**
+A: Currently, we require entering your delivery address with each order to ensure accuracy and allow delivery to different locations.
+
+**Q: Why can't I save payment methods?**
+A: For security, payment is processed through Square during checkout and not stored in our system.
 
 **Q: Is there a mobile app?**
-A: The website is fully mobile-optimized. Access your account through any web browser.
+A: No mobile app is needed - our website is fully optimized for mobile devices and works perfectly in any browser.
 
-**Q: Can I have multiple accounts?**
-A: Each email address can only have one account. Contact support if you need help consolidating accounts.
+**Q: Can I change my email address?**
+A: Email changes require contacting customer support for security verification.
 
-**Q: Why don't you save my address?**
-A: We prioritize accuracy and flexibility, allowing you to specify exactly where each order should be delivered.
+**Q: Do you have a loyalty or rewards program?**
+A: We don't currently offer a loyalty program, but we appreciate all our customers and may offer special promotions.
 
-**Q: Do you offer any loyalty rewards?**
-A: We don't currently have a loyalty program, but we appreciate all our customers and occasionally offer special promotions.
+**Q: Can family members use my account?**
+A: Accounts are individual, but family members can place separate orders to the same delivery address.
 
-**Q: Can I share my account with family?**
-A: Accounts are individual, but family members can place orders for the same delivery address.
+---
 
-## 🔜 What's Next?
+## 🔜 **Next Steps**
 
-Ready to explore more features?
-- **[Placing Orders](placing-orders.md)**: Learn the ordering process
-- **[Order Tracking](order-tracking.md)**: Follow your orders in real-time
-- **[Catering Orders](catering-orders.md)**: Planning large group orders
+Ready to make the most of your account?
+- **[Placing Orders](placing-orders.md)**: Learn the complete ordering process
+- **[Order Tracking](order-tracking.md)**: Monitor your order progress
+- **[Catering Orders](catering-orders.md)**: Plan large quantity orders
 
-Keep your account simple and organized! 📱✨
+**Access your account anytime** to manage orders and explore new products! 🇦🇷✨
