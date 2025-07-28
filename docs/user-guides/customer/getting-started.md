@@ -5,30 +5,30 @@ Welcome to Destino SF! This guide will help you create your account and place yo
 ## 🎯 What You'll Learn
 
 - How to create your account
-- Understanding our menu and options
+- Understanding our menu system
 - Placing your first order
-- Setting up delivery preferences
+- Important platform details
 
 ## 📱 Step 1: Create Your Account
 
-### Option A: Quick Registration
+### Account Registration
 1. **Visit** [destino-sf.com](https://destino-sf.com)
 2. **Click** "Sign Up" in the top right corner
 3. **Enter** your information:
+   - Email address (this will be your login)
    - Full name
-   - Email address
-   - Phone number
    - Create a secure password
 4. **Click** "Create Account"
 5. **Check your email** for a confirmation link
 6. **Click the link** to verify your account
 
-### Option B: Guest Checkout
-**Don't want to create an account yet?** No problem! You can place orders as a guest, but you'll miss out on:
+### Guest Checkout Option
+**Don't want to create an account yet?** You can place orders as a guest, but you'll miss out on:
 - Order history and easy reordering
-- Saved addresses and payment methods
-- Exclusive member offers
 - Faster checkout process
+- Order tracking after completion
+
+**Note**: You'll still need to provide your name, email, and phone for any order.
 
 ## 🍽️ Step 2: Explore Our Menu
 
@@ -36,143 +36,160 @@ Welcome to Destino SF! This guide will help you create your account and place yo
 - **Appetizers**: Perfect starters and small plates
 - **Main Dishes**: Hearty entrees and signature items
 - **Desserts**: Sweet treats to finish your meal
-- **Beverages**: Drinks, coffee, and specialty beverages
-- **Catering Packages**: Pre-designed meals for groups
+- **Beverages**: Drinks and specialty beverages
+- **Catering**: Pre-designed meals for groups (10+ people)
 
-### Menu Features to Look For
-- 🌱 **Dietary Icons**: Vegetarian, vegan, gluten-free options
-- ⭐ **Popular Items**: Customer favorites marked with stars
-- 🔥 **Spicy Level**: Heat indicators for spicy dishes
-- 👥 **Serving Size**: Individual, family, or group portions
+### Menu Features
+- 🌱 **Dietary Icons**: Look for vegetarian, vegan, gluten-free options
+- ⭐ **Popular Items**: Customer favorites
+- 🔥 **Spice Level**: Heat indicators where applicable
+- 📷 **Photos**: High-quality images of our dishes
 
-### Using Search and Filters
-1. **Search Bar**: Type dish names or ingredients
-2. **Category Filter**: Browse by food type
-3. **Dietary Filter**: Find options that meet your needs
-4. **Price Filter**: Set your budget range
+### Browsing and Search
+- **Browse Categories**: Click category names to see all items
+- **Search**: Use the search bar for specific dishes or ingredients
+- **Product Details**: Click any item for full description and options
 
 ## 🛒 Step 3: Your First Order
 
 ### Adding Items to Cart
 1. **Browse** the menu or search for specific items
 2. **Click** on any item to see details and options
-3. **Select** size, modifications, or add-ons if available
+3. **Select** size or variant if available
 4. **Choose** quantity
 5. **Click** "Add to Cart"
 
-### Cart Management
-- **View Cart**: Click the cart icon (shows item count)
+### Review Your Cart
+- **View Cart**: Click the cart icon to see your items
 - **Modify Quantities**: Use +/- buttons in cart
 - **Remove Items**: Click the trash icon
-- **Add Special Instructions**: Use the notes field
+- **Order Total**: See subtotal, tax, and delivery fees
 
-### Minimum Order Requirements
+**Important**: You'll need to meet minimum order requirements:
 - **Regular Delivery**: $25 minimum
-- **Catering Orders**: Varies by delivery zone ($500-$750)
-- **Pickup Orders**: No minimum required
+- **Catering Orders**: Varies by delivery zone
 
-## 📍 Step 4: Set Up Delivery
+## 📍 Step 4: Checkout Process
 
-### Adding Your Address
-1. **Click** "Checkout" when ready
-2. **Enter** your complete delivery address:
+### Delivery Information
+**For Each Order, You'll Need To**:
+1. **Enter your complete delivery address**:
    - Street address and apartment/suite number
    - City, state, and ZIP code
-   - Delivery instructions (gate codes, buzzer numbers, etc.)
-3. **Verify** the address is within our delivery zone
-4. **Save** the address for future orders
+   - Phone number for delivery coordination
+   - Special delivery instructions (gate codes, buzzer numbers, etc.)
 
-### Delivery Options
-- **Standard Delivery**: 45-60 minutes
-- **Scheduled Delivery**: Choose a future time
-- **Contactless Delivery**: Leave at door option
-- **Pickup**: Order ready in 20-30 minutes
+2. **Verify delivery availability**:
+   - Check that we deliver to your area
+   - See delivery fee for your location
+   - Confirm estimated delivery time
+
+**Note**: The platform doesn't save addresses, so you'll enter this information with each order.
 
 ### Delivery Zones & Fees
 - **San Francisco**: $5.99 delivery fee
-- **Peninsula**: $7.99 delivery fee
+- **Peninsula**: $7.99 delivery fee  
 - **East Bay**: $8.99 delivery fee
 - **Free Delivery**: On orders over $75
 
 ## 💳 Step 5: Payment
 
-### Accepted Payment Methods
-- **Credit Cards**: Visa, Mastercard, American Express
-- **Debit Cards**: With PIN or signature
-- **Digital Wallets**: Apple Pay, Google Pay
-- **Corporate Cards**: For business orders
-
-### Secure Payment Process
-1. **Enter** payment information
+### Payment Process
+**Payment is handled securely through Square**:
+1. **Enter** payment information at checkout
 2. **Review** order total including tax and delivery
 3. **Add** tip for delivery driver (suggested 15-20%)
-4. **Click** "Place Order"
+4. **Complete** secure payment through Square
 
-### Order Confirmation
-- **Confirmation Number**: Save this for reference
-- **Email Receipt**: Sent immediately
-- **SMS Updates**: Optional order status notifications
-- **Estimated Delivery**: Time will be provided
+### Accepted Payment Methods
+- **Credit Cards**: Visa, Mastercard, American Express, Discover
+- **Debit Cards**: Bank cards
+- **Digital Wallets**: Apple Pay, Google Pay
 
-## 📱 Step 6: Track Your Order
+**Security Note**: Payment information is processed securely and not stored on our platform.
+
+## 📱 Step 6: Order Confirmation & Tracking
+
+### After Placing Your Order
+1. **Confirmation Email**: Sent immediately with order details
+2. **Order Number**: Save this for reference
+3. **Estimated Delivery**: Time estimate provided
+4. **Order Tracking**: Follow your order's progress
 
 ### Order Status Updates
-1. **Order Confirmed**: Payment processed successfully
-2. **In Preparation**: Kitchen is preparing your food
-3. **Ready for Pickup**: Order completed, driver assigned
-4. **Out for Delivery**: Driver is on the way
-5. **Delivered**: Order has been delivered
+- **Pending**: Order placed, awaiting confirmation
+- **Processing**: Order confirmed and being prepared
+- **Ready**: Order completed, out for delivery
+- **Completed**: Order successfully delivered
 
-### Tracking Options
-- **Email Notifications**: Automatic status updates
-- **SMS Alerts**: Text message notifications
-- **Account Dashboard**: Real-time status in your account
-- **Live Tracking**: See driver location (when available)
+### Tracking Your Order
+- **Email Updates**: Automatic status notifications
+- **Account Dashboard**: Check status anytime (if logged in)
+- **Customer Support**: Call if you have questions
 
-## 🎉 Congratulations!
-
-You've successfully placed your first order! Here are some tips for next time:
+## 🎉 Success! What's Next?
 
 ### Make Future Orders Easier
-- **Save Favorite Items**: Heart icon on menu items
-- **Reorder**: One-click reorder from order history
-- **Multiple Addresses**: Save work, home, and other locations
-- **Scheduled Orders**: Plan ahead for regular meal times
+- **Order History**: View and reorder previous meals (account required)
+- **Save Your Preferences**: Remember what you liked
+- **Try Catering**: Perfect for office meetings and parties
 
 ### Explore More Features
-- **Group Orders**: Share cart link with friends/colleagues
-- **Catering**: Perfect for office meetings and parties
-- **Dietary Preferences**: Save preferences in your profile
-- **Loyalty Rewards**: Earn points with every order
+- **Catering Orders**: For groups of 10+ people
+- **Seasonal Menus**: Check for limited-time offerings
+- **Special Promotions**: Watch for deals and discounts
 
-## ❓ Need Help?
-
-### Common First-Order Questions
+## ❓ Common First-Order Questions
 
 **Q: How long will my first delivery take?**
 A: First orders typically take 45-60 minutes. We'll send you updates throughout the process.
 
 **Q: Can I modify my order after placing it?**
-A: You can modify orders within 5 minutes of placing them. After that, call us at (415) 555-3663.
+A: Contact us immediately at (415) 555-3663. We can make changes if the order hasn't started preparation.
 
 **Q: What if I'm not satisfied with my order?**
-A: Contact us immediately at support@destino-sf.com or through the app. We'll make it right!
+A: Contact us immediately at support@destino-sf.com. We'll make it right!
 
 **Q: Do you deliver to my area?**
 A: Enter your address during checkout to see if delivery is available and what the fee will be.
 
-## 📞 Contact Support
+**Q: Can I save my address for next time?**
+A: The platform requires entering your address with each order to ensure accuracy. This gives you flexibility to deliver to different locations.
 
+**Q: Why can't I save my payment method?**
+A: For security, payment is processed fresh each time through Square's secure system.
+
+## 💡 Pro Tips for New Customers
+
+### Ordering Success
+- **Order during off-peak hours** (2-5 PM) for fastest delivery
+- **Double-check your address** since it's entered fresh each time
+- **Keep your phone handy** for delivery coordination
+- **Try our popular items** first to experience our best dishes
+
+### Account Benefits
+- **Create an account** to track orders and reorder easily
+- **Keep contact info updated** for smooth delivery
+- **Save confirmation emails** for your records
+
+## 📞 Need Help?
+
+### Customer Support
 - **Email**: support@destino-sf.com
 - **Phone**: (415) 555-FOOD (3663)
-- **Live Chat**: Available on website 9 AM - 9 PM
-- **FAQ**: Check our help center for instant answers
+- **Hours**: Monday-Sunday, 9 AM - 9 PM
+
+### Common Support Topics
+- Delivery area questions
+- Order modifications
+- Payment issues
+- Menu item questions
 
 ## 🔜 What's Next?
 
-Ready to explore more? Check out these guides:
-- **[Placing Orders](placing-orders.md)**: Advanced ordering features
+Ready to explore more?
+- **[Placing Orders](placing-orders.md)**: Advanced ordering tips
 - **[Catering Orders](catering-orders.md)**: Ordering for groups and events
-- **[Account Management](account-management.md)**: Customize your experience
+- **[Order Tracking](order-tracking.md)**: Follow your order progress
 
-Welcome to the Destino SF family! 🎉
+Welcome to the Destino SF family! 🍽️✨
