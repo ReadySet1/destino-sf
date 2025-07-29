@@ -52,4 +52,4 @@ package-lock.json
 .git/
 
 # Node modules (should already be excluded but being explicit)
-node_modules/ 
+node_modules/ # Force rebuild to fix categories.isActive issue - Tue Jul 29 12:09:53 CST 2025
