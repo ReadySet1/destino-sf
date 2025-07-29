@@ -30,6 +30,8 @@ interface WebhookQueueItem extends QueueItem {
     eventType: string;
     eventId: string;
     orderId?: string;
+    error?: string;
+    errorCode?: string;
   };
 }
 

@@ -2,7 +2,7 @@
   "name": "destino-sf",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "next dev",
     "dev:turbo": "next dev --turbopack",

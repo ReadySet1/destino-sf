@@ -222,7 +222,7 @@ async function validateSpecificOrder(orderId: string): Promise<void> {
     order.payments.forEach((payment, index) => {
       console.log(`   ${index + 1}. ID: ${payment.id}`);
       console.log(`      Square Payment ID: ${payment.squarePaymentId}`);
-      console.log(`      Amount: $${(payment.amount / 100).toFixed(2)}`);
+      console.log(`      Amount: $${(Number(payment.amount) / 100).toFixed(2)}`);
       console.log(`      Status: ${payment.status}`);
       console.log(`      Created: ${payment.createdAt}`);
       console.log('');
