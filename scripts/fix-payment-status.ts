@@ -2,18 +2,17 @@
 
 import { prisma } from '../src/lib/db';
 
-async function fixPaymentStatus() {
-  console.log('🔧 Fixing Payment Status for Order');
-  console.log('===================================');
+const ORDER_ID = 'e5df1298-5aca-494e-8db6-2c321dd7ffa4';
 
-  const squareOrderId = 'voGPZUuiz5wCz02HdOUuMyrl0h4F';
-  const squarePaymentId = 'v7Sg2rTTx9aL3KJWLToCnBkUuBZZY';
-  const paymentAmount = 7801; // From webhook: 7801 cents = $78.01
+async function fixPaymentStatus() {
+  console.log('🔧 Fixing payment status inconsistency...');
+  console.log(`Order ID: ${ORDER_ID}`);
+  console.log('---');
 
   try {
-    // Find the order
+    // Get current order state
     const order = await prisma.order.findUnique({
-      where: { squareOrderId },
+      where: { id: ORDER_ID },
       select: {
         id: true,
         squareOrderId: true,
@@ -21,83 +20,75 @@ async function fixPaymentStatus() {
         paymentStatus: true,
         total: true,
         customerName: true,
+        email: true,
+        fulfillmentType: true,
+        payments: {
+          select: {
+            id: true,
+            squarePaymentId: true,
+            amount: true,
+            status: true,
+          }
+        }
       },
     });
 
     if (!order) {
-      console.log('❌ Order not found');
+      console.error('❌ Order not found');
       return;
     }
 
-    console.log('✅ Found order:', {
-      id: order.id.substring(0, 8) + '...',
+    console.log('📋 Current order state:', {
+      id: order.id,
+      squareOrderId: order.squareOrderId,
       status: order.status,
       paymentStatus: order.paymentStatus,
-      total: order.total,
+      total: order.total.toString(),
+      customerName: order.customerName,
+      email: order.email,
+      fulfillmentType: order.fulfillmentType,
     });
 
-    // Check if payment record already exists
-    const existingPayment = await prisma.payment.findUnique({
-      where: { squarePaymentId },
-    });
+    console.log('💳 Associated payments:', order.payments);
 
-    if (existingPayment) {
-      console.log('✅ Payment record already exists:', {
-        id: existingPayment.id,
-        status: existingPayment.status,
-        amount: existingPayment.amount,
-      });
-    } else {
-      // Create the missing payment record
-      console.log('📝 Creating missing payment record...');
-      const payment = await prisma.payment.create({
-        data: {
-          squarePaymentId,
-          amount: paymentAmount / 100, // Convert cents to dollars
-          status: 'PAID',
-          orderId: order.id,
-          rawData: {
-            createdViaFixScript: true,
-            originalWebhookData: {
-              squareOrderId,
-              squarePaymentId,
-              status: 'COMPLETED',
-              amount: paymentAmount,
-            },
-            fixedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      console.log('✅ Created payment record:', {
-        id: payment.id,
-        squarePaymentId: payment.squarePaymentId,
-        status: payment.status,
-        amount: payment.amount,
-      });
-    }
-
-    // Update order payment status if needed
-    if (order.paymentStatus !== 'PAID') {
-      console.log('📝 Updating order payment status...');
+    // Check if any payment is PAID
+    const paidPayment = order.payments.find(p => p.status === 'PAID');
+    
+    if (paidPayment && order.paymentStatus !== 'PAID') {
+      console.log('🔄 Payment is PAID but order paymentStatus is not. Fixing...');
+      
       const updatedOrder = await prisma.order.update({
-        where: { id: order.id },
+        where: { id: ORDER_ID },
         data: {
           paymentStatus: 'PAID',
           updatedAt: new Date(),
         },
       });
 
-      console.log('✅ Updated order payment status:', {
-        id: order.id.substring(0, 8) + '...',
-        oldStatus: order.paymentStatus,
-        newStatus: updatedOrder.paymentStatus,
+      console.log('✅ Fixed payment status:', {
+        id: updatedOrder.id,
+        paymentStatus: updatedOrder.paymentStatus,
+        updatedAt: updatedOrder.updatedAt,
       });
+
+      // Verify the fix
+      const verifyOrder = await prisma.order.findUnique({
+        where: { id: ORDER_ID },
+        select: {
+          id: true,
+          status: true,
+          paymentStatus: true,
+          updatedAt: true,
+        },
+      });
+
+      console.log('🔍 Verification:', verifyOrder);
+    } else if (order.paymentStatus === 'PAID') {
+      console.log('✅ Payment status is already correct');
     } else {
-      console.log('ℹ️ Order payment status already PAID');
+      console.log('❌ No PAID payment found for this order');
     }
 
-    console.log('\n🎉 Payment status fix completed successfully!');
   } catch (error) {
     console.error('❌ Error fixing payment status:', error);
   } finally {
@@ -105,5 +96,7 @@ async function fixPaymentStatus() {
   }
 }
 
-// Run the script directly
-fixPaymentStatus().catch(console.error); 
+// Run if this file is executed directly
+fixPaymentStatus().catch(console.error);
+
+export { fixPaymentStatus }; 

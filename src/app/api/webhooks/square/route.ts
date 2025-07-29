@@ -746,21 +746,39 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
 }
 
 async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
-  const { data } = payload;
-  const paymentData = data.object.payment as any;
-  const squarePaymentId = data.id;
-  const squareOrderId = paymentData?.order_id;
-  const paymentStatus = paymentData?.status?.toUpperCase();
+  console.log(`🚀 DEBUG: Starting handlePaymentUpdated function...`);
   
-  console.log(`🔄 Processing payment.updated event: ${squarePaymentId}`);
-  console.log(`📋 Payment data:`, {
-    squarePaymentId,
-    squareOrderId,
-    paymentStatus,
-    amount: paymentData?.amount_money?.amount,
-    currency: paymentData?.amount_money?.currency,
-    eventId: payload.event_id,
-  });
+  try {
+    const { data } = payload;
+    console.log(`✅ DEBUG: Extracted data from payload`);
+    
+    const paymentData = data.object.payment as any;
+    console.log(`✅ DEBUG: Extracted paymentData, keys:`, Object.keys(paymentData || {}));
+    
+    const squarePaymentId = data.id;
+    console.log(`✅ DEBUG: squarePaymentId: ${squarePaymentId}`);
+    
+    const squareOrderId = paymentData?.order_id;
+    console.log(`✅ DEBUG: squareOrderId: ${squareOrderId}`);
+    
+    const paymentStatus = paymentData?.status?.toUpperCase();
+    console.log(`✅ DEBUG: paymentStatus: ${paymentStatus}`);
+    
+    console.log(`🔄 Processing payment.updated event: ${squarePaymentId}`);
+  
+  try {
+    console.log(`📋 Payment data:`, {
+      squarePaymentId,
+      squareOrderId,
+      paymentStatus,
+      amount: paymentData?.amount_money?.amount,
+      currency: paymentData?.amount_money?.currency,
+      eventId: payload.event_id,
+    });
+    console.log(`✅ DEBUG: Successfully logged payment data for ${squarePaymentId}`);
+  } catch (logError: any) {
+    console.error(`❌ DEBUG: Error logging payment data for ${squarePaymentId}:`, logError);
+  }
 
   if (!squareOrderId) {
     console.error(
@@ -1130,6 +1148,24 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
       throw error;
     }
+  }
+  } catch (comprehensiveError: any) {
+    console.error(`❌ COMPREHENSIVE ERROR in handlePaymentUpdated (outer catch):`, {
+      error: comprehensiveError.message,
+      stack: comprehensiveError.stack?.substring(0, 500),
+      eventId: payload?.event_id,
+      paymentId: payload?.data?.id,
+    });
+    
+    // Capture the comprehensive error for monitoring
+    await errorMonitor.captureWebhookError(
+      comprehensiveError,
+      'handlePaymentUpdated.comprehensive',
+      { eventId: payload?.event_id, paymentId: payload?.data?.id },
+      payload?.event_id
+    );
+    
+    throw comprehensiveError; // Re-throw to trigger webhook retry
   }
 }
 
