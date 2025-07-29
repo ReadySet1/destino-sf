@@ -1,274 +1,188 @@
-# Account Management - Customer Guide
+# 👤 Account Management - Customer Guide
 
-Make the most of your Destino SF account! This guide shows you how to manage your profile, save time with stored information, and customize your experience.
+Make the most of your Destino SF account! This guide shows you how to manage your profile, view order history, and get the most from your account features.
 
-## 🎯 What You'll Learn
+## 🎯 **What You'll Learn**
 
-- Setting up and optimizing your profile
-- Managing saved addresses and payment methods
-- Understanding your order history and reordering
-- Customizing preferences and notifications
-- Loyalty program and rewards
+- Setting up and managing your profile
+- Viewing your order history and statistics
+- Understanding account features and limitations
+- Getting help when needed
 
-## 👤 Profile Management
+---
 
-### Personal Information
-**Basic Profile Setup**:
+## 👤 **Profile Management**
+
+### **Personal Information**
+**Profile Fields Available**:
 - **Full Name**: Used for orders and customer service
 - **Email Address**: Primary contact and login
-- **Phone Number**: For order updates and delivery coordination
-- **Birthday**: Optional, for special birthday offers
+- **Phone Number**: For delivery coordination and updates
 
-**Privacy Settings**:
-- **Email Preferences**: Choose which notifications to receive
-- **SMS Notifications**: Opt in/out of text message updates
-- **Marketing Communications**: Control promotional emails
-- **Data Sharing**: Manage how your information is used
+### **Updating Your Profile**
+1. **Sign in** to your account
+2. **Go to** your account dashboard
+3. **Edit** your name or phone number in the profile section
+4. **Save** your changes
 
-### Profile Photo and Preferences
-**Personalization Options**:
-- **Profile Photo**: Upload a photo for account identification
-- **Preferred Name**: How staff should address you
-- **Language Preference**: Select your preferred language
-- **Accessibility Needs**: Screen reader compatibility, large text
+**Important**: Email address changes require contacting customer support for security reasons.
 
-## 🏠 Address Management
+---
 
-### Adding Delivery Addresses
-**Primary Address Setup**:
-1. **Click** "Add New Address" in your account
-2. **Enter** complete street address
-3. **Add** apartment/suite number if applicable
-4. **Include** delivery instructions (gate codes, buzzer numbers)
-5. **Save** with a memorable name (Home, Work, Mom's House)
+## 📊 **Account Dashboard**
 
-**Address Information Required**:
-- **Full Street Address**: Include apartment/suite numbers
-- **City, State, ZIP**: Complete location information
-- **Delivery Instructions**: Specific directions for drivers
-- **Address Nickname**: Easy identification for future orders
+### **Quick Statistics**
+Your dashboard shows:
+- **Total Orders**: Complete count of all your orders
+- **Recent Orders**: Orders placed in the last 30 days
+- **Account Status**: Active status and member since date
 
-### Managing Multiple Addresses
-**Address Organization**:
-- **Set Default**: Choose most frequently used address
-- **Address Labels**: Home, Work, Friend's House, etc.
-- **Special Instructions**: Gate codes, parking notes, buzzer info
-- **Delivery Preferences**: Contactless, ring doorbell, etc.
+### **Quick Actions Available**
+From your dashboard, you can:
+- **🛒 Browse Menu**: Start shopping for products
+- **🍽️ Catering**: Plan events and large orders
+- **📦 All Orders**: View complete order history
+- **📞 Contact Us**: Get customer support
 
-**Address Validation**:
-- **Delivery Zone Check**: Automatic verification we deliver there
-- **Delivery Fee Display**: See fees for each address
-- **Estimated Times**: Delivery time estimates per location
-- **Special Restrictions**: Any limitations for specific addresses
+---
 
-## 💳 Payment Methods
+## 📋 **Order History**
 
-### Adding Payment Options
-**Supported Payment Types**:
-- **Credit Cards**: Visa, Mastercard, American Express, Discover
-- **Debit Cards**: Bank cards with PIN or signature
-- **Digital Wallets**: Apple Pay, Google Pay, Samsung Pay
-- **Corporate Cards**: Business payment options
+### **Complete Order Tracking**
+**Information Available**:
+- **Regular Orders**: Individual product purchases
+- **Catering Orders**: Large quantity and event orders
+- **Order Status**: Current progress of each order
+- **Order Details**: Items, quantities, pricing, and delivery information
 
-**Payment Security**:
-- **Encryption**: All payment data is encrypted and secure
-- **PCI Compliance**: Industry-standard security measures
-- **No Storage**: Card numbers are tokenized, not stored
-- **Fraud Protection**: Monitoring for suspicious activity
+### **Order Status Types**
+- **Pending**: Order placed, awaiting processing
+- **Processing**: Order confirmed and being prepared
+- **Shipped**: Order in transit to your address
+- **Delivered**: Order successfully completed
+- **Cancelled**: Order was cancelled
 
-### Managing Payment Methods
-**Payment Organization**:
-- **Default Payment**: Set preferred payment method
-- **Multiple Cards**: Store cards for different purposes
-- **Expiration Tracking**: Get notified when cards expire
-- **Security Updates**: Notifications about payment security
+### **Easy Reordering**
+**How to Reorder Favorites**:
+1. **Go to** your order history
+2. **Find** the order you want to repeat
+3. **Click** "Reorder" button
+4. **Review** items in your cart (modify if needed)
+5. **Proceed** to checkout
 
-**Payment Preferences**:
-- **Auto-Fill**: Quickly select saved payment methods
-- **Billing Address**: Match payment to billing address
-- **Tip Settings**: Set default tip percentages
-- **Receipt Preferences**: Email vs. SMS vs. both
+---
 
-## 📱 Order History and Reordering
+## 📱 **Account Features**
 
-### Viewing Order History
-**Order Details Available**:
-- **Complete Order Information**: Items, prices, delivery details
-- **Order Status Timeline**: Track progression from order to delivery
-- **Payment Information**: Receipt and payment method used
-- **Delivery Photos**: Photos of completed deliveries
+### **✅ What Your Account Includes**
+- **Order History**: Complete record of all purchases
+- **Order Tracking**: Monitor current order progress
+- **Easy Reordering**: Quickly repeat favorite orders
+- **Account Statistics**: Track your ordering patterns
+- **Profile Management**: Update contact information
+- **Quick Navigation**: Fast access to menu and catering
 
-**Search and Filter Options**:
-- **Date Range**: Find orders from specific time periods
-- **Order Status**: Filter by completed, cancelled, refunded
-- **Restaurant Location**: If multiple locations available
-- **Order Type**: Regular delivery vs. catering orders
+### **❌ Current Limitations**
+- **No Saved Addresses**: Enter delivery address with each order
+- **No Stored Payment**: Payment processed securely each time
+- **No Notification Preferences**: Standard email updates for all
+- **No Wishlist Feature**: Cannot save favorite items for later
+- **No Loyalty Program**: No points or rewards system currently
 
-### Easy Reordering
-**One-Click Reorder**:
-1. **Find** previous order in your history
-2. **Click** "Reorder" button
-3. **Review** items and make any changes
-4. **Confirm** delivery address and payment
-5. **Place** your familiar order instantly
+---
 
-**Reorder Benefits**:
-- **Save Time**: Skip browsing and selection
-- **Consistent Experience**: Get the same meal you loved
-- **Quick Modifications**: Easy to adjust quantities or items
-- **Remembered Preferences**: Special instructions automatically included
+## 🔐 **Account Security**
 
-### Favorite Orders
-**Creating Favorites**:
-- **Save Successful Orders**: Mark great orders as favorites
-- **Custom Names**: "Friday Night Dinner" or "Office Lunch"
-- **Quick Access**: Favorites appear at top of reorder options
-- **Share Favorites**: Send favorite order links to friends
+### **Sign Out Process**
+**To sign out safely**:
+1. **Go to** your account page
+2. **Click** "Sign Out" button in the top right
+3. **Confirm** you want to end your session
 
-## 🎯 Preferences and Customization
+### **Security Best Practices**
+- **Use strong passwords** with mixed characters
+- **Don't share** account credentials with others
+- **Sign out** when using shared or public computers
+- **Contact support** immediately if you notice suspicious activity
 
-### Dietary Preferences
-**Dietary Restriction Setup**:
-- **Allergies**: Mark severe food allergies for safety
-- **Dietary Choices**: Vegetarian, vegan, gluten-free, etc.
-- **Spice Tolerance**: Preferred heat levels for dishes
-- **Portion Preferences**: Tendency toward larger or smaller portions
+### **Password Management**
+- **Forgot Password**: Use the reset link on the sign-in page
+- **Change Password**: Contact support for password changes
+- **Account Recovery**: Email verification required for access
 
-**Menu Customization**:
-- **Filter by Preferences**: Automatically hide incompatible items
-- **Highlight Options**: Show items that match your dietary needs
-- **Substitution Suggestions**: Get recommendations for modifications
-- **New Item Alerts**: Notify when new items match your preferences
+---
 
-### Notification Preferences
-**Order Update Notifications**:
-- **SMS Updates**: Text messages for order status changes
-- **Email Notifications**: Detailed email updates
-- **Push Notifications**: Mobile app alerts
-- **Call Preferences**: When you prefer phone calls vs. texts
+## 📞 **Customer Support**
 
-**Marketing Communication Settings**:
-- **Promotional Emails**: Special offers and new menu items
-- **Weekly Specials**: Information about weekly deals
-- **Seasonal Updates**: Holiday menus and seasonal items
-- **Event Notifications**: Catering promotions and group offers
+### **When to Contact Support**
+- **Account access issues**: Can't sign in or forgot password
+- **Order problems**: Missing items, delivery issues, or refunds
+- **Profile updates**: Need to change email address
+- **Technical issues**: Website problems or payment issues
+- **General questions**: Product information or policies
 
-## 🏆 Loyalty Program
+### **How to Get Help**
+- **Contact Form**: Available on our website
+- **Response Time**: 1-2 business days
+- **Order-Specific Issues**: Include order number in your message
 
-### Destino Rewards Program
-**How Points Work**:
-- **Earn Points**: 1 point for every $1 spent
-- **Bonus Points**: Double points on your birthday month
-- **Milestone Rewards**: Bonus points at spending milestones
-- **Referral Bonuses**: Points for referring new customers
+### **Information to Have Ready**
+- **Account email address**
+- **Order numbers** (if applicable)
+- **Clear description** of the issue or question
+- **Screenshots** if experiencing technical problems
 
-**Redeeming Rewards**:
-- **100 Points = $5**: Minimum redemption amount
-- **Partial Redemption**: Use points for part of order total
-- **Full Redemption**: Cover entire order with points
-- **Expiration**: Points expire after 12 months of inactivity
+---
 
-### VIP Status Benefits
-**Loyalty Tiers**:
-- **Bronze** (0-499 points): Standard member benefits
-- **Silver** (500-999 points): 5% bonus points on all orders
-- **Gold** (1000-1999 points): 10% bonus points + priority support
-- **Platinum** (2000+ points): 15% bonus points + exclusive offers
+## 💡 **Tips for Best Experience**
 
-**VIP Perks**:
-- **Early Access**: New menu items available first
-- **Exclusive Offers**: VIP-only promotions and discounts
-- **Priority Support**: Faster customer service response
-- **Special Events**: Invitations to tasting events
+### **Account Management**
+- **Keep profile updated** with current phone number
+- **Check order history** to track preferences and reorder favorites
+- **Save confirmation emails** for your records
+- **Sign in regularly** to monitor order status
 
-## 📊 Account Analytics
+### **Ordering Efficiency**
+- **Use reorder feature** for items you buy regularly
+- **Double-check addresses** since they're not saved
+- **Review cart carefully** before checkout
+- **Plan catering orders** well in advance
 
-### Personal Ordering Insights
-**Your Order Statistics**:
-- **Total Orders Placed**: Complete order count
-- **Favorite Menu Items**: Most frequently ordered dishes
-- **Spending Patterns**: Monthly and yearly spending trends
-- **Average Order Value**: Your typical order amount
+### **Mobile Usage**
+- **Website works great** on mobile devices
+- **Same features available** on phone, tablet, and desktop
+- **Responsive design** adapts to your screen size
+- **No app needed** - just use your mobile browser
 
-**Personalized Recommendations**:
-- **Similar Items**: Dishes similar to your favorites
-- **Trending Items**: Popular items among similar customers
-- **Seasonal Suggestions**: Items that match your seasonal patterns
-- **Upsell Opportunities**: Complementary items for your favorites
+---
 
-### Environmental Impact
-**Sustainability Tracking**:
-- **Eco-Friendly Orders**: Times you chose sustainable options
-- **Packaging Choices**: Reduced packaging and reusable containers
-- **Local Sourcing**: Orders featuring locally-sourced ingredients
-- **Carbon Footprint**: Estimated environmental impact of orders
+## ❓ **Frequently Asked Questions**
 
-## 🔐 Account Security
+**Q: Can I save my delivery address?**
+A: Currently, we require entering your delivery address with each order to ensure accuracy and allow delivery to different locations.
 
-### Security Features
-**Account Protection**:
-- **Strong Password Requirements**: Secure password standards
-- **Two-Factor Authentication**: Optional SMS verification
-- **Login Alerts**: Notifications of account access
-- **Device Management**: See and manage logged-in devices
+**Q: Why can't I save payment methods?**
+A: For security, payment is processed through Square during checkout and not stored in our system.
 
-**Privacy Controls**:
-- **Data Download**: Export your account data
-- **Account Deletion**: Permanently delete your account
-- **Data Sharing**: Control how your information is used
-- **Marketing Opt-out**: Unsubscribe from all communications
-
-### Password Management
-**Best Practices**:
-- **Unique Password**: Don't reuse passwords from other sites
-- **Regular Updates**: Change password periodically
-- **Recovery Options**: Keep recovery email updated
-- **Secure Storage**: Use password manager if available
-
-## 📞 Account Support
-
-### Self-Service Options
-**Account Management Help**:
-- **FAQ Section**: Common account questions answered
-- **Video Tutorials**: Step-by-step guidance for account features
-- **Email Templates**: Pre-written emails for common requests
-- **Password Reset**: Automatic password recovery system
-
-### Contact Support
-**When You Need Help**:
-- **Email Support**: account-help@destino-sf.com
-- **Phone Support**: (415) 555-ACCOUNT (2226)
-- **Live Chat**: Available on website during business hours
-- **Support Hours**: Monday-Sunday, 8 AM - 10 PM
-
-**Before Contacting Support**:
-- **Account Information**: Have your email and phone number ready
-- **Order Details**: Note specific order numbers if relevant
-- **Screenshot Issues**: Take photos of any error messages
-- **Detailed Description**: Explain exactly what's happening
-
-## ❓ Frequently Asked Questions
-
-**Q: Can I share my account with family members?**
-A: Accounts are individual, but you can save multiple addresses and payment methods for family use.
-
-**Q: How do I delete my account?**
-A: Contact customer support or use the account deletion option in your privacy settings.
+**Q: Is there a mobile app?**
+A: No mobile app is needed - our website is fully optimized for mobile devices and works perfectly in any browser.
 
 **Q: Can I change my email address?**
-A: Yes, update it in your profile settings. You'll need to verify the new email address.
+A: Email changes require contacting customer support for security verification.
 
-**Q: What happens to my points if I don't order for a while?**
-A: Points expire after 12 months of account inactivity, but any order will reset the clock.
+**Q: Do you have a loyalty or rewards program?**
+A: We don't currently offer a loyalty program, but we appreciate all our customers and may offer special promotions.
 
-**Q: Can I use multiple payment methods for one order?**
-A: Currently, each order uses one payment method. Consider gift cards for splitting payments.
+**Q: Can family members use my account?**
+A: Accounts are individual, but family members can place separate orders to the same delivery address.
 
-## 🔜 What's Next?
+---
 
-Ready to explore more features?
-- **[Order Tracking](order-tracking.md)**: Follow your orders in real-time
-- **[Placing Orders](placing-orders.md)**: Advanced ordering techniques
-- **[Catering Orders](catering-orders.md)**: Planning large group orders
+## 🔜 **Next Steps**
 
-Make your account work perfectly for you! ⚙️
+Ready to make the most of your account?
+- **[Placing Orders](placing-orders.md)**: Learn the complete ordering process
+- **[Order Tracking](order-tracking.md)**: Monitor your order progress
+- **[Catering Orders](catering-orders.md)**: Plan large quantity orders
+
+**Access your account anytime** to manage orders and explore new products! 🇦🇷✨

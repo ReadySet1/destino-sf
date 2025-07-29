@@ -2,7 +2,11 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaVersion: string | undefined;
 };
+
+// Version identifier for the current Prisma client
+const CURRENT_PRISMA_VERSION = '2024-07-27-fix-categories-active';
 
 // Optimized Prisma configuration for Vercel/Serverless
 const prismaClientSingleton = () => {
@@ -17,9 +21,43 @@ const prismaClientSingleton = () => {
   });
 };
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+// Force regenerate client if version doesn't match (to fix caching issues)
+const shouldRegenerateClient = () => {
+  return !globalForPrisma.prisma || globalForPrisma.prismaVersion !== CURRENT_PRISMA_VERSION;
+};
+
+if (shouldRegenerateClient()) {
+  // Disconnect old client if it exists
+  if (globalForPrisma.prisma) {
+    try {
+      globalForPrisma.prisma.$disconnect();
+    } catch (error) {
+      console.warn('Error disconnecting old Prisma client:', error);
+    }
+  }
+  
+  globalForPrisma.prisma = prismaClientSingleton();
+  globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+}
+
+export const prisma = globalForPrisma.prisma!;
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+// Function to force client regeneration (for emergency use)
+export async function forceRegenerateClient(): Promise<void> {
+  try {
+    if (globalForPrisma.prisma) {
+      await globalForPrisma.prisma.$disconnect();
+    }
+  } catch (error) {
+    console.warn('Error during client disconnect:', error);
+  }
+  
+  globalForPrisma.prisma = prismaClientSingleton();
+  globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+  console.log('Prisma client regenerated successfully');
+}
 
 // Helper function for safe database operations with retry logic
 export async function withRetry<T>(

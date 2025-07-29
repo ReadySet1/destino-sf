@@ -1,178 +1,216 @@
-# Getting Started - Customer Guide
+# 🎯 Getting Started - Customer Guide
 
-Welcome to Destino SF! This guide will help you create your account and place your first delicious order in just a few minutes.
+Welcome to Destino SF! Your gateway to authentic Argentine empanadas, alfajores, and specialty products. This guide will get you started with ordering delicious Argentine food products that you prepare at home.
 
-## 🎯 What You'll Learn
+## 🇦🇷 **About Destino SF**
 
-- How to create your account
-- Understanding our menu and options
-- Placing your first order
-- Setting up delivery preferences
+### **What We Offer**
+- **Authentic Argentine Empanadas**: Traditional hand pies with various fillings (beef, pork, chicken, salmon)
+- **Premium Alfajores**: Sweet sandwich cookies with dulce de leche in various flavors
+- **Catering Options**: Large quantity orders for events and gatherings
 
-## 📱 Step 1: Create Your Account
+### **Our Specialty**
+We are **NOT a restaurant** - we specialize in **authentic Argentine retail food products** that you prepare and enjoy at home. Think of us as your source for bringing Argentina's flavors to your kitchen.
 
-### Option A: Quick Registration
-1. **Visit** [destino-sf.com](https://destino-sf.com)
-2. **Click** "Sign Up" in the top right corner
-3. **Enter** your information:
-   - Full name
-   - Email address
-   - Phone number
-   - Create a secure password
-4. **Click** "Create Account"
-5. **Check your email** for a confirmation link
-6. **Click the link** to verify your account
+---
 
-### Option B: Guest Checkout
-**Don't want to create an account yet?** No problem! You can place orders as a guest, but you'll miss out on:
-- Order history and easy reordering
-- Saved addresses and payment methods
-- Exclusive member offers
-- Faster checkout process
+## 🚀 **Getting Started**
 
-## 🍽️ Step 2: Explore Our Menu
+### **1. Create Your Account (Optional)**
+While you can order as a guest, creating an account offers benefits:
+- **Order History**: View all your past purchases
+- **Faster Checkout**: Saved profile information
+- **Easy Reordering**: Quickly reorder favorite items
 
-### Understanding Our Categories
-- **Appetizers**: Perfect starters and small plates
-- **Main Dishes**: Hearty entrees and signature items
-- **Desserts**: Sweet treats to finish your meal
-- **Beverages**: Drinks, coffee, and specialty beverages
-- **Catering Packages**: Pre-designed meals for groups
+**To Create an Account:**
+1. Click "Sign Up" or "Create Account"
+2. Enter your email and create a password
+3. Add your name and phone number
+4. Verify your email address
 
-### Menu Features to Look For
-- 🌱 **Dietary Icons**: Vegetarian, vegan, gluten-free options
-- ⭐ **Popular Items**: Customer favorites marked with stars
-- 🔥 **Spicy Level**: Heat indicators for spicy dishes
-- 👥 **Serving Size**: Individual, family, or group portions
+### **2. Browse Our Products**
+- **No Search Function**: Browse by category to discover products
+- **Product Categories**: Empanadas, Alfajores, Catering
+- **Product Details**: Click any item to see descriptions, pricing, and dietary information
+- **Database Integration**: All products are stored in our database and display current availability
 
-### Using Search and Filters
-1. **Search Bar**: Type dish names or ingredients
-2. **Category Filter**: Browse by food type
-3. **Dietary Filter**: Find options that meet your needs
-4. **Price Filter**: Set your budget range
+### **3. Place Your First Order**
+1. **Add Items**: Click "Add to Cart" for desired products
+2. **Review Cart**: Check quantities and items in your cart
+3. **Enter Address**: Provide delivery information (required each time)
+4. **Secure Payment**: Pay safely through Square payment processing
+5. **Confirmation**: Receive immediate email confirmation
 
-## 🛒 Step 3: Your First Order
+---
 
-### Adding Items to Cart
-1. **Browse** the menu or search for specific items
-2. **Click** on any item to see details and options
-3. **Select** size, modifications, or add-ons if available
-4. **Choose** quantity
-5. **Click** "Add to Cart"
+## 📱 **Platform Features & Limitations**
 
-### Cart Management
-- **View Cart**: Click the cart icon (shows item count)
-- **Modify Quantities**: Use +/- buttons in cart
-- **Remove Items**: Click the trash icon
-- **Add Special Instructions**: Use the notes field
+### **✅ What We Have**
+- **Responsive Website**: Works perfectly on mobile devices
+- **Secure Checkout**: Square payment processing with PCI compliance
+- **Nationwide Shipping**: Delivery across the United States
+- **Order Tracking**: Email notifications with carrier tracking
+- **Catering System**: Large orders for events and businesses with custom quotes
+- **Admin Support**: Human customer service team
+- **Account Dashboard**: View order history and manage your profile
 
-### Minimum Order Requirements
-- **Regular Delivery**: $25 minimum
-- **Catering Orders**: Varies by delivery zone ($500-$750)
-- **Pickup Orders**: No minimum required
+### **❌ What We Don't Have**
+- **Mobile App**: No iOS or Android app (website works great on mobile)
+- **Live Tracking**: No real-time GPS or driver location tracking
+- **Search Function**: Browse by categories instead
+- **Saved Addresses**: Enter delivery address fresh each time
+- **Restaurant Service**: We don't prepare hot meals for delivery
+- **Wishlist/Favorites**: No saved product lists
 
-## 📍 Step 4: Set Up Delivery
+---
 
-### Adding Your Address
-1. **Click** "Checkout" when ready
-2. **Enter** your complete delivery address:
-   - Street address and apartment/suite number
-   - City, state, and ZIP code
-   - Delivery instructions (gate codes, buzzer numbers, etc.)
-3. **Verify** the address is within our delivery zone
-4. **Save** the address for future orders
+## 🛒 **Understanding Our Products**
 
-### Delivery Options
-- **Standard Delivery**: 45-60 minutes
-- **Scheduled Delivery**: Choose a future time
-- **Contactless Delivery**: Leave at door option
-- **Pickup**: Order ready in 20-30 minutes
+### **Empanadas** 
+- **Frozen Products**: Shipped frozen, ready to bake at home
+- **Various Fillings**: Argentine Beef, Caribbean Pork, Lomo Saltado (Peruvian), Salmon
+- **Baking Instructions**: Included with your order
+- **Authentic Recipe**: Made using traditional methods
+- **High Protein**: Up to 17 grams of protein per empanada
 
-### Delivery Zones & Fees
-- **San Francisco**: $5.99 delivery fee
-- **Peninsula**: $7.99 delivery fee
-- **East Bay**: $8.99 delivery fee
-- **Free Delivery**: On orders over $75
+### **Alfajores**
+- **Ready to Eat**: No preparation required
+- **Dulce de Leche**: Traditional Argentine caramel filling
+- **Multiple Flavors**: Classic, Chocolate, Gluten-Free, Lemon, and seasonal specialties
+- **Shelf Stable**: Can be stored at room temperature
+- **Perfect Gift**: Beautiful packaging for sharing
+- **Handcrafted**: Made in small batches using family recipes
 
-## 💳 Step 5: Payment
+### **Catering Options**
+- **Large Quantities**: Perfect for events, offices, and parties
+- **Package Deals**: Pre-configured options for groups
+- **Custom Orders**: Special requests for large events
+- **Dietary Accommodations**: Gluten-free, vegetarian, and vegan options available
 
-### Accepted Payment Methods
-- **Credit Cards**: Visa, Mastercard, American Express
-- **Debit Cards**: With PIN or signature
-- **Digital Wallets**: Apple Pay, Google Pay
-- **Corporate Cards**: For business orders
+---
 
-### Secure Payment Process
-1. **Enter** payment information
-2. **Review** order total including tax and delivery
-3. **Add** tip for delivery driver (suggested 15-20%)
-4. **Click** "Place Order"
+## 🚚 **Shipping & Delivery**
 
-### Order Confirmation
-- **Confirmation Number**: Save this for reference
-- **Email Receipt**: Sent immediately
-- **SMS Updates**: Optional order status notifications
-- **Estimated Delivery**: Time will be provided
+### **How Shipping Works**
+- **Nationwide Delivery**: We ship throughout the United States
+- **Weight-Based Pricing**: Shipping calculated by package weight
+- **Professional Carriers**: USPS, UPS, and FedEx
+- **Automatic Labels**: Shipping integration creates labels automatically
 
-## 📱 Step 6: Track Your Order
+### **Shipping Timeline**
+- **Processing**: 1-3 business days to prepare your order
+- **Shipping**: 3-7 business days for standard delivery
+- **Total Time**: 4-10 business days from order to delivery
+- **Tracking Provided**: Email notifications with tracking numbers
 
-### Order Status Updates
-1. **Order Confirmed**: Payment processed successfully
-2. **In Preparation**: Kitchen is preparing your food
-3. **Ready for Pickup**: Order completed, driver assigned
-4. **Out for Delivery**: Driver is on the way
-5. **Delivered**: Order has been delivered
+### **Special Handling**
+- **Frozen Items**: Shipped with appropriate temperature control
+- **Careful Packaging**: Products protected during transit
+- **Quality Assurance**: Items packaged to arrive in perfect condition
 
-### Tracking Options
-- **Email Notifications**: Automatic status updates
-- **SMS Alerts**: Text message notifications
-- **Account Dashboard**: Real-time status in your account
-- **Live Tracking**: See driver location (when available)
+---
 
-## 🎉 Congratulations!
+## 💳 **Payment & Security**
 
-You've successfully placed your first order! Here are some tips for next time:
+### **Secure Payment Processing**
+- **Square Integration**: Industry-leading payment security
+- **PCI Compliance**: Your payment information is fully protected
+- **Major Cards Accepted**: Visa, Mastercard, American Express, Discover
+- **No Stored Payment Info**: Payment details processed securely each transaction
 
-### Make Future Orders Easier
-- **Save Favorite Items**: Heart icon on menu items
-- **Reorder**: One-click reorder from order history
-- **Multiple Addresses**: Save work, home, and other locations
-- **Scheduled Orders**: Plan ahead for regular meal times
+### **Order Process**
+1. **Cart Review**: Verify items and quantities
+2. **Address Entry**: Complete shipping information
+3. **Payment**: Secure credit card processing
+4. **Confirmation**: Immediate email receipt
 
-### Explore More Features
-- **Group Orders**: Share cart link with friends/colleagues
-- **Catering**: Perfect for office meetings and parties
-- **Dietary Preferences**: Save preferences in your profile
-- **Loyalty Rewards**: Earn points with every order
+---
 
-## ❓ Need Help?
+## 📧 **Communication & Support**
 
-### Common First-Order Questions
+### **Automatic Notifications**
+- **Order Confirmation**: Immediate email with order details
+- **Admin Alert**: Our team is notified to prepare your order
+- **Shipping Notice**: Tracking information when order ships
+- **No App Notifications**: All communication via email
 
-**Q: How long will my first delivery take?**
-A: First orders typically take 45-60 minutes. We'll send you updates throughout the process.
+### **Customer Support**
+- **Contact Form**: Available on our website
+- **Response Time**: 1-2 business days
+- **Order Help**: Questions about products, orders, or delivery
+- **Human Support**: Real people, not chatbots
 
-**Q: Can I modify my order after placing it?**
-A: You can modify orders within 5 minutes of placing them. After that, call us at (415) 555-3663.
+---
 
-**Q: What if I'm not satisfied with my order?**
-A: Contact us immediately at support@destino-sf.com or through the app. We'll make it right!
+## 🎯 **Tips for Success**
 
-**Q: Do you deliver to my area?**
-A: Enter your address during checkout to see if delivery is available and what the fee will be.
+### **First-Time Ordering**
+- **Start Small**: Try a variety pack to discover favorites
+- **Check Shipping Costs**: Review total including shipping before checkout
+- **Note Frozen Items**: Be prepared to store empanadas in freezer
+- **Save Confirmation**: Keep order confirmation email for tracking
 
-## 📞 Contact Support
+### **Browsing Products**
+- **Browse Categories**: No search function - explore by product type
+- **Read Descriptions**: Understand what you're ordering and dietary information
+- **Check Quantities**: Make sure you're ordering the right amount
+- **Consider Shipping**: Group orders to optimize shipping costs
 
-- **Email**: support@destino-sf.com
-- **Phone**: (415) 555-FOOD (3663)
-- **Live Chat**: Available on website 9 AM - 9 PM
-- **FAQ**: Check our help center for instant answers
+### **Delivery Preparation**
+- **Clear Address**: Provide complete, accurate delivery address
+- **Be Available**: For any signature-required deliveries
+- **Frozen Storage**: Have freezer space ready for empanadas
+- **Contact Info**: Provide good phone number for delivery coordination
 
-## 🔜 What's Next?
+---
 
-Ready to explore more? Check out these guides:
-- **[Placing Orders](placing-orders.md)**: Advanced ordering features
-- **[Catering Orders](catering-orders.md)**: Ordering for groups and events
-- **[Account Management](account-management.md)**: Customize your experience
+## 🍽️ **Catering for Events**
 
-Welcome to the Destino SF family! 🎉
+### **When to Consider Catering**
+- **Large Groups**: Events with 10+ people
+- **Businesses**: Office meetings, parties, client events
+- **Special Occasions**: Weddings, birthdays, celebrations
+- **Cultural Events**: Share authentic Argentine flavors
+
+### **Catering Process**
+1. **Browse Catering Section**: View package options and à la carte items
+2. **Submit Inquiry**: Use our catering contact form with event details
+3. **Receive Quote**: Custom pricing for your event
+4. **Confirm Order**: Finalize details and payment
+5. **Event Delivery**: Coordinated delivery for your event
+
+---
+
+## ❓ **Common Questions**
+
+**Q: Do you deliver hot, prepared meals?**
+A: No, we sell authentic Argentine retail products that you prepare at home.
+
+**Q: Can I search for specific products?**
+A: Browse our organized categories - all products are clearly categorized by type.
+
+**Q: Do you have a mobile app?**
+A: No, but our website works perfectly on mobile devices for easy ordering.
+
+**Q: How long does shipping take?**
+A: Processing takes 1-3 business days, then 3-7 business days for shipping.
+
+**Q: Can I save my address for future orders?**
+A: Currently, we require fresh address entry each time to ensure accuracy.
+
+**Q: What if I have food allergies?**
+A: Check product descriptions carefully and contact us with specific allergy questions.
+
+---
+
+## 🔜 **Next Steps**
+
+Ready to explore more?
+- **[Placing Orders](placing-orders.md)**: Learn the complete ordering process
+- **[Order Tracking](order-tracking.md)**: Monitor your order status
+- **[Catering Orders](catering-orders.md)**: Large quantity orders for events
+- **[Account Management](account-management.md)**: Manage your profile and order history
+
+---
+
+**Welcome to the authentic taste of Argentina!** 🇦🇷✨

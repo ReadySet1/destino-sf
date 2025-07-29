@@ -1,325 +1,288 @@
 # Order Management - Admin Guide
 
-Master the complete order lifecycle from placement to delivery. This guide covers everything admin staff need to know about processing orders efficiently and keeping customers happy.
+Master the complete order lifecycle in Destino SF! This guide covers processing orders, managing Square integration, and providing excellent customer service.
 
 ## 🎯 What You'll Learn
 
-- Order processing workflow
-- Status management and timing
-- Customer communication
-- Problem resolution
-- Performance optimization
+- Understanding the Square-integrated order flow
+- Processing orders from placement to completion
+- Managing different order types (regular and catering)
+- Handling customer communication and issues
 
-## 📋 Order Lifecycle Overview
+## 🔄 Order Flow Overview
 
-### Order Statuses Explained
-1. **🟡 Pending**: New order waiting for confirmation
-2. **🔵 Confirmed**: Payment processed, order accepted
-3. **🟠 In Preparation**: Kitchen is preparing the order
-4. **🟣 Ready for Pickup**: Order complete, awaiting delivery
-5. **🚚 Out for Delivery**: Driver en route to customer
-6. **✅ Delivered**: Order successfully completed
-7. **❌ Cancelled**: Order cancelled (various reasons)
-8. **💰 Refunded**: Payment returned to customer
+### How Orders Work with Square
+**Order Lifecycle**:
+1. **Customer places order** on website
+2. **Order created** in Destino SF database
+3. **Payment processed** through Square
+4. **Order synced** to Square POS (if applicable)
+5. **Kitchen receives** order for preparation
+6. **Status updates** tracked through admin dashboard
+7. **Completion** marked when delivered/picked up
 
-### Typical Timeline
-- **Pending → Confirmed**: 2-5 minutes (immediate response ideal)
-- **Confirmed → In Preparation**: Immediate (automatic)
-- **In Preparation**: 25-35 minutes (varies by order complexity)
-- **Ready → Out for Delivery**: 5-10 minutes (driver assignment)
-- **Out for Delivery → Delivered**: 10-20 minutes (travel time)
+### Integration Points
+- **Payment Processing**: Handled entirely by Square
+- **Order Status**: Managed in admin dashboard
+- **Customer Communication**: Automated emails from Destino SF
+- **POS Integration**: Orders can appear in Square POS for kitchen
 
-## 🎛️ Order Management Interface
+## 📊 Admin Dashboard Overview
 
-### Order Queue Dashboard
-**Live Order Board**:
-- **Pending Orders** (Red banner): Require immediate attention
-- **Active Orders** (Yellow/Orange): Currently being processed
-- **Completed Orders** (Green): Delivered in last 2 hours
+### Order Management Interface
+**Main Dashboard Shows**:
+- **Pending Orders**: New orders needing attention
+- **In Progress**: Orders currently being prepared
+- **Ready**: Orders completed and awaiting delivery
+- **Recent Completions**: Recently finished orders
 
-**Quick Action Buttons**:
-- ✅ **Confirm Order**: Accept and start processing
-- 📞 **Call Customer**: Direct dial customer phone
-- 📝 **Add Notes**: Internal order notes
-- ⚠️ **Report Issue**: Flag problems or delays
+### Order Information Display
+**Each Order Shows**:
+- **Order ID**: Unique identifier for tracking
+- **Customer Information**: Name, email, phone
+- **Order Details**: Items, quantities, pricing
+- **Delivery Address**: Full address with instructions
+- **Payment Status**: Square payment confirmation
+- **Timestamps**: Order placed, estimated completion
 
-### Order Details View
-**Customer Information**:
-- Full name, phone number, email
-- Delivery address with any special instructions
-- Order history and customer loyalty status
-- Previous delivery notes and preferences
+## 🎯 Processing New Orders
 
-**Order Contents**:
-- Itemized list with quantities and modifications
-- Special instructions and dietary requirements
-- Kitchen preparation notes
-- Estimated preparation time
+### When Orders Arrive
+**Immediate Actions**:
+1. **Review order details** for completeness
+2. **Check inventory availability** for all items
+3. **Verify delivery address** is in service area
+4. **Confirm payment** processed successfully through Square
+5. **Send to kitchen** for preparation
 
-**Payment Information**:
-- Payment method and transaction ID
-- Order total breakdown (subtotal, tax, delivery, tip)
-- Payment status and any processing issues
-- Refund capability and history
+### Order Validation
+**Check for Issues**:
+- **Payment Problems**: Failed or pending payments
+- **Address Issues**: Incomplete or undeliverable addresses
+- **Inventory Conflicts**: Items no longer available
+- **Special Requests**: Custom modifications or dietary needs
 
-## ⚡ Processing New Orders
+### Status Management
+**Update Order Status**:
+- **Pending** → **Processing**: Order confirmed and in kitchen
+- **Processing** → **Ready**: Food prepared, ready for delivery
+- **Ready** → **Completed**: Successfully delivered to customer
 
-### Step 1: Order Review (Within 2 Minutes)
-**Immediate Checks**:
-1. **Payment Status**: Verify payment was processed successfully
-2. **Inventory Check**: Confirm all items are available
-3. **Address Validation**: Ensure delivery address is in service area
-4. **Special Requirements**: Review any dietary restrictions or modifications
+## 📋 Order Types
 
-**Red Flags to Watch For**:
-- 🚩 **Large orders** without advance notice
-- 🚩 **Delivery to new/unusual addresses**
-- 🚩 **Multiple payment failures** from same customer
-- 🚩 **Unrealistic delivery time requests**
+### Regular Food Orders
+**Characteristics**:
+- **Individual/small group** orders (1-4 people typically)
+- **Standard portions** and packaging
+- **Regular delivery** timeframes (45-60 minutes)
+- **Standard pricing** and delivery fees
 
-### Step 2: Order Confirmation
-**If Everything Looks Good**:
-1. Click **"Confirm Order"**
-2. **Kitchen notification** sent automatically
-3. **Customer notification** sent via SMS/email
-4. **Estimated delivery time** calculated and displayed
+**Processing Steps**:
+1. **Confirm order** and send to kitchen
+2. **Monitor preparation** time
+3. **Coordinate delivery** when ready
+4. **Update status** throughout process
+5. **Mark complete** upon delivery
 
-**If Issues Found**:
-1. **Contact customer immediately** via phone
-2. **Explain the issue** clearly and professionally
-3. **Offer solutions** (substitutions, modifications, refunds)
-4. **Update order** based on customer decision
-5. **Document resolution** in order notes
+### Catering Orders
+**Characteristics**:
+- **Large group** orders (10+ people)
+- **Bulk packaging** and presentation
+- **Advanced scheduling** (often day(s) ahead)
+- **Higher order values** and different pricing
 
-### Step 3: Kitchen Communication
-**Order Ticket Details**:
-- **Priority level** (standard, rush, catering)
-- **Special instructions** highlighted clearly
-- **Allergy alerts** in bold red text
-- **Modification details** for each item
-- **Target completion time**
+**Special Handling**:
+- **Early confirmation** calls to customers
+- **Kitchen coordination** for timing
+- **Special packaging** requirements
+- **Delivery logistics** for large orders
 
-**Kitchen Coordination**:
-- **Complex orders**: Brief kitchen staff personally
-- **Large orders**: Coordinate timing across stations
-- **Dietary restrictions**: Double-check preparation methods
-- **Rush orders**: Negotiate realistic timing
+## 💬 Customer Communication
 
-## 🍳 During Preparation
+### Automated Communications
+**System Sends Automatically**:
+- **Order Confirmation**: Immediate upon successful payment
+- **Status Updates**: When order status changes
+- **Completion Notice**: When order is delivered
+- **Payment Issues**: If payment problems occur
 
-### Monitoring Progress
-**Kitchen Communication**:
-- **Check-in every 15 minutes** on large orders
-- **Monitor preparation times** vs. estimates
-- **Address any ingredient shortages** immediately
-- **Quality control** checks before completion
+### Manual Communication
+**When to Contact Customers**:
+- **Order Problems**: Items unavailable or issues
+- **Delivery Questions**: Address clarification needed
+- **Timing Updates**: Significant delays
+- **Payment Issues**: Failed or incomplete payments
 
-**Customer Updates**:
-- **Proactive communication** if delays occur
-- **Send updates** every 15-20 minutes during delays
-- **Manage expectations** with realistic timing
-- **Offer compensation** for significant delays
+**Communication Methods**:
+- **Phone Call**: For urgent issues or clarifications
+- **Email**: For non-urgent updates and confirmations
+- **SMS**: Quick status updates (if phone number provided)
 
-### Common Preparation Issues
+### Customer Service Scripts
+**Common Scenarios**:
+
 **Out of Stock Items**:
-1. **Contact customer immediately**
-2. **Offer similar substitutions**
-3. **Adjust pricing** if substitution costs less
-4. **Get customer approval** before proceeding
+"Hi [Name], we're preparing your order but unfortunately [item] is currently unavailable. Would you like to substitute with [alternative] or receive a refund for that item?"
 
-**Kitchen Delays**:
-1. **Assess realistic completion time**
-2. **Contact customer** with updated timeline
-3. **Offer delivery credit** for delays over 15 minutes
-4. **Consider rush fee waiver** as compensation
+**Delivery Delays**:
+"Hi [Name], your order is ready but we're experiencing higher delivery volume. Your order will arrive approximately [time] later than originally estimated. Thank you for your patience!"
 
-**Special Dietary Requests**:
-1. **Verify kitchen capabilities** for complex modifications
-2. **Double-check ingredients** for allergen safety
-3. **Use separate preparation areas** when necessary
-4. **Document procedures** for future reference
+**Address Issues**:
+"Hi [Name], we're having trouble locating your delivery address. Could you provide additional details like building entrance, apartment number, or nearby landmarks?"
 
-## 🚚 Delivery Coordination
+## ⚠️ Problem Resolution
 
-### Driver Assignment
-**Automatic Assignment**:
-- System assigns based on location and availability
-- Driver receives order details and customer info
-- GPS navigation provided to delivery address
-- Customer contact information included
-
-**Manual Assignment** (when needed):
-- Choose driver based on location and workload
-- Consider driver experience with area
-- Account for traffic and weather conditions
-- Special delivery requirements (stairs, gates, etc.)
-
-### Delivery Tracking
-**Real-Time Updates**:
-- Driver location shared with customer
-- Estimated arrival time calculated
-- Delivery photos required for confirmation
-- Customer notification upon completion
-
-**Common Delivery Issues**:
-- **Address not found**: Contact customer immediately
-- **Customer not available**: Follow 3-attempt protocol
-- **Weather delays**: Communicate with all affected customers
-- **Vehicle problems**: Reassign to another driver quickly
-
-## 📞 Customer Communication
-
-### Professional Communication Guidelines
-**Tone and Approach**:
-- **Friendly and apologetic** when issues arise
-- **Clear and specific** about timelines and solutions
-- **Solution-focused** rather than problem-focused
-- **Follow up** to ensure customer satisfaction
-
-**Phone Call Scripts**:
-
-**For Delays**:
-> "Hi [Customer Name], this is [Your Name] from Destino SF. I'm calling about order #[Order Number]. We're experiencing a slight delay in the kitchen, and your order will be ready about 15 minutes later than originally estimated. We sincerely apologize for the inconvenience. Can I offer you a $5 credit for your next order?"
-
-**For Out of Stock**:
-> "Hi [Customer Name], I'm calling about your order #[Order Number]. Unfortunately, we're currently out of [Item Name]. I can offer you [Alternative Options] at the same price, or I can remove the item and adjust your total. What would you prefer?"
-
-**For Delivery Issues**:
-> "Hi [Customer Name], your driver is having trouble locating your address at [Address]. Could you help us with any additional landmarks or instructions? They're currently at [Location]."
-
-### SMS and Email Templates
-**Order Confirmed**:
-> "✅ Order #[Number] confirmed! Your delicious meal is being prepared and will be delivered in approximately [Time]. Track your order: [Link]"
-
-**Out for Delivery**:
-> "🚚 Your Destino SF order is on the way! Expected delivery: [Time]. Track your driver: [Link]"
-
-**Delivered**:
-> "📦 Order delivered! Enjoy your meal! Leave us a review: [Link]"
-
-## 🚨 Problem Resolution
-
-### Common Issues and Solutions
+### Common Issues
 
 **Payment Problems**:
-- **Failed payment**: Contact customer for alternative payment method
-- **Disputed charges**: Verify order details and provide receipts
-- **Refund requests**: Process immediately if valid, investigate if questionable
+- **Failed Payments**: Contact customer for alternative payment
+- **Partial Payments**: Verify full amount with Square
+- **Refund Requests**: Process through Square system
 
-**Food Quality Issues**:
-- **Customer complaint**: Listen actively and empathize
-- **Immediate replacement**: Offer to remake and redeliver
-- **Refund option**: Provide full refund if replacement not desired
-- **Follow-up**: Call next day to ensure satisfaction
+**Delivery Issues**:
+- **Wrong Address**: Contact customer immediately
+- **Access Problems**: Get building codes or contact info
+- **Customer Not Available**: Attempt contact and follow protocol
 
-**Delivery Problems**:
-- **Wrong address**: Coordinate with driver and customer for redelivery
-- **Late delivery**: Provide immediate credit and expedite future orders
-- **Missing items**: Send driver back with missing items immediately
-- **Cold food**: Offer full remake or partial refund
+**Order Problems**:
+- **Kitchen Mistakes**: Remake items if needed
+- **Missing Items**: Immediate replacement or refund
+- **Quality Issues**: Customer satisfaction priority
 
 ### Escalation Procedures
 **When to Escalate**:
-- Customer requests manager or owner
-- Issues involving potential legal problems
-- Repeated problems with same customer
-- Staff safety concerns
-- Major system or operational failures
+- Customer complaints requiring management
+- Repeated delivery failures
+- Payment disputes
+- Special dietary concerns or allergies
 
-**Escalation Steps**:
-1. **Document the issue** thoroughly in the system
-2. **Inform the customer** about escalation timeline
-3. **Brief the manager/supervisor** with all details
-4. **Follow up** to ensure resolution
-5. **Update customer** on final resolution
+## 📊 Square Integration Management
 
-## 📊 Performance Tracking
+### Payment Monitoring
+**Check Square Dashboard For**:
+- **Payment confirmations** for all orders
+- **Failed payment** alerts
+- **Refund processing** status
+- **Daily payment** reconciliation
 
-### Key Metrics to Monitor
-**Order Processing**:
-- **Confirmation time**: Average time to confirm orders
-- **Preparation time**: Kitchen efficiency metrics
-- **Delivery time**: End-to-end fulfillment speed
-- **Order accuracy**: Percentage of orders delivered correctly
+### Order Sync Status
+**Monitor Integration**:
+- **Orders appearing** in Square POS
+- **Status sync** between systems
+- **Payment matching** between platforms
+- **Data consistency** checks
 
-**Customer Service**:
-- **Customer satisfaction**: Review ratings and feedback
-- **Response time**: How quickly issues are addressed
-- **Resolution rate**: Percentage of issues resolved on first contact
-- **Repeat customers**: Customer retention and loyalty
+### Troubleshooting Square Issues
+**Common Problems**:
+- **Orders not syncing** to Square POS
+- **Payment status** not updating
+- **Customer payment** failed but order placed
+- **Refund processing** delays
 
-### Daily Performance Goals
-**Speed Targets**:
-- **Order confirmation**: Under 3 minutes average
-- **Total fulfillment**: Under 50 minutes for standard orders
-- **Customer response**: Under 30 seconds for phone calls
-- **Issue resolution**: Under 5 minutes for simple problems
+**Resolution Steps**:
+1. **Check Square connection** in admin settings
+2. **Verify API credentials** are current
+3. **Manual sync** if needed
+4. **Contact Square support** for payment issues
 
-**Quality Targets**:
-- **Order accuracy**: 95% or higher
-- **Customer satisfaction**: 4.5+ stars average
-- **On-time delivery**: 90% or higher
-- **First-call resolution**: 80% or higher
+## 📈 Performance Monitoring
 
-## 📱 Mobile Order Management
+### Key Metrics to Track
+**Daily Operations**:
+- **Order Volume**: Number of orders processed
+- **Average Order Value**: Revenue per order
+- **Completion Times**: Kitchen efficiency
+- **Customer Satisfaction**: Reviews and feedback
 
-### Mobile App Features
-**On-the-Go Management**:
-- **Push notifications** for new orders
-- **Quick status updates** with one tap
-- **Customer calling** directly from app
-- **Photo documentation** of issues
+**Weekly Analysis**:
+- **Popular Items**: Best-selling menu items
+- **Peak Times**: Busiest ordering periods
+- **Delivery Performance**: Success rates and timing
+- **Revenue Trends**: Week-over-week performance
 
-**Offline Capabilities**:
-- **View current orders** without internet
-- **Update statuses** (syncs when connected)
-- **Access customer info** from cache
-- **Emergency procedures** available offline
+### Quality Control
+**Monitor for**:
+- **Order Accuracy**: Correct items and modifications
+- **Delivery Times**: Meeting time estimates
+- **Customer Feedback**: Reviews and complaints
+- **Kitchen Efficiency**: Preparation time consistency
 
-## 🔄 Shift Handoff Procedures
+## 🕐 Time Management
 
-### End-of-Shift Checklist
-**Orders Status Review**:
-- All pending orders addressed
-- In-progress orders documented with status
-- Any customer issues documented
-- Kitchen informed of overnight prep needs
+### Peak Period Management
+**Lunch Rush (11:30 AM - 1:30 PM)**:
+- **Extra kitchen staff** if possible
+- **Streamlined menu** during peak times
+- **Proactive customer communication** about delays
 
-**Handoff Documentation**:
-- **Order volumes** and patterns from shift
-- **Customer service issues** requiring follow-up
-- **Inventory concerns** noted for next shift
-- **Staff performance** notes and concerns
+**Dinner Rush (5:30 PM - 8 PM)**:
+- **Extended preparation times** communicated to customers
+- **Delivery coordination** to manage volume
+- **Priority system** for order processing
 
-### Communication Log
-**Daily Log Entries**:
-- **Significant customer interactions**
-- **System issues** or technical problems
-- **Process improvements** discovered
-- **Training needs** identified
+### Scheduling Considerations
+**Daily Planning**:
+- **Staff schedules** aligned with expected volume
+- **Inventory preparation** for busy periods
+- **Delivery capacity** planning
+- **Kitchen prep** for popular items
+
+## 📞 Support and Escalation
+
+### Customer Support Contact
+**When Customers Call**:
+- **Order Status**: Check admin dashboard for current status
+- **Delivery Questions**: Coordinate with delivery team
+- **Payment Issues**: Check Square for payment status
+- **Complaints**: Document and resolve or escalate
+
+### Internal Communication
+**Team Coordination**:
+- **Kitchen Updates**: Keep kitchen informed of priority orders
+- **Delivery Coordination**: Manage delivery schedule and routes
+- **Management Updates**: Report significant issues or trends
 
 ## ❓ Frequently Asked Questions
 
-**Q: What if a customer wants to modify their order after it's confirmed?**
-A: Small changes are usually possible within 5 minutes. For major changes, call the customer to discuss options and timing.
+**Q: What if a customer wants to modify their order after placing it?**
+A: Check if the order has started preparation in the kitchen. If not, modifications can usually be made. If preparation has started, explain the situation and offer alternatives.
 
-**Q: How do I handle customers who are upset about delays?**
-A: Listen actively, apologize sincerely, explain the situation, offer compensation, and follow up to ensure satisfaction.
+**Q: How do I handle a failed payment?**
+A: Contact the customer immediately to arrange alternative payment. Don't release the order until payment is confirmed in Square.
 
-**Q: What's the policy on refunds?**
-A: Full refunds for our errors, partial refunds for delays over 30 minutes, case-by-case for customer preference issues.
+**Q: What if we're out of an ordered item?**
+A: Contact the customer promptly to offer substitutions or a refund for that item. Update inventory in Square to prevent future orders.
 
-**Q: How do I prioritize orders during busy periods?**
-A: Confirm all orders first, then prioritize by order time, delivery distance, and customer loyalty status.
+**Q: How long should orders take?**
+A: Standard orders: 45-60 minutes. Catering orders: Plan according to size and complexity. Always communicate realistic timeframes to customers.
 
-**Q: What if we run out of a popular item?**
-A: Update the system immediately, contact affected customers, offer alternatives, and note the shortage for inventory planning.
+**Q: What if there's a delivery problem?**
+A: Contact the customer immediately, work to resolve the issue, and document the problem to prevent recurrence.
+
+## 💡 Best Practices
+
+### Daily Operations
+- **Check order queue** regularly throughout the day
+- **Communicate with kitchen** about timing and priorities
+- **Monitor customer feedback** and address issues quickly
+- **Keep Square integration** working smoothly
+
+### Customer Service Excellence
+- **Proactive communication** when issues arise
+- **Quick problem resolution** to maintain satisfaction
+- **Professional tone** in all customer interactions
+- **Follow up** on resolved issues to ensure satisfaction
+
+### Efficiency Tips
+- **Batch similar orders** when possible for kitchen efficiency
+- **Use templates** for common customer communications
+- **Track patterns** in orders and problems for improvement
+- **Coordinate with delivery** team for optimal routing
 
 ## 🔜 What's Next?
 
 Ready to master more admin functions?
-- **[Product Management](product-management.md)**: Managing menu and inventory
-- **[Customer Service](customer-service.md)**: Advanced customer support techniques
-- **[Reports & Analytics](reports-analytics.md)**: Understanding business metrics
+- **[Dashboard Overview](dashboard-overview.md)**: Understanding your control center
+- **[Product Management](product-management.md)**: Working with Square product sync
 
-Excellence in order management drives customer satisfaction! 🌟
+Master order management for exceptional customer experiences! 📦✨

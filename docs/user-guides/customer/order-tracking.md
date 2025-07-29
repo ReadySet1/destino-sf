@@ -1,339 +1,265 @@
-# Order Tracking - Customer Guide
+# 📦 Order Tracking - Customer Guide
 
-Stay informed about your order from placement to delivery! This guide shows you how to track your orders in real-time and understand what's happening at each step.
+Track your Destino SF order from placement to delivery. This guide explains how to monitor your authentic Argentine products as they make their way to you.
 
-## 🎯 What You'll Learn
+## 🎯 **What You'll Learn**
 
-- Real-time order tracking features
-- Understanding order status updates
-- Managing delivery timing and communication
-- Troubleshooting tracking issues
-- Getting help when needed
+- How to track your order status
+- Understanding order progress updates
+- What to expect during shipping
+- Getting help with tracking issues
 
-## 📱 Tracking Methods
+---
 
-### Mobile App Tracking
-**Real-Time Features**:
-- **Live Map**: See your driver's location on a map
-- **Status Updates**: Instant notifications for status changes
-- **Time Estimates**: Updated delivery time predictions
-- **Direct Contact**: Call or message your driver directly
+## 📧 **Order Tracking Methods**
 
-**Push Notifications**:
-- **Order Confirmed**: Payment processed successfully
-- **Kitchen Started**: Your food is being prepared
-- **Driver Assigned**: Driver is on the way to pick up
-- **Out for Delivery**: Driver is heading to your location
-- **Delivered**: Order has arrived at your address
+### **Email Notifications**
+The primary way to track your order:
+- **Order Confirmation**: Immediate confirmation with order details
+- **Shipping Notification**: Email with tracking number when order ships
+- **Delivery Updates**: Information about shipping carrier and estimated delivery
 
-### Website Tracking
-**Browser-Based Tracking**:
-- **Order Status Page**: Detailed view of order progress
-- **Email Links**: Direct links to tracking page
-- **No App Required**: Full tracking without downloading app
-- **Shareable Links**: Send tracking link to others expecting delivery
+### **Account Dashboard** (If You Have an Account)
+- **Login**: Access your account dashboard
+- **Order History**: View all past orders and their status
+- **Status**: See current status of each order
+- **Reorder**: Easily reorder favorite items
 
-### SMS and Email Updates
-**Automatic Notifications**:
-- **Text Messages**: Brief status updates via SMS
-- **Email Updates**: Detailed information about your order
-- **Customizable**: Choose which notifications you want
-- **Backup Communication**: If app notifications fail
+### **No Mobile App or Live Tracking**
+**Important**: We do not have:
+- ❌ A mobile app for tracking
+- ❌ Live driver location tracking
+- ❌ Real-time GPS updates
+- ❌ Push notifications
 
-## 📊 Order Status Explained
+### **Carrier Tracking**
+Once shipped, track via shipping carrier:
+- **USPS**: Use tracking number on usps.com
+- **UPS**: Track on ups.com with provided number
+- **FedEx**: Monitor on fedex.com using tracking number
 
-### Status Timeline
-**1. 🟡 Order Placed**
-- **What it means**: Order submitted and payment processing
-- **Typical duration**: 1-3 minutes
+---
+
+## 📊 **Order Status Updates**
+
+### **Order Processing Stages**
+
+#### **1. 🟡 Order Placed**
+- **What it means**: Order submitted and payment processed via Square
+- **Duration**: Immediate
 - **What's happening**: Payment verification and order review
-- **Next step**: Order confirmation or payment issue resolution
+- **Your action**: Check email for order confirmation
 
-**2. ✅ Order Confirmed**
+#### **2. ✅ Order Confirmed**
 - **What it means**: Payment successful, order accepted
-- **Typical duration**: Immediate after payment
-- **What's happening**: Order sent to kitchen, preparation queue
-- **Next step**: Kitchen begins preparation
+- **Duration**: Within minutes of payment
+- **What's happening**: Order details stored in our database for processing
+- **Your action**: Wait for shipping notification
 
-**3. 🍳 In Preparation**
-- **What it means**: Kitchen is actively making your food
-- **Typical duration**: 20-35 minutes
-- **What's happening**: Cooking, assembling, quality checking
-- **Next step**: Food completion and packaging
+#### **3. 📦 Processing**
+- **What it means**: Our team is preparing your order
+- **Duration**: 1-3 business days
+- **What's happening**: Items collected, packaged, shipping label created
+- **Your action**: Wait for shipping confirmation
 
-**4. 📦 Ready for Pickup**
-- **What it means**: Food is complete and packaged
-- **Typical duration**: 5-10 minutes
-- **What's happening**: Driver assignment and dispatch
-- **Next step**: Driver arrives to collect order
+#### **4. 🚚 Shipped**
+- **What it means**: Order has been handed to shipping carrier
+- **Duration**: Shipping time depends on location
+- **What's happening**: Package in transit to your address
+- **Your action**: Track with carrier using provided tracking number
 
-**5. 🚗 Out for Delivery**
-- **What it means**: Driver has your order and is en route
-- **Typical duration**: 10-25 minutes
-- **What's happening**: Travel to your delivery address
-- **Next step**: Arrival and delivery
-
-**6. 🎉 Delivered**
-- **What it means**: Order successfully delivered to you
+#### **5. 📬 Delivered**
+- **What it means**: Package delivered to your address
 - **Duration**: Final status
-- **What happened**: Driver confirmed delivery completion
-- **Next step**: Enjoy your meal!
+- **What happened**: Carrier confirmed delivery
+- **Your action**: Enjoy your authentic Argentine products!
 
-## 🗺️ Live Tracking Features
+---
 
-### Driver Location Tracking
-**Map Features**:
-- **Real-Time Location**: See exactly where your driver is
-- **Route Display**: View the path to your location
-- **Traffic Updates**: Automatic adjustments for traffic delays
-- **Arrival Estimates**: Continuously updated delivery times
+## ⏰ **Timeline Expectations**
 
-**Privacy and Safety**:
-- **Driver Information**: Photo and name of your driver
-- **Vehicle Details**: Car make, model, and license plate
-- **Contact Options**: Call or text driver if needed
-- **Safety Features**: All drivers are background-checked
+### **Processing Time**
+- **Order Processing**: 1-3 business days
+- **Shipping Preparation**: Additional 1-2 business days
+- **Total Before Shipping**: 2-5 business days
 
-### Delivery Coordination
-**Communication Tools**:
-- **Direct Messaging**: Text your driver about delivery details
-- **Phone Calls**: Call driver for urgent delivery instructions
-- **Special Instructions**: Delivery notes visible to driver
-- **Update Address**: Last-minute address corrections
+### **Shipping Time** (After Processing)
+- **Standard Shipping**: 3-7 business days
+- **Express Options**: 1-3 business days (if available)
+- **Location Dependent**: Times vary by destination
 
-**Delivery Assistance**:
-- **Building Access**: Help with gate codes or building entry
-- **Parking Instructions**: Guide drivers to available parking
-- **Alternate Locations**: Meet at different spot if needed
-- **Contact Information**: Always available for coordination
+### **Factors Affecting Timeline**
+- **Product Availability**: Some items may require additional preparation
+- **Packaging Requirements**: Frozen items need special packaging
+- **Carrier Schedules**: Weekend and holiday impacts
+- **Weather**: Severe weather may cause delays
 
-## ⏰ Timing and Estimates
+---
 
-### Delivery Time Estimates
-**Factors Affecting Time**:
-- **Order Complexity**: Number and type of items ordered
-- **Kitchen Load**: How busy the restaurant is
-- **Distance**: Travel time from restaurant to your location
-- **Traffic Conditions**: Real-time traffic and weather impact
-- **Driver Availability**: Number of drivers currently working
+## 📱 **Tracking Your Shipment**
 
-**Time Estimates Updates**:
-- **Initial Estimate**: Provided when order is confirmed
-- **Kitchen Updates**: Revised based on actual preparation time
-- **Traffic Adjustments**: Modified for current traffic conditions
-- **Driver Communication**: Updated when driver reports delays
+### **Using Your Tracking Number**
+1. **Check Your Email**: Find shipping confirmation email
+2. **Locate Tracking Number**: Usually starts with carrier prefix
+3. **Visit Carrier Website**: Go to carrier's tracking page
+4. **Enter Number**: Input tracking number for status updates
+5. **Monitor Progress**: Check periodically for updates
 
-### Managing Expectations
-**Realistic Timing**:
-- **Standard Orders**: 45-60 minutes total time
-- **Rush Periods**: Additional 15-30 minutes during peak hours
-- **Weather Delays**: Extra time during rain, snow, or storms
-- **Large Orders**: May require additional preparation time
+### **Carrier Websites**
+- **USPS**: usps.com → "Track a Package"
+- **UPS**: ups.com → "Tracking"
+- **FedEx**: fedex.com → "Track Shipments"
 
-**Peak Hour Awareness**:
-- **Lunch Rush**: 11:30 AM - 1:30 PM (longer times expected)
-- **Dinner Rush**: 5:30 PM - 8:00 PM (increased demand)
-- **Weekend Evenings**: Friday-Sunday peak periods
-- **Holiday Periods**: Extended times during holidays
+### **What You'll See**
+- **Package Location**: Current location of your shipment
+- **Status Updates**: Package milestones and progress
+- **Delivery Estimate**: Expected delivery date
+- **Delivery Instructions**: How package will be delivered
 
-## 📞 Communication During Delivery
+---
 
-### Proactive Communication
-**When We Contact You**:
-- **Address Issues**: If driver can't locate your address
-- **Access Problems**: Difficulty entering building or gated community
-- **Substitution Needs**: If ordered items are unavailable
-- **Significant Delays**: When delivery will be much later than estimated
+## 🏠 **Delivery Information**
 
-**How We Contact You**:
-- **Phone Calls**: For urgent issues requiring immediate response
-- **Text Messages**: For non-urgent updates and information
-- **App Notifications**: Through our mobile app
-- **Email Updates**: For detailed information and records
+### **Delivery Methods**
+- **Home Delivery**: Direct delivery to your address
+- **Package Holds**: Some carriers offer package pickup locations
+- **Signature Required**: May be required for certain orders
+- **Safe Delivery**: Carriers follow standard delivery procedures
 
-### When to Contact Us
-**Appropriate Times to Call**:
-- **Address Corrections**: Need to update delivery location
-- **Special Instructions**: Additional delivery requirements
-- **Urgent Dietary Issues**: Last-minute allergy concerns
-- **Order Modifications**: Changes needed before preparation starts
+### **Preparing for Delivery**
+- **Be Available**: For signature-required packages
+- **Clear Address**: Ensure address is visible and accessible
+- **Special Instructions**: Note any delivery requirements when ordering
+- **Frozen Storage**: Be prepared to refrigerate/freeze empanadas immediately
 
-**Contact Information**:
-- **Customer Support**: (415) 555-FOOD (3663)
-- **Driver Direct**: Available through app when out for delivery
-- **Live Chat**: Website chat during business hours
-- **Email Support**: support@destino-sf.com
+---
 
-## 🚨 Common Tracking Issues
+## 🚨 **Common Tracking Issues**
 
-### App and Technology Issues
-**App Not Updating**:
-1. **Refresh the app**: Pull down to refresh tracking page
-2. **Check internet connection**: Ensure strong WiFi or cellular
-3. **Restart app**: Close and reopen the application
-4. **Update app**: Make sure you have the latest version
+### **Tracking Number Not Working**
+**Possible Causes**:
+- **Recent Shipment**: May take 24 hours for tracking to activate
+- **Typo in Number**: Double-check tracking number from email
+- **Wrong Carrier**: Verify you're using correct carrier website
+- **System Delays**: Carrier systems may have temporary delays
 
-**Missing Notifications**:
-1. **Check notification settings**: Ensure notifications are enabled
-2. **Phone settings**: Verify app permissions for notifications
-3. **Do Not Disturb**: Check if phone is in silent mode
-4. **Background refresh**: Allow app to run in background
+**Solutions**:
+1. Wait 24 hours and try again
+2. Double-check tracking number accuracy
+3. Contact us with your order number
 
-### Delivery Issues
-**Driver Can't Find Address**:
-- **Provide landmark details**: "Blue house next to corner store"
-- **Share location**: Send GPS coordinates if possible
-- **Meet outside**: Go to street or lobby to guide driver
-- **Update instructions**: Add more specific delivery notes
+### **No Tracking Information Received**
+**Check These**:
+- **Email Spam Folder**: Shipping emails may be filtered
+- **Email Address**: Verify correct email on order
+- **Processing Time**: Order may still be in preparation
+- **Contact Us**: Reach out if it's been longer than expected
 
-**Long Delays Without Updates**:
-1. **Check app** for latest status
-2. **Contact customer support** for investigation
-3. **Be patient** during peak hours or bad weather
-4. **Document issue** for potential compensation
+### **Package Appears Lost**
+**Steps to Take**:
+1. **Check Tracking**: Look for last known location
+2. **Contact Carrier**: Call carrier's customer service
+3. **Check Neighbors**: Package may have been misdelivered
+4. **Wait 24-48 Hours**: Sometimes updates are delayed
+5. **Contact Us**: We'll help investigate and resolve
 
-### Order Status Problems
-**Status Not Changing**:
-- **Technical delays**: Sometimes updates are delayed
-- **Kitchen busy**: May stay in "preparation" longer than expected
-- **Driver shortage**: Delays in "ready for pickup" status
-- **System lag**: Refresh app or check website
+---
 
-**Incorrect Status Display**:
-- **Cache issues**: Clear app cache or refresh browser
-- **Multiple orders**: Make sure you're viewing correct order
-- **Contact support**: Report persistent status issues
-- **Keep order number**: Have reference for support calls
+## 📞 **Getting Help with Tracking**
 
-## 📦 Delivery Completion
+### **When to Contact Customer Support**
+- **No shipping notification** after 5 business days
+- **Tracking shows package as delivered** but you didn't receive it
+- **Package appears lost** or delayed significantly
+- **Questions about order status** or processing
 
-### Confirming Delivery
-**Delivery Verification**:
-- **Photo Confirmation**: Driver takes photo of delivery
-- **Signature Required**: For some high-value orders
-- **Contactless Delivery**: Leave at door with notification
-- **Hand-to-Hand**: Direct delivery to customer
+### **Information to Have Ready**
+- **Order Number**: From your confirmation email
+- **Tracking Number**: If you have one
+- **Order Date**: When you placed the order
+- **Email Address**: Used for the order
 
-**What to Check Upon Delivery**:
-- **Order Completeness**: Verify all items are included
-- **Food Temperature**: Hot items should be hot, cold items cold
-- **Special Instructions**: Confirm any modifications were made
-- **Packaging Quality**: Items properly packaged and secure
+### **Contact Information**
+- **Contact Form**: Available on our website
+- **Response Time**: 1-2 business days
+- **Include**: Order details and specific questions
 
-### After Delivery
-**Immediate Actions**:
-- **Enjoy your meal**: Food is best when fresh and hot
-- **Check order accuracy**: Verify everything is correct
-- **Save receipts**: Keep email receipt for records
-- **Rate your experience**: Help us improve service
+---
 
-**If There's a Problem**:
-- **Contact us immediately**: While food is still fresh
-- **Document issues**: Take photos of problems
-- **Keep order details**: Have order number ready
-- **Be specific**: Explain exactly what's wrong
+## ❄️ **Special Handling for Frozen Items**
 
-## ⭐ Rating and Feedback
+### **Temperature-Sensitive Products**
+Some of our products require special shipping:
+- **Frozen Empanadas**: Shipped with dry ice or gel packs
+- **Temperature Monitoring**: Packaging designed to maintain cold temperatures
+- **Delivery Timing**: May require faster shipping methods
+- **Immediate Storage**: Refrigerate or freeze upon receipt
 
-### Rating Your Experience
-**What to Rate**:
-- **Food Quality**: Taste, temperature, freshness
-- **Order Accuracy**: Everything correct as ordered
-- **Delivery Service**: Timeliness and driver courtesy
-- **Overall Experience**: Would you order again?
+### **Upon Delivery**
+- **Check Immediately**: Inspect package temperature upon arrival
+- **Store Properly**: Follow storage instructions on packaging
+- **Quality Concerns**: Contact us if items arrived thawed or damaged
 
-**Rating Scale**:
-- **5 Stars**: Excellent, exceeded expectations
-- **4 Stars**: Good, met expectations
-- **3 Stars**: Average, room for improvement
-- **2 Stars**: Below expectations, some issues
-- **1 Star**: Poor, significant problems
+---
 
-### Providing Feedback
-**Helpful Feedback Examples**:
-- **Specific Details**: "Pasta was perfectly cooked, arrived hot"
-- **Driver Performance**: "Driver was friendly and found address easily"
-- **Improvement Suggestions**: "Food could have been warmer"
-- **Compliments**: "Best delivery experience I've had"
+## 📋 **Order History & Records**
 
-**Feedback Benefits**:
-- **Helps Us Improve**: Your input shapes our service
-- **Helps Other Customers**: Reviews guide future orders
-- **Driver Recognition**: Positive feedback helps drivers
-- **Issue Resolution**: Negative feedback helps us fix problems
+### **Accessing Your Orders** (If You Have an Account)
+- **Login**: Access your account dashboard
+- **Order History**: View all past orders
+- **Status**: See current status of each order
+- **Reorder**: Easily reorder favorite items
 
-## 📊 Order History and Tracking Records
+### **Guest Orders**
+- **Save Emails**: Keep order confirmation emails for records
+- **Track via Email**: Use information from shipping notifications
+- **Contact Support**: Reference order number for assistance
 
-### Accessing Past Orders
-**Order History Features**:
-- **Complete Timeline**: See full tracking history for each order
-- **Delivery Photos**: View photos taken at delivery
-- **Driver Information**: See who delivered your order
-- **Performance Metrics**: Delivery times and accuracy
+---
 
-**Using History for Reorders**:
-- **Find Favorites**: Easily reorder successful meals
-- **Avoid Problems**: Skip items that had issues before
-- **Track Preferences**: See your ordering patterns
-- **Share Experiences**: Tell friends about great orders
+## ❓ **Frequently Asked Questions**
 
-### Analytics and Insights
-**Personal Insights**:
-- **Average Delivery Time**: Your typical wait times
-- **Favorite Items**: Most frequently ordered dishes
-- **Preferred Delivery Times**: When you usually order
-- **Spending Patterns**: Monthly and yearly trends
+**Q: Why don't you have a mobile app for tracking?**
+A: We focus on our website experience and email notifications. Carrier websites provide detailed tracking once shipped.
 
-## ❓ Frequently Asked Questions
+**Q: Can I get real-time location updates for my package?**
+A: Once shipped, use the carrier's tracking system for the most detailed location information.
 
-**Q: Why isn't my order status updating?**
-A: Status updates can sometimes be delayed during busy periods. Try refreshing the app or contact support if it's been more than 15 minutes.
+**Q: How long does processing take before shipping?**
+A: Typically 1-3 business days for order processing and packaging.
 
-**Q: Can I change my delivery address after the driver has left?**
-A: This depends on how far the driver has traveled. Contact us immediately, and we'll coordinate with the driver.
+**Q: What if my package is delivered but I didn't receive it?**
+A: Check with neighbors, verify the delivery address, and contact the shipping carrier. We'll help investigate.
 
-**Q: What if my driver gets lost?**
-A: You can contact the driver directly through the app, or call our support line for assistance with directions.
+**Q: Can I change my delivery address after shipping?**
+A: Contact the shipping carrier directly. Address changes may be possible depending on package location.
 
-**Q: How accurate are the delivery time estimates?**
-A: Our estimates are based on current conditions and are usually accurate within 5-10 minutes. Heavy traffic or weather can cause delays.
+**Q: Why is my order taking longer than expected?**
+A: Processing times can vary based on product availability and shipping requirements, especially for frozen items.
 
-**Q: Can I track multiple orders at once?**
-A: Yes, if you have multiple orders, each will have its own tracking page accessible from your order history.
+---
 
-## 📞 Support and Help
+## 📬 **After Delivery**
 
-### When to Contact Support
-**Tracking Issues**:
-- Order status hasn't updated in 20+ minutes
-- Driver appears lost or stopped for extended time
-- Delivery estimate has passed significantly
-- Can't contact driver when needed
+### **Upon Receiving Your Order**
+- **Inspect Package**: Check for any damage during shipping
+- **Verify Contents**: Ensure all ordered items are included
+- **Store Properly**: Follow storage instructions for each product type
+- **Enjoy**: Savor your authentic Argentine products!
 
-**Emergency Situations**:
-- **Food Safety Concerns**: Temperature or quality issues
-- **Delivery Safety**: Unsafe driver behavior
-- **Payment Problems**: Unexpected charges or processing issues
-- **Severe Delays**: Orders taking much longer than estimated
+### **Issues with Your Order**
+- **Missing Items**: Contact us with order details
+- **Damaged Products**: Take photos and contact support
+- **Quality Concerns**: We want you to be completely satisfied
 
-### Support Options
-**Immediate Help**:
-- **Phone**: (415) 555-FOOD (3663) - Available 24/7
-- **Live Chat**: Website chat during business hours
-- **App Support**: Built-in help feature in mobile app
-- **Email**: support@destino-sf.com for non-urgent issues
+---
 
-**Self-Service Resources**:
-- **FAQ Section**: Common questions and answers
-- **Video Tutorials**: How-to guides for tracking features
-- **Order Help**: Automated assistance for simple issues
-- **Community Forum**: Customer tips and experiences
+## 🔜 **Next Steps**
 
-## 🔜 What's Next?
+- **[Account Management](account-management.md)**: Manage your profile and order history
+- **[Catering Orders](catering-orders.md)**: Learn about large quantity orders
+- **[Placing Orders](placing-orders.md)**: Order more authentic Argentine products
 
-Ready to master more features?
-- **[Account Management](account-management.md)**: Optimize your profile and preferences
-- **[Placing Orders](placing-orders.md)**: Advanced ordering techniques
-- **[Catering Orders](catering-orders.md)**: Track large group orders
+---
 
-Stay informed, stay satisfied! 📱✨
+**Track with confidence and enjoy authentic Argentine flavors!** 🇦🇷📦

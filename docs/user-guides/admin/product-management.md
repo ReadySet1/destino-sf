@@ -1,387 +1,240 @@
 # Product Management - Admin Guide
 
-Master your menu and inventory management! This guide covers everything you need to know about adding products, managing stock, updating prices, and optimizing your menu performance.
+Understand how products work in Destino SF! This guide explains how products are managed through Square POS integration and what admin controls are available.
 
 ## 🎯 What You'll Learn
 
-- Adding and editing menu items
-- Managing inventory and stock levels
-- Setting up categories and organization
-- Pricing strategies and promotions
-- Performance analysis and optimization
+- Understanding Square POS integration
+- Managing product sync from Square
+- Working with readonly product data
+- Troubleshooting sync issues
 
-## 🍽️ Menu Management Overview
+## 🔗 Square Integration Overview
 
-### Product Hierarchy
-**Categories** → **Products** → **Variants** → **Modifiers**
+### How Products Work
+**Important**: Products in Destino SF are **synchronized from Square POS** and are **readonly** in the web platform.
 
-Example structure:
-- **Main Dishes** (Category)
-  - **Signature Pasta** (Product)
-    - **Small** / **Large** (Variants)
-      - **Extra Cheese** / **Gluten-Free** (Modifiers)
+**Product Data Flow**:
+1. **Products created in Square POS** (Point of Sale system)
+2. **Sync process pulls data** to Destino SF platform
+3. **Website displays** synchronized products
+4. **All changes must be made in Square POS**
 
-### Product Information Required
-**Basic Information**:
-- Product name and description
-- Category assignment
-- Base price and variants
-- Preparation time
-- Availability status
+### What This Means
+- ✅ **Products automatically sync** from your Square POS
+- ✅ **Inventory levels update** from Square
+- ✅ **Pricing stays consistent** across POS and website
+- ❌ **Cannot add products** directly in Destino SF
+- ❌ **Cannot edit products** through the website
+- ❌ **Cannot manage inventory** in the platform
 
-**Additional Details**:
-- High-quality photos (multiple angles)
-- Ingredients list and allergen information
-- Nutritional data (calories, dietary restrictions)
-- Kitchen preparation notes
-- Customer customization options
+## 📊 Product Data Display
 
-## ➕ Adding New Products
+### What You Can View
+**Product Information Available**:
+- **Product Name**: As entered in Square POS
+- **Description**: Product descriptions from Square
+- **Pricing**: Current Square pricing
+- **Categories**: Category assignments from Square
+- **Images**: Product photos (may need manual management)
+- **Availability**: In-stock/out-of-stock status
+- **Square ID**: Unique identifier linking to Square
 
-### Step 1: Product Setup
-**Access Product Management**:
-1. **Navigate** to "Products" in admin menu
-2. **Click** "Add New Product"
-3. **Select** product category
-4. **Choose** product type (individual, family, catering)
+### Product Organization
+**Categories**:
+- **Synced from Square**: Categories come from your Square catalog
+- **Hierarchical Structure**: Matches Square category organization
+- **Website Display**: Categories organize menu navigation
 
-**Basic Information Form**:
-- **Product Name**: Clear, appealing name
-- **Short Description**: 1-2 sentences for menu display
-- **Long Description**: Detailed ingredients and preparation
-- **Category**: Select appropriate menu category
-- **Tags**: Dietary restrictions, spice level, etc.
+**Product Variants**:
+- **Size Options**: Small, medium, large variations
+- **Pricing Tiers**: Different prices for different sizes
+- **Square Management**: All variants managed in Square POS
 
-### Step 2: Pricing Configuration
-**Base Pricing**:
-- **Default Price**: Standard portion price
-- **Cost of Goods**: Your cost to make the item
-- **Profit Margin**: Calculated automatically
-- **Tax Category**: Food vs. beverage taxation
+## 🔄 Sync Management
 
-**Variant Pricing**:
-- **Size Options**: Small, Regular, Large, Family
-- **Price Adjustments**: Additional cost for larger sizes
-- **Percentage vs. Fixed**: Use percentages for consistency
+### Manual Sync Process
+**When to Sync**:
+- After adding new products in Square
+- After updating prices in Square POS  
+- After changing product availability
+- When products seem out of date on website
 
-**Modifier Pricing**:
-- **Add-ons**: Extra proteins, toppings, sauces
-- **Substitutions**: Usually no charge
-- **Premium Options**: Avocado, organic ingredients, etc.
+**How to Sync**:
+1. **Go to** Admin Dashboard → Sync
+2. **Click** "Sync Products from Square"
+3. **Wait** for sync completion
+4. **Verify** products updated correctly
 
-### Step 3: Inventory Setup
-**Stock Management**:
-- **Track Inventory**: Enable if you want stock monitoring
-- **Initial Quantity**: Starting stock level
-- **Low Stock Alert**: When to notify staff
-- **Reorder Point**: Automatic reorder triggers
+### Automatic Sync
+**Background Sync**:
+- **Periodic Updates**: System automatically syncs periodically
+- **Webhook Updates**: Real-time updates when possible
+- **Inventory Changes**: Stock levels update regularly
 
-**Supplier Information**:
-- **Primary Supplier**: Main ingredient source
-- **Backup Suppliers**: Alternative sources
-- **Lead Time**: How long to restock
-- **Order Quantities**: Minimum and maximum orders
+### Sync Status Monitoring
+**Check Sync Health**:
+- **Last Sync Time**: When products were last updated
+- **Sync Errors**: Any issues with Square connection
+- **Product Count**: Number of products synced
+- **Missing Images**: Products needing image updates
 
-### Step 4: Visual Content
-**Photo Requirements**:
-- **Main Photo**: High-quality hero shot
-- **Additional Photos**: Different angles, close-ups
-- **Styling**: Professional food presentation
-- **Consistency**: Match your brand aesthetic
+## 🖼️ Image Management
 
-**Photo Guidelines**:
-- **Resolution**: Minimum 1200x800 pixels
-- **Format**: JPG or PNG, under 2MB
-- **Lighting**: Bright, natural lighting preferred
-- **Background**: Clean, consistent backgrounds
+### Product Images
+**Image Sources**:
+- **Square Images**: Photos uploaded to Square POS
+- **Manual Upload**: Additional images can be added manually
+- **Image Protection**: System preserves custom images during sync
 
-## 📝 Editing Existing Products
+**Managing Images**:
+- **View Current Images**: See all product photos
+- **Add Additional Images**: Upload supplementary photos
+- **Image Quality**: Ensure high-quality food photography
+- **Update Process**: Changes may require manual intervention
 
-### Regular Updates Needed
-**Seasonal Adjustments**:
-- **Availability**: Mark seasonal items as available/unavailable
-- **Pricing**: Adjust for seasonal ingredient costs
-- **Descriptions**: Update with seasonal language
-- **Photos**: Refresh with current presentation
+### Image Troubleshooting
+**Common Issues**:
+- **Missing Images**: Products without photos
+- **Broken Links**: Images that no longer load
+- **Quality Issues**: Low-resolution or poor photos
 
-**Performance-Based Changes**:
-- **Popular Items**: Consider featuring more prominently
-- **Slow Movers**: Revise descriptions or pricing
-- **Customer Feedback**: Address common complaints
-- **Kitchen Feedback**: Streamline difficult preparations
+**Solutions**:
+- **Upload in Square**: Add images to Square POS first
+- **Manual Addition**: Add images through admin interface
+- **Sync Again**: Re-sync to pull updated images
 
-### Bulk Editing Features
-**Multiple Product Updates**:
-- **Price Adjustments**: Apply percentage increases across categories
-- **Availability Changes**: Mark multiple items as unavailable
-- **Category Reassignment**: Move products between categories
-- **Tag Updates**: Add dietary or seasonal tags
+## ⚙️ Product Settings
 
-## 📊 Inventory Management
+### Availability Management
+**In Square POS**:
+- **Mark items unavailable** when out of stock
+- **Set inventory levels** for automatic management
+- **Seasonal availability** for limited-time items
 
-### Stock Tracking Methods
-**Manual Tracking**:
-- **Daily Counts**: Physical inventory counts
-- **Depletion Tracking**: Subtract as orders are prepared
-- **Waste Logging**: Track spoilage and waste
-- **Receiving Updates**: Add inventory when deliveries arrive
+**On Website**:
+- **Products automatically hide** when marked unavailable in Square
+- **Stock status reflects** Square inventory levels
+- **Customer sees** accurate availability
 
-**Automated Tracking**:
-- **POS Integration**: Automatic deduction on sales
-- **Supplier Integration**: Automatic updates on deliveries
-- **Waste Tracking**: Digital logging of waste reasons
-- **Predictive Ordering**: AI-suggested reorder quantities
+### Pricing Updates
+**Price Changes**:
+1. **Update prices in Square POS**
+2. **Sync products** to Destino SF
+3. **Verify pricing** on website
+4. **Test ordering process** to confirm accuracy
 
-### Inventory Alerts
-**Low Stock Warnings**:
-- **Email Notifications**: Sent to managers daily
-- **Dashboard Alerts**: Visible on admin homepage
-- **Mobile Push**: Urgent alerts on mobile app
-- **Supplier Notifications**: Automatic reorder triggers
+## 📈 Analytics and Reporting
 
-**Out of Stock Procedures**:
-1. **Mark item unavailable** immediately
-2. **Contact supplier** for emergency delivery
-3. **Notify customers** of affected orders
-4. **Update menu displays** to remove item
-5. **Plan substitution strategies**
+### Available Analytics
+**Basic Metrics**:
+- **Product Views**: Which products customers view most
+- **Order Frequency**: Most frequently ordered items
+- **Category Performance**: Popular menu categories
 
-## 💰 Pricing Management
+**Note**: Detailed business analytics are handled in Square POS, not in Destino SF.
 
-### Pricing Strategies
-**Cost-Plus Pricing**:
-- **Calculate food cost** percentage (typically 28-35%)
-- **Add labor costs** and overhead
-- **Apply desired profit margin**
-- **Round to customer-friendly prices**
+### Sales Reporting
+**Square Reports**:
+- **Use Square Dashboard** for detailed sales analytics
+- **Product Performance**: Square provides comprehensive reporting
+- **Inventory Reports**: Stock movement and turnover
+- **Revenue Analysis**: Profit margins and trends
 
-**Competitive Pricing**:
-- **Research competitor prices** regularly
-- **Position appropriately** (premium vs. value)
-- **Consider portion sizes** in comparison
-- **Evaluate value proposition**
+## 🚨 Troubleshooting
 
-**Dynamic Pricing**:
-- **Peak Hour Pricing**: Higher prices during rush times
-- **Seasonal Adjustments**: Reflect ingredient cost changes
-- **Demand-Based**: Adjust popular item pricing
-- **Promotional Pricing**: Limited-time offers
+### Common Sync Issues
+**Products Not Appearing**:
+1. **Check Square connection** in admin settings
+2. **Verify products are active** in Square POS
+3. **Run manual sync** from admin dashboard
+4. **Check error logs** for sync failures
 
-### Promotion Management
-**Discount Types**:
-- **Percentage Off**: 10%, 15%, 20% discounts
-- **Fixed Amount**: $5 off, $10 off orders
-- **Buy One Get One**: BOGO offers
-- **Bundle Deals**: Combo meal pricing
+**Pricing Mismatches**:
+1. **Confirm prices in Square POS**
+2. **Force sync** to update pricing
+3. **Clear cache** if prices still wrong
+4. **Contact support** if issues persist
 
-**Promotion Scheduling**:
-- **Happy Hour**: Afternoon slow period promotions
-- **Weekday Specials**: Monday-Thursday offers
-- **Seasonal Promotions**: Holiday-themed deals
-- **Customer Acquisition**: New customer incentives
+**Missing Categories**:
+1. **Verify categories exist** in Square
+2. **Check category assignment** in Square POS
+3. **Resync categories** specifically
+4. **Manually organize** if needed
 
-## 📂 Category Organization
+### Error Resolution
+**Sync Failures**:
+- **Check internet connection**
+- **Verify Square API credentials**
+- **Look for Square service outages**
+- **Try sync again after delay**
 
-### Category Structure Best Practices
-**Logical Grouping**:
-- **Appetizers**: Starters and small plates
-- **Soups & Salads**: Light options
-- **Main Dishes**: Primary entrees
-- **Desserts**: Sweet endings
-- **Beverages**: All drinks
-- **Catering**: Large-format options
+**Product Issues**:
+- **Individual product problems** may need manual fixing
+- **Bulk issues** suggest sync problems
+- **Image problems** often need separate resolution
 
-**Customer-Friendly Names**:
-- **"Shareables"** instead of "Appetizers"
-- **"Hearty Mains"** instead of "Entrees"
-- **"Sweet Treats"** instead of "Desserts"
-- **"Refreshers"** instead of "Beverages"
+## 📞 Getting Help
 
-### Category Management
-**Visual Organization**:
-- **Category Photos**: Appealing representative images
-- **Sort Order**: Arrange by customer journey (appetizers → mains → desserts)
-- **Featured Categories**: Highlight profitable sections
-- **Seasonal Categories**: Add/remove based on season
+### When to Contact Support
+**Technical Issues**:
+- Sync consistently failing
+- Products not updating after multiple syncs  
+- Square connection problems
+- Data corruption or missing products
 
-## 📈 Performance Analysis
+**Square Support**:
+- **Product setup questions**: Contact Square support
+- **POS configuration**: Square handles POS setup
+- **Inventory management**: Square provides inventory training
 
-### Key Product Metrics
-**Sales Performance**:
-- **Units Sold**: Total quantity ordered
-- **Revenue Generated**: Total dollar amount
-- **Average Order Value**: When item is included
-- **Reorder Rate**: How often customers reorder
+### Internal Support
+**Contact Information**:
+- **Technical Support**: admin-support@destino-sf.com
+- **Training Resources**: Available in admin dashboard
+- **Documentation**: Keep this guide bookmarked
 
-**Profitability Analysis**:
-- **Gross Profit**: Revenue minus food costs
-- **Profit Margin**: Percentage profit per item
-- **Labor Efficiency**: Preparation time vs. profit
-- **Total Contribution**: Overall impact on business
+## 💡 Best Practices
 
-### Menu Engineering Matrix
-**Four Categories of Items**:
+### Daily Operations
+- **Check sync status** regularly
+- **Monitor product availability** 
+- **Review customer feedback** about menu items
+- **Keep Square POS updated** with current offerings
 
-**🌟 Stars** (High Profit + High Popularity):
-- **Action**: Promote heavily, maintain quality
-- **Strategy**: Feature prominently on menu
-- **Example**: Signature dishes that customers love
+### Product Organization
+- **Use clear product names** in Square
+- **Write descriptive descriptions** for customer clarity
+- **Organize categories logically** for easy browsing
+- **Maintain high-quality images** for better sales
 
-**🐴 Workhorses** (Low Profit + High Popularity):
-- **Action**: Find ways to increase profitability
-- **Strategy**: Reduce costs or increase price carefully
-- **Example**: Popular but low-margin items
-
-**💎 Hidden Gems** (High Profit + Low Popularity):
-- **Action**: Increase visibility and promotion
-- **Strategy**: Better positioning, staff training
-- **Example**: Profitable items customers don't know about
-
-**🚫 Menu Burdens** (Low Profit + Low Popularity):
-- **Action**: Consider removing or repositioning
-- **Strategy**: Revamp completely or eliminate
-- **Example**: Items that waste kitchen time and space
-
-## 🔧 Advanced Features
-
-### Recipe Management
-**Standardized Recipes**:
-- **Ingredient Lists**: Exact quantities and specifications
-- **Preparation Steps**: Detailed cooking instructions
-- **Portion Controls**: Consistent serving sizes
-- **Cost Calculations**: Track ingredient costs
-
-**Recipe Scaling**:
-- **Batch Cooking**: Scale recipes for efficient preparation
-- **Catering Portions**: Automatically scale for large orders
-- **Yield Management**: Predict quantities needed
-- **Waste Reduction**: Optimize preparation amounts
-
-### Nutritional Information
-**Required Data**:
-- **Calories**: Per serving calculation
-- **Allergens**: Complete allergen disclosure
-- **Dietary Labels**: Vegetarian, vegan, gluten-free
-- **Nutritional Facts**: Fats, carbs, protein, sodium
-
-**Compliance Requirements**:
-- **FDA Regulations**: Menu labeling compliance
-- **Local Requirements**: City/state specific rules
-- **Accuracy Standards**: Regular nutritional analysis
-- **Update Procedures**: Keep information current
-
-### Integration Management
-**POS System Sync**:
-- **Menu Synchronization**: Keep POS updated with menu changes
-- **Price Updates**: Automatic price synchronization
-- **Availability Status**: Real-time stock status
-- **Modifier Options**: Sync customization options
-
-**Kitchen Display Integration**:
-- **Order Routing**: Send orders to appropriate stations
-- **Preparation Times**: Display estimated cook times
-- **Special Instructions**: Highlight modifications clearly
-- **Priority Levels**: Rush orders and VIP customers
-
-## 📱 Mobile Product Management
-
-### Mobile App Features
-**Quick Updates**:
-- **Mark items unavailable** when you run out
-- **Update prep times** during busy periods
-- **Check inventory levels** from anywhere
-- **Review sales performance** on the go
-
-**Photo Management**:
-- **Take new photos** with phone camera
-- **Upload immediately** to update menu
-- **Approve photo changes** before going live
-- **Maintain photo quality** standards
-
-## ⚠️ Common Mistakes to Avoid
-
-### Menu Design Errors
-- **Too Many Options**: Overwhelming choice paradox
-- **Unclear Descriptions**: Confusing or vague language
-- **Poor Photo Quality**: Unappetizing or inconsistent images
-- **Inconsistent Pricing**: Pricing that doesn't make sense
-
-### Inventory Management Mistakes
-- **Ignoring Data**: Not using sales data to predict needs
-- **Over-Ordering**: Excessive waste from spoilage
-- **Under-Ordering**: Running out of popular items
-- **Poor Supplier Relations**: Not maintaining backup sources
-
-### Pricing Problems
-- **Emotion-Based Pricing**: Pricing without data analysis
-- **Ignoring Competition**: Pricing in a vacuum
-- **Static Pricing**: Never adjusting for costs or demand
-- **Hidden Costs**: Not accounting for all expenses
-
-## 📊 Reporting and Analytics
-
-### Daily Reports
-**Sales Summary**:
-- **Top Selling Items**: Most popular dishes
-- **Revenue by Category**: Which sections perform best
-- **Average Order Value**: When specific items included
-- **Customer Preferences**: Trending items
-
-**Inventory Reports**:
-- **Current Stock Levels**: What's available now
-- **Low Stock Alerts**: Items needing attention
-- **Waste Tracking**: What was discarded and why
-- **Supplier Performance**: Delivery reliability
-
-### Weekly Analysis
-**Menu Performance**:
-- **Item Profitability**: Which items make the most money
-- **Customer Satisfaction**: Reviews and ratings by item
-- **Kitchen Efficiency**: Prep times and difficulty
-- **Seasonal Trends**: How seasons affect sales
-
-**Strategic Planning**:
-- **Menu Optimization**: What changes would improve performance
-- **Pricing Analysis**: Are prices optimized for profit
-- **Inventory Efficiency**: Reduce waste and improve margins
-- **Customer Insights**: What do customers really want
+### Inventory Management
+- **Update availability promptly** when items run out
+- **Set realistic inventory levels** in Square
+- **Plan for seasonal items** and limited offers
+- **Coordinate with kitchen staff** on availability
 
 ## ❓ Frequently Asked Questions
 
-**Q: How often should I update menu prices?**
-A: Review quarterly, adjust when ingredient costs change significantly (5%+ increase).
+**Q: Can I add products directly in Destino SF?**
+A: No, all products must be created in Square POS first, then synced to the website.
 
-**Q: What's the ideal number of menu items?**
-A: 7-12 items per category is optimal. Too many choices overwhelm customers.
+**Q: How often do products sync automatically?**
+A: Products sync automatically several times per day, but you can run manual syncs anytime.
 
-**Q: How do I handle seasonal items?**
-A: Create seasonal categories, clearly mark availability dates, and plan transitions in advance.
+**Q: What happens if I change prices in Square?**
+A: Run a sync to update website pricing. Changes may take a few minutes to appear.
 
-**Q: Should I remove low-selling items immediately?**
-A: Not always. Try repositioning, repricing, or better promotion first. Some items support menu variety.
+**Q: Can I hide certain products from the website?**
+A: Mark products as unavailable in Square POS to hide them from the website.
 
-**Q: How do I photograph food for the menu?**
-A: Use natural lighting, style carefully, keep backgrounds consistent, and consider professional photography for key items.
-
-## 📞 Product Management Support
-
-### Getting Help
-- **Training Videos**: Available in admin dashboard
-- **Documentation**: Detailed guides for all features
-- **Email Support**: product-help@destino-sf.com
-- **Phone Support**: (415) 555-MENU (6368)
-
-### Best Practices Resources
-- **Industry Benchmarks**: Compare your performance
-- **Seasonal Planning**: Templates for menu changes
-- **Pricing Calculators**: Tools for optimal pricing
-- **Photo Guidelines**: Standards for menu photography
+**Q: Why don't my new Square products appear immediately?**
+A: Run a manual sync from the admin dashboard to pull new products immediately.
 
 ## 🔜 What's Next?
 
 Ready to master more admin functions?
-- **[Reports & Analytics](reports-analytics.md)**: Deep dive into business metrics
-- **[Customer Service](customer-service.md)**: Handling customer inquiries
-- **[System Settings](system-settings.md)**: Configure restaurant operations
+- **[Order Management](order-management.md)**: Processing customer orders
+- **[Dashboard Overview](dashboard-overview.md)**: Understanding your control center
 
-Master your menu, master your business! 🎯
+Master the Square integration for seamless operations! 🔄

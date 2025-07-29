@@ -27,17 +27,21 @@ yarn-debug.log*
 yarn-error.log*
 debug-*.png
 
-# local env files
+# local env files - CRITICAL SECURITY
 .env
+.env*
 .env.local
+.env.development
 .env.development.local
-.env.test.local
-.env.production.local
 .env.test
+.env.test.local
+.env.production
+.env.production.local
 .env*.local
 .env.backup*
 .env*.backup*
 .env.vercel
+!.env.example
 
 # vercel
 .vercel
