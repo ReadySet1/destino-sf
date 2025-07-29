@@ -1604,16 +1604,23 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
     console.log('Square Webhook Payload Type:', payload.type);
     console.log('Square Webhook Event ID:', payload.event_id);
 
-    // Handle different event types with race condition protection
+    // Handle different event types with enhanced error handling and monitoring
     try {
+      // Try queue-based processing first with improved error handling
       await handleWebhookWithQueue(payload, payload.type);
+      
+      console.log(`✅ Successfully processed ${payload.type} event via queue system (Event: ${payload.event_id})`);
     } catch (error: any) {
-      console.error(`Failed to process webhook ${payload.type} (${payload.event_id}):`, error);
+      console.error(`❌ Queue processing failed for ${payload.type} (${payload.event_id}):`, {
+        error: error.message,
+        code: error.code,
+        stack: error.stack?.substring(0, 500), // Truncated stack trace
+      });
 
-      // For non-race-condition errors, still try direct processing for now
-      // This provides a fallback while the queue system stabilizes
-      if (error.code !== 'P2025') {
-        console.warn(`Attempting direct processing for ${payload.type} as fallback...`);
+      // Enhanced fallback processing with specific error handling
+      try {
+        console.warn(`🔄 Attempting direct fallback processing for ${payload.type}...`);
+        
         switch (payload.type) {
           case 'order.created':
             await handleOrderCreated(payload);
@@ -1637,8 +1644,37 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
             await handleRefundUpdated(payload);
             break;
           default:
-            console.warn(`Unhandled event type in async processing: ${payload.type}`);
+            console.warn(`⚠️ Unhandled event type in fallback processing: ${payload.type}`);
+            // Capture unknown event types for monitoring
+            await errorMonitor.captureWebhookError(
+              new Error(`Unknown webhook event type: ${payload.type}`),
+              'unknown_event_type',
+              { eventType: payload.type, eventId: payload.event_id },
+              payload.event_id
+            );
+            return;
         }
+        
+        console.log(`✅ Successfully processed ${payload.type} event via fallback (Event: ${payload.event_id})`);
+      } catch (fallbackError: any) {
+        console.error(`❌ CRITICAL: Both queue and fallback processing failed for ${payload.type} (${payload.event_id}):`, fallbackError);
+        
+        // Capture critical webhook failure for immediate attention
+        await errorMonitor.captureWebhookError(
+          fallbackError,
+          'critical_webhook_failure',
+          { 
+            originalError: error.message,
+            fallbackError: fallbackError.message,
+            eventType: payload.type,
+            eventId: payload.event_id,
+            orderId: payload.data?.id 
+          },
+          payload.event_id
+        );
+        
+        // Don't throw here - we've already logged and monitored the error
+        // Square expects a 200 response even for processing failures
       }
     }
 

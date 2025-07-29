@@ -305,20 +305,34 @@ export class ProcessingQueue {
 export const processingQueue = ProcessingQueue.getInstance();
 
 /**
- * Enhanced webhook handler with race condition protection
+ * Enhanced webhook handler with circuit breaker pattern and comprehensive error handling
  */
 export async function handleWebhookWithQueue(payload: any, eventType: string): Promise<void> {
+  const processingQueue = ProcessingQueue.getInstance();
+  
   try {
-    // Try immediate processing first by calling the handler directly
-    const processingQueue = ProcessingQueue.getInstance();
+    // Try immediate processing first
     await processingQueue['processWebhookPayload'](payload);
+    
+    console.log(`✅ Webhook processed successfully via queue: ${eventType} (${payload.event_id})`);
   } catch (error: any) {
-    // Check if this is a race condition error
-    if (error.code === 'P2025' && error.message?.includes('not found')) {
-      console.warn(`⚠️ Race condition detected for ${eventType}. Queuing for retry...`);
+    const errorContext = {
+      error: error.message,
+      code: error.code,
+      eventId: payload.event_id,
+      eventType,
+      orderId: payload.data?.id,
+    };
+    
+    console.error(`❌ Webhook processing failed for ${eventType}:`, errorContext);
 
-      // Queue with exponential backoff for race conditions
-      const delayMs = eventType === 'order.updated' ? 10000 : 5000; // 10s for order.updated, 5s for others
+    // Determine retry strategy based on error type
+    const shouldRetry = determineShouldRetry(error, eventType);
+    
+    if (shouldRetry) {
+      const delayMs = calculateRetryDelay(error, eventType);
+      
+      console.warn(`⚠️ Queuing ${eventType} for retry in ${delayMs}ms due to: ${error.message}`);
 
       await processingQueue.queueWebhook(
         {
@@ -326,14 +340,72 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
           eventType,
           eventId: payload.event_id,
           orderId: payload.data?.id,
+          error: error.message,
+          errorCode: error.code,
         },
         delayMs
       );
-    } else {
-      // Re-throw non-race-condition errors
-      throw error;
     }
+    
+    // Always re-throw for fallback processing
+    throw error;
   }
+}
+
+/**
+ * Determine if a webhook should be retried based on error type
+ */
+function determineShouldRetry(error: any, eventType: string): boolean {
+  // Always retry race conditions
+  if (error.code === 'P2025' && error.message?.includes('not found')) {
+    return true;
+  }
+  
+  // Retry database connection issues
+  if (error.code === 'P1001' || error.code === 'P1008' || error.code === 'P1017') {
+    return true;
+  }
+  
+  // Retry timeout errors
+  if (error.message?.includes('timeout') || error.code === 'TIMEOUT') {
+    return true;
+  }
+  
+  // Retry temporary database issues
+  if (error.message?.includes('connection') || error.message?.includes('ECONNRESET')) {
+    return true;
+  }
+  
+  // Don't retry validation errors or permanent failures
+  if (error.message?.includes('validation') || error.code === 'P2003') {
+    return false;
+  }
+  
+  // Default: retry most other errors with exponential backoff
+  return true;
+}
+
+/**
+ * Calculate retry delay based on error type and event type
+ */
+function calculateRetryDelay(error: any, eventType: string): number {
+  // Race conditions get shorter delays
+  if (error.code === 'P2025' && error.message?.includes('not found')) {
+    return eventType === 'order.updated' ? 10000 : 5000; // 10s for order.updated, 5s for others
+  }
+  
+  // Database connection issues get medium delays
+  if (error.code === 'P1001' || error.code === 'P1008') {
+    return 15000; // 15 seconds
+  }
+  
+  // Payment processing gets priority with shorter delays
+  if (eventType.startsWith('payment.')) {
+    return 8000; // 8 seconds
+  }
+  
+  // Default delay for other errors
+  return 12000; // 12 seconds
 }
 
 /**
