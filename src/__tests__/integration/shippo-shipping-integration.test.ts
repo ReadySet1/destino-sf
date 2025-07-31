@@ -1,16 +1,19 @@
 import { Shippo } from 'shippo';
 import { getShippingRates, createShippingLabel, trackShipment } from '@/app/actions/shipping';
 import { calculateShippingWeight } from '@/lib/shippingUtils';
+import { ShippoClientManager } from '@/lib/shippo/client';
 
-// Mock Shippo SDK
+// Mock Shippo SDK and centralized client
 jest.mock('shippo');
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/lib/db');
+jest.mock('@/lib/shippo/client');
 
 const MockShippo = Shippo as jest.MockedClass<typeof Shippo>;
 const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
   typeof calculateShippingWeight
 >;
+const mockShippoClientManager = ShippoClientManager as jest.Mocked<typeof ShippoClientManager>;
 
 describe('Shippo Shipping Integration - E2E Testing', () => {
   let mockShippoClient: any;
@@ -46,6 +49,15 @@ describe('Shippo Shipping Integration - E2E Testing', () => {
 
     MockShippo.mockImplementation(() => mockShippoClient);
     mockCalculateShippingWeight.mockResolvedValue(2.5);
+    
+    // Setup centralized client manager
+    mockShippoClientManager.getInstance.mockReturnValue(mockShippoClient);
+    mockShippoClientManager.setMockClient.mockImplementation((client) => {
+      // In real implementation, this would set the mock client
+    });
+    mockShippoClientManager.reset.mockImplementation(() => {
+      // In real implementation, this would reset the client
+    });
 
     // Set up environment
     process.env.SHIPPO_API_KEY = 'test-shippo-key';

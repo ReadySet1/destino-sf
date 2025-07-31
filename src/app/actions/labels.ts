@@ -1,248 +1,359 @@
 'use server';
 
-import { Shippo } from 'shippo';
 import { prisma } from '@/lib/db';
 import { OrderStatus } from '@prisma/client';
 import { getShippingRates } from '@/lib/shipping';
+import { ShippoClientManager } from '@/lib/shippo/client';
+import { 
+  ShippingLabelResponse, 
+  ShippoError, 
+  isRateExpiredError, 
+  createShippoError, 
+  DEFAULT_RETRY_CONFIG 
+} from '@/types/shippo';
 
-// Enhanced function with rate refresh capability
+/**
+ * Enhanced label purchase with automatic retry and rate refresh
+ */
 export async function purchaseShippingLabel(
   orderId: string,
   shippoRateId: string
-): Promise<{ success: boolean; labelUrl?: string; trackingNumber?: string; error?: string }> {
+): Promise<ShippingLabelResponse> {
   console.log(
-    `Attempting to purchase label for Order ID: ${orderId} using Shippo Rate ID: ${shippoRateId}`
+    `🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}`
   );
 
-  const apiKey = process.env.SHIPPO_API_KEY;
-  if (!apiKey) {
-    console.error('Shippo API Key not configured for label purchase.');
-    return { success: false, error: 'Shipping provider configuration error.' };
-  }
-
-  const shippo = new Shippo({ apiKeyHeader: apiKey });
-
-  // First, try with the original rate ID
   try {
+    // Get current order and check retry count
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new Error(`Order not found: ${orderId}`);
+    }
+
+    // Check if we've exceeded retry limit
+    if (order.retryCount >= DEFAULT_RETRY_CONFIG.maxAttempts) {
+      const error: ShippoError = {
+        type: 'RETRY_EXHAUSTED',
+        attempts: order.retryCount,
+        lastError: 'Maximum retry attempts exceeded',
+      };
+      
+      return {
+        success: false,
+        error: `Maximum retry attempts (${DEFAULT_RETRY_CONFIG.maxAttempts}) exceeded for order ${orderId}`,
+        errorCode: 'RETRY_EXHAUSTED',
+        retryAttempt: order.retryCount,
+      };
+    }
+
+    return await attemptLabelPurchase(order, shippoRateId, order.retryCount);
+  } catch (error) {
+    console.error(`❌ Error in purchaseShippingLabel for Order ID: ${orderId}:`, error);
+    const shippoError = createShippoError(error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorCode: shippoError.type,
+    };
+  }
+}
+
+/**
+ * Attempt label purchase with retry logic
+ */
+async function attemptLabelPurchase(
+  order: any,
+  shippoRateId: string,
+  retryAttempt: number = 0
+): Promise<ShippingLabelResponse> {
+  const orderId = order.id;
+  
+  try {
+    console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
+    
+    // Get Shippo client
+    const shippo = ShippoClientManager.getInstance();
+    
+    // Update retry tracking
+    await updateRetryTracking(orderId, retryAttempt);
+
+    // Attempt transaction creation
     const transaction = await shippo.transactions.create({
       rate: shippoRateId,
       labelFileType: 'PDF_4x6',
       async: false,
-      metadata: `order_id=${orderId}`,
+      metadata: `order_id=${orderId}_attempt_${retryAttempt + 1}`,
     });
 
-    console.log('Shippo Transaction Result:', JSON.stringify(transaction, null, 2));
+    console.log(`📋 Transaction result for Order ID ${orderId}:`, {
+      status: transaction.status,
+      hasLabel: !!transaction.labelUrl,
+      hasTracking: !!transaction.trackingNumber,
+    });
 
-    // Check transaction status
+    // Check for success
     if (transaction.status === 'SUCCESS' && transaction.labelUrl && transaction.trackingNumber) {
-      console.log(`Label purchased successfully for Order ID: ${orderId}`);
+      console.log(`✅ Label purchased successfully for Order ID: ${orderId}`);
 
-      // Update the order in Prisma with tracking info
+      // Update order with success
       await prisma.order.update({
         where: { id: orderId },
         data: {
           trackingNumber: transaction.trackingNumber,
           status: OrderStatus.SHIPPING,
+          retryCount: retryAttempt + 1,
+          lastRetryAt: new Date(),
         },
       });
-      console.log(`Order ${orderId} updated with tracking number and status.`);
 
       return {
         success: true,
         labelUrl: transaction.labelUrl,
         trackingNumber: transaction.trackingNumber,
+        retryAttempt: retryAttempt + 1,
       };
     } else {
-      // Handle errors or non-success statuses
-      const errorMessage =
-        transaction.messages?.map((m: any) => m.text).join(', ') ||
-        `Label purchase failed with status: ${transaction.status}`;
+      // Handle transaction failure
+      const errorMessage = transaction.messages?.map((m: any) => m.text).join(', ') || 
+                          `Transaction failed with status: ${transaction.status}`;
       throw new Error(errorMessage);
     }
   } catch (error: any) {
-    console.log(`Initial label purchase failed for Order ID: ${orderId}:`, error.message);
-
+    console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
+    
     // Check if this is a rate expiration error
-    const isRateExpired =
-      error?.body?.rate &&
-      (error.body.rate.includes('not found') ||
-        error.body.rate.includes('Rate with supplied object_id not found'));
-
-    if (isRateExpired) {
-      console.log(
-        `Rate expired for Order ID: ${orderId}. Attempting to refresh rates and retry...`
-      );
-
-      try {
-        // Get the order details to re-fetch shipping rates
-        const order = await prisma.order.findUnique({
-          where: { id: orderId },
-          include: {
-            items: {
-              include: {
-                product: true,
-                variant: true,
-              },
-            },
-          },
-        });
-
-        if (!order) {
-          return { success: false, error: 'Order not found for rate refresh' };
-        }
-
-        // Parse the shipping address from order data
-        let shippingAddress;
-        try {
-          // Check if we have shipping address stored in rawData or other fields
-          if (order.rawData && typeof order.rawData === 'object') {
-            const rawData = order.rawData as any;
-            // Look for shipping address in various possible locations
-            shippingAddress =
-              rawData.shippingAddress ||
-              rawData.shipping_address ||
-              rawData.shipment_details?.recipient?.address;
-          }
-        } catch (parseError) {
-          console.error('Error parsing shipping address from order:', parseError);
-        }
-
-        if (!shippingAddress) {
-          return {
-            success: false,
-            error: 'Cannot refresh rates: shipping address not found in order data',
-          };
-        }
-
-        // Convert order items to the format expected by getShippingRates
-        const cartItems = order.items.map(item => ({
-          id: item.productId,
-          name: item.product?.name || 'Unknown Product',
-          quantity: item.quantity,
-          variantId: item.variantId,
-          price: parseFloat(item.price.toString()),
-        }));
-
-        // Re-fetch shipping rates
-        const ratesResponse = await getShippingRates({
-          shippingAddress: {
-            recipientName: shippingAddress.recipientName || shippingAddress.name,
-            street:
-              shippingAddress.street || shippingAddress.street1 || shippingAddress.address_line_1,
-            street2: shippingAddress.street2 || shippingAddress.address_line_2,
-            city: shippingAddress.city || shippingAddress.locality,
-            state: shippingAddress.state || shippingAddress.administrative_district_level_1,
-            postalCode: shippingAddress.postalCode || shippingAddress.postal_code,
-            country: shippingAddress.country || 'US',
-          },
-          cartItems,
-          estimatedLengthIn: 10,
-          estimatedWidthIn: 8,
-          estimatedHeightIn: 4,
-        });
-
-        if (!ratesResponse.success || !ratesResponse.rates || ratesResponse.rates.length === 0) {
-          return {
-            success: false,
-            error:
-              'Failed to refresh shipping rates: ' + (ratesResponse.error || 'No rates available'),
-          };
-        }
-
-        // Find a similar rate (same carrier and service level if possible)
-        const originalShippingCarrier = order.shippingCarrier;
-        const originalShippingMethod = order.shippingMethodName;
-
-        let bestRate = ratesResponse.rates[0]; // Default to first rate
-
-        // Try to find a rate matching the original carrier and service
-        if (originalShippingCarrier) {
-          const matchingRate = ratesResponse.rates.find(
-            rate => rate.carrier.toLowerCase() === originalShippingCarrier.toLowerCase()
-          );
-          if (matchingRate) {
-            bestRate = matchingRate;
-          }
-        }
-
-        console.log(
-          `Using refreshed rate: ${bestRate.id} (${bestRate.carrier} - ${bestRate.name}) for Order ID: ${orderId}`
-        );
-
-        // Attempt label purchase with the new rate
-        const refreshedTransaction = await shippo.transactions.create({
-          rate: bestRate.id,
-          labelFileType: 'PDF_4x6',
-          async: false,
-          metadata: `order_id=${orderId}_refreshed`,
-        });
-
-        if (
-          refreshedTransaction.status === 'SUCCESS' &&
-          refreshedTransaction.labelUrl &&
-          refreshedTransaction.trackingNumber
-        ) {
-          console.log(`Label purchased successfully with refreshed rate for Order ID: ${orderId}`);
-
-          // Update the order with the new tracking info and rate ID
-          await prisma.order.update({
-            where: { id: orderId },
-            data: {
-              trackingNumber: refreshedTransaction.trackingNumber,
-              shippingRateId: bestRate.id, // Update to the new rate ID
-              status: OrderStatus.SHIPPING,
-              notes: `Label purchased with refreshed rate after original rate expired`,
-            },
-          });
-
-          return {
-            success: true,
-            labelUrl: refreshedTransaction.labelUrl,
-            trackingNumber: refreshedTransaction.trackingNumber,
-          };
-        } else {
-          const refreshErrorMessage =
-            refreshedTransaction.messages?.map((m: any) => m.text).join(', ') ||
-            `Refreshed label purchase failed with status: ${refreshedTransaction.status}`;
-          throw new Error(refreshErrorMessage);
-        }
-      } catch (refreshError: any) {
-        console.error(`Error during rate refresh for Order ID: ${orderId}:`, refreshError);
-        await prisma.order
-          .update({
-            where: { id: orderId },
-            data: {
-              notes: `Label purchase failed after rate refresh attempt: ${refreshError.message}`,
-            },
-          })
-          .catch(e => console.error('Failed to update order notes on refresh error:', e));
-
-        return {
-          success: false,
-          error: `Rate refresh failed: ${refreshError.message}`,
-        };
-      }
-    } else {
-      // Non-expiration error - handle normally
-      console.error(`Error purchasing shipping label for Order ID: ${orderId}:`, error);
-      let errorMessage = 'Failed to purchase shipping label due to an unexpected error.';
-      if (error?.body?.detail) {
-        errorMessage =
-          typeof error.body.detail === 'string'
-            ? error.body.detail
-            : JSON.stringify(error.body.detail);
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      await prisma.order
-        .update({
-          where: { id: orderId },
-          data: { notes: `Label purchase error: ${errorMessage}` },
-        })
-        .catch(e => console.error('Failed to update order notes on label purchase error:', e));
-
-      return { success: false, error: errorMessage };
+    if (isRateExpiredError(error)) {
+      console.log(`🔄 Rate expired for Order ID: ${orderId}, attempting refresh...`);
+      return await handleRateExpiration(order, retryAttempt);
     }
+    
+    // Check if we should retry for other errors
+    if (retryAttempt < DEFAULT_RETRY_CONFIG.maxAttempts - 1) {
+      const delay = calculateRetryDelay(retryAttempt);
+      console.log(`⏳ Retrying Order ID: ${orderId} in ${delay}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return await attemptLabelPurchase(order, shippoRateId, retryAttempt + 1);
+    }
+    
+    // Final failure
+    const shippoError = createShippoError(error);
+    await updateRetryTracking(orderId, retryAttempt + 1, error.message);
+    
+    return {
+      success: false,
+      error: error.message,
+      errorCode: shippoError.type,
+      retryAttempt: retryAttempt + 1,
+    };
+  }
+}
+
+/**
+ * Handle rate expiration by refreshing rates and retrying
+ */
+async function handleRateExpiration(order: any, retryAttempt: number): Promise<ShippingLabelResponse> {
+  const orderId = order.id;
+  
+  try {
+    console.log(`🔄 Refreshing rates for Order ID: ${orderId}...`);
+    
+    // Extract shipping information from order
+    const { cartItems, shippingAddress } = extractOrderShippingInfo(order);
+    
+    // Get fresh shipping rates
+    const ratesResponse = await getShippingRates({
+      cartItems,
+      shippingAddress,
+    });
+
+    if (!ratesResponse.success || !ratesResponse.rates || ratesResponse.rates.length === 0) {
+      throw new Error('Failed to refresh shipping rates');
+    }
+
+    console.log(`✅ Retrieved ${ratesResponse.rates.length} fresh rates for Order ID: ${orderId}`);
+
+    // Find best matching rate
+    const bestRate = findBestMatchingRate(ratesResponse.rates, order.shippingCarrier);
+    
+    console.log(`🎯 Selected rate: ${bestRate.id} (${bestRate.carrier} - ${bestRate.name})`);
+
+    // Update order with new rate ID
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        shippingRateId: bestRate.id,
+      },
+    });
+
+    // Retry with new rate
+    return await attemptLabelPurchase(order, bestRate.id, retryAttempt + 1);
+  } catch (error) {
+    console.error(`❌ Rate refresh failed for Order ID: ${orderId}:`, error);
+    const shippoError = createShippoError(error);
+    
+    return {
+      success: false,
+      error: `Rate refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      errorCode: shippoError.type,
+      retryAttempt: retryAttempt + 1,
+    };
+  }
+}
+
+/**
+ * Update retry tracking in database
+ */
+async function updateRetryTracking(orderId: string, retryCount: number, errorMessage?: string): Promise<void> {
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      retryCount,
+      lastRetryAt: new Date(),
+      ...(errorMessage && { notes: `Last error: ${errorMessage}` }),
+    },
+  });
+}
+
+/**
+ * Calculate exponential backoff delay
+ */
+function calculateRetryDelay(retryAttempt: number): number {
+  const delay = Math.min(
+    DEFAULT_RETRY_CONFIG.baseDelay * Math.pow(DEFAULT_RETRY_CONFIG.backoffMultiplier, retryAttempt),
+    DEFAULT_RETRY_CONFIG.maxDelay
+  );
+  return delay;
+}
+
+/**
+ * Extract shipping information from order
+ */
+function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddress: any } {
+  // Extract cart items
+  const cartItems = order.items.map((item: any) => ({
+    id: item.product.squareId,
+    name: item.product.name,
+    price: Number(item.product.price),
+    quantity: item.quantity,
+    weight: 1.0, // Default weight
+  }));
+
+  // Extract shipping address from order's rawData
+  const rawData = order.rawData as any;
+  let shippingAddress: any;
+
+  if (rawData?.fulfillment?.shipment_details?.recipient) {
+    const recipient = rawData.fulfillment.shipment_details.recipient;
+    shippingAddress = {
+      name: recipient.display_name || order.customerName,
+      street1: recipient.address?.address_line_1 || '',
+      street2: recipient.address?.address_line_2 || '',
+      city: recipient.address?.locality || '',
+      state: recipient.address?.administrative_district_level_1 || '',
+      postalCode: recipient.address?.postal_code || '',
+      country: recipient.address?.country || 'US',
+      phone: recipient.phone_number || order.phone,
+      email: order.email,
+    };
+  } else {
+    throw new Error(`Unable to extract shipping address from order ${order.id}`);
+  }
+
+  return { cartItems, shippingAddress };
+}
+
+/**
+ * Find the best matching rate based on original carrier preference
+ */
+function findBestMatchingRate(rates: any[], originalCarrier?: string): any {
+  if (!rates || rates.length === 0) {
+    throw new Error('No rates available');
+  }
+
+  // If we have an original carrier preference, try to match it
+  if (originalCarrier) {
+    const matchingRate = rates.find(
+      rate => rate.carrier.toLowerCase() === originalCarrier.toLowerCase()
+    );
+    if (matchingRate) {
+      return matchingRate;
+    }
+  }
+
+  // Default to first rate (usually the cheapest)
+  return rates[0];
+}
+
+/**
+ * Server action to refresh and retry label creation
+ */
+export async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelResponse> {
+  console.log(`🔄 Manual refresh and retry for Order ID: ${orderId}`);
+  
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new Error(`Order not found: ${orderId}`);
+    }
+
+    // Reset retry count for manual retry
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        retryCount: 0,
+        lastRetryAt: new Date(),
+      },
+    });
+
+    // Start fresh attempt
+    return await handleRateExpiration(order, 0);
+  } catch (error) {
+    console.error(`❌ Error in refreshAndRetryLabel for Order ID: ${orderId}:`, error);
+    const shippoError = createShippoError(error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorCode: shippoError.type,
+    };
+  }
+}
+
+/**
+ * Validate Shippo connection
+ */
+export async function validateShippoConnection(): Promise<{ connected: boolean; version: string; error?: string }> {
+  try {
+    return await ShippoClientManager.validateConnection();
+  } catch (error) {
+    return {
+      connected: false,
+      version: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown connection error',
+    };
   }
 }

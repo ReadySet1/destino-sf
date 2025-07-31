@@ -29,7 +29,10 @@ jest.mock('@/store/cart');
 jest.mock('@/components/ui/cart-alert');
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: any) => {
+    // Use a div instead of img to avoid the warning
+    return <div data-testid="next-image" data-src={src} data-alt={alt} {...props} />;
+  },
 }));
 jest.mock('next/link', () => ({
   __esModule: true,

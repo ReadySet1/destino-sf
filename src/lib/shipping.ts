@@ -98,14 +98,13 @@ export interface TrackingResponse {
   error?: string;
 }
 
-// Mock Shippo client for testing
-let mockShippoClient: any = null;
+import { ShippoClientManager } from './shippo/client';
 
 /**
  * Configure mock Shippo client for testing
  */
 export function configureMockShippo(mockClient: any) {
-  mockShippoClient = mockClient;
+  ShippoClientManager.setMockClient(mockClient);
 }
 
 /**
@@ -133,55 +132,9 @@ function getShippoConfig() {
 // In-memory cache for shipping rates
 const rateCache = new Map<string, ShippingRate[]>();
 
-/** Helper to create or reuse Shippo client */
-function getShippoClient(apiKey: string): any {
-  if (mockShippoClient) return mockShippoClient;
-
-  console.log(
-    'Initializing Shippo client with API key:',
-    apiKey ? `${apiKey.substring(0, 15)}...` : 'MISSING'
-  );
-
-  if (!apiKey) {
-    throw new Error('Shippo API key is required');
-  }
-
-  // Dynamically require shippo to avoid compile-time dependency issues in tests.
-  const { Shippo } = require('shippo') as any;
-
-  // For Shippo SDK v2.15.0+, use the correct initialization pattern
-  try {
-    console.log('Trying Shippo v2.15+ initialization pattern...');
-    const client = new Shippo({
-      apiKeyHeader: apiKey,
-      serverURL: 'https://api.goshippo.com',
-    });
-
-    console.log('Shippo client initialized successfully');
-    return client;
-  } catch (error) {
-    console.error('Modern Shippo initialization failed:', error);
-
-    // Fallback to older patterns
-    try {
-      console.log('Trying simple API key constructor...');
-      return new Shippo(apiKey);
-    } catch (error2) {
-      console.error('Simple constructor failed:', error2);
-
-      try {
-        console.log('Trying configuration object with apiKey...');
-        return new Shippo({
-          apiKey: apiKey,
-        });
-      } catch (error3) {
-        console.error('All initialization methods failed:', error3);
-        throw new Error(
-          `Failed to initialize Shippo client: ${error3 instanceof Error ? error3.message : 'Unknown error'}`
-        );
-      }
-    }
-  }
+/** Helper to get Shippo client */
+function getShippoClient(): any {
+  return ShippoClientManager.getInstance();
 }
 
 // Utility to build cache key from request
@@ -308,7 +261,7 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       metadata: `destino_sf_website_order_${Date.now()}_value_${estimatedValue}`,
     };
 
-    const client = getShippoClient(config.apiKey);
+    const client = getShippoClient();
 
     // Log API key being used for debugging
     console.log('🔑 Using Shippo API key:', config.apiKey.substring(0, 15) + '...');
@@ -390,14 +343,13 @@ export async function createShippingLabel(
   try {
     const config = getShippoConfig();
 
-    // For testing purposes, return mock response
-    if (process.env.NODE_ENV === 'test' || mockShippoClient) {
-      if (
-        mockShippoClient &&
-        mockShippoClient.transactions &&
-        mockShippoClient.transactions.create
-      ) {
-        const tx = await mockShippoClient.transactions.create({ rate: rateId, metadata });
+    // For testing purposes, use the centralized client (which handles mocking)
+    const client = getShippoClient();
+    
+    if (process.env.NODE_ENV === 'test') {
+      // If in test mode and using a mock client, handle mock response
+      if (client && client.transactions && client.transactions.create) {
+        const tx = await client.transactions.create({ rate: rateId, metadata });
         if (tx.status === 'SUCCESS') {
           return {
             success: true,
@@ -419,7 +371,7 @@ export async function createShippingLabel(
           errorCode: 'TRANSACTION_FAILED',
         };
       }
-      // Fallback mock response
+      // Fallback mock response for tests
       return {
         success: true,
         label: {
@@ -470,26 +422,20 @@ export async function trackShipment(
   carrier: string
 ): Promise<TrackingResponse> {
   try {
-    const client = mockShippoClient ?? getShippoClient(process.env.SHIPPO_API_KEY || '');
+    const client = getShippoClient();
 
     let trackResp: any;
-    if (mockShippoClient) {
-      if (mockShippoClient.tracks.retrieve) {
-        trackResp = await mockShippoClient.tracks.retrieve(trackingNumber, carrier);
-      } else if (mockShippoClient.tracks.create) {
-        trackResp = await mockShippoClient.tracks.create({
-          tracking_number: trackingNumber,
-          carrier,
-        });
-      }
-    }
-
-    if (!trackResp && client.tracks && client.tracks.retrieve) {
+    
+    // Try to retrieve tracking information
+    if (client.tracks && client.tracks.retrieve) {
       trackResp = await client.tracks.retrieve(trackingNumber, carrier);
-    }
-
-    if (!trackResp) {
-      throw new Error('Shippo client not configured');
+    } else if (client.tracks && client.tracks.create) {
+      trackResp = await client.tracks.create({
+        tracking_number: trackingNumber,
+        carrier,
+      });
+    } else {
+      throw new Error('Shippo client not properly configured for tracking');
     }
 
     const status = trackResp.tracking_status?.status ?? 'UNKNOWN';

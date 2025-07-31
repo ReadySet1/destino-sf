@@ -44,6 +44,9 @@ model Product {
   slug           String?         @unique
   ordinal        BigInt?
   inventory      Int?            @default(0)
+  syncSource     String?         @default("SQUARE") @db.VarChar(50)
+  lastSyncAt     DateTime?
+  syncLocked     Boolean         @default(false)
   orderItems     OrderItem[]
   category       Category        @relation(fields: [categoryId], references: [id])
   spotlightPicks SpotlightPick[]
@@ -51,6 +54,7 @@ model Product {
 
   @@index([categoryId])
   @@index([ordinal])
+  @@index([syncSource])
   @@map("products")
 }
 
@@ -642,6 +646,23 @@ enum AlertType {
   ORDER_VOLUME_ALERT
   PAYMENT_GATEWAY_ALERT
   WEBSITE_PERFORMANCE_ALERT
+}
+
+model SyncHistory {
+  id              String    @id @default(uuid()) @db.Uuid
+  syncType        String    @db.VarChar(50)
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  productsSynced  Int       @default(0)
+  productsSkipped Int       @default(0)
+  errors          Json      @default("[]")
+  metadata        Json      @default("{}")
+  createdBy       String?   @db.VarChar(255)
+  createdAt       DateTime  @default(now())
+
+  @@index([completedAt(sort: Desc)])
+  @@index([syncType])
+  @@map("sync_history")
 }
 
 enum AlertPriority {

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Decimal } from '@prisma/client/runtime/library';
 import { redirect } from 'next/navigation';
 import ProductsClientWrapper from './client-wrapper';
-import { SyncSquareButton } from './sync-square';
+import { FilteredSyncButton } from './filtered-sync-button';
 import { updateProductCategory } from './actions';
 import CategorySelect from './components/CategorySelect';
 import ProductFilters from './components/ProductFilters';
@@ -214,7 +214,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold uppercase tracking-wide">Products</h1>
           <div className="flex gap-4">
-            <SyncSquareButton />
+            <FilteredSyncButton />
             <Link
               href="/admin/categories"
               className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap font-medium"
