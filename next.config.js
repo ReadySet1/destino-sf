@@ -1,4 +1,85 @@
 /** @type {import('next').NextConfig} */
+
+// Environment Detection and Logging
+function logEnvironmentInfo() {
+  try {
+    const isDev = process.env.NODE_ENV === 'development';
+    const isProd = process.env.NODE_ENV === 'production';
+    const isTest = process.env.NODE_ENV === 'test';
+    const isVercel = !!process.env.VERCEL;
+    const isLocal = !!process.env.USE_LOCAL_DOCKER;
+    const isCloud = !!process.env.USE_SUPABASE_CLOUD;
+    
+    // Database detection
+    const dbUrl = process.env.DATABASE_URL || '';
+    const isLocalDB = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') || dbUrl.includes('host.docker.internal');
+    const isSupabaseDB = dbUrl.includes('supabase.co') || dbUrl.includes('supabase.com');
+    
+    // Square detection
+    const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 
+                     process.env.SQUARE_ENVIRONMENT || 
+                     (isProd ? 'production' : 'sandbox');
+    
+    console.log('\n🚀 Next.js Environment Configuration');
+    console.log('═'.repeat(50));
+    console.log(`App Environment:     ${process.env.NODE_ENV?.toUpperCase() || 'UNKNOWN'}`);
+    console.log(`Infrastructure:      ${isVercel ? 'Vercel Cloud' : isLocal ? 'Local Docker' : isCloud ? 'Cloud' : 'Local'}`);
+    console.log(`Database:            ${isSupabaseDB ? 'Supabase Cloud' : isLocalDB ? 'Local PostgreSQL' : 'External'}`);
+    console.log(`Square:              ${squareEnv}`);
+    console.log(`Base URL:            ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}`);
+    
+    // Feature flags
+    const features = [];
+    if (isDev) features.push('Development Mode');
+    if (isProd) features.push('Production Mode'); 
+    if (isTest) features.push('Test Mode');
+    if (process.env.DEBUG === 'true') features.push('Debug Logging');
+    if (process.env.VERBOSE_LOGGING === 'true') features.push('Verbose Logging');
+    
+    if (features.length > 0) {
+      console.log(`Features:            ${features.join(', ')}`);
+    }
+    
+    // Connection status
+    const connections = [];
+    if (process.env.DATABASE_URL) connections.push('Database');
+    if (process.env.SQUARE_ACCESS_TOKEN || process.env.SQUARE_SANDBOX_TOKEN) connections.push('Square');
+    if (process.env.UPSTASH_REDIS_REST_URL) connections.push('Redis');
+    if (process.env.SHIPPO_API_KEY) connections.push('Shippo');
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) connections.push('Supabase');
+    
+    console.log(`Services:            ${connections.length > 0 ? connections.join(', ') : 'None configured'}`);
+    
+    // Warnings
+    const warnings = [];
+    if (isProd && squareEnv === 'sandbox') {
+      warnings.push('Production app using Square sandbox');
+    }
+    if (isDev && isSupabaseDB && !isLocal) {
+      warnings.push('Development using cloud database');
+    }
+    if (!process.env.DATABASE_URL) {
+      warnings.push('No database URL configured');
+    }
+    
+    if (warnings.length > 0) {
+      console.log('\n⚠️  Warnings:');
+      warnings.forEach(warning => console.log(`   • ${warning}`));
+    }
+    
+    console.log('═'.repeat(50));
+    console.log(`🔧 Use 'pnpm env:check' for detailed environment analysis\n`);
+    
+  } catch (error) {
+    console.log('⚠️  Failed to log environment info:', error instanceof Error ? error.message : 'Unknown error');
+  }
+}
+
+// Log environment info during Next.js startup
+if (process.env.NODE_ENV !== 'test') {
+  logEnvironmentInfo();
+}
+
 const nextConfig = {
   compiler: {
     styledComponents: true,

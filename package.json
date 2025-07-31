@@ -114,7 +114,28 @@
     "check-test-images": "tsx tests/utils/check-images.ts",
     "sync-test-data": "tsx tests/utils/sync-production-data.ts",
     "postinstall": "prisma generate",
-    "test:square": "NODE_ENV=development tsx --env-file=.env.local src/scripts/diagnose-square-sync.ts"
+    "test:square": "NODE_ENV=development tsx --env-file=.env.local src/scripts/diagnose-square-sync.ts",
+    
+    "env:check": "tsx --env-file=.env.local src/scripts/check-environment.ts",
+    "env:info": "tsx --env-file=.env.local src/scripts/show-environment-info.ts",
+    "env:validate": "tsx --env-file=.env.local src/scripts/validate-environment.ts",
+    "env:switch-local": "tsx --env-file=.env.local src/scripts/switch-to-local.ts",
+    "env:switch-cloud": "tsx --env-file=.env.local src/scripts/switch-to-cloud.ts",
+    
+    "dev:local": "USE_LOCAL_DOCKER=true pnpm dev",
+    "dev:cloud": "USE_SUPABASE_CLOUD=true pnpm dev",
+    "dev:local-docker": "USE_LOCAL_DOCKER=true USE_SQUARE_SANDBOX=true pnpm dev",
+    "dev:staging": "NODE_ENV=staging pnpm dev",
+    
+    "db:local": "USE_LOCAL_DOCKER=true pnpm db:reset && pnpm db:seed",
+    "db:cloud": "USE_SUPABASE_CLOUD=true pnpm db:reset && pnpm db:seed",
+    "db:switch-local": "tsx --env-file=.env.local src/scripts/switch-database-local.ts",
+    "db:switch-cloud": "tsx --env-file=.env.local src/scripts/switch-database-cloud.ts",
+    "db:status": "tsx --env-file=.env.local src/scripts/check-database-status.ts",
+    
+    "square:sandbox": "USE_SQUARE_SANDBOX=true tsx --env-file=.env.local src/scripts/test-square-connection.ts",
+    "square:production": "SQUARE_ENVIRONMENT=production tsx --env-file=.env.local src/scripts/test-square-connection.ts",
+    "square:switch": "tsx --env-file=.env.local src/scripts/switch-square-environment.ts"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.8",
