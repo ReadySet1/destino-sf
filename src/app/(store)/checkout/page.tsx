@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
-import { CheckoutForm } from '@/components/Store/CheckoutForm';
+import { CheckoutForm } from '@/components/store/CheckoutForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 

@@ -162,10 +162,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       include: {
         variants: true, // Include variants if needed by ProductGrid
       },
-      orderBy: {
-        // Optional: Add sorting, e.g., by name or a custom order field
-        name: 'asc',
-      },
+      orderBy: [
+        { displayOrder: 'asc' },  // Primary sort by displayOrder
+        { name: 'asc' }           // Secondary sort by name
+      ],
     });
 
     // Process database products before mapping to GridProduct
@@ -189,6 +189,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           slug: p.slug || p.id, // Use product slug or ID if slug is missing
           featured: p.featured || false,
           active: p.active,
+          displayOrder: p.displayOrder,
           createdAt: p.createdAt,
           updatedAt: p.updatedAt,
           variants: p.variants.map(v => ({

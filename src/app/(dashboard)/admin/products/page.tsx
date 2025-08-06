@@ -216,6 +216,12 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
           <div className="flex gap-4">
             <FilteredSyncButton />
             <Link
+              href="/admin/products/reorder"
+              className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 text-center font-medium"
+            >
+              Reorder Products
+            </Link>
+            <Link
               href="/admin/categories"
               className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap font-medium"
             >

@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { slugify } from '@/lib/slug';
 import { redirect } from 'next/navigation';
 import { syncSquareProducts } from '@/lib/square/sync';
+import type { ProductReorderItem, ReorderUpdate, ReorderResponse } from '@/types/product';
 
 export async function createProductAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -204,6 +205,78 @@ export async function manualSyncFromSquare() {
       message: error instanceof Error ? error.message : 'An unknown error occurred during sync',
       syncedProducts: 0,
       errors: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+}
+
+/**
+ * Get products by category for reordering
+ */
+export async function getProductsByCategory(categoryId: string): Promise<ProductReorderItem[]> {
+  try {
+    const products = await prisma.product.findMany({
+      where: { 
+        categoryId,
+        active: true 
+      },
+      select: {
+        id: true,
+        name: true,
+        images: true,
+        displayOrder: true,
+        categoryId: true
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { name: 'asc' }
+      ]
+    });
+    
+    return products.map(p => ({
+      ...p,
+      displayOrder: p.displayOrder ?? 0
+    }));
+  } catch (error) {
+    logger.error('Error fetching products by category:', error);
+    throw new Error('Failed to fetch products');
+  }
+}
+
+/**
+ * Update product display order
+ */
+export async function updateProductOrder(updates: ReorderUpdate[]): Promise<ReorderResponse> {
+  try {
+    logger.info('Updating product order:', updates);
+    
+    // Use transaction for atomic updates
+    await prisma.$transaction(
+      updates.map(update => 
+        prisma.product.update({
+          where: { id: update.productId },
+          data: { displayOrder: update.newOrder }
+        })
+      )
+    );
+    
+    // Revalidate relevant paths
+    revalidatePath('/admin/products');
+    revalidatePath('/admin/products/reorder');
+    revalidatePath('/products');
+    revalidatePath('/products/category/[slug]', 'page');
+    
+    logger.info(`Successfully updated display order for ${updates.length} products`);
+    
+    return { 
+      success: true, 
+      updatedCount: updates.length 
+    };
+  } catch (error) {
+    logger.error('Error updating product order:', error);
+    return { 
+      success: false, 
+      updatedCount: 0,
+      errors: [error instanceof Error ? error.message : 'Unknown error occurred']
     };
   }
 }

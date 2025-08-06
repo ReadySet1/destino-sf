@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
-import { CartItemList } from '@/components/Store/CartItemList';
-import { CartSummary } from '@/components/Store/CartSummary';
-import { EmptyCart } from '@/components/Store/EmptyCart';
+import { CartItemList } from '@/components/store/CartItemList';
+import { CartSummary } from '@/components/store/CartSummary';
+import { EmptyCart } from '@/components/store/EmptyCart';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { useState } from 'react';
 

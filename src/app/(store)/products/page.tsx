@@ -84,8 +84,9 @@ export default async function ProductsPage() {
       variants: true, // Include variant data
     },
     orderBy: [
-      // Order by category order first, then by Square ordinal (if available), then by product name
+      // Order by category order first, then by displayOrder, then by Square ordinal (if available), then by product name
       { category: { order: 'asc' } },
+      { displayOrder: 'asc' },
       { ordinal: 'asc' },
       { name: 'asc' },
     ],
@@ -128,6 +129,7 @@ export default async function ProductsPage() {
       }),
       featured: p.featured || false,
       active: p.active,
+      displayOrder: p.displayOrder,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       // Add slug if it exists on the product model

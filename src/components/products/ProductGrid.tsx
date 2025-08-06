@@ -14,11 +14,20 @@ interface ProductGridProps {
 
 export function ProductGrid({ products, title, showFilters = false }: ProductGridProps) {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
-  const [sortOption, setSortOption] = useState<string>('');
+  const [sortOption, setSortOption] = useState<string>('default');
 
-  // Re-initialize filtered products when the products prop changes
+  // Re-initialize filtered products when the products prop changes with default sorting
   useEffect(() => {
-    setFilteredProducts(products);
+    // Sort by displayOrder by default if available
+    const sorted = [...products].sort((a, b) => {
+      // If displayOrder exists, use it; otherwise fall back to name
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined && 
+          a.displayOrder !== null && b.displayOrder !== null) {
+        return a.displayOrder - b.displayOrder;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    setFilteredProducts(sorted);
   }, [products]);
 
   // Handle sort selection
@@ -29,6 +38,16 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
     let sorted = [...products];
 
     switch (option) {
+      case 'default':
+        // Use display order if available
+        sorted.sort((a, b) => {
+          if (a.displayOrder !== undefined && b.displayOrder !== undefined &&
+              a.displayOrder !== null && b.displayOrder !== null) {
+            return a.displayOrder - b.displayOrder;
+          }
+          return a.name.localeCompare(b.name);
+        });
+        break;
       case 'price-low':
         sorted.sort((a, b) => Number(a.price) - Number(b.price));
         break;
@@ -39,13 +58,18 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
         sorted.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'newest':
-        // Assuming you have a createdAt field or similar
-        // If not, this will just use the original order
-        sorted = [...products];
+        // Sort by creation date if available, otherwise use original order
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       default:
-        // Default to original order
-        sorted = [...products];
+        // Default to display order
+        sorted.sort((a, b) => {
+          if (a.displayOrder !== undefined && b.displayOrder !== undefined &&
+              a.displayOrder !== null && b.displayOrder !== null) {
+            return a.displayOrder - b.displayOrder;
+          }
+          return a.name.localeCompare(b.name);
+        });
     }
 
     setFilteredProducts(sorted);
@@ -65,7 +89,7 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
                 value={sortOption}
                 onChange={handleSortChange}
               >
-                <option value="">Sort by</option>
+                <option value="default">Default Order</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
                 <option value="name-asc">Name: A to Z</option>

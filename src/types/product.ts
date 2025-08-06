@@ -15,6 +15,7 @@ export interface Product {
   variants?: Variant[];
   featured: boolean;
   active: boolean;
+  displayOrder?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,4 +74,24 @@ export interface CreateCategoryInput {
   imageUrl?: string;
   metadata?: any;
   squareId?: string;
+}
+
+// Product reordering types
+export interface ProductReorderItem {
+  id: string;
+  name: string;
+  images: string[];
+  displayOrder: number;
+  categoryId: string;
+}
+
+export interface ReorderUpdate {
+  productId: string;
+  newOrder: number;
+}
+
+export interface ReorderResponse {
+  success: boolean;
+  updatedCount: number;
+  errors?: string[];
 }
