@@ -61,24 +61,42 @@ export class CateringProtectionService {
         }
       });
 
-      // Get products with $0.00 price (likely catering items)
+      // Get products with $0.00 price that are NOT in retail categories (likely catering items)
       const zeroPriceProducts = await prisma.product.findMany({
         where: {
-          price: 0
+          price: 0,
+          AND: {
+            category: {
+              name: {
+                notIn: ['ALFAJORES', 'EMPANADAS', 'Products'] // Don't protect retail categories
+              }
+            }
+          }
         },
         select: {
           id: true,
           name: true,
-          squareId: true
+          squareId: true,
+          category: {
+            select: {
+              name: true
+            }
+          }
         }
       });
 
+      // Filter out any retail products that might have been incorrectly included
+      const allProtectedProductIds = [
+        ...cateringItems.map(item => item.id),
+        ...protectedProducts.map(product => product.id),
+        ...zeroPriceProducts.map(product => product.id)
+      ];
+
+      // Remove duplicates and ensure we don't protect retail categories
+      const filteredProtectedIds = [...new Set(allProtectedProductIds)];
+
       this.protection = {
-        itemIds: [
-          ...cateringItems.map(item => item.id),
-          ...protectedProducts.map(product => product.id),
-          ...zeroPriceProducts.map(product => product.id)
-        ],
+        itemIds: filteredProtectedIds,
         packageIds: cateringPackages.map(pkg => pkg.id),
         preserveImages: true,
         protectedCategoryNames: FILTERED_SYNC_CONFIG.protectedCategories
@@ -88,7 +106,8 @@ export class CateringProtectionService {
         protectedItems: this.protection.itemIds.length,
         protectedPackages: this.protection.packageIds.length,
         cateringItemsWithSquareIds: cateringItems.length,
-        zeroPriceProducts: zeroPriceProducts.length
+        zeroPriceProductsInNonRetailCategories: zeroPriceProducts.length,
+        protectedCategories: FILTERED_SYNC_CONFIG.protectedCategories.length
       });
 
       return this.protection;
@@ -106,12 +125,18 @@ export class CateringProtectionService {
       await this.initialize();
     }
 
+    // FIRST: Allow retail categories to sync even if they have other protection flags
+    if (categoryName && ['ALFAJORES', 'EMPANADAS', 'Products'].includes(categoryName)) {
+      logger.debug(`✅ Allowing retail category "${categoryName}" to sync`);
+      return false;
+    }
+
     // Check if product ID is in protected list
     if (this.protection!.itemIds.includes(productId)) {
       return true;
     }
 
-    // Check if category is protected
+    // Check if category is protected (catering categories)
     if (categoryName && this.protection!.protectedCategoryNames.some(cat => 
       categoryName.toUpperCase().startsWith(cat.toUpperCase())
     )) {
