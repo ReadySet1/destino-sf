@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
-import { AccountProfile, AccountProfileProps } from '@/components/Store/AccountProfile';
-import { OrderHistory, OrderHistoryProps } from '@/components/Store/OrderHistory';
+import { AccountProfile, AccountProfileProps } from '@/components/store/AccountProfile';
+import { OrderHistory, OrderHistoryProps } from '@/components/store/OrderHistory';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';

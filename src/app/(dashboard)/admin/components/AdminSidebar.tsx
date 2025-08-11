@@ -70,7 +70,7 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
       icon: <Tag className="h-4 w-4" />,
     },
     {
-      href: '/admin/sync',
+      href: '/admin/square-sync',
       label: 'Product Sync',
       icon: <RefreshCw className="h-4 w-4" />,
     },

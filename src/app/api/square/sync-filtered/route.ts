@@ -18,6 +18,7 @@ const SyncRequestSchema = z.object({
     dryRun: z.boolean().optional(),
     forceImageUpdate: z.boolean().optional(),
     batchSize: z.number().min(10).max(100).optional(),
+    selectedCategories: z.array(z.string()).optional(),
   }).optional(),
 }).strict();
 

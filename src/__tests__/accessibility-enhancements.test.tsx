@@ -8,8 +8,8 @@ import '@testing-library/jest-dom';
 
 // Import components for accessibility testing
 import ProductDetails from '@/components/Products/ProductDetails';
-import CheckoutForm from '@/components/Store/CheckoutForm';
-import AccountProfile from '@/components/Store/AccountProfile';
+import CheckoutForm from '@/components/store/CheckoutForm';
+import AccountProfile from '@/components/store/AccountProfile';
 import ProductCard from '@/components/Products/ProductCard';
 import BoxedLunchMenu from '@/components/Catering/BoxedLunchMenu';
 

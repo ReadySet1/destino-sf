@@ -20,6 +20,8 @@ export interface FilteredSyncConfig {
   batchSize?: number;
   /** Whether this is a dry run (preview only) */
   dryRun?: boolean;
+  /** Custom selected categories for dynamic selection */
+  selectedCategories?: string[];
 }
 
 export interface SyncResult {
@@ -122,19 +124,27 @@ export interface RollbackResult {
 }
 
 /**
+ * Square category data
+ */
+export interface SquareCategory {
+  id: string;
+  name: string;
+  present_at_all_locations: boolean;
+}
+
+/**
  * Configuration for the filtered sync process
  * Only alfajores and empanadas should be synced from Square
  */
 export const FILTERED_SYNC_CONFIG: FilteredSyncConfig = {
   allowedCategories: [
     'ALFAJORES',
-    'EMPANADAS',
-    'ALFAJORES & SWEETS', // Alternative category name
-    'EMPANADAS & SAVORY'  // Alternative category name
+    'EMPANADAS'
   ],
   allowedProductNames: [
     /alfajor/i,
-    /empanada/i
+    /empanada/i,
+    /dulce de leche/i
   ],
   protectedCategories: [
     'CATERING',
@@ -143,7 +153,12 @@ export const FILTERED_SYNC_CONFIG: FilteredSyncConfig = {
     'CATERING- DESSERTS',
     'CATERING- BEVERAGES',
     'CATERING- SIDES',
-    'CATERING- PACKAGES'
+    'CATERING- PACKAGES',
+    'CATERING- LUNCH, ENTREES',
+    'CATERING- LUNCH, STARTERS',
+    'CATERING- BUFFET, ENTREES',
+    'CATERING- BUFFET, STARTERS',
+    'CATERING- SHARE PLATTERS'
   ],
   enableImageSync: true,
   validateBeforeSync: true,

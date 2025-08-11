@@ -171,7 +171,6 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 
     // Also fetch products from Product table that belong to catering categories
     try {
-      // Let's be more specific with the categories we want
       const cateringProducts = await db.product.findMany({
         where: {
           active: true,
@@ -235,12 +234,27 @@ export async function getCateringItems(): Promise<CateringItem[]> {
         // First try: Direct squareProductId match
         if (cateringItem.squareProductId && productImageMap.has(cateringItem.squareProductId)) {
           realImageUrl = productImageMap.get(cateringItem.squareProductId);
+          console.log(`🖼️ [CATERING] Direct image match for "${cateringItem.name}" via Square ID: ${cateringItem.squareProductId}`);
         }
         // Second try: For size variants (Small/Large), match with base item name
         else if (cateringItem.name.includes(' - ')) {
           const baseName = cateringItem.name.split(' - ')[0].toLowerCase();
           if (baseItemImageMap.has(baseName)) {
             realImageUrl = baseItemImageMap.get(baseName);
+            console.log(`🖼️ [CATERING] Variant image match for "${cateringItem.name}" via base name: ${baseName}`);
+          }
+        }
+        // Third try: Name-based matching for products that might not have exact Square ID match
+        else {
+          const normalizedCateringName = cateringItem.name.toLowerCase().trim();
+          const matchingProduct = cateringProducts.find(product => 
+            product.name.toLowerCase().trim() === normalizedCateringName ||
+            product.name.toLowerCase().includes(normalizedCateringName) ||
+            normalizedCateringName.includes(product.name.toLowerCase())
+          );
+          if (matchingProduct && matchingProduct.images && matchingProduct.images.length > 0) {
+            realImageUrl = matchingProduct.images[0];
+            console.log(`🖼️ [CATERING] Name-based image match for "${cateringItem.name}" via product: ${matchingProduct.name}`);
           }
         }
 
@@ -272,17 +286,23 @@ export async function getCateringItems(): Promise<CateringItem[]> {
       const productAsCateringItems: CateringItem[] = cateringProducts
         .filter(product => {
           // Skip products that already have CateringItem equivalents
+          // Improved deduplication: check both squareProductId and name matching
           const existsInCateringItems = cateringItems.some(
-            cateringItem => cateringItem.squareProductId === product.squareId
+            cateringItem => 
+              // Direct Square ID match
+              (cateringItem.squareProductId && cateringItem.squareProductId === product.squareId) ||
+              // Name-based match (normalized for comparison)
+              (cateringItem.name.toLowerCase().trim() === product.name.toLowerCase().trim())
           );
 
           return !existsInCateringItems;
         })
         .map(product => {
-          // Determine category based on the Square category name
+          // Determine category based on the Square category name using SQUARE_CATEGORY_MAPPING
           let category = 'STARTER'; // default
-          const categoryName = product.category?.name?.toUpperCase() || '';
+          const categoryName = product.category?.name || '';
 
+          // Use the mapping logic similar to getItemsForTab
           if (categoryName.includes('DESSERT')) {
             category = 'DESSERT';
           } else if (categoryName.includes('ENTREE') || categoryName.includes('BUFFET')) {
@@ -313,7 +333,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
             servingSize: null,
             imageUrl: firstImage,
             isActive: true,
-            squareCategory: product.category?.name || null,
+            squareCategory: product.category?.name || '', // Ensure it's never null for tab filtering
             squareProductId: product.squareId,
             createdAt: product.createdAt,
             updatedAt: product.updatedAt,

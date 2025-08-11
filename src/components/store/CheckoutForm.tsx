@@ -28,14 +28,14 @@ import { useCartStore } from '@/store/cart';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckoutSummary } from '@/components/Store/CheckoutSummary';
+import { CheckoutSummary } from '@/components/store/CheckoutSummary';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 import {
   FulfillmentSelector,
   FulfillmentMethod as AppFulfillmentMethod,
-} from '@/components/Store/FulfillmentSelector';
-import { AddressForm } from '@/components/Store/AddressForm';
+} from '@/components/store/FulfillmentSelector';
+import { AddressForm } from '@/components/store/AddressForm';
 import { createOrderAndGenerateCheckoutUrl, getShippingRates } from '@/app/actions';
 import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
 import type { FulfillmentData, ShippingRate } from '@/app/actions';
@@ -57,7 +57,7 @@ import {
   getDeliveryFeeMessage,
   DeliveryFeeResult,
 } from '@/lib/deliveryUtils';
-import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
+import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 import { saveContactInfo } from '@/actions/catering';
 

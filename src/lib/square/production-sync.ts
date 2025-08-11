@@ -56,6 +56,7 @@ interface ProductSyncOptions {
   validateImages?: boolean;
   batchSize?: number;
   enableCleanup?: boolean;
+  restoreCateringPackages?: boolean;
 }
 
 interface ImageSyncResult {
@@ -88,6 +89,7 @@ export class ProductionSyncManager {
       validateImages: options.validateImages ?? true,
       batchSize: options.batchSize ?? 50,
       enableCleanup: options.enableCleanup ?? false,
+      restoreCateringPackages: options.restoreCateringPackages ?? true,
     };
     this.syncStartTime = new Date();
   }
@@ -123,7 +125,12 @@ export class ProductionSyncManager {
         await this.cleanupOrphanedData();
       }
 
-      // Step 5: Generate final report
+      // Step 5: Restore catering packages (appetizers, etc.)
+      if (this.options.restoreCateringPackages !== false) {
+        await this.restoreCateringPackages();
+      }
+
+      // Step 6: Generate final report
       return this.generateSyncReport(syncResult);
     } catch (error) {
       logger.error('❌ Production sync failed:', error);
@@ -593,6 +600,99 @@ export class ProductionSyncManager {
       batches.push(items.slice(i, i + batchSize));
     }
     return batches;
+  }
+
+  /**
+   * Restore catering packages after sync to ensure appetizer packages are available
+   */
+  private async restoreCateringPackages(): Promise<void> {
+    try {
+      logger.info('🍽️ Restoring catering packages after sync...');
+      
+      // Check if packages already exist to avoid duplicates
+      const existingPackages = await prisma.cateringPackage.count({
+        where: {
+          name: {
+            contains: 'Appetizer Selection'
+          }
+        }
+      });
+
+      if (existingPackages >= 3) {
+        logger.info('✅ Appetizer packages already exist, skipping restoration');
+        return;
+      }
+
+      // Use enhanced catering setup directly instead of API endpoint
+      // This ensures we get the latest intelligent image assignment logic
+      logger.info(`🔧 Running enhanced catering setup with intelligent image assignment...`);
+      
+      try {
+        // Import and run the enhanced setup script
+        const { spawn } = await import('child_process');
+        
+        // Run the enhanced setup script
+        const scriptPath = 'scripts/enhanced-catering-setup.ts';
+        const child = spawn('npx', ['tsx', scriptPath], {
+          stdio: 'pipe',
+          cwd: process.cwd()
+        });
+        
+        let output = '';
+        let errorOutput = '';
+        
+        child.stdout?.on('data', (data) => {
+          output += data.toString();
+        });
+        
+        child.stderr?.on('data', (data) => {
+          errorOutput += data.toString();
+        });
+        
+        await new Promise((resolve, reject) => {
+          child.on('close', (code) => {
+            if (code === 0) {
+              resolve(void 0);
+            } else {
+              reject(new Error(`Setup script failed with code ${code}: ${errorOutput}`));
+            }
+          });
+        });
+        
+        logger.info(`✅ Enhanced catering setup completed successfully`);
+        logger.info(`📊 Setup output: ${output.split('\n').pop()}`); // Last line summary
+        
+      } catch (scriptError) {
+        // Fallback to API endpoint if script execution fails
+        logger.warn(`⚠️ Script execution failed, falling back to API endpoint: ${scriptError}`);
+        
+        const setupUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/catering/setup-menu`;
+        logger.info(`📞 Calling catering setup endpoint: ${setupUrl}`);
+        
+        const response = await fetch(setupUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Setup endpoint failed: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          logger.info(`✅ Catering packages restored via API: ${result.summary?.packages || 'Unknown count'} packages created/updated`);
+        } else {
+          logger.warn(`⚠️ Catering setup completed with warnings: ${result.message}`);
+        }
+      }
+      
+    } catch (error) {
+      logger.error('❌ Failed to restore catering packages:', error);
+      // Don't throw - this is a non-critical post-sync operation
+    }
   }
 
   /**

@@ -1,13 +1,10 @@
 // src/app/admin/products/page.tsx
 
 import { prisma } from '@/lib/db';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Decimal } from '@prisma/client/runtime/library';
 import { redirect } from 'next/navigation';
 import ProductsClientWrapper from './client-wrapper';
-import { FilteredSyncButton } from './filtered-sync-button';
-import { updateProductCategory } from './actions';
 import CategorySelect from './components/CategorySelect';
 import ProductFilters from './components/ProductFilters';
 import Pagination from '@/components/ui/pagination';
@@ -213,23 +210,6 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       <div className="p-4 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold uppercase tracking-wide">Products</h1>
-          <div className="flex gap-4">
-            <FilteredSyncButton />
-            <Link
-              href="/admin/categories"
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-center w-full md:w-1/2 break-words whitespace-nowrap font-medium"
-            >
-              Manage Categories
-            </Link>
-            <a
-              href="https://squareup.com/dashboard/items/library"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center w-full md:w-1/2 break-words whitespace-nowrap font-medium"
-            >
-              Edit in Square
-            </a>
-          </div>
         </div>
 
         <div className="mb-6">

@@ -1,22 +1,25 @@
 ## 🎯 Feature/Fix Overview
 
-**Name**: Square Products & Images Sync Refactoring
+**Name**: Square Catalog Filtered Sync Fix
 
-**Type**: Refactor
+**Type**: Bug Fix
 
-**Priority**: High
+**Priority**: Critical
+
+**Estimated Complexity**: Small (1-2 days)
 
 ### Problem Statement
 
-The current Square sync process has become overly complex with two implementations (admin/products and admin/sync), making it difficult to maintain. The main concern is protecting manually integrated catering elements while syncing only alfajores and empanadas from Square's production environment, without accidentally deleting or modifying catering database entries.
+The filtered Square catalog sync is failing with two critical errors:
+1. Invalid UUID format in sync history creation (using custom format `sync_1754518018317_e12njoct8` instead of proper UUID)
+2. Malformed Square API query structure causing 400 error with "Unknown query type" (incorrect `query` field structure)
 
 ### Success Criteria
 
-- [x] Unified sync process that only imports alfajores and empanadas from Square
-- [x] Complete protection of existing catering items and their custom implementation
-- [x] Zero data loss during sync operations
-- [x] Clear separation between Square products and catering items
-- [x] Consistent and predictable sync behavior
+- [ ] Sync history records are created/updated successfully with valid UUIDs
+- [ ] Square catalog API returns data without 400 errors
+- [ ] Filtered sync completes with proper product synchronization for alfajores/empanadas
+- [ ] Catering items remain protected during sync
 
 ---
 
@@ -27,145 +30,201 @@ The current Square sync process has become overly complex with two implementatio
 ### File Structure
 
 ```tsx
-// New/Modified Files
 src/
-├── app/
-│   ├── api/
-│   │   └── square/
-│   │       ├── sync/
-│   │       │   ├── route.ts              // Main sync endpoint (keep)
-│   │       │   └── route.test.ts         
-│   │       └── sync-filtered/
-│   │           ├── route.ts              // New filtered sync endpoint
-│   │           └── route.test.ts
-│   ├── (dashboard)/
-│   │   └── admin/
-│   │       └── products/
-│   │           ├── page.tsx              // Unified admin page
-│   │           └── sync-button.tsx       // Simplified sync button
 ├── lib/
 │   ├── square/
-│   │   ├── filtered-sync.ts              // New filtered sync manager
-│   │   ├── sync-constants.ts             // Sync configuration
-│   │   └── catering-protection.ts        // Catering protection logic
-│   └── db/
-│       └── queries/
-│           └── sync-queries.ts           // Database sync queries
-├── types/
-│   └── square-sync.ts                    // TypeScript interfaces
-└── migrations/
-    └── [timestamp]_add_sync_metadata.sql // Track sync history
-
+│   │   ├── filtered-sync.ts      // Main sync logic (FIX: UUID generation)
+│   │   ├── catalog-api.ts        // Already using direct API correctly
+│   │   └── client.ts              // Client wrapper (routes to catalog-api)
+├── prisma/
+│   └── schema.prisma              // SyncHistory table expects UUID
+└── types/
+    └── square-sync.ts             // Type definitions
 ```
 
 ### Key Interfaces & Types
 
 ```tsx
-// types/square-sync.ts
-interface FilteredSyncConfig {
-  allowedCategories: string[];
-  allowedProductNames: RegExp[];
-  protectedCategories: string[];
-  enableImageSync: boolean;
-  validateBeforeSync: boolean;
+// From your prisma schema - SyncHistory expects UUID
+model SyncHistory {
+  id              String    @id @default(uuid()) @db.Uuid  // <-- Must be valid UUID
+  syncType        String    @db.VarChar(50)
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  productsSynced  Int       @default(0)
+  productsSkipped Int       @default(0)
+  errors          Json      @default("[]")
+  metadata        Json      @default("{}")
+}
+```
+
+---
+
+## 🔐 Specific Fixes Required
+
+### Fix 1: UUID Generation in filtered-sync.ts
+
+**Location**: `/src/lib/square/filtered-sync.ts` Line 33
+
+```tsx
+// CURRENT CODE (BROKEN):
+constructor(config: Partial<FilteredSyncConfig> = {}) {
+  this.config = { ...FILTERED_SYNC_CONFIG, ...config };
+  this.syncId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-interface SyncResult {
+// FIXED CODE:
+import { randomUUID } from 'crypto';
+
+constructor(config: Partial<FilteredSyncConfig> = {}) {
+  this.config = { ...FILTERED_SYNC_CONFIG, ...config };
+  this.syncId = randomUUID(); // Generates proper UUID v4 format
+}
+```
+
+### Fix 2: Square API Query Structure in fetchFilteredCatalog
+
+**Location**: `/src/lib/square/filtered-sync.ts` Lines 180-195
+
+The issue is in the `fetchFilteredCatalog` method. The Square API is receiving an invalid query structure:
+
+```tsx
+// CURRENT CODE (BROKEN):
+private async fetchFilteredCatalog(): Promise<{
   success: boolean;
-  message: string;
-  syncedProducts: number;
-  protectedItems: number;
-  errors: string[];
-}
+  products: any[];
+  relatedObjects: any[];
+  error?: string;
+}> {
+  try {
+    const catalogApi = squareClient.catalogApi;
+    
+    const response = await catalogApi.searchCatalogObjects({
+      objectTypes: ['ITEM'],
+      query: {
+        sortedAttributeQuery: {
+          attributeName: 'name'
+        }
+      },
+      includeRelatedObjects: true,
+      limit: 1000
+    });
 
-interface CateringProtection {
-  itemIds: string[];
-  packageIds: string[];
-  preserveImages: boolean;
-}
-
-type SyncStrategy = 'FILTERED' | 'FULL' | 'IMAGES_ONLY';
-
+// FIXED CODE:
+private async fetchFilteredCatalog(): Promise<{
+  success: boolean;
+  products: any[];
+  relatedObjects: any[];
+  error?: string;
+}> {
+  try {
+    const catalogApi = squareClient.catalogApi;
+    
+    if (!catalogApi) {
+      throw new Error('Square catalog API is not available');
+    }
+    
+    // Use proper Square API structure
+    const requestBody = {
+      object_types: ['ITEM'],  // Changed from objectTypes
+      include_related_objects: true,  // Changed from includeRelatedObjects
+      limit: 1000,
+      // Remove the problematic query field entirely or use correct structure
+      sorted_attribute_query: {  // If you need sorting
+        attribute_name: 'name',
+        initial_attribute_value: '',
+        sort_order: 'ASC'
+      }
+    };
+    
+    const response = await catalogApi.searchCatalogObjects(requestBody);
 ```
 
-### Database Schema Reference
+Actually, looking at your `catalog-api.ts`, the `searchCatalogObjects` function expects a different structure. Let me check what the actual API expects:
 
-```sql
--- migrations/[timestamp]_add_sync_metadata.sql
--- Add sync tracking to prevent accidental overwrites
-ALTER TABLE products 
-ADD COLUMN IF NOT EXISTS sync_source VARCHAR(50) DEFAULT 'SQUARE',
-ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS sync_locked BOOLEAN DEFAULT FALSE;
+### Fix 2 (Revised): Align with catalog-api.ts implementation
 
--- Create sync history table
-CREATE TABLE IF NOT EXISTS sync_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sync_type VARCHAR(50) NOT NULL,
-  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  completed_at TIMESTAMPTZ,
-  products_synced INTEGER DEFAULT 0,
-  products_skipped INTEGER DEFAULT 0,
-  errors JSONB DEFAULT '[]',
-  metadata JSONB DEFAULT '{}',
-  created_by VARCHAR(255)
-);
-
--- Index for catering protection
-CREATE INDEX idx_catering_items_protection 
-ON catering_items(square_product_id) 
-WHERE square_product_id IS NOT NULL;
-
-```
-
-### 2. Core Functionality Checklist
-
-### Required Features (Do Not Modify)
-
-- [x] Filter Square products to only sync alfajores and empanadas
-- [x] Preserve all existing catering items, packages, and custom implementations
-- [x] Maintain image URLs for catering items that were manually set
-- [x] Create audit trail of all sync operations
-- [x] Implement rollback capability for sync failures
-
-### Implementation Assumptions
-
-- Square production API contains both product types and catering items
-- Alfajores and empanadas can be identified by category or product name patterns
-- Catering items use separate tables (catering_items, catering_packages) from products
-- Some catering items may reference Square product IDs but should not be modified
-
-### 3. Full Stack Integration Points
-
-### API Endpoints
+The `catalog-api.ts` already handles the proper API structure. The issue is that `fetchFilteredCatalog` is passing the wrong format to it:
 
 ```tsx
-// POST /api/square/sync-filtered - Main filtered sync
-// GET /api/square/sync-filtered/preview - Preview what will be synced
-// POST /api/square/sync-filtered/rollback - Rollback last sync
-// GET /api/admin/sync/history - View sync history
+// FIXED fetchFilteredCatalog method:
+private async fetchFilteredCatalog(): Promise<{
+  success: boolean;
+  products: any[];
+  relatedObjects: any[];
+  error?: string;
+}> {
+  try {
+    const catalogApi = squareClient.catalogApi;
+    
+    if (!catalogApi) {
+      throw new Error('Square catalog API is not available');
+    }
+    
+    // Use the format expected by catalog-api.ts searchCatalogObjects
+    const requestBody = {
+      filter: {
+        types: ['ITEM']
+      },
+      include_deleted_objects: false,
+      include_related_objects: true,
+      limit: 1000
+    };
+    
+    const response = await catalogApi.searchCatalogObjects(requestBody);
 
+    if (!response.result) {
+      return {
+        success: false,
+        products: [],
+        relatedObjects: [],
+        error: 'No result from Square API'
+      };
+    }
+
+    const objects = response.result.objects || [];
+    const relatedObjects = response.result.related_objects || [];
+
+    // Filter products to only include items that match our criteria
+    const filteredProducts = objects.filter(obj => this.shouldProcessProduct(obj));
+
+    logger.info(`📦 Fetched ${objects.length} total products, ${filteredProducts.length} match filter criteria`);
+
+    return {
+      success: true,
+      products: filteredProducts,
+      relatedObjects
+    };
+
+  } catch (error) {
+    logger.error('❌ Failed to fetch Square catalog:', error);
+    return {
+      success: false,
+      products: [],
+      relatedObjects: [],
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
 ```
 
-### Server Actions (App Router)
+### Fix 3: Additional Type Safety Improvements
+
+Add proper typing to prevent future issues:
 
 ```tsx
-// app/(dashboard)/admin/products/actions.ts
-async function syncFilteredProducts(): Promise<SyncResult>
-async function previewSync(): Promise<{ products: Product[]; willSkip: string[] }>
-async function rollbackSync(syncId: string): Promise<{ success: boolean }>
-async function getSyncHistory(): Promise<SyncHistory[]>
-
+// types/square-sync.ts (add if not present)
+export interface CatalogSearchRequest {
+  filter?: {
+    types?: string[];
+    product_types?: string[];
+  };
+  include_deleted_objects?: boolean;
+  include_related_objects?: boolean;
+  limit?: number;
+  cursor?: string;
+}
 ```
-
-### Client-Server Data Flow
-
-1. Admin triggers sync from UI
-2. Preview endpoint shows what will be synced
-3. Confirmation required before actual sync
-4. Filtered sync runs with progress updates
-5. Audit log created with rollback capability
-6. UI updates with results and any warnings
 
 ---
 
@@ -174,347 +233,198 @@ async function getSyncHistory(): Promise<SyncHistory[]>
 ### Unit Tests
 
 ```tsx
-// Filtered Sync Tests
+// lib/square/__tests__/filtered-sync.test.ts
+import { FilteredSyncManager } from '../filtered-sync';
+import { validate as uuidValidate } from 'uuid';
+
 describe('FilteredSyncManager', () => {
-  it('only syncs products matching allowed categories', async () => {})
-  it('skips all catering-related categories', async () => {})
-  it('preserves existing catering item images', async () => {})
-  it('creates accurate sync history records', async () => {})
-});
-
-// Protection Tests
-describe('CateringProtection', () => {
-  it('identifies all catering items correctly', async () => {})
-  it('prevents modification of protected items', async () => {})
-  it('maintains catering-product relationships', async () => {})
-});
-
-// Rollback Tests
-describe('SyncRollback', () => {
-  it('restores previous product state', async () => {})
-  it('preserves catering data during rollback', async () => {})
-  it('updates sync history on rollback', async () => {})
-});
-
-```
-
-### Integration Tests
-
-```tsx
-// Full Sync Flow
-describe('Square Filtered Sync Integration', () => {
-  beforeEach(async () => {
-    // Seed test data with mixed products
+  it('generates valid UUID for syncId', () => {
+    const manager = new FilteredSyncManager();
+    // Access private property for testing
+    const syncId = (manager as any).syncId;
+    
+    expect(uuidValidate(syncId)).toBe(true);
+    expect(syncId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
   });
 
-  it('completes filtered sync without affecting catering', async () => {})
-  it('handles Square API failures gracefully', async () => {})
-  it('maintains data integrity with concurrent syncs', async () => {})
-});
-
-// Catering Protection Integration
-describe('Catering Protection During Sync', () => {
-  it('preserves all catering relationships', async () => {})
-  it('maintains custom catering images', async () => {})
-  it('keeps catering menu structure intact', async () => {})
-});
-
-```
-
-### E2E Tests (Playwright)
-
-```tsx
-test.describe('Admin Sync Flow', () => {
-  test('preview and execute filtered sync', async ({ page }) => {
-    // Test complete sync flow with UI
-  });
-
-  test('rollback sync operation', async ({ page }) => {
-    // Test rollback functionality
-  });
-
-  test('catering pages remain functional after sync', async ({ page }) => {
-    // Verify catering functionality
+  it('creates sync history with valid UUID', async () => {
+    const mockPrisma = {
+      syncHistory: {
+        create: jest.fn().mockResolvedValue({})
+      }
+    };
+    
+    const manager = new FilteredSyncManager();
+    await (manager as any).createSyncHistory(new Date());
+    
+    const call = mockPrisma.syncHistory.create.mock.calls[0];
+    expect(uuidValidate(call[0].data.id)).toBe(true);
   });
 });
 
-```
-
-### Type Safety Tests
-
-```tsx
-// types/square-sync.test-d.ts
-import { expectType } from 'tsd';
-
-// Test sync configuration types
-// Test catering protection types
-// Test rollback metadata types
-
-```
-
----
-
-## 🔒 Security Analysis
-
-### Authentication & Authorization
-
-- [x] Admin role required for all sync operations
-- [x] Sync history tracks user who initiated sync
-- [x] Rate limiting on sync endpoints (max 3 per hour)
-- [x] Rollback requires special permission
-
-### Input Validation & Sanitization
-
-```tsx
-// Sync configuration validation
-const SyncConfigSchema = z.object({
-  strategy: z.enum(['FILTERED', 'FULL', 'IMAGES_ONLY']),
-  options: z.object({
-    dryRun: z.boolean().optional(),
-    forceImageUpdate: z.boolean().optional(),
-    batchSize: z.number().min(10).max(100).optional(),
-  }).optional(),
-}).strict();
-
-```
-
-### SQL Injection Prevention
-
-```tsx
-// Use Prisma ORM exclusively
-// No raw SQL for product operations
-// Parameterized queries for sync history
-const protectedItems = await prisma.cateringItem.findMany({
-  where: {
-    squareProductId: { not: null }
-  }
+// lib/square/__tests__/catalog-api-integration.test.ts
+describe('Square Catalog API Integration', () => {
+  it('formats search request correctly', async () => {
+    const manager = new FilteredSyncManager();
+    const result = await (manager as any).fetchFilteredCatalog();
+    
+    // Should not throw 400 error
+    expect(result.error).not.toContain('Unknown query type');
+    expect(result.success).toBeDefined();
+  });
 });
-
 ```
 
-### XSS Protection
+### Manual Testing Steps
 
-- [x] Sanitize all product descriptions from Square
-- [x] Validate image URLs before storage
-- [x] Escape category names in UI
-- [x] Use React's built-in protection
+1. **Test UUID Generation**:
+```bash
+# In your Next.js app, add a test endpoint
+# app/api/test-sync/route.ts
+import { randomUUID } from 'crypto';
 
-### Additional Security Measures
-
-```tsx
-// Backup before sync
-const backup = await createProductBackup();
-
-// Validate Square data integrity
-const isValidProduct = (product: SquareProduct) => {
-  return product.id && product.name && !BLOCKED_PRODUCTS.includes(product.id);
-};
-
-// Audit logging for all operations
-await createAuditLog('SYNC_INITIATED', { userId, strategy, options });
-
+export async function GET() {
+  const testId = randomUUID();
+  return Response.json({ 
+    uuid: testId,
+    isValid: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(testId)
+  });
+}
 ```
 
----
-
-## 📊 Performance Considerations
-
-### Database Optimization
-
+2. **Test Database Insert**:
 ```sql
--- Indexes for filtered sync
-CREATE INDEX idx_products_square_category ON products(square_category_id);
-CREATE INDEX idx_products_sync_source ON products(sync_source);
-CREATE INDEX idx_sync_history_completed ON sync_history(completed_at DESC);
+-- Test that UUID column accepts the new format
+INSERT INTO sync_history (id, "syncType", "startedAt") 
+VALUES (gen_random_uuid(), 'TEST', NOW());
 
--- Partial index for active catering items
-CREATE INDEX idx_active_catering ON catering_items(id) WHERE is_active = true;
-
+-- Verify it worked
+SELECT id, LENGTH(id::text) as id_length 
+FROM sync_history 
+WHERE "syncType" = 'TEST';
 ```
 
-### Caching Strategy
-
-- [x] Cache Square API responses for 5 minutes
-- [x] Use database transactions for batch operations
-- [x] Implement progress tracking for long syncs
-- [x] Queue sync jobs to prevent timeouts
-
-### Bundle Size Optimization
-
-- [x] Lazy load sync UI components
-- [x] Use dynamic imports for admin features
-- [x] Minimize Square SDK imports
+3. **Test Square API Call**:
+```bash
+# Test the catalog API directly
+curl -X POST https://connect.squareup.com/v2/catalog/search \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Square-Version: 2024-10-17" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "object_types": ["ITEM"],
+    "include_related_objects": true,
+    "limit": 10
+  }'
+```
 
 ---
 
 ## 🚦 Implementation Checklist
 
-### Pre-Development
+### Immediate Actions (Fix the Errors)
 
-- [x] Document all current catering items and their sources
-- [x] Identify exact Square categories for alfajores/empanadas
-- [x] Create comprehensive backup of production database
-- [x] Map all catering-product relationships
+- [ ] Update `FilteredSyncManager` constructor to use `randomUUID()`
+- [ ] Fix `fetchFilteredCatalog` to use correct API request structure
+- [ ] Test sync with dry-run mode first
 
-### Development Phase
+### Code Changes
 
-- [x] Implement filtered sync manager with category filtering
-- [x] Create catering protection service
-- [x] Build sync preview functionality
-- [x] Develop rollback mechanism
-- [x] Update admin UI to single sync interface
-- [x] Add comprehensive logging and monitoring
+1. **Update filtered-sync.ts**:
+```bash
+# Line 33 - Update constructor
+# Line 180-220 - Update fetchFilteredCatalog method
+```
 
-### Pre-Deployment
+2. **Verify imports**:
+```tsx
+// At top of filtered-sync.ts
+import { randomUUID } from 'crypto';
+```
 
-- [x] Test on staging with production data copy
-- [x] Verify no catering data is modified
-- [x] Confirm only target products are synced
-- [x] Load test sync process
-- [x] Create rollback procedures
-- [x] Document new sync process
+3. **Update package.json if needed** (crypto is built-in to Node.js):
+```json
+// No changes needed - crypto is native to Node.js
+```
 
----
-
-## 📝 MCP Analysis Commands
-
-### For Local Development
+### Testing Commands
 
 ```bash
-# Analyze current sync implementations
-desktop-commander: read_file ./src/app/(dashboard)/admin/products/sync-square.tsx
-desktop-commander: read_file ./src/lib/square/production-sync.ts
+# Run the sync with logging
+npm run dev
+# Navigate to: http://localhost:3000/api/square/sync-filtered
 
-# Check catering structure
-desktop-commander: list_directory ./src/app/catering
-desktop-commander: search_code "catering_items" path: ./src
+# Check logs for:
+# - Valid UUID in "Starting filtered Square sync..." log
+# - No "Unknown query type" errors
+# - Successful "Fetched X total products" message
 
-# Review Square integration
-desktop-commander: read_file ./src/lib/square/client.ts
-desktop-commander: search_code "squareClient" path: ./src
-
-```
-
-### For GitHub Repositories
-
-```bash
-# Analyze sync history
-github: search_code "syncProducts" repo: destino-sf
-
-# Review catering implementation
-github: get_file_contents path: src/app/api/catering
-
-# Check Square API usage
-github: search_code "catalogApi" repo: destino-sf
-
+# Verify database
+psql $DATABASE_URL -c "SELECT id, \"syncType\", \"startedAt\" FROM sync_history ORDER BY \"startedAt\" DESC LIMIT 5;"
 ```
 
 ---
 
-## 🎨 Code Style Guidelines
+## 🔄 Quick Debugging
 
-### TypeScript Best Practices
-
-- Use strict typing for all Square API responses
-- Create type guards for product filtering
-- Use const assertions for configuration
-- Implement proper error boundaries
-
-### Next.js Patterns
-
-- Use Server Components for admin pages
-- Implement streaming for large syncs
-- Use Server Actions for mutations
-- Add proper loading and error states
-
-### PostgreSQL Conventions
-
-- Use transactions for all sync operations
-- Implement soft deletes for rollback
-- Add audit columns to track changes
-- Use JSONB for flexible metadata
-
----
-
-## 📚 Documentation Template
-
-### API Documentation
-
-```tsx
-/**
- * Filtered Square Sync Endpoint
- *
- * @route POST /api/square/sync-filtered
- * @param {FilteredSyncConfig} config - Sync configuration
- * @returns {SyncResult} Sync results with protected items count
- * @throws {400} Invalid configuration
- * @throws {401} Unauthorized
- * @throws {429} Rate limit exceeded
- * @throws {500} Sync failure
- */
-
-```
-
-### Component Documentation
-
-```tsx
-/**
- * FilteredSyncButton - Triggers filtered Square sync
- *
- * Only syncs alfajores and empanadas while protecting catering items
- *
- * @example
- * ```tsx
- * <FilteredSyncButton
- *   onSuccess={handleSuccess}
- *   showPreview={true}
- * />
- * ```
- */
-
-```
-
----
-
-## 🔄 Rollback Plan
-
-### Database Rollback
-
+### Check Current Sync History Issues
 ```sql
--- Restore from sync history
-WITH last_sync AS (
-  SELECT * FROM sync_history 
-  WHERE completed_at IS NOT NULL 
-  ORDER BY completed_at DESC 
-  LIMIT 1
-)
-UPDATE products 
-SET 
-  name = (last_sync.metadata->>'previous_state'->>'name'),
-  price = (last_sync.metadata->>'previous_state'->>'price')::DECIMAL
-FROM last_sync
-WHERE sync_source = 'SQUARE';
+-- See what's in sync_history
+SELECT 
+  id,
+  "syncType",
+  "startedAt",
+  "completedAt",
+  "productsSynced",
+  (metadata->>'success')::boolean as success,
+  LEFT(errors::text, 100) as error_preview
+FROM sync_history
+ORDER BY "startedAt" DESC
+LIMIT 10;
 
+-- Clean up invalid entries if needed
+DELETE FROM sync_history 
+WHERE id NOT SIMILAR TO '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 ```
 
-### Feature Toggle
-
+### Test API Directly
 ```tsx
-// Environment-based sync strategy
-const SYNC_STRATEGY = process.env.NEXT_PUBLIC_SYNC_STRATEGY || 'FILTERED';
+// app/api/test-catalog/route.ts
+import { squareClient } from '@/lib/square/client';
 
-if (SYNC_STRATEGY === 'FILTERED') {
-  // New filtered implementation
-} else {
-  // Fallback to original implementation
+export async function GET() {
+  try {
+    const response = await squareClient.catalogApi.searchCatalogObjects({
+      filter: {
+        types: ['ITEM']
+      },
+      include_related_objects: true,
+      limit: 5
+    });
+    
+    return Response.json({
+      success: true,
+      count: response.result?.objects?.length || 0
+    });
+  } catch (error: any) {
+    return Response.json({
+      success: false,
+      error: error.message
+    }, { status: 500 });
+  }
 }
-
 ```
 
-### Monitoring & Alerts
+---
 
-- [x] Monitor sync duration and success rate
-- [x] Alert on catering data modifications
-- [x] Track Square API errors
-- [x] Set up automated rollback triggers
-- [x] Create dashboard for sync health
+## 🎯 Summary
+
+The fix is straightforward:
+
+1. **Replace custom sync ID generation with `randomUUID()`** in the constructor
+2. **Fix the Square API request structure** in `fetchFilteredCatalog` to match what `catalog-api.ts` expects
+3. **Test thoroughly** before deploying
+
+These are minimal, surgical changes that address the root causes without affecting the rest of your sync logic. The catering protection and other features will continue to work as designed.

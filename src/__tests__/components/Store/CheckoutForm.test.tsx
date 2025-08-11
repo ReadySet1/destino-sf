@@ -4,7 +4,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { CheckoutForm } from '@/components/Store/CheckoutForm';
+import { CheckoutForm } from '@/components/store/CheckoutForm';
 import { useCartStore } from '@/store/cart';
 import { useSmartCart } from '@/hooks/useSmartCart';
 import type { CartItem } from '@/store/cart';

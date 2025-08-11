@@ -30,31 +30,35 @@ model Profile {
 }
 
 model Product {
-  id             String          @id @default(uuid()) @db.Uuid
-  squareId       String          @unique
-  name           String
-  description    String?
-  price          Decimal         @db.Decimal(10, 2)
-  images         String[]
-  categoryId     String          @db.Uuid
-  featured       Boolean         @default(false)
-  active         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  slug           String?         @unique
-  ordinal        BigInt?
-  inventory      Int?            @default(0)
-  syncSource     String?         @default("SQUARE") @db.VarChar(50)
-  lastSyncAt     DateTime?
-  syncLocked     Boolean         @default(false)
-  orderItems     OrderItem[]
-  category       Category        @relation(fields: [categoryId], references: [id])
-  spotlightPicks SpotlightPick[]
-  variants       Variant[]
+  id              String          @id @default(uuid()) @db.Uuid
+  squareId        String          @unique
+  name            String
+  description     String?
+  price           Decimal         @db.Decimal(10, 2)
+  images          String[]
+  categoryId      String          @db.Uuid
+  featured        Boolean         @default(false)
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  slug            String?         @unique
+  ordinal         BigInt?
+  inventory       Int?            @default(0)
+  syncSource      String?         @default("SQUARE") @db.VarChar(50)
+  lastSyncAt      DateTime?
+  syncLocked      Boolean         @default(false)
+  squareVersion   BigInt?         @map("square_version")
+  squareUpdatedAt DateTime?       @map("square_updated_at")
+  syncStatus      String?         @default("SYNCED") @map("sync_status") @db.VarChar(20)
+  orderItems      OrderItem[]
+  category        Category        @relation(fields: [categoryId], references: [id])
+  spotlightPicks  SpotlightPick[]
+  variants        Variant[]
 
   @@index([categoryId])
   @@index([ordinal])
   @@index([syncSource])
+  @@index([syncStatus])
   @@map("products")
 }
 
@@ -663,6 +667,28 @@ model SyncHistory {
   @@index([completedAt(sort: Desc)])
   @@index([syncType])
   @@map("sync_history")
+}
+
+model SyncLog {
+  id             String    @id @default(uuid()) @db.Uuid
+  syncType       String    @map("sync_type") @db.VarChar(50)
+  status         String    @db.VarChar(20)
+  itemsSynced    Int       @default(0) @map("items_synced")
+  itemsCreated   Int       @default(0) @map("items_created")
+  itemsUpdated   Int       @default(0) @map("items_updated")
+  itemsDeleted   Int       @default(0) @map("items_deleted")
+  itemsSkipped   Int       @default(0) @map("items_skipped")
+  errors         Json?
+  warnings       Json?
+  metadata       Json?
+  startedAt      DateTime  @default(now()) @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  createdBy      String?   @db.Uuid @map("created_by")
+  
+  @@index([status])
+  @@index([startedAt])
+  @@index([syncType])
+  @@map("sync_logs")
 }
 
 enum AlertPriority {

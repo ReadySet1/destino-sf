@@ -100,6 +100,7 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- APPETIZERS': 'appetizers',
   'CATERING- SHARE PLATTERS': 'appetizers',
   'CATERING- DESSERTS': 'appetizers', // También aparece en buffet
+  'CATERING- EMPANADAS': 'appetizers', // For sauces and empanada-related items
 
   'CATERING- BUFFET, STARTERS': 'buffet',
   'CATERING- BUFFET, ENTREES': 'buffet',
@@ -204,7 +205,8 @@ export interface CateringFormData {
 // Funciones de utilidad para trabajar con categorías de Square
 export function getItemsForTab(items: CateringItem[], tabId: string): CateringItem[] {
   return items.filter(item => {
-    if (!item.squareCategory) return false;
+    // Handle cases where squareCategory might be null, undefined, or empty string
+    if (!item.squareCategory || item.squareCategory.trim() === '') return false;
     return SQUARE_CATEGORY_MAPPING[item.squareCategory] === tabId;
   });
 }

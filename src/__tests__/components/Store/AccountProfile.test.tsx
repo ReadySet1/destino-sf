@@ -5,7 +5,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AccountProfile } from '@/components/Store/AccountProfile';
+import { AccountProfile } from '@/components/store/AccountProfile';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
