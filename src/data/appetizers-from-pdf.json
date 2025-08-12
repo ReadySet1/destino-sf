@@ -1,0 +1,238 @@
+{
+  "menuName": "Appetizer Menu, 2025",
+  "restaurant": "DESTINO",
+  "cateringNotice": "Catering orders must be confirmed 5 days in advance",
+  "dietaryLegend": {
+    "gf": "gluten free",
+    "vg": "vegetarian", 
+    "vgn": "vegan"
+  },
+  "appetizers": [
+    {
+      "name": "pintxos vegetarianos",
+      "ingredients": ["roasted beets", "cucumber", "kalamata olives", "feta"],
+      "dietary": ["gf", "vg"]
+    },
+    {
+      "name": "arepas",
+      "ingredients": ["cornmeal biscuits", "ginger", "pineapple-cilantro salsa"],
+      "dietary": ["gf", "vg", "vgn"]
+    },
+    {
+      "name": "camotitos",
+      "ingredients": ["sweet potato", "coconut milk", "shitake", "multi-grain cracker", "poppyseeds"],
+      "dietary": ["gf", "vg", "vgn"]
+    },
+    {
+      "name": "mt. tam montado",
+      "ingredients": ["cowgirl creamery's mt. tam", "jalea de aji", "crostini"],
+      "dietary": ["vg"]
+    },
+    {
+      "name": "quinoa arancini balls",
+      "ingredients": ["white quinoa", "mozzarella", "shitake", "romesco"],
+      "dietary": ["vg"]
+    },
+    {
+      "name": "causa",
+      "ingredients": ["yukon potato", "lime", "sweet 100 tomato", "olive puree", "black sesame cracker"],
+      "dietary": ["gf", "vg", "vgn"]
+    },
+    {
+      "name": "bocadillo de boquerones",
+      "ingredients": ["almond picada", "white bean puree", "spanish boquerones", "sesame cracker"],
+      "dietary": []
+    },
+    {
+      "name": "peruvian ceviche",
+      "ingredients": ["wild halibut", "aji amarillo", "cilantro", "lime", "corn nuts", "endive"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "tiger prawns",
+      "ingredients": ["sautéed prawns", "corn-goat cheese crème", "corn tortilla chips"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "salmon carpaccio",
+      "ingredients": ["local wild king salmon", "ginger", "creamy pepper reduction", "poppyseed"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "churrasco",
+      "ingredients": ["top sirloin strips", "chimichurri", "plantain chips"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "pa amb tomàquet",
+      "ingredients": ["16-month aged jamon serrano", "garlic", "tomato spread", "crostini"],
+      "dietary": []
+    },
+    {
+      "name": "anticuchos de pollo",
+      "ingredients": ["free range chicken breast skewers", "smoky pepper marinade"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "sliders",
+      "ingredients": ["angus beef mini-burgers", "smoky aji panca pepper", "pickled onion relish"],
+      "dietary": []
+    },
+    {
+      "name": "albondigas",
+      "ingredients": ["baked pork meatballs", "caribbean-10 spice rub", "mango reduction"],
+      "dietary": ["gf"]
+    },
+    {
+      "name": "oxtail",
+      "ingredients": ["braised oxtail", "pine nuts", "golden raisins", "mint", "queso cotija", "plantain crisps"],
+      "dietary": ["gf"]
+    }
+  ],
+  "empanadas": {
+    "description": "our empanadas are available with the following fillings",
+    "options": [
+      {
+        "name": "pork",
+        "ingredients": ["ground hampshire pork", "manzanilla olives", "black mission figs", "caribbean spices"],
+        "dietary": []
+      },
+      {
+        "name": "vegetarian",
+        "ingredients": ["hearts of palms", "white cheddar", "cilantro", "grana padano parmesan"],
+        "dietary": ["vg"]
+      },
+      {
+        "name": "tamal verde",
+        "ingredients": ["sweet white corn", "cilantro", "aji amarillo", "red bell pepper"],
+        "dietary": ["gf", "vg", "vgn"]
+      },
+      {
+        "name": "beef",
+        "ingredients": ["ground beef", "golden raisins", "pimiento stuffed olives", "egg", "pimento"],
+        "dietary": []
+      },
+      {
+        "name": "chicken",
+        "ingredients": ["free-range chicken breast", "cream–aji chile reduction", "parmesan"],
+        "dietary": []
+      },
+      {
+        "name": "salmon",
+        "ingredients": ["local king salmon", "tamarind – panela reduction"],
+        "dietary": []
+      }
+    ]
+  },
+  "pricingTiers": [
+    {
+      "items": 5,
+      "pricePerPerson": 22.00
+    },
+    {
+      "items": 7,
+      "pricePerPerson": 34.00
+    },
+    {
+      "items": 9,
+      "pricePerPerson": 46.00
+    }
+  ],
+  "platters": [
+    {
+      "name": "plantain chips platter",
+      "description": "yellow pepper cream sauce",
+      "sizes": [
+        {
+          "size": "small",
+          "price": 45.00,
+          "serves": "approximately 10-20 people"
+        },
+        {
+          "size": "large",
+          "price": 80.00,
+          "serves": "approximately 25-40 people"
+        }
+      ]
+    },
+    {
+      "name": "cheese & charcuterie platter",
+      "description": "selection of local & imported artisan",
+      "sizes": [
+        {
+          "size": "small",
+          "price": 150.00,
+          "portions": "8oz portions of 4 offerings",
+          "serves": "approximately 10-20 people"
+        },
+        {
+          "size": "large",
+          "price": 280.00,
+          "portions": "8oz portions of 6 offerings",
+          "serves": "approximately 25-40 people"
+        }
+      ]
+    },
+    {
+      "name": "cocktail prawn platter",
+      "description": "jumbo tiger prawns / zesty cocktail sauce",
+      "sizes": [
+        {
+          "size": "small",
+          "price": 80.00,
+          "quantity": "25 prawns",
+          "serves": "approximately 10-20 people"
+        },
+        {
+          "size": "large",
+          "price": 150.00,
+          "quantity": "50 prawns",
+          "serves": "approximately 25-40 people"
+        }
+      ]
+    }
+  ],
+  "desserts": {
+    "priceEach": 2.50,
+    "items": [
+      {
+        "name": "alfajores",
+        "description": "south american butter cookies",
+        "varieties": [
+          {
+            "name": "classic",
+            "ingredients": ["shortbread", "dulce de leche"],
+            "dietary": ["vg"]
+          },
+          {
+            "name": "chocolate",
+            "ingredients": ["dulce de leche", "dark chocolate", "peruvian sea salt"],
+            "dietary": ["vg"]
+          },
+          {
+            "name": "lemon",
+            "ingredients": ["shortbread", "dulce de leche", "lemon royal icing"],
+            "dietary": ["vg"]
+          },
+          {
+            "name": "gluten-free",
+            "ingredients": ["gluten-free dulce de leche butter cookies"],
+            "dietary": ["gf", "vg"]
+          }
+        ]
+      },
+      {
+        "name": "mini cupcakes",
+        "description": "selection of dark chocolate or vanilla buttercream"
+      },
+      {
+        "name": "lemon bars",
+        "description": "meyer lemon zest, blueberry compote"
+      },
+      {
+        "name": "brownie bites",
+        "description": "double dark chocolate brownie, candied hot pepper jelly"
+      }
+    ]
+  }
+}

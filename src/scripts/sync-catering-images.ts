@@ -202,14 +202,17 @@ async function syncMissingCateringItemsFromSquare(): Promise<{
 
     for (const product of cateringProducts) {
       try {
-        // Check if a catering item already exists for this product
-        const existingCateringItem = await prisma.cateringItem.findFirst({
-          where: {
+        // Enhanced duplicate detection using the centralized utility
+        const { isDuplicate, existingItem, matchType } = await import('@/lib/catering-duplicate-detector').then(
+          module => module.CateringDuplicateDetector.checkForDuplicate({
+            name: product.name,
             squareProductId: product.squareId,
-          },
-        });
+            squareCategory: product.category?.name
+          })
+        );
 
-        if (existingCateringItem) {
+        if (isDuplicate && existingItem) {
+          logger.info(`⏭️  Skipped "${product.name}" - ${matchType}: exists as "${existingItem.name}"`);
           result.skipped++;
           continue;
         }

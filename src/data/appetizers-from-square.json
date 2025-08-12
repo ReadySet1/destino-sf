@@ -1,0 +1,94 @@
+{
+  "source": "Square POS",
+  "category": "CATERING- APPETIZERS",
+  "items": [
+    {
+      "name": "albondigas",
+      "hasImage": true
+    },
+    {
+      "name": "anticuchos de pollo",
+      "hasImage": false
+    },
+    {
+      "name": "arepas",
+      "hasImage": true
+    },
+    {
+      "name": "beef empanada",
+      "hasImage": true
+    },
+    {
+      "name": "bocadillo de boquerones",
+      "hasImage": true
+    },
+    {
+      "name": "camotitos",
+      "hasImage": true
+    },
+    {
+      "name": "causa",
+      "hasImage": true
+    },
+    {
+      "name": "chicken empanada",
+      "hasImage": true
+    },
+    {
+      "name": "churrasco",
+      "hasImage": true
+    },
+    {
+      "name": "mt. tam montado",
+      "hasImage": true
+    },
+    {
+      "name": "oxtail",
+      "hasImage": false
+    },
+    {
+      "name": "pa amb tomàquet",
+      "hasImage": true
+    },
+    {
+      "name": "peruvian ceviche",
+      "hasImage": true
+    },
+    {
+      "name": "pintxos vegetarianos",
+      "hasImage": true
+    },
+    {
+      "name": "pork empanada",
+      "hasImage": true
+    },
+    {
+      "name": "quinoa arancini balls",
+      "hasImage": true
+    },
+    {
+      "name": "salmon carpaccio",
+      "hasImage": true
+    },
+    {
+      "name": "salmon empanada",
+      "hasImage": true
+    },
+    {
+      "name": "sliders",
+      "hasImage": true
+    },
+    {
+      "name": "tamal verde empanada",
+      "hasImage": true
+    },
+    {
+      "name": "tiger prawns",
+      "hasImage": true
+    },
+    {
+      "name": "vegetarian empanada",
+      "hasImage": true
+    }
+  ]
+}

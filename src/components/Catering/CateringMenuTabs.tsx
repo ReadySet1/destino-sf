@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ALaCarteMenu, CateringPackages } from '@/components/Catering';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import { AppetizerPackageSelector } from '@/components/Catering/AppetizerPackageSelector';
-import { CateringItem, CateringPackage, getItemsForTab } from '@/types/catering';
+import { CateringItem, CateringPackage, getItemsForTab, getAppetizerPackageItems } from '@/types/catering';
 
 interface CateringMenuTabsProps {
   cateringItems: CateringItem[];
@@ -50,7 +50,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cate
             <div className="mb-12">
               <AppetizerPackageSelector
                 packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
-                availableItems={getItemsForTab(cateringItems, 'appetizers').filter(
+                availableItems={getAppetizerPackageItems(cateringItems).filter(
                   item => item.price === 0
                 )}
               />
@@ -60,9 +60,13 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cate
             <div className="border-t pt-12">
               <ALaCarteMenu
                 items={cateringItems.filter(item => {
-                  // Get items for appetizers tab but exclude $0 items (package-only)
-                  const appetizerTabItems = getItemsForTab(cateringItems, 'appetizers');
-                  return appetizerTabItems.includes(item) && item.price > 0;
+                  // Only show Share Platters and Desserts, exclude basic appetizer items
+                  // to avoid duplication with the package selector above
+                  return (
+                    item.price > 0 && 
+                    (item.squareCategory === 'CATERING- SHARE PLATTERS' || 
+                     item.squareCategory === 'CATERING- DESSERTS')
+                  );
                 })}
                 activeCategory="appetizers"
                 showDessertsAtBottom={true}

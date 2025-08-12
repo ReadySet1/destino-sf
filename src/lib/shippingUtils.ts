@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { PrismaClient } from '@prisma/client';
 
 /**
  * Interface for cart items used in shipping calculations
@@ -178,13 +179,42 @@ export async function calculateShippingWeight(
 }
 
 /**
+ * Create isolated Prisma client for shipping operations to avoid prepared statement conflicts
+ */
+const createShippingPrismaClient = () => {
+  return new PrismaClient({
+    log: ['error'],
+    errorFormat: 'minimal',
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
+};
+
+/**
  * Admin function to get all shipping weight configurations
  */
 export async function getAllShippingConfigurations(): Promise<ShippingWeightConfig[]> {
+  let prismaClient: PrismaClient | null = null;
+  
   try {
-    const dbConfigs = await prisma.shippingConfiguration.findMany({
-      orderBy: { productName: 'asc' },
-    });
+    // Use isolated client for build-time queries to avoid prepared statement conflicts
+    const isStaticGeneration = process.env.NODE_ENV === 'production' && !globalThis.fetch;
+    
+    if (isStaticGeneration) {
+      prismaClient = createShippingPrismaClient();
+      var dbQuery = prismaClient.shippingConfiguration.findMany({
+        orderBy: { productName: 'asc' },
+      });
+    } else {
+      var dbQuery = prisma.shippingConfiguration.findMany({
+        orderBy: { productName: 'asc' },
+      });
+    }
+    
+    const dbConfigs = await dbQuery;
 
     const configs: ShippingWeightConfig[] = dbConfigs.map(config => ({
       productName: config.productName,
@@ -206,6 +236,15 @@ export async function getAllShippingConfigurations(): Promise<ShippingWeightConf
   } catch (error) {
     console.error('Error fetching shipping configurations:', error);
     return Object.values(DEFAULT_WEIGHT_CONFIGS);
+  } finally {
+    // Always disconnect isolated client
+    if (prismaClient) {
+      try {
+        await prismaClient.$disconnect();
+      } catch (disconnectError) {
+        console.warn('Error disconnecting shipping Prisma client:', disconnectError);
+      }
+    }
   }
 }
 

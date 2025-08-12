@@ -1,0 +1,58 @@
+{
+  "appetizers": [
+    {
+      "name": "Spinach and Cheese Empanada",
+      "ingredients": ["spinach", "cheese", "onions", "pastry"],
+      "dietary": ["vg"]
+    },
+    {
+      "name": "Beef Empanada", 
+      "ingredients": ["ground beef", "onions", "spices", "pastry"],
+      "dietary": []
+    },
+    {
+      "name": "Chicken Empanada",
+      "ingredients": ["chicken", "onions", "peppers", "pastry"], 
+      "dietary": []
+    },
+    {
+      "name": "Cheese Empanada",
+      "ingredients": ["cheese", "pastry"],
+      "dietary": ["vg"]
+    },
+    {
+      "name": "Ham and Cheese Empanada",
+      "ingredients": ["ham", "cheese", "pastry"],
+      "dietary": []
+    }
+  ],
+  "empanadas": {
+    "options": [
+      {
+        "name": "Spinach and Cheese",
+        "ingredients": ["spinach", "cheese", "onions"],
+        "dietary": ["vg"]
+      },
+      {
+        "name": "Beef",
+        "ingredients": ["ground beef", "onions", "spices"],
+        "dietary": []
+      },
+      {
+        "name": "Chicken",
+        "ingredients": ["chicken", "onions", "peppers"],
+        "dietary": []
+      },
+      {
+        "name": "Cheese",
+        "ingredients": ["cheese"],
+        "dietary": ["vg"]
+      },
+      {
+        "name": "Ham and Cheese",
+        "ingredients": ["ham", "cheese"],
+        "dietary": []
+      }
+    ]
+  }
+}

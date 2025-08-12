@@ -1,0 +1,15 @@
+# Enable post-install scripts for Prisma packages
+# This resolves the "Ignored build scripts" warning for @prisma/client, @prisma/engines, and prisma
+enable-pre-post-scripts=true
+
+# Allow these specific packages to run build scripts
+@prisma:registry=https://registry.npmjs.org/
+@prisma/*:build-script=true
+
+# Prisma client optimization
+auto-install-peers=true
+strict-peer-dependencies=false
+
+# Performance improvements
+prefer-frozen-lockfile=true
+store-dir=.pnpm-store

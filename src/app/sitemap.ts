@@ -1,5 +1,18 @@
 import { MetadataRoute } from 'next';
-import { prisma } from '@/lib/db';
+import { PrismaClient } from '@prisma/client';
+
+// Create isolated Prisma client for sitemap generation to avoid prepared statement conflicts
+const createSitemapPrismaClient = () => {
+  return new PrismaClient({
+    log: ['error'],
+    errorFormat: 'minimal',
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -90,9 +103,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Use isolated Prisma client to avoid prepared statement conflicts during build
+  let prismaClient: PrismaClient | null = null;
+  
   try {
-    // Dynamic product pages
-    const products = await prisma.product.findMany({
+    prismaClient = createSitemapPrismaClient();
+    
+    // Dynamic product pages with retry logic
+    const products = await prismaClient.product.findMany({
       where: {
         active: true,
       },
@@ -114,5 +132,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error generating sitemap:', error);
     // Return static pages if database query fails
     return staticPages;
+  } finally {
+    // Always disconnect the isolated client
+    if (prismaClient) {
+      try {
+        await prismaClient.$disconnect();
+      } catch (disconnectError) {
+        console.warn('Error disconnecting sitemap Prisma client:', disconnectError);
+      }
+    }
   }
 }

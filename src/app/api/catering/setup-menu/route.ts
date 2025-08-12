@@ -947,27 +947,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create dessert items
-    console.log('📝 Creating dessert items...');
+    // Create dessert items with enhanced duplicate detection
+    console.log('📝 Creating dessert items (checking for Square duplicates)...');
     for (const item of DESSERT_ITEMS) {
       try {
-        const existingItem = await prisma.cateringItem.findFirst({
-          where: { name: item.name },
+        // Use enhanced duplicate detection to check against Square items
+        const { CateringDuplicateDetector } = await import('@/lib/catering-duplicate-detector');
+        const { isDuplicate, existingItem, matchType } = await CateringDuplicateDetector.checkForDuplicate({
+          name: item.name,
+          squareCategory: item.squareCategory
         });
 
-        if (existingItem) {
-          await prisma.cateringItem.update({
-            where: { id: existingItem.id },
-            data: {
-              ...item,
-              price: new Decimal(item.price),
-              category: item.category as any,
-              updatedAt: new Date(),
-            },
-          });
-          updatedItems++;
-          console.log(`  ✅ Updated: ${item.name}`);
+        if (isDuplicate && existingItem) {
+          // Skip creation if Square version exists - Square is authoritative for desserts
+          if (existingItem.source === 'square') {
+            console.log(`  ⏭️  Skipped "${item.name}" - ${matchType}: Square version exists as "${existingItem.name}"`);
+            continue;
+          } else {
+            // Update manual item if no Square version exists
+            await prisma.cateringItem.update({
+              where: { id: existingItem.id },
+              data: {
+                ...item,
+                price: new Decimal(item.price),
+                category: item.category as any,
+                updatedAt: new Date(),
+              },
+            });
+            updatedItems++;
+            console.log(`  ✅ Updated manual item: ${item.name}`);
+          }
         } else {
+          // Create new item if no duplicate found
           await prisma.cateringItem.create({
             data: {
               ...item,

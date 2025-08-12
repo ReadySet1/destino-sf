@@ -343,6 +343,13 @@ model CateringItem {
   isActive        Boolean                @default(true)
   squareCategory  String?
   squareProductId String?
+  // New sync-related fields
+  ingredients     String[]               @default([])
+  dietaryTags     String[]               @default([]) @map("dietary_tags")
+  sourceType      String                 @default("MANUAL") @map("source_type") @db.VarChar(20)
+  lastSquareSync  DateTime?              @map("last_square_sync")
+  squareItemId    String?                @unique @map("square_item_id") @db.VarChar(255)
+  syncEnabled     Boolean                @default(true) @map("sync_enabled")
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   overrides       CateringItemOverrides?
@@ -463,6 +470,21 @@ model CateringItemOverrides {
 
   @@index([itemId])
   @@map("catering_item_overrides")
+}
+
+model CateringItemMapping {
+  id               String   @id @default(uuid()) @db.Uuid
+  squareName       String   @map("square_name") @db.VarChar(255)
+  pdfName          String   @map("pdf_name") @db.VarChar(255)
+  confidenceScore  Decimal? @map("confidence_score") @db.Decimal(3, 2)
+  isVerified       Boolean  @default(false) @map("is_verified")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([squareName, pdfName], name: "unique_square_pdf_mapping")
+  @@index([squareName], name: "idx_catering_mappings_square")
+  @@index([pdfName], name: "idx_catering_mappings_pdf")
+  @@map("catering_item_mappings")
 }
 
 model EmailAlert {
@@ -613,6 +635,7 @@ enum CateringPackageType {
 }
 
 enum CateringItemCategory {
+  APPETIZER
   STARTER
   ENTREE
   SIDE

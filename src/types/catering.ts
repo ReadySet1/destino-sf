@@ -211,6 +211,15 @@ export function getItemsForTab(items: CateringItem[], tabId: string): CateringIt
   });
 }
 
+// Función específica para el selector de paquetes de appetizers
+// Solo retorna items de la categoría "CATERING- APPETIZERS" (los 22 items del sync)
+export function getAppetizerPackageItems(items: CateringItem[]): CateringItem[] {
+  return items.filter(item => {
+    // Solo items de la categoría específica de appetizers
+    return item.squareCategory === 'CATERING- APPETIZERS';
+  });
+}
+
 export function groupItemsBySubcategory(items: CateringItem[]): Record<string, CateringItem[]> {
   const result: Record<string, CateringItem[]> = {};
 

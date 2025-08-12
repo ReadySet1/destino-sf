@@ -18,6 +18,8 @@ import {
   User2,
   ChevronUp,
   LogOut,
+  Plus,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { signOutAction } from '@/app/actions/auth';
 import {
@@ -73,6 +75,16 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
       href: '/admin/square-sync',
       label: 'Product Sync',
       icon: <RefreshCw className="h-4 w-4" />,
+    },
+    {
+      href: '/admin/new-appetizers-sync',
+      label: 'New Appetizers',
+      icon: <Plus className="h-4 w-4" />,
+    },
+    {
+      href: '/admin/catering-sync',
+      label: 'Catering Sync',
+      icon: <ImageIcon className="h-4 w-4" />,
     },
     {
       href: '/admin/catering',
