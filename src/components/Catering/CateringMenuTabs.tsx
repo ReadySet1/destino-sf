@@ -63,9 +63,10 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cate
                   // Only show Share Platters and Desserts, exclude basic appetizer items
                   // to avoid duplication with the package selector above
                   return (
-                    item.price > 0 && 
-                    (item.squareCategory === 'CATERING- SHARE PLATTERS' || 
-                     item.squareCategory === 'CATERING- DESSERTS')
+                    // Allow Share Platters even with $0 price (variable pricing)
+                    (item.squareCategory === 'CATERING- SHARE PLATTERS') ||
+                    // Desserts must have price > 0
+                    (item.price > 0 && item.squareCategory === 'CATERING- DESSERTS')
                   );
                 })}
                 activeCategory="appetizers"

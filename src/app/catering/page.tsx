@@ -29,19 +29,6 @@ const dancingScript = Dancing_Script({
   weight: ['400', '700'],
 });
 
-// Debug function to check image availability
-const debugImages = (items: CateringItem[]) => {
-  const withImages = items.filter(item => item.imageUrl).length;
-  console.log(
-    `[DEBUG] Catering page loaded with ${withImages}/${items.length} items having images`
-  );
-
-  // Log the first few items with their image URLs
-  items.slice(0, 5).forEach(item => {
-    console.log(`[DEBUG] Item "${item.name}" has image: ${item.imageUrl || 'NO IMAGE'}`);
-  });
-};
-
 // Define catering services
 const cateringServices: string[] = [
   'Corporate Luncheons',
@@ -61,9 +48,6 @@ const CateringPage = async () => {
     // Fetch packages and items from the database
     cateringPackages = await getCateringPackages();
     cateringItems = await getCateringItems();
-
-    // Debug image URLs in fetched items
-    debugImages(cateringItems);
   } catch (error) {
     console.error('Error fetching catering data:', error);
     errorMessage = error instanceof Error ? error.message : 'Failed to load catering data';

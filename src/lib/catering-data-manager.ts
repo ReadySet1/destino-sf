@@ -56,7 +56,7 @@ async function determineStrategy(): Promise<CateringDataStrategy> {
 /**
  * Convert product to catering item format
  */
-function convertProductToCateringItem(product: any): CateringItem {
+function convertProductToCateringItem(product: any): CateringItem[] {
   // Determine category based on the Square category name
   let category: CateringItemCategory = CateringItemCategory.STARTER; // default
   const categoryName = product.category?.name || '';
@@ -79,23 +79,58 @@ function convertProductToCateringItem(product: any): CateringItem {
   // Get first image if available
   const firstImage = product.images && product.images.length > 0 ? product.images[0] : null;
 
-  return {
-    id: product.id,
-    name: product.name,
-    description: product.description || '',
-    price: Number(product.price),
-    category,
-    isVegetarian: false, // Default values - could be enhanced with metadata
-    isVegan: false,
-    isGlutenFree: false,
-    servingSize: null,
-    imageUrl: firstImage,
-    isActive: true,
-    squareCategory: product.category?.name || '',
-    squareProductId: product.squareId,
-    createdAt: product.createdAt,
-    updatedAt: product.updatedAt,
-  } as CateringItem;
+  // If no variants, return single item with base product price
+  if (!product.variants || product.variants.length === 0) {
+    return [{
+      id: product.id,
+      name: product.name,
+      description: product.description || '',
+      price: Number(product.price),
+      category,
+      isVegetarian: false, // Default values - could be enhanced with metadata
+      isVegan: false,
+      isGlutenFree: false,
+      servingSize: null,
+      imageUrl: firstImage,
+      isActive: true,
+      squareCategory: product.category?.name || '',
+      squareProductId: product.squareId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    } as CateringItem];
+  }
+
+  // Convert each variant to a separate CateringItem
+  return product.variants.map((variant: any) => {
+    // Determine serving size based on variant name
+    let servingSize = null;
+    if (variant.name === 'Small') {
+      servingSize = '10-20 people';
+    } else if (variant.name === 'Large') {
+      servingSize = '25-40 people';
+    }
+
+    // Use variant price if available, otherwise fall back to product price
+    const price = variant.price ? Number(variant.price) : Number(product.price);
+
+    return {
+      id: `${product.id}-${variant.id}`, // Create unique ID for variant
+      name: `${product.name} - ${variant.name}`,
+      description: product.description || '',
+      price,
+      category,
+      isVegetarian: false, // Default values - could be enhanced with metadata
+      isVegan: false,
+      isGlutenFree: false,
+      servingSize,
+      imageUrl: firstImage,
+      isActive: true,
+      squareCategory: product.category?.name || '',
+      squareProductId: product.squareId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    } as CateringItem;
+  });
 }
 
 /**
@@ -113,7 +148,8 @@ async function fetchFromProductsTable(): Promise<CateringItem[]> {
         }
       },
       include: {
-        category: true
+        category: true,
+        variants: true // Include variants to get pricing
       },
       orderBy: [
         { category: { name: 'asc' } },
@@ -121,9 +157,18 @@ async function fetchFromProductsTable(): Promise<CateringItem[]> {
       ]
     });
 
-    logger.info(`✅ Fetched ${products.length} items from products table`);
+    logger.info(`✅ Fetched ${products.length} products with variants from products table`);
 
-    return products.map(convertProductToCateringItem);
+    // Convert products to catering items, handling variants
+    const cateringItems: CateringItem[] = [];
+    products.forEach(product => {
+      const items = convertProductToCateringItem(product);
+      cateringItems.push(...items);
+    });
+
+    logger.info(`✅ Converted to ${cateringItems.length} catering items (including variants)`);
+
+    return cateringItems;
   } catch (error) {
     logger.error('❌ Error fetching from products table:', error);
     throw error;
@@ -300,12 +345,15 @@ export async function getCateringItem(
           }
         },
         include: {
-          category: true
+          category: true,
+          variants: true
         }
       });
 
       if (product) {
-        item = convertProductToCateringItem(product);
+        const items = convertProductToCateringItem(product);
+        // Try to find exact match first, then fall back to first item
+        item = items.find(i => i.id === itemId) || items[0];
       }
     } else {
       // Check catering_items table

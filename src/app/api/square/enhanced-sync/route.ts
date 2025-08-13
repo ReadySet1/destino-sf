@@ -1,8 +1,9 @@
 /**
  * Enhanced Square Sync API Endpoint
  * 
- * Syncs ALL missing catering items from Square while protecting existing items.
- * Uses intelligent duplicate detection and category-by-category processing.
+ * Syncs ALL missing catering items from Square to the unified products table
+ * while protecting existing items. Uses intelligent duplicate detection 
+ * and category-by-category processing.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,6 +12,7 @@ import { logger } from '@/utils/logger';
 import { z } from 'zod';
 import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
+import { prisma } from '@/lib/db';
 
 // Request validation schema
 const EnhancedSyncRequestSchema = z.object({
@@ -64,6 +66,17 @@ interface SyncSummary {
   skipped: number;
 }
 
+// Helper function to normalize category name for products table
+function normalizeCategoryName(categoryName: string): string {
+  // Normalize category names to match the unified products table format
+  return categoryName
+    .toUpperCase()
+    .replace(/\s*-\s*/g, '-')      // Remove spaces around hyphens
+    .replace(/,\s*/g, '-')         // Replace commas with hyphens
+    .replace(/\s+/g, '-')          // Replace remaining spaces with hyphens
+    .trim();
+}
+
 // Helper function to fetch items from Square for a specific category
 async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareItem[]> {
   try {
@@ -91,6 +104,19 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareIt
           
           if (variation?.item_variation_data?.price_money?.amount) {
             price = variation.item_variation_data.price_money.amount / 100; // Convert cents to dollars
+          } else if (variation?.item_variation_data?.pricing_type === 'VARIABLE_PRICING') {
+            // Handle variable pricing items - set reasonable base prices for Share Platters
+            const itemName = item.item_data.name.toLowerCase();
+            if (itemName.includes('plantain')) {
+              price = 45.00; // Plantain Chips Platter base price
+            } else if (itemName.includes('cheese') && itemName.includes('charcuterie')) {
+              price = 150.00; // Cheese & Charcuterie Platter base price
+            } else if (itemName.includes('cocktail') && itemName.includes('prawn')) {
+              price = 80.00; // Cocktail Prawn Platter base price
+            } else {
+              // Default variable pricing base
+              price = 50.00;
+            }
           }
 
           // Find image from related objects
@@ -132,16 +158,21 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareIt
 // Helper function to get current DB items count for a category
 async function getDbItemsCountForCategory(categoryName: string): Promise<number> {
   try {
-    // Use direct Supabase query through our project
-    const query = `SELECT COUNT(*) as count FROM catering_items WHERE "squareCategory" = '${categoryName}' AND "isActive" = true`;
+    const normalizedName = normalizeCategoryName(categoryName);
+    const count = await prisma.product.count({
+      where: {
+        active: true,
+        category: {
+          name: {
+            equals: normalizedName,
+            mode: 'insensitive'
+          }
+        }
+      }
+    });
     
-    // We'll use a mock count for now and implement proper DB access later
-    // This is a placeholder that will need to be replaced with actual Supabase connection
-    logger.info(`Would execute query: ${query}`);
-    
-    // For now, return 0 to indicate no items in DB
-    // This will cause all Square items to be considered "missing"
-    return 0;
+    logger.info(`Found ${count} existing items in ${categoryName} (products table)`);
+    return count;
   } catch (error) {
     logger.error(`Error getting DB count for ${categoryName}:`, error);
     return 0;
@@ -254,16 +285,65 @@ async function syncMissingItems(): Promise<{
             continue;
           }
 
-          // Item doesn't exist - sync it
-          // For now, we'll log what would be synced instead of actually inserting
-          logger.info(`Would sync item: "${squareItem.name}" ($${squareItem.price}) to ${categoryName}`);
+          // Item doesn't exist - sync it to products table
+          logger.info(`Syncing new item: "${squareItem.name}" ($${squareItem.price}) to ${categoryName}`);
           
-          // TODO: Implement actual database insertion
-          // This is a placeholder for the actual sync operation
+          // Get or create category in products table
+          const normalizedCategoryName = normalizeCategoryName(categoryName);
+          let category = await prisma.category.findFirst({
+            where: {
+              name: {
+                equals: normalizedCategoryName,
+                mode: 'insensitive'
+              }
+            }
+          });
+
+          if (!category) {
+            category = await prisma.category.create({
+              data: {
+                name: normalizedCategoryName,
+                description: `Category for ${normalizedCategoryName} products`,
+                slug: normalizedCategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                order: 0,
+                active: true
+              }
+            });
+            logger.info(`Created new category: ${normalizedCategoryName}`);
+          }
+
+          // Create unique slug for the product
+          const baseSlug = squareItem.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          const existingSlug = await prisma.product.findFirst({
+            where: { slug: baseSlug }
+          });
+          const slug = existingSlug ? `${baseSlug}-${squareItem.id.substring(0, 8)}` : baseSlug;
+
+          // Create the product in the database
+          const createdProduct = await prisma.product.create({
+            data: {
+              squareId: squareItem.id,
+              name: squareItem.name,
+              slug,
+              description: squareItem.description || '',
+              price: squareItem.price,
+              images: squareItem.imageUrl ? [squareItem.imageUrl] : [],
+              categoryId: category.id,
+              featured: false,
+              active: true,
+              variants: {
+                create: squareItem.variations.map(v => ({
+                  name: v.name,
+                  price: v.price || null,
+                  squareVariantId: v.id
+                }))
+              }
+            }
+          });
 
           categorySynced++;
           syncedItems++;
-          logger.info(`✅ Synced \"${squareItem.name}\" - $${squareItem.price}`);
+          logger.info(`✅ Synced \"${squareItem.name}\" - $${squareItem.price} to products table (ID: ${createdProduct.id})`);
           
         } catch (itemError) {
           const errorMsg = `Failed to sync ${squareItem.name}: ${itemError}`;
@@ -411,9 +491,10 @@ export async function GET() {
     info: {
       endpoint: '/api/square/enhanced-sync',
       methods: ['GET', 'POST'],
-      description: 'Enhanced Square sync - syncs ALL missing catering items while protecting existing items',
-      protection: 'Appetizers, empanadas, and alfajores are protected using intelligent duplicate detection',
+      description: 'Enhanced Square sync - syncs ALL missing catering items to unified products table while protecting existing items',
+      protection: 'Existing products are protected using intelligent duplicate detection',
       authentication: 'Required',
+      target: 'products table (unified data model)',
     },
     availableActions: {
       'POST with preview: true': 'Preview what items will be synced',

@@ -15,6 +15,7 @@ import { CategoryMapper, CATEGORY_MAPPINGS, LEGACY_CATEGORY_MAPPINGS } from '@/l
 import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { prisma } from '@/lib/db';
+import { archiveRemovedSquareProducts } from '@/lib/square/archive-handler';
 import type { SyncVerificationResult } from '@/types/square-sync';
 
 // Request validation schema
@@ -128,6 +129,20 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
           
           if (variation?.item_variation_data?.price_money?.amount) {
             price = variation.item_variation_data.price_money.amount / 100;
+          } else if (variation?.item_variation_data?.pricing_type === 'VARIABLE_PRICING') {
+            // Handle variable pricing items - set reasonable base prices for Share Platters
+            const itemName = item.item_data.name.toLowerCase();
+            if (itemName.includes('plantain')) {
+              price = 45.00; // Plantain Chips Platter base price
+            } else if (itemName.includes('cheese') && itemName.includes('charcuterie')) {
+              price = 150.00; // Cheese & Charcuterie Platter base price
+            } else if (itemName.includes('cocktail') && itemName.includes('prawn')) {
+              price = 80.00; // Cocktail Prawn Platter base price
+            } else {
+              // Default variable pricing base for other items
+              price = 50.00;
+            }
+            logger.info(`🔧 Variable pricing detected for "${item.item_data.name}" - using base price: $${price}`);
           }
 
           // Find image from related objects
@@ -367,47 +382,47 @@ async function verifySyncCompleteness(
     itemsByCategory.set(item.categoryName, categoryItems);
   }
 
-  // Check each category
-  for (const [categoryName, items] of itemsByCategory) {
-    const squareCount = items.length;
-    let localCount = 0;
+    // Check each category
+    for (const [categoryName, items] of itemsByCategory) {
+      const squareCount = items.length;
+      let localCount = 0;
 
-    if (targetTable === 'products') {
-      const normalizedName = CategoryMapper.normalizeCategory(categoryName);
-      localCount = await prisma.product.count({
-        where: {
-          active: true,
-          category: {
-            name: {
-              equals: normalizedName,
-              mode: 'insensitive'
+      if (targetTable === 'products') {
+        const normalizedName = CategoryMapper.normalizeCategory(categoryName);
+        localCount = await prisma.product.count({
+          where: {
+            active: true,
+            category: {
+              name: {
+                equals: normalizedName,
+                mode: 'insensitive'
+              }
             }
           }
-        }
-      });
-    } else {
-      localCount = await prisma.cateringItem.count({
-        where: {
-          isActive: true,
-          squareCategory: categoryName
+        });
+      } else {
+        localCount = await prisma.cateringItem.count({
+          where: {
+            isActive: true,
+            squareCategory: categoryName
+          }
+        });
+      }
+
+      const discrepancy = Math.abs(squareCount - localCount);
+      totalDiscrepancy += discrepancy;
+
+      categories.push({
+        squareId: CategoryMapper.findSquareIdByLocalName(categoryName) || 'unknown',
+        squareName: categoryName,
+        localName: categoryName,
+        itemCount: {
+          square: squareCount,
+          local: localCount,
+          discrepancy
         }
       });
     }
-
-    const discrepancy = Math.abs(squareCount - localCount);
-    totalDiscrepancy += discrepancy;
-
-    categories.push({
-      squareId: CategoryMapper.findSquareIdByLocalName(categoryName) || 'unknown',
-      squareName: categoryName,
-      localName: categoryName,
-      itemCount: {
-        square: squareCount,
-        local: localCount,
-        discrepancy
-      }
-    });
-  }
 
   return {
     categories,
@@ -432,12 +447,14 @@ async function performUnifiedSync(
   errors: number;
   report: any;
   verification: SyncVerificationResult;
+  archiveResult: any;
 }> {
   const syncLogger = new SyncLogger();
   const allSyncedItems: SquareItem[] = [];
   let syncedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
+  let archiveResult = null;
 
   syncLogger.logSyncStart(`Unified Sync (${strategy} -> ${targetTable})${dryRun ? ' [DRY RUN]' : ''}`);
 
@@ -468,7 +485,8 @@ async function performUnifiedSync(
         for (const item of squareItems) {
           try {
             if (dryRun) {
-              syncLogger.logInfo(`[DRY RUN] Would sync: ${item.name} to ${targetTable}`);
+              // During dry run, log items as if they would be synced so they appear in the report
+              syncLogger.logItemProcessed(item.id, item.name, 'synced', `[DRY RUN] Would sync to ${targetTable}`);
               categorySynced++;
             } else {
               if (targetTable === 'products') {
@@ -495,6 +513,18 @@ async function performUnifiedSync(
       }
     }
 
+    // Archive products that are no longer in Square (if not dry run)
+    if (!dryRun) {
+      try {
+        const allValidSquareIds = allSyncedItems.map(item => item.id);
+        archiveResult = await archiveRemovedSquareProducts(allValidSquareIds);
+        syncLogger.logInfo(`🗃️ Archive operation: ${archiveResult.archived} products archived, ${archiveResult.errors} errors`);
+      } catch (archiveError) {
+        syncLogger.logError(`❌ Archive operation failed: ${archiveError}`);
+        errorCount++;
+      }
+    }
+
     // Verify sync completeness
     const verification = await verifySyncCompleteness(allSyncedItems, targetTable);
     const report = syncLogger.generateReport();
@@ -511,7 +541,8 @@ async function performUnifiedSync(
       skippedItems: skippedCount,
       errors: errorCount,
       report,
-      verification
+      verification,
+      archiveResult
     };
 
   } catch (error) {
@@ -570,15 +601,20 @@ export async function POST(request: NextRequest) {
       strategy: syncDecision.strategy,
       targetTable: syncDecision.targetTable,
       reason: syncDecision.reason,
-      message: success 
-        ? `Unified sync completed: ${result.syncedItems} items synced to ${syncDecision.targetTable} table`
-        : `Unified sync completed with errors: ${result.errors} errors occurred`,
+      message: dryRun
+        ? success 
+          ? `[DRY RUN] Unified sync preview completed: ${result.syncedItems} items would be synced to ${syncDecision.targetTable} table`
+          : `[DRY RUN] Unified sync preview completed with errors: ${result.errors} errors occurred`
+        : success 
+          ? `Unified sync completed: ${result.syncedItems} items synced to ${syncDecision.targetTable} table`
+          : `Unified sync completed with errors: ${result.errors} errors occurred`,
       data: {
         syncedItems: result.syncedItems,
         skippedItems: result.skippedItems,
         errors: result.errors,
         verification: result.verification,
-        report: result.report.summary
+        report: result.report.summary,
+        archive: result.archiveResult || null
       },
       timestamp: new Date().toISOString()
     });

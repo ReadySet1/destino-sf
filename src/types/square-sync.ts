@@ -147,18 +147,8 @@ export const FILTERED_SYNC_CONFIG: FilteredSyncConfig = {
     /dulce de leche/i
   ],
   protectedCategories: [
-    'CATERING',
-    'CATERING- APPETIZERS',
-    'CATERING- ENTREES', 
-    'CATERING- DESSERTS',
-    'CATERING- BEVERAGES',
-    'CATERING- SIDES',
-    'CATERING- PACKAGES',
-    'CATERING- LUNCH, ENTREES',
-    'CATERING- LUNCH, STARTERS',
-    'CATERING- BUFFET, ENTREES',
-    'CATERING- BUFFET, STARTERS',
-    'CATERING- SHARE PLATTERS'
+    // Protection removed - full sync now enabled
+    // Items removed from Square will be archived locally
   ],
   enableImageSync: true,
   validateBeforeSync: true,

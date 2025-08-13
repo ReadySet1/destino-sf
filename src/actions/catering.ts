@@ -143,46 +143,128 @@ export async function getCateringItem(
 }
 
 /**
- * Fetches all active catering items using UNIFIED approach (PRODUCTS_ONLY)
+ * Fetches all active catering items using PRODUCTS_ONLY approach
  * Phase 4: Updated to use single source of truth based on unified sync strategy
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
-    // Import the unified data manager
-    const { getCateringItems: getUnifiedCateringItems } = await import('@/lib/catering-data-manager');
+    console.log('🔧 [CATERING] Fetching catering items directly from products table...');
     
-    console.log('🔧 [CATERING] Using unified data manager (PRODUCTS_ONLY)...');
-    
-    // Force PRODUCTS_ONLY strategy - no auto-detection or fallback to catering_items
-    return await getUnifiedCateringItems({
-      strategy: 'PRODUCTS_ONLY',
-      logStatistics: true
+    const products = await db.product.findMany({
+      where: {
+        active: true,
+        category: {
+          name: {
+            contains: 'CATERING'
+          }
+        }
+      },
+      include: {
+        category: true,
+        variants: true
+      },
+      orderBy: [
+        { category: { name: 'asc' } },
+        { name: 'asc' }
+      ]
     });
+
+    console.log(`✅ [CATERING] Found ${products.length} products with CATERING categories`);
+
+    const cateringItems: CateringItem[] = [];
+    
+    products.forEach(product => {
+      const category = mapSquareCategoryToEnum(product.category?.name);
+      const firstImage = product.images?.[0] || null;
+      
+      if (!product.variants || product.variants.length === 0) {
+        // No variants - single item
+        cateringItems.push({
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          price: Number(product.price),
+          category,
+          isVegetarian: false,
+          isVegan: false,
+          isGlutenFree: false,
+          servingSize: null,
+          imageUrl: firstImage,
+          isActive: true,
+          squareCategory: product.category?.name || '',
+          squareProductId: product.squareId,
+          createdAt: product.createdAt,
+          updatedAt: product.updatedAt,
+        });
+      } else {
+        // Convert each variant to separate item
+        product.variants.forEach(variant => {
+          const servingSize = variant.name === 'Small' 
+            ? '10-20 people' 
+            : variant.name === 'Large' 
+            ? '25-40 people' 
+            : null;
+            
+          const displayName = variant.name === 'Regular' 
+            ? product.name 
+            : `${product.name} - ${variant.name}`;
+            
+          cateringItems.push({
+            id: `${product.id}-${variant.id}`,
+            name: displayName,
+            description: product.description || '',
+            price: variant.price ? Number(variant.price) : Number(product.price),
+            category,
+            isVegetarian: false,
+            isVegan: false,
+            isGlutenFree: false,
+            servingSize,
+            imageUrl: firstImage,
+            isActive: true,
+            squareCategory: product.category?.name || '',
+            squareProductId: product.squareId,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+          });
+        });
+      }
+    });
+
+    console.log(`✅ [CATERING] Converted ${products.length} products to ${cateringItems.length} catering items`);
+    return cateringItems;
   } catch (error) {
-    console.error('❌ [CATERING] Error with unified approach:', error);
-    // Return empty array instead of fallback to deprecated catering_items table
+    console.error('❌ [CATERING] Error fetching catering items:', error);
     return [];
   }
 }
 
+// Helper function to map Square category names to enum
+function mapSquareCategoryToEnum(categoryName: string | undefined): CateringItemCategory {
+  if (!categoryName) return CateringItemCategory.STARTER;
+  
+  const name = categoryName.toUpperCase();
+  
+  if (name.includes('DESSERT')) return CateringItemCategory.DESSERT;
+  if (name.includes('ENTREE')) return CateringItemCategory.ENTREE;
+  if (name.includes('SIDE')) return CateringItemCategory.SIDE;
+  if (name.includes('STARTER')) return CateringItemCategory.STARTER;
+  if (name.includes('BEVERAGE')) return CateringItemCategory.BEVERAGE;
+  if (name.includes('APPETIZER')) return CateringItemCategory.STARTER;
+  
+  return CateringItemCategory.STARTER;
+}
+
 /**
- * Fetches catering items by category (UPDATED to use unified approach - PRODUCTS_ONLY)
+ * Fetches catering items by category (UPDATED to use direct products table approach)
  */
 export async function getCateringItemsByCategory(
   category: CateringItemCategory
 ): Promise<CateringItem[]> {
   try {
-    // Import the unified data manager
-    const { getCateringItemsByCategory: getUnifiedCateringItemsByCategory } = await import('@/lib/catering-data-manager');
-    
-    // Force PRODUCTS_ONLY strategy - no fallback to deprecated catering_items table
-    return await getUnifiedCateringItemsByCategory(category, {
-      strategy: 'PRODUCTS_ONLY',
-      logStatistics: false
-    });
+    const allItems = await getCateringItems();
+    return allItems.filter(item => item.category === category);
   } catch (error) {
     console.error(`❌ Error fetching catering items for category ${category}:`, error);
-    // Return empty array instead of fallback to deprecated catering_items table
     return [];
   }
 }

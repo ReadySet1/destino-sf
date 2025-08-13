@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { PlatterMenuItem } from '@/components/Catering/PlatterMenuItem';
-import { ShoppingCart, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { ShoppingCart, Users } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toTitleCase } from '@/lib/utils';
@@ -35,9 +35,11 @@ const formatDescription = (str: string | null | undefined): string => {
 
 // Function to check if an item is a platter item
 const isPlatterItem = (item: CateringItem): boolean => {
-  return (
-    item.name.includes('Platter') && (item.name.includes('Small') || item.name.includes('Large'))
-  );
+  const name = item.name.toLowerCase();
+  const hasPlatter = name.includes('platter');
+  const hasSize = name.includes('small') || name.includes('large');
+  
+  return hasPlatter && hasSize;
 };
 
 // Function to get base platter name
@@ -49,8 +51,10 @@ const getBasePlatterName = (name: string): string => {
 const groupPlatterItems = (items: CateringItem[]): Record<string, CateringItem[]> => {
   const platterGroups: Record<string, CateringItem[]> = {};
 
-  items.forEach(item => {
-    if (isPlatterItem(item)) {
+  items.forEach((item, index) => {
+    const isPlatter = isPlatterItem(item);
+    
+    if (isPlatter) {
       const baseName = getBasePlatterName(item.name);
       if (!platterGroups[baseName]) {
         platterGroups[baseName] = [];
@@ -210,29 +214,25 @@ const CategorySection: React.FC<CategorySectionProps> = ({
   items,
   isDessertSection = false,
 }) => {
-  const [showAll, setShowAll] = useState(false);
-
   // Group platter items and separate non-platter items
   const platterGroups = groupPlatterItems(items);
   const nonPlatterItems = items.filter(item => !isPlatterItem(item));
 
   // Create display items array with grouped platters and individual items
-  const displayItemsArray: Array<{
+  const displayItems: Array<{
     type: 'platter' | 'item';
     data: CateringItem[] | CateringItem;
   }> = [];
 
-  // Add platter groups
+  // Add platter groups first (these will be single cards with size selection)
   Object.entries(platterGroups).forEach(([baseName, platterItems]) => {
-    displayItemsArray.push({ type: 'platter', data: platterItems });
+    displayItems.push({ type: 'platter', data: platterItems });
   });
 
-  // Add individual items
+  // Add individual non-platter items
   nonPlatterItems.forEach(item => {
-    displayItemsArray.push({ type: 'item', data: item });
+    displayItems.push({ type: 'item', data: item });
   });
-
-  const displayItems = showAll ? displayItemsArray : displayItemsArray.slice(0, 6);
 
   return (
     <div
@@ -269,27 +269,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
           </motion.div>
         ))}
       </div>
-
-      {displayItemsArray.length > 6 && (
-        <div className="mt-10 text-center">
-          <Button
-            variant="outline"
-            onClick={() => setShowAll(!showAll)}
-            className="border-gray-300 text-gray-700 py-5 px-8 rounded-full flex items-center gap-2 hover:bg-gray-50 transition-colors"
-          >
-            {showAll ? (
-              <>
-                Show Less <ChevronUp className="h-4 w-4 ml-1" />
-              </>
-            ) : (
-              <>
-                Show {displayItemsArray.length - 6} More Options{' '}
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </>
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
