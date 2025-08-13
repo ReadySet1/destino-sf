@@ -143,252 +143,51 @@ export async function getCateringItem(
 }
 
 /**
- * Fetches all active catering items using Prisma
- * Enhanced to also fetch products from Product table that belong to catering categories
+ * Fetches all active catering items using UNIFIED approach (PRODUCTS_ONLY)
+ * Phase 4: Updated to use single source of truth based on unified sync strategy
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
   try {
-    console.log('🔧 [CATERING] Fetching catering items via Prisma...');
-
-    const items = await db.cateringItem.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        category: 'asc',
-      },
+    // Import the unified data manager
+    const { getCateringItems: getUnifiedCateringItems } = await import('@/lib/catering-data-manager');
+    
+    console.log('🔧 [CATERING] Using unified data manager (PRODUCTS_ONLY)...');
+    
+    // Force PRODUCTS_ONLY strategy - no auto-detection or fallback to catering_items
+    return await getUnifiedCateringItems({
+      strategy: 'PRODUCTS_ONLY',
+      logStatistics: true
     });
-
-    console.log(
-      `✅ [CATERING] Successfully fetched ${items?.length || 0} catering items from CateringItem table`
-    );
-
-    const cateringItems =
-      (items?.map((item: any) => ({
-        ...item,
-        price: Number(item.price),
-      })) as CateringItem[]) || [];
-
-    // Also fetch products from Product table that belong to catering categories
-    try {
-      const cateringProducts = await db.product.findMany({
-        where: {
-          active: true,
-          OR: [
-            {
-              category: {
-                name: {
-                  contains: 'CATERING',
-                  mode: 'insensitive',
-                },
-              },
-            },
-            {
-              category: {
-                name: {
-                  contains: 'SHARE PLATTERS',
-                  mode: 'insensitive',
-                },
-              },
-            },
-          ],
-        },
-        include: {
-          category: {
-            select: {
-              name: true,
-            },
-          },
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-
-      console.log(`✅ [CATERING] Found ${cateringProducts.length} products in catering categories`);
-
-      // Create a map of real images from Product table
-      const productImageMap = new Map();
-      cateringProducts.forEach(product => {
-        const imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
-        if (imageUrl && product.squareId) {
-          productImageMap.set(product.squareId, imageUrl);
-        }
-      });
-
-      // Create a map for base platter names to their real images
-      const baseItemImageMap = new Map();
-      cateringItems.forEach(item => {
-        if (item.squareProductId && productImageMap.has(item.squareProductId)) {
-          const realImageUrl = productImageMap.get(item.squareProductId);
-          const baseName = item.name.toLowerCase();
-          baseItemImageMap.set(baseName, realImageUrl);
-        }
-      });
-
-      // Update existing CateringItems with real images from Product table
-      let updatedCount = 0;
-      const updatedCateringItems = cateringItems.map(cateringItem => {
-        let realImageUrl = null;
-
-        // First try: Direct squareProductId match
-        if (cateringItem.squareProductId && productImageMap.has(cateringItem.squareProductId)) {
-          realImageUrl = productImageMap.get(cateringItem.squareProductId);
-          console.log(`🖼️ [CATERING] Direct image match for "${cateringItem.name}" via Square ID: ${cateringItem.squareProductId}`);
-        }
-        // Second try: For size variants (Small/Large), match with base item name
-        else if (cateringItem.name.includes(' - ')) {
-          const baseName = cateringItem.name.split(' - ')[0].toLowerCase();
-          if (baseItemImageMap.has(baseName)) {
-            realImageUrl = baseItemImageMap.get(baseName);
-            console.log(`🖼️ [CATERING] Variant image match for "${cateringItem.name}" via base name: ${baseName}`);
-          }
-        }
-        // Third try: Name-based matching for products that might not have exact Square ID match
-        else {
-          const normalizedCateringName = cateringItem.name.toLowerCase().trim();
-          const matchingProduct = cateringProducts.find(product => 
-            product.name.toLowerCase().trim() === normalizedCateringName ||
-            product.name.toLowerCase().includes(normalizedCateringName) ||
-            normalizedCateringName.includes(product.name.toLowerCase())
-          );
-          if (matchingProduct && matchingProduct.images && matchingProduct.images.length > 0) {
-            realImageUrl = matchingProduct.images[0];
-            console.log(`🖼️ [CATERING] Name-based image match for "${cateringItem.name}" via product: ${matchingProduct.name}`);
-          }
-        }
-
-        if (realImageUrl) {
-          const isGenericImage =
-            cateringItem.imageUrl?.includes('/images/catering/') &&
-            (cateringItem.imageUrl.includes('appetizer-package') ||
-              cateringItem.imageUrl.includes('default-item'));
-
-          if (isGenericImage || !cateringItem.imageUrl) {
-            updatedCount++;
-            return {
-              ...cateringItem,
-              imageUrl: realImageUrl,
-            };
-          }
-        }
-
-        return cateringItem;
-      });
-
-      if (updatedCount > 0) {
-        console.log(
-          `🔄 [CATERING] Updated ${updatedCount} items with real images from Product table`
-        );
-      }
-
-      // Convert remaining Product items that don't have CateringItem equivalents
-      const productAsCateringItems: CateringItem[] = cateringProducts
-        .filter(product => {
-          // Skip products that already have CateringItem equivalents
-          // Improved deduplication: check both squareProductId and name matching
-          const existsInCateringItems = cateringItems.some(
-            cateringItem => 
-              // Direct Square ID match
-              (cateringItem.squareProductId && cateringItem.squareProductId === product.squareId) ||
-              // Name-based match (normalized for comparison)
-              (cateringItem.name.toLowerCase().trim() === product.name.toLowerCase().trim())
-          );
-
-          return !existsInCateringItems;
-        })
-        .map(product => {
-          // Determine category based on the Square category name using SQUARE_CATEGORY_MAPPING
-          let category = 'STARTER'; // default
-          const categoryName = product.category?.name || '';
-
-          // Use the mapping logic similar to getItemsForTab
-          if (categoryName.includes('DESSERT')) {
-            category = 'DESSERT';
-          } else if (categoryName.includes('ENTREE') || categoryName.includes('BUFFET')) {
-            category = 'ENTREE';
-          } else if (categoryName.includes('SIDE')) {
-            category = 'SIDE';
-          } else if (categoryName.includes('SALAD')) {
-            category = 'SALAD';
-          } else if (categoryName.includes('BEVERAGE')) {
-            category = 'BEVERAGE';
-          }
-
-          // Same logic as admin: get first image if available
-          const firstImage =
-            product.images && product.images.length > 0 && product.images[0]
-              ? product.images[0]
-              : null;
-
-          return {
-            id: product.id,
-            name: product.name,
-            description: product.description || '',
-            price: Number(product.price),
-            category: category as any,
-            isVegetarian: false,
-            isVegan: false,
-            isGlutenFree: false,
-            servingSize: null,
-            imageUrl: firstImage,
-            isActive: true,
-            squareCategory: product.category?.name || '', // Ensure it's never null for tab filtering
-            squareProductId: product.squareId,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt,
-          } as CateringItem;
-        });
-
-      console.log(
-        `✅ [CATERING] Converted ${productAsCateringItems.length} products to catering items`
-      );
-
-      // Merge the results - updated catering items first, then new products
-      const allItems = [...updatedCateringItems, ...productAsCateringItems];
-
-      console.log(
-        `✅ [CATERING] Total items returned: ${allItems.length} (${updatedCateringItems.length} from CateringItem + ${productAsCateringItems.length} from Product)`
-      );
-
-      return allItems;
-    } catch (productError) {
-      console.error('❌ [CATERING] Error fetching products from Product table:', productError);
-      // Return just the catering items if product fetch fails
-      return cateringItems;
-    }
   } catch (error) {
-    console.error('❌ [CATERING] Unexpected error fetching catering items:', error);
+    console.error('❌ [CATERING] Error with unified approach:', error);
+    // Return empty array instead of fallback to deprecated catering_items table
     return [];
   }
 }
 
 /**
- * Fetches catering items by category
+ * Fetches catering items by category (UPDATED to use unified approach - PRODUCTS_ONLY)
  */
 export async function getCateringItemsByCategory(
   category: CateringItemCategory
 ): Promise<CateringItem[]> {
   try {
-    const items = await db.cateringItem.findMany({
-      where: {
-        isActive: true,
-        category,
-      },
-      orderBy: {
-        name: 'asc',
-      },
+    // Import the unified data manager
+    const { getCateringItemsByCategory: getUnifiedCateringItemsByCategory } = await import('@/lib/catering-data-manager');
+    
+    // Force PRODUCTS_ONLY strategy - no fallback to deprecated catering_items table
+    return await getUnifiedCateringItemsByCategory(category, {
+      strategy: 'PRODUCTS_ONLY',
+      logStatistics: false
     });
-
-    return items.map((item: any) => ({
-      ...item,
-      price: Number(item.price),
-    })) as unknown as CateringItem[];
   } catch (error) {
-    console.error(`Error fetching catering items for category ${category}:`, error);
-    throw new Error(`Failed to fetch catering items for category ${category}`);
+    console.error(`❌ Error fetching catering items for category ${category}:`, error);
+    // Return empty array instead of fallback to deprecated catering_items table
+    return [];
   }
 }
+
+
 
 /**
  * Creates a new catering package

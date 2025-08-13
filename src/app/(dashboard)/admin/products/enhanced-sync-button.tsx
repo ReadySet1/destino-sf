@@ -7,19 +7,26 @@ import { Loader2, Download, CheckCircle, AlertTriangle, Info } from 'lucide-reac
 
 interface SyncResult {
   success: boolean;
-  message: string;
+  message?: string;
+  error?: string;
+  strategy?: string;
+  targetTable?: string;
   data: {
     syncedItems: number;
     skippedItems: number;
-    protectedItems: number;
-    newCategories: string[];
-    categoryBreakdown: Array<{
-      category: string;
-      synced: number;
-      skipped: number;
-      protected: number;
-    }>;
-    errors: string[];
+    errors: number;
+    verification?: {
+      missingInDB: number;
+    };
+    report?: {
+      summary: any;
+      categoryBreakdown: Array<{
+        category: string;
+        synced: number;
+        skipped: number;
+        items?: any[];
+      }>;
+    };
   };
 }
 
@@ -49,10 +56,14 @@ export function EnhancedSyncButton() {
     try {
       setIsLoading(true);
       
-      const response = await fetch('/api/square/enhanced-sync', {
+      const response = await fetch('/api/square/unified-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: true })
+        body: JSON.stringify({ 
+          strategy: 'PRODUCTS_ONLY',
+          dryRun: true,
+          categories: ['CATERING- APPETIZERS', 'CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS', 'CATERING- LUNCH, STARTERS', 'CATERING- LUNCH, ENTREES', 'CATERING- LUNCH, SIDES']
+        })
       });
 
       if (!response.ok) {
@@ -62,9 +73,14 @@ export function EnhancedSyncButton() {
       const result = await response.json();
       
       if (result.success) {
-        setPreviewData(result.data);
+        // Convert unified sync dry-run response to preview format
+        const previewData = {
+          totalMissing: result.data.verification?.missingInDB || 0,
+          categories: result.data.report?.categoryBreakdown || []
+        };
+        setPreviewData(previewData);
         setShowPreview(true);
-        toast.success(`Found ${result.data.totalMissing} missing items across ${result.data.categories.length} categories`);
+        toast.success(`Found ${previewData.totalMissing} items to sync (${result.strategy} strategy)`);
       } else {
         toast.error(`Preview failed: ${result.message}`);
       }
@@ -81,10 +97,15 @@ export function EnhancedSyncButton() {
       setIsLoading(true);
       setShowPreview(false);
       
-      const response = await fetch('/api/square/enhanced-sync', {
+      const response = await fetch('/api/square/unified-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: false })
+        body: JSON.stringify({ 
+          strategy: 'PRODUCTS_ONLY',
+          dryRun: false,
+          categories: ['CATERING- APPETIZERS', 'CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS', 'CATERING- LUNCH, STARTERS', 'CATERING- LUNCH, ENTREES', 'CATERING- LUNCH, SIDES'],
+          forceUpdate: false
+        })
       });
 
       if (!response.ok) {
@@ -97,10 +118,10 @@ export function EnhancedSyncButton() {
 
       if (result.success) {
         toast.success(
-          `Enhanced sync completed: ${result.data.syncedItems} items synced, ${result.data.protectedItems} items protected`
+          `Unified sync completed: ${result.data.syncedItems} items synced to products table (${result.strategy})`
         );
       } else {
-        toast.error(`Enhanced sync failed: ${result.message}`);
+        toast.error(`Unified sync failed: ${result.message || result.error}`);
       }
     } catch (error) {
       console.error('Enhanced sync error:', error);
@@ -138,7 +159,7 @@ export function EnhancedSyncButton() {
           ) : (
             <Download className="h-4 w-4" />
           )}
-          Enhanced Sync All Missing
+          Unified Sync (Products Only)
         </Button>
       </div>
 
@@ -147,10 +168,10 @@ export function EnhancedSyncButton() {
         <div className="flex items-start">
           <Info className="h-5 w-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-blue-800 mb-1">Enhanced Square Sync</p>
+            <p className="font-medium text-blue-800 mb-1">Unified Products-Only Sync</p>
             <p className="text-blue-700">
-              Syncs ALL missing catering items from Square while protecting existing appetizers, 
-              empanadas, and alfajores. Uses intelligent duplicate detection to prevent conflicts.
+              Syncs ALL missing catering items from Square directly to the products table using 
+              our unified data model. Uses intelligent duplicate detection to prevent conflicts.
             </p>
           </div>
         </div>
@@ -238,34 +259,30 @@ export function EnhancedSyncButton() {
             Enhanced Sync Results
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{syncResult.data.syncedItems}</div>
-              <div className="text-sm text-green-700">Items Synced</div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{syncResult.data.protectedItems}</div>
-              <div className="text-sm text-blue-700">Items Protected</div>
+              <div className="text-sm text-green-700">Items Synced to {syncResult.targetTable}</div>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">{syncResult.data.skippedItems}</div>
               <div className="text-sm text-yellow-700">Items Skipped</div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{syncResult.data.newCategories.length}</div>
-              <div className="text-sm text-purple-700">New Categories</div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">{syncResult.data.errors}</div>
+              <div className="text-sm text-red-700">Errors</div>
             </div>
           </div>
 
-          {syncResult.data.categoryBreakdown.length > 0 && (
+          {syncResult.data.report?.categoryBreakdown && syncResult.data.report.categoryBreakdown.length > 0 && (
             <div className="space-y-2">
               <h4 className="font-medium">Category Breakdown:</h4>
               <div className="space-y-1">
-                {syncResult.data.categoryBreakdown.map((cat, index) => (
+                {syncResult.data.report.categoryBreakdown.map((cat, index) => (
                   <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span className="font-medium">{cat.category}</span>
                     <div className="text-sm text-gray-600">
-                      {cat.synced} synced, {cat.protected} protected, {cat.skipped} skipped
+                      {cat.synced} synced, {cat.skipped} skipped
                     </div>
                   </div>
                 ))}
@@ -273,14 +290,12 @@ export function EnhancedSyncButton() {
             </div>
           )}
 
-          {syncResult.data.errors.length > 0 && (
+          {syncResult.data.errors > 0 && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-              <h4 className="font-medium text-red-800 mb-2">Errors:</h4>
-              <ul className="text-sm text-red-700 space-y-1">
-                {syncResult.data.errors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-              </ul>
+              <h4 className="font-medium text-red-800 mb-2">Errors occurred during sync:</h4>
+              <p className="text-sm text-red-700">
+                {syncResult.data.errors} errors occurred. Check the server logs for details.
+              </p>
             </div>
           )}
         </div>

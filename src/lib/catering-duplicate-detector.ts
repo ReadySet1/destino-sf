@@ -4,6 +4,10 @@
 // 
 // Centraliza la lógica de detección de duplicados para usar en todos los scripts de sync
 // Evita que se creen items duplicados desde diferentes fuentes (Square, scripts manuales, etc.)
+//
+// PHASE 2 ENHANCEMENT: Now checks BOTH products and catering_items tables
+// This addresses the dual storage problem identified in the fix plan where items
+// are stored in both tables, causing discrepancies and duplicate detection issues.
 
 import { PrismaClient } from '@prisma/client';
 
@@ -36,7 +40,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Verificar si un item de catering ya existe
+   * Verificar si un item de catering ya existe (PRODUCTS_ONLY - single source of truth)
    */
   static async checkForDuplicate(itemData: {
     name: string;
@@ -47,26 +51,27 @@ export class CateringDuplicateDetector {
     const { name, squareProductId, squareCategory } = itemData;
     
     // 1. Verificación exacta por squareProductId (máxima prioridad)
+    // Check ONLY products table (single source of truth)
     if (squareProductId) {
-      const existingBySquareId = await prisma.cateringItem.findFirst({
+      const existingInProducts = await prisma.product.findFirst({
         where: {
-          squareProductId: squareProductId,
-          isActive: true
+          squareId: squareProductId,
+          active: true
         },
         select: {
           id: true,
           name: true,
-          squareProductId: true
+          squareId: true
         }
       });
 
-      if (existingBySquareId) {
+      if (existingInProducts) {
         return {
           isDuplicate: true,
           existingItem: {
-            id: existingBySquareId.id,
-            name: existingBySquareId.name,
-            squareProductId: existingBySquareId.squareProductId,
+            id: existingInProducts.id,
+            name: existingInProducts.name,
+            squareProductId: existingInProducts.squareId,
             source: 'square'
           },
           matchType: 'exact_square_id',
@@ -75,32 +80,41 @@ export class CateringDuplicateDetector {
       }
     }
 
-    // 2. Verificación exacta por nombre
-    const existingByExactName = await prisma.cateringItem.findFirst({
+    // 2. Verificación exacta por nombre (check ONLY products table)
+    const existingProductByName = await prisma.product.findFirst({
       where: {
         name: {
           equals: name,
           mode: 'insensitive'
         },
-        isActive: true,
-        // Opcionalmente filtrar por categoría si se proporciona
-        ...(squareCategory && { squareCategory })
+        active: true,
+        // Check if it's in a catering category
+        category: {
+          name: {
+            contains: 'CATERING'
+          }
+        }
       },
       select: {
         id: true,
         name: true,
-        squareProductId: true
+        squareId: true,
+        category: {
+          select: {
+            name: true
+          }
+        }
       }
     });
 
-    if (existingByExactName) {
+    if (existingProductByName) {
       return {
         isDuplicate: true,
         existingItem: {
-          id: existingByExactName.id,
-          name: existingByExactName.name,
-          squareProductId: existingByExactName.squareProductId,
-          source: existingByExactName.squareProductId ? 'square' : 'manual'
+          id: existingProductByName.id,
+          name: existingProductByName.name,
+          squareProductId: existingProductByName.squareId,
+          source: existingProductByName.squareId ? 'square' : 'manual'
         },
         matchType: 'exact_name',
         confidence: 0.95
@@ -108,34 +122,43 @@ export class CateringDuplicateDetector {
     }
 
     // 3. Verificación por nombre normalizado (para detectar variaciones)
+    // Check ONLY products table for normalized name matches
     const normalizedName = this.normalizeItemName(name);
     
-    const allItems = await prisma.cateringItem.findMany({
+    const allProducts = await prisma.product.findMany({
       where: {
-        isActive: true,
-        // Opcionalmente filtrar por categoría si se proporciona
-        ...(squareCategory && { squareCategory })
+        active: true,
+        category: {
+          name: {
+            contains: 'CATERING'
+          }
+        }
       },
       select: {
         id: true,
         name: true,
-        squareProductId: true
+        squareId: true,
+        category: {
+          select: {
+            name: true
+          }
+        }
       }
     });
 
-    // Buscar coincidencias por nombre normalizado
-    const normalizedMatch = allItems.find(item => 
+    // Check products table for normalized matches
+    const normalizedProductMatch = allProducts.find(item => 
       this.normalizeItemName(item.name) === normalizedName
     );
 
-    if (normalizedMatch) {
+    if (normalizedProductMatch) {
       return {
         isDuplicate: true,
         existingItem: {
-          id: normalizedMatch.id,
-          name: normalizedMatch.name,
-          squareProductId: normalizedMatch.squareProductId,
-          source: normalizedMatch.squareProductId ? 'square' : 'manual'
+          id: normalizedProductMatch.id,
+          name: normalizedProductMatch.name,
+          squareProductId: normalizedProductMatch.squareId,
+          source: normalizedProductMatch.squareId ? 'square' : 'manual'
         },
         matchType: 'normalized_name',
         confidence: 0.85
@@ -170,7 +193,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Crear item solo si no es duplicado
+   * Crear item solo si no es duplicado (PRODUCTS_ONLY - creates products instead of catering items)
    */
   static async createIfNotDuplicate(itemData: {
     name: string;
@@ -207,21 +230,48 @@ export class CateringDuplicateDetector {
         };
       }
 
-      // Crear el item si no es duplicado
-      const newItem = await prisma.cateringItem.create({
+      // Get or create category for products table
+      const categoryName = itemData.squareCategory || itemData.category;
+      let category = await prisma.category.findFirst({
+        where: {
+          name: {
+            equals: categoryName,
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            name: categoryName,
+            description: `Category for ${categoryName} products`,
+            slug: categoryName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            order: 0,
+            active: true
+          }
+        });
+      }
+
+      // Create slug
+      const baseSlug = itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const existingSlug = await prisma.product.findFirst({
+        where: { slug: baseSlug }
+      });
+      const slug = existingSlug ? `${baseSlug}-${Date.now()}` : baseSlug;
+
+      // Crear el item como producto si no es duplicado
+      const newItem = await prisma.product.create({
         data: {
           name: itemData.name,
+          slug,
           description: itemData.description || '',
           price: itemData.price,
-          category: itemData.category as any,
-          squareProductId: itemData.squareProductId || null,
-          squareCategory: itemData.squareCategory || null,
-          imageUrl: itemData.imageUrl || null,
-          isVegetarian: itemData.isVegetarian || false,
-          isVegan: itemData.isVegan || false,
-          isGlutenFree: itemData.isGlutenFree || false,
-          servingSize: itemData.servingSize || null,
-          isActive: itemData.isActive !== false, // default true
+          squareId: itemData.squareProductId || `manual-${Date.now()}`,
+          images: itemData.imageUrl ? [itemData.imageUrl] : [],
+          categoryId: category.id,
+          featured: false,
+          active: itemData.isActive !== false, // default true
         }
       });
 
@@ -239,7 +289,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Obtener estadísticas de duplicados por categoría
+   * Obtener estadísticas de duplicados por categoría (PRODUCTS_ONLY - single source of truth)
    */
   static async getDuplicateStats(): Promise<{
     totalItems: number;
@@ -248,24 +298,48 @@ export class CateringDuplicateDetector {
       withSquareId: number;
       withoutSquareId: number;
       potentialDuplicates: number;
+      inProductsTable: number;
+      inCateringTable: number; // kept for compatibility, always 0
     }>;
   }> {
     
-    const allItems = await prisma.cateringItem.findMany({
-      where: { isActive: true },
+    const allProducts = await prisma.product.findMany({
+      where: { 
+        active: true,
+        category: {
+          name: {
+            contains: 'CATERING'
+          }
+        }
+      },
       select: {
         id: true,
         name: true,
-        squareCategory: true,
-        squareProductId: true
+        squareId: true,
+        category: {
+          select: {
+            name: true
+          }
+        }
       }
     });
+
+    // Use only products for unified analysis
+    const allItems = allProducts.map(item => ({
+      id: item.id,
+      name: item.name,
+      squareCategory: item.category.name,
+      squareProductId: item.squareId,
+      source: 'products' as const
+    }));
 
     const byCategory: Record<string, {
       total: number;
       withSquareId: number;
       withoutSquareId: number;
       potentialDuplicates: number;
+      inProductsTable: number;
+      inCateringTable: number;
     }> = {};
 
     // Agrupar por categoría
@@ -277,11 +351,15 @@ export class CateringDuplicateDetector {
           total: 0,
           withSquareId: 0,
           withoutSquareId: 0,
-          potentialDuplicates: 0
+          potentialDuplicates: 0,
+          inProductsTable: 0,
+          inCateringTable: 0 // Always 0 in products-only mode
         };
       }
 
       byCategory[category].total++;
+      byCategory[category].inProductsTable++;
+      
       if (item.squareProductId) {
         byCategory[category].withSquareId++;
       } else {

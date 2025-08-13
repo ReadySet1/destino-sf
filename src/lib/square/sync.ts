@@ -526,18 +526,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           logger.info(
             `Found ${cateringCategories.length} catering categories: ${JSON.stringify(cateringCategories)}`
           );
-
-          // Also synchronize catering items with Square
-          try {
-            logger.info('Starting catering items synchronization with Square...');
-            const cateringResult = await syncCateringItemsWithSquare(items, categories);
-            logger.info(`Catering items sync results: ${JSON.stringify(cateringResult)}`);
-          } catch (cateringError) {
-            logger.error('Error synchronizing catering items:', cateringError);
-            errors.push(
-              `Catering items sync error: ${cateringError instanceof Error ? cateringError.message : 'Unknown error'}`
-            );
-          }
+          logger.info('Catering items will be synced to products table as part of main sync (unified approach)');
         } else {
           logger.warn('No CATERING categories found in Square data!');
         }
@@ -1295,161 +1284,16 @@ function findMatchingCateringItems(cateringItems: any[], productName: string): a
 }
 
 /**
- * Synchronizes catering items with Square categories and images
- * This function ensures that catering items in our database are properly
- * linked to their corresponding Square categories and have up-to-date images
+ * Legacy function - No longer used in unified products-only approach
+ * All catering items are now synced as products during the main sync process
+ * @deprecated Use unified sync approach instead
  */
 export async function syncCateringItemsWithSquare(
   allProducts?: SquareCatalogObject[],
   allCategories?: SquareCatalogObject[]
 ): Promise<{ updated: number; skipped: number; errors: number; imagesUpdated: number }> {
-  const result = { updated: 0, skipped: 0, errors: 0, imagesUpdated: 0 };
-
-  try {
-    logger.info('Starting synchronization of catering items with Square categories and images...');
-
-    let cateringCategories: SquareCatalogObject[] = [];
-    let squareProducts: SquareCatalogObject[] = [];
-
-    // Use provided data if available, otherwise fetch
-    if (allCategories && allProducts) {
-      cateringCategories = allCategories.filter((cat: SquareCatalogObject) => {
-        const catName = cat.category_data?.name || '';
-        return isCateringCategory(catName);
-      });
-      squareProducts = allProducts;
-      logger.info(
-        `Using provided data: ${cateringCategories.length} catering categories, ${squareProducts.length} products`
-      );
-    } else {
-      // Fetch if not provided
-      const catalogClient = getCatalogClient();
-      const catalogApi = catalogClient?.catalogApi;
-      if (!catalogApi) {
-        throw new Error('Square catalog API not available');
-      }
-
-      const searchResponse = await catalogApi.searchCatalogObjects({
-        object_types: ['CATEGORY', 'ITEM'],
-      });
-
-      const allObjects = searchResponse.result.objects || [];
-      cateringCategories = allObjects
-        .filter((obj: SquareCatalogObject) => obj.type === 'CATEGORY')
-        .filter((cat: SquareCatalogObject) => {
-          const catName = cat.category_data?.name || '';
-          return isCateringCategory(catName);
-        });
-
-      squareProducts = allObjects.filter((obj: SquareCatalogObject) => obj.type === 'ITEM');
-      logger.info(
-        `Fetched ${cateringCategories.length} catering categories and ${squareProducts.length} products`
-      );
-    }
-
-    const cateringItems = await prisma.cateringItem.findMany({
-      where: { isActive: true },
-    });
-
-    logger.info(`Found ${cateringItems.length} active catering items in database`);
-
-    // Create a map of Square products for faster lookup
-    const productMap = new Map<string, SquareCatalogObject>();
-    squareProducts.forEach(product => {
-      productMap.set(product.id, product);
-    });
-
-    // Related objects for image processing
-    const relatedObjects = allProducts ? [] : await fetchRelatedObjects();
-
-    // Process each catering category efficiently
-    for (const category of cateringCategories) {
-      const categoryId = category.id;
-      const categoryName = category.category_data?.name || '';
-
-      logger.debug(`Processing category: ${categoryName} (${categoryId})`);
-
-      const categoryProducts = squareProducts.filter((product: SquareCatalogObject) => {
-        const productCategoryIds = product.item_data?.category_id
-          ? [product.item_data.category_id]
-          : product.item_data?.categories?.map(c => c.id) || [];
-
-        return productCategoryIds.includes(categoryId);
-      });
-
-      logger.debug(`Found ${categoryProducts.length} products in category ${categoryName}`);
-
-      // Update matching catering items in batches
-      const updatePromises = categoryProducts.map(async product => {
-        const productName = product.item_data?.name || '';
-        if (!productName) return;
-
-        // Use improved matching that handles name format differences
-        const matchingItems = findMatchingCateringItems(cateringItems, productName);
-
-        if (matchingItems.length === 0) {
-          logger.debug(`No matching catering item found for Square product: ${productName}`);
-          result.skipped++;
-          return;
-        }
-
-        // Update each matching item
-        for (const item of matchingItems) {
-          try {
-            const updateData: any = {
-              updatedAt: new Date(),
-            };
-
-            // Update Square category and product ID
-            if (categoryName) {
-              updateData.squareCategory = categoryName;
-            }
-            if (product.id) {
-              updateData.squareProductId = product.id;
-            }
-
-            // Check and update image if needed
-            if (!item.imageUrl || item.imageUrl === '') {
-              try {
-                const imageUrls = await getImageUrls(product, relatedObjects);
-                if (imageUrls.length > 0) {
-                  updateData.imageUrl = imageUrls[0];
-                  result.imagesUpdated++;
-                  logger.debug(`Updated image for catering item ${item.name}`);
-                }
-              } catch (imageError) {
-                logger.warn(`Could not fetch image for ${item.name}:`, imageError);
-              }
-            }
-
-            await prisma.cateringItem.update({
-              where: { id: item.id },
-              data: updateData,
-            });
-
-            logger.debug(
-              `Successfully updated catering item ${item.name} with Square product ID ${product.id}`
-            );
-            result.updated++;
-          } catch (error) {
-            logger.error(`Error updating catering item ${item.id}:`, error);
-            result.errors++;
-          }
-        }
-      });
-
-      await Promise.allSettled(updatePromises);
-    }
-
-    logger.info(
-      `Catering items sync complete: ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors, ${result.imagesUpdated} images updated`
-    );
-    return result;
-  } catch (error) {
-    logger.error('Error synchronizing catering items with Square:', error);
-    result.errors++;
-    return result;
-  }
+  logger.info('🚫 syncCateringItemsWithSquare is deprecated - using unified products-only approach');
+  return { updated: 0, skipped: 0, errors: 0, imagesUpdated: 0 };
 }
 
 // Helper function to fetch related objects when not provided

@@ -11,18 +11,18 @@
       "maxDuration": 60
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/icon0.svg",
-      "dest": "/src/app/icon0.svg"
+      "source": "/icon0.svg",
+      "destination": "/src/app/icon0.svg"
     },
     {
-      "src": "/icon1.png", 
-      "dest": "/src/app/icon1.png"
+      "source": "/icon1.png",
+      "destination": "/src/app/icon1.png"
     },
     {
-      "src": "/manifest.json",
-      "dest": "/src/app/manifest.json"
+      "source": "/manifest.json",
+      "destination": "/src/app/manifest.json"
     }
   ],
   "headers": [
@@ -35,19 +35,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "DATABASE_URL": "@database_url",
-    "DIRECT_URL": "@direct_url",
-    "SQUARE_APPLICATION_ID": "@square_application_id",
-    "SQUARE_ACCESS_TOKEN": "@square_access_token",
-    "SQUARE_WEBHOOK_SIGNATURE_KEY": "@square_webhook_signature_key",
-    "SHIPPO_API_TOKEN": "@shippo_api_token",
-    "RESEND_API_KEY": "@resend_api_key",
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
-  }
+  ]
 }
