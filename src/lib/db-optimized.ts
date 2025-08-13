@@ -19,6 +19,40 @@ interface DatabaseConfig {
 }
 
 /**
+ * Get properly formatted database URL
+ */
+function getDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
+  try {
+    const url = new URL(databaseUrl);
+    
+    // Check if it's a Supabase pooler URL (already optimized)
+    const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
+    
+    if (isSupabasePooler) {
+      // Supabase pooler URLs are already optimized, use as-is
+      return databaseUrl;
+    }
+    
+    // For non-Supabase databases, add connection parameters
+    url.searchParams.set('connection_limit', DATABASE_CONFIG.maxConnections.toString());
+    url.searchParams.set('pool_timeout', (DATABASE_CONFIG.connectionTimeout / 1000).toString());
+    url.searchParams.set('connect_timeout', (DATABASE_CONFIG.connectionTimeout / 1000).toString());
+    url.searchParams.set('socket_timeout', (DATABASE_CONFIG.idleTimeout / 1000).toString());
+    
+    return url.toString();
+  } catch (error) {
+    console.error('Failed to parse DATABASE_URL:', error);
+    // Fallback to original URL if parsing fails
+    return databaseUrl;
+  }
+}
+
+/**
  * Production-optimized database configuration
  */
 const DATABASE_CONFIG: DatabaseConfig = {
@@ -55,7 +89,7 @@ const createPrismaClient = () => {
 
     datasources: {
       db: {
-        url: `${process.env.DATABASE_URL}?connection_limit=${DATABASE_CONFIG.maxConnections}&pool_timeout=${DATABASE_CONFIG.connectionTimeout / 1000}&connect_timeout=${DATABASE_CONFIG.connectionTimeout / 1000}&socket_timeout=${DATABASE_CONFIG.idleTimeout / 1000}`,
+        url: getDatabaseUrl(),
       },
     },
   });
