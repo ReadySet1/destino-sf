@@ -6,18 +6,29 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Version identifier for the current Prisma client
-const CURRENT_PRISMA_VERSION = '2024-07-27-fix-categories-active';
+const CURRENT_PRISMA_VERSION = '2025-01-28-fix-prepared-statements';
 
 // Optimized Prisma configuration for Vercel/Serverless
 const prismaClientSingleton = () => {
   const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  
+  // Add connection pooling parameters to prevent prepared statement conflicts
+  let databaseUrl = process.env.DATABASE_URL;
+  if (isServerless && databaseUrl) {
+    const url = new URL(databaseUrl);
+    // Add pgbouncer and connection pooling parameters for serverless
+    url.searchParams.set('pgbouncer', 'true');
+    url.searchParams.set('connection_limit', '1');
+    url.searchParams.set('pool_timeout', '20');
+    databaseUrl = url.toString();
+  }
   
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     errorFormat: 'minimal',
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: databaseUrl,
       },
     },
     // Serverless-specific configurations
@@ -83,6 +94,14 @@ export async function cleanupForServerless(): Promise<void> {
     // In serverless, we don't want to disconnect the client
     // as it might be reused, but we can clean up any prepared statements
     await prisma.$executeRaw`DISCARD ALL`;
+    
+    // Also try to explicitly deallocate all prepared statements
+    try {
+      await prisma.$executeRaw`DEALLOCATE ALL`;
+    } catch (deallocateError) {
+      // This might fail in some PostgreSQL configurations, but that's okay
+      console.debug('DEALLOCATE ALL failed (this is often expected):', deallocateError);
+    }
   } catch (error) {
     console.warn('Error during serverless cleanup:', error);
   }
@@ -190,32 +209,65 @@ export async function withPreparedStatementHandling<T>(
   operation: () => Promise<T>,
   operationName: string = 'database operation'
 ): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    // Check if it's a prepared statement error
-    const isPreparedStatementError = 
-      error instanceof Error && 
-      (error.message.includes("prepared statement") ||
-       (error as any).code === '42P05');
-    
-    if (isPreparedStatementError) {
-      console.warn(`Prepared statement error in ${operationName}, attempting recovery...`);
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
       
-      try {
-        // Clean up prepared statements
-        await cleanupForServerless();
+      // Check if it's a prepared statement error or connection error
+      const isPreparedStatementError = 
+        error instanceof Error && 
+        (error.message.includes("prepared statement") ||
+         error.message.includes("already exists") ||
+         (error as any).code === '42P05');
+      
+      const isConnectionError = 
+        error instanceof Error && 
+        (error.message.includes("Can't reach database server") ||
+         error.message.includes("Connection terminated") ||
+         error.message.includes("ECONNRESET") ||
+         error.message.includes("ECONNREFUSED") ||
+         error.message.includes("ETIMEDOUT") ||
+         (error as any).code === 'P1001' ||
+         (error as any).code === 'P1008' ||
+         (error as any).code === 'P1017');
+      
+      if ((isPreparedStatementError || isConnectionError) && attempt < maxRetries) {
+        console.warn(`${operationName} attempt ${attempt} failed, retrying... Error: ${error.message}`);
         
-        // Try the operation again
-        return await operation();
-      } catch (retryError) {
-        console.error(`Recovery failed for ${operationName}:`, retryError);
-        throw retryError;
+        try {
+          if (isPreparedStatementError) {
+            // Clean up prepared statements
+            await cleanupForServerless();
+            
+            // Force regenerate client to ensure clean state
+            await forceRegenerateClient();
+          } else if (isConnectionError) {
+            // Just regenerate client for connection errors
+            await forceRegenerateClient();
+          }
+          
+          // Wait before retry with exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+        } catch (cleanupError) {
+          console.warn(`Cleanup failed on attempt ${attempt}:`, cleanupError);
+          // Continue to retry even if cleanup fails
+        }
+        
+        continue;
       }
+      
+      throw error;
     }
-    
-    throw error;
   }
+  
+  throw lastError || new Error(`Operation ${operationName} failed after ${maxRetries} attempts`);
 }
 
 // Legacy exports for backward compatibility

@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import { db, withPreparedStatementHandling } from '@/lib/db';
 import {
   type CateringPackage,
   type CateringItem,
@@ -28,30 +28,32 @@ import { env } from '@/env'; // Import the validated environment configuration
  * Fetches all active catering packages using Prisma
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
-  try {
-    console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
+  return withPreparedStatementHandling(async () => {
+    try {
+      console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
 
-    const packages = await db.cateringPackage.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        featuredOrder: 'asc',
-      },
-    });
+      const packages = await db.cateringPackage.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          featuredOrder: 'asc',
+        },
+      });
 
-    console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
+      console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
 
-    return (
-      (packages?.map((pkg: any) => ({
-        ...pkg,
-        pricePerPerson: Number(pkg.pricePerPerson),
-      })) as CateringPackage[]) || []
-    );
-  } catch (error) {
-    console.error('❌ [CATERING] Error fetching catering packages:', error);
-    return [];
-  }
+      return (
+        (packages?.map((pkg: any) => ({
+          ...pkg,
+          pricePerPerson: Number(pkg.pricePerPerson),
+        })) as CateringPackage[]) || []
+      );
+    } catch (error) {
+      console.error('❌ [CATERING] Error fetching catering packages:', error);
+      return [];
+    }
+  }, 'getCateringPackages');
 }
 
 /**
@@ -147,78 +149,49 @@ export async function getCateringItem(
  * Phase 4: Updated to use single source of truth based on unified sync strategy
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
-  try {
-    console.log('🔧 [CATERING] Fetching catering items directly from products table...');
-    
-    const products = await db.product.findMany({
-      where: {
-        active: true,
-        category: {
-          name: {
-            contains: 'CATERING'
-          }
-        }
-      },
-      include: {
-        category: true,
-        variants: true
-      },
-      orderBy: [
-        { category: { name: 'asc' } },
-        { name: 'asc' }
-      ]
-    });
-
-    console.log(`✅ [CATERING] Found ${products.length} products with CATERING categories`);
-
-    const cateringItems: CateringItem[] = [];
-    
-    products.forEach(product => {
-      const category = mapSquareCategoryToEnum(product.category?.name);
-      const firstImage = product.images?.[0] || null;
+  return withPreparedStatementHandling(async () => {
+    try {
+      console.log('🔧 [CATERING] Fetching catering items directly from products table...');
       
-      if (!product.variants || product.variants.length === 0) {
-        // No variants - single item
-        cateringItems.push({
-          id: product.id,
-          name: product.name,
-          description: product.description || '',
-          price: Number(product.price),
-          category,
-          isVegetarian: false,
-          isVegan: false,
-          isGlutenFree: false,
-          servingSize: null,
-          imageUrl: firstImage,
-          isActive: true,
-          squareCategory: product.category?.name || '',
-          squareProductId: product.squareId,
-          createdAt: product.createdAt,
-          updatedAt: product.updatedAt,
-        });
-      } else {
-        // Convert each variant to separate item
-        product.variants.forEach(variant => {
-          const servingSize = variant.name === 'Small' 
-            ? '10-20 people' 
-            : variant.name === 'Large' 
-            ? '25-40 people' 
-            : null;
-            
-          const displayName = variant.name === 'Regular' 
-            ? product.name 
-            : `${product.name} - ${variant.name}`;
-            
+      const products = await db.product.findMany({
+        where: {
+          active: true,
+          category: {
+            name: {
+              contains: 'CATERING'
+            }
+          }
+        },
+        include: {
+          category: true,
+          variants: true
+        },
+        orderBy: [
+          { category: { name: 'asc' } },
+          { name: 'asc' }
+        ]
+      });
+
+      console.log(`✅ [CATERING] Found ${products.length} products with CATERING categories`);
+
+      const cateringItems: CateringItem[] = [];
+      
+      products.forEach(product => {
+        const category = mapSquareCategoryToEnum(product.category?.name);
+        const firstImage = product.images?.[0] || null;
+        
+        if (!product.variants || product.variants.length === 0) {
+          // No variants - single item
           cateringItems.push({
-            id: `${product.id}-${variant.id}`,
-            name: displayName,
+            id: product.id,
+            name: product.name,
             description: product.description || '',
-            price: variant.price ? Number(variant.price) : Number(product.price),
+            price: Number(product.price),
             category,
             isVegetarian: false,
             isVegan: false,
             isGlutenFree: false,
-            servingSize,
+            servingSize: null,
             imageUrl: firstImage,
             isActive: true,
             squareCategory: product.category?.name || '',
@@ -226,16 +199,47 @@ export async function getCateringItems(): Promise<CateringItem[]> {
             createdAt: product.createdAt,
             updatedAt: product.updatedAt,
           });
-        });
-      }
-    });
+        } else {
+          // Convert each variant to separate item
+          product.variants.forEach(variant => {
+            const servingSize = variant.name === 'Small' 
+              ? '10-20 people' 
+              : variant.name === 'Large' 
+              ? '25-40 people' 
+              : null;
+              
+            const displayName = variant.name === 'Regular' 
+              ? product.name 
+              : `${product.name} - ${variant.name}`;
+              
+            cateringItems.push({
+              id: `${product.id}-${variant.id}`,
+              name: displayName,
+              description: product.description || '',
+              price: variant.price ? Number(variant.price) : Number(product.price),
+              category,
+              isVegetarian: false,
+              isVegan: false,
+              isGlutenFree: false,
+              servingSize,
+              imageUrl: firstImage,
+              isActive: true,
+              squareCategory: product.category?.name || '',
+              squareProductId: product.squareId,
+              createdAt: product.createdAt,
+              updatedAt: product.updatedAt,
+            });
+          });
+        }
+      });
 
-    console.log(`✅ [CATERING] Converted ${products.length} products to ${cateringItems.length} catering items`);
-    return cateringItems;
-  } catch (error) {
-    console.error('❌ [CATERING] Error fetching catering items:', error);
-    return [];
-  }
+      console.log(`✅ [CATERING] Converted ${products.length} products to ${cateringItems.length} catering items`);
+      return cateringItems;
+    } catch (error) {
+      console.error('❌ [CATERING] Error fetching catering items:', error);
+      return [];
+    }
+  }, 'getCateringItems');
 }
 
 // Helper function to map Square category names to enum

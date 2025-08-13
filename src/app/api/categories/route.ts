@@ -1,20 +1,22 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, withPreparedStatementHandling } from '@/lib/db';
 import { logger } from '@/utils/logger';
 
 export async function GET() {
   try {
     // Get all categories
-    const categories = await prisma.category.findMany({
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+    const categories = await withPreparedStatementHandling(async () => {
+      return await prisma.category.findMany({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+    }, 'categories-fetch');
 
     return NextResponse.json(categories);
   } catch (error) {

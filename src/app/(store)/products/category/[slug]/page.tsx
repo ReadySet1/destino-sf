@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
-import { prisma } from '@/lib/db'; // Import Prisma client
+import { prisma, withPreparedStatementHandling } from '@/lib/db'; // Import Prisma client
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
 import { Metadata } from 'next';
@@ -68,9 +68,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
   try {
     // Fetch the category from the database
-    const category = await prisma.category.findUnique({
-      where: { slug: slug },
-    });
+    const category = await withPreparedStatementHandling(async () => {
+      return await prisma.category.findUnique({
+        where: { slug: slug },
+      });
+    }, 'generateMetadata-category-fetch');
 
     if (!category) {
       return generateSEO({
@@ -129,12 +131,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   if (searchParams) await searchParams;
 
   // Fetch the category from the database using the slug
-  const category = await prisma.category.findUnique({
-    where: {
-      // Assuming the category table has a unique 'slug' field
-      slug: slug,
-    },
-  });
+  const category = await withPreparedStatementHandling(async () => {
+    return await prisma.category.findUnique({
+      where: {
+        // Assuming the category table has a unique 'slug' field
+        slug: slug,
+      },
+    });
+  }, 'CategoryPage-category-fetch');
 
   // If the category doesn't exist in the database, return 404
   if (!category) {
@@ -145,28 +149,30 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Fetch products associated with this category from the database
   let products: GridProduct[] = [];
   try {
-    const dbProducts = await prisma.product.findMany({
-      where: {
-        categoryId: category.id,
-        active: true, // Only fetch active products
-        // Exclude catering products from category pages
-        category: {
-          NOT: {
-            name: {
-              startsWith: 'CATERING',
-              mode: 'insensitive',
+    const dbProducts = await withPreparedStatementHandling(async () => {
+      return await prisma.product.findMany({
+        where: {
+          categoryId: category.id,
+          active: true, // Only fetch active products
+          // Exclude catering products from category pages
+          category: {
+            NOT: {
+              name: {
+                startsWith: 'CATERING',
+                mode: 'insensitive',
+              },
             },
           },
         },
-      },
-      include: {
-        variants: true, // Include variants if needed by ProductGrid
-      },
-      orderBy: {
-        // Optional: Add sorting, e.g., by name or a custom order field
-        name: 'asc',
-      },
-    });
+        include: {
+          variants: true, // Include variants if needed by ProductGrid
+        },
+        orderBy: {
+          // Optional: Add sorting, e.g., by name or a custom order field
+          name: 'asc',
+        },
+      });
+    }, 'CategoryPage-products-fetch');
 
     // Process database products before mapping to GridProduct
     const serializedProducts = await preparePrismaData(dbProducts);
