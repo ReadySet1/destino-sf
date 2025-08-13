@@ -11,7 +11,7 @@ import { createClient } from '@/utils/supabase/server';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
 import { SyncLogger } from '@/lib/square/sync-logger';
-import { CategoryMapper, CATEGORY_MAPPINGS } from '@/lib/square/category-mapper';
+import { CategoryMapper, CATEGORY_MAPPINGS, LEGACY_CATEGORY_MAPPINGS } from '@/lib/square/category-mapper';
 import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { prisma } from '@/lib/db';
@@ -442,11 +442,11 @@ async function performUnifiedSync(
   syncLogger.logSyncStart(`Unified Sync (${strategy} -> ${targetTable})${dryRun ? ' [DRY RUN]' : ''}`);
 
   try {
-    // Get categories to sync
+    // Get categories to sync (use LEGACY_CATEGORY_MAPPINGS to match database format)
     const categoriesToSync = categories?.length 
-      ? Object.entries(CATEGORY_MAPPINGS).filter(([, localName]) => 
+      ? Object.entries(LEGACY_CATEGORY_MAPPINGS).filter(([, localName]) => 
           categories.includes(localName))
-      : Object.entries(CATEGORY_MAPPINGS);
+      : Object.entries(LEGACY_CATEGORY_MAPPINGS);
 
     syncLogger.logInfo(`Syncing ${categoriesToSync.length} categories`);
 
@@ -620,7 +620,7 @@ export async function GET() {
       'CATERING_ONLY': 'Sync all items to catering_items table only',
       'SMART_MERGE': 'Automatically choose best strategy based on current data'
     },
-    categories: Object.values(CATEGORY_MAPPINGS),
+    categories: Object.values(LEGACY_CATEGORY_MAPPINGS),
     timestamp: new Date().toISOString()
   });
 }
