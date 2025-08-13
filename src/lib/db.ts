@@ -16,11 +16,18 @@ const prismaClientSingleton = () => {
   let databaseUrl = process.env.DATABASE_URL;
   if (isServerless && databaseUrl) {
     const url = new URL(databaseUrl);
-    // Add pgbouncer and connection pooling parameters for serverless
-    url.searchParams.set('pgbouncer', 'true');
-    url.searchParams.set('connection_limit', '1');
-    url.searchParams.set('pool_timeout', '20');
-    databaseUrl = url.toString();
+    
+    // Check if it's a Supabase pooler URL (already has pgbouncer)
+    const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
+    
+    if (!isSupabasePooler) {
+      // Only add these parameters for non-Supabase databases
+      url.searchParams.set('pgbouncer', 'true');
+      url.searchParams.set('connection_limit', '1');
+      url.searchParams.set('pool_timeout', '20');
+      databaseUrl = url.toString();
+    }
+    // For Supabase pooler URLs, use them as-is since they're already optimized
   }
   
   return new PrismaClient({
