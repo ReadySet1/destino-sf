@@ -9,9 +9,7 @@
 // This addresses the dual storage problem identified in the fix plan where items
 // are stored in both tables, causing discrepancies and duplicate detection issues.
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from './db';
 
 export interface DuplicateCheckResult {
   isDuplicate: boolean;

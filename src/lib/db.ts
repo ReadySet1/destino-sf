@@ -10,6 +10,8 @@ const CURRENT_PRISMA_VERSION = '2024-07-27-fix-categories-active';
 
 // Optimized Prisma configuration for Vercel/Serverless
 const prismaClientSingleton = () => {
+  const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     errorFormat: 'minimal',
@@ -18,6 +20,11 @@ const prismaClientSingleton = () => {
         url: process.env.DATABASE_URL,
       },
     },
+    // Serverless-specific configurations
+    ...(isServerless && {
+      // Disable query logging in production to reduce noise
+      log: ['error'],
+    }),
   });
 };
 
@@ -59,6 +66,28 @@ export async function forceRegenerateClient(): Promise<void> {
   console.log('Prisma client regenerated successfully');
 }
 
+// Serverless-specific connection management
+export async function ensureConnection(): Promise<void> {
+  try {
+    // Test connection
+    await prisma.$queryRaw`SELECT 1`;
+  } catch (error) {
+    console.warn('Connection test failed, regenerating client...');
+    await forceRegenerateClient();
+  }
+}
+
+// Function to handle serverless function cleanup
+export async function cleanupForServerless(): Promise<void> {
+  try {
+    // In serverless, we don't want to disconnect the client
+    // as it might be reused, but we can clean up any prepared statements
+    await prisma.$executeRaw`DISCARD ALL`;
+  } catch (error) {
+    console.warn('Error during serverless cleanup:', error);
+  }
+}
+
 // Helper function for safe database operations with retry logic
 export async function withRetry<T>(
   operation: () => Promise<T>,
@@ -73,7 +102,7 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error as Error;
       
-      // Check if it's a connection error
+      // Check if it's a connection error or prepared statement error
       const isConnectionError = 
         error instanceof Error && 
         (error.message.includes("Can't reach database server") ||
@@ -81,13 +110,31 @@ export async function withRetry<T>(
          error.message.includes("ECONNRESET") ||
          error.message.includes("ECONNREFUSED") ||
          error.message.includes("ETIMEDOUT") ||
+         error.message.includes("prepared statement") ||
          (error as any).code === 'P1001' ||
          (error as any).code === 'P1008' ||
          (error as any).code === 'P1017');
       
-      if (isConnectionError && i < maxRetries - 1) {
-        console.log(`Database connection attempt ${i + 1} failed, retrying in ${delay}ms...`);
+      // Check for PostgreSQL prepared statement errors
+      const isPreparedStatementError = 
+        error instanceof Error && 
+        (error.message.includes("prepared statement") ||
+         (error as any).code === '42P05');
+      
+      if ((isConnectionError || isPreparedStatementError) && i < maxRetries - 1) {
+        console.log(`Database operation attempt ${i + 1} failed, retrying in ${delay}ms...`);
         console.log(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        
+        // For prepared statement errors, try to clean up and regenerate client
+        if (isPreparedStatementError) {
+          try {
+            await cleanupForServerless();
+            await forceRegenerateClient();
+          } catch (cleanupError) {
+            console.warn('Error during cleanup:', cleanupError);
+          }
+        }
+        
         await new Promise(resolve => setTimeout(resolve, delay));
         // Exponential backoff
         delay = delay * 2;
@@ -135,6 +182,39 @@ export async function checkDatabaseHealth(): Promise<{
       latency: Date.now() - start,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
+  }
+}
+
+// Wrapper function for operations that might encounter prepared statement errors
+export async function withPreparedStatementHandling<T>(
+  operation: () => Promise<T>,
+  operationName: string = 'database operation'
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    // Check if it's a prepared statement error
+    const isPreparedStatementError = 
+      error instanceof Error && 
+      (error.message.includes("prepared statement") ||
+       (error as any).code === '42P05');
+    
+    if (isPreparedStatementError) {
+      console.warn(`Prepared statement error in ${operationName}, attempting recovery...`);
+      
+      try {
+        // Clean up prepared statements
+        await cleanupForServerless();
+        
+        // Try the operation again
+        return await operation();
+      } catch (retryError) {
+        console.error(`Recovery failed for ${operationName}:`, retryError);
+        throw retryError;
+      }
+    }
+    
+    throw error;
   }
 }
 

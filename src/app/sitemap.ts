@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { withPreparedStatementHandling } from '@/lib/db';
 
 // Create isolated Prisma client for sitemap generation to avoid prepared statement conflicts
 const createSitemapPrismaClient = () => {
@@ -109,16 +110,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     prismaClient = createSitemapPrismaClient();
     
-    // Dynamic product pages with retry logic
-    const products = await prismaClient.product.findMany({
-      where: {
-        active: true,
-      },
-      select: {
-        slug: true,
-        updatedAt: true,
-      },
-    });
+    // Dynamic product pages with retry logic and error handling
+    const products = await withPreparedStatementHandling(
+      () => prismaClient!.product.findMany({
+        where: {
+          active: true,
+        },
+        select: {
+          slug: true,
+          updatedAt: true,
+        },
+      }),
+      'sitemap product query'
+    );
 
     const productPages = products.map(product => ({
       url: `${baseUrl}/products/${product.slug}`,
