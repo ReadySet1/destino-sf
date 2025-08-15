@@ -98,6 +98,8 @@
     "test:catering:all": "./scripts/test-catering.sh both",
     "test:catering:auth": "./scripts/test-catering.sh auth",
     "test:e2e:smoke": "playwright test --grep='smoke'",
+    "sync-users": "tsx src/scripts/sync-existing-users.ts",
+    "sync-users:dry-run": "tsx src/scripts/sync-existing-users.ts --dry-run",
     "test:e2e:smoke-production": "NODE_ENV=production playwright test --grep='smoke' --config=playwright.config.production.ts",
     "test:pre-deploy": "pnpm test:e2e:critical && pnpm test:e2e:mobile",
     "setup-sandbox": "./scripts/setup-vercel-sandbox.sh",

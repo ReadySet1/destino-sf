@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { logger } from '@/utils/logger';
 import { ResponsivePageHeader } from '@/components/ui/responsive-page-header';
+import { ensureUserProfile } from '@/middleware/profile-sync';
 
 export default async function AdminDashboard() {
   // Create the Supabase client for authentication
@@ -38,12 +39,15 @@ export default async function AdminDashboard() {
       return redirect('/');
     }
 
-    // Get the profile with minimal fields needed
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    });
+    // Use the new profile sync middleware to ensure profile exists
+    const profileSyncResult = await ensureUserProfile(user.id, user.email);
+    
+    if (!profileSyncResult.success) {
+      logger.error('Failed to ensure user profile:', profileSyncResult.error);
+      return redirect('/');
+    }
 
+    const profile = profileSyncResult.profile;
     logger.debug('Profile data:', profile);
 
     if (!profile) {
