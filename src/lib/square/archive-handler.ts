@@ -62,29 +62,80 @@ export async function archiveRemovedSquareProducts(
 
     logger.info(`📦 Found ${removedProducts.length} products removed from Square`);
 
-    // Archive each removed product
-    for (const product of removedProducts) {
-      try {
-        await prisma.product.update({
-          where: { id: product.id },
-          data: {
-            active: false,
-            updatedAt: new Date()
-          }
-        });
+    // Batch archive all removed products for better performance
+    try {
+      const archiveStartTime = Date.now();
+      
+      // Use updateMany for batch operation - much faster than individual updates
+      const updateResult = await prisma.product.updateMany({
+        where: {
+          active: true,
+          squareId: {
+            notIn: validSquareIds
+          },
+          NOT: [
+            { squareId: '' }
+          ]
+        },
+        data: {
+          active: false,
+          updatedAt: new Date()
+        }
+      });
 
-        result.archivedItems.push({
-          id: product.id,
-          name: product.name,
-          squareId: product.squareId || '',
-          category: product.category?.name || 'Uncategorized'
-        });
+      const archiveTime = Date.now() - archiveStartTime;
+      result.archived = updateResult.count;
 
-        result.archived++;
-        logger.info(`🗃️ Archived: "${product.name}" (Square ID: ${product.squareId})`);
-      } catch (error) {
-        result.errors++;
-        logger.error(`❌ Failed to archive "${product.name}":`, error);
+      // Store archived items info for reporting
+      result.archivedItems = removedProducts.map(product => ({
+        id: product.id,
+        name: product.name,
+        squareId: product.squareId || '',
+        category: product.category?.name || 'Uncategorized'
+      }));
+
+      logger.info(`✅ Batch archived ${result.archived} products in ${archiveTime}ms (${Math.round(archiveTime/1000)}s)`);
+      
+      // Log first few archived items for verification
+      if (result.archivedItems.length > 0) {
+        logger.info(`📋 Sample archived products:`);
+        result.archivedItems.slice(0, 5).forEach(item => {
+          logger.info(`   • "${item.name}" (${item.squareId}) in ${item.category}`);
+        });
+        if (result.archivedItems.length > 5) {
+          logger.info(`   • ... and ${result.archivedItems.length - 5} more`);
+        }
+      }
+
+    } catch (error) {
+      result.errors++;
+      logger.error(`❌ Failed to batch archive products:`, error);
+      
+      // Fallback to individual updates if batch fails
+      logger.info('🔄 Falling back to individual updates...');
+      for (const product of removedProducts) {
+        try {
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              active: false,
+              updatedAt: new Date()
+            }
+          });
+
+          result.archivedItems.push({
+            id: product.id,
+            name: product.name,
+            squareId: product.squareId || '',
+            category: product.category?.name || 'Uncategorized'
+          });
+
+          result.archived++;
+          logger.info(`🗃️ Archived: "${product.name}" (Square ID: ${product.squareId})`);
+        } catch (individualError) {
+          result.errors++;
+          logger.error(`❌ Failed to archive "${product.name}":`, individualError);
+        }
       }
     }
 
