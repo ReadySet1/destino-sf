@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto';
 import { squareClient } from './client';
 import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
-import { cateringProtection } from './catering-protection';
+
 import { 
   FilteredSyncConfig, 
   SyncResult, 
@@ -51,15 +51,16 @@ export class FilteredSyncManager {
         timestamp: startTime.toISOString()
       });
 
-      // Step 1: Initialize catering protection
-      await cateringProtection.initialize();
+      // Step 1: Initialize catering protection - DISABLED (catering_items table removed)
+      // await cateringProtection.initialize();
 
       // Step 2: Create sync history record
       await this.createSyncHistory(startTime);
 
-      // Step 3: Backup catering images if needed
-      const imageBackup = this.config.enableImageSync ? 
-        await cateringProtection.backupCateringImages() : {};
+      // Step 3: Backup catering images if needed - DISABLED (catering_items table removed)
+      // const imageBackup = this.config.enableImageSync ? 
+      //   await cateringProtection.backupCateringImages() : {};
+      const imageBackup = {};
 
       // Step 4: Fetch filtered catalog from Square
       const catalogData = await this.fetchFilteredCatalog();
@@ -106,8 +107,8 @@ export class FilteredSyncManager {
     try {
       logger.info('👀 Generating sync preview...');
 
-      // Initialize protection to identify what should be skipped
-      await cateringProtection.initialize();
+      // Initialize protection to identify what should be skipped - DISABLED (catering_items table removed)
+      // await cateringProtection.initialize();
 
       // Fetch catalog data
       const catalogData = await this.fetchFilteredCatalog();
@@ -381,11 +382,13 @@ export class FilteredSyncManager {
     });
 
     if (existingProduct) {
-      const isProtected = await cateringProtection.isProductProtected(
-        existingProduct.id,
-        existingProduct.squareId || undefined,
-        existingProduct.category?.name
-      );
+      // Protection check disabled - catering_items table removed
+      // const isProtected = await cateringProtection.isProductProtected(
+      //   existingProduct.id,
+      //   existingProduct.squareId || undefined,
+      //   existingProduct.category?.name
+      // );
+      const isProtected = false; // No protection needed with unified data model
 
       if (isProtected) {
         this.stats.protected++;

@@ -20,13 +20,11 @@ import type { SyncVerificationResult } from '@/types/square-sync';
 
 // Request validation schema
 const UnifiedSyncRequestSchema = z.object({
-  strategy: z.enum(['PRODUCTS_ONLY', 'CATERING_ONLY', 'SMART_MERGE']).optional().default('PRODUCTS_ONLY'),
+  strategy: z.enum(['PRODUCTS_ONLY', 'CATERING_ONLY', 'SMART_MERGE']).optional(), // Ignored for backward compatibility
   dryRun: z.boolean().optional().default(false),
   categories: z.array(z.string()).optional(), // Specific categories to sync
   forceUpdate: z.boolean().optional().default(false),
 }).strict();
-
-type SyncStrategy = 'PRODUCTS_ONLY' | 'CATERING_ONLY' | 'SMART_MERGE';
 
 interface SquareItem {
   id: string;
@@ -44,60 +42,34 @@ interface SquareItem {
 }
 
 interface SyncDecision {
-  strategy: SyncStrategy;
-  targetTable: 'products' | 'catering_items';
+  strategy: 'PRODUCTS_ONLY';
+  targetTable: 'products';
   reason: string;
 }
 
 /**
- * Determine the best sync strategy based on current data state
+ * Determine the sync strategy - simplified to use only products table
  */
-async function determineSyncStrategy(requestedStrategy: SyncStrategy): Promise<SyncDecision> {
-  // Get current state of both tables
-  const [productsCount, cateringCount] = await Promise.all([
-    prisma.product.count({
-      where: {
-        active: true,
-        category: {
-          name: {
-            contains: 'CATERING'
-          }
+async function determineSyncStrategy(): Promise<SyncDecision> {
+  // Get current state of products table
+  const productsCount = await prisma.product.count({
+    where: {
+      active: true,
+      category: {
+        name: {
+          contains: 'CATERING'
         }
       }
-    }),
-    prisma.cateringItem.count({
-      where: {
-        isActive: true
-      }
-    })
-  ]);
+    }
+  });
 
-  logger.info(`Current state: ${productsCount} items in products table, ${cateringCount} items in catering_items table`);
+  logger.info(`Current state: ${productsCount} catering items in products table`);
 
-  switch (requestedStrategy) {
-    case 'PRODUCTS_ONLY':
-      return {
-        strategy: 'PRODUCTS_ONLY',
-        targetTable: 'products',
-        reason: 'User requested products table only'
-      };
-
-    case 'CATERING_ONLY':
-      return {
-        strategy: 'CATERING_ONLY',
-        targetTable: 'catering_items',
-        reason: 'User requested catering_items table only'
-      };
-
-    case 'SMART_MERGE':
-    default:
-      // Force products-only strategy for unified data model
-      return {
-        strategy: 'PRODUCTS_ONLY',
-        targetTable: 'products',
-        reason: 'Forced PRODUCTS_ONLY for unified data model - catering_items table deprecated'
-      };
-  }
+  return {
+    strategy: 'PRODUCTS_ONLY',
+    targetTable: 'products',
+    reason: 'Unified data model - products table only'
+  };
 }
 
 /**
@@ -282,92 +254,13 @@ async function syncToProductsTable(
   }
 }
 
-/**
- * Sync item to catering_items table
- */
-async function syncToCateringTable(
-  item: SquareItem, 
-  syncLogger: SyncLogger,
-  forceUpdate: boolean = false
-): Promise<void> {
-  try {
-    // Check for existing item
-    const { isDuplicate, existingItem } = await CateringDuplicateDetector.checkForDuplicate({
-      name: item.name,
-      squareProductId: item.id,
-      squareCategory: item.categoryName
-    });
 
-    if (isDuplicate && !forceUpdate) {
-      syncLogger.logItemDuplicate(item.id, item.name, `Already exists: ${existingItem?.source}`);
-      return;
-    }
-
-    // Map category to catering enum
-    const cateringCategory = mapToCarteringCategory(item.categoryName);
-    const cateringData = {
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      category: cateringCategory,
-      squareProductId: item.id,
-      squareItemId: item.id,
-      squareCategory: item.categoryName,
-      imageUrl: item.imageUrl || null,
-      isVegetarian: false, // Default values
-      isVegan: false,
-      isGlutenFree: false,
-      servingSize: null,
-      isActive: true
-    };
-
-    if (existingItem) {
-      // Update existing
-      await prisma.cateringItem.update({
-        where: { squareItemId: item.id },
-        data: {
-          ...cateringData,
-          updatedAt: new Date()
-        }
-      });
-      syncLogger.logItemSynced(item.id, item.name, 'Updated in catering_items table');
-    } else {
-      // Create new
-      await prisma.cateringItem.create({
-        data: cateringData
-      });
-      syncLogger.logItemSynced(item.id, item.name, 'Created in catering_items table');
-    }
-
-  } catch (error) {
-    syncLogger.logItemError(item.id, item.name, `Catering table sync error: ${error}`);
-    throw error;
-  }
-}
-
-/**
- * Map category name to catering enum
- */
-function mapToCarteringCategory(categoryName: string): any {
-  const normalized = CategoryMapper.normalizeCategory(categoryName);
-  
-  // Map to catering category enum (using correct Prisma enum values)
-  if (normalized.includes('APPETIZER')) return 'APPETIZER';
-  if (normalized.includes('ENTREE')) return 'ENTREE';
-  if (normalized.includes('SIDE')) return 'SIDE';
-  if (normalized.includes('DESSERT')) return 'DESSERT';
-  if (normalized.includes('STARTER')) return 'STARTER';
-  if (normalized.includes('BEVERAGE')) return 'BEVERAGE';
-  
-  return 'APPETIZER'; // Default fallback (Prisma enum value)
-}
 
 /**
  * Verify sync completeness
  */
 async function verifySyncCompleteness(
-  syncedItems: SquareItem[],
-  targetTable: 'products' | 'catering_items'
+  syncedItems: SquareItem[]
 ): Promise<SyncVerificationResult> {
   const categories: any[] = [];
   let totalDiscrepancy = 0;
@@ -382,47 +275,37 @@ async function verifySyncCompleteness(
     itemsByCategory.set(item.categoryName, categoryItems);
   }
 
-    // Check each category
-    for (const [categoryName, items] of itemsByCategory) {
-      const squareCount = items.length;
-      let localCount = 0;
-
-      if (targetTable === 'products') {
-        const normalizedName = CategoryMapper.normalizeCategory(categoryName);
-        localCount = await prisma.product.count({
-          where: {
-            active: true,
-            category: {
-              name: {
-                equals: normalizedName,
-                mode: 'insensitive'
-              }
-            }
+  // Check each category in products table only
+  for (const [categoryName, items] of itemsByCategory) {
+    const squareCount = items.length;
+    const normalizedName = CategoryMapper.normalizeCategory(categoryName);
+    
+    const localCount = await prisma.product.count({
+      where: {
+        active: true,
+        category: {
+          name: {
+            equals: normalizedName,
+            mode: 'insensitive'
           }
-        });
-      } else {
-        localCount = await prisma.cateringItem.count({
-          where: {
-            isActive: true,
-            squareCategory: categoryName
-          }
-        });
-      }
-
-      const discrepancy = Math.abs(squareCount - localCount);
-      totalDiscrepancy += discrepancy;
-
-      categories.push({
-        squareId: CategoryMapper.findSquareIdByLocalName(categoryName) || 'unknown',
-        squareName: categoryName,
-        localName: categoryName,
-        itemCount: {
-          square: squareCount,
-          local: localCount,
-          discrepancy
         }
-      });
-    }
+      }
+    });
+
+    const discrepancy = Math.abs(squareCount - localCount);
+    totalDiscrepancy += discrepancy;
+
+    categories.push({
+      squareId: CategoryMapper.findSquareIdByLocalName(categoryName) || 'unknown',
+      squareName: categoryName,
+      localName: categoryName,
+      itemCount: {
+        square: squareCount,
+        local: localCount,
+        discrepancy
+      }
+    });
+  }
 
   return {
     categories,
@@ -436,8 +319,6 @@ async function verifySyncCompleteness(
  * Main unified sync function
  */
 async function performUnifiedSync(
-  strategy: SyncStrategy,
-  targetTable: 'products' | 'catering_items',
   dryRun: boolean,
   categories?: string[],
   forceUpdate: boolean = false
@@ -456,7 +337,8 @@ async function performUnifiedSync(
   let errorCount = 0;
   let archiveResult = null;
 
-  syncLogger.logSyncStart(`Unified Sync (${strategy} -> ${targetTable})${dryRun ? ' [DRY RUN]' : ''}`);
+  const syncId = `sync_${Date.now()}`;
+  syncLogger.logSyncStart(`Unified Sync (PRODUCTS_ONLY)${dryRun ? ' [DRY RUN]' : ''}`, { syncId, timestamp: new Date().toISOString() });
 
   try {
     // Get categories to sync (use LEGACY_CATEGORY_MAPPINGS to match database format)
@@ -465,7 +347,7 @@ async function performUnifiedSync(
           categories.includes(localName))
       : Object.entries(LEGACY_CATEGORY_MAPPINGS);
 
-    syncLogger.logInfo(`Syncing ${categoriesToSync.length} categories`);
+    syncLogger.logInfo(`Syncing ${categoriesToSync.length} categories`, { count: categoriesToSync.length, categories: categoriesToSync.map(([,name]) => name) });
 
     // Process each category
     for (const [squareId, localName] of categoriesToSync) {
@@ -486,14 +368,10 @@ async function performUnifiedSync(
           try {
             if (dryRun) {
               // During dry run, log items as if they would be synced so they appear in the report
-              syncLogger.logItemProcessed(item.id, item.name, 'synced', `[DRY RUN] Would sync to ${targetTable}`);
+              syncLogger.logItemProcessed(item.id, item.name, 'synced', '[DRY RUN] Would sync to products table');
               categorySynced++;
             } else {
-              if (targetTable === 'products') {
-                await syncToProductsTable(item, syncLogger, forceUpdate);
-              } else {
-                await syncToCateringTable(item, syncLogger, forceUpdate);
-              }
+              await syncToProductsTable(item, syncLogger, forceUpdate);
               categorySynced++;
             }
           } catch (itemError) {
@@ -526,7 +404,7 @@ async function performUnifiedSync(
     }
 
     // Verify sync completeness
-    const verification = await verifySyncCompleteness(allSyncedItems, targetTable);
+    const verification = await verifySyncCompleteness(allSyncedItems);
     const report = syncLogger.generateReport();
 
     syncLogger.logSyncComplete('Unified Sync', {
@@ -576,18 +454,21 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request
     const body = await request.json();
-    const { strategy, dryRun, categories, forceUpdate } = UnifiedSyncRequestSchema.parse(body);
+    const { strategy: _ignoredStrategy, dryRun, categories, forceUpdate } = UnifiedSyncRequestSchema.parse(body);
 
-    logger.info(`🎯 Unified sync mode: ${strategy}${dryRun ? ' [DRY RUN]' : ''}`);
+    // Log any deprecated strategy parameter for monitoring
+    if (_ignoredStrategy && _ignoredStrategy !== 'PRODUCTS_ONLY') {
+      logger.warn(`🔄 Deprecated strategy '${_ignoredStrategy}' ignored - using PRODUCTS_ONLY (unified data model)`);
+    }
+
+    logger.info(`🎯 Unified sync mode: PRODUCTS_ONLY${dryRun ? ' [DRY RUN]' : ''}`);
 
     // Determine sync strategy
-    const syncDecision = await determineSyncStrategy(strategy);
+    const syncDecision = await determineSyncStrategy();
     logger.info(`📋 Sync decision: ${syncDecision.reason}`);
 
     // Perform unified sync
     const result = await performUnifiedSync(
-      syncDecision.strategy,
-      syncDecision.targetTable,
       dryRun,
       categories,
       forceUpdate
@@ -603,10 +484,10 @@ export async function POST(request: NextRequest) {
       reason: syncDecision.reason,
       message: dryRun
         ? success 
-          ? `[DRY RUN] Unified sync preview completed: ${result.syncedItems} items would be synced to ${syncDecision.targetTable} table`
+          ? `[DRY RUN] Unified sync preview completed: ${result.syncedItems} items would be synced to products table`
           : `[DRY RUN] Unified sync preview completed with errors: ${result.errors} errors occurred`
         : success 
-          ? `Unified sync completed: ${result.syncedItems} items synced to ${syncDecision.targetTable} table`
+          ? `Unified sync completed: ${result.syncedItems} items synced to products table`
           : `Unified sync completed with errors: ${result.errors} errors occurred`,
       data: {
         syncedItems: result.syncedItems,
@@ -641,20 +522,22 @@ export async function GET() {
     info: {
       endpoint: '/api/square/unified-sync',
       methods: ['GET', 'POST'],
-      description: 'Unified Square sync with single source of truth approach',
-      strategies: ['PRODUCTS_ONLY', 'CATERING_ONLY', 'SMART_MERGE'],
+      description: 'Unified Square sync with single source of truth approach - products table only',
+      strategy: 'PRODUCTS_ONLY',
       features: [
-        'Single source of truth decision logic',
+        'Single source of truth - products table only',
         'Comprehensive logging and verification',
         'Dry run support',
         'Category-specific sync',
-        'Duplicate detection across both tables'
+        'Simplified duplicate detection'
+      ],
+      deprecatedParameters: [
+        'strategy - Always uses PRODUCTS_ONLY, other values are ignored for backward compatibility'
       ]
     },
-    availableStrategies: {
-      'PRODUCTS_ONLY': 'Sync all items to products table only',
-      'CATERING_ONLY': 'Sync all items to catering_items table only',
-      'SMART_MERGE': 'Automatically choose best strategy based on current data'
+    strategy: {
+      'PRODUCTS_ONLY': 'Sync all items to products table only - unified data model',
+      'DEPRECATED': 'CATERING_ONLY and SMART_MERGE strategies are no longer supported'
     },
     categories: Object.values(LEGACY_CATEGORY_MAPPINGS),
     timestamp: new Date().toISOString()

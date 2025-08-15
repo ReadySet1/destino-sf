@@ -5,9 +5,9 @@
 // Centraliza la lógica de detección de duplicados para usar en todos los scripts de sync
 // Evita que se creen items duplicados desde diferentes fuentes (Square, scripts manuales, etc.)
 //
-// PHASE 2 ENHANCEMENT: Now checks BOTH products and catering_items tables
-// This addresses the dual storage problem identified in the fix plan where items
-// are stored in both tables, causing discrepancies and duplicate detection issues.
+// PRODUCTS_ONLY IMPLEMENTATION: Uses only products table as single source of truth
+// This addresses the dual storage problem by using a unified data model with
+// products table only, eliminating discrepancies and duplicate detection issues.
 
 import { prisma } from './db';
 
@@ -38,7 +38,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Verificar si un item de catering ya existe (PRODUCTS_ONLY - single source of truth)
+   * Verificar si un item de catering ya existe (usando solo tabla products)
    */
   static async checkForDuplicate(itemData: {
     name: string;
@@ -49,7 +49,7 @@ export class CateringDuplicateDetector {
     const { name, squareProductId, squareCategory } = itemData;
     
     // 1. Verificación exacta por squareProductId (máxima prioridad)
-    // Check ONLY products table (single source of truth)
+    // Verificar solo en tabla products (fuente única de verdad)
     if (squareProductId) {
       const existingInProducts = await prisma.product.findFirst({
         where: {
@@ -78,7 +78,7 @@ export class CateringDuplicateDetector {
       }
     }
 
-    // 2. Verificación exacta por nombre (check ONLY products table)
+    // 2. Verificación exacta por nombre (solo tabla products)
     const existingProductByName = await prisma.product.findFirst({
       where: {
         name: {
@@ -120,7 +120,7 @@ export class CateringDuplicateDetector {
     }
 
     // 3. Verificación por nombre normalizado (para detectar variaciones)
-    // Check ONLY products table for normalized name matches
+    // Verificar solo en tabla products para nombres normalizados
     const normalizedName = this.normalizeItemName(name);
     
     const allProducts = await prisma.product.findMany({
@@ -144,7 +144,7 @@ export class CateringDuplicateDetector {
       }
     });
 
-    // Check products table for normalized matches
+    // Verificar coincidencias normalizadas en tabla products
     const normalizedProductMatch = allProducts.find(item => 
       this.normalizeItemName(item.name) === normalizedName
     );
@@ -191,7 +191,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Crear item solo si no es duplicado (PRODUCTS_ONLY - creates products instead of catering items)
+   * Crear item solo si no es duplicado (crea productos en lugar de catering items)
    */
   static async createIfNotDuplicate(itemData: {
     name: string;
@@ -287,7 +287,7 @@ export class CateringDuplicateDetector {
   }
 
   /**
-   * Obtener estadísticas de duplicados por categoría (PRODUCTS_ONLY - single source of truth)
+   * Obtener estadísticas de duplicados por categoría (solo tabla products)
    */
   static async getDuplicateStats(): Promise<{
     totalItems: number;
@@ -297,7 +297,7 @@ export class CateringDuplicateDetector {
       withoutSquareId: number;
       potentialDuplicates: number;
       inProductsTable: number;
-      inCateringTable: number; // kept for compatibility, always 0
+      inCateringTable: number; // Siempre 0 - tabla catering_items eliminada
     }>;
   }> {
     
@@ -322,7 +322,7 @@ export class CateringDuplicateDetector {
       }
     });
 
-    // Use only products for unified analysis
+    // Usar solo productos para análisis unificado
     const allItems = allProducts.map(item => ({
       id: item.id,
       name: item.name,
@@ -351,7 +351,7 @@ export class CateringDuplicateDetector {
           withoutSquareId: 0,
           potentialDuplicates: 0,
           inProductsTable: 0,
-          inCateringTable: 0 // Always 0 in products-only mode
+          inCateringTable: 0 // Siempre 0 - modo solo productos
         };
       }
 

@@ -54,16 +54,8 @@ export interface SyncResult {
   };
 }
 
-export interface CateringProtection {
-  /** Product IDs that should never be modified */
-  itemIds: string[];
-  /** Package IDs that should never be modified */
-  packageIds: string[];
-  /** Whether to preserve custom catering images */
-  preserveImages: boolean;
-  /** Categories that contain catering items */
-  protectedCategoryNames: string[];
-}
+// CateringProtection interface removed - catering_items table deprecated
+// Protection is no longer needed with unified data model (products table only)
 
 export type SyncStrategy = 'FILTERED' | 'FULL' | 'IMAGES_ONLY';
 
