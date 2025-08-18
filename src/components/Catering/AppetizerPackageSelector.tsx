@@ -11,10 +11,12 @@ import { Users, CheckCircle, Circle, Info, ShoppingCart, TrendingUp } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn, toTitleCase } from '@/lib/utils';
+import { CateringPackageSkeletonSimple } from '@/components/ui/catering-package-skeleton';
 
 interface AppetizerPackageSelectorProps {
   packages: CateringPackage[];
   availableItems: CateringItem[];
+  isLoading?: boolean;
 }
 
 interface SelectedItems {
@@ -173,6 +175,7 @@ const StickyAddToCartButton: React.FC<StickyButtonProps> = ({
 export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> = ({
   packages,
   availableItems,
+  isLoading = false,
 }) => {
   const { addItem } = useCateringCartStore();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
@@ -431,8 +434,11 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
         </div>
       </div>
 
-      {/* Check if packages are available */}
-      {packages.length === 0 || availableItems.length === 0 ? (
+      {/* Show loading skeleton while loading */}
+      {isLoading ? (
+        <CateringPackageSkeletonSimple />
+      ) : /* Check if packages are available */
+      packages.length === 0 || availableItems.length === 0 ? (
         <div className="text-center py-12">
           <div className="max-w-md mx-auto space-y-4">
             <div className="text-6xl">🍽️</div>

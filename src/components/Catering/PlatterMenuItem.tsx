@@ -159,7 +159,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
             fallbackSrc="/images/catering/default-item.jpg"
-            maxRetries={0}
+            maxRetries={3}
             priority={false}
           />
         </div>

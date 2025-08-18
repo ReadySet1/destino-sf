@@ -15,6 +15,16 @@ export enum CateringItemCategory {
   SALAD = 'SALAD',
   DESSERT = 'DESSERT',
   BEVERAGE = 'BEVERAGE',
+  // Buffet categories
+  BUFFET_STARTER = 'BUFFET_STARTER',
+  BUFFET_ENTREE = 'BUFFET_ENTREE',
+  BUFFET_SIDE = 'BUFFET_SIDE',
+  // Lunch categories
+  LUNCH_STARTER = 'LUNCH_STARTER',
+  LUNCH_ENTREE = 'LUNCH_ENTREE',
+  LUNCH_SIDE = 'LUNCH_SIDE',
+  // Share Platters
+  'SHARE PLATTER' = 'SHARE PLATTER',
   // PROTEIN = 'PROTEIN', // New category for protein options - commented out due to DB migration issues
   // ADD_ON = 'ADD_ON' // New category for add-ons - commented out due to DB migration issues
 }

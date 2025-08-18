@@ -58,7 +58,23 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
 /**
  * Map Square category names to CateringItemCategory enum
  */
-function mapSquareCategoryToCateringCategory(squareCategory: string): any {
+export function mapSquareCategoryToCateringCategory(squareCategory: string): any {
+  // Buffet categories
+  if (squareCategory === 'CATERING- BUFFET, STARTERS') return 'BUFFET_STARTER';
+  if (squareCategory === 'CATERING- BUFFET, ENTREES') return 'BUFFET_ENTREE';
+  if (squareCategory === 'CATERING- BUFFET, SIDES') return 'BUFFET_SIDE';
+  
+  // Lunch categories
+  if (squareCategory === 'CATERING- LUNCH, STARTERS') return 'LUNCH_STARTER';
+  if (squareCategory === 'CATERING- LUNCH, ENTREES') return 'LUNCH_ENTREE';
+  if (squareCategory === 'CATERING- LUNCH, SIDES') return 'LUNCH_SIDE';
+  
+  // Appetizer categories
+  if (squareCategory === 'CATERING- APPETIZERS') return 'STARTER';
+  if (squareCategory === 'CATERING- SHARE PLATTERS') return 'SHARE PLATTER';
+  if (squareCategory === 'CATERING- DESSERTS') return 'DESSERT';
+  
+  // Generic fallback mappings
   if (squareCategory.includes('STARTER')) return 'STARTER';
   if (squareCategory.includes('ENTREE')) return 'ENTREE';
   if (squareCategory.includes('SIDE')) return 'SIDE';
@@ -66,6 +82,7 @@ function mapSquareCategoryToCateringCategory(squareCategory: string): any {
   if (squareCategory.includes('DESSERT')) return 'DESSERT';
   if (squareCategory.includes('BEVERAGE')) return 'BEVERAGE';
   if (squareCategory.includes('APPETIZER')) return 'STARTER';
+  
   return 'ENTREE'; // Default fallback
 }
 

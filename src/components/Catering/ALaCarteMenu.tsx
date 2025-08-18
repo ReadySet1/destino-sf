@@ -23,6 +23,7 @@ interface ALaCarteMenuProps {
   items: CateringItem[];
   activeCategory?: string;
   showDessertsAtBottom?: boolean;
+  isDessertSection?: boolean;
 }
 
 // Helper functions for text formatting
@@ -95,6 +96,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
   items,
   activeCategory = 'appetizers',
   showDessertsAtBottom = false,
+  isDessertSection = false,
 }) => {
   // Filter items for this tab and group them by subcategory
   let filteredItems;
