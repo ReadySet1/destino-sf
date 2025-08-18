@@ -13,7 +13,7 @@ import {
   CateringPackageType,
   getItemsForTab,
 } from '@/types/catering';
-import { getCateringPackages, getCateringItems } from '@/actions/catering';
+import { getCateringPackages } from '@/actions/catering';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import Image from 'next/image';
 import { BoxedLunchInitializer } from '@/components/Catering/BoxedLunchInitializer';
@@ -193,7 +193,8 @@ const AdminCateringPage = async () => {
   try {
     // Attempt to fetch from the database
     packages = await getCateringPackages();
-    items = await getCateringItems();
+    // Note: Individual catering items are now managed through Square integration
+    items = []; // Empty array since we no longer manage individual items locally
   } catch (error) {
     console.error('Error fetching catering data:', error);
     useDbData = false;
@@ -210,15 +211,15 @@ const AdminCateringPage = async () => {
 
     // Fallback to mock data
     packages = mockPackages;
-    items = mockItems;
+    items = []; // Empty array since we no longer manage individual items locally
   }
 
   const tabs = ['all-items', 'appetizers', 'buffet', 'lunch', 'boxed-lunches'];
 
   // Statistics for the dashboard
-  const totalItems = items.length;
+  const totalItems = 0; // Individual items are now managed through Square
   const totalPackages = packages.length;
-  const activeItems = items.filter(item => item.isActive).length;
+  const activeItems = 0; // Individual items are now managed through Square
   const activePackages = packages.filter(pkg => pkg.isActive).length;
 
   return (
@@ -238,10 +239,10 @@ const AdminCateringPage = async () => {
               View Live Menu
             </Link>
           </Button>
-          <Button asChild>
-            <Link href="/admin/catering/item/new" className="flex items-center gap-2">
+          <Button asChild variant="outline" disabled>
+            <Link href="#" className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
-              Add Item
+              Add Item (Square Only)
             </Link>
           </Button>
           <Button asChild>
@@ -252,6 +253,16 @@ const AdminCateringPage = async () => {
           </Button>
         </div>
       </div>
+
+      {/* Notice about new approach */}
+      <Alert className="mb-6">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          <strong>System Update:</strong> Individual catering items are now managed through our Square integration. 
+          This provides better synchronization and eliminates duplicate data management. 
+          You can still manage catering packages and orders through this interface.
+        </AlertDescription>
+      </Alert>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -282,10 +293,9 @@ const AdminCateringPage = async () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${Math.min(...items.map(i => Number(i.price))).toFixed(0)} - $
-              {Math.max(...items.map(i => Number(i.price))).toFixed(0)}
+              N/A
             </div>
-            <p className="text-xs text-muted-foreground">Item prices</p>
+            <p className="text-xs text-muted-foreground">Items managed via Square</p>
           </CardContent>
         </Card>
         <Card>

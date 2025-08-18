@@ -10,7 +10,13 @@ export function SyncDashboard() {
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
   const handleSyncStarted = (syncId: string) => {
-    setCurrentSyncId(syncId);
+    // Only track async syncs, not synchronous completions
+    if (syncId !== 'sync-completed') {
+      setCurrentSyncId(syncId);
+    } else {
+      // For synchronous syncs, immediately trigger history refresh
+      setHistoryRefreshTrigger(prev => prev + 1);
+    }
   };
 
   const handleSyncComplete = () => {

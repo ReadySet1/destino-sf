@@ -94,18 +94,21 @@ export class CateringImageSyncService {
           }
           
           // Find matching catering item by Square ID or name
-          const cateringItem = await prisma.cateringItem.findFirst({
+          const cateringProduct = await prisma.product.findFirst({
             where: {
               OR: [
-                { squareItemId: squareItem.id },
-                { squareProductId: itemName },
+                { squareId: squareItem.id },
                 { name: { equals: itemName, mode: 'insensitive' } }
               ],
-              category: 'APPETIZER'
+              category: {
+                name: {
+                  contains: 'APPETIZER'
+                }
+              }
             }
           });
           
-          if (!cateringItem) {
+          if (!cateringProduct) {
             const errorMsg = `No match found for Square item: ${itemName}`;
             logger.warn(errorMsg);
             result.errors.push(errorMsg);
@@ -131,8 +134,8 @@ export class CateringImageSyncService {
           }
           
           // Update the catering item
-          await prisma.cateringItem.update({
-            where: { id: cateringItem.id },
+          await prisma.product.update({
+            where: { id: cateringProduct.id },
             data: updateData
           });
           
@@ -166,23 +169,28 @@ export class CateringImageSyncService {
     lastSyncTimes: Date[];
   }> {
     try {
-      const items = await prisma.cateringItem.findMany({
-        where: { category: 'APPETIZER' },
+      const items = await prisma.product.findMany({
+        where: { 
+          category: {
+            name: {
+              contains: 'APPETIZER'
+            }
+          }
+        },
         select: {
           id: true,
           name: true,
-          squareItemId: true,
-          squareProductId: true,
-          lastSquareSync: true
+          squareId: true,
+          updatedAt: true
         }
       });
       
       const matchedItems = items.filter(item => 
-        item.squareItemId || item.squareProductId
+        item.squareId
       ).length;
       
       const lastSyncTimes = items
-        .map(item => item.lastSquareSync)
+        .map(item => item.updatedAt)
         .filter((date): date is Date => date !== null);
       
       return {

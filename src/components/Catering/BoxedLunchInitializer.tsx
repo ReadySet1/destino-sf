@@ -23,7 +23,7 @@ export const BoxedLunchInitializer: React.FC<BoxedLunchInitializerProps> = ({ ha
       const result = await initializeBoxedLunchDataAction();
 
       if (result.success) {
-        toast.success(`✅ ${result.summary}`, {
+        toast.success(`✅ ${result.message}`, {
           id: 'init-boxed-lunch',
           duration: 5000,
         });

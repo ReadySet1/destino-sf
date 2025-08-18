@@ -26,6 +26,7 @@ async function debugMagicLink() {
   console.log('\n🔌 Supabase Connection:');
   try {
     const supabase = await createClient();
+    // Note: Using getSession() here is acceptable for debugging purposes only
     const { data, error } = await supabase.auth.getSession();
     if (error) {
       console.log('❌ Supabase auth error:', error.message);

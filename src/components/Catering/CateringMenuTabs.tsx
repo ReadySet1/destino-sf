@@ -1,17 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ALaCarteMenu, CateringPackages } from '@/components/Catering';
+import { CateringPackages } from '@/components/Catering';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import { AppetizerPackageSelector } from '@/components/Catering/AppetizerPackageSelector';
-import { CateringItem, CateringPackage, getItemsForTab, getAppetizerPackageItems } from '@/types/catering';
+import { CateringPackage } from '@/types/catering';
 
 interface CateringMenuTabsProps {
-  cateringItems: CateringItem[];
   cateringPackages: CateringPackage[];
 }
 
-const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cateringPackages }) => {
+const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages }) => {
   const [activeTab, setActiveTab] = useState<string>('appetizers');
 
   const tabs = [
@@ -50,35 +49,49 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringItems, cate
             <div className="mb-12">
               <AppetizerPackageSelector
                 packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
-                availableItems={getAppetizerPackageItems(cateringItems).filter(
-                  item => item.price === 0
-                )}
+                availableItems={[]} // Empty since we no longer have local catering items
               />
             </div>
 
-            {/* Individual Appetizer Items - Share Platters and Desserts */}
+            {/* Note about Square integration */}
             <div className="border-t pt-12">
-              <ALaCarteMenu
-                items={cateringItems.filter(item => {
-                  // Only show Share Platters and Desserts, exclude basic appetizer items
-                  // to avoid duplication with the package selector above
-                  return (
-                    // Allow Share Platters even with $0 price (variable pricing)
-                    (item.squareCategory === 'CATERING- SHARE PLATTERS') ||
-                    // Desserts must have price > 0
-                    (item.price > 0 && item.squareCategory === 'CATERING- DESSERTS')
-                  );
-                })}
-                activeCategory="appetizers"
-                showDessertsAtBottom={true}
-              />
+              <div className="text-center py-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Individual Appetizer Items
+                </h3>
+                <p className="text-gray-600">
+                  Our appetizer selection is now managed through our Square integration. 
+                  Please contact us directly for custom appetizer orders or view our 
+                  available packages above.
+                </p>
+              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'buffet' && <ALaCarteMenu items={cateringItems} activeCategory="buffet" />}
+        {activeTab === 'buffet' && (
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Buffet Options
+            </h3>
+            <p className="text-gray-600">
+              Our buffet menu is now managed through our Square integration. 
+              Please contact us directly for buffet pricing and options.
+            </p>
+          </div>
+        )}
 
-        {activeTab === 'lunch' && <ALaCarteMenu items={cateringItems} activeCategory="lunch" />}
+        {activeTab === 'lunch' && (
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Lunch Options
+            </h3>
+            <p className="text-gray-600">
+              Our lunch menu is now managed through our Square integration. 
+              Please contact us directly for lunch pricing and options.
+            </p>
+          </div>
+        )}
 
         {activeTab === 'boxed-lunches' && <BoxedLunchMenu />}
       </div>

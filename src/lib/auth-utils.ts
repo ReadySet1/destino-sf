@@ -5,13 +5,13 @@ import { prisma } from '@/lib/db-connection';
  * Get user information from request headers (set by middleware)
  * This avoids database calls for basic user info
  */
-export function getUserFromHeaders(): {
+export async function getUserFromHeaders(): Promise<{
   id?: string;
   email?: string;
   isAuthenticated: boolean;
-} {
+}> {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const userId = headersList.get('X-User-ID');
     const userEmail = headersList.get('X-User-Email');
 

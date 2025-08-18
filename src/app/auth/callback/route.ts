@@ -83,24 +83,17 @@ export async function GET(request: Request) {
     }
   }
 
-  // Verify session was created
+  // Verify user is authenticated
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-  if (sessionError) {
-    console.error('❌ Session verification error:', sessionError);
-    return NextResponse.redirect(`${origin}/sign-in?error=Session verification failed`);
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) {
+    console.error('❌ User verification error:', userError);
+    return NextResponse.redirect(`${origin}/sign-in?error=User verification failed`);
   }
 
-  if (!session) {
-    console.error('❌ No session found after authentication');
-    return NextResponse.redirect(
-      `${origin}/sign-in?error=Authentication failed - no session created`
-    );
-  }
-
-  console.log('✅ Session verified for user:', session.user.email);
+  console.log('✅ User authenticated successfully:', user.email);
 
   // If we have a redirect_to parameter, use it
   if (redirectTo) {

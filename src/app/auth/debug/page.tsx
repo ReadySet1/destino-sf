@@ -34,6 +34,8 @@ export default function AuthDebugPage() {
           data: { user },
           error,
         } = await supabase.auth.getUser();
+        // Note: getSession() is used here for debugging purposes only
+        // In production code, use getUser() for security
         const {
           data: { session },
         } = await supabase.auth.getSession();

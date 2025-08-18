@@ -32,7 +32,7 @@ export async function GET() {
     // Test Supabase connection
     try {
       const supabase = await createClient();
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getUser();
 
       diagnostics.supabase_config_check = {
         connection_status: error ? 'ERROR' : 'SUCCESS',

@@ -59,7 +59,7 @@ import {
 } from '@/lib/deliveryUtils';
 import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
-import { saveContactInfo } from '@/actions/catering';
+import { saveCateringContactInfo } from '@/actions/catering';
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
@@ -260,7 +260,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       }
 
       try {
-        const result = await saveContactInfo({
+        const result = await saveCateringContactInfo({
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
@@ -268,9 +268,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         if (result.success) {
           setContactSaved(true);
-          console.log('✅ Contact info saved successfully with profile ID:', result.data.profileId);
+          console.log('✅ Contact info saved successfully:', result.message);
         } else {
-          console.error('❌ Failed to save contact info:', result.error);
+          console.error('❌ Failed to save contact info:', result.message);
         }
       } catch (error) {
         console.error('❌ Error saving contact info:', error);

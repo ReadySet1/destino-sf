@@ -6,62 +6,49 @@ interface CateringItemWithImage extends CateringItem {
 }
 
 /**
- * Optimized function to get catering items with images
- * Replaces the inefficient 185-parameter query with a more efficient approach
+ * Optimized function to get catering products as catering items with images
+ * Uses products table as single source of truth (catering_items table removed)
  */
 export async function getCateringItemsWithImages(): Promise<CateringItemWithImage[]> {
   try {
-    // First, get all active catering items
-    const cateringItems = await db.cateringItem.findMany({
-      where: { isActive: true },
-      orderBy: { category: 'asc' },
+    // Get all active products in catering categories
+    const cateringProducts = await db.product.findMany({
+      where: { 
+        active: true,
+        category: {
+          name: {
+            contains: 'CATERING'
+          }
+        }
+      },
+      include: {
+        category: true
+      },
+      orderBy: { name: 'asc' },
     });
 
-    if (cateringItems.length === 0) {
+    if (cateringProducts.length === 0) {
       return [];
     }
 
-    // Create a more efficient search strategy using array operations
-    const itemNames = cateringItems.map(item => item.name.toLowerCase());
-
-    // Use efficient PostgreSQL query with array operations instead of multiple ILIKE
-    const products = await db.$queryRaw<Array<{ id: string; name: string; images: string[] }>>`
-      SELECT id, name, images 
-      FROM "Product" 
-      WHERE LOWER(name) = ANY(${itemNames}::text[])
-      OR EXISTS (
-        SELECT 1 FROM unnest(${itemNames}::text[]) AS search_name
-        WHERE LOWER("Product".name) LIKE '%' || search_name || '%'
-        AND length(search_name) > 3
-      )
-      AND active = true
-      LIMIT 200
-    `;
-
-    // Create efficient lookup map
-    const productMap = new Map(products.map(p => [p.name.toLowerCase(), p.images[0]]));
-
-    // Map products to catering items efficiently
-    return cateringItems.map(item => {
-      const itemKey = item.name.toLowerCase();
-      let imageUrl = item.imageUrl;
-
-      if (!imageUrl) {
-        // Try exact match first
-        imageUrl = productMap.get(itemKey) || null;
-
-        // If no exact match, try partial match with more intelligent matching
-        if (!imageUrl) {
-          imageUrl = findPartialMatch(item.name, products)?.images[0] || null;
-        }
-      }
-
-      return {
-        ...item,
-        price: Number(item.price),
-        imageUrl,
-      };
-    }) as CateringItemWithImage[];
+    // Transform products to CateringItem format for backward compatibility
+    return cateringProducts.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description || null,
+      price: parseFloat(product.price.toString()),
+      category: mapSquareCategoryToCateringCategory(product.category.name),
+      isVegetarian: false, // Default values - these would need to be stored in product table
+      isVegan: false,
+      isGlutenFree: false,
+      servingSize: null,
+      imageUrl: product.images[0] || null,
+      isActive: product.active,
+      squareCategory: product.category.name,
+      squareProductId: product.squareId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    })) as CateringItemWithImage[];
   } catch (error) {
     console.error('Error fetching catering items with images:', error);
     throw new Error('Failed to fetch catering items');
@@ -69,45 +56,62 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
 }
 
 /**
- * Intelligent partial matching for product names
+ * Map Square category names to CateringItemCategory enum
  */
-function findPartialMatch(
-  itemName: string,
-  products: Array<{ name: string; images: string[] }>
-): { images: string[] } | undefined {
-  const searchTerms = itemName
-    .toLowerCase()
-    .split(' ')
-    .filter(term => term.length > 3);
-
-  return products.find(product => {
-    const productNameLower = product.name.toLowerCase();
-    return searchTerms.some(
-      term => productNameLower.includes(term) || term.includes(productNameLower.split(' ')[0]) // Match key product words
-    );
-  });
+function mapSquareCategoryToCateringCategory(squareCategory: string): any {
+  if (squareCategory.includes('STARTER')) return 'STARTER';
+  if (squareCategory.includes('ENTREE')) return 'ENTREE';
+  if (squareCategory.includes('SIDE')) return 'SIDE';
+  if (squareCategory.includes('SALAD')) return 'SALAD';
+  if (squareCategory.includes('DESSERT')) return 'DESSERT';
+  if (squareCategory.includes('BEVERAGE')) return 'BEVERAGE';
+  if (squareCategory.includes('APPETIZER')) return 'STARTER';
+  return 'ENTREE'; // Default fallback
 }
 
+
+
 /**
- * Optimized function to get catering items by category
+ * Optimized function to get catering products by category
+ * Now uses products table with catering category filtering
  */
 export async function getCateringItemsByCategory(
   category: string
 ): Promise<CateringItemWithImage[]> {
   try {
-    const items = await db.cateringItem.findMany({
+    const products = await db.product.findMany({
       where: {
-        isActive: true,
-        category: category as any,
+        active: true,
+        category: {
+          name: {
+            contains: category.toUpperCase()
+          }
+        }
+      },
+      include: {
+        category: true
       },
       orderBy: {
         name: 'asc',
       },
     });
 
-    return items.map(item => ({
-      ...item,
-      price: Number(item.price),
+    return products.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description || null,
+      price: parseFloat(product.price.toString()),
+      category: mapSquareCategoryToCateringCategory(product.category.name),
+      isVegetarian: false,
+      isVegan: false,
+      isGlutenFree: false,
+      servingSize: null,
+      imageUrl: product.images[0] || null,
+      isActive: product.active,
+      squareCategory: product.category.name,
+      squareProductId: product.squareId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
     })) as CateringItemWithImage[];
   } catch (error) {
     console.error(`Error fetching catering items for category ${category}:`, error);
@@ -116,13 +120,13 @@ export async function getCateringItemsByCategory(
 }
 
 /**
- * Cache for catering items to avoid repeated database queries
+ * Cache for catering products to avoid repeated database queries
  */
 let cateringItemsCache: { data: CateringItemWithImage[]; timestamp: number } | null = null;
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
 
 /**
- * Get catering items with caching
+ * Get catering products with caching (backward compatibility function name)
  */
 export async function getCachedCateringItems(): Promise<CateringItemWithImage[]> {
   const now = Date.now();
@@ -138,7 +142,7 @@ export async function getCachedCateringItems(): Promise<CateringItemWithImage[]>
 }
 
 /**
- * Clear the catering items cache (useful for admin operations)
+ * Clear the catering cache (useful for admin operations)
  */
 export function clearCateringCache(): void {
   cateringItemsCache = null;

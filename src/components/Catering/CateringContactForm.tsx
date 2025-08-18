@@ -90,7 +90,9 @@ export function CateringContactForm({
       // Convert to the format expected by the server action
       const result = await submitCateringInquiry({
         ...data,
-        eventDate: data.eventDate,
+        eventDate: data.eventDate.toISOString(),
+        packageType: 'INQUIRY', // Default package type for contact form inquiries
+        specialRequests: data.notes, // Map notes to specialRequests
       });
 
       if (result.success) {

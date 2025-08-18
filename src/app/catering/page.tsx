@@ -13,7 +13,7 @@ import {
   CateringPackageType,
   getItemsForTab,
 } from '@/types/catering';
-import { getCateringPackages, getCateringItems } from '@/actions/catering';
+import { getCateringPackages } from '@/actions/catering';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
 import CateringMenuTabs from '@/components/Catering/CateringMenuTabs';
 import { ContactForm, ContactInfo, ContactInfoCatering } from '@/components/ContactForm';
@@ -41,13 +41,12 @@ const cateringServices: string[] = [
 const CateringPage = async () => {
   // Fetch data from the database
   let cateringPackages: CateringPackage[] = [];
-  let cateringItems: CateringItem[] = [];
   let errorMessage = '';
 
   try {
-    // Fetch packages and items from the database
+    // Fetch packages from the database
     cateringPackages = await getCateringPackages();
-    cateringItems = await getCateringItems();
+    // Note: Catering items are now managed through Square integration
   } catch (error) {
     console.error('Error fetching catering data:', error);
     errorMessage = error instanceof Error ? error.message : 'Failed to load catering data';
@@ -82,7 +81,7 @@ const CateringPage = async () => {
           )}
 
           {/* No data message if database is empty */}
-          {!errorMessage && cateringPackages.length === 0 && cateringItems.length === 0 && (
+          {!errorMessage && cateringPackages.length === 0 && (
             <div className="max-w-[1300px] mx-auto px-6 md:px-8 mt-8">
               <div
                 className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6"
@@ -184,7 +183,6 @@ const CateringPage = async () => {
 
           {/* Use the client component for tabs */}
           <CateringMenuTabs
-            cateringItems={cateringItems}
             cateringPackages={cateringPackages.filter(
               pkg =>
                 pkg.type === CateringPackageType.INDIVIDUAL ||

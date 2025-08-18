@@ -1,5 +1,6 @@
 // Define enums directly instead of importing from @prisma/client
 // After running prisma generate, these imports can be replaced
+import { Product, Category } from '@prisma/client';
 export enum CateringPackageType {
   INDIVIDUAL = 'INDIVIDUAL',
   BUFFET = 'BUFFET',
@@ -128,6 +129,12 @@ export interface CateringPackage {
   squareCategory?: string; // Categoría de Square
 }
 
+// CateringProduct type uses Product table as single source of truth
+export type CateringProduct = Product & {
+  category: Category;
+};
+
+// Helper type for backward compatibility - maps Product fields to old CateringItem structure
 export interface CateringItem {
   id: string;
   name: string;
@@ -140,8 +147,8 @@ export interface CateringItem {
   servingSize?: string | null;
   imageUrl?: string | null;
   isActive: boolean;
-  squareCategory?: string; // Categoría de Square
-  squareProductId?: string | null; // Square Product ID for tracking
+  squareCategory?: string; // Maps to category.name for Square categories
+  squareProductId?: string | null; // Maps to product.squareId
   createdAt?: Date;
   updatedAt?: Date;
 }

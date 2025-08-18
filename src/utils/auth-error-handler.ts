@@ -101,9 +101,9 @@ export async function validateSession(
 
   try {
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (error) {
       if (
@@ -114,11 +114,11 @@ export async function validateSession(
         const refreshResult = await refreshSessionWithRetry();
 
         if (refreshResult.success) {
-          // Get the session again after successful refresh
+          // Get the user again after successful refresh
           const {
-            data: { session: newSession },
+            data: { user: newUser },
             error: newError,
-          } = await supabase.auth.getSession();
+          } = await supabase.auth.getUser();
 
           if (newError) {
             return await handleAuthError(newError, 'post-refresh-session-check');
@@ -127,7 +127,7 @@ export async function validateSession(
           return {
             success: true,
             requiresAuth: false,
-            session: newSession,
+            session: { user: newUser },
           };
         }
 
@@ -137,18 +137,18 @@ export async function validateSession(
       return await handleAuthError(error, 'session-validation');
     }
 
-    if (!session) {
+    if (!user) {
       return {
         success: false,
         requiresAuth: true,
-        error: 'No active session found.',
+        error: 'No authenticated user found.',
       };
     }
 
     return {
       success: true,
       requiresAuth: false,
-      session,
+      session: { user },
     };
   } catch (error) {
     console.error('Session validation error:', error);

@@ -215,7 +215,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           id: item.id,
           quantity: item.quantity,
           price: item.pricePerUnit?.toNumber() ?? 0,
-          productName: item.name,
+          productName: item.itemName, // Use itemName instead of name
           itemType: item.itemType,
           totalPrice: item.totalPrice?.toNumber() ?? 0,
         })),

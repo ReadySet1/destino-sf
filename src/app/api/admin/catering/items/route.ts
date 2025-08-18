@@ -26,42 +26,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
     
-    // Fetch all catering appetizer items
-    const items = await prisma.cateringItem.findMany({
-      where: {
-        category: 'APPETIZER'
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        isActive: true,
-        isVegetarian: true,
-        isVegan: true,
-        isGlutenFree: true,
-        servingSize: true,
-        squareItemId: true,
-        squareProductId: true,
-        ingredients: true,
-        dietaryTags: true,
-        sourceType: true,
-        lastSquareSync: true,
-        imageUrl: true,
-        createdAt: true,
-        updatedAt: true
-      },
-      orderBy: [
-        { isActive: 'desc' }, // Active items first
-        { name: 'asc' }       // Then alphabetical
-      ]
-    });
-    
-    logger.info(`📦 Fetched ${items.length} catering appetizer items`, { 
+    // Since individual catering items are now managed through Square integration,
+    // return an empty array with a message
+    logger.info(`📦 Individual catering items are now managed via Square integration`, { 
       userId: user.id 
     });
     
-    return NextResponse.json(items);
+    return NextResponse.json({
+      items: [],
+      message: 'Individual catering items are now managed through Square integration',
+      note: 'This API endpoint has been deprecated in favor of Square-based item management'
+    });
     
   } catch (error) {
     logger.error('❌ Failed to fetch catering items:', error);
@@ -96,49 +71,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
     
-    const body = await request.json();
-    const { itemId, updates } = body;
-    
-    if (!itemId) {
-      return NextResponse.json({ error: 'Item ID required' }, { status: 400 });
-    }
-    
-    // Validate allowed updates
-    const allowedFields = [
-      'name', 'description', 'price', 'isActive', 'squareProductId', 
-      'isVegetarian', 'isVegan', 'isGlutenFree', 'servingSize'
-    ];
-    
-    const updateData: any = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (allowedFields.includes(key)) {
-        updateData[key] = value;
-      }
-    }
-    
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No valid updates provided' }, { status: 400 });
-    }
-    
-    // Update the item
-    const updatedItem = await prisma.cateringItem.update({
-      where: { 
-        id: itemId,
-        category: 'APPETIZER' // Safety check
-      },
-      data: {
-        ...updateData,
-        updatedAt: new Date()
-      }
-    });
-    
-    logger.info(`✅ Updated catering item: ${updatedItem.name}`, { 
-      itemId, 
-      updates: Object.keys(updateData),
+    // Since individual catering items are now managed through Square integration,
+    // return an error indicating this operation is no longer supported
+    logger.info(`📦 Individual catering item updates are now managed via Square integration`, { 
       userId: user.id 
     });
     
-    return NextResponse.json(updatedItem);
+    return NextResponse.json(
+      { 
+        error: 'Individual catering item updates are no longer supported',
+        message: 'Items are now managed through Square integration',
+        note: 'This API endpoint has been deprecated in favor of Square-based item management'
+      },
+      { status: 410 } // Gone - resource no longer available
+    );
     
   } catch (error) {
     logger.error('❌ Failed to update catering item:', error);

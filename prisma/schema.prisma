@@ -30,39 +30,48 @@ model Profile {
 }
 
 model Product {
-  id              String          @id @default(uuid()) @db.Uuid
-  squareId        String          @unique
-  name            String
-  description     String?
-  price           Decimal         @db.Decimal(10, 2)
-  images          String[]
-  categoryId      String          @db.Uuid
-  featured        Boolean         @default(false)
-  active          Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  slug            String?         @unique
-  ordinal         BigInt?
-  inventory       Int?            @default(0)
-  lastSyncAt      DateTime?
-  syncLocked      Boolean         @default(false)
-  syncSource      String?         @default("SQUARE") @db.VarChar(50)
-  squareVersion   BigInt?         @map("square_version")
-  squareUpdatedAt DateTime?       @map("square_updated_at")
-  syncStatus      String?         @default("SYNCED") @map("sync_status") @db.VarChar(20)
-  orderItems      OrderItem[]
-  category        Category        @relation(fields: [categoryId], references: [id])
-  spotlightPicks  SpotlightPick[]
-  variants        Variant[]
+  id                 String          @id @default(uuid()) @db.Uuid
+  squareId           String          @unique
+  name               String
+  description        String?
+  price              Decimal         @db.Decimal(10, 2)
+  images             String[]
+  categoryId         String          @db.Uuid
+  featured           Boolean         @default(false)
+  active             Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  slug               String?         @unique
+  ordinal            BigInt?
+  inventory          Int?            @default(0)
+  lastSyncAt         DateTime?
+  syncLocked         Boolean         @default(false)
+  syncSource         String?         @default("SQUARE") @db.VarChar(50)
+  squareVersion      BigInt?         @map("square_version")
+  squareUpdatedAt    DateTime?       @map("square_updated_at")
+  syncStatus         String?         @default("SYNCED") @map("sync_status") @db.VarChar(20)
+  calories           Int?
+  dietaryPreferences String[]        @map("dietary_preferences")
+  ingredients        String?
+  allergens          String[]
+  nutritionFacts     Json?           @map("nutrition_facts")
+  orderItems         OrderItem[]
+  category           Category        @relation(fields: [categoryId], references: [id])
+  spotlightPicks     SpotlightPick[]
+  variants           Variant[]
 
   @@index([categoryId])
   @@index([ordinal])
   @@index([syncSource])
   @@index([syncStatus])
-  @@index([active]) // Add index for active status filtering
-  @@index([createdAt]) // Add index for date-based queries
-  @@index([squareId, active]) // Composite index for sync operations
-  @@index([squareId, syncStatus]) // Composite index for sync status updates
+  @@index([active])
+  @@index([createdAt])
+  @@index([squareId, active])
+  @@index([squareId, syncStatus])
+  @@index([allergens], map: "idx_products_allergens", type: Gin)
+  @@index([calories], map: "idx_products_calories")
+  @@index([dietaryPreferences], map: "idx_products_dietary_preferences", type: Gin)
+  @@index([nutritionFacts], map: "idx_products_nutrition_facts", type: Gin)
   @@map("products")
 }
 

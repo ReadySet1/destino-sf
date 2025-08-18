@@ -87,7 +87,7 @@ export class SquareService {
 
     try {
       if (!this.client.locationsApi) {
-        logger.warn('SquareService - Locations API not available');
+        logger.debug('SquareService - Locations API not available');
         return [];
       }
 

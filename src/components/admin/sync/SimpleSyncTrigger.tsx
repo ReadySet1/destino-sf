@@ -34,9 +34,9 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
           description: `${data.sync?.syncedProducts || 0} products synchronized successfully.`,
         });
         
-        // Generate a sync ID for progress tracking
-        const syncId = `sync-${Date.now()}`;
-        onSyncStarted?.(syncId);
+        // Note: This sync is synchronous - no need for progress tracking
+        // Only call onSyncStarted if parent component specifically needs it
+        onSyncStarted?.('sync-completed');
         
         // Reset state after showing success
         setTimeout(() => {

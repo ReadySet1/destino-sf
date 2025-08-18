@@ -111,19 +111,23 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       setIsValidating(true);
 
       try {
+        // Calculate total amount
+        const totalAmount = cateringItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
         const validation = await validateCateringOrderWithDeliveryZone(
-          cateringItems.map(item => ({
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          {
-            city: deliveryAddress.city,
-            postalCode: deliveryAddress.postalCode,
-          }
+          `${deliveryAddress.city}, ${deliveryAddress.postalCode}`,
+          totalAmount
         );
 
-        setDeliveryValidation(validation);
+        // Transform the response to match the expected format
+        setDeliveryValidation({
+          isValid: validation.success,
+          errorMessage: validation.error,
+          deliveryZone: validation.deliveryZone?.toString(),
+          minimumRequired: validation.minimumPurchase,
+          currentAmount: totalAmount,
+          deliveryFee: validation.deliveryFee,
+        });
       } catch (error) {
         console.error('Error validating delivery zone:', error);
         setDeliveryValidation({
@@ -287,31 +291,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       const formattedEventDate = customerInfo.eventDate.toISOString();
 
       const result = await createCateringOrderAndProcessPayment({
-        customerInfo: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          customerId: userData?.id,
-        },
-        eventDetails: {
-          eventDate: formattedEventDate as unknown as Date,
-          numberOfPeople: 1, // Default value since we removed people count
-          specialRequests: customerInfo.specialRequests || null,
-        },
-        fulfillment: {
-          method: fulfillmentMethod as 'pickup' | 'local_delivery',
-          ...(fulfillmentMethod === 'pickup'
-            ? {
-                pickupDate: format(pickupDate, 'yyyy-MM-dd'),
-                pickupTime,
-              }
-            : {
-                deliveryAddress,
-                deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
-                deliveryTime: pickupTime,
-              }),
-        },
-        items: formattedItems,
+        name: customerInfo.name,
+        email: customerInfo.email,
+        phone: customerInfo.phone,
+        eventDate: formattedEventDate,
+        numberOfPeople: 1, // Default value since we removed people count
+        packageType: 'A_LA_CARTE', // Default package type for a-la-carte orders
+        specialRequests: customerInfo.specialRequests,
+        ...(fulfillmentMethod === 'local_delivery' && {
+          deliveryAddress: `${deliveryAddress}, ${format(pickupDate, 'yyyy-MM-dd')} ${pickupTime}`,
+          deliveryZone: deliveryValidation?.deliveryZone || 'UNKNOWN',
+          deliveryFee: deliveryValidation?.deliveryFee || 0,
+        }),
         totalAmount: calculateTotal(),
         paymentMethod: paymentMethod,
       });
@@ -321,11 +312,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         clearCart();
 
         // If there's a checkout URL (Square payment), redirect to it
-        if (result.data.checkoutUrl) {
-          window.location.href = result.data.checkoutUrl;
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
         } else {
           // Otherwise go to the confirmation page
-          router.push(`/catering/confirmation?orderId=${result.data.orderId}`);
+          router.push(`/catering/confirmation?orderId=${result.orderId}`);
         }
       } else {
         // Handle error

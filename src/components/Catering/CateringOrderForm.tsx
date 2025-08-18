@@ -115,9 +115,9 @@ export function CateringOrderForm({
 
       if (result.success) {
         setContactSaved(true);
-        console.log('✅ Contact info saved successfully with profile ID:', result.data.profileId);
+        console.log('✅ Contact info saved successfully:', result.message);
       } else {
-        console.error('❌ Failed to save contact info:', result.error);
+        console.error('❌ Failed to save contact info:', result.message);
       }
     } catch (error) {
       console.error('❌ Error saving contact info:', error);

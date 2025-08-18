@@ -202,7 +202,7 @@ class SquareClientSingleton {
         (client as any).locationsApi = client.locations;
         logger.info('Square locations API initialized');
       } else {
-        logger.warn('Square locations API not available');
+        logger.debug('Square locations API not available');
       }
 
       logger.info(`Square ${clientType} client initialized successfully`);

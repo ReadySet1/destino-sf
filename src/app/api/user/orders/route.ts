@@ -41,7 +41,7 @@ type CateringOrderData = Prisma.CateringOrderGetPayload<{
         quantity: true;
         pricePerUnit: true;
         totalPrice: true;
-        name: true;
+        itemName: true;
         itemType: true;
       };
     };
@@ -116,7 +116,7 @@ export async function GET() {
     });
 
     // 3. Fetch catering orders for the authenticated user
-    const cateringOrders: CateringOrderData[] = await prisma.cateringOrder.findMany({
+    const cateringOrders = await prisma.cateringOrder.findMany({
       where: {
         customerId: user.id,
       },
@@ -134,7 +134,7 @@ export async function GET() {
             quantity: true,
             pricePerUnit: true,
             totalPrice: true,
-            name: true,
+            itemName: true,
             itemType: true,
           },
         },
@@ -189,7 +189,7 @@ export async function GET() {
           typeof item.pricePerUnit === 'object' && item.pricePerUnit !== null
             ? Number(item.pricePerUnit)
             : Number(item.pricePerUnit) || 0,
-        name: item.name,
+        name: item.itemName,
       })),
     }));
 

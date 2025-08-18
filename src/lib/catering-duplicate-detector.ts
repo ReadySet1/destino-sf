@@ -297,7 +297,7 @@ export class CateringDuplicateDetector {
       withoutSquareId: number;
       potentialDuplicates: number;
       inProductsTable: number;
-      inCateringTable: number; // Siempre 0 - tabla catering_items eliminada
+      inCateringTable: number; // Always 0 - catering_items table removed
     }>;
   }> {
     
@@ -351,7 +351,7 @@ export class CateringDuplicateDetector {
           withoutSquareId: 0,
           potentialDuplicates: 0,
           inProductsTable: 0,
-          inCateringTable: 0 // Siempre 0 - modo solo productos
+          inCateringTable: 0 // Always 0 - products-only mode
         };
       }
 

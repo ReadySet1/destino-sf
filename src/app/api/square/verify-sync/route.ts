@@ -79,12 +79,10 @@ async function getLocalItemCounts(): Promise<Record<string, { products: number; 
       }
     });
 
-    // Get counts from catering_items table
-    const cateringItems = await prisma.cateringItem.findMany({
-      where: {
-        isActive: true
-      }
-    });
+    // Get catering products from products table (catering_items table removed)
+    const cateringProducts = productsWithCategories.filter(product => 
+      product.category.name.includes('CATERING')
+    );
 
     // Count products by category
     for (const product of productsWithCategories) {
@@ -95,18 +93,13 @@ async function getLocalItemCounts(): Promise<Record<string, { products: number; 
       counts[categoryName].products++;
     }
 
-    // Count catering items by category
-    for (const item of cateringItems) {
-      const categoryName = item.squareCategory || 'UNKNOWN';
-      if (!counts[categoryName]) {
-        counts[categoryName] = { products: 0, cateringItems: 0, total: 0 };
-      }
-      counts[categoryName].cateringItems++;
-    }
+    // Catering items are now counted in the products section above
+    // (catering_items table removed - using unified products approach)
 
-    // Calculate totals
+    // Calculate totals (cateringItems count now always 0)
     for (const categoryName in counts) {
-      counts[categoryName].total = counts[categoryName].products + counts[categoryName].cateringItems;
+      counts[categoryName].cateringItems = 0; // Always 0 since table removed
+      counts[categoryName].total = counts[categoryName].products;
     }
 
     return counts;
@@ -134,17 +127,17 @@ async function findMissingItems(): Promise<Array<{ squareId: string; name: strin
         const existsInProducts = await prisma.product.findFirst({
           where: {
             squareId: squareId
+          },
+          include: {
+            category: true
           }
         });
 
-        // Check if item exists in catering_items table
-        const existsInCatering = await prisma.cateringItem.findFirst({
-          where: {
-            squareProductId: squareId
-          }
-        });
+        // Check if item exists in catering categories in products table
+        // (catering_items table removed - checking catering categories in products)
+        const existsInCatering = existsInProducts && existsInProducts.category.name.includes('CATERING');
 
-        if (!existsInProducts && !existsInCatering) {
+        if (!existsInProducts) {
           missingItems.push({
             squareId,
             name,
@@ -205,25 +198,8 @@ async function findExtraItems(): Promise<Array<{ id: string; name: string; categ
       }
     }
 
-    // Check catering_items table for items with Square IDs not in Square
-    const cateringItemsWithSquareIds = await prisma.cateringItem.findMany({
-      where: {
-        squareProductId: {
-          not: null
-        } as any,
-        isActive: true
-      }
-    });
-
-    for (const item of cateringItemsWithSquareIds) {
-      if (item.squareProductId && !allSquareIds.has(item.squareProductId)) {
-        extraItems.push({
-          id: item.id,
-          name: item.name,
-          category: item.squareCategory || 'UNKNOWN'
-        });
-      }
-    }
+    // Catering products are already checked in the productsWithSquareIds loop above
+    // (catering_items table removed - using unified products approach)
 
   } catch (error) {
     logger.error('Error finding extra items:', error);

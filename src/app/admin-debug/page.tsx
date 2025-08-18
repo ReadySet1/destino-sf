@@ -114,17 +114,8 @@ function AdminDebugContent() {
     }
   };
 
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      // code here
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase.auth]);
+  // Removed onAuthStateChange listener as it was unnecessary and caused security warnings
+  // The component already handles auth state through getUser() calls
 
   return (
     <div className="container mx-auto py-10 space-y-6">
