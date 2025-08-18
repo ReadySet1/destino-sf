@@ -149,6 +149,8 @@ async function getDatabaseSquareIds(): Promise<Map<string, string>> {
   }
 }
 
+// Protections removed - sync process should handle active status correctly
+
 /**
  * Main function to find and deactivate obsolete products.
  */

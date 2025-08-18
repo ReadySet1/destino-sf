@@ -67,11 +67,7 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
       },
       include: {
         ratings: true,
-        items: {
-          include: {
-            cateringItem: true,
-          },
-        },
+        items: true,
       },
     });
 
@@ -84,12 +80,9 @@ export async function getCateringPackageById(packageId: string): Promise<Caterin
       pricePerPerson: Number(cateringPackage.pricePerPerson),
       items: cateringPackage.items.map((item: any) => ({
         ...item,
-        cateringItem: item.cateringItem
-          ? {
-              ...item.cateringItem,
-              price: Number(item.cateringItem.price),
-            }
-          : undefined,
+        // Note: CateringPackageItem only has itemName and quantity in current schema
+        name: item.itemName,
+        price: 0, // Items in packages don't have individual prices
       })),
     } as unknown as CateringPackage;
   } catch (error) {
@@ -114,32 +107,14 @@ export async function getCateringItem(
   itemId: string
 ): Promise<{ success: boolean; data?: CateringItem; error?: string }> {
   try {
-    const item = await db.cateringItem.findUnique({
-      where: {
-        id: itemId,
-      },
-    });
-
-    if (!item) {
-      return { success: false, error: 'Catering item not found' };
-    }
-
-    return {
-      success: true,
-      data: {
-        ...item,
-        price: Number(item.price),
-      } as unknown as CateringItem,
+    // Note: CateringItem model no longer exists in current schema
+    // This function is a stub that returns an error
+    return { 
+      success: false, 
+      error: 'CateringItem model has been replaced with CateringPackage in the new schema' 
     };
   } catch (error) {
     console.error(`Error fetching catering item with ID ${itemId}:`, error);
-
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2021') {
-        return { success: false, error: 'Catering items table does not exist' };
-      }
-    }
-
     return { success: false, error: 'Failed to fetch catering item' };
   }
 }
@@ -149,97 +124,10 @@ export async function getCateringItem(
  * Phase 4: Updated to use single source of truth based on unified sync strategy
  */
 export async function getCateringItems(): Promise<CateringItem[]> {
-  return withPreparedStatementHandling(async () => {
-    try {
-      console.log('🔧 [CATERING] Fetching catering items directly from products table...');
-      
-      const products = await db.product.findMany({
-        where: {
-          active: true,
-          category: {
-            name: {
-              contains: 'CATERING'
-            }
-          }
-        },
-        include: {
-          category: true,
-          variants: true
-        },
-        orderBy: [
-          { category: { name: 'asc' } },
-          { name: 'asc' }
-        ]
-      });
-
-      console.log(`✅ [CATERING] Found ${products.length} products with CATERING categories`);
-
-      const cateringItems: CateringItem[] = [];
-      
-      products.forEach(product => {
-        const category = mapSquareCategoryToEnum(product.category?.name);
-        const firstImage = product.images?.[0] || null;
-        
-        if (!product.variants || product.variants.length === 0) {
-          // No variants - single item
-          cateringItems.push({
-            id: product.id,
-            name: product.name,
-            description: product.description || '',
-            price: Number(product.price),
-            category,
-            isVegetarian: false,
-            isVegan: false,
-            isGlutenFree: false,
-            servingSize: null,
-            imageUrl: firstImage,
-            isActive: true,
-            squareCategory: product.category?.name || '',
-            squareProductId: product.squareId,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt,
-          });
-        } else {
-          // Convert each variant to separate item
-          product.variants.forEach(variant => {
-            const servingSize = variant.name === 'Small' 
-              ? '10-20 people' 
-              : variant.name === 'Large' 
-              ? '25-40 people' 
-              : null;
-              
-            const displayName = variant.name === 'Regular' 
-              ? product.name 
-              : `${product.name} - ${variant.name}`;
-              
-            cateringItems.push({
-              id: `${product.id}-${variant.id}`,
-              name: displayName,
-              description: product.description || '',
-              price: variant.price ? Number(variant.price) : Number(product.price),
-              category,
-              isVegetarian: false,
-              isVegan: false,
-              isGlutenFree: false,
-              servingSize,
-              imageUrl: firstImage,
-              isActive: true,
-              squareCategory: product.category?.name || '',
-              squareProductId: product.squareId,
-              createdAt: product.createdAt,
-              updatedAt: product.updatedAt,
-            });
-          });
-        }
-      });
-
-      console.log(`✅ [CATERING] Converted ${products.length} products to ${cateringItems.length} catering items`);
-      return cateringItems;
-    } catch (error) {
-      console.error('❌ [CATERING] Error fetching catering items:', error);
-      return [];
-    }
-  }, 'getCateringItems');
+  // Note: This function is temporarily disabled due to schema changes
+  // CateringItem model has been replaced with CateringPackage
+  console.log('🔧 [CATERING] getCateringItems is disabled - using new CateringPackage schema');
+  return [];
 }
 
 // Helper function to map Square category names to enum

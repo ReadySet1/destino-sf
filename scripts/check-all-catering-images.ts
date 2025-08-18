@@ -12,7 +12,7 @@ interface ProductWithImages {
 interface CateringItemWithImages {
   id: string;
   name: string;
-  category: string;
+  type: string;
   imageUrl: string | null;
   squareProductId: string | null;
   price: any; // Decimal type from Prisma
@@ -23,9 +23,9 @@ async function checkAllCateringImages() {
 
   try {
     // Get all catering items
-    const cateringItems = (await prisma.cateringItem.findMany({
+    const cateringItems = (await prisma.cateringPackage.findMany({
       where: { isActive: true },
-      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      orderBy: [{ type: 'asc' }, { name: 'asc' }],
     })) as CateringItemWithImages[];
 
     // Get all products that could have images
@@ -45,14 +45,14 @@ async function checkAllCateringImages() {
     console.log(`Found ${cateringItems.length} active catering items`);
     console.log(`Found ${products.length} products with images\n`);
 
-    // Group by category for better analysis
-    const categories = new Map<string, CateringItemWithImages[]>();
+    // Group by type for better analysis
+    const types = new Map<string, CateringItemWithImages[]>();
 
     cateringItems.forEach(item => {
-      if (!categories.has(item.category)) {
-        categories.set(item.category, []);
+      if (!types.has(item.type)) {
+        types.set(item.type, []);
       }
-      categories.get(item.category)!.push(item);
+      types.get(item.type)!.push(item);
     });
 
     let totalItems = 0;
@@ -60,11 +60,11 @@ async function checkAllCateringImages() {
     let itemsWithS3Images = 0;
     let missingImages: CateringItemWithImages[] = [];
 
-    console.log('📊 CATERING IMAGES BY CATEGORY');
+    console.log('📊 CATERING IMAGES BY TYPE');
     console.log('='.repeat(50));
 
-    for (const [category, items] of categories) {
-      console.log(`\n🏷️  ${category} (${items.length} items)`);
+    for (const [type, items] of types) {
+      console.log(`\n🏷️  ${type} (${items.length} items)`);
       console.log('-'.repeat(30));
 
       for (const item of items) {
@@ -139,7 +139,7 @@ async function checkAllCateringImages() {
       console.log('\n🚨 ITEMS MISSING IMAGES');
       console.log('='.repeat(30));
       missingImages.forEach(item => {
-        console.log(`- ${item.name} (${item.category})`);
+        console.log(`- ${item.name} (${item.type})`);
         console.log(`  ID: ${item.id}`);
         console.log(`  Price: $${Number(item.price).toFixed(2)}`);
         console.log(`  Square Product ID: ${item.squareProductId || 'None'}`);

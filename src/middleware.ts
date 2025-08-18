@@ -73,80 +73,121 @@ export async function middleware(request: NextRequest) {
   // Add enhanced security headers for all responses
   addSecurityHeaders(response, pathname);
 
-  // Initialize Supabase client with enhanced error handling (after rate limiting)
-  try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
+  // Optimized authentication check for admin routes
+  if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return request.cookies.get(name)?.value;
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              response.cookies.set({
+                name,
+                value,
+                ...options,
+              });
+            },
+            remove(name: string, options: CookieOptions) {
+              response.cookies.set({
+                name,
+                value: '',
+                ...options,
+              });
+            },
           },
-          set(name: string, value: string, options: CookieOptions) {
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          },
-          remove(name: string, options: CookieOptions) {
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
-          },
-        },
-      }
-    );
+        }
+      );
 
-    // Enhanced auth check with session refresh handling
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+      // Check session without database calls
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-    if (error) {
-      // Handle specific auth errors
-      if (
-        error.message?.includes('refresh_token_not_found') ||
-        error.message?.includes('Invalid Refresh Token')
-      ) {
-        console.warn('Auth token refresh failed in middleware:', {
-          error: error.message,
-          pathname,
-          timestamp: new Date().toISOString(),
-        });
-
-        // Clear invalid session cookies
+      if (error || !session) {
+        // Clear any invalid session cookies
         response.cookies.set('sb-access-token', '', { maxAge: 0 });
         response.cookies.set('sb-refresh-token', '', { maxAge: 0 });
 
-        // For admin routes, redirect to sign-in
+        // Redirect to sign-in for admin routes
         if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
           return NextResponse.redirect(new URL('/sign-in', request.url));
         }
       } else {
-        console.error('Auth error in middleware:', error);
+        // Session exists, add user info to headers for downstream use
+        // This avoids database calls in individual page components
+        response.headers.set('X-User-ID', session.user.id);
+        response.headers.set('X-User-Email', session.user.email || '');
+        
+        // Check if user needs to refresh token
+        const tokenExpiry = session.expires_at;
+        if (tokenExpiry && Date.now() > (tokenExpiry * 1000) - 60000) { // 1 minute before expiry
+          try {
+            await supabase.auth.refreshSession();
+          } catch (refreshError) {
+            console.warn('Token refresh failed:', refreshError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Auth middleware error:', error);
+      response.headers.set('X-Auth-Error', 'true');
+      
+      // For admin routes, redirect to sign-in on auth errors
+      if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
+        return NextResponse.redirect(new URL('/sign-in', request.url));
       }
     }
+  } else {
+    // For non-admin routes, just check session without blocking
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return request.cookies.get(name)?.value;
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              response.cookies.set({
+                name,
+                value,
+                ...options,
+              });
+            },
+            remove(name: string, options: CookieOptions) {
+              response.cookies.set({
+                name,
+                value: '',
+                ...options,
+              });
+            },
+          },
+        }
+      );
 
-    // If session exists, attempt to refresh it if needed
-    if (session) {
-      try {
-        await supabase.auth.getUser();
-      } catch (userError) {
-        console.warn('Failed to refresh user session:', userError);
-        // Don't block the request, but log the issue
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        // Log error but don't block non-admin routes
+        console.warn('Non-admin route auth error:', error);
+      } else if (session) {
+        // Add user info to headers for downstream use
+        response.headers.set('X-User-ID', session.user.id);
+        response.headers.set('X-User-Email', session.user.email || '');
       }
+    } catch (error) {
+      // Log error but don't block non-admin routes
+      console.warn('Non-admin route auth check failed:', error);
     }
-  } catch (error) {
-    // Log error but don't block the request
-    console.error('Middleware error:', error);
-
-    // Add error context to response headers for debugging
-    response.headers.set('X-Auth-Error', 'true');
   }
 
   return response;

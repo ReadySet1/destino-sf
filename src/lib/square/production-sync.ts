@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
+import CategoryMapper from './category-mapper';
 import type { Prisma } from '@prisma/client';
 
 // Type definitions
@@ -297,7 +298,7 @@ export class ProductionSyncManager {
     );
 
     // Determine category
-    const categoryId = await this.determineProductCategory(squareProduct, defaultCategory.id);
+    const categoryId = await this.determineProductCategory(squareProduct, relatedObjects, defaultCategory);
 
     // Process variations
     const { variants, basePrice } = this.processVariations(
@@ -317,7 +318,7 @@ export class ProductionSyncManager {
       images: imageResult.validUrls,
       categoryId,
       featured: false,
-      active: true,
+      active: true, // All products should be active by default
       updatedAt: new Date(),
     };
 
@@ -555,15 +556,71 @@ export class ProductionSyncManager {
   }
 
   /**
-   * Determine product category
+   * Determine product category using Square category mapping
    */
   private async determineProductCategory(
     product: SquareCatalogObject,
-    defaultCategoryId: string
+    relatedObjects: SquareCatalogObject[],
+    defaultCategory: { id: string; name: string }
   ): Promise<string> {
-    // Implementation for category determination
-    // For now, return default category
-    return defaultCategoryId;
+    try {
+      // Get Square category ID from product
+      const squareCategoryId = product.item_data?.category_id || 
+                              product.item_data?.categories?.[0]?.id;
+      
+      if (!squareCategoryId) {
+        logger.warn(`No category found for product ${product.item_data?.name}, using default`);
+        return defaultCategory.id;
+      }
+
+      // Check if we have a mapping for this Square category
+      const localCategoryName = CategoryMapper.getLegacyLocalCategory(squareCategoryId) ||
+                                CategoryMapper.getLocalCategory(squareCategoryId);
+      
+      if (!localCategoryName) {
+        logger.warn(`No mapping for Square category ${squareCategoryId}, using default`);
+        return defaultCategory.id;
+      }
+
+      // Find or create the local category
+      let localCategory = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { squareId: squareCategoryId },
+            { name: localCategoryName }
+          ]
+        }
+      });
+
+      if (!localCategory) {
+        // Create the category if it doesn't exist
+        localCategory = await prisma.category.create({
+          data: {
+            name: localCategoryName,
+            squareId: squareCategoryId,
+            slug: CategoryMapper.normalizeCategory(localCategoryName).toLowerCase(),
+            description: `Category synced from Square`,
+            active: true,
+            order: 0
+          }
+        });
+        logger.info(`Created new category: ${localCategoryName} with Square ID: ${squareCategoryId}`);
+      } else if (!localCategory.squareId) {
+        // Update existing category with Square ID
+        await prisma.category.update({
+          where: { id: localCategory.id },
+          data: { squareId: squareCategoryId }
+        });
+        logger.info(`Updated category ${localCategoryName} with Square ID: ${squareCategoryId}`);
+      }
+
+      logger.debug(`Product ${product.item_data?.name} assigned to category ${localCategoryName}`);
+      return localCategory.id;
+      
+    } catch (error) {
+      logger.error(`Error determining category for product ${product.item_data?.name}:`, error);
+      return defaultCategory.id;
+    }
   }
 
   /**

@@ -67,7 +67,7 @@ async function assignCateringImages() {
 
   try {
     // Get all items without images
-    const itemsWithoutImages = await prisma.cateringItem.findMany({
+    const itemsWithoutImages = await prisma.cateringPackage.findMany({
       where: {
         isActive: true,
         OR: [
@@ -78,7 +78,7 @@ async function assignCateringImages() {
       select: {
         id: true,
         name: true,
-        category: true,
+        type: true,
         imageUrl: true,
       },
     });
@@ -96,8 +96,8 @@ async function assignCateringImages() {
         imageUrl = IMAGE_MAPPINGS[item.name as keyof typeof IMAGE_MAPPINGS];
       }
       // Then try category fallback
-      else if (CATEGORY_FALLBACKS[item.category as keyof typeof CATEGORY_FALLBACKS]) {
-        imageUrl = CATEGORY_FALLBACKS[item.category as keyof typeof CATEGORY_FALLBACKS];
+      else if (CATEGORY_FALLBACKS[item.type as keyof typeof CATEGORY_FALLBACKS]) {
+        imageUrl = CATEGORY_FALLBACKS[item.type as keyof typeof CATEGORY_FALLBACKS];
       }
       // Default fallback
       else {
@@ -106,7 +106,7 @@ async function assignCateringImages() {
 
       if (imageUrl) {
         try {
-          await prisma.cateringItem.update({
+          await prisma.cateringPackage.update({
             where: { id: item.id },
             data: { imageUrl },
           });

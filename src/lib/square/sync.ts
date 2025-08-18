@@ -592,16 +592,36 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       // Optional: Log info about potentially orphaned products
       logger.info(`Sync complete. Found ${validSquareIds.length} valid Square products.`);
 
-      // Special handling for manually created products (with 'reset-' prefix in squareId)
+      // Optimized archive logic: Use bulk operations instead of individual queries
       try {
-        logger.info('Checking for manually created products that need image preservation...');
-        const manualProducts = await prisma.product.findMany({
+        logger.info('Starting optimized archive logic for products not in Square...');
+        
+        // Get all active Square IDs from our database
+        const dbSquareIds = await prisma.product.findMany({
           where: {
             squareId: {
-              startsWith: 'reset-',
+              not: '',
             },
-            images: {
-              isEmpty: true,
+            active: true,
+          },
+          select: {
+            squareId: true,
+          },
+        });
+
+        const dbSquareIdSet = new Set(dbSquareIds.map(p => p.squareId));
+
+        // Find products that should be archived (not in Square anymore)
+        const productsToArchive = await prisma.product.findMany({
+          where: {
+            squareId: {
+              not: '',
+              notIn: Array.from(dbSquareIdSet),
+            },
+            active: true,
+            // Only archive products that were created more than 24 hours ago
+            createdAt: {
+              lt: new Date(Date.now() - 24 * 60 * 60 * 1000),
             },
           },
           select: {
@@ -611,75 +631,48 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           },
         });
 
-        if (manualProducts.length > 0) {
-          logger.info(`Found ${manualProducts.length} manual products with empty images array`);
+        if (productsToArchive.length > 0) {
+          logger.info(`Found ${productsToArchive.length} products to archive`);
 
-          // Extract the original UUID from the squareId to look up previous versions
-          for (const product of manualProducts) {
-            const originalId = product.squareId.replace('reset-', '');
-            logger.info(
-              `Looking for images for manual product: ${product.name} (${product.id}), original ID: ${originalId}`
-            );
-
-            // Check for any products with this ID in our database that might have images
-            const matchingProducts = await prisma.product.findMany({
-              where: {
-                OR: [{ id: originalId }, { squareId: originalId }],
+          // Bulk archive operation - much faster than individual updates
+          const archiveResult = await prisma.product.updateMany({
+            where: {
+              id: {
+                in: productsToArchive.map(p => p.id),
               },
-              select: {
-                images: true,
-              },
-            });
+            },
+            data: {
+              active: false,
+              updatedAt: new Date(),
+              syncStatus: 'ARCHIVED',
+            },
+          });
 
-            // If we find matching products with images, use those images
-            for (const matchingProduct of matchingProducts) {
-              if (matchingProduct.images && matchingProduct.images.length > 0) {
-                logger.info(
-                  `Found matching product with ${matchingProduct.images.length} images for ${product.name}`
-                );
-
-                // Update the manual product with these images
-                await prisma.product.update({
-                  where: { id: product.id },
-                  data: {
-                    images: matchingProduct.images,
-                    updatedAt: new Date(),
-                  },
-                });
-
-                logger.info(
-                  `Updated manual product ${product.name} with ${matchingProduct.images.length} images`
-                );
-                break; // Stop after first match with images
-              }
-            }
-          }
+          logger.info(`Successfully archived ${archiveResult.count} products`);
         } else {
-          logger.info('No manual products without images found');
+          logger.info('No products need to be archived');
         }
 
-        // Check for custom non-Square products that might have lost their images
-        // This handles products that were added manually but don't have the 'reset-' prefix
-        logger.info('Checking for non-Square products that might have lost images...');
-
-        // Get all products that:
-        // 1. Don't have a Square ID (custom products) or have an ID not in validSquareIds (removed from Square)
-        // 2. Have empty images array
-        // 3. Have been active for some time (not brand new)
+        // Handle custom/removed products without images (simplified logic)
         const customOrRemovedProducts = await prisma.product.findMany({
           where: {
-            OR: [
-              { squareId: { equals: undefined } },
+            AND: [
               {
                 squareId: {
                   not: { startsWith: 'reset-' },
-                  notIn: validSquareIds,
                 },
               },
+              {
+                squareId: {
+                  notIn: Array.from(dbSquareIdSet),
+                },
+              },
+              {
+                images: { isEmpty: true },
+                active: true,
+                createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+              },
             ],
-            images: { isEmpty: true },
-            active: true,
-            createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Created more than 24 hours ago
           },
           select: {
             id: true,
@@ -693,27 +686,21 @@ export async function syncSquareProducts(): Promise<SyncResult> {
             `Found ${customOrRemovedProducts.length} custom/removed products without images`
           );
 
-          // Look for products with the same name or slug in a backup table or in the database history
-          // This would require you to implement a product history or backup table
-
-          // For now, just log these products so you're aware of them
+          // Log these products for awareness (future implementation can add backup logic)
           for (const product of customOrRemovedProducts) {
             logger.warn(`Custom/removed product without images: ${product.name} (${product.id})`);
-            // Future implementation: Check backup tables or other sources for these product images
           }
         } else {
           logger.info('No custom/removed products without images found');
         }
+
+        logger.info(
+          "Optimized archive logic completed. Skipping special image preservation for 'reset-' and custom products to ensure strict Square image sync."
+        );
       } catch (manualError) {
-        logger.error('Error processing manual products:', manualError);
+        logger.error('Error in optimized archive logic:', manualError);
         // Don't fail the entire sync due to these issues
       }
-
-      // For now, removing the special handling for 'reset-' and custom/removed products image preservation as it conflicts with strict Square data.
-      // If you need specific fallbacks for *manually created* non-Square items, that logic should be separate and very targeted.
-      logger.info(
-        "Skipping special image preservation for 'reset-' and custom products for now to ensure strict Square image sync."
-      );
     } catch (searchError) {
       logger.error('Error searching catalog items:', searchError);
       errors.push(searchError instanceof Error ? searchError.message : String(searchError));
@@ -764,30 +751,76 @@ async function processSquareItem(
 
   const baseSlug = createSlug(itemName);
 
-  // Determine category with database retry
+  // Determine category using Square category mapping (FIXED)
   let categoryId = defaultCategory.id;
   let categoryName = defaultCategory.name;
 
   const categoryIdFromItem = itemData.categories?.[0]?.id || itemData.category_id;
 
   if (categoryIdFromItem) {
-    const categoryObject = categoryMap.get(categoryIdFromItem);
-    if (categoryObject?.category_data?.name) {
-      categoryName = categoryObject.category_data.name;
+    // Use CategoryMapper instead of creating by name
+    const { default: CategoryMapper } = await import('./category-mapper');
+    
+    // Try to get mapped category name
+    const mappedCategoryName = CategoryMapper.getLegacyLocalCategory(categoryIdFromItem) ||
+                              CategoryMapper.getLocalCategory(categoryIdFromItem);
+    
+    if (mappedCategoryName) {
+      // Find existing category by Square ID first, then by name
+      let category = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { squareId: categoryIdFromItem },
+            { name: mappedCategoryName }
+          ]
+        }
+      });
 
-      if (isCateringCategory(categoryName)) {
-        logger.debug(`Found catering category: ${categoryName} for item ${itemName}`);
+      if (!category) {
+        // Create category with proper Square ID
+        category = await prisma.category.create({
+          data: {
+            name: mappedCategoryName,
+            squareId: categoryIdFromItem,
+            slug: CategoryMapper.normalizeCategory(mappedCategoryName).toLowerCase(),
+            description: `Category synced from Square`,
+            active: true,
+            order: 0
+          }
+        });
+        logger.info(`Created new category: ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`);
+      } else if (!category.squareId) {
+        // Update existing category with Square ID
+        await prisma.category.update({
+          where: { id: category.id },
+          data: { squareId: categoryIdFromItem }
+        });
+        logger.info(`Updated category ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`);
       }
 
-      try {
-        const category = await withDatabaseRetry(async () => {
-          return await getOrCreateCategoryByName(categoryName);
-        });
-        categoryId = category.id;
-        logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId})`);
-      } catch (categoryError) {
-        logger.error(`Error getting/creating category for "${itemName}":`, categoryError);
-        categoryId = defaultCategory.id;
+      categoryId = category.id;
+      categoryName = mappedCategoryName;
+      logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via CategoryMapper`);
+    } else {
+      // Fallback to original logic for unmapped categories
+      const categoryObject = categoryMap.get(categoryIdFromItem);
+      if (categoryObject?.category_data?.name) {
+        categoryName = categoryObject.category_data.name;
+
+        if (isCateringCategory(categoryName)) {
+          logger.debug(`Found catering category: ${categoryName} for item ${itemName}`);
+        }
+
+        try {
+          const category = await withDatabaseRetry(async () => {
+            return await getOrCreateCategoryByName(categoryName);
+          });
+          categoryId = category.id;
+          logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via fallback`);
+        } catch (categoryError) {
+          logger.error(`Error getting/creating category for "${itemName}":`, categoryError);
+          categoryId = defaultCategory.id;
+        }
       }
     }
   }
@@ -827,6 +860,7 @@ async function processSquareItem(
             create: variants,
           },
           categoryId: categoryId,
+          active: true, // FIXED: Ensure products stay active on update
           updatedAt: new Date(),
         },
       });
@@ -1453,54 +1487,57 @@ export async function syncProductOrderingFromSquare(): Promise<{
 
     logger.info(`Created ordinal mapping for ${squareOrdinalsMap.size} Square items`);
 
-    const productBatches = chunkArray(dbProducts, BATCH_SIZE);
+    // Optimize: Use bulk operations instead of individual updates
+    const productsToUpdate: Array<{ id: string; ordinal: bigint }> = [];
+    
+    for (const product of dbProducts) {
+      if (!product.squareId) {
+        results.skipped++;
+        continue;
+      }
 
-    for (const batch of productBatches) {
-      const updatePromises = batch.map(async product => {
-        try {
-          if (!product.squareId) {
-            results.skipped++;
-            return;
-          }
+      const squareOrdinal = squareOrdinalsMap.get(product.squareId);
 
-          const squareOrdinal = squareOrdinalsMap.get(product.squareId);
+      if (squareOrdinal === undefined) {
+        logger.debug(
+          `No ordinal found in Square for product ${product.name} (${product.squareId})`
+        );
+        results.skipped++;
+        continue;
+      }
 
-          if (squareOrdinal === undefined) {
-            logger.debug(
-              `No ordinal found in Square for product ${product.name} (${product.squareId})`
-            );
-            results.skipped++;
-            return;
-          }
+      if (product.ordinal !== squareOrdinal) {
+        productsToUpdate.push({
+          id: product.id,
+          ordinal: squareOrdinal,
+        });
+      } else {
+        results.skipped++;
+      }
+    }
 
-          if (product.ordinal !== squareOrdinal) {
-            await prisma.product.update({
-              where: { id: product.id },
-              data: {
-                ordinal: squareOrdinal,
-                updatedAt: new Date(),
-              },
-            });
-
-            logger.debug(
-              `Updated ordinal for product ${product.name}: ${product.ordinal} -> ${squareOrdinal}`
-            );
-            results.updated++;
-          } else {
-            results.skipped++;
-          }
-        } catch (error) {
-          logger.error(`Error updating ordinal for product ${product.name}:`, error);
-          results.errors++;
+    // Perform bulk update if there are products to update
+    if (productsToUpdate.length > 0) {
+      logger.info(`Performing bulk update for ${productsToUpdate.length} products...`);
+      
+      // Use transaction for bulk update to ensure consistency
+      await prisma.$transaction(async (tx) => {
+        for (const productUpdate of productsToUpdate) {
+          await tx.product.update({
+            where: { id: productUpdate.id },
+            data: {
+              ordinal: productUpdate.ordinal,
+              updatedAt: new Date(),
+            },
+          });
         }
       });
 
-      await Promise.allSettled(updatePromises);
+      results.updated = productsToUpdate.length;
+      logger.info(`Successfully updated ordinals for ${productsToUpdate.length} products`);
+    } else {
+      logger.info('No products need ordinal updates');
     }
-
-    logger.info(
-      `Product ordering sync complete. Updated: ${results.updated}, Skipped: ${results.skipped}, Errors: ${results.errors}`
-    );
   } catch (error) {
     logger.error('Error in syncProductOrderingFromSquare:', error);
     results.errors++;

@@ -3,10 +3,38 @@
 import { NextResponse } from 'next/server';
 import { syncProductsProduction } from '@/lib/square/production-sync';
 import { logger } from '@/utils/logger';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
     logger.info('🚀 Square sync API triggered via POST');
+    logger.info('📊 Pre-sync statistics:');
+    
+    // Log current state before sync
+    const preStats = await prisma.product.groupBy({
+      by: ['active', 'categoryId'],
+      _count: true
+    });
+    
+    logger.info('Pre-sync product distribution:', preStats);
+
+    // Check specifically for empanadas before sync
+    const empanadasCategoryBefore = await prisma.category.findFirst({
+      where: { name: 'EMPANADAS' }
+    });
+    
+    let empanadasCountBefore = 0;
+    if (empanadasCategoryBefore) {
+      empanadasCountBefore = await prisma.product.count({
+        where: {
+          categoryId: empanadasCategoryBefore.id,
+          active: true
+        }
+      });
+      logger.info(`🌮 Active empanadas before sync: ${empanadasCountBefore}`);
+    } else {
+      logger.warn('⚠️ EMPANADAS category not found before sync');
+    }
 
     // Parse request body for options
     let options = {};
@@ -21,6 +49,47 @@ export async function POST(request: Request) {
     // Start the production sync process
     const result = await syncProductsProduction(options);
 
+    // Log post-sync state
+    logger.info('📊 Post-sync statistics:');
+    const postStats = await prisma.product.groupBy({
+      by: ['active', 'categoryId'],
+      _count: true
+    });
+    
+    logger.info('Post-sync product distribution:', postStats);
+
+    // Check specifically for empanadas after sync
+    const empanadasCategory = await prisma.category.findFirst({
+      where: { name: 'EMPANADAS' }
+    });
+    
+    if (empanadasCategory) {
+      const empanadasCount = await prisma.product.count({
+        where: {
+          categoryId: empanadasCategory.id,
+          active: true
+        }
+      });
+      logger.info(`🌮 Active empanadas after sync: ${empanadasCount} (was: ${empanadasCountBefore})`);
+      
+      // Log sample empanadas to verify category assignment
+      const sampleEmpanadas = await prisma.product.findMany({
+        where: {
+          categoryId: empanadasCategory.id
+        },
+        take: 3,
+        select: {
+          name: true,
+          active: true,
+          squareId: true
+        }
+      });
+      
+      logger.info('📋 Sample empanadas:', sampleEmpanadas);
+    } else {
+      logger.error('❌ EMPANADAS category still not found after sync!');
+    }
+
     const response = {
       success: result.success,
       message: result.message,
@@ -31,6 +100,15 @@ export async function POST(request: Request) {
         productDetails: result.productDetails,
         errors: result.errors,
         warnings: result.warnings,
+        empanadasInfo: empanadasCategory ? {
+          categoryId: empanadasCategory.id,
+          activeCount: await prisma.product.count({
+            where: { categoryId: empanadasCategory.id, active: true }
+          }),
+          totalCount: await prisma.product.count({
+            where: { categoryId: empanadasCategory.id }
+          })
+        } : null,
       },
     };
 

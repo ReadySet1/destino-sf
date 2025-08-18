@@ -35,6 +35,21 @@ class ResilientPrismaClient extends PrismaClient {
       },
       log: isProduction ? ['error'] : ['query', 'info', 'warn', 'error'],
       errorFormat: 'pretty',
+      // Add connection pooling configuration for better performance
+      // These settings help with serverless environments
+      __internal: {
+        engine: {
+          // Increase connection timeout for serverless
+          connectionTimeout: 30000, // 30 seconds
+          // Better connection management
+          pool: {
+            min: 1,
+            max: 10,
+            idleTimeoutMillis: 30000, // 30 seconds
+            acquireTimeoutMillis: 30000, // 30 seconds
+          },
+        },
+      },
     });
 
     // Initialize connection state
