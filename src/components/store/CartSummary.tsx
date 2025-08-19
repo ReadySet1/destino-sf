@@ -14,29 +14,33 @@ export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: Cart
 
   return (
     <div
-      className={`rounded-lg border p-4 bg-white shadow-sm ${cartType === 'catering' ? 'border-amber-200' : ''}`}
+      className={`rounded-xl border p-4 sm:p-6 bg-white shadow-sm lg:shadow-lg ${
+        cartType === 'catering' ? 'border-amber-200 lg:border-amber-300' : 'border-gray-200 lg:border-gray-300'
+      }`}
       data-testid="cart-summary"
     >
       <h2
-        className={`text-lg font-semibold mb-4 ${cartType === 'catering' ? 'text-amber-700' : ''}`}
+        className={`text-lg sm:text-xl font-bold mb-4 ${
+          cartType === 'catering' ? 'text-amber-700' : 'text-gray-900'
+        }`}
       >
         {cartType === 'catering' ? 'Catering' : 'Order'} Summary
       </h2>
-      <div className="space-y-1">
-        <div className="flex justify-between" data-testid="order-subtotal">
-          <span>Subtotal ({totalItems} items)</span>
-          <span>{formatCurrency(subtotal)}</span>
+      <div className="space-y-3">
+        <div className="flex justify-between text-gray-700" data-testid="order-subtotal">
+          <span className="text-sm sm:text-base">Subtotal ({totalItems} items)</span>
+          <span className="font-semibold text-sm sm:text-base">{formatCurrency(subtotal)}</span>
         </div>
-        <div className="flex justify-between" data-testid="order-tax">
-          <span>Tax</span>
-          <span>{formatCurrency(tax)}</span>
+        <div className="flex justify-between text-gray-700" data-testid="order-tax">
+          <span className="text-sm sm:text-base">Tax</span>
+          <span className="font-semibold text-sm sm:text-base">{formatCurrency(tax)}</span>
         </div>
         <div
-          className="border-t mt-2 pt-2 font-bold flex justify-between"
+          className="border-t-2 border-gray-200 mt-3 pt-3 font-bold flex justify-between text-gray-900"
           data-testid="order-total"
         >
-          <span>Total</span>
-          <span>{formatCurrency(total)}</span>
+          <span className="text-base sm:text-lg">Total</span>
+          <span className="text-lg sm:text-xl">{formatCurrency(total)}</span>
         </div>
       </div>
     </div>

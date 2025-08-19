@@ -44,42 +44,61 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
   const itemImage = getItemImage();
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center p-4">
-      {/* Product Image */}
-      <div className="mr-4 flex-shrink-0">
-        <div className="relative h-16 w-16 overflow-hidden rounded-md bg-gray-200">
-          {itemImage ? (
-            <Image src={itemImage} alt={item.name} fill className="object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-xs text-gray-500">No image</span>
-            </div>
-          )}
+    <div className="p-4 sm:p-6">
+      {/* Mobile Layout: Image and Content Side by Side */}
+      <div className="flex gap-3 sm:gap-4 mb-4 sm:mb-0">
+        {/* Product Image */}
+        <div className="flex-shrink-0">
+          <div className="relative h-20 w-20 sm:h-16 sm:w-16 overflow-hidden rounded-lg bg-gray-200">
+            {itemImage ? (
+              <Image src={itemImage} alt={item.name} fill className="object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="text-xs text-gray-500">No image</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Product Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 leading-tight mb-1 sm:truncate">
+            <span className="block sm:hidden">{item.name}</span>
+            <span className="hidden sm:block truncate">{item.name}</span>
+          </h3>
+          <p className="text-sm text-gray-600 mb-2">${item.price.toFixed(2)} / each</p>
+          
+          {/* Mobile: Show total price prominently */}
+          <div className="block sm:hidden">
+            <p className="text-lg font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Desktop: Total Price */}
+        <div className="hidden sm:block sm:mx-4 font-semibold text-lg text-gray-900">
+          ${(item.price * item.quantity).toFixed(2)}
         </div>
       </div>
 
-      {/* Product Info */}
-      <div className="flex-1 min-w-0 mb-3 sm:mb-0">
-        <h3 className="font-medium truncate">{item.name}</h3>
-        <p className="text-sm text-gray-500">${item.price.toFixed(2)} / each</p>
-      </div>
-
-      {/* Mobile Layout: Controls in a row at the bottom */}
-      <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end mt-2 sm:mt-0">
+      {/* Controls Row - Better Spacing for Mobile */}
+      <div className="flex items-center justify-between sm:justify-end pt-3 sm:pt-0 border-t border-gray-100 sm:border-t-0">
         {/* Quantity Stepper */}
-        <div className="mr-3 sm:mx-4">
+        <div className="flex items-center">
+          <span className="text-sm font-medium text-gray-700 mr-3 sm:hidden">Quantity:</span>
           <QuantityStepper value={item.quantity} min={1} max={20} onChange={onUpdateQuantity} />
         </div>
 
-        {/* Total Price */}
-        <div className="mx-3 sm:mx-4 font-medium">${(item.price * item.quantity).toFixed(2)}</div>
-
-        {/* Remove Button */}
-        <div>
-          <Button variant="ghost" size="icon" onClick={onRemove} title="Remove item">
-            <Trash2 className="h-4 w-4 text-gray-500" />
-          </Button>
-        </div>
+        {/* Remove Button - Larger touch target for mobile */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onRemove} 
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 sm:px-2 sm:py-2"
+          title="Remove item"
+        >
+          <Trash2 className="h-4 w-4 mr-1 sm:mr-0" />
+          <span className="sm:hidden">Remove</span>
+        </Button>
       </div>
     </div>
   );
