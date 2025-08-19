@@ -9,6 +9,8 @@ import { OrderStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FormattedNotes } from '@/components/Order/FormattedNotes';
+import { ShippingLabelButton } from '../components/ShippingLabelButton';
+import { PaymentSyncButton } from './components/PaymentSyncButton';
 
 // Define types for serialized data
 interface SerializedOrderItem {
@@ -49,7 +51,12 @@ interface SerializedOrder {
   updatedAt: string;
   userId: string | null;
   trackingNumber: string | null;
+  labelUrl: string | null;
+  labelCreatedAt: string | null;
   shippingCarrier: string | null;
+  fulfillmentType: string | null;
+  shippingRateId: string | null;
+  retryCount: number;
   notes: string | null;
   items: SerializedOrderItem[];
   payments: SerializedPayment[];
@@ -142,7 +149,12 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     updatedAt: order.updatedAt ? new Date(order.updatedAt).toISOString() : '',
     userId: order.userId,
     trackingNumber: order.trackingNumber,
+    labelUrl: order.labelUrl,
+    labelCreatedAt: order.labelCreatedAt?.toISOString() ?? null,
     shippingCarrier: order.shippingCarrier,
+    fulfillmentType: order.fulfillmentType,
+    shippingRateId: order.shippingRateId,
+    retryCount: order.retryCount || 0,
     notes: order.notes,
     items: serializedItems,
     payments: serializedPayments,
@@ -220,6 +232,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
         },
         payments: true,
       },
+      // Include all fields needed for shipping label functionality
     });
 
     // Log database query result
@@ -337,6 +350,22 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   {serializedOrder.shippingCarrier && ` (${serializedOrder.shippingCarrier})`}
                 </p>
               )}
+
+              {serializedOrder?.fulfillmentType && (
+                <p>
+                  <strong>Fulfillment Type:</strong> {serializedOrder.fulfillmentType.replace('_', ' ').toUpperCase()}
+                </p>
+              )}
+            </div>
+            
+            {/* Payment Sync Button - Only show for admin users and when needed */}
+            <div className="mt-4">
+              <PaymentSyncButton
+                orderId={serializedOrder.id}
+                squareOrderId={serializedOrder.squareOrderId}
+                paymentStatus={serializedOrder.paymentStatus}
+                status={serializedOrder.status}
+              />
             </div>
           </div>
 
@@ -367,6 +396,23 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
               )}
             </div>
           </div>
+
+          {/* Shipping Label Management */}
+          {serializedOrder?.fulfillmentType === 'nationwide_shipping' && (
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Shipping Label</h2>
+              <ShippingLabelButton
+                orderId={serializedOrder.id}
+                shippingRateId={serializedOrder.shippingRateId}
+                trackingNumber={serializedOrder.trackingNumber}
+                labelUrl={serializedOrder.labelUrl}
+                shippingCarrier={serializedOrder.shippingCarrier}
+                fulfillmentType={serializedOrder.fulfillmentType}
+                paymentStatus={serializedOrder.paymentStatus}
+                retryCount={serializedOrder.retryCount}
+              />
+            </div>
+          )}
 
           {/* Order Notes */}
           {serializedOrder?.notes && (
