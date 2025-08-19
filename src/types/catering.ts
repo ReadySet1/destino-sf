@@ -685,3 +685,38 @@ export interface ItemEditCapabilities {
   source: ItemSource;
   warnings?: string[];
 }
+
+// New Database-Driven Boxed Lunch Types (replacing the hardcoded tier system)
+export interface BoxedLunchItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  squareId: string;
+  imageUrl?: string | null;
+  dietaryPreferences: string[];
+  isGlutenFree: boolean;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  modifiers?: BoxedLunchModifier[];
+}
+
+export interface BoxedLunchModifier {
+  id: string;
+  name: string;
+  price: number;
+  dietaryInfo?: string;
+}
+
+export interface TropicalSaladModifiers {
+  queso_fresco: BoxedLunchModifier;
+  sirloin_steak: BoxedLunchModifier;
+  chicken_mojo: BoxedLunchModifier;
+}
+
+// Response type for API
+export interface BoxedLunchResponse {
+  success: boolean;
+  items: BoxedLunchItem[];
+  error?: string;
+}

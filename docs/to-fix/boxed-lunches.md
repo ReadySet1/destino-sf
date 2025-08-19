@@ -1,62 +1,10 @@
-# Prompt context: 
-
-I'll help you analyze this issue and create a structured fix plan using your template. Let me first understand the current state of your project and the Square integration.Let me look at the Square integration and sync process to understand the current implementation:Let me look at the documentation and sync-related files:Now let me check the actual sync implementation to understand the current state better:Let me check the actual sync implementation that's being used:Now let me check the current categorization mapping:Let me check the Square API integration to understand how items are currently categorized:Now, let me first check the current database to understand the product categories:Now let me check the actual products that James is referring to:Now I can see the issue! The new "Box" items are being categorized under "CATERING- LUNCH, ENTREES" instead of a proper "BOXED LUNCHES" category. Let me check Square directly to understand the structure:Now let me search for the items to understand their current categorization in Square:I can see the issue clearly now. The "Box" items are categorized under "CATERING- LUNCH, ENTREES" (category ID: K2O3B7JUWT7QD7HGQ5AL2R2N) instead of being in a proper "BOXED LUNCHES" category. Let me create a comprehensive fix plan using your template:I've created a comprehensive implementation plan for fixing the Square sync category mapping issue. Here's the summary of the problem and solution:
-
-## **The Core Issue**
-- ✅ **RESOLVED**: 7 "Box-" prefixed items (the new boxed lunches) have been successfully moved from "CATERING- LUNCH, ENTREES" to "CATERING- BOXED LUNCHES" in Square
-- ✅ **COMPLETED**: Dedicated "CATERING- BOXED LUNCHES" category has been created in Square
-- ✅ **COMPLETED**: All items are now correctly categorized and will appear in the Boxed Lunches menu section
-- The sync process is correctly pulling the data but maintaining the wrong categorization
-
-## **Key Actions Needed**
-
-### 1. **Immediate Fix (Square Side)**
-- ✅ **COMPLETED**: New "CATERING- BOXED LUNCHES" category has been created in Square
-- ✅ **COMPLETED**: All 7 Box- items have been moved to the new category
-- 🔄 **NEXT**: Add pricing tiers for empanada platters (50 pieces @ $145)
-- 🔄 **NEXT**: Add modifiers to Tropical Salad for add-ons
-
-### 2. **Database Update**
-- ✅ **COMPLETED**: "CATERING- BOXED LUNCHES" category exists in Square
-- 🔄 **NEXT**: Create corresponding "CATERING- BOXED LUNCHES" category in the database
-- Update product mappings to point to the new category
-
-### 3. **Sync Process Enhancement**
-- Update the `filtered-sync.ts` to handle category mappings
-- Implement a category mapper service that automatically routes items based on naming patterns
-
-## **The 7 Affected Items**
-All these items need to be moved from "CATERING- LUNCH, ENTREES" to "CATERING- BOXED LUNCHES":
-1. Box- Churrasco Energy Box
-2. Box- Tropical Salad Entree (12oz)
-3. Box- Vegetarian Empanadas (2) with Arroz Rojo & Kale
-4. Box-Beef Empanadas (2) with Chipotle Potatoes & Arroz Blanco
-5. Box- Adobo Pork Power Box
-6. Box- Citrus Mojo Chicken Box
-7. Box-Chicken Empanadas (2) with Chipotle Potatoes & Kale
-
-## **Implementation Approach**
-The plan includes:
-- A one-time fix script to reorganize existing items
-- Enhanced sync logic to handle future categorization correctly
-- Proper category mapping rules based on item name prefixes
-- Batch processing to handle Square API limits efficiently
-
-This fix will ensure that boxed lunch items appear in the correct section of the menu system, making it easier for customers to find and order them.
-
-## **Current Status Update**
-- ✅ **COMPLETED**: "CATERING- BOXED LUNCHES" category successfully created in Square
-- ✅ **COMPLETED**: All 7 Box- items successfully moved to "CATERING- BOXED LUNCHES" category
-- 🔄 **NEXT STEPS**: Database category creation, product mapping updates, and sync process enhancement
-- 📋 **REMAINING**: Pricing tiers for empanada platters and modifiers for Tropical Salad
-
-# Square Sync Category Mapping Fix - Implementation Plan
+# Master Fix Planning - Boxed Lunches Feature
 
 ## 🎯 Feature/Fix Overview
 
-**Name**: Square Category Mapping & Box Lunch Reorganization
+**Name**: Add Database-Driven Boxed Lunches to Catering Page
 
-**Type**: Bug Fix / Enhancement
+**Type**: Feature Enhancement
 
 **Priority**: High
 
@@ -64,18 +12,18 @@ This fix will ensure that boxed lunch items appear in the correct section of the
 
 ### Problem Statement
 
-The new boxed lunch items created by James are incorrectly categorized under "CATERING- LUNCH, ENTREES" in Square instead of a proper "BOXED LUNCHES" category. This causes them to appear in the wrong section of the menu system after sync. Additionally, 3 empanada platters need pricing tiers added in Square.
+Need to integrate the existing boxed lunch items from the database (category: "CATERING- BOXED LUNCHES") into the catering page's Boxed Lunches tab. The Tropical Salad item requires special handling with dropdown modifiers for protein add-ons. Currently, the boxed lunch menu is using hard-coded data instead of pulling from the database.
 
 ### Success Criteria
 
-- [x] ✅ **COMPLETED**: "CATERING- BOXED LUNCHES" category has been created in Square
-- [x] ✅ **COMPLETED**: All "Box-" prefixed items are mapped to the dedicated "CATERING- BOXED LUNCHES" category
-- [ ] The sync process correctly handles category mapping and placement
-- [ ] Empanada platters have both 25 piece ($75) and 50 piece ($145) pricing tiers
-- [ ] Light Carb boxes appear correctly under Boxed Lunches section
-- [ ] Tropical Salad has dropdown modifiers for add-ons (Queso Fresco +$2, Sirloin +$4, Chicken Mojo +$3)
+- [x] All 7 boxed lunch items from database displayed in the Boxed Lunches tab
+- [x] Tropical Salad has working dropdown for protein add-ons with pricing
+- [x] Clean, sleek UI matching existing catering page design
+- [x] Real-time price updates when modifiers are selected
+- [x] Items maintain proper dietary indicators (GF, Vegan, Vegetarian)
+- [x] Integration with existing cart system
 
----
+------
 
 ## 📋 Planning Phase
 
@@ -84,501 +32,444 @@ The new boxed lunch items created by James are incorrectly categorized under "CA
 ### File Structure
 
 ```tsx
-// New/Modified Files
 src/
 ├── app/
 │   ├── api/
-│   │   └── square/
-│   │       ├── fix-category-mapping/
-│   │       │   └── route.ts          // One-time fix for category mapping
-│   │       └── sync-filtered/
-│   │           └── route.ts          // Update sync logic
+│   │   └── catering/
+│   │       └── boxed-lunches/
+│   │           └── route.ts                    // NEW: API route for boxed lunches
+│   └── catering/
+│       └── page.tsx                            // Update: Add boxed lunch data fetching
+├── components/
+│   └── Catering/
+│       ├── BoxedLunchMenu.tsx                  // MODIFY: Convert to database-driven
+│       ├── BoxedLunchCard.tsx                  // NEW: Individual item card component
+│       └── TropicalSaladModifier.tsx           // NEW: Dropdown modifier component
 ├── lib/
-│   ├── square/
-│   │   ├── category-mapper.ts        // Category mapping logic
-│   │   └── filtered-sync.ts          // Update sync to handle mappings
+│   └── catering/
+│       └── boxed-lunch-utils.ts                // NEW: Utility functions
 ├── types/
-│   └── square-sync.ts                // Category mapping types
-└── scripts/
-    └── fix-box-lunch-categories.ts   // One-time migration script
+│   └── catering.ts                             // UPDATE: Add BoxedLunchItem interface
+└── store/
+    └── catering-cart.ts                        // Verify: Cart compatibility
 ```
 
 ### Key Interfaces & Types
 
 ```tsx
-// types/square-sync.ts - Add to existing
-interface CategoryMapping {
-  squareCategoryName: string;
-  dbCategoryName: string;
-  priority: number;
-  rules?: {
-    namePrefix?: string;
-    nameContains?: string[];
-  };
-}
-
-interface BoxLunchItem {
+// types/catering.ts - ADD these interfaces
+interface BoxedLunchItem {
   id: string;
+  name: string;
+  description: string;
+  price: number;
   squareId: string;
-  name: string;
-  currentCategory: string;
-  targetCategory: string;
-  variations?: ItemVariation[];
-  modifiers?: ItemModifier[];
+  imageUrl?: string;
+  dietaryPreferences: string[];
+  isGlutenFree: boolean;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  modifiers?: BoxedLunchModifier[];
 }
 
-interface PricingTier {
-  quantity: number;
-  price: Decimal;
+interface BoxedLunchModifier {
+  id: string;
   name: string;
+  price: number;
+  dietaryInfo?: string;
 }
 
-type CategoryMappingError =
-  | { type: 'CATEGORY_NOT_FOUND'; categoryName: string }
-  | { type: 'MAPPING_CONFLICT'; item: string; categories: string[] }
-  | { type: 'SQUARE_API_ERROR'; message: string };
+interface TropicalSaladModifiers {
+  queso_fresco: BoxedLunchModifier;
+  sirloin_steak: BoxedLunchModifier;
+  chicken_mojo: BoxedLunchModifier;
+}
+
+// Response type for API
+interface BoxedLunchResponse {
+  success: boolean;
+  items: BoxedLunchItem[];
+  error?: string;
+}
 ```
 
 ### Database Schema Reference
 
 ```sql
--- No new migrations needed, but we need to update existing data
--- Update categories table to ensure correct structure
-UPDATE categories 
-SET name = 'BOXED LUNCHES',
-    slug = 'boxed-lunches',
-    "displayOrder" = 3
-WHERE name = 'CATERING- LUNCH, ENTREES' 
-  AND id IN (
-    SELECT DISTINCT "categoryId" 
-    FROM products 
-    WHERE name LIKE 'Box-%'
-  );
-
--- Create new category if needed
-INSERT INTO categories (name, slug, active, "displayOrder", "createdAt", "updatedAt")
-VALUES ('BOXED LUNCHES', 'boxed-lunches', true, 3, NOW(), NOW())
-ON CONFLICT (name) DO NOTHING;
+-- Existing products table contains boxed lunch items
+-- Category: "CATERING- BOXED LUNCHES"
+-- Items already in database:
+-- 1. Box- Adobo Pork Power Box ($16.00)
+-- 2. Box- Churrasco Energy Box ($17.00)  
+-- 3. Box- Citrus Mojo Chicken Box ($15.00)
+-- 4. Box- Tropical Salad Entree (12oz) ($14.00) -- Needs modifiers
+-- 5. Box- Vegetarian Empanadas (2) with Arroz Rojo & Kale ($15.00)
+-- 6. Box-Beef Empanadas (2) with Chipotle Potatoes & Arroz Blanco ($15.00)
+-- 7. Box-Chicken Empanadas (2) with Chipotle Potatoes & Kale ($15.00)
 ```
 
 ### 2. Core Functionality Checklist
 
 ### Required Features (Do Not Modify)
 
-- [x] Identify all "Box-" prefixed items currently miscategorized
-- [x] Create or ensure "BOXED LUNCHES" category exists in both Square and DB
-- [x] Update Square catalog to move items to correct category
-- [x] Update database to reflect new categorization
-- [x] Add pricing tiers for empanada platters
-- [x] Add modifiers for Tropical Salad box
+- [x] Display all 7 boxed lunch items from database category "CATERING- BOXED LUNCHES"
+- [x] Tropical Salad dropdown with exactly these options:
+  - Add Queso Fresco (4oz) $2.00 -gf
+  - Add Sirloin Steak (4oz) $4.00 -gf  
+  - Add Chicken Mojo (4oz) $3.00 -gf
+- [x] Clean item description parsing (handle special characters, line breaks)
+- [x] Dietary indicator badges (GF, Vegan, Vegetarian)
+- [x] Add to cart functionality with modifier state
 
 ### Implementation Assumptions
 
-- Square API allows category updates via catalog batch operations
-- Existing sync protection for catering items remains intact
-- Category changes won't affect existing orders
+- Modifiers for Tropical Salad will be stored in component state initially
+- Future enhancement: Move modifiers to database variant system
+- Images will use fallback if not available in database
+- Price calculations happen client-side for modifiers
 
 ### 3. Full Stack Integration Points
 
 ### API Endpoints
 
 ```tsx
-// POST /api/square/fix-category-mapping - One-time fix execution
-// GET /api/square/fix-category-mapping - Preview changes
-// POST /api/square/sync-filtered - Updated sync with mapping
-
+// GET /api/catering/boxed-lunches - Fetch all boxed lunch items
+interface RouteHandler {
+  GET: async () => {
+    // Query products with category "CATERING- BOXED LUNCHES"
+    // Parse dietary info from descriptions
+    // Return formatted items
+  }
+}
 ```
 
 ### Server Actions (App Router)
 
 ```tsx
-// lib/square/category-mapper.ts
-async function mapItemToCategory(item: CatalogItem): Promise<string>
-async function createBoxedLunchCategory(): Promise<Category>
-async function updateItemCategories(items: string[], categoryId: string): Promise<Result>
+// app/catering/actions.ts - ADD
+async function getBoxedLunchItems(): Promise<BoxedLunchItem[]>
+async function addBoxedLunchToCart(
+  item: BoxedLunchItem, 
+  quantity: number,
+  modifiers?: BoxedLunchModifier[]
+): Promise<CartResponse>
 ```
 
 ### Client-Server Data Flow
 
-1. Admin triggers category fix from dashboard
-2. Server fetches miscategorized items from Square
-3. Batch update to Square catalog
-4. Database sync to reflect changes
-5. Confirmation displayed with updated counts
+1. Page loads → Fetch boxed lunch items from API
+2. User selects Tropical Salad → Show modifier dropdown
+3. User selects modifier → Update local price display
+4. User clicks "Add to Cart" → Send item + modifier to cart
+5. Cart calculates total with base + modifier prices
+6. Confirmation toast shows success
 
----
+------
 
 ## 🧪 Testing Strategy
 
 ### Unit Tests
 
 ```tsx
-// Category Mapping Tests
-describe('CategoryMapper', () => {
-  it('correctly identifies Box- prefixed items', () => {})
-  it('maps items to BOXED LUNCHES category', () => {})
-  it('handles items with multiple category matches', () => {})
+// BoxedLunchCard Tests
+describe('BoxedLunchCard', () => {
+  it('displays item name and base price correctly', async () => {})
+  it('shows dietary badges based on description parsing', async () => {})
+  it('handles Tropical Salad modifier selection', async () => {})
+  it('calculates correct total with modifiers', async () => {})
 });
 
-// Square API Tests
-describe('Square Category Update', () => {
-  it('batch updates item categories', async () => {})
-  it('handles API rate limits', async () => {})
-  it('rollback on partial failure', async () => {})
+// API Route Tests  
+describe('API: /api/catering/boxed-lunches', () => {
+  it('returns all items from CATERING- BOXED LUNCHES category', async () => {})
+  it('parses dietary preferences from descriptions', async () => {})
+  it('handles database connection errors gracefully', async () => {})
+});
+
+// Utility Function Tests
+describe('Boxed lunch utilities', () => {
+  it('extracts dietary info from description text', () => {})
+  it('formats prices correctly with modifiers', () => {})
+  it('sanitizes description HTML/special chars', () => {})
 });
 ```
 
 ### Integration Tests
 
 ```tsx
-// Full Fix Process
-describe('Category Fix Integration', () => {
-  beforeEach(async () => {
-    // Setup test Square items
-  });
+// Database Integration
+describe('Boxed Lunch Database Operations', () => {
+  it('retrieves items with correct category filter', async () => {})
+  it('maintains data integrity for special characters', async () => {})
+});
 
-  it('completes full category reorganization', async () => {})
-  it('preserves catering protection', async () => {})
-  it('updates both Square and DB', async () => {})
+// Cart Integration
+describe('Boxed Lunch Cart Integration', () => {
+  it('adds item with modifier to cart correctly', async () => {})
+  it('preserves modifier selection through checkout', async () => {})
 });
 ```
 
----
+------
 
 ## 🔒 Security Analysis
-
-### Authentication & Authorization
-
-- [x] Admin-only access to category fix endpoint
-- [x] Verify Square webhook signatures
-- [x] Audit log for category changes
 
 ### Input Validation & Sanitization
 
 ```tsx
-const CategoryFixSchema = z.object({
-  dryRun: z.boolean().default(true),
-  targetItems: z.array(z.string()).optional(),
-  createNewCategory: z.boolean().default(false),
+// Validate modifier selections
+const TropicalSaladModifierSchema = z.object({
+  modifierId: z.enum(['queso_fresco', 'sirloin_steak', 'chicken_mojo']).optional(),
+  quantity: z.number().int().positive().max(10)
+});
+
+// Sanitize description HTML
+import DOMPurify from 'isomorphic-dompurify';
+const sanitizedDescription = DOMPurify.sanitize(item.description);
+```
+
+### SQL Injection Prevention
+
+```tsx
+// Use parameterized Prisma queries
+const items = await prisma.product.findMany({
+  where: {
+    category: {
+      name: 'CATERING- BOXED LUNCHES'
+    },
+    active: true
+  },
+  include: {
+    category: true,
+    variants: true
+  }
 });
 ```
 
----
+------
 
 ## 📊 Performance Considerations
 
-### Batch Processing
-
-```tsx
-// Process items in batches of 10 (Square's recommended batch size)
-const BATCH_SIZE = 10;
-const batches = chunk(items, BATCH_SIZE);
-```
-
 ### Caching Strategy
 
-- [x] Cache category mappings for sync duration
-- [x] Invalidate cache after successful fix
+- [x] Cache boxed lunch items with React Query (5 minute stale time)
+- [x] Memoize modifier price calculations
+- [x] Use Next.js route caching for API endpoint
 
----
+### Bundle Size Optimization
+
+- [x] Lazy load BoxedLunchMenu component
+- [x] Use dynamic imports for DOMPurify (only when needed)
+
+------
 
 ## 🚦 Implementation Checklist
 
-### Pre-Development
+### Phase 1: API & Data Layer
 
-- [x] Audit current Square catalog structure
-- [x] Identify all affected items (7 box lunch items found)
-- [x] Backup current category assignments
-- [x] Review Square API batch update limits
+- [ ] Create `/api/catering/boxed-lunches/route.ts`
+- [ ] Add BoxedLunchItem interface to types
+- [ ] Create boxed-lunch-utils.ts with parsing functions
+- [ ] Test API endpoint with Postman/Thunder Client
 
-### Development Phase
+### Phase 2: UI Components
 
-- [ ] Create category mapping service
-- [ ] Implement batch category update
-- [ ] Add pricing tier management for platters
-- [ ] Create modifier management for Tropical Salad
-- [ ] Update sync to respect new mappings
-- [ ] Add admin UI for category fix
+- [ ] Create BoxedLunchCard component
+- [ ] Create TropicalSaladModifier dropdown component
+- [ ] Update BoxedLunchMenu to use database data
+- [ ] Style with Tailwind matching existing design
 
-### Pre-Deployment
+### Phase 3: Integration
 
-- [ ] Test in Square Sandbox environment
-- [ ] Verify all 7 box items are mapped correctly
-- [ ] Confirm empanada platter pricing
-- [ ] Test Tropical Salad modifiers
-- [ ] Create rollback plan
+- [ ] Connect to existing cart system
+- [ ] Add loading states with skeletons
+- [ ] Implement error boundaries
+- [ ] Add success/error toasts
 
----
+### Phase 4: Testing & Polish
 
-## 📝 Implementation Code
+- [ ] Write unit tests
+- [ ] Manual testing of all items
+- [ ] Test modifier pricing calculations
+- [ ] Mobile responsiveness check
+- [ ] Accessibility audit
 
-### Category Mapper Service
+------
 
-```typescript
-// lib/square/category-mapper.ts
-import { Client } from 'square';
-import { prisma } from '@/lib/db';
+## 🎨 UI/UX Design Specifications
 
-export class CategoryMapper {
-  private client: Client;
-  private mappings: Map<string, string>;
+### Layout Structure
 
-  constructor(client: Client) {
-    this.client = client;
-    this.mappings = new Map([
-      ['Box-', 'BOXED LUNCHES'],
-      ['Empanada Platter', 'CATERING- LUNCH, STARTERS'],
-      ['Light Carb', 'BOXED LUNCHES'],
-      ['Tropical Salad', 'BOXED LUNCHES'],
-    ]);
-  }
-
-  async fixBoxLunchCategories() {
-    console.log('🔧 Starting category fix...');
-    
-    // Step 1: Ensure BOXED LUNCHES category exists
-    const boxedLunchCategory = await this.ensureCategory('BOXED LUNCHES');
-    
-    // Step 2: Find miscategorized items
-    const items = await this.findMiscategorizedItems();
-    console.log(`📦 Found ${items.length} items to fix`);
-    
-    // Step 3: Batch update in Square
-    await this.batchUpdateCategories(items, boxedLunchCategory.id);
-    
-    // Step 4: Update database
-    await this.updateDatabase(items, boxedLunchCategory.id);
-    
-    return {
-      success: true,
-      itemsFixed: items.length,
-      categoryId: boxedLunchCategory.id,
-    };
-  }
-
-  private async findMiscategorizedItems() {
-    const response = await this.client.catalogApi.searchCatalogObjects({
-      object_types: ['ITEM'],
-      query: {
-        prefix_query: {
-          attribute_name: 'name',
-          attribute_prefix: 'Box'
-        }
-      }
-    });
-
-    return response.result.objects?.filter(item => {
-      const categories = item.item_data?.categories || [];
-      return !categories.some(cat => cat.name === 'BOXED LUNCHES');
-    }) || [];
-  }
-
-  private async ensureCategory(name: string) {
-    // Check if exists in Square
-    const searchResponse = await this.client.catalogApi.searchCatalogObjects({
-      object_types: ['CATEGORY'],
-      query: {
-        exact_query: {
-          attribute_name: 'name',
-          attribute_value: name
-        }
-      }
-    });
-
-    if (searchResponse.result.objects?.length > 0) {
-      return searchResponse.result.objects[0];
-    }
-
-    // Create new category
-    const createResponse = await this.client.catalogApi.upsertCatalogObject({
-      idempotency_key: `create-${name}-${Date.now()}`,
-      object: {
-        type: 'CATEGORY',
-        id: '#boxed-lunches',
-        category_data: {
-          name,
-          parent_category: {
-            id: 'XXLCZNYXGTAKX2ZB7CYDBNPV' // CATERING parent
-          }
-        }
-      }
-    });
-
-    return createResponse.result.catalog_object;
-  }
-
-  private async batchUpdateCategories(items: any[], categoryId: string) {
-    const batches = this.chunk(items, 10);
-    
-    for (const batch of batches) {
-      const batchRequest = {
-        batches: batch.map(item => ({
-          objects: [{
-            type: 'ITEM',
-            id: item.id,
-            version: item.version,
-            item_data: {
-              ...item.item_data,
-              categories: [{
-                id: categoryId,
-                ordinal: 0
-              }]
-            }
-          }]
-        }))
-      };
-
-      await this.client.catalogApi.batchUpsertCatalogObjects(batchRequest);
-      console.log(`✓ Updated batch of ${batch.length} items`);
-    }
-  }
-
-  private async updateDatabase(items: any[], categoryId: string) {
-    // Get or create DB category
-    const dbCategory = await prisma.category.upsert({
-      where: { name: 'BOXED LUNCHES' },
-      update: { squareId: categoryId },
-      create: {
-        name: 'BOXED LUNCHES',
-        slug: 'boxed-lunches',
-        squareId: categoryId,
-        active: true,
-        displayOrder: 3,
-      }
-    });
-
-    // Update products
-    const squareIds = items.map(item => item.id);
-    await prisma.product.updateMany({
-      where: { squareId: { in: squareIds } },
-      data: { categoryId: dbCategory.id }
-    });
-  }
-
-  private chunk<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
-}
+```tsx
+// Grid Layout (Responsive)
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {items.map(item => (
+    <BoxedLunchCard key={item.id} item={item} />
+  ))}
+</div>
 ```
 
-### API Route
+### BoxedLunchCard Design
 
-```typescript
-// app/api/square/fix-category-mapping/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { CategoryMapper } from '@/lib/square/category-mapper';
-import { squareClient } from '@/lib/square/client';
-
-export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Preview mode - show what would be fixed
-  const mapper = new CategoryMapper(squareClient);
-  const items = await mapper.findMiscategorizedItems();
+```tsx
+<Card className="hover:shadow-lg transition-shadow">
+  <CardHeader>
+    <div className="flex justify-between items-start">
+      <h3 className="text-lg font-semibold">{item.name}</h3>
+      <span className="text-xl font-bold text-primary">
+        ${calculatePrice(item, selectedModifier)}
+      </span>
+    </div>
+    <div className="flex gap-2 mt-2">
+      {item.isGlutenFree && <Badge variant="secondary">GF</Badge>}
+      {item.isVegan && <Badge variant="secondary">Vegan</Badge>}
+      {item.isVegetarian && <Badge variant="secondary">Vegetarian</Badge>}
+    </div>
+  </CardHeader>
   
-  return NextResponse.json({
-    itemsToFix: items.map(item => ({
-      id: item.id,
-      name: item.item_data?.name,
-      currentCategory: item.item_data?.categories?.[0]?.name || 'None',
-      targetCategory: 'BOXED LUNCHES'
-    })),
-    totalCount: items.length
-  });
-}
-
-export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  try {
-    const mapper = new CategoryMapper(squareClient);
-    const result = await mapper.fixBoxLunchCategories();
+  <CardContent>
+    <p className="text-sm text-muted-foreground mb-4">
+      {item.description}
+    </p>
     
-    return NextResponse.json({
-      success: true,
-      ...result
-    });
-  } catch (error) {
-    console.error('Category fix failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to fix categories' },
-      { status: 500 }
-    );
-  }
-}
+    {/* Tropical Salad Modifier Dropdown */}
+    {item.name.includes('Tropical Salad') && (
+      <TropicalSaladModifier 
+        onSelect={setSelectedModifier}
+        currentSelection={selectedModifier}
+      />
+    )}
+    
+    <div className="flex items-center gap-2 mt-4">
+      <QuantitySelector 
+        value={quantity}
+        onChange={setQuantity}
+      />
+      <Button 
+        onClick={handleAddToCart}
+        className="flex-1"
+      >
+        <ShoppingCart className="mr-2 h-4 w-4" />
+        Add to Cart
+      </Button>
+    </div>
+  </CardContent>
+</Card>
 ```
 
----
+### Tropical Salad Modifier Dropdown
+
+```tsx
+<Select onValueChange={onSelect} value={currentSelection}>
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Add protein (optional)" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="none">No protein</SelectItem>
+    <SelectItem value="queso_fresco">
+      Add Queso Fresco (4oz) +$2.00 <Badge size="sm">GF</Badge>
+    </SelectItem>
+    <SelectItem value="sirloin_steak">
+      Add Sirloin Steak (4oz) +$4.00 <Badge size="sm">GF</Badge>
+    </SelectItem>
+    <SelectItem value="chicken_mojo">
+      Add Chicken Mojo (4oz) +$3.00 <Badge size="sm">GF</Badge>
+    </SelectItem>
+  </SelectContent>
+</Select>
+```
+
+------
+
+## 📝 Implementation Notes
+
+### Key Considerations
+
+1. **Description Parsing**: Item descriptions contain dietary info (e.g., "-gf, vg, vegan") that needs to be extracted and displayed as badges
+
+2. **Price Display**: When modifier is selected, show total price (base + modifier) prominently
+
+3. **Mobile First**: Ensure touch-friendly controls and readable text on mobile
+
+4. **Loading States**: Use skeleton loaders matching card dimensions
+
+5. **Error Handling**: Gracefully handle API failures with fallback UI
+
+### Future Enhancements
+
+- Move modifiers to database as product variants
+- Add item images when available
+- Implement quantity-based pricing discounts
+- Add nutritional information display
+- Create modifier presets for common combinations
+
+------
 
 ## 🔄 Rollback Plan
 
-### Database Rollback
+### Feature Toggle
 
-```sql
--- Backup current state before fix
-CREATE TABLE products_category_backup AS
-SELECT id, "squareId", name, "categoryId" 
-FROM products 
-WHERE name LIKE 'Box-%';
+```tsx
+// Environment variable for gradual rollout
+const ENABLE_DB_BOXED_LUNCHES = process.env.NEXT_PUBLIC_ENABLE_DB_BOXED_LUNCHES === 'true';
 
--- Rollback if needed
-UPDATE products p
-SET "categoryId" = b."categoryId"
-FROM products_category_backup b
-WHERE p.id = b.id;
+// In BoxedLunchMenu component
+if (ENABLE_DB_BOXED_LUNCHES) {
+  // Use database items
+} else {
+  // Use existing hardcoded items
+}
 ```
 
-### Square Rollback
+### Database Rollback
 
-Store original category assignments before update, use batch API to restore if needed.
+No database changes required - using existing products table
 
----
+### Monitoring & Alerts
 
-## 📚 Current State Analysis
+- [ ] Track API response times for boxed lunch endpoint
+- [ ] Monitor cart conversion rates for boxed lunch items
+- [ ] Set up error tracking for modifier selection issues
+- [ ] Track usage analytics for Tropical Salad modifiers
 
-### Affected Items (7 Box Lunch Items)
+------
 
-1. **Box- Churrasco Energy Box** (ID: 2RQH2VMIQUR42V2WCLZOJQG4)
-2. **Box- Tropical Salad Entree (12oz)** (ID: P53ECIKMNSSQWF5W6LFQIDNY)
-3. **Box- Vegetarian Empanadas (2) with Arroz Rojo & Kale** (ID: WTZ5UOIALKJKMBCUABVBDS53)
-4. **Box-Beef Empanadas (2) with Chipotle Potatoes & Arroz Blanco** (ID: LHMTWY6L3CDD2XPYY47QRVGN)
-5. **Box- Adobo Pork Power Box** (ID: ECTYMOI2S5V5WYUKG6DQJB6O)
-6. **Box- Citrus Mojo Chicken Box** (ID: OVNEZHAQHS4MN6HOA2A57K2X)
-7. **Box-Chicken Empanadas (2) with Chipotle Potatoes & Kale** (ID: O7JH7PC6TO6CJASJRQBBOD5K)
+## Example API Response
 
-All currently under: **CATERING- LUNCH, ENTREES** (Category ID: K2O3B7JUWT7QD7HGQ5AL2R2N)
-
-### Additional Square Tasks
-
-1. **Empanada Platters** - Add 50 piece pricing tier ($145) to existing 25 piece ($75)
-2. **Tropical Salad Box** - Add modifier list for add-ons:
-   - Add Queso Fresco (4oz) +$2.00
-   - Add Sirloin Steak (4oz) +$4.00
-   - Add Chicken Mojo (4oz) +$3.00
-
----
-
-## 🎨 Quick Fix Script
-
-```bash
-# One-time fix script
-npm run fix:box-lunch-categories
-
-# Preview changes first
-npm run fix:box-lunch-categories -- --dry-run
-
-# Apply fix
-npm run fix:box-lunch-categories -- --apply
+```json
+{
+  "success": true,
+  "items": [
+    {
+      "id": "uuid-1",
+      "name": "Box- Tropical Salad Entree (12oz)",
+      "description": "baby arugula / hearts of palms / brazilian mango...",
+      "price": 14.00,
+      "squareId": "square-id",
+      "isGlutenFree": true,
+      "isVegan": true,
+      "isVegetarian": true,
+      "modifiers": [
+        {
+          "id": "mod-1",
+          "name": "Add Queso Fresco (4oz)",
+          "price": 2.00,
+          "dietaryInfo": "gf"
+        },
+        {
+          "id": "mod-2", 
+          "name": "Add Sirloin Steak (4oz)",
+          "price": 4.00,
+          "dietaryInfo": "gf"
+        },
+        {
+          "id": "mod-3",
+          "name": "Add Chicken Mojo (4oz)",
+          "price": 3.00,
+          "dietaryInfo": "gf"
+        }
+      ]
+    }
+  ]
+}
 ```
