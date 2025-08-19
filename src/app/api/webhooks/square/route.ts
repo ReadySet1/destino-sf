@@ -389,10 +389,41 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
 async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const orderUpdateData = data.object.order_updated as any;
-  console.log('Processing order.updated event:', data.id);
+  console.log('🔄 Processing order.updated event:', data.id);
+
+  // Check if the order exists in our database first
+  const existingOrder = await safeQuery(() =>
+    prisma.order.findUnique({
+      where: { squareOrderId: data.id },
+      select: { 
+        id: true, 
+        status: true, 
+        paymentStatus: true, 
+        rawData: true 
+      },
+    })
+  );
+
+  if (!existingOrder) {
+    console.warn(
+      `⚠️ Order with squareOrderId ${data.id} not found for update. This may be a timing issue where order.updated arrived before order.created. Skipping update.`
+    );
+    // Don't throw an error - this is expected behavior when webhooks arrive out of order
+    return;
+  }
 
   const newSquareState = orderUpdateData?.state;
   const mappedStatus = mapSquareStateToOrderStatus(newSquareState);
+
+  // Check if this event was already processed
+  const eventId = payload.event_id;
+  if (existingOrder.rawData && typeof existingOrder.rawData === 'object') {
+    const rawData = existingOrder.rawData as any;
+    if (rawData?.lastProcessedEventId === eventId) {
+      console.log(`⚠️ Event ${eventId} for order ${data.id} already processed, skipping`);
+      return;
+    }
+  }
 
   // Prepare the base update data object
   const updateData: Omit<Prisma.OrderUpdateInput, 'status'> & { status?: OrderStatus } = {
@@ -402,7 +433,11 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
     customerName: orderUpdateData?.customer_id
       ? 'Customer ID: ' + orderUpdateData.customer_id
       : undefined,
-    rawData: data.object as unknown as Prisma.InputJsonValue,
+    rawData: {
+      ...(typeof existingOrder.rawData === 'object' ? existingOrder.rawData : {}),
+      lastProcessedEventId: eventId,
+      lastUpdate: data.object,
+    } as unknown as Prisma.InputJsonValue,
   };
 
   // Only add status to the update if it's a terminal state (COMPLETED, CANCELLED)
@@ -477,20 +512,15 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
   // allowing the fulfillment handler to correctly set READY.
 
   try {
-    // Get the previous status before updating if we're making a status change
-    let previousStatus = undefined;
-    if (updateData.status) {
-      const currentOrder = await prisma.order.findUnique({
-        where: { squareOrderId: data.id },
-        select: { status: true },
-      });
-      previousStatus = currentOrder?.status;
-    }
+    // Get the previous status for comparison
+    const previousStatus = existingOrder.status;
 
-    await prisma.order.update({
-      where: { squareOrderId: data.id },
-      data: updateData, // Apply updates (only includes status if terminal)
-    });
+    await safeQuery(() =>
+      prisma.order.update({
+        where: { squareOrderId: data.id },
+        data: updateData, // Apply updates (only includes status if terminal)
+      })
+    );
 
     // Send status change alert for terminal states (COMPLETED, CANCELLED)
     if (updateData.status && previousStatus && previousStatus !== updateData.status) {
@@ -521,13 +551,19 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
       }
     }
   } catch (error: any) {
+    // This shouldn't happen since we already checked if the order exists
+    // but handle it gracefully just in case
     if (error.code === 'P2025') {
       console.warn(
-        `Order with squareOrderId ${data.id} not found for order update. It might be created later.`
+        `⚠️ Order with squareOrderId ${data.id} not found during update. This is unexpected since we checked for existence. Webhook timing issue.`
       );
-      // Optionally, create the order here as a fallback
+      return; // Don't throw an error for timing issues
     } else {
-      console.error(`Error updating order ${data.id}:`, error);
+      console.error(`❌ Error updating order ${data.id}:`, {
+        error: error.message,
+        code: error.code,
+        eventId: payload.event_id,
+      });
       throw error;
     }
   }

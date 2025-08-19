@@ -89,12 +89,12 @@ function manuallySerializeCateringOrder(order: any): SerializedCateringOrder {
   // Manually serialize items
   const serializedItems = (order.items || []).map((item: any) => ({
     id: item.id,
-    name: item.name || '',
+    name: item.itemName || '', // Use itemName from database
+    itemType: item.itemType || 'item', // Include itemType for display
     quantity: item.quantity || 0,
     pricePerUnit: decimalToNumber(item.pricePerUnit),
     totalPrice: decimalToNumber(item.totalPrice),
     notes: item.notes,
-    itemType: item.itemType || 'item',
   }));
 
   // Create serialized order with manual decimal conversions
@@ -364,15 +364,6 @@ const CateringOrderDetailsPage = async ({ params }: PageProps) => {
                     key={item.id || 'unknown'}
                     className="flex items-center gap-4 p-4 border rounded-lg"
                   >
-                    {/* Item Image */}
-                    <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <OrderItemImage
-                        src={getBoxedLunchImage(item.name || '')}
-                        alt={item.name || 'Catering item'}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
                     {/* Item Details */}
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name || 'N/A'}</h3>

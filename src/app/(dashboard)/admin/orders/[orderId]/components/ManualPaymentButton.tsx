@@ -118,18 +118,18 @@ export function ManualPaymentButton({
                 <AlertCircle className="h-5 w-5 text-amber-600" />
                 Confirm Manual Payment Override
               </DialogTitle>
-              <DialogDescription className="space-y-2">
-                <p>
-                  Are you sure you want to manually mark this order as <strong>PAID</strong>?
-                </p>
-                <div className="bg-gray-50 p-3 rounded-md text-sm">
-                  <p><strong>Order ID:</strong> {orderId}</p>
-                  <p><strong>Current Status:</strong> <Badge variant="secondary">{paymentStatus}</Badge></p>
-                </div>
-                <p className="text-sm text-gray-600">
-                  This action will change the payment status to PAID and the order status to PROCESSING. Only use this if you have confirmed the payment was completed outside the system.
-                </p>
+              <DialogDescription>
+                Are you sure you want to manually mark this order as <strong>PAID</strong>?
               </DialogDescription>
+              <div className="space-y-3 mt-4">
+                <div className="bg-gray-50 p-3 rounded-md text-sm">
+                  <div><strong>Order ID:</strong> {orderId}</div>
+                  <div><strong>Current Status:</strong> <Badge variant="secondary">{paymentStatus}</Badge></div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  This action will change the payment status to PAID and the order status to PROCESSING. Only use this if you have confirmed the payment was completed outside the system.
+                </div>
+              </div>
             </DialogHeader>
             <DialogFooter className="flex-col sm:flex-row gap-2">
               <DialogClose asChild>

@@ -81,10 +81,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check DNS resolution first for relevant domain
-      const domainToTest =
-        forceSandbox || (!forceProduction && process.env.USE_SQUARE_SANDBOX === 'true')
-          ? 'sandbox.squareup.com'
-          : 'connect.squareup.com';
+      const domainToTest = 'connect.squareup.com';
 
       const dnsResolved = await testDnsResolution(domainToTest);
 

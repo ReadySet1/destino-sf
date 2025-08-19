@@ -143,6 +143,8 @@ model Order {
   paymentUrl                String?       @map("payment_url")
   paymentUrlExpiresAt       DateTime?     @map("payment_url_expires_at")
   retryCount                Int           @default(0) @map("retry_count")
+  labelUrl                  String?       @map("label_url")
+  labelCreatedAt            DateTime?     @map("label_created_at")
   emailAlerts               EmailAlert[]
   items                     OrderItem[]
   archivedByUser            Profile?      @relation("ArchivedOrders", fields: [archivedBy], references: [id])

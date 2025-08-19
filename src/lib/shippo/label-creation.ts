@@ -1,9 +1,7 @@
-'use server';
-
 import { prisma } from '@/lib/db';
-import { OrderStatus } from '@prisma/client';
-import { getShippingRates } from '@/lib/shipping';
 import { ShippoClientManager } from '@/lib/shippo/client';
+import { getShippingRates } from '@/lib/shipping';
+import { OrderStatus } from '@prisma/client';
 import { 
   ShippingLabelResponse, 
   ShippoError, 
@@ -12,68 +10,150 @@ import {
   DEFAULT_RETRY_CONFIG 
 } from '@/types/shippo';
 
+export interface LabelCreationJob {
+  orderId: string;
+  rateId: string;
+  attempt: number;
+  lastError?: string;
+  createdAt: Date;
+}
+
 /**
- * Enhanced label purchase with automatic retry and rate refresh
+ * Centralized label creation queue for handling retry jobs
  */
-export async function purchaseShippingLabel(
-  orderId: string,
-  shippoRateId: string
-): Promise<ShippingLabelResponse> {
-  console.log(
-    `🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}`
-  );
-
-  try {
-    // Get current order and check retry count
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-      },
-    });
-
-    if (!order) {
-      throw new Error(`Order not found: ${orderId}`);
+class LabelCreationQueue {
+  private static instance: LabelCreationQueue;
+  private pendingJobs = new Map<string, LabelCreationJob>();
+  
+  public static getInstance(): LabelCreationQueue {
+    if (!LabelCreationQueue.instance) {
+      LabelCreationQueue.instance = new LabelCreationQueue();
     }
+    return LabelCreationQueue.instance;
+  }
 
-    // Check if we've exceeded retry limit
-    if (order.retryCount >= DEFAULT_RETRY_CONFIG.maxAttempts) {
-      const error: ShippoError = {
-        type: 'RETRY_EXHAUSTED',
-        attempts: order.retryCount,
-        lastError: 'Maximum retry attempts exceeded',
-      };
-      
+  /**
+   * Add a job to the retry queue
+   */
+  addJob(orderId: string, rateId: string, attempt: number = 0, lastError?: string): void {
+    const job: LabelCreationJob = {
+      orderId,
+      rateId,
+      attempt,
+      lastError,
+      createdAt: new Date(),
+    };
+    
+    this.pendingJobs.set(orderId, job);
+    console.log(`📋 Added label creation job for order ${orderId} (attempt ${attempt + 1})`);
+  }
+
+  /**
+   * Remove a job from the queue (on success or final failure)
+   */
+  removeJob(orderId: string): void {
+    this.pendingJobs.delete(orderId);
+    console.log(`🗑️ Removed label creation job for order ${orderId}`);
+  }
+
+  /**
+   * Get a pending job
+   */
+  getJob(orderId: string): LabelCreationJob | undefined {
+    return this.pendingJobs.get(orderId);
+  }
+
+  /**
+   * Get all pending jobs
+   */
+  getAllJobs(): LabelCreationJob[] {
+    return Array.from(this.pendingJobs.values());
+  }
+
+  /**
+   * Process all pending jobs with exponential backoff
+   */
+  async processJobs(): Promise<void> {
+    const jobs = this.getAllJobs();
+    console.log(`🔄 Processing ${jobs.length} pending label creation jobs`);
+
+    for (const job of jobs) {
+      try {
+        const result = await this.processJob(job);
+        if (result.success) {
+          this.removeJob(job.orderId);
+        } else if (job.attempt >= DEFAULT_RETRY_CONFIG.maxAttempts - 1) {
+          console.error(`❌ Job for order ${job.orderId} failed after ${job.attempt + 1} attempts`);
+          this.removeJob(job.orderId);
+        } else {
+          // Update job with incremented attempt
+          this.addJob(job.orderId, job.rateId, job.attempt + 1, result.error);
+        }
+      } catch (error) {
+        console.error(`❌ Error processing job for order ${job.orderId}:`, error);
+      }
+
+      // Add delay between jobs to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  /**
+   * Process a single job
+   */
+  private async processJob(job: LabelCreationJob): Promise<ShippingLabelResponse> {
+    console.log(`🚀 Processing label creation job for order ${job.orderId}, attempt ${job.attempt + 1}`);
+    
+    // Check if enough time has passed for retry (exponential backoff)
+    const timeSinceCreated = Date.now() - job.createdAt.getTime();
+    const requiredDelay = Math.min(
+      DEFAULT_RETRY_CONFIG.baseDelay * Math.pow(DEFAULT_RETRY_CONFIG.backoffMultiplier, job.attempt),
+      DEFAULT_RETRY_CONFIG.maxDelay
+    );
+
+    if (timeSinceCreated < requiredDelay) {
+      console.log(`⏳ Job for order ${job.orderId} needs to wait ${requiredDelay - timeSinceCreated}ms more`);
       return {
         success: false,
-        error: `Maximum retry attempts (${DEFAULT_RETRY_CONFIG.maxAttempts}) exceeded for order ${orderId}`,
-        errorCode: 'RETRY_EXHAUSTED',
-        retryAttempt: order.retryCount,
+        error: 'Waiting for retry delay',
+        errorCode: 'RETRY_DELAY',
       };
     }
 
-    return await attemptLabelPurchase(order, shippoRateId, order.retryCount);
-  } catch (error) {
-    console.error(`❌ Error in purchaseShippingLabel for Order ID: ${orderId}:`, error);
-    const shippoError = createShippoError(error);
-    
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      errorCode: shippoError.type,
-    };
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: job.orderId },
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new Error(`Order not found: ${job.orderId}`);
+      }
+
+      return await attemptLabelCreation(order, job.rateId, job.attempt);
+    } catch (error) {
+      const shippoError = createShippoError(error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorCode: shippoError.type,
+        retryAttempt: job.attempt + 1,
+      };
+    }
   }
 }
 
 /**
- * Attempt label purchase with retry logic
+ * Attempt to create a label with the given rate
  */
-async function attemptLabelPurchase(
+async function attemptLabelCreation(
   order: any,
   shippoRateId: string,
   retryAttempt: number = 0
@@ -88,11 +168,6 @@ async function attemptLabelPurchase(
     
     // Update retry tracking
     await updateRetryTracking(orderId, retryAttempt);
-
-    // Validate rate ID before attempting transaction
-    if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
-      throw new Error(`Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`);
-    }
 
     // Attempt transaction creation
     const transaction = await shippo.transactions.create({
@@ -125,12 +200,6 @@ async function attemptLabelPurchase(
         },
       });
 
-      // Log the label URL prominently so it can be accessed
-      console.log(`🏷️ LABEL CREATED FOR ORDER ${orderId}:`);
-      console.log(`📄 PDF URL: ${transaction.labelUrl}`);
-      console.log(`📦 TRACKING: ${transaction.trackingNumber}`);
-      console.log(`🔗 Direct Link: ${transaction.labelUrl}`);
-
       return {
         success: true,
         labelUrl: transaction.labelUrl,
@@ -146,31 +215,14 @@ async function attemptLabelPurchase(
   } catch (error: any) {
     console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
     
-    // Check if this is a rate expiration error or invalid input (undefined rate)
-    if (isRateExpiredError(error) || error.message.includes('Input validation failed')) {
-      console.log(`🔄 Rate expired/invalid for Order ID: ${orderId}, attempting refresh...`);
+    // Check if this is a rate expiration error
+    if (isRateExpiredError(error)) {
+      console.log(`🔄 Rate expired for Order ID: ${orderId}, attempting refresh...`);
       return await handleRateExpiration(order, retryAttempt);
     }
     
-    // Check if we should retry for other errors
-    if (retryAttempt < DEFAULT_RETRY_CONFIG.maxAttempts - 1) {
-      const delay = calculateRetryDelay(retryAttempt);
-      console.log(`⏳ Retrying Order ID: ${orderId} in ${delay}ms...`);
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return await attemptLabelPurchase(order, shippoRateId, retryAttempt + 1);
-    }
-    
-    // Final failure
-    const shippoError = createShippoError(error);
-    await updateRetryTracking(orderId, retryAttempt + 1, error.message);
-    
-    return {
-      success: false,
-      error: error.message,
-      errorCode: shippoError.type,
-      retryAttempt: retryAttempt + 1,
-    };
+    // Re-throw error for queue processing
+    throw error;
   }
 }
 
@@ -232,7 +284,7 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
     });
 
     // Retry with new rate
-    return await attemptLabelPurchase(order, rateId, retryAttempt + 1);
+    return await attemptLabelCreation(order, rateId, retryAttempt + 1);
   } catch (error) {
     console.error(`❌ Rate refresh failed for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
@@ -258,17 +310,6 @@ async function updateRetryTracking(orderId: string, retryCount: number, errorMes
       ...(errorMessage && { notes: `Last error: ${errorMessage}` }),
     },
   });
-}
-
-/**
- * Calculate exponential backoff delay
- */
-function calculateRetryDelay(retryAttempt: number): number {
-  const delay = Math.min(
-    DEFAULT_RETRY_CONFIG.baseDelay * Math.pow(DEFAULT_RETRY_CONFIG.backoffMultiplier, retryAttempt),
-    DEFAULT_RETRY_CONFIG.maxDelay
-  );
-  return delay;
 }
 
 /**
@@ -434,62 +475,36 @@ function findBestMatchingRate(rates: any[], originalCarrier?: string): any {
 }
 
 /**
- * Server action to refresh and retry label creation
+ * Queue a label creation job for later processing
  */
-export async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelResponse> {
-  console.log(`🔄 Manual refresh and retry for Order ID: ${orderId}`);
-  
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-      },
-    });
-
-    if (!order) {
-      throw new Error(`Order not found: ${orderId}`);
-    }
-
-    // Reset retry count for manual retry
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        retryCount: 0,
-        lastRetryAt: new Date(),
-      },
-    });
-
-    // Start fresh attempt
-    return await handleRateExpiration(order, 0);
-  } catch (error) {
-    console.error(`❌ Error in refreshAndRetryLabel for Order ID: ${orderId}:`, error);
-    const shippoError = createShippoError(error);
-    
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      errorCode: shippoError.type,
-    };
-  }
+export function queueLabelCreation(orderId: string, rateId: string): void {
+  const queue = LabelCreationQueue.getInstance();
+  queue.addJob(orderId, rateId, 0);
 }
 
 /**
- * Validate Shippo connection
+ * Process all pending label creation jobs
  */
-export async function validateShippoConnection(): Promise<{ connected: boolean; version: string; error?: string }> {
-  try {
-    return await ShippoClientManager.validateConnection();
-  } catch (error) {
-    return {
-      connected: false,
-      version: 'unknown',
-      error: error instanceof Error ? error.message : 'Unknown connection error',
-    };
-  }
+export async function processLabelCreationQueue(): Promise<void> {
+  const queue = LabelCreationQueue.getInstance();
+  await queue.processJobs();
 }
+
+/**
+ * Get statistics about the label creation queue
+ */
+export function getLabelCreationQueueStats(): { 
+  pendingJobs: number; 
+  jobs: LabelCreationJob[] 
+} {
+  const queue = LabelCreationQueue.getInstance();
+  const jobs = queue.getAllJobs();
+  
+  return {
+    pendingJobs: jobs.length,
+    jobs,
+  };
+}
+
+// Export the queue instance for direct access if needed
+export const labelCreationQueue = LabelCreationQueue.getInstance();

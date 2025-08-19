@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import ErrorDisplay from '@/components/ui/ErrorDisplay';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FormattedNotes } from '@/components/Order/FormattedNotes';
 import { ShippingLabelButton } from '../components/ShippingLabelButton';
-import { PaymentSyncButton } from './components/PaymentSyncButton';
+import { ManualPaymentButton } from './components/ManualPaymentButton';
 
 // Define types for serialized data
 interface SerializedOrderItem {
@@ -221,6 +221,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     // Log before database query
     console.log('Fetching order with ID:', orderId);
 
+    // Try to fetch as a regular order first
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -235,8 +236,26 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
       // Include all fields needed for shipping label functionality
     });
 
+    // If not found as regular order, try as catering order
+    const cateringOrder = !order
+      ? await prisma.cateringOrder.findUnique({
+          where: { id: orderId },
+          include: {
+            items: true,
+            customer: true,
+          },
+        })
+      : null;
+
     // Log database query result
-    console.log('Database query result:', order ? 'Order found' : 'No order found');
+    console.log('Database query result:', order ? 'Regular order found' : (cateringOrder ? 'Catering order found' : 'No order found'));
+
+    // If this is a catering order, redirect to the catering order details page
+    if (cateringOrder) {
+      console.log(`Found catering order, redirecting to catering details page for ID: ${orderId}`);
+      redirect(`/admin/catering/${orderId}`);
+      return; // This will never execute due to redirect, but helps with type safety
+    }
 
     if (!order) {
       console.error(`Order not found for ID: ${orderId}`);
@@ -358,9 +377,9 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
               )}
             </div>
             
-            {/* Payment Sync Button - Only show for admin users and when needed */}
+            {/* Manual Payment Button - Only show for admin users when payment is pending/failed */}
             <div className="mt-4">
-              <PaymentSyncButton
+              <ManualPaymentButton
                 orderId={serializedOrder.id}
                 squareOrderId={serializedOrder.squareOrderId}
                 paymentStatus={serializedOrder.paymentStatus}
@@ -546,6 +565,17 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
       </div>
     );
   } catch (error) {
+    // Check if this is a Next.js redirect error (which is normal behavior)
+    const isRedirectError = error instanceof Error && 'digest' in error && 
+      typeof (error as any).digest === 'string' && 
+      (error as any).digest.startsWith('NEXT_REDIRECT');
+    
+    if (isRedirectError) {
+      // This is a normal redirect, don't log it as an error and re-throw to complete the redirect
+      throw error;
+    }
+
+    // Only log actual errors, not redirect behavior
     console.error('Error rendering order details:', error);
     logger.error('Error rendering order details:', error);
 

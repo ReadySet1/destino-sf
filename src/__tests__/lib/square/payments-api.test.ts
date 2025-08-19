@@ -123,7 +123,7 @@ describe('Square Payments API', () => {
       // Verify HTTPS request configuration
       expect(mockHttps.request).toHaveBeenCalledWith(
         expect.objectContaining({
-          hostname: 'sandbox.squareup.com',
+          hostname: 'connect.squareup.com',
           path: '/v2/payments',
           method: 'POST',
           headers: expect.objectContaining({
@@ -337,7 +337,7 @@ describe('Square Payments API', () => {
 
       expect(mockHttps.request).toHaveBeenCalledWith(
         expect.objectContaining({
-          hostname: 'sandbox.squareup.com',
+          hostname: 'connect.squareup.com',
           headers: expect.objectContaining({
             Authorization: 'Bearer sandbox-token-123',
           }),

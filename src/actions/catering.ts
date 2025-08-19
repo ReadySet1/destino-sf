@@ -253,12 +253,23 @@ export async function saveContactInfo(data: {
   deliveryFee?: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;
+  customerId?: string | null; // Add customerId parameter
+  items?: Array<{
+    itemType: string;
+    itemId?: string | null;
+    packageId?: string | null;
+    name: string;
+    quantity: number;
+    pricePerUnit: number;
+    totalPrice: number;
+    notes?: string | null;
+  }>; // Add items parameter
 }): Promise<{ success: boolean; error?: string; orderId?: string }> {
   try {
-    // Create a new catering order
+    // Create a new catering order with items
     const newOrder = await db.cateringOrder.create({
       data: {
-        customerId: null, // Will be set when user is authenticated
+        customerId: data.customerId || null, // Use provided customerId if available
         email: data.email,
         name: data.name,
         phone: data.phone,
@@ -272,6 +283,20 @@ export async function saveContactInfo(data: {
         deliveryFee: data.deliveryFee,
         paymentMethod: data.paymentMethod,
         paymentStatus: PaymentStatus.PENDING,
+        // Create associated catering order items if provided
+        ...(data.items && data.items.length > 0 && {
+          items: {
+            create: data.items.map(item => ({
+              itemType: item.itemType,
+              itemName: item.name,
+              quantity: item.quantity,
+              pricePerUnit: item.pricePerUnit,
+              totalPrice: item.totalPrice,
+              notes: item.notes,
+              ...(item.packageId && { packageId: item.packageId }),
+            })),
+          },
+        }),
       },
     });
 
@@ -302,6 +327,17 @@ export async function createCateringOrderAndProcessPayment(data: {
   totalAmount: number;
   paymentMethod: PaymentMethod;
   packageId?: string;
+  customerId?: string | null; // Add customerId parameter
+  items?: Array<{
+    itemType: string;
+    itemId?: string | null;
+    packageId?: string | null;
+    name: string;
+    quantity: number;
+    pricePerUnit: number;
+    totalPrice: number;
+    notes?: string | null;
+  }>; // Add items parameter
 }): Promise<{ success: boolean; error?: string; orderId?: string; checkoutUrl?: string }> {
   try {
     // Create the catering order
@@ -309,6 +345,8 @@ export async function createCateringOrderAndProcessPayment(data: {
       ...data,
       totalAmount: data.totalAmount,
       paymentMethod: data.paymentMethod,
+      customerId: data.customerId, // Pass customerId to saveContactInfo
+      items: data.items, // Pass items to saveContactInfo
     });
 
     if (!orderResult.success || !orderResult.orderId) {

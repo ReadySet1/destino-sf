@@ -146,7 +146,7 @@ export function OrderConfirmationLayout({
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                    Your Order Has Shipped!
+                    Your Order will be Shipped Soon!
                   </h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -437,15 +437,6 @@ export function OrderConfirmationLayout({
                           {orderData.fulfillment.trackingNumber ? (
                             <>
                               <div>
-                                <p className="text-sm text-gray-600 font-medium">Status</p>
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-700 border-green-300"
-                                >
-                                  Shipped
-                                </Badge>
-                              </div>
-                              <div>
                                 <p className="text-sm text-gray-600 font-medium">Tracking Number</p>
                                 <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                                   {orderData.fulfillment.trackingNumber}
@@ -462,10 +453,6 @@ export function OrderConfirmationLayout({
                             </>
                           ) : (
                             <div>
-                              <p className="text-sm text-gray-600 font-medium">Status</p>
-                              <Badge variant="outline" className="text-blue-700 border-blue-300">
-                                Processing
-                              </Badge>
                               <p className="text-sm text-gray-600 mt-1">
                                 We&apos;ll send you tracking information once your order ships.
                               </p>

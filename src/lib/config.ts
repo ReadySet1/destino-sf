@@ -43,7 +43,7 @@ export const config: AppConfig = {
     environment: useSandbox ? 'sandbox' : 'production',
     accessToken: squareAccessToken || '',
     applicationId: process.env.SQUARE_APPLICATION_ID,
-    apiHost: useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com',
+    apiHost: 'connect.squareup.com',
     useSandbox,
   },
   database: {

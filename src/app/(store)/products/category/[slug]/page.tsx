@@ -7,6 +7,7 @@ import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 import { prisma, withPreparedStatementHandling } from '@/lib/db'; // Import Prisma client
+import { withDatabaseConnection } from '@/lib/db-utils';
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
 import { Metadata } from 'next';
@@ -131,14 +132,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   if (searchParams) await searchParams;
 
   // Fetch the category from the database using the slug
-  const category = await withPreparedStatementHandling(async () => {
+  const category = await withDatabaseConnection(async () => {
     return await prisma.category.findUnique({
       where: {
         // Assuming the category table has a unique 'slug' field
         slug: slug,
       },
     });
-  }, 'CategoryPage-category-fetch');
+  });
 
   // If the category doesn't exist in the database, return 404
   if (!category) {
@@ -149,7 +150,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Fetch products associated with this category from the database
   let products: GridProduct[] = [];
   try {
-    const dbProducts = await withPreparedStatementHandling(async () => {
+    const dbProducts = await withDatabaseConnection(async () => {
       return await prisma.product.findMany({
         where: {
           categoryId: category.id,
@@ -164,15 +165,37 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             },
           },
         },
-        include: {
-          variants: true, // Include variants if needed by ProductGrid
+        select: {
+          id: true,
+          squareId: true,
+          name: true,
+          description: true,
+          price: true,
+          images: true,
+          categoryId: true,
+          slug: true,
+          featured: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              squareVariantId: true,
+              productId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
         orderBy: {
           // Optional: Add sorting, e.g., by name or a custom order field
           name: 'asc',
         },
       });
-    }, 'CategoryPage-products-fetch');
+    }, 3); // 3 retries
 
     // Process database products before mapping to GridProduct
     const serializedProducts = await preparePrismaData(dbProducts);

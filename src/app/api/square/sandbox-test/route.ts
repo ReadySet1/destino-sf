@@ -8,8 +8,8 @@ export async function GET() {
     ? process.env.SQUARE_SANDBOX_TOKEN
     : process.env.SQUARE_ACCESS_TOKEN;
 
-  // ¡IMPORTANTE! El dominio correcto de Sandbox es sandbox.squareup.com
-  const apiHost = useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com';
+  // API host es el mismo para sandbox y production, diferenciado por el token
+  const apiHost = 'connect.squareup.com';
 
   logger.info(`Probando conexión directa a Square API (${apiHost})`);
   logger.info(`Variables de entorno: useSandbox=${useSandbox}, token disponible: ${!!accessToken}`);

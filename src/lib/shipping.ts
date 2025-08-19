@@ -292,17 +292,34 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       return { success: false, error: 'Unable to fetch rates' };
     }
 
+    // Debug: Log raw Shippo response structure
+    console.log(`🔍 [DEBUG] Raw Shippo rates response (first rate):`, JSON.stringify(shipmentResp.rates[0], null, 2));
+    console.log(`🔍 [DEBUG] Available properties in raw rate:`, Object.keys(shipmentResp.rates[0] || {}));
+
     // Transform rates
-    const rates: ShippingRate[] = shipmentResp.rates.map((r: any) => ({
-      id: r.object_id,
-      carrier: r.provider,
-      name: r.servicelevel?.name ?? r.servicelevel,
-      amount: Number(r.amount),
-      currency: r.currency,
-      estimatedDays: r.estimated_days ?? r.days ?? 0,
-      serviceLevel: r.servicelevel?.token ?? '',
-      rateId: r.object_id,
-    }));
+    const rates: ShippingRate[] = shipmentResp.rates.map((r: any) => {
+      // Try multiple possible ID fields
+      const rateId = r.object_id || r.id || r.rate_id || r.objectId;
+      
+      console.log(`🔍 [DEBUG] Rate ID extraction for ${r.provider} ${r.servicelevel?.name || r.servicelevel}:`, {
+        object_id: r.object_id,
+        id: r.id,
+        rate_id: r.rate_id,
+        objectId: r.objectId,
+        selected: rateId
+      });
+
+      return {
+        id: rateId,
+        carrier: r.provider,
+        name: r.servicelevel?.name ?? r.servicelevel,
+        amount: Number(r.amount),
+        currency: r.currency,
+        estimatedDays: r.estimated_days ?? r.days ?? 0,
+        serviceLevel: r.servicelevel?.token ?? '',
+        rateId: rateId,
+      };
+    });
 
     // Store cache
     const validationResults = shipmentResp.address_to?.validation_results;

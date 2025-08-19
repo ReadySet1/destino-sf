@@ -305,6 +305,8 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }),
         totalAmount: calculateTotal(),
         paymentMethod: paymentMethod,
+        customerId: customerId, // Pass the user ID to associate the order with the logged-in user
+        items: formattedItems, // Pass the catering order items
       });
 
       if (result.success) {

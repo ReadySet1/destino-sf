@@ -53,7 +53,7 @@ function getSquareConfig() {
     accessToken = sanitizedToken;
   }
 
-  const apiHost = useSandbox ? 'sandbox.squareup.com' : 'connect.squareup.com';
+  const apiHost = 'connect.squareup.com';
 
   return {
     useSandbox,

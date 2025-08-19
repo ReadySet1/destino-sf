@@ -8,41 +8,54 @@ const globalForPrisma = globalThis as unknown as {
 // Version identifier for the current Prisma client
 const CURRENT_PRISMA_VERSION = '2025-01-28-fix-prepared-statements';
 
-// Optimized Prisma configuration for Vercel/Serverless
+// Optimized Prisma configuration for Vercel/Serverless with better connection handling
 const prismaClientSingleton = () => {
   const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
   // Add connection pooling parameters to prevent prepared statement conflicts
   let databaseUrl = process.env.DATABASE_URL;
-  if (isServerless && databaseUrl) {
+  if (databaseUrl) {
     const url = new URL(databaseUrl);
     
     // Check if it's a Supabase pooler URL (already has pgbouncer)
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
     
-    if (!isSupabasePooler) {
-      // Only add these parameters for non-Supabase databases
+    if (!isSupabasePooler && isServerless) {
+      // Only add these parameters for non-Supabase databases in serverless environment
       url.searchParams.set('pgbouncer', 'true');
       url.searchParams.set('connection_limit', '1');
       url.searchParams.set('pool_timeout', '20');
+      url.searchParams.set('statement_timeout', '30000'); // 30 seconds
+      url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
       databaseUrl = url.toString();
     }
-    // For Supabase pooler URLs, use them as-is since they're already optimized
+    
+    // For development, ensure we have proper timeouts
+    if (isDevelopment && !isSupabasePooler) {
+      url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
+      url.searchParams.set('idle_in_transaction_session_timeout', '60000');
+      databaseUrl = url.toString();
+    }
   }
   
   return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    log: isDevelopment ? [
+      {
+        emit: 'event',
+        level: 'error',
+      },
+      {
+        emit: 'event', 
+        level: 'warn',
+      }
+    ] : ['error'],
     errorFormat: 'minimal',
     datasources: {
       db: {
         url: databaseUrl,
       },
     },
-    // Serverless-specific configurations
-    ...(isServerless && {
-      // Disable query logging in production to reduce noise
-      log: ['error'],
-    }),
   });
 };
 
@@ -211,21 +224,42 @@ export async function checkDatabaseHealth(): Promise<{
   }
 }
 
-// Wrapper function for operations that might encounter prepared statement errors
-export async function withPreparedStatementHandling<T>(
+// Improved connection management with better error handling and monitoring
+export async function withConnectionManagement<T>(
   operation: () => Promise<T>,
-  operationName: string = 'database operation'
+  operationName: string = 'database operation',
+  timeoutMs: number = 30000
 ): Promise<T> {
   const maxRetries = 3;
   let lastError: Error | null = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const startTime = Date.now();
+    
     try {
-      return await operation();
+      // Add timeout wrapper for the operation
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      });
+      
+      const operationPromise = operation();
+      
+      const result = await Promise.race([operationPromise, timeoutPromise]);
+      
+      // Log slow queries
+      const duration = Date.now() - startTime;
+      if (duration > 5000) { // 5 seconds
+        console.warn(`🐌 Slow ${operationName}: ${duration}ms`);
+      }
+      
+      return result;
     } catch (error) {
       lastError = error as Error;
+      const duration = Date.now() - startTime;
       
-      // Check if it's a prepared statement error or connection error
+      // Enhanced error classification
       const isPreparedStatementError = 
         error instanceof Error && 
         (error.message.includes("prepared statement") ||
@@ -239,34 +273,41 @@ export async function withPreparedStatementHandling<T>(
          error.message.includes("ECONNRESET") ||
          error.message.includes("ECONNREFUSED") ||
          error.message.includes("ETIMEDOUT") ||
+         error.message.includes("timeout") ||
+         error.message.includes("Connection pool timeout") ||
          (error as any).code === 'P1001' ||
          (error as any).code === 'P1008' ||
-         (error as any).code === 'P1017');
+         (error as any).code === 'P1017' ||
+         (error as any).code === 'P2024');
       
-      if ((isPreparedStatementError || isConnectionError) && attempt < maxRetries) {
-        console.warn(`${operationName} attempt ${attempt} failed, retrying... Error: ${error.message}`);
-        
+      const isRetryableError = isPreparedStatementError || isConnectionError;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`❌ ${operationName} attempt ${attempt} failed (${duration}ms):`, {
+          error: (error as Error).message,
+          code: (error as any).code,
+          retryable: isRetryableError,
+          attempt,
+          maxRetries,
+        });
+      }
+      
+      if (isRetryableError && attempt < maxRetries) {
         try {
-          if (isPreparedStatementError) {
-            // Clean up prepared statements
-            await cleanupForServerless();
-            
-            // Force regenerate client to ensure clean state
-            await forceRegenerateClient();
-          } else if (isConnectionError) {
-            // Just regenerate client for connection errors
-            await forceRegenerateClient();
+          // Attempt to disconnect and clean up
+          await prisma.$disconnect();
+        } catch (disconnectError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Non-fatal disconnect error:', disconnectError);
           }
-          
-          // Wait before retry with exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-        } catch (cleanupError) {
-          console.warn(`Cleanup failed on attempt ${attempt}:`, cleanupError);
-          // Continue to retry even if cleanup fails
         }
         
+        // Progressive backoff: 1s, 2s, 4s
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`⏳ Retrying ${operationName} in ${delay}ms...`);
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
       
@@ -274,8 +315,11 @@ export async function withPreparedStatementHandling<T>(
     }
   }
   
-  throw lastError || new Error(`Operation ${operationName} failed after ${maxRetries} attempts`);
+  throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
 }
+
+// Alias for backward compatibility
+export const withPreparedStatementHandling = withConnectionManagement;
 
 // Legacy exports for backward compatibility
 export const db = prisma;

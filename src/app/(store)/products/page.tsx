@@ -1,6 +1,7 @@
 // src/app/(store)/products/page.tsx
 
 import { prisma } from '@/lib/db';
+import { withDatabaseConnection } from '@/lib/db-utils';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -65,30 +66,53 @@ const convertDecimalToNumber = (decimal: unknown): number => {
 };
 
 export default async function ProductsPage() {
-  // Fetch products only from the database
-  const dbProducts = await prisma.product.findMany({
-    where: {
-      active: true, // Fetch only active products
-      // Exclude catering products from main products page
-      category: {
-        NOT: {
-          name: {
-            startsWith: 'CATERING',
-            mode: 'insensitive',
+  // Optimized query with connection management and timeout handling
+  const dbProducts = await withDatabaseConnection(async () => {
+    return await prisma.product.findMany({
+      where: {
+        active: true, // Fetch only active products
+        // Exclude catering products from main products page
+        category: {
+          NOT: {
+            name: {
+              startsWith: 'CATERING',
+              mode: 'insensitive',
+            },
           },
         },
       },
-    },
-    include: {
-      category: true, // Include category data
-      variants: true, // Include variant data
-    },
-    orderBy: [
-      // Order by category order first, then by Square ordinal (if available), then by product name
-      { category: { order: 'asc' } },
-      { ordinal: 'asc' },
-      { name: 'asc' },
-    ],
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            order: true,
+            active: true,
+            createdAt: true,
+            updatedAt: true,
+            slug: true,
+          },
+        },
+        variants: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            squareVariantId: true,
+            productId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: [
+        // Order by category order first, then by Square ordinal (if available), then by product name
+        { category: { order: 'asc' } },
+        { ordinal: 'asc' },
+        { name: 'asc' },
+      ],
+    });
   });
 
   // Transform Prisma products to the Product interface
