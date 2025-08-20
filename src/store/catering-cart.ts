@@ -8,6 +8,11 @@ export interface CateringCartItem {
   quantity: number;
   image?: string;
   variantId?: string;
+  category?: string;
+  customizations?: {
+    notes?: string;
+    nameLabel?: string;
+  };
 }
 
 interface CateringCartStore {

@@ -443,6 +443,22 @@ model CateringItemMapping {
   @@map("catering_item_mappings")
 }
 
+model BoxedLunchTier {
+  id            String   @id @default(uuid()) @db.Uuid
+  tierNumber    Int      @unique @map("tier_number")
+  name          String   @db.VarChar(100)
+  priceCents    Int      @map("price_cents")
+  proteinAmount String?  @map("protein_amount") @db.VarChar(50)
+  sides         Json     @default("[]")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tierNumber])
+  @@index([active])
+  @@map("boxed_lunch_tiers")
+}
+
 model EmailAlert {
   id             String        @id @default(uuid()) @db.Uuid
   type           AlertType

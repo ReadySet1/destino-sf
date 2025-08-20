@@ -550,3 +550,101 @@ function mapCategoryNameToCateringCategory(categoryName: string): CateringItemCa
   if (categoryName.includes('BEVERAGE')) return CateringItemCategory.BEVERAGE;
   return CateringItemCategory.ENTREE; // Default fallback
 }
+
+// New server actions for Build Your Own Boxed Lunch feature
+
+/**
+ * Get boxed lunch entrees from the CATERING- BOXED LUNCH ENTREES category
+ */
+export async function getBoxedLunchEntrees() {
+  try {
+    const products = await db.product.findMany({
+      where: {
+        active: true,
+        category: {
+          name: 'CATERING- BOXED LUNCH ENTREES'
+        }
+      },
+      include: {
+        category: true
+      },
+      orderBy: [
+        { ordinal: 'asc' },
+        { name: 'asc' }
+      ]
+    });
+
+    return products.map((product, index) => ({
+      id: product.id,
+      squareId: product.squareId,
+      name: product.name,
+      description: product.description || undefined,
+      imageUrl: product.images?.[0] || null,
+      category: 'BOXED_LUNCH_ENTREE' as const,
+      available: product.active,
+      sortOrder: product.ordinal ? Number(product.ordinal) : index,
+      dietaryPreferences: product.dietaryPreferences || [],
+      calories: product.calories || undefined,
+      ingredients: product.ingredients || undefined,
+      allergens: product.allergens || undefined,
+    }));
+  } catch (error) {
+    console.error('Error getting boxed lunch entrees:', error);
+    return [];
+  }
+}
+
+/**
+ * Get boxed lunch tier configurations
+ */
+export async function getBoxedLunchTiers() {
+  try {
+    const tiers = await db.$queryRaw<any[]>`
+      SELECT id, tier_number as "tierNumber", name, price_cents as "priceCents", 
+             protein_amount as "proteinAmount", sides, active, created_at as "createdAt", 
+             updated_at as "updatedAt"
+      FROM boxed_lunch_tiers 
+      WHERE active = true 
+      ORDER BY tier_number
+    `;
+
+    return tiers.map(tier => ({
+      id: tier.id,
+      tierNumber: tier.tierNumber,
+      name: tier.name,
+      priceCents: tier.priceCents,
+      proteinAmount: tier.proteinAmount,
+      sides: Array.isArray(tier.sides) ? tier.sides : [],
+      active: tier.active,
+      createdAt: tier.createdAt,
+      updatedAt: tier.updatedAt,
+    }));
+  } catch (error) {
+    console.error('Error getting boxed lunch tiers:', error);
+    return [];
+  }
+}
+
+/**
+ * Get complete boxed lunch data with tiers and entrees
+ */
+export async function getBoxedLunchTiersWithEntrees() {
+  try {
+    const [tiers, entrees] = await Promise.all([
+      getBoxedLunchTiers(),
+      getBoxedLunchEntrees()
+    ]);
+
+    return tiers.map(tier => ({
+      tier: `TIER_${tier.tierNumber}` as any,
+      name: tier.name,
+      price: tier.priceCents / 100, // Convert cents to dollars
+      proteinAmount: tier.proteinAmount || '',
+      sides: tier.sides,
+      availableEntrees: entrees // All entrees available for all tiers
+    }));
+  } catch (error) {
+    console.error('Error getting boxed lunch tiers with entrees:', error);
+    return [];
+  }
+}

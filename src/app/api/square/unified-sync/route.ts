@@ -1197,6 +1197,8 @@ async function performUnifiedSync(
  * Unified sync endpoint with single source of truth approach
  */
 export async function POST(request: NextRequest) {
+  let syncLogId: string | null = null;
+  
   try {
     logger.info('🚀 Unified sync POST request received');
     
@@ -1214,6 +1216,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user profile for logging
+    const userProfile = await prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { name: true, email: true, role: true }
+    });
+
     // Parse and validate request
     const body = await request.json();
     const { strategy: _ignoredStrategy, dryRun, categories, forceUpdate } = UnifiedSyncRequestSchema.parse(body);
@@ -1225,9 +1233,46 @@ export async function POST(request: NextRequest) {
 
     logger.info(`🎯 Unified sync mode: PRODUCTS_ONLY${dryRun ? ' [DRY RUN]' : ''}`);
 
+    // Create sync log entry for tracking
+    if (!dryRun) {
+      const syncId = `unified-sync-${Date.now()}`;
+      const startTime = new Date();
+      
+      await prisma.userSyncLog.create({
+        data: {
+          userId: user.id,
+          syncId,
+          status: 'RUNNING',
+          startedBy: `${userProfile?.name || 'Unknown'} (${userProfile?.email || 'unknown@example.com'})`,
+          progress: 0,
+          message: 'Starting unified sync...',
+          currentStep: 'initialization',
+          options: {
+            categories: categories || [],
+            forceUpdate,
+            syncType: 'unified'
+          } as any,
+        }
+      });
+      
+      syncLogId = syncId;
+    }
+
     // Determine sync strategy
     const syncDecision = await determineSyncStrategy();
     logger.info(`📋 Sync decision: ${syncDecision.reason}`);
+
+    // Update progress
+    if (!dryRun && syncLogId) {
+      await prisma.userSyncLog.updateMany({
+        where: { syncId: syncLogId },
+        data: {
+          progress: 25,
+          message: 'Processing items from Square...',
+          currentStep: 'processing'
+        }
+      });
+    }
 
     // Perform unified sync
     const result = await performUnifiedSync(
@@ -1237,6 +1282,32 @@ export async function POST(request: NextRequest) {
     );
 
     const success = result.errors === 0 || result.syncedItems > 0;
+
+    // Update sync log with completion
+    if (!dryRun && syncLogId) {
+      await prisma.userSyncLog.updateMany({
+        where: { syncId: syncLogId },
+        data: {
+          status: success ? 'COMPLETED' : 'FAILED',
+          progress: 100,
+          endTime: new Date(),
+          message: success 
+            ? `Sync completed successfully - ${result.syncedItems} items synced`
+            : `Sync completed with ${result.errors} errors`,
+          currentStep: 'completed',
+          results: {
+            syncedProducts: result.syncedItems,
+            skippedProducts: result.skippedItems,
+            warnings: 0,
+            errors: result.errors,
+            verification: result.verification,
+            performance: {
+              totalTimeSeconds: Math.round(result.timings.totalSync / 1000)
+            }
+          } as any
+        }
+      });
+    }
     
     return NextResponse.json({
       success,
@@ -1251,6 +1322,12 @@ export async function POST(request: NextRequest) {
         : success 
           ? `Unified sync completed: ${result.syncedItems} items synced to products table`
           : `Unified sync completed with errors: ${result.errors} errors occurred`,
+      sync: {
+        syncedProducts: result.syncedItems,
+        skippedProducts: result.skippedItems,
+        errors: result.errors,
+        syncId: syncLogId,
+      },
       data: {
         syncedItems: result.syncedItems,
         skippedItems: result.skippedItems,
@@ -1276,6 +1353,25 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     logger.error('❌ Unified sync API error:', error);
+    
+    // Update sync log with error if it exists
+    if (syncLogId) {
+      try {
+        await prisma.userSyncLog.updateMany({
+          where: { syncId: syncLogId },
+          data: {
+            status: 'FAILED',
+            progress: 0,
+            endTime: new Date(),
+            message: `Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            currentStep: 'failed',
+            errors: [error instanceof Error ? error.message : String(error)] as any
+          }
+        });
+      } catch (logError) {
+        logger.error('Failed to update sync log with error:', logError);
+      }
+    }
     
     return NextResponse.json({
       success: false,

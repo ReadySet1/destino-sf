@@ -5,23 +5,18 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Plus, ShoppingCart, Utensils, Users, Cookie, Loader2, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import { Plus, ShoppingCart, Users, Cookie, Loader2, AlertCircle } from 'lucide-react';
 import {
-  BOXED_LUNCH_TIERS,
   BOXED_LUNCH_SALADS,
   BOXED_LUNCH_ADD_ONS,
-  PROTEIN_OPTIONS,
-  BoxedLunchTier,
   SaladOption,
   AddOnOption,
-  ProteinOption,
-  BoxedLunchTierConfig,
   BoxedLunchResponse,
   BoxedLunchItem,
 } from '@/types/catering';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { BoxedLunchCard } from './BoxedLunchCard';
+import { BoxedLunchBuilder } from './BoxedLunchBuilder';
 import toast from 'react-hot-toast';
 
 // Alfajores data for boxed lunch menu
@@ -68,19 +63,7 @@ const ALFAJORES_ITEMS = [
   },
 ];
 
-// Protein image mapping
-const getProteinImage = (protein: ProteinOption): string | null => {
-  const imageMap: Record<ProteinOption, string | null> = {
-    [ProteinOption.CARNE_ASADA]: '/images/boxedlunches/carne-asada.png',
-    [ProteinOption.POLLO_AL_CARBON]: '/images/boxedlunches/pollo-carbon.png',
-    [ProteinOption.CARNITAS]: '/images/boxedlunches/carnitas.png',
-    [ProteinOption.POLLO_ASADO]: '/images/boxedlunches/pollo-asado.png',
-    [ProteinOption.PESCADO]: '/images/boxedlunches/pescado.png',
-    [ProteinOption.VEGETARIAN_OPTION]: '/images/boxedlunches/vegetarian-option.png',
-  };
-
-  return imageMap[protein] || null;
-};
+// Protein image mapping moved to BoxedLunchBuilder component
 
 interface BoxedLunchMenuProps {
   className?: string;
@@ -92,15 +75,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Tier system state
-  const [selectedTier, setSelectedTier] = useState<BoxedLunchTier | null>(null);
-  const [selectedProteins, setSelectedProteins] = useState<
-    Record<BoxedLunchTier, ProteinOption | null>
-  >({
-    [BoxedLunchTier.TIER_1]: null,
-    [BoxedLunchTier.TIER_2]: null,
-    [BoxedLunchTier.TIER_3]: null,
-  });
+  // Note: Tier system now handled by BoxedLunchBuilder component
   
   // Shared state for salads, add-ons, and quantities
   const [selectedSalads, setSelectedSalads] = useState<Set<SaladOption>>(new Set());
@@ -139,17 +114,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
     fetchBoxedLunchItems();
   }, []);
 
-  // Tier system handlers
-  const handleTierSelect = (tier: BoxedLunchTier) => {
-    setSelectedTier(selectedTier === tier ? null : tier);
-  };
-
-  const handleProteinSelect = (tier: BoxedLunchTier, protein: ProteinOption) => {
-    setSelectedProteins(prev => ({
-      ...prev,
-      [tier]: prev[tier] === protein ? null : protein,
-    }));
-  };
+  // Note: Tier handlers now handled by BoxedLunchBuilder component
 
   const handleSaladToggle = (salad: SaladOption) => {
     const newSelectedSalads = new Set(selectedSalads);
@@ -177,46 +142,10 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
     setQuantities(prev => ({ ...prev, [itemId]: Math.max(1, quantity) }));
   };
 
-  const addToCart = (type: 'tier' | 'salad' | 'addon' | 'alfajores', itemId: string, item: any) => {
+  const addToCart = (type: 'salad' | 'addon' | 'alfajores', itemId: string, item: any) => {
     const quantity = getQuantity(itemId);
 
-    // For tier items, check if protein is selected
-    if (type === 'tier') {
-      const tier = itemId as BoxedLunchTier;
-      const selectedProtein = selectedProteins[tier];
-
-      if (!selectedProtein) {
-        toast.error('Please select a protein option first!');
-        return;
-      }
-
-      // Include protein information in the cart item
-      const productId = `boxed-lunch-${type}-${itemId}-${selectedProtein}`;
-      const proteinInfo = PROTEIN_OPTIONS[selectedProtein];
-
-      const metadata = {
-        type: 'boxed-lunch',
-        subType: type,
-        itemId,
-        tier: item.tier,
-        selectedProtein,
-        proteinName: proteinInfo.name,
-      };
-
-      addItem({
-        id: productId,
-        name: `${item.name} - ${proteinInfo.name}`,
-        price: item.price,
-        quantity,
-        variantId: JSON.stringify(metadata),
-        image: getProteinImage(selectedProtein) ?? undefined,
-      });
-
-      toast.success(`Added ${quantity}x ${item.name} with ${proteinInfo.name} to catering cart!`);
-      return;
-    }
-
-    // For non-tier items (salads, add-ons, alfajores), use existing logic
+    // For salads, add-ons, and alfajores
     const productId = `boxed-lunch-${type}-${itemId}`;
 
     const metadata = {
@@ -318,28 +247,15 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         </section>
       )}
 
-      {/* Tier Selection - Customizable Boxed Lunches */}
+      {/* Build Your Own Boxed Lunch - New Dynamic System */}
       <section>
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <Utensils className="h-6 w-6 text-amber-600" />
-          Build Your Own Boxed Lunch Tiers
-        </h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          {Object.values(BOXED_LUNCH_TIERS).map((tier, index) => (
-            <TierCard
-              key={tier.tier}
-              tier={tier}
-              isSelected={selectedTier === tier.tier}
-              selectedProtein={selectedProteins[tier.tier]}
-              onSelect={() => handleTierSelect(tier.tier)}
-              onProteinSelect={protein => handleProteinSelect(tier.tier, protein)}
-              onAddToCart={() => addToCart('tier', tier.tier, tier)}
-              quantity={getQuantity(tier.tier)}
-              onQuantityChange={qty => setQuantity(tier.tier, qty)}
-              index={index}
-            />
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <BoxedLunchBuilder />
+        </motion.div>
       </section>
 
       {/* Optional Side Salads */}
@@ -656,160 +572,6 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
   );
 };
 
-// Individual Tier Card Component
-interface TierCardProps {
-  tier: BoxedLunchTierConfig;
-  isSelected: boolean;
-  selectedProtein: ProteinOption | null;
-  onSelect: () => void;
-  onProteinSelect: (protein: ProteinOption) => void;
-  onAddToCart: () => void;
-  quantity: number;
-  onQuantityChange: (quantity: number) => void;
-  index: number;
-}
-
-const TierCard: React.FC<TierCardProps> = ({
-  tier,
-  isSelected,
-  selectedProtein,
-  onSelect,
-  onProteinSelect,
-  onAddToCart,
-  quantity,
-  onQuantityChange,
-  index,
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-    >
-      <Card
-        className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-          isSelected ? 'ring-2 ring-amber-500 shadow-lg' : ''
-        }`}
-      >
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-bold text-gray-800">{tier.name}</CardTitle>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-amber-600">${tier.price.toFixed(2)}</div>
-              <Badge variant="secondary" className="mt-1">
-                {tier.proteinSize} protein
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-gray-600">{tier.description}</p>
-
-          {/* Protein Selection */}
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm text-gray-700">Choose Your Protein:</h4>
-            <div className="grid gap-2">
-              {tier.availableProteins.map(protein => {
-                const proteinInfo = PROTEIN_OPTIONS[protein];
-                const isSelected = selectedProtein === protein;
-
-                return (
-                  <button
-                    key={protein}
-                    onClick={() => onProteinSelect(protein)}
-                    className={`text-left p-3 rounded-lg border transition-all duration-200 ${
-                      isSelected
-                        ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-200'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        {getProteinImage(protein) ? (
-                          <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
-                            <Image
-                              src={getProteinImage(protein)!}
-                              alt={proteinInfo.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                              onError={e => {
-                                console.error(
-                                  `Failed to load image for ${proteinInfo.name}:`,
-                                  getProteinImage(protein)
-                                );
-                              }}
-                              onLoad={() => {
-                                console.log(
-                                  `Successfully loaded image for ${proteinInfo.name}:`,
-                                  getProteinImage(protein)
-                                );
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs text-gray-500">
-                              No
-                              <br />
-                              Pic
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <div
-                            className={`font-medium ${isSelected ? 'text-amber-800' : 'text-gray-800'}`}
-                          >
-                            {proteinInfo.name}
-                          </div>
-                          <div
-                            className={`text-sm ${isSelected ? 'text-amber-600' : 'text-gray-600'}`}
-                          >
-                            {proteinInfo.description}
-                          </div>
-                        </div>
-                      </div>
-                      {isSelected && <CheckCircle className="h-5 w-5 text-amber-600" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onQuantityChange(quantity - 1)}
-                disabled={quantity <= 1}
-              >
-                -
-              </Button>
-              <span className="font-medium px-3">{quantity}</span>
-              <Button variant="outline" size="sm" onClick={() => onQuantityChange(quantity + 1)}>
-                +
-              </Button>
-            </div>
-
-            <Button
-              onClick={onAddToCart}
-              className={`transition-all duration-200 ${
-                selectedProtein
-                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              disabled={!selectedProtein}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Cart
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+// TierCard component removed - now handled by BoxedLunchBuilder
 
 export default BoxedLunchMenu;

@@ -121,6 +121,9 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- LUNCH, STARTERS': 'lunch',
   'CATERING- LUNCH, ENTREES': 'lunch',
   'CATERING- LUNCH, SIDES': 'lunch',
+  
+  'CATERING- BOXED LUNCHES': 'boxed-lunches',
+  'CATERING- BOXED LUNCH ENTREES': 'boxed-lunch-entrees', // New category for Build Your Own Box
 };
 
 export interface CateringPackage {
@@ -732,4 +735,82 @@ export interface BoxedLunchResponse {
   success: boolean;
   items: BoxedLunchItem[];
   error?: string;
+}
+
+// New interfaces for Build Your Own Boxed Lunch feature
+
+// New entree-specific type for Build Your Own Box
+export interface BoxedLunchEntree {
+  id: string;
+  squareId: string;
+  name: string;
+  description?: string;
+  imageUrl: string | null;
+  category: 'BOXED_LUNCH_ENTREE';
+  available: boolean;
+  sortOrder: number;
+  dietaryPreferences: string[];
+  // Nutritional info from existing Product model
+  calories?: number;
+  ingredients?: string;
+  allergens?: string[];
+}
+
+// Update existing BoxedLunchItem interface for Build Your Own Box orders
+export interface BuildYourOwnBoxOrder {
+  tierId: BoxedLunchTier;
+  entreeId: string;
+  entreeName: string;
+  quantity: number;
+  price: number;
+  sides: string[];
+  proteinAmount: string;
+  customizations?: {
+    notes?: string;
+    nameLabel?: string; // For individual packaging
+  };
+}
+
+// Tier configuration with new entrees
+export interface BoxedLunchTierWithEntrees {
+  tier: BoxedLunchTier;
+  name: string;
+  price: number;
+  proteinAmount: string;
+  sides: string[];
+  availableEntrees: BoxedLunchEntree[];
+}
+
+// Database model type for boxed lunch tiers (matches Prisma schema)
+export interface BoxedLunchTierModel {
+  id: string;
+  tierNumber: number;
+  name: string;
+  priceCents: number;
+  proteinAmount: string | null;
+  sides: string[]; // JSON array
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Enhanced entree with Square variations support
+export interface BoxedLunchEntreeWithVariations extends BoxedLunchEntree {
+  variations?: SquareItemVariation[];
+  hasVariations?: boolean;
+}
+
+// Cart item for Build Your Own Box
+export interface BuildYourOwnBoxCartItem {
+  id: string;
+  type: 'BUILD_YOUR_OWN_BOX';
+  tierConfig: BoxedLunchTierModel;
+  selectedEntree: BoxedLunchEntree;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  customizations?: {
+    notes?: string;
+    nameLabel?: string;
+  };
 }
