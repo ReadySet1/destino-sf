@@ -10,6 +10,7 @@
 // products table only, eliminating discrepancies and duplicate detection issues.
 
 import { prisma } from './db';
+import { VariationGrouper } from './square/variation-grouper';
 
 export interface DuplicateCheckResult {
   isDuplicate: boolean;
@@ -19,8 +20,10 @@ export interface DuplicateCheckResult {
     squareProductId: string | null;
     source: 'square' | 'manual';
   };
-  matchType?: 'exact_square_id' | 'exact_name' | 'normalized_name' | 'none';
+  matchType?: 'exact_square_id' | 'exact_name' | 'normalized_name' | 'base_product_exists' | 'exact_variation' | 'none';
   confidence: number; // 0-1, where 1 is exact match
+  isVariation?: boolean;
+  baseProduct?: any;
 }
 
 export class CateringDuplicateDetector {
@@ -172,6 +175,83 @@ export class CateringDuplicateDetector {
   }
 
   /**
+   * Check for variation-aware duplicates (handles size variations)
+   */
+  static async checkForVariationDuplicate(itemData: {
+    name: string;
+    squareProductId?: string | null;
+    squareCategory?: string | null;
+  }): Promise<DuplicateCheckResult> {
+    
+    const { baseName, size } = VariationGrouper.detectSizePattern(itemData.name);
+    
+    // First check if this exact item exists (by Square ID)
+    if (itemData.squareProductId) {
+      const exactMatch = await this.checkForDuplicate(itemData);
+      if (exactMatch.isDuplicate) {
+        return exactMatch;
+      }
+    }
+    
+    // Check if base product exists (for variation detection)
+    const existingBaseProduct = await prisma.product.findFirst({
+      where: {
+        OR: [
+          // Exact base name match
+          { name: { equals: baseName, mode: 'insensitive' } },
+          // Base name with any size suffix (for existing non-variation products)
+          { name: { startsWith: baseName, mode: 'insensitive' } }
+        ],
+        active: true,
+        category: {
+          name: { contains: 'CATERING' }
+        }
+      },
+      include: { 
+        variants: true,
+        category: true
+      }
+    });
+
+    if (existingBaseProduct) {
+      // Check if this specific size variation already exists
+      if (existingBaseProduct.variants && existingBaseProduct.variants.length > 0) {
+        const existingVariation = existingBaseProduct.variants.find(v => 
+          v.name && size && v.name.toLowerCase().includes(size.toLowerCase())
+        );
+
+        if (existingVariation) {
+          return {
+            isDuplicate: true,
+            isVariation: true,
+            baseProduct: existingBaseProduct,
+            existingItem: {
+              id: existingVariation.id,
+              name: existingVariation.name || `${baseName} - ${size}`,
+              squareProductId: existingBaseProduct.squareId,
+              source: existingBaseProduct.squareId ? 'square' : 'manual'
+            },
+            matchType: 'exact_variation',
+            confidence: 1.0
+          };
+        }
+      }
+
+      // Base product exists but this size variation doesn't
+      return {
+        isDuplicate: false, // Not a duplicate, can add as variation
+        isVariation: true,
+        baseProduct: existingBaseProduct,
+        matchType: 'base_product_exists',
+        confidence: 0.8
+      };
+    }
+
+    // Fall back to original duplicate detection for non-variation cases
+    return await this.checkForDuplicate(itemData);
+  }
+
+  /**
    * Verificar duplicados para múltiples items (batch)
    */
   static async checkForDuplicatesBatch(itemsData: Array<{
@@ -183,7 +263,7 @@ export class CateringDuplicateDetector {
     const results: DuplicateCheckResult[] = [];
     
     for (const itemData of itemsData) {
-      const result = await this.checkForDuplicate(itemData);
+      const result = await this.checkForVariationDuplicate(itemData);
       results.push(result);
     }
     

@@ -41,7 +41,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-4 sm:py-8 pb-32 sm:pb-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Cart Type Tabs - Improved Mobile Design */}
         <div className="mb-6">
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -108,8 +108,8 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Order Summary - Improved Mobile */}
-          <div className="lg:static fixed bottom-0 left-0 right-0 bg-white lg:bg-transparent border-t lg:border-t-0 p-4 lg:p-0 shadow-lg lg:shadow-none z-10">
+          {/* Order Summary */}
+          <div className="bg-white border rounded-xl shadow-sm p-4 lg:p-6">
           <CartSummary
             subtotal={currentTotalPrice}
             totalItems={currentTotalItems}

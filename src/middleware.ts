@@ -135,8 +135,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/sign-in', request.url));
       }
     }
-  } else {
-    // For non-admin routes, check user authentication without blocking
+  }
+  
+  // Only check auth for specific routes that need user context (like account pages)
+  // but don't log warnings for public routes
+  if (pathname.startsWith('/account/') || pathname.startsWith('/user/')) {
     try {
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -169,17 +172,14 @@ export async function middleware(request: NextRequest) {
         error,
       } = await supabase.auth.getUser();
 
-      if (error) {
-        // Log error but don't block non-admin routes
-        console.warn('Non-admin route auth error:', error);
-      } else if (user) {
+      if (!error && user) {
         // Add user info to headers for downstream use
         response.headers.set('X-User-ID', user.id);
         response.headers.set('X-User-Email', user.email || '');
       }
+      // Note: No logging for auth failures on account routes - let the page handle redirects
     } catch (error) {
-      // Log error but don't block non-admin routes
-      console.warn('Non-admin route auth check failed:', error);
+      // Silently fail for account routes - let the page handle auth
     }
   }
 

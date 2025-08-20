@@ -23,9 +23,16 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   // We're not using searchParams in this component, but we'll await it to satisfy TypeScript
   await searchParams;
 
-  // Fetch the product from Prisma
+  // Fetch the product from Prisma with variants
   const product = await prisma.product.findUnique({
     where: { id: productId },
+    include: {
+      variants: {
+        orderBy: {
+          price: 'asc'
+        }
+      }
+    }
   });
 
   if (!product) {
@@ -259,6 +266,36 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                 Active Product
               </label>
             </div>
+
+            {/* Product Variants Section */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="sm:col-span-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Product Variants ({product.variants.length})
+                </label>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  {product.variants.map((variant, index) => (
+                    <div key={variant.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                      <div>
+                        <span className="font-medium text-gray-900">{variant.name}</span>
+                        {variant.squareVariantId && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            (Square ID: {variant.squareVariantId})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600">
+                        {variant.price ? `$${Number(variant.price).toFixed(2)}` : 'No price'}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="text-xs text-gray-500 mt-2">
+                    <strong>Note:</strong> Product variants are managed through Square sync. 
+                    Changes to variants should be made in Square Dashboard and synced here.
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="sm:col-span-6 flex justify-end space-x-4 mt-6">
               <Link

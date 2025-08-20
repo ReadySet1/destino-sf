@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { SafeImage } from '@/components/ui/safe-image';
-import { CateringItem } from '@/types/catering';
+import { CateringItemWithVariations, SquareItemVariation } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -17,7 +17,7 @@ import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from 'react-hot-toast';
 
 interface PlatterMenuItemProps {
-  items: CateringItem[]; // Now accepts an array of related platter items (Small/Large)
+  item: CateringItemWithVariations; // Single item with Square native variations
 }
 
 interface DietaryBadgeProps {
@@ -77,71 +77,45 @@ const formatDescription = (str: string | null | undefined): string => {
   return trimmedStr.charAt(0).toUpperCase() + trimmedStr.slice(1);
 };
 
-// Extract base platter name from size-specific name
-const getBasePlatterName = (name: string): string => {
-  return name.replace(/ - (Small|Large)$/, '');
-};
+// Helper function to format text to title case (keep existing function)
 
-export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
+export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
   const { addItem } = useCateringCartStore();
-  const [selectedSize, setSelectedSize] = useState<'small' | 'large'>('small');
+  const [selectedVariationId, setSelectedVariationId] = useState<string>('');
   const [showOrderModal, setShowOrderModal] = useState(false);
 
-  // Sort items to ensure consistent ordering (Small first, then Large)
-  const sortedItems = items.sort((a, b) => {
-    if (a.name.includes('Small')) return -1;
-    if (b.name.includes('Small')) return 1;
-    return 0;
-  });
+  // Get available variations (use item.variations if available, otherwise create default)
+  const variations = item.variations && item.variations.length > 0 
+    ? item.variations 
+    : [{ id: item.id, name: item.name, price: item.price }];
 
-  const smallItem = sortedItems.find(item => item.name.includes('Small'));
-  const largeItem = sortedItems.find(item => item.name.includes('Large'));
+  // Sort variations by price (small to large)
+  const sortedVariations = variations.sort((a, b) => (a.price || 0) - (b.price || 0));
 
-  if (!smallItem && !largeItem) {
+  // Set default selection to first variation if not set
+  if (!selectedVariationId && sortedVariations.length > 0) {
+    setSelectedVariationId(sortedVariations[0].id);
+  }
+
+  const selectedVariation = sortedVariations.find(v => v.id === selectedVariationId) || sortedVariations[0];
+
+  if (!selectedVariation) {
     return null;
   }
 
-  // Use the first available item for base info
-  const baseItem = smallItem || largeItem!;
-  const baseName = getBasePlatterName(baseItem.name);
-  const currentItem = selectedSize === 'small' ? smallItem : largeItem;
-
-  if (!currentItem) {
-    // If selected size doesn't exist, fall back to available size
-    const availableItem = smallItem || largeItem!;
-    const availableSize = smallItem ? 'small' : 'large';
-    setSelectedSize(availableSize);
-    return null; // Re-render with correct size
-  }
-
-  // Function to get the correct image URL
-  const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return '/images/catering/default-item.jpg';
-
-    if (
-      url.includes('amazonaws.com') ||
-      url.includes('s3.') ||
-      url.startsWith('http://') ||
-      url.startsWith('https://')
-    ) {
-      return url;
-    }
-
-    return url.startsWith('/') ? url : `/${url}`;
-  };
-
   const handleAddToCart = () => {
     const cartItem = {
-      id: `${currentItem.id}`,
-      name: toTitleCase(currentItem.name),
-      price: Number(currentItem.price),
+      id: selectedVariation.id,
+      name: toTitleCase(selectedVariation.name),
+      price: Number(selectedVariation.price || item.price),
       quantity: 1,
-      image: getImageUrl(currentItem.imageUrl),
+      image: item.imageUrl || '/images/catering/default-item.jpg',
       variantId: JSON.stringify({
         type: 'item',
-        itemId: currentItem.id,
-        size: selectedSize,
-        servingSize: currentItem.servingSize,
+        itemId: item.id,
+        variationId: selectedVariation.id,
+        variationName: selectedVariation.name,
+        servingSize: item.servingSize,
       }),
     };
 
@@ -154,8 +128,8 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
       <div className="h-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
         <div className="relative w-full h-48">
           <SafeImage
-            src={getImageUrl(currentItem.imageUrl)}
-            alt={toTitleCase(baseName)}
+            src={item.imageUrl || '/images/catering/default-item.jpg'}
+            alt={toTitleCase(item.name)}
             fill
             className="object-cover hover:scale-105 transition-transform duration-300"
             fallbackSrc="/images/catering/default-item.jpg"
@@ -168,54 +142,53 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <h4 className="text-lg md:text-xl font-semibold text-gray-800">
-                {toTitleCase(baseName)}
+                {toTitleCase(item.name)}
               </h4>
               <div className="flex gap-1 mt-1">
-                {baseItem.isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
-                {baseItem.isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
-                {baseItem.isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
+                {item.isVegetarian && <DietaryBadge label="V" tooltip="Vegetarian" />}
+                {item.isVegan && <DietaryBadge label="VG" tooltip="Vegan" />}
+                {item.isGlutenFree && <DietaryBadge label="GF" tooltip="Gluten Free" />}
               </div>
             </div>
             <div className="text-lg md:text-xl font-bold text-gray-800">
-              ${Number(currentItem.price).toFixed(2)}
+              ${Number(selectedVariation.price || item.price).toFixed(2)}
             </div>
           </div>
 
-          {/* Size Selection */}
-          <div className="mb-3">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Size:</label>
-            <Select
-              value={selectedSize}
-              onValueChange={(value: 'small' | 'large') => setSelectedSize(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {smallItem && (
-                  <SelectItem value="small">
-                    Small - {smallItem.servingSize} (${Number(smallItem.price)})
-                  </SelectItem>
-                )}
-                {largeItem && (
-                  <SelectItem value="large">
-                    Large - {largeItem.servingSize} (${Number(largeItem.price)})
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Variation Selection (only show if multiple variations) */}
+          {sortedVariations.length > 1 && (
+            <div className="mb-3">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Size:</label>
+              <Select
+                value={selectedVariationId}
+                onValueChange={setSelectedVariationId}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedVariations.map((variation) => (
+                    <SelectItem key={variation.id} value={variation.id}>
+                      {variation.name} (${Number(variation.price || item.price).toFixed(2)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Serving Size */}
-          <div className="text-sm md:text-base font-medium text-gray-600 mb-2">
-            <span className="font-bold">Serving: </span>
-            {currentItem.servingSize}
-          </div>
+          {item.servingSize && (
+            <div className="text-sm md:text-base font-medium text-gray-600 mb-2">
+              <span className="font-bold">Serving: </span>
+              {item.servingSize}
+            </div>
+          )}
 
           {/* Description */}
           <div className="mb-4 flex-grow">
             <p className="text-gray-600 text-sm md:text-base">
-              {formatDescription(currentItem.description)}
+              {formatDescription(item.description)}
             </p>
           </div>
 
@@ -241,7 +214,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ items }) => {
       </div>
 
       <CateringOrderModal
-        item={currentItem}
+        item={item}
         type="item"
         isOpen={showOrderModal}
         onClose={() => setShowOrderModal(false)}

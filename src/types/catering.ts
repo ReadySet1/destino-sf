@@ -163,6 +163,19 @@ export interface CateringItem {
   updatedAt?: Date;
 }
 
+// Square item variation (native Square variations)
+export interface SquareItemVariation {
+  id: string;
+  name: string;
+  price?: number;
+}
+
+// Enhanced catering item with Square variations support
+export interface CateringItemWithVariations extends CateringItem {
+  variations?: SquareItemVariation[];
+  hasVariations?: boolean;
+}
+
 export interface CateringPackageItem {
   id: string;
   packageId: string;

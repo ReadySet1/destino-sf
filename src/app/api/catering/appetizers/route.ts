@@ -68,6 +68,12 @@ export async function GET(request: NextRequest) {
         squareProductId: product.squareId,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
+        // Include variations for Share Platters
+        variations: product.variants?.length > 0 ? product.variants.map(variant => ({
+          id: variant.id,
+          name: variant.name,
+          price: parseFloat(variant.price?.toString() || product.price.toString())
+        })) : undefined,
       };
     });
 

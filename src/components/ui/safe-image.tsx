@@ -69,7 +69,7 @@ export function SafeImage({
     if (retryCount < maxRetries && currentSrc !== fallbackSrc) {
       setRetryCount(prev => prev + 1);
 
-      // Try adding cache busting parameter
+      // Try adding cache busting parameter for retry
       if (typeof currentSrc === 'string' && !currentSrc.includes('?')) {
         setCurrentSrc(`${currentSrc}?t=${Date.now()}`);
         return;

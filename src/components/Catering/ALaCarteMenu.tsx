@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { SafeImage } from '@/components/ui/safe-image';
 import {
   CateringItem,
+  CateringItemWithVariations,
   getItemsForTab,
   groupItemsBySubcategory,
   groupBuffetItemsByCategory,
@@ -34,37 +35,9 @@ const formatDescription = (str: string | null | undefined): string => {
   return trimmedStr.charAt(0).toUpperCase() + trimmedStr.slice(1);
 };
 
-// Function to check if an item is a platter item
-const isPlatterItem = (item: CateringItem): boolean => {
-  const name = item.name.toLowerCase();
-  const hasPlatter = name.includes('platter');
-  const hasSize = name.includes('small') || name.includes('large');
-  
-  return hasPlatter && hasSize;
-};
-
-// Function to get base platter name
-const getBasePlatterName = (name: string): string => {
-  return name.replace(/ - (Small|Large)$/, '');
-};
-
-// Function to group platter items by base name
-const groupPlatterItems = (items: CateringItem[]): Record<string, CateringItem[]> => {
-  const platterGroups: Record<string, CateringItem[]> = {};
-
-  items.forEach((item, index) => {
-    const isPlatter = isPlatterItem(item);
-    
-    if (isPlatter) {
-      const baseName = getBasePlatterName(item.name);
-      if (!platterGroups[baseName]) {
-        platterGroups[baseName] = [];
-      }
-      platterGroups[baseName].push(item);
-    }
-  });
-
-  return platterGroups;
+// Function to check if an item is a Share Platter (using category instead of name pattern)
+const isSharePlatterItem = (item: CateringItem): boolean => {
+  return item.squareCategory === 'CATERING- SHARE PLATTERS';
 };
 
 // Service Add-ons data
@@ -216,23 +189,23 @@ const CategorySection: React.FC<CategorySectionProps> = ({
   items,
   isDessertSection = false,
 }) => {
-  // Group platter items and separate non-platter items
-  const platterGroups = groupPlatterItems(items);
-  const nonPlatterItems = items.filter(item => !isPlatterItem(item));
+  // Separate Share Platter items from regular items
+  const sharePlatterItems = items.filter(item => isSharePlatterItem(item));
+  const regularItems = items.filter(item => !isSharePlatterItem(item));
 
-  // Create display items array with grouped platters and individual items
+  // Create display items array
   const displayItems: Array<{
     type: 'platter' | 'item';
-    data: CateringItem[] | CateringItem;
+    data: CateringItem;
   }> = [];
 
-  // Add platter groups first (these will be single cards with size selection)
-  Object.entries(platterGroups).forEach(([baseName, platterItems]) => {
-    displayItems.push({ type: 'platter', data: platterItems });
+  // Add Share Platter items (these will use PlatterMenuItem with variations)
+  sharePlatterItems.forEach(item => {
+    displayItems.push({ type: 'platter', data: item });
   });
 
-  // Add individual non-platter items
-  nonPlatterItems.forEach(item => {
+  // Add regular individual items
+  regularItems.forEach(item => {
     displayItems.push({ type: 'item', data: item });
   });
 
@@ -253,20 +226,16 @@ const CategorySection: React.FC<CategorySectionProps> = ({
       <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
         {displayItems.map((displayItem, index) => (
           <motion.div
-            key={
-              displayItem.type === 'platter'
-                ? `platter-${getBasePlatterName((displayItem.data as CateringItem[])[0].name)}`
-                : (displayItem.data as CateringItem).id
-            }
+            key={`${displayItem.type}-${displayItem.data.id}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             className="h-full"
           >
             {displayItem.type === 'platter' ? (
-              <PlatterMenuItem items={displayItem.data as CateringItem[]} />
+              <PlatterMenuItem item={displayItem.data as CateringItemWithVariations} />
             ) : (
-              <MenuItem item={displayItem.data as CateringItem} />
+              <MenuItem item={displayItem.data} />
             )}
           </motion.div>
         ))}

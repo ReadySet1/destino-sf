@@ -41,7 +41,7 @@ export default function ProductFilters({
 
   const [search, setSearch] = useState(currentSearch);
   const [category, setCategory] = useState(currentCategory || 'all');
-  const [status, setStatus] = useState(currentStatus || 'all');
+  const [status, setStatus] = useState(currentStatus || 'active');
   const [featured, setFeatured] = useState(currentFeatured || 'all');
 
   // Function to create new URL with updated search params

@@ -21,8 +21,16 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
     setSyncState('starting');
 
     try {
-      const response = await fetch('/api/square/fix-sync', {
-        method: 'GET',
+      const response = await fetch('/api/square/unified-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dryRun: false,
+          categories: [], // Sync all categories
+          forceUpdate: false
+        })
       });
 
       const data = await response.json();

@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { SyncLogger } from '@/lib/square/sync-logger';
 import { CategoryMapper, CATEGORY_MAPPINGS, LEGACY_CATEGORY_MAPPINGS } from '@/lib/square/category-mapper';
 import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
+import { VariationGrouper } from '@/lib/square/variation-grouper';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { cachedSearchCatalogObjects } from '@/lib/square/api-cache';
 import { prisma } from '@/lib/db';
@@ -506,7 +507,7 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
 }
 
 /**
- * Batch sync items to products table for improved performance
+ * Batch sync items to products table with variation grouping support
  */
 async function batchSyncToProducts(
   items: SquareItem[], 
@@ -518,113 +519,208 @@ async function batchSyncToProducts(
   logger.info(`🔄 Batch syncing ${items.length} items to products table...`);
   
   try {
-    // Get all existing products in ONE query
-    const existingProducts = await prisma.product.findMany({
-      where: { squareId: { in: items.map(i => i.id) } },
-      include: { category: true }
-    });
+    logger.info(`🔄 Starting batch sync of ${items.length} items to products table`);
     
-    const existingProductsMap = new Map(
-      existingProducts.map(p => [p.squareId, p])
-    );
+    // Check if this is SHARE PLATTERS category (only category that needs variation grouping)
+    const isSharePlattersCategory = items.length > 0 && 
+      items[0].categoryName === 'CATERING- SHARE PLATTERS';
     
-    // Prepare batch operations
-    const toCreate: any[] = [];
-    const toUpdate: any[] = [];
+    let syncedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
     
-    // Process each item
-    for (const item of items) {
-      try {
-        const existingProduct = existingProductsMap.get(item.id);
-        const isUpdate = !!existingProduct;
-        
-        // Get or create category using cache
-        const category = await getOrCreateCategory(item.categoryId, item.categoryName);
-        
-        // Check for duplicates if it's a new item
-        if (!isUpdate) {
-          const { isDuplicate, existingItem } = await CateringDuplicateDetector.checkForDuplicate({
-            name: item.name,
-            squareProductId: item.id,
+    if (isSharePlattersCategory) {
+      // SHARE PLATTERS: Use intelligent variation grouping with Square's native variations
+      logger.info(`📦 Processing SHARE PLATTERS with enhanced variation grouping`);
+      
+      // Group variations using the VariationGrouper to detect size patterns
+      const groupedProducts = VariationGrouper.groupVariations(items);
+      
+      logger.info(`🔍 Grouped ${items.length} items into ${groupedProducts.length} products with variations:`, {
+        totalItems: items.length,
+        groupedProducts: groupedProducts.length,
+        withMultipleSizes: groupedProducts.filter(g => g.hasMultipleSizes).length
+      });
+      
+      for (const groupedProduct of groupedProducts) {
+        try {
+          // Use the base name for the product (without size indicators)
+          const baseName = groupedProduct.baseName;
+          const category = await getOrCreateCategory(groupedProduct.categoryId, groupedProduct.category);
+          
+          // Look for existing product by base name pattern or any variation's Square ID
+          const variationSquareIds = groupedProduct.variations.map(v => v.id);
+          let existingProduct = await prisma.product.findFirst({
+            where: {
+              OR: [
+                { squareId: { in: variationSquareIds } },
+                { name: baseName },
+                { name: { contains: baseName, mode: 'insensitive' } }
+              ]
+            },
+            include: { variants: true }
           });
           
-          if (isDuplicate && existingItem) {
-            syncLogger.logItemProcessed(item.id, item.name, 'duplicate', `Duplicate of existing item: ${existingItem.name}`);
+          if (existingProduct && !forceUpdate) {
+            syncLogger.logItemProcessed(variationSquareIds[0], baseName, 'duplicate', 'Product already exists');
             skippedCount++;
             continue;
           }
-        }
-        
-        // Generate unique slug (or reuse existing for updates)
-        const uniqueSlug = await generateUniqueSlug(item.name, item.id, existingProduct?.slug || undefined);
-        
-        // Prepare data for create/update
-        const productData = {
-          name: item.name,
-          description: item.description || '',
-          price: item.price,
-          squareId: item.id,
-          category: {
-            connect: { id: category.id }
-          },
-          active: true,
-          images: item.imageUrl ? [item.imageUrl] : [],
-          slug: uniqueSlug,
-        };
-        
-        if (isUpdate) {
-          toUpdate.push({
-            where: { id: existingProduct.id },
-            data: productData
+          
+          // Generate unique slug using base name
+          const uniqueSlug = await generateUniqueSlug(baseName, variationSquareIds[0], existingProduct?.slug || undefined);
+          
+          // Find the best base price (usually the smallest/regular size)
+          const sortedVariations = groupedProduct.variations.sort((a, b) => {
+            const sizeOrder = { 'small': 1, 'regular': 2, 'medium': 2, 'large': 3 };
+            const orderA = sizeOrder[a.size as keyof typeof sizeOrder] || 2;
+            const orderB = sizeOrder[b.size as keyof typeof sizeOrder] || 2;
+            return orderA - orderB;
           });
-        } else {
-          toCreate.push(productData);
+          const basePrice = sortedVariations[0]?.price || 0;
+          
+          let baseProduct: typeof existingProduct;
+          
+          if (!existingProduct) {
+            // Create new product with base name
+            baseProduct = await prisma.product.create({
+              data: {
+                name: baseName,
+                description: groupedProduct.variations[0]?.description || '',
+                price: basePrice,
+                squareId: variationSquareIds[0], // Use first variation ID as primary
+                category: { connect: { id: category.id } },
+                active: true,
+                images: groupedProduct.baseImageUrl ? [groupedProduct.baseImageUrl] : [],
+                slug: uniqueSlug,
+              },
+              include: { variants: true }
+            });
+            syncLogger.logItemSynced(variationSquareIds[0], baseName, `Created grouped product with ${groupedProduct.variations.length} variations`);
+          } else {
+            // Update existing product
+            baseProduct = await prisma.product.update({
+              where: { id: existingProduct.id },
+              data: {
+                name: baseName,
+                description: groupedProduct.variations[0]?.description || '',
+                price: basePrice,
+                images: groupedProduct.baseImageUrl ? [groupedProduct.baseImageUrl] : [],
+                active: true,
+              },
+              include: { variants: true }
+            });
+            syncLogger.logItemSynced(variationSquareIds[0], baseName, `Updated grouped product with ${groupedProduct.variations.length} variations`);
+          }
+          
+          // Clear existing variants if this is an update to avoid orphaned variants
+          if (baseProduct.variants && baseProduct.variants.length > 0) {
+            await prisma.variant.deleteMany({
+              where: { productId: baseProduct.id }
+            });
+          }
+          
+          // Create variants for each size variation
+          for (const variation of groupedProduct.variations) {
+            const variantName = groupedProduct.hasMultipleSizes 
+              ? `${VariationGrouper.getSizeDisplayName(variation.size)}` 
+              : baseName;
+            
+            await prisma.variant.create({
+              data: {
+                productId: baseProduct.id,
+                squareVariantId: variation.squareVariantId || variation.id,
+                name: variantName,
+                price: variation.price,
+              }
+            });
+            
+            logger.info(`🔧 Created variant "${variantName}" for ${baseName}: $${variation.price}`);
+          }
+          
+          logger.info(`✅ Successfully processed SHARE PLATTER: "${baseName}" with ${groupedProduct.variations.length} size variations`, {
+            productId: baseProduct.id,
+            variations: groupedProduct.variations.map(v => ({ 
+              size: v.size, 
+              price: v.price,
+              squareId: v.id 
+            }))
+          });
+          
+          syncedCount++;
+          
+        } catch (error) {
+          errorCount++;
+          logger.error(`❌ Error processing SHARE PLATTER group "${groupedProduct.baseName}":`, error);
+          syncLogger.logError(groupedProduct.baseName, error as Error);
         }
-        
-      } catch (error) {
-        logger.error(`❌ Error processing item ${item.name}:`, error);
-        syncLogger.logError(item.name, error as Error);
-        errorCount++;
+      }
+    } else {
+      // ALL OTHER CATEGORIES: Individual products (existing logic)
+      logger.info(`📦 Processing regular category "${items[0]?.categoryName}" as individual products`);
+      
+      for (const item of items) {
+        try {
+          const existingProduct = await prisma.product.findFirst({
+            where: { squareId: item.id }
+          });
+          const isUpdate = !!existingProduct;
+          
+          // Check for duplicates if it's a new item
+          if (!isUpdate) {
+            const { isDuplicate, existingItem } = await CateringDuplicateDetector.checkForDuplicate({
+              name: item.name,
+              squareProductId: item.id,
+            });
+            
+            if (isDuplicate && existingItem) {
+              syncLogger.logItemProcessed(item.id, item.name, 'duplicate', `Duplicate of existing item: ${existingItem.name}`);
+              skippedCount++;
+              continue;
+            }
+          }
+          
+          // Get or create category
+          const category = await getOrCreateCategory(item.categoryId, item.categoryName);
+          
+          // Generate unique slug
+          const uniqueSlug = await generateUniqueSlug(item.name, item.id, existingProduct?.slug || undefined);
+          
+          const productData = {
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
+            squareId: item.id,
+            category: { connect: { id: category.id } },
+            active: true,
+            images: item.imageUrl ? [item.imageUrl] : [],
+            slug: uniqueSlug,
+          };
+          
+          if (isUpdate) {
+            await prisma.product.update({
+              where: { id: existingProduct.id },
+              data: productData
+            });
+            syncLogger.logItemSynced(item.id, item.name, 'Updated individual product');
+          } else {
+            await prisma.product.create({
+              data: productData
+            });
+            syncLogger.logItemSynced(item.id, item.name, 'Created individual product');
+          }
+          
+          syncedCount++;
+          
+        } catch (error) {
+          errorCount++;
+          logger.error(`❌ Error processing item ${item.name}:`, error);
+          syncLogger.logError(item.name, error as Error);
+        }
       }
     }
     
-    // Execute batch operations with extended timeout
-    let createdCount = 0;
-    let updatedCount = 0;
-    
-    if (toCreate.length > 0 || toUpdate.length > 0) {
-      await prisma.$transaction(async (tx) => {
-        // Batch create new products
-        if (toCreate.length > 0) {
-          await tx.product.createMany({ 
-            data: toCreate,
-            skipDuplicates: true 
-          });
-          createdCount = toCreate.length;
-          logger.info(`✅ Created ${createdCount} new products`);
-        }
-        
-        // Batch update existing products with parallel processing
-        if (toUpdate.length > 0) {
-          // Process updates in smaller batches to avoid timeout
-          const batchSize = 5;
-          for (let i = 0; i < toUpdate.length; i += batchSize) {
-            const batch = toUpdate.slice(i, i + batchSize);
-            await Promise.all(batch.map(update => tx.product.update(update)));
-            updatedCount += batch.length;
-          }
-          logger.info(`✅ Updated ${updatedCount} existing products in batches`);
-        }
-      }, {
-        maxWait: 20000, // 20 seconds to wait for transaction to start
-        timeout: 30000, // 30 seconds total transaction timeout
-      });
-    }
-    
-    const syncedCount = createdCount + updatedCount;
-    logger.info(`📊 Batch sync completed: ${syncedCount} synced, ${skippedCount} skipped, ${errorCount} errors`);
+    logger.info(`✅ Batch sync completed: ${syncedCount} synced, ${skippedCount} skipped, ${errorCount} errors`);
     
     return { synced: syncedCount, skipped: skippedCount, errors: errorCount };
     
@@ -1222,3 +1318,4 @@ export async function GET() {
     timestamp: new Date().toISOString()
   });
 }
+

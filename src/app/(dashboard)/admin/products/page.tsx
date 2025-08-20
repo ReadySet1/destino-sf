@@ -31,6 +31,12 @@ type ProductWithCategory = {
   };
   featured: boolean;
   active: boolean;
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number | string | Decimal | null;
+    squareVariantId: string | null;
+  }>;
 };
 
 type ProductPageProps = {
@@ -88,7 +94,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
     }
   }
 
-  // Fetch products with their categories
+  // Fetch products with their categories and variants
   const productsFromDb = await prisma.product.findMany({
     where,
     orderBy: {
@@ -96,6 +102,11 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
     },
     include: {
       category: true,
+      variants: {
+        orderBy: {
+          price: 'asc'
+        }
+      },
     },
     skip,
     take: itemsPerPage,
@@ -113,7 +124,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   });
 
   // Transform the products to match our expected type
-  const products = productsFromDb.map((product: ProductWithCategory) => ({
+  const products = productsFromDb.map((product: any) => ({
     id: product.id,
     name: product.name,
     price: product.price,
@@ -125,6 +136,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
     },
     featured: product.featured,
     active: product.active,
+    variants: product.variants || [],
   }));
 
   async function deleteProduct(formData: FormData) {
@@ -266,6 +278,9 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                   <th className="hidden sm:table-cell w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Featured
                   </th>
+                  <th className="hidden lg:table-cell w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Variants
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -311,11 +326,34 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                       <td className="hidden sm:table-cell px-4 py-4 text-sm text-gray-500 font-medium">
                         {product.featured ? 'Yes' : 'No'}
                       </td>
+                      <td className="hidden lg:table-cell px-4 py-4 text-sm text-gray-500">
+                        {product.variants && product.variants.length > 0 ? (
+                          <div className="space-y-1">
+                            {product.variants.slice(0, 2).map((variant, index) => (
+                              <div key={variant.id} className="text-xs">
+                                <span className="font-medium">{variant.name}</span>
+                                {variant.price && (
+                                  <span className="text-gray-400 ml-1">
+                                    (${Number(variant.price).toFixed(2)})
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {product.variants.length > 2 && (
+                              <div className="text-xs text-gray-400">
+                                +{product.variants.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No variants</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                       No products found. Try adjusting your filters.
                     </td>
                   </tr>
