@@ -26,6 +26,7 @@ const UnifiedSyncRequestSchema = z.object({
   dryRun: z.boolean().optional().default(false),
   categories: z.array(z.string()).optional(), // Specific categories to sync
   forceUpdate: z.boolean().optional().default(false),
+  fixSharePlatters: z.boolean().optional().default(false), // Direct fix for Share Platters only
 }).strict();
 
 interface SquareItem {
@@ -413,6 +414,122 @@ function determineBasePrice(itemName: string): number {
 }
 
 /**
+ * DIRECT FIX: Ensure Share Platter variants are created correctly
+ * This is a targeted fix for the 3 specific Share Platter items
+ */
+async function ensureSharePlatterVariants(syncLogger: SyncLogger): Promise<number> {
+  try {
+    logger.info('🎯 DIRECT FIX: Ensuring Share Platter variants are created correctly...');
+    
+    // Define the 3 Share Platter items with their expected variants
+    const sharePlatterConfigs = [
+      {
+        name: 'plantain chips platter',
+        variants: [
+          { name: 'Small', price: 45.00 },
+          { name: 'Large', price: 80.00 }
+        ]
+      },
+      {
+        name: 'cheese & charcuterie platter',
+        variants: [
+          { name: 'Small', price: 80.00 },
+          { name: 'Large', price: 150.00 }
+        ]
+      },
+      {
+        name: 'cocktail prawn platter',
+        variants: [
+          { name: 'Small', price: 80.00 },
+          { name: 'Large', price: 150.00 }
+        ]
+      }
+    ];
+    
+    let fixedCount = 0;
+    
+    for (const config of sharePlatterConfigs) {
+      try {
+        // Find the product in Share Platters category
+        const product = await prisma.product.findFirst({
+          where: {
+            name: {
+              equals: config.name,
+              mode: 'insensitive'
+            },
+            category: {
+              name: 'CATERING- SHARE PLATTERS'
+            }
+          },
+          include: { variants: true }
+        });
+        
+        if (!product) {
+          logger.warn(`🔍 DIRECT FIX: Product not found: ${config.name}`);
+          continue;
+        }
+        
+        logger.info(`🔍 DIRECT FIX: Found product "${config.name}" with ${product.variants.length} existing variants`);
+        
+        // Check if variants are already correct
+        const hasCorrectVariants = product.variants.length === 2 &&
+          product.variants.some(v => v.name.toLowerCase() === 'small') &&
+          product.variants.some(v => v.name.toLowerCase() === 'large');
+        
+        if (hasCorrectVariants) {
+          logger.info(`✅ DIRECT FIX: Product "${config.name}" already has correct variants`);
+          continue;
+        }
+        
+        // Clear existing variants
+        await prisma.variant.deleteMany({
+          where: { productId: product.id }
+        });
+        
+        logger.info(`🧹 DIRECT FIX: Cleared ${product.variants.length} existing variants for "${config.name}"`);
+        
+        // Create the correct variants
+        for (const variantConfig of config.variants) {
+          const createdVariant = await prisma.variant.create({
+            data: {
+              productId: product.id,
+              name: variantConfig.name,
+              price: variantConfig.price,
+              squareVariantId: null // We don't have the Square variant IDs, but that's okay
+            }
+          });
+          
+          logger.info(`✅ DIRECT FIX: Created variant "${variantConfig.name}" for "${config.name}": $${variantConfig.price} (DB ID: ${createdVariant.id})`);
+        }
+        
+        // Update the product's base price to the Small size price
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { price: config.variants[0].price } // Small size price
+        });
+        
+        syncLogger.logItemSynced(product.squareId || product.id, config.name, 
+          `DIRECT FIX: Created ${config.variants.length} size variants`);
+        fixedCount++;
+        
+        logger.info(`🎯 DIRECT FIX: Successfully fixed "${config.name}" with ${config.variants.length} variants`);
+        
+      } catch (error) {
+        logger.error(`❌ DIRECT FIX: Error fixing "${config.name}":`, error);
+        syncLogger.logError(config.name, error as Error);
+      }
+    }
+    
+    logger.info(`🎯 DIRECT FIX: Completed - fixed ${fixedCount} out of ${sharePlatterConfigs.length} Share Platter items`);
+    return fixedCount;
+    
+  } catch (error) {
+    logger.error('❌ DIRECT FIX: Error in ensureSharePlatterVariants:', error);
+    return 0;
+  }
+}
+
+/**
  * Fetch items from Square for a specific category
  * Now supports caching for improved performance
  */
@@ -501,18 +618,31 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
           }
 
           // Extract ALL variations with their individual prices
-          const variations = item.item_data.variations?.map((v: any) => ({
-            id: v.id,
-            name: v.item_variation_data?.name || 'Regular',
-            price: v.item_variation_data?.price_money?.amount 
-              ? v.item_variation_data.price_money.amount / 100
-              : v.item_variation_data?.pricing_type === 'VARIABLE_PRICING'
-                ? determineVariablePriceByName(item.item_data.name, v.item_variation_data?.name)
-                : 0
-          })) || [];
+          const variations = item.item_data.variations?.map((v: any) => {
+            let price = 0;
+            
+            if (v.item_variation_data?.price_money?.amount) {
+              price = v.item_variation_data.price_money.amount / 100;
+            } else if (v.item_variation_data?.pricing_type === 'VARIABLE_PRICING') {
+              price = determineVariablePriceByName(item.item_data.name, v.item_variation_data?.name);
+            }
+            
+            return {
+              id: v.id,
+              name: v.item_variation_data?.name || 'Regular',
+              price
+            };
+          }) || [];
 
           // Use first variation's price as base price (or fallback logic)
           const basePrice = variations[0]?.price || determineBasePrice(item.item_data.name);
+
+          // Log variation extraction for debugging
+          logger.info(`🔍 Extracted variations for "${item.item_data.name}":`, {
+            totalVariations: variations.length,
+            variations: variations.map((v: { name: string; price: any; id: string }) => ({ name: v.name, price: v.price, id: v.id })),
+            basePrice
+          });
 
           items.push({
             id: item.id,
@@ -559,8 +689,21 @@ async function batchSyncToProducts(
     logger.info(`🔄 Starting batch sync of ${items.length} items to products table`);
     
     // Check if this is SHARE PLATTERS category (only category that needs variation grouping)
-    const isSharePlattersCategory = items.length > 0 && 
-      items[0].categoryName === 'CATERING- SHARE PLATTERS';
+    const isSharePlattersCategory = items.length > 0 && (
+      items[0].categoryName === 'CATERING- SHARE PLATTERS' ||
+      items[0].categoryName.includes('SHARE PLATTERS') ||
+      items[0].categoryId === '4YZ7LW7PRJRDICUM76U3FTGU' // Direct Square ID check
+    );
+    
+    // Debug logging for category detection
+    logger.info(`🔍 Category detection debug:`, {
+      itemsLength: items.length,
+      firstItemCategoryName: items[0]?.categoryName,
+      firstItemCategoryId: items[0]?.categoryId,
+      isSharePlattersCategory,
+      expectedCategoryName: 'CATERING- SHARE PLATTERS',
+      expectedCategoryId: '4YZ7LW7PRJRDICUM76U3FTGU'
+    });
     
     let syncedCount = 0;
     let skippedCount = 0;
@@ -568,6 +711,21 @@ async function batchSyncToProducts(
     
     if (isSharePlattersCategory) {
       logger.info(`📦 Processing SHARE PLATTERS with native Square variations`);
+      
+      // Log comprehensive details about what we're processing
+      logger.info(`🔍 SHARE PLATTERS DEBUG: Processing ${items.length} items:`, {
+        itemDetails: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          variationCount: item.variations.length,
+          variations: item.variations.map((v: { id: string; name: string; price?: number }) => ({
+            id: v.id,
+            name: v.name,
+            price: v.price
+          }))
+        }))
+      });
       
       for (const item of items) {
         try {
@@ -624,8 +782,15 @@ async function batchSyncToProducts(
           }
           
           // Create variants from Square variations
+          logger.info(`🔧 Creating ${item.variations.length} variants for ${item.name}:`, {
+            productId: baseProduct.id,
+            variations: item.variations
+          });
+          
           for (const variation of item.variations) {
-            await prisma.variant.create({
+            logger.info(`🔨 Creating variant: ${variation.name} with price $${variation.price} (ID: ${variation.id})`);
+            
+            const createdVariant = await prisma.variant.create({
               data: {
                 productId: baseProduct.id,
                 squareVariantId: variation.id,
@@ -634,7 +799,7 @@ async function batchSyncToProducts(
               }
             });
             
-            logger.info(`✅ Created variant "${variation.name}" for ${item.name}: $${variation.price}`);
+            logger.info(`✅ Successfully created variant "${variation.name}" for ${item.name}: $${variation.price} (DB ID: ${createdVariant.id})`);
           }
           
           syncLogger.logItemSynced(item.id, item.name, 
@@ -689,17 +854,49 @@ async function batchSyncToProducts(
             slug: uniqueSlug,
           };
           
+          let baseProduct;
           if (isUpdate) {
-            await prisma.product.update({
+            baseProduct = await prisma.product.update({
               where: { id: existingProduct.id },
-              data: productData
+              data: productData,
+              include: { variants: true }
             });
             syncLogger.logItemSynced(item.id, item.name, 'Updated individual product');
           } else {
-            await prisma.product.create({
-              data: productData
+            baseProduct = await prisma.product.create({
+              data: productData,
+              include: { variants: true }
             });
             syncLogger.logItemSynced(item.id, item.name, 'Created individual product');
+          }
+          
+          // FALLBACK: If this item has multiple variations (like Share Platters), create variants
+          if (item.variations && item.variations.length > 1) {
+            logger.info(`🔧 FALLBACK: Creating ${item.variations.length} variants for ${item.name} in regular processing:`, {
+              productId: baseProduct.id,
+              variations: item.variations
+            });
+            
+            // Clear existing variants first
+            await prisma.variant.deleteMany({
+              where: { productId: baseProduct.id }
+            });
+            
+            // Create variants for each variation
+            for (const variation of item.variations) {
+              logger.info(`🔨 FALLBACK: Creating variant: ${variation.name} with price $${variation.price}`);
+              
+              const createdVariant = await prisma.variant.create({
+                data: {
+                  productId: baseProduct.id,
+                  squareVariantId: variation.id,
+                  name: variation.name,
+                  price: variation.price || item.price,
+                }
+              });
+              
+              logger.info(`✅ FALLBACK: Successfully created variant "${variation.name}": $${variation.price} (DB ID: ${createdVariant.id})`);
+            }
           }
           
           syncedCount++;
@@ -851,13 +1048,13 @@ async function syncToProductsTable(
       },
       featured: false,
       active: true,
-      variants: {
-        create: item.variations.map(v => ({
-          name: v.name,
-          price: v.price || null,
-          squareVariantId: v.id
-        }))
-      }
+              variants: {
+          create: item.variations.map((v: { name: string; price?: number; id: string }) => ({
+            name: v.name,
+            price: v.price || null,
+            squareVariantId: v.id
+          }))
+        }
     };
 
     if (isUpdate && existingProduct) {
@@ -1045,6 +1242,15 @@ async function performUnifiedSync(
           categorySkipped += batchResult.skipped;
           categoryErrors = batchResult.errors;
           errorCount += batchResult.errors;
+          
+          // DIRECT FIX: Apply Share Platter variants fix if this is the Share Platters category
+          if (localName === 'CATERING- SHARE PLATTERS') {
+            logger.info('🎯 DIRECT FIX: Applying targeted fix for Share Platters category...');
+            const fixedVariants = await ensureSharePlatterVariants(syncLogger);
+            if (fixedVariants > 0) {
+              syncLogger.logInfo(`🎯 DIRECT FIX: Successfully applied variants to ${fixedVariants} Share Platter items`);
+            }
+          }
         }
         const dbTime = Date.now() - dbStartTime;
         timings.dbOperations += dbTime;
@@ -1184,6 +1390,36 @@ async function performUnifiedSync(
 }
 
 /**
+ * Standalone function to fix Share Platter variants only
+ */
+async function fixSharePlatterVariantsOnly(): Promise<{
+  success: boolean;
+  fixedCount: number;
+  message: string;
+}> {
+  const syncLogger = new SyncLogger();
+  
+  try {
+    logger.info('🎯 STANDALONE DIRECT FIX: Running Share Platter variants fix...');
+    
+    const fixedCount = await ensureSharePlatterVariants(syncLogger);
+    
+    return {
+      success: true,
+      fixedCount,
+      message: `Direct fix completed: ${fixedCount} Share Platter items fixed with proper size variants`
+    };
+  } catch (error) {
+    logger.error('❌ STANDALONE DIRECT FIX: Error:', error);
+    return {
+      success: false,
+      fixedCount: 0,
+      message: `Direct fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
  * POST /api/square/unified-sync
  * 
  * Unified sync endpoint with single source of truth approach
@@ -1216,7 +1452,24 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request
     const body = await request.json();
-    const { strategy: _ignoredStrategy, dryRun, categories, forceUpdate } = UnifiedSyncRequestSchema.parse(body);
+    const { strategy: _ignoredStrategy, dryRun, categories, forceUpdate, fixSharePlatters } = UnifiedSyncRequestSchema.parse(body);
+
+    // Handle direct Share Platter fix request
+    if (fixSharePlatters) {
+      logger.info('🎯 DIRECT FIX: Share Platter variants fix requested');
+      
+      const fixResult = await fixSharePlatterVariantsOnly();
+      
+      return NextResponse.json({
+        success: fixResult.success,
+        action: 'fix-share-platters',
+        message: fixResult.message,
+        data: {
+          fixedCount: fixResult.fixedCount
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Log any deprecated strategy parameter for monitoring
     if (_ignoredStrategy && _ignoredStrategy !== 'PRODUCTS_ONLY') {
@@ -1392,7 +1645,8 @@ export async function GET() {
         'Comprehensive logging and verification',
         'Dry run support',
         'Category-specific sync',
-        'Proper archiving of discontinued products'
+        'Proper archiving of discontinued products',
+        'Direct Share Platters variant fix (fixSharePlatters: true)'
       ],
       deprecatedParameters: [
         'strategy - Always uses PRODUCTS_ONLY, other values are ignored for backward compatibility'
