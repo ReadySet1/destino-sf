@@ -5,7 +5,7 @@ import { CateringPackages } from '@/components/Catering';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import { AppetizerPackageSelector } from '@/components/Catering/AppetizerPackageSelector';
 import { ALaCarteMenu } from '@/components/Catering/ALaCarteMenu';
-import { CateringPackage, CateringItem } from '@/types/catering';
+import { CateringPackage, CateringItem, getAppetizerPackageItems, getDessertItems } from '@/types/catering';
 import { logger } from '@/utils/logger';
 
 interface CateringMenuTabsProps {
@@ -139,11 +139,11 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
           <div>
             {/* Appetizer Packages */}
             <div className="mb-12">
-              <AppetizerPackageSelector
-                packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
-                availableItems={appetizerItems}
-                isLoading={isLoadingAppetizers}
-              />
+                          <AppetizerPackageSelector
+              packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
+              availableItems={getAppetizerPackageItems(appetizerItems)}
+              isLoading={isLoadingAppetizers}
+            />
             </div>
 
             {/* Share Platters Section */}
@@ -183,10 +183,26 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
 
         {activeTab === 'buffet' && !isLoadingBuffet && (
           <div>
+            {/* Buffet Items */}
             <ALaCarteMenu 
               items={buffetItems}
               activeCategory="buffet"
             />
+            
+            {/* Desserts Section */}
+            {!isLoadingAppetizers && getDessertItems(appetizerItems).length > 0 && (
+              <div className="border-t pt-12 mt-12">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Catering - Desserts</h3>
+                  <p className="text-gray-600">Complete your buffet with our delicious desserts</p>
+                </div>
+                <ALaCarteMenu 
+                  items={getDessertItems(appetizerItems)}
+                  activeCategory="buffet"
+                  showServiceAddOns={false}
+                />
+              </div>
+            )}
           </div>
         )}
 

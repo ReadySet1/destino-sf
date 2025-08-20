@@ -364,6 +364,55 @@ async function getAllActiveSquareProductIds(): Promise<string[]> {
 }
 
 /**
+ * Helper function for variable pricing based on item and variant names
+ */
+function determineVariablePriceByName(itemName: string, variantName?: string): number {
+  const lowerName = itemName.toLowerCase();
+  const lowerVariant = (variantName || '').toLowerCase();
+  
+  // Plantain Chips Platter
+  if (lowerName.includes('plantain')) {
+    if (lowerVariant.includes('small')) return 45.00;
+    if (lowerVariant.includes('large')) return 80.00;
+    return 45.00; // default
+  }
+  
+  // Cheese & Charcuterie Platter  
+  if (lowerName.includes('cheese') && lowerName.includes('charcuterie')) {
+    if (lowerVariant.includes('small')) return 80.00;
+    if (lowerVariant.includes('large')) return 150.00;
+    return 80.00; // default
+  }
+  
+  // Cocktail Prawn Platter
+  if (lowerName.includes('cocktail') && lowerName.includes('prawn')) {
+    if (lowerVariant.includes('small')) return 80.00;
+    if (lowerVariant.includes('large')) return 150.00;
+    return 80.00; // default
+  }
+  
+  return 50.00; // generic default
+}
+
+/**
+ * Helper function to determine base price for items
+ */
+function determineBasePrice(itemName: string): number {
+  const lowerName = itemName.toLowerCase();
+  
+  // Set base prices for known Share Platter items
+  if (lowerName.includes('plantain')) {
+    return 45.00; // Plantain Chips Platter base price
+  } else if (lowerName.includes('cheese') && lowerName.includes('charcuterie')) {
+    return 80.00; // Cheese & Charcuterie Platter base price (small)
+  } else if (lowerName.includes('cocktail') && lowerName.includes('prawn')) {
+    return 80.00; // Cocktail Prawn Platter base price (small)
+  }
+  
+  return 50.00; // generic default
+}
+
+/**
  * Fetch items from Square for a specific category
  * Now supports caching for improved performance
  */
@@ -440,27 +489,6 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
     if (data.objects) {
       for (const item of data.objects) {
         if (item.type === 'ITEM' && item.item_data) {
-          const variation = item.item_data.variations?.[0];
-          let price = 0;
-          
-          if (variation?.item_variation_data?.price_money?.amount) {
-            price = variation.item_variation_data.price_money.amount / 100;
-          } else if (variation?.item_variation_data?.pricing_type === 'VARIABLE_PRICING') {
-            // Handle variable pricing items - set reasonable base prices for Share Platters
-            const itemName = item.item_data.name.toLowerCase();
-            if (itemName.includes('plantain')) {
-              price = 45.00; // Plantain Chips Platter base price
-            } else if (itemName.includes('cheese') && itemName.includes('charcuterie')) {
-              price = 150.00; // Cheese & Charcuterie Platter base price
-            } else if (itemName.includes('cocktail') && itemName.includes('prawn')) {
-              price = 80.00; // Cocktail Prawn Platter base price
-            } else {
-              // Default variable pricing base for other items
-              price = 50.00;
-            }
-            logger.info(`🔧 Variable pricing detected for "${item.item_data.name}" - using base price: $${price}`);
-          }
-
           // Find image from related objects
           let imageUrl: string | undefined;
           if (item.item_data.image_ids?.[0] && data.related_objects) {
@@ -472,20 +500,29 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
             }
           }
 
+          // Extract ALL variations with their individual prices
+          const variations = item.item_data.variations?.map((v: any) => ({
+            id: v.id,
+            name: v.item_variation_data?.name || 'Regular',
+            price: v.item_variation_data?.price_money?.amount 
+              ? v.item_variation_data.price_money.amount / 100
+              : v.item_variation_data?.pricing_type === 'VARIABLE_PRICING'
+                ? determineVariablePriceByName(item.item_data.name, v.item_variation_data?.name)
+                : 0
+          })) || [];
+
+          // Use first variation's price as base price (or fallback logic)
+          const basePrice = variations[0]?.price || determineBasePrice(item.item_data.name);
+
           items.push({
             id: item.id,
             name: item.item_data.name,
             description: item.item_data.description_plaintext || '',
-            price,
+            price: basePrice,
             categoryId,
             categoryName,
             imageUrl,
-            variations: item.item_data.variations?.map((v: any) => ({
-              id: v.id,
-              name: v.item_variation_data?.name || 'Regular',
-              price: v.item_variation_data?.price_money?.amount ? 
-                v.item_variation_data.price_money.amount / 100 : undefined
-            })) || []
+            variations
           });
         }
       }
@@ -530,129 +567,84 @@ async function batchSyncToProducts(
     let errorCount = 0;
     
     if (isSharePlattersCategory) {
-      // SHARE PLATTERS: Use intelligent variation grouping with Square's native variations
-      logger.info(`📦 Processing SHARE PLATTERS with enhanced variation grouping`);
+      logger.info(`📦 Processing SHARE PLATTERS with native Square variations`);
       
-      // Group variations using the VariationGrouper to detect size patterns
-      const groupedProducts = VariationGrouper.groupVariations(items);
-      
-      logger.info(`🔍 Grouped ${items.length} items into ${groupedProducts.length} products with variations:`, {
-        totalItems: items.length,
-        groupedProducts: groupedProducts.length,
-        withMultipleSizes: groupedProducts.filter(g => g.hasMultipleSizes).length
-      });
-      
-      for (const groupedProduct of groupedProducts) {
+      for (const item of items) {
         try {
-          // Use the base name for the product (without size indicators)
-          const baseName = groupedProduct.baseName;
-          const category = await getOrCreateCategory(groupedProduct.categoryId, groupedProduct.category);
+          const category = await getOrCreateCategory(item.categoryId, item.categoryName);
           
-          // Look for existing product by base name pattern or any variation's Square ID
-          const variationSquareIds = groupedProduct.variations.map(v => v.id);
+          // Check for existing product
           let existingProduct = await prisma.product.findFirst({
             where: {
               OR: [
-                { squareId: { in: variationSquareIds } },
-                { name: baseName },
-                { name: { contains: baseName, mode: 'insensitive' } }
+                { squareId: item.id },
+                { name: item.name }
               ]
             },
             include: { variants: true }
           });
           
           if (existingProduct && !forceUpdate) {
-            syncLogger.logItemProcessed(variationSquareIds[0], baseName, 'duplicate', 'Product already exists');
+            syncLogger.logItemProcessed(item.id, item.name, 'duplicate', 'Product already exists');
             skippedCount++;
             continue;
           }
           
-          // Generate unique slug using base name
-          const uniqueSlug = await generateUniqueSlug(baseName, variationSquareIds[0], existingProduct?.slug || undefined);
+          const uniqueSlug = await generateUniqueSlug(item.name, item.id, existingProduct?.slug || undefined);
           
-          // Find the best base price (usually the smallest/regular size)
-          const sortedVariations = groupedProduct.variations.sort((a, b) => {
-            const sizeOrder = { 'small': 1, 'regular': 2, 'medium': 2, 'large': 3 };
-            const orderA = sizeOrder[a.size as keyof typeof sizeOrder] || 2;
-            const orderB = sizeOrder[b.size as keyof typeof sizeOrder] || 2;
-            return orderA - orderB;
-          });
-          const basePrice = sortedVariations[0]?.price || 0;
+          // Create/update base product
+          const productData = {
+            name: item.name,
+            description: item.description || '',
+            price: item.price, // Base price from first variation
+            squareId: item.id,
+            category: { connect: { id: category.id } },
+            active: true,
+            images: item.imageUrl ? [item.imageUrl] : [],
+            slug: uniqueSlug,
+          };
           
-          let baseProduct: typeof existingProduct;
-          
+          let baseProduct;
           if (!existingProduct) {
-            // Create new product with base name
             baseProduct = await prisma.product.create({
-              data: {
-                name: baseName,
-                description: groupedProduct.variations[0]?.description || '',
-                price: basePrice,
-                squareId: variationSquareIds[0], // Use first variation ID as primary
-                category: { connect: { id: category.id } },
-                active: true,
-                images: groupedProduct.baseImageUrl ? [groupedProduct.baseImageUrl] : [],
-                slug: uniqueSlug,
-              },
+              data: productData,
               include: { variants: true }
             });
-            syncLogger.logItemSynced(variationSquareIds[0], baseName, `Created grouped product with ${groupedProduct.variations.length} variations`);
           } else {
-            // Update existing product
+            // Clear existing variants first
+            await prisma.variant.deleteMany({
+              where: { productId: existingProduct.id }
+            });
+            
             baseProduct = await prisma.product.update({
               where: { id: existingProduct.id },
-              data: {
-                name: baseName,
-                description: groupedProduct.variations[0]?.description || '',
-                price: basePrice,
-                images: groupedProduct.baseImageUrl ? [groupedProduct.baseImageUrl] : [],
-                active: true,
-              },
+              data: productData,
               include: { variants: true }
             });
-            syncLogger.logItemSynced(variationSquareIds[0], baseName, `Updated grouped product with ${groupedProduct.variations.length} variations`);
           }
           
-          // Clear existing variants if this is an update to avoid orphaned variants
-          if (baseProduct.variants && baseProduct.variants.length > 0) {
-            await prisma.variant.deleteMany({
-              where: { productId: baseProduct.id }
-            });
-          }
-          
-          // Create variants for each size variation
-          for (const variation of groupedProduct.variations) {
-            const variantName = groupedProduct.hasMultipleSizes 
-              ? `${VariationGrouper.getSizeDisplayName(variation.size)}` 
-              : baseName;
-            
+          // Create variants from Square variations
+          for (const variation of item.variations) {
             await prisma.variant.create({
               data: {
                 productId: baseProduct.id,
-                squareVariantId: variation.squareVariantId || variation.id,
-                name: variantName,
-                price: variation.price,
+                squareVariantId: variation.id,
+                name: variation.name,
+                price: variation.price || item.price, // Fallback to base price
               }
             });
             
-            logger.info(`🔧 Created variant "${variantName}" for ${baseName}: $${variation.price}`);
+            logger.info(`✅ Created variant "${variation.name}" for ${item.name}: $${variation.price}`);
           }
           
-          logger.info(`✅ Successfully processed SHARE PLATTER: "${baseName}" with ${groupedProduct.variations.length} size variations`, {
-            productId: baseProduct.id,
-            variations: groupedProduct.variations.map(v => ({ 
-              size: v.size, 
-              price: v.price,
-              squareId: v.id 
-            }))
-          });
-          
+          syncLogger.logItemSynced(item.id, item.name, 
+            `Synced with ${item.variations.length} variants`);
           syncedCount++;
           
         } catch (error) {
           errorCount++;
-          logger.error(`❌ Error processing SHARE PLATTER group "${groupedProduct.baseName}":`, error);
-          syncLogger.logError(groupedProduct.baseName, error as Error);
+          logger.error(`❌ Error processing "${item.name}":`, error);
+          syncLogger.logError(item.name, error as Error);
         }
       }
     } else {

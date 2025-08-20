@@ -25,6 +25,7 @@ interface ALaCarteMenuProps {
   activeCategory?: string;
   showDessertsAtBottom?: boolean;
   isDessertSection?: boolean;
+  showServiceAddOns?: boolean; // New prop to control Service Add-Ons display
 }
 
 // Helper functions for text formatting
@@ -61,7 +62,7 @@ const SERVICE_ADD_ONS = [
     name: 'Compostable Serving Spoon',
     price: 1.5,
     description: 'Compostable serving spoon for family style',
-    categories: ['buffet'], // Only available for buffet
+    categories: ['buffet'], // Only available for buffet (makes sense for family style)
   },
 ];
 
@@ -70,6 +71,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
   activeCategory = 'appetizers',
   showDessertsAtBottom = false,
   isDessertSection = false,
+  showServiceAddOns = true, // Default to true for backward compatibility
 }) => {
   // Filter items for this tab and group them by subcategory
   let filteredItems;
@@ -164,7 +166,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
         ))}
 
         {/* Add Service Add-ons section for buffet and lunch */}
-        {(activeCategory === 'buffet' || activeCategory === 'lunch') && (
+        {showServiceAddOns && (activeCategory === 'buffet' || activeCategory === 'lunch') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

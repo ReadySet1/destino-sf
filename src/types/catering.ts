@@ -253,6 +253,15 @@ export function getAppetizerPackageItems(items: CateringItem[]): CateringItem[] 
   });
 }
 
+// Función específica para obtener items de desserts
+// Solo retorna items de la categoría "CATERING- DESSERTS"
+export function getDessertItems(items: CateringItem[]): CateringItem[] {
+  return items.filter(item => {
+    // Solo items de la categoría específica de desserts
+    return item.squareCategory === 'CATERING- DESSERTS';
+  });
+}
+
 export function groupItemsBySubcategory(items: CateringItem[]): Record<string, CateringItem[]> {
   const result: Record<string, CateringItem[]> = {};
 
