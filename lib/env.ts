@@ -21,11 +21,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1, 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is required'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   
-  // Sanity
-  NEXT_PUBLIC_SANITY_API_TOKEN: z.string().min(1, 'NEXT_PUBLIC_SANITY_API_TOKEN is required'),
-  SANITY_API_TOKEN: z.string().min(1, 'SANITY_API_TOKEN is required'),
-  NEXT_PUBLIC_SANITY_DATASET: z.string().min(1, 'NEXT_PUBLIC_SANITY_DATASET is required'),
-  NEXT_PUBLIC_SANITY_PROJECT_ID: z.string().min(1, 'NEXT_PUBLIC_SANITY_PROJECT_ID is required'),
+
   
   // Square Payment
   SQUARE_ENVIRONMENT: z.enum(['sandbox', 'production'], {

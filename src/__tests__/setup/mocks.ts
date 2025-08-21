@@ -262,9 +262,7 @@ export const mockSanityClient = () => {
     }),
   };
 
-  jest.mock('@sanity/client', () => ({
-    createClient: jest.fn(() => mockSanityClient),
-  }));
+
 
   return { mockSanityClient, mockSanityData };
 };

@@ -18,8 +18,7 @@ export const env = createEnv({
     // NextAuth Configuration
     NEXTAUTH_SECRET: z.string().optional(),
     NEXTAUTH_URL: z.string().url().optional(),
-    // Sanity CMS Configuration
-    SANITY_API_TOKEN: z.string().optional(),
+
     // Shipping Configuration
     SHIPPO_API_KEY: z.string().optional(),
     SHIPPO_WEBHOOK_SECRET: z.string().optional(),
@@ -37,9 +36,7 @@ export const env = createEnv({
     // Supabase Configuration
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
-    // Sanity CMS Configuration
-    NEXT_PUBLIC_SANITY_PROJECT_ID: z.string().optional(),
-    NEXT_PUBLIC_SANITY_DATASET: z.string().default('production'),
+
     // Google Maps Configuration
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
     // Error Tracking
@@ -67,8 +64,7 @@ export const env = createEnv({
     // NextAuth Configuration
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    // Sanity CMS Configuration
-    SANITY_API_TOKEN: process.env.SANITY_API_TOKEN,
+
     // Shipping Configuration
     SHIPPO_API_KEY: process.env.SHIPPO_API_KEY,
     SHIPPO_WEBHOOK_SECRET: process.env.SHIPPO_WEBHOOK_SECRET,
@@ -84,8 +80,7 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_SANITY_PROJECT_ID: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-    NEXT_PUBLIC_SANITY_DATASET: process.env.NEXT_PUBLIC_SANITY_DATASET,
+
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,

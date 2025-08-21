@@ -82,21 +82,7 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
       label: 'Product Sync',
       icon: <RefreshCw className="h-4 w-4" />,
     },
-    {
-      href: '/admin/new-appetizers-sync',
-      label: 'New Appetizers',
-      icon: <Plus className="h-4 w-4" />,
-    },
-    {
-      href: '/admin/catering-sync',
-      label: 'Catering Sync',
-      icon: <ImageIcon className="h-4 w-4" />,
-    },
-    {
-      href: '/admin/catering',
-      label: 'Catering',
-      icon: <UtensilsCrossed className="h-4 w-4" />,
-    },
+
     {
       href: '/admin/users',
       label: 'Users',

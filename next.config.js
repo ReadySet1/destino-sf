@@ -18,8 +18,7 @@ const nextConfig = {
     dirs: ['src'],
     ignoreDuringBuilds: false, // Re-enable ESLint checking for production builds
   },
-  // Add Sanity to transpile modules to avoid issues with conflicting types
-  transpilePackages: ['next-sanity', '@sanity/client'],
+
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
   serverExternalPackages: ['@prisma/client', 'prisma'],
   // Experimental features
