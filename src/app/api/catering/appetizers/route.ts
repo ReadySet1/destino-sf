@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: {
-        name: 'asc'
-      }
+      orderBy: [
+        { ordinal: 'asc' },  // Admin-controlled order first
+        { name: 'asc' }      // Alphabetical fallback
+      ]
     });
 
     logger.info(`✅ Found ${appetizers.length} appetizer, share platter and dessert products`);

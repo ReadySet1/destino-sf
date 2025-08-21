@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,9 +54,11 @@ export function ProductCardWithNutrition({
         {/* Product Image */}
         {product.images && product.images.length > 0 && (
           <div className="aspect-square w-full overflow-hidden rounded-t-lg">
-            <img
+            <Image
               src={product.images[0]}
               alt={product.name}
+              width={400}
+              height={400}
               className="h-full w-full object-cover transition-all hover:scale-105"
             />
           </div>

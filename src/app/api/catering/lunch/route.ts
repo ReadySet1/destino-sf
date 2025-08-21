@@ -21,12 +21,25 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      include: {
-        category: true
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        images: true,
+        dietaryPreferences: true,
+        active: true,
+        ordinal: true,
+        category: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: [
-        { category: { name: 'asc' } },
-        { name: 'asc' }
+        { category: { name: 'asc' } },  // Keep category ordering  
+        { ordinal: 'asc' },             // Admin-controlled order within category
+        { name: 'asc' }                 // Alphabetical fallback
       ]
     });
 
@@ -42,7 +55,8 @@ export async function GET(request: NextRequest) {
       isVegan: product.dietaryPreferences?.includes('vegan') || false,
       isGlutenFree: product.dietaryPreferences?.includes('gluten-free') || false,
       servingSize: 'per serving', // Default serving size since it's not stored in the database
-      isActive: product.active
+      isActive: product.active,
+      ordinal: Number(product.ordinal || 0) // Include ordinal for proper sorting
     }));
 
     // Sort items in the desired order: STARTERS, ENTREES, SIDES, DESSERTS
@@ -61,7 +75,11 @@ export async function GET(request: NextRequest) {
         return orderA - orderB;
       }
       
-      // If same category, sort by name
+      // If same category, sort by admin-controlled ordinal first, then by name
+      if (a.ordinal !== b.ordinal) {
+        return a.ordinal - b.ordinal;
+      }
+      
       return a.name.localeCompare(b.name);
     });
 

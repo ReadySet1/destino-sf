@@ -178,6 +178,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           active: true,
           createdAt: true,
           updatedAt: true,
+          ordinal: true, // Include ordinal for proper ordering
           variants: {
             select: {
               id: true,
@@ -190,10 +191,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             },
           },
         },
-        orderBy: {
-          // Optional: Add sorting, e.g., by name or a custom order field
-          name: 'asc',
-        },
+        orderBy: [
+          // Order by ordinal first (admin-controlled order), then by name as fallback
+          { ordinal: 'asc' },
+          { name: 'asc' },
+        ],
       });
     }, 3); // 3 retries
 

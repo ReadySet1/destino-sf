@@ -20,6 +20,7 @@ import {
   LogOut,
   Plus,
   Image as ImageIcon,
+  ArrowUpDown,
 } from 'lucide-react';
 import { signOutAction } from '@/app/actions/auth';
 import {
@@ -65,6 +66,11 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
       href: '/admin/products',
       label: 'Products',
       icon: <Archive className="h-4 w-4" />,
+    },
+    {
+      href: '/admin/products/order',
+      label: 'Product Order',
+      icon: <ArrowUpDown className="h-4 w-4" />,
     },
     {
       href: '/admin/categories',

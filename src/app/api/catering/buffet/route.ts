@@ -32,11 +32,14 @@ export async function GET(request: NextRequest) {
       orderBy: [
         {
           category: {
-            name: 'asc'
+            name: 'asc'  // Keep category ordering
           }
         },
         {
-          name: 'asc'
+          ordinal: 'asc'  // Admin-controlled order within category
+        },
+        {
+          name: 'asc'     // Alphabetical fallback
         }
       ]
     });

@@ -58,9 +58,10 @@ async function getLegacyBoxedLunchItems() {
         }
       }
     },
-    orderBy: {
-      name: 'asc'
-    }
+    orderBy: [
+      { ordinal: 'asc' },  // Admin-controlled order first
+      { name: 'asc' }      // Alphabetical fallback
+    ]
   });
 
   logger.info(`✅ Found ${products.length} legacy boxed lunch products`);
