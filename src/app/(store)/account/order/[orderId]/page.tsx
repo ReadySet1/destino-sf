@@ -96,6 +96,30 @@ const getPaymentStatusVariant = (
   return statusMap[status] || 'secondary';
 };
 
+// Helper to get the display text for order status based on fulfillment type
+const getStatusDisplayText = (status: string | null | undefined, fulfillmentType: string | null | undefined): string => {
+  if (!status) return 'UNKNOWN';
+  
+  // Handle READY status based on fulfillment type
+  if (status === 'READY') {
+    const fulfillment = fulfillmentType?.toLowerCase();
+    
+    if (fulfillment === 'pickup') {
+      return 'READY FOR PICKUP';
+    } else if (fulfillment === 'local_delivery') {
+      return 'READY FOR DELIVERY';
+    } else if (fulfillment === 'nationwide_shipping') {
+      return 'READY FOR SHIPPING';
+    } else {
+      // Fallback for unknown fulfillment types
+      return 'READY';
+    }
+  }
+  
+  // For all other statuses, return as-is
+  return status;
+};
+
 export default async function OrderDetailsPage({ params }: PageProps) {
   // Get authenticated user
   const supabase = await createClient();
@@ -274,7 +298,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   <div>
                     <p className="text-sm text-gray-600 font-medium">Status</p>
                     <Badge variant={getStatusVariant(orderData.status)} className="mt-1">
-                      {orderData.status === 'READY' ? 'READY FOR PICKUP' : orderData.status}
+                      {getStatusDisplayText(orderData.status, orderData.fulfillmentType)}
                     </Badge>
                   </div>
                   <div>

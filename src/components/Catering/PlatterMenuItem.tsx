@@ -14,7 +14,7 @@ import {
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { ShoppingCart } from 'lucide-react';
 import { useCateringCartStore } from '@/store/catering-cart';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface PlatterMenuItemProps {
   item: CateringItemWithVariations; // Single item with Square native variations

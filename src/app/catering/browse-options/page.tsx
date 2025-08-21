@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
-import { Toaster } from 'react-hot-toast';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +14,7 @@ const BrowseOptionsPage = () => {
       {/* Add the CateringCartButton component */}
       <CateringCartButton />
 
-      {/* Toaster for notifications */}
-      <Toaster position="top-right" />
+
 
       {/* Header with navigation */}
       <div className="bg-gray-50 border-b">

@@ -7,7 +7,7 @@ import { formatDateTime, formatCurrency } from '@/utils/formatting';
 import { ResponsiveTable, createTableColumn, TableColumn } from '@/components/ui/responsive-table';
 import { useState } from 'react';
 import { unarchiveOrder, unarchiveCateringOrder } from '@/app/actions/orders';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,7 +84,7 @@ function getPaymentStatusColor(status: PaymentStatus) {
 }
 
 export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps) {
-  const { toast } = useToast();
+
   const [unarchivingOrderId, setUnarchivingOrderId] = useState<string | null>(null);
 
   const handleUnarchiveOrder = async (orderId: string, orderType: 'regular' | 'catering') => {
@@ -97,24 +97,19 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
           : await unarchiveOrder(orderId);
 
       if (result.success) {
-        toast({
-          title: 'Order Unarchived',
+        toast.success('Order Unarchived', {
           description: `Order ${orderId.substring(0, 8)}... has been restored successfully.`,
         });
         // Refresh the page to update the list
         window.location.reload();
       } else {
-        toast({
-          title: 'Unarchive Failed',
+        toast.error('Unarchive Failed', {
           description: result.error || 'Failed to unarchive order',
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: 'Unarchive Failed', 
+      toast.error('Unarchive Failed', {
         description: 'An unexpected error occurred',
-        variant: 'destructive',
       });
     } finally {
       setUnarchivingOrderId(null);

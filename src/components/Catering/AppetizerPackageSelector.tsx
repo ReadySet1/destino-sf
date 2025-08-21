@@ -9,7 +9,7 @@ import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringPackage, CateringItem } from '@/types/catering';
 import { Users, CheckCircle, Circle, Info, ShoppingCart, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { cn, toTitleCase } from '@/lib/utils';
 import { CateringPackageSkeletonSimple } from '@/components/ui/catering-package-skeleton';
 

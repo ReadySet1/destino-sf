@@ -17,8 +17,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useCateringCartStore } from '@/store/catering-cart';
-import toast from 'react-hot-toast';
-import { Toaster } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
+
 
 // Define the lunch packet tiers based on user requirements
 interface LunchPacketTier {
@@ -261,7 +261,7 @@ export const LunchPacketsMenu: React.FC<LunchPacketsMenuProps> = ({ className })
 
   return (
     <div className={`w-full space-y-8 ${className}`}>
-      <Toaster position="top-right" />
+      
 
       {/* Header */}
       <div className="text-center">

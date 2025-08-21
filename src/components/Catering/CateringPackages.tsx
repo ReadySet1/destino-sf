@@ -8,7 +8,7 @@ import { Star, StarHalf, ShoppingCart, Users, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
-import { Toaster } from 'react-hot-toast';
+
 import { motion } from 'framer-motion';
 
 interface CateringPackagesProps {
@@ -66,7 +66,7 @@ export const CateringPackages: React.FC<CateringPackagesProps> = ({ packages }) 
 
   return (
     <div className="w-full">
-      <Toaster position="top-right" />
+
       <div className="text-center mb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

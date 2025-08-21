@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { RefreshCw, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 
 interface SimpleSyncTriggerProps {
   onSyncStarted?: (syncId: string) => void;
@@ -15,7 +15,6 @@ type SyncState = 'idle' | 'starting' | 'started' | 'error';
 
 export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyncTriggerProps) {
   const [syncState, setSyncState] = useState<SyncState>('idle');
-  const { toast } = useToast();
 
   const handleSync = async () => {
     setSyncState('starting');
@@ -37,8 +36,7 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
 
       if (response.ok && data.success) {
         setSyncState('started');
-        toast({
-          title: "Synchronization completed",
+        toast.success("Synchronization completed", {
           description: `${data.sync?.syncedProducts || 0} products synchronized successfully.`,
         });
         
@@ -55,10 +53,8 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
       }
     } catch (error) {
       setSyncState('error');
-      toast({
-        title: "Synchronization error",
+      toast.error("Synchronization error", {
         description: error instanceof Error ? error.message : 'Unknown error',
-        variant: "destructive",
       });
       
       setTimeout(() => {

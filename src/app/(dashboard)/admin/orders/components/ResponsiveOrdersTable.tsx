@@ -10,7 +10,7 @@ import { formatDateTime, formatCurrency } from '@/utils/formatting';
 import { ResponsiveTable, createTableColumn, TableColumn } from '@/components/ui/responsive-table';
 import { useState } from 'react';
 import { archiveOrder, archiveCateringOrder } from '@/app/actions/orders';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +88,7 @@ export default function ResponsiveOrdersTable({
   sortKey, 
   sortDirection = 'asc' 
 }: ResponsiveOrdersTableProps) {
-  const { toast } = useToast();
+
   const [archivingOrderId, setArchivingOrderId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState('');
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -112,8 +112,7 @@ export default function ResponsiveOrdersTable({
         : await archiveOrder(archivingOrderId, archiveReason);
 
       if (result.success) {
-        toast({
-          title: 'Order Archived',
+        toast.success('Order Archived', {
           description: 'The order has been successfully archived.',
         });
         setShowArchiveDialog(false);
@@ -126,10 +125,8 @@ export default function ResponsiveOrdersTable({
       }
     } catch (error) {
       console.error('Error archiving order:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to archive order. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsArchiving(false);

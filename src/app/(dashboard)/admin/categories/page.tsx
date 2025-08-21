@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getCategories } from './actions';
-import ToasterClient from '@/components/Toaster';
+
 import DeleteCategoryForm from './DeleteCategoryForm';
 
 // Force dynamic rendering to avoid build-time database queries
@@ -11,7 +11,7 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      <ToasterClient />
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Category Management</h1>
         <Link

@@ -1,6 +1,6 @@
 'use client';
 
-import { toast } from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ActionResult } from '@/app/(dashboard)/admin/categories/actions';

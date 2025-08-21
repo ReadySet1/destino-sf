@@ -1,165 +1,166 @@
-'use client';
+import { Suspense } from 'react';
+import CateringConfirmationContent from './CateringConfirmationContent';
+import { prisma } from '@/lib/db';
+import type { CateringOrder, CateringOrderItem, Prisma } from '@prisma/client';
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
-import { OrderConfirmationLayout } from '@/components/shared/OrderConfirmationLayout';
-import type { CateringOrderData, CustomerInfo } from '@/types/confirmation';
+// Type fetched directly from Prisma (might include Decimal)
+type FetchedCateringOrderData =
+  | (Pick<
+      CateringOrder,
+      | 'id'
+      | 'status'
+      | 'totalAmount'
+      | 'name'
+      | 'email'
+      | 'phone'
+      | 'eventDate'
+      | 'numberOfPeople'
+      | 'specialRequests'
+      | 'deliveryZone'
+      | 'deliveryAddress'
+      | 'deliveryAddressJson'
+      | 'createdAt'
+      | 'paymentStatus'
+      | 'squareOrderId'
+    > & {
+      items: Array<{
+        id: string;
+        itemName: string;
+        quantity: number;
+        pricePerUnit: Prisma.Decimal;
+        totalPrice: Prisma.Decimal;
+        itemType: string;
+        notes?: string | null;
+      }>;
+    })
+  | null;
 
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  finalPrice?: number;
-  image?: string;
-  pricePerUnit?: number;
-  totalPrice?: number;
-  metadata?: {
-    type: 'item' | 'package';
-    minPeople?: number;
-  };
-}
+// Type safe to pass to client components (Decimals converted to number)
+export type SerializableCateringOrderData =
+  | (Pick<
+      CateringOrder,
+      | 'id'
+      | 'status'
+      | 'name'
+      | 'email'
+      | 'phone'
+      | 'eventDate'
+      | 'numberOfPeople'
+      | 'specialRequests'
+      | 'deliveryZone'
+      | 'deliveryAddress'
+      | 'deliveryAddressJson'
+      | 'createdAt'
+      | 'paymentStatus'
+      | 'squareOrderId'
+    > & {
+      totalAmount: number;
+      items: Array<{
+        id: string;
+        itemName: string;
+        quantity: number;
+        pricePerUnit: number;
+        totalPrice: number;
+        itemType: string;
+        notes?: string | null;
+      }>;
+    })
+  | null;
 
-interface OrderData {
-  id: string;
-  items: OrderItem[];
-  totalAmount: number;
-  eventDetails: {
-    eventDate: string;
-    specialRequests?: string;
-  };
-}
+type CateringConfirmationPageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-interface UserData {
-  name?: string;
-  email?: string;
-  phone?: string;
-}
+export default async function CateringConfirmationPage({ searchParams }: CateringConfirmationPageProps) {
+  // Await searchParams
+  const params = await searchParams;
+  const status = typeof params.status === 'string' ? params.status : '';
+  const orderId = typeof params.orderId === 'string' ? params.orderId : null;
+  const squareOrderId = typeof params.squareOrderId === 'string' ? params.squareOrderId : null;
 
-function ConfirmationContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
+  let orderData: FetchedCateringOrderData = null;
+  let serializableOrderData: SerializableCateringOrderData = null;
 
-  // Extract URL parameters
-  const orderId = searchParams.get('orderId');
-  const squareStatus = searchParams.get('status');
-  const squareOrderId = searchParams.get('squareOrderId');
-  const isSquareRedirect = !!(squareStatus && squareOrderId);
+  if ((status === 'success' || status === 'confirmed') && orderId) {
+    console.log(`🔧 [CATERING] Fetching catering order details for ID: ${orderId}`);
+    try {
+      orderData = await prisma.cateringOrder.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          status: true,
+          totalAmount: true,
+          name: true,
+          email: true,
+          phone: true,
+          eventDate: true,
+          numberOfPeople: true,
+          specialRequests: true,
+          deliveryZone: true,
+          deliveryAddress: true,
+          deliveryAddressJson: true,
+          createdAt: true,
+          paymentStatus: true,
+          squareOrderId: true,
+          items: {
+            select: {
+              id: true,
+              itemName: true,
+              quantity: true,
+              pricePerUnit: true,
+              totalPrice: true,
+              itemType: true,
+              notes: true,
+            },
+          },
+        },
+      });
 
-  // State
-  const [orderData, setOrderData] = useState<OrderData | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadUserData() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          setUserData({
-            name: user.user_metadata?.name || '',
-            email: user.email || '',
-            phone: user.user_metadata?.phone || '',
-          });
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
+      if (!orderData) {
+        console.warn(`🔧 [CATERING] Order with ID ${orderId} not found in database.`);
+      } else {
+        console.log(`✅ [CATERING] Successfully fetched catering order with ${orderData.items.length} items`);
       }
-    }
 
-    function loadOrderData() {
-      try {
-        // Try to load order data from localStorage
-        const savedOrderData = localStorage.getItem('cateringOrderData');
-        if (savedOrderData) {
-          setOrderData(JSON.parse(savedOrderData));
-        } else if (!isSquareRedirect) {
-          // No order data and not a Square redirect - redirect to catering
-          router.push('/catering');
-        }
-      } catch (error) {
-        console.error('Error loading order data:', error);
-        if (!isSquareRedirect) {
-          router.push('/catering');
-        }
-      } finally {
-        setIsLoading(false);
+      // Convert Decimal fields to numbers for serialization
+      if (orderData) {
+        serializableOrderData = {
+          ...orderData,
+          totalAmount: orderData.totalAmount.toNumber(),
+          items: orderData.items.map(item => ({
+            ...item,
+            pricePerUnit: item.pricePerUnit.toNumber(),
+            totalPrice: item.totalPrice.toNumber(),
+          })),
+        };
       }
+    } catch (error) {
+      console.error(`🔧 [CATERING] Error fetching catering order ${orderId}:`, error);
+      // Keep orderData as null, the client component can show an error message
     }
-
-    loadUserData();
-
-    // Only run in browser environment
-    if (typeof window !== 'undefined') {
-      loadOrderData();
-    }
-  }, [isSquareRedirect, router, supabase]);
-
-  // Show loading state while we're waiting
-  if (isLoading) {
-    return (
-      <div className="container py-12 text-center">
-        <div className="animate-pulse">
-          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
-        </div>
-      </div>
-    );
+  } else if (status === 'success' || status === 'confirmed') {
+    console.warn('🔧 [CATERING] No orderId provided for catering confirmation');
   }
 
-  // Transform orderData to match CateringOrderData interface
-  const transformedOrderData: CateringOrderData | null = orderData
-    ? {
-        id: orderData.id,
-        status: 'confirmed',
-        total: orderData.totalAmount,
-        customerName: userData?.name || '',
-        createdAt: new Date().toISOString(),
-        eventDetails: orderData.eventDetails,
-        items: orderData.items,
-        totalAmount: orderData.totalAmount,
-      }
-    : null;
-
-  // Extract customer info
-  const customerData: CustomerInfo = userData || {};
-
-  // Payment details for Square redirect
-  const paymentDetails = {
-    isSquareRedirect,
-    squareStatus: squareStatus || undefined,
-    squareOrderId: squareOrderId || undefined,
-  };
-
-  return (
-    <OrderConfirmationLayout
-      orderType="catering"
-      status={squareStatus === 'success' ? 'success' : 'confirmed'}
-      orderData={transformedOrderData}
-      customerData={customerData}
-      paymentDetails={paymentDetails}
-    />
-  );
-}
-
-export default function CateringConfirmation() {
   return (
     <Suspense
       fallback={
-        <div className="container py-12 text-center">
-          <div className="animate-pulse">
-            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-48 mx-auto mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
+        <main className="container mx-auto px-4 py-16">
+          <div className="mx-auto max-w-lg rounded-lg border bg-white p-8 shadow-md">
+            <div className="mb-8 text-center">
+              <div className="mb-4 text-5xl">🔄</div>
+              <h1 className="mb-4 text-2xl font-bold">Loading Catering Order Details...</h1>
+              <p className="text-gray-600">Please wait while we retrieve your catering order information.</p>
+            </div>
           </div>
-        </div>
+        </main>
       }
     >
-      <ConfirmationContent />
+      <CateringConfirmationContent 
+        status={status} 
+        orderData={serializableOrderData} 
+        squareOrderId={squareOrderId}
+      />
     </Suspense>
   );
 }

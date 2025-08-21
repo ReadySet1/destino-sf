@@ -7,7 +7,7 @@ import { formatDateTime, formatCurrency } from '@/utils/formatting';
 import SortableTableHeader from '@/components/ui/sortable-table-header';
 import { useState } from 'react';
 import { archiveOrder, archiveCateringOrder } from '@/app/actions/orders';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +77,7 @@ function getPaymentStatusColor(status: PaymentStatus) {
 }
 
 export default function OrdersTable({ orders }: OrdersTableProps) {
-  const { toast } = useToast();
+
   const [archivingOrderId, setArchivingOrderId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState('');
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -101,31 +101,24 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
       const result = await archiveBulkOrders(selectedOrders, bulkArchiveReason);
 
       if (result.success) {
-        toast({
-          title: 'Orders Archived',
+        toast.success('Orders Archived', {
           description: `Successfully archived ${result.count} orders.`,
         });
         if (result.errors && result.errors.length > 0) {
-          toast({
-            title: 'Some Errors Occurred',
+          toast.warning('Some Errors Occurred', {
             description: `${result.errors.length} orders could not be archived.`,
-            variant: 'destructive',
           });
         }
         // Refresh the page to update the list
         window.location.reload();
       } else {
-        toast({
-          title: 'Bulk Archive Failed',
+        toast.error('Bulk Archive Failed', {
           description: result.errors?.join(', ') || 'Failed to archive orders',
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: 'Bulk Archive Failed',
+      toast.error('Bulk Archive Failed', {
         description: 'An unexpected error occurred',
-        variant: 'destructive',
       });
     } finally {
       setIsBulkArchiving(false);
@@ -165,24 +158,19 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           : await archiveOrder(archivingOrderId, archiveReason);
 
       if (result.success) {
-        toast({
-          title: 'Order Archived',
+        toast.success('Order Archived', {
           description: `Order ${archivingOrderId.substring(0, 8)}... has been archived successfully.`,
         });
         // Refresh the page to update the list
         window.location.reload();
       } else {
-        toast({
-          title: 'Archive Failed',
+        toast.error('Archive Failed', {
           description: result.error || 'Failed to archive order',
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: 'Archive Failed',
+      toast.error('Archive Failed', {
         description: 'An unexpected error occurred',
-        variant: 'destructive',
       });
     } finally {
       setIsArchiving(false);

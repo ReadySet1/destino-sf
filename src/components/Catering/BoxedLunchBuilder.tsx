@@ -26,7 +26,7 @@ import {
   BoxedLunchTierModel
 } from '@/types/catering';
 import { useCateringCartStore } from '@/store/catering-cart';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface BoxedLunchBuilderProps {
   onClose?: () => void;

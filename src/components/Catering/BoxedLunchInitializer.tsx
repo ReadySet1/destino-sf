@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { initializeBoxedLunchDataAction } from '@/actions/catering';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface BoxedLunchInitializerProps {
   hasPackages: boolean;

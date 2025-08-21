@@ -108,16 +108,85 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
           product: item.product,
           variant: item.variant,
         })),
-        fulfillment: orderData.trackingNumber
-          ? {
-              type: 'shipment' as const,
-              trackingNumber: orderData.trackingNumber,
-              shippingCarrier: orderData.shippingCarrier || undefined,
+        fulfillment: (() => {
+          // Determine fulfillment type based on the actual fulfillmentType field from the database
+          // The database stores: 'pickup', 'local_delivery', 'nationwide_shipping'
+          const fulfillmentType = orderData.fulfillmentType?.toLowerCase();
+          
+          // Parse address information from notes field if available
+          let addressInfo = null;
+          try {
+            if (orderData.notes && typeof orderData.notes === 'string') {
+              const parsedNotes = JSON.parse(orderData.notes);
+              addressInfo = parsedNotes.deliveryAddress || parsedNotes.shippingAddress || null;
             }
-          : {
+          } catch (error) {
+            console.warn('Failed to parse order notes for address information:', error);
+          }
+          
+          if (fulfillmentType === 'nationwide_shipping') {
+            return {
+              type: 'shipment' as const,
+              trackingNumber: orderData.trackingNumber || undefined,
+              shippingCarrier: orderData.shippingCarrier || undefined,
+              shipmentDetails: addressInfo ? {
+                recipient: {
+                  displayName: addressInfo.recipientName || addressInfo.name || undefined,
+                  address: {
+                    addressLine1: addressInfo.street || undefined,
+                    addressLine2: addressInfo.street2 || addressInfo.apartmentNumber || undefined,
+                    locality: addressInfo.city || undefined,
+                    administrativeDistrictLevel1: addressInfo.state || undefined,
+                    postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
+                  },
+                },
+              } : undefined,
+            };
+          } else if (fulfillmentType === 'local_delivery') {
+            return {
+              type: 'delivery' as const,
+              trackingNumber: orderData.trackingNumber || undefined,
+              shippingCarrier: orderData.shippingCarrier || undefined,
+              deliveryDetails: addressInfo ? {
+                recipient: {
+                  displayName: addressInfo.recipientName || addressInfo.name || undefined,
+                  address: {
+                    addressLine1: addressInfo.street || undefined,
+                    addressLine2: addressInfo.street2 || addressInfo.apartmentNumber || undefined,
+                    locality: addressInfo.city || undefined,
+                    administrativeDistrictLevel1: addressInfo.state || undefined,
+                    postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
+                  },
+                },
+              } : undefined,
+            };
+          } else if (fulfillmentType === 'pickup') {
+            return {
               type: 'pickup' as const,
               pickupTime: orderData.pickupTime ? orderData.pickupTime.toString() : undefined,
-            },
+            };
+          } else {
+            // Fallback: if no fulfillmentType is set, try to infer from available data
+            if (orderData.trackingNumber) {
+              return {
+                type: 'shipment' as const,
+                trackingNumber: orderData.trackingNumber,
+                shippingCarrier: orderData.shippingCarrier || undefined,
+              };
+            } else if (orderData.pickupTime) {
+              return {
+                type: 'pickup' as const,
+                pickupTime: orderData.pickupTime.toString(),
+              };
+            } else {
+              // Default to pickup if no specific data is available
+              return {
+                type: 'pickup' as const,
+                pickupTime: undefined,
+              };
+            }
+          }
+        })(),
       }
     : null;
 

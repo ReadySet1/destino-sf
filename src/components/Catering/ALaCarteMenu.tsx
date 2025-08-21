@@ -14,11 +14,10 @@ import { Button } from '@/components/ui/button';
 import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { PlatterMenuItem } from '@/components/Catering/PlatterMenuItem';
 import { ShoppingCart, Users } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toTitleCase } from '@/lib/utils';
 import { useCateringCartStore } from '@/store/catering-cart';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface ALaCarteMenuProps {
   items: CateringItem[];
@@ -144,7 +143,7 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
 
   return (
     <div className="w-full">
-      <Toaster position="top-right" />
+
       <div className="space-y-12">
         {sectionsToShow.map(([categoryName, categoryItems], index) => (
           <motion.div

@@ -290,8 +290,38 @@ export function OrderConfirmationLayout({
                                   ? 'Delivery Address'
                                   : 'Shipping Address'}
                               </p>
-                              {/* Display address details */}
-                              {/* ... address rendering logic ... */}
+                              {/* Display address details if available */}
+                              {(() => {
+                                const deliveryDetails = orderData.fulfillment.deliveryDetails;
+                                const shipmentDetails = orderData.fulfillment.shipmentDetails;
+                                const addressDetails = deliveryDetails?.recipient || shipmentDetails?.recipient;
+                                
+                                if (addressDetails?.address) {
+                                  const addr = addressDetails.address;
+                                  return (
+                                    <div className="text-gray-900 text-sm">
+                                      {addressDetails.displayName && (
+                                        <p className="font-medium">{addressDetails.displayName}</p>
+                                      )}
+                                      {addr.addressLine1 && <p>{addr.addressLine1}</p>}
+                                      {addr.addressLine2 && <p>{addr.addressLine2}</p>}
+                                      {(addr.locality || addr.administrativeDistrictLevel1 || addr.postalCode) && (
+                                        <p>
+                                          {[addr.locality, addr.administrativeDistrictLevel1, addr.postalCode]
+                                            .filter(Boolean)
+                                            .join(', ')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <p className="text-gray-600 text-sm">
+                                      Address details will be provided during processing.
+                                    </p>
+                                  );
+                                }
+                              })()}
                             </div>
                           </div>
                         )}
@@ -411,58 +441,114 @@ export function OrderConfirmationLayout({
 
               {/* Fulfillment Details */}
               {isStoreOrder(orderData) && orderData.fulfillment && (
-                <Card className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      {orderData.fulfillment.type === 'pickup' && <Clock className="h-5 w-5" />}
-                      {orderData.fulfillment.type === 'delivery' && <MapPin className="h-5 w-5" />}
-                      {orderData.fulfillment.type === 'shipment' && <Truck className="h-5 w-5" />}
-                      {getFulfillmentTitle(orderData.fulfillment)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {orderData.fulfillment.type === 'pickup' &&
-                        orderData.fulfillment.pickupTime && (
-                          <div>
-                            <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
-                            <p className="text-gray-900">
-                              {safeFormat(orderData.fulfillment.pickupTime, 'PPP p')}
-                            </p>
-                          </div>
-                        )}
+                (() => {
+                  const fulfillment = orderData.fulfillment;
+                  
+                  // Check if there's meaningful fulfillment data to display
+                  const hasPickupTime = fulfillment.type === 'pickup' && fulfillment.pickupTime;
+                  const hasTrackingInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') && fulfillment.trackingNumber;
+                  const hasAddressInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') && 
+                    (fulfillment.deliveryDetails?.recipient?.address || fulfillment.shipmentDetails?.recipient?.address);
+                  const hasShippingInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery');
+                  
+                  // Only show the card if there's meaningful data to display
+                  if (!hasPickupTime && !hasTrackingInfo && !hasAddressInfo && !hasShippingInfo) {
+                    return null;
+                  }
 
-                      {orderData.fulfillment.type === 'shipment' && (
+                  return (
+                    <Card className="shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          {fulfillment.type === 'pickup' && <Clock className="h-5 w-5" />}
+                          {fulfillment.type === 'delivery' && <MapPin className="h-5 w-5" />}
+                          {fulfillment.type === 'shipment' && <Truck className="h-5 w-5" />}
+                          {getFulfillmentTitle(fulfillment)}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
                         <div className="space-y-3">
-                          {orderData.fulfillment.trackingNumber ? (
-                            <>
-                              <div>
-                                <p className="text-sm text-gray-600 font-medium">Tracking Number</p>
-                                <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                                  {orderData.fulfillment.trackingNumber}
-                                </code>
-                              </div>
-                              {orderData.fulfillment.shippingCarrier && (
-                                <div>
-                                  <p className="text-sm text-gray-600 font-medium">Carrier</p>
-                                  <p className="text-gray-900">
-                                    {orderData.fulfillment.shippingCarrier}
-                                  </p>
-                                </div>
-                              )}
-                            </>
-                          ) : (
+                          {/* Pickup details */}
+                          {fulfillment.type === 'pickup' && fulfillment.pickupTime && (
                             <div>
-                              <p className="text-sm text-gray-600 mt-1">
-                                We&apos;ll send you tracking information once your order ships.
+                              <p className="text-sm text-gray-600 font-medium">Pickup Time</p>
+                              <p className="text-gray-900">
+                                {safeFormat(fulfillment.pickupTime, 'PPP p')}
                               </p>
                             </div>
                           )}
+
+                          {/* Shipping/delivery details */}
+                          {(fulfillment.type === 'shipment' || fulfillment.type === 'delivery') && (
+                            <div className="space-y-3">
+                              {/* Address information */}
+                              {(() => {
+                                const deliveryDetails = fulfillment.deliveryDetails;
+                                const shipmentDetails = fulfillment.shipmentDetails;
+                                const addressDetails = deliveryDetails?.recipient || shipmentDetails?.recipient;
+                                
+                                if (addressDetails?.address) {
+                                  const addr = addressDetails.address;
+                                  return (
+                                    <div>
+                                      <p className="text-sm text-gray-600 font-medium">
+                                        {fulfillment.type === 'delivery' ? 'Delivery Address' : 'Shipping Address'}
+                                      </p>
+                                      <div className="text-gray-900 text-sm mt-1">
+                                        {addressDetails.displayName && (
+                                          <p className="font-medium">{addressDetails.displayName}</p>
+                                        )}
+                                        {addr.addressLine1 && <p>{addr.addressLine1}</p>}
+                                        {addr.addressLine2 && <p>{addr.addressLine2}</p>}
+                                        {(addr.locality || addr.administrativeDistrictLevel1 || addr.postalCode) && (
+                                          <p>
+                                            {[addr.locality, addr.administrativeDistrictLevel1, addr.postalCode]
+                                              .filter(Boolean)
+                                              .join(', ')}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              
+                              {/* Tracking information */}
+                              {fulfillment.trackingNumber ? (
+                                <>
+                                  <div>
+                                    <p className="text-sm text-gray-600 font-medium">Tracking Number</p>
+                                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                                      {fulfillment.trackingNumber}
+                                    </code>
+                                  </div>
+                                  {fulfillment.shippingCarrier && (
+                                    <div>
+                                      <p className="text-sm text-gray-600 font-medium">Carrier</p>
+                                      <p className="text-gray-900">
+                                        {fulfillment.shippingCarrier}
+                                      </p>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div>
+                                  <p className="text-sm text-gray-600">
+                                    {fulfillment.type === 'shipment' 
+                                      ? "We'll send you tracking information once your order ships."
+                                      : "We'll notify you when your order is out for delivery."
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  );
+                })()
               )}
 
               {/* Next Steps */}
@@ -475,23 +561,49 @@ export function OrderConfirmationLayout({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {isStoreOrder(orderData) && orderData.fulfillment?.type === 'shipment' ? (
-                      orderData.fulfillment.trackingNumber ? (
-                        <p className="text-sm text-gray-600">
-                          Your order has shipped! Use the tracking information above to monitor your
-                          package&apos;s progress.
-                        </p>
-                      ) : (
-                        <p className="text-sm text-gray-600">
-                          We&apos;re preparing your order for shipment. You&apos;ll receive tracking
-                          information via email once it ships.
-                        </p>
-                      )
-                    ) : isStoreOrder(orderData) && orderData.fulfillment?.type === 'pickup' ? (
-                      <p className="text-sm text-gray-600">
-                        Please bring your ID and order confirmation when picking up your order.
-                        We&apos;ll notify you when your order is ready for pickup.
-                      </p>
+                    {isStoreOrder(orderData) && orderData.fulfillment ? (
+                      (() => {
+                        const fulfillment = orderData.fulfillment;
+                        
+                        if (fulfillment.type === 'shipment') {
+                          return fulfillment.trackingNumber ? (
+                            <p className="text-sm text-gray-600">
+                              Your order has shipped! Use the tracking information above to monitor your
+                              package&apos;s progress.
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-600">
+                              We&apos;re preparing your order for shipment. You&apos;ll receive tracking
+                              information via email once it ships.
+                            </p>
+                          );
+                        } else if (fulfillment.type === 'delivery') {
+                          return fulfillment.trackingNumber ? (
+                            <p className="text-sm text-gray-600">
+                              Your order is out for delivery! Use the tracking information above to monitor
+                              your delivery&apos;s progress.
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-600">
+                              We&apos;re preparing your order for local delivery. You&apos;ll receive tracking
+                              information via email once it&apos;s out for delivery.
+                            </p>
+                          );
+                        } else if (fulfillment.type === 'pickup') {
+                          return (
+                            <p className="text-sm text-gray-600">
+                              Please bring your ID and order confirmation when picking up your order.
+                              We&apos;ll notify you when your order is ready for pickup.
+                            </p>
+                          );
+                        } else {
+                          return (
+                            <p className="text-sm text-gray-600">
+                              We&apos;ll keep you updated on your order status via email and SMS.
+                            </p>
+                          );
+                        }
+                      })()
                     ) : (
                       <p className="text-sm text-gray-600">
                         We&apos;ll keep you updated on your order status via email and SMS.

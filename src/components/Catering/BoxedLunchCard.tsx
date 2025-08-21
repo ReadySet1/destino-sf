@@ -18,7 +18,7 @@ import {
   getModifierById,
 } from '@/lib/catering/boxed-lunch-utils';
 import { useCateringCartStore } from '@/store/catering-cart';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface BoxedLunchCardProps {
   item: BoxedLunchItem;

@@ -16,6 +16,8 @@ type FetchedOrderData =
       | 'paymentStatus'
       | 'trackingNumber'
       | 'shippingCarrier'
+      | 'fulfillmentType'
+      | 'notes'
     > & {
       items: Array<{
         id: string;
@@ -38,6 +40,8 @@ export type SerializableFetchedOrderData =
       | 'paymentStatus'
       | 'trackingNumber'
       | 'shippingCarrier'
+      | 'fulfillmentType'
+      | 'notes'
     > & {
       total: number | null;
       items: Array<{
@@ -78,6 +82,8 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
           paymentStatus: true,
           trackingNumber: true,
           shippingCarrier: true,
+          fulfillmentType: true,
+          notes: true,
           items: {
             select: {
               id: true,

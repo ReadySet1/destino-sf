@@ -7,7 +7,7 @@ import { CateringItem, CateringPackage } from '@/types/catering';
 import { Button } from '@/components/ui/button';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { toTitleCase } from '@/lib/utils';
 
 interface CateringOrderModalProps {

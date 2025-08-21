@@ -17,7 +17,7 @@ import {
 import { useCateringCartStore } from '@/store/catering-cart';
 import { BoxedLunchCard } from './BoxedLunchCard';
 import { BoxedLunchBuilder } from './BoxedLunchBuilder';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 // Alfajores data for boxed lunch menu
 const ALFAJORES_ITEMS = [

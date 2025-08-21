@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/lib/toast';
 
 interface SyncProgressProps {
   syncId: string | null;
@@ -40,7 +40,6 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   // Use refs to track polling state and prevent race conditions
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,21 +146,16 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
           // Only show toast if status actually changed (prevent duplicate toasts)
           if (statusChanged) {
             if (currentStatus === 'COMPLETED') {
-              toast({
-                title: 'Sync Completed! ✅',
+              toast.success('Sync Completed! ✅', {
                 description: `${data.results?.syncedProducts || 0} products updated successfully`,
               });
             } else if (currentStatus === 'FAILED') {
-              toast({
-                title: 'Sync Failed ❌',
+              toast.error('Sync Failed ❌', {
                 description: data.message || 'Something went wrong during the sync',
-                variant: 'destructive',
               });
             } else if (currentStatus === 'CANCELLED') {
-              toast({
-                title: 'Sync Cancelled ⚠️',
+              toast.warning('Sync Cancelled ⚠️', {
                 description: 'The sync was cancelled successfully',
-                variant: 'default',
               });
             }
 
@@ -204,7 +198,7 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
       mountedRef.current = false;
       cleanup();
     };
-  }, [syncId, onSyncComplete, toast, isSyncStale]);
+  }, [syncId, onSyncComplete, isSyncStale]);
 
   const handleCancelSync = async () => {
     if (!syncId) return;
@@ -219,24 +213,19 @@ export function SyncProgress({ syncId, onSyncComplete }: SyncProgressProps) {
       });
 
       if (response.ok) {
-        toast({
-          title: 'Sync Cancelled',
+        toast.success('Sync Cancelled', {
           description: 'The sync has been cancelled successfully',
         });
         // Status will be updated by the polling mechanism
       } else {
         const data = await response.json();
-        toast({
-          title: 'Cancel Failed',
+        toast.error('Cancel Failed', {
           description: data.message || 'Failed to cancel sync',
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: 'Cancel Failed',
+      toast.error('Cancel Failed', {
         description: 'Network error while cancelling sync',
-        variant: 'destructive',
       });
     }
   };
