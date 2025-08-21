@@ -53,6 +53,115 @@ export default function CateringConfirmationContent({ status, orderData, squareO
     );
   }
 
+  // Handle various error and pending states
+  if (status === 'not_found') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">🔍</div>
+            <h1 className="mb-4 text-2xl font-bold">Catering Order Not Found</h1>
+            <p className="text-gray-600">
+              We couldn&apos;t find a catering order with that ID. Please check your order confirmation email or contact support.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/catering')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Catering
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">⚠️</div>
+            <h1 className="mb-4 text-2xl font-bold">Error Loading Order</h1>
+            <p className="text-gray-600">
+              There was an error loading your catering order details. Please try refreshing the page or contact support.
+            </p>
+          </div>
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={() => router.push('/catering')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Catering
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">❌</div>
+            <h1 className="mb-4 text-2xl font-bold">Payment Failed</h1>
+            <p className="text-gray-600">
+              Your catering order payment was not successful. Please try placing your order again or contact support.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/catering')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">⏳</div>
+            <h1 className="mb-4 text-2xl font-bold">Payment Processing</h1>
+            <p className="text-gray-600">
+              Your catering order is being processed. Please check your email for updates or contact support if you have questions.
+            </p>
+          </div>
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Refresh Status
+            </button>
+            <button
+              onClick={() => router.push('/catering')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Catering
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (status !== 'success' && status !== 'confirmed') {
     return (
       <main className="container mx-auto px-4 py-16">

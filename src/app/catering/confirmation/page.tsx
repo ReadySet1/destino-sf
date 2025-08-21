@@ -74,14 +74,17 @@ type CateringConfirmationPageProps = {
 export default async function CateringConfirmationPage({ searchParams }: CateringConfirmationPageProps) {
   // Await searchParams
   const params = await searchParams;
-  const status = typeof params.status === 'string' ? params.status : '';
+  const urlStatus = typeof params.status === 'string' ? params.status : '';
   const orderId = typeof params.orderId === 'string' ? params.orderId : null;
   const squareOrderId = typeof params.squareOrderId === 'string' ? params.squareOrderId : null;
 
   let orderData: FetchedCateringOrderData = null;
   let serializableOrderData: SerializableCateringOrderData = null;
+  let actualStatus = urlStatus;
 
-  if ((status === 'success' || status === 'confirmed') && orderId) {
+  // Always fetch order data if orderId is provided (regardless of URL status)
+  // This handles Square redirects that don't include status parameter
+  if (orderId) {
     console.log(`🔧 [CATERING] Fetching catering order details for ID: ${orderId}`);
     try {
       orderData = await prisma.cateringOrder.findUnique({
@@ -118,12 +121,25 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
 
       if (!orderData) {
         console.warn(`🔧 [CATERING] Order with ID ${orderId} not found in database.`);
+        actualStatus = 'not_found';
       } else {
         console.log(`✅ [CATERING] Successfully fetched catering order with ${orderData.items.length} items`);
-      }
+        
+        // Determine actual status based on order data if URL status is missing
+        if (!urlStatus) {
+          if (orderData.paymentStatus === 'PAID' && (orderData.status === 'CONFIRMED' || orderData.status === 'PENDING')) {
+            actualStatus = 'success';
+            console.log(`🔧 [CATERING] URL status missing, determined status as 'success' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+          } else if (orderData.paymentStatus === 'FAILED' || orderData.status === 'CANCELLED') {
+            actualStatus = 'failed';
+            console.log(`🔧 [CATERING] URL status missing, determined status as 'failed' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+          } else {
+            actualStatus = 'pending';
+            console.log(`🔧 [CATERING] URL status missing, determined status as 'pending' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+          }
+        }
 
-      // Convert Decimal fields to numbers for serialization
-      if (orderData) {
+        // Convert Decimal fields to numbers for serialization
         serializableOrderData = {
           ...orderData,
           totalAmount: orderData.totalAmount.toNumber(),
@@ -136,10 +152,12 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
       }
     } catch (error) {
       console.error(`🔧 [CATERING] Error fetching catering order ${orderId}:`, error);
+      actualStatus = 'error';
       // Keep orderData as null, the client component can show an error message
     }
-  } else if (status === 'success' || status === 'confirmed') {
-    console.warn('🔧 [CATERING] No orderId provided for catering confirmation');
+  } else if (urlStatus) {
+    console.warn('🔧 [CATERING] Status provided but no orderId for catering confirmation');
+    actualStatus = 'invalid';
   }
 
   return (
@@ -157,7 +175,7 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
       }
     >
       <CateringConfirmationContent 
-        status={status} 
+        status={actualStatus} 
         orderData={serializableOrderData} 
         squareOrderId={squareOrderId}
       />
