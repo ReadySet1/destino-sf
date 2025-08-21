@@ -66,6 +66,21 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 
   console.log('🆕 Processing order.created event:', data.id);
 
+  // Check if this is a catering order first to prevent overwriting customer data
+  const cateringOrder = await safeQuery(() =>
+    prisma.cateringOrder.findUnique({
+      where: { squareOrderId: data.id },
+      select: { id: true, name: true, email: true, phone: true },
+    })
+  );
+
+  if (cateringOrder) {
+    // This is a catering order - don't create a regular order
+    // Catering orders already have customer data from the form
+    console.log(`✅ Catering order ${cateringOrder.id} already exists with Square ID ${data.id}`);
+    return;
+  }
+
   // Enhanced duplicate check with event ID tracking using safe query
   const existingOrder = await safeQuery(() =>
     prisma.order.findUnique({

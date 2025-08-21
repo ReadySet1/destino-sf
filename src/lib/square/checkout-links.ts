@@ -14,12 +14,15 @@ export interface SquareCheckoutLinkParams {
   }>;
   redirectUrl: string;
   customerEmail?: string;
+  customerName?: string;    // ADD
+  customerPhone?: string;   // ADD
   merchantSupportEmail?: string;
 }
 
 export interface SquareCheckoutResponse {
   checkoutUrl: string;
   checkoutId: string;
+  orderId: string;
 }
 
 /**
@@ -67,6 +70,10 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       },
       pre_populated_data: {
         buyer_email: params.customerEmail,
+        // Add buyer phone if available
+        ...(params.customerPhone && {
+          buyer_phone_number: params.customerPhone,
+        }),
       },
     };
     
@@ -114,6 +121,7 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
     return {
       checkoutUrl: responseData.payment_link.url,
       checkoutId: responseData.payment_link.id,
+      orderId: responseData.payment_link.order_id,
     };
   } catch (error) {
     logger.error('Error creating Square checkout link:', error);

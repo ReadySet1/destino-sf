@@ -125,17 +125,25 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
       } else {
         console.log(`✅ [CATERING] Successfully fetched catering order with ${orderData.items.length} items`);
         
-        // Determine actual status based on order data if URL status is missing
-        if (!urlStatus) {
-          if (orderData.paymentStatus === 'PAID' && (orderData.status === 'CONFIRMED' || orderData.status === 'PENDING')) {
-            actualStatus = 'success';
-            console.log(`🔧 [CATERING] URL status missing, determined status as 'success' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
-          } else if (orderData.paymentStatus === 'FAILED' || orderData.status === 'CANCELLED') {
-            actualStatus = 'failed';
-            console.log(`🔧 [CATERING] URL status missing, determined status as 'failed' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+        // Trust database state over URL parameters
+        if (orderData.paymentStatus === 'PAID') {
+          actualStatus = 'success';
+          console.log(`🔧 [CATERING] Determined status as 'success' based on database payment status: ${orderData.paymentStatus}`);
+        } else if (orderData.paymentStatus === 'FAILED' || orderData.status === 'CANCELLED') {
+          actualStatus = 'failed';
+          console.log(`🔧 [CATERING] Determined status as 'failed' based on database payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+        } else if (orderData.paymentStatus === 'PENDING') {
+          // Check if order was recently created (within 5 minutes)
+          const orderAge = Date.now() - new Date(orderData.createdAt).getTime();
+          const fiveMinutes = 5 * 60 * 1000;
+          
+          if (orderAge < fiveMinutes) {
+            // Recent order, might still be processing
+            actualStatus = 'processing';
+            console.log(`🔧 [CATERING] Determined status as 'processing' - order is ${Math.round(orderAge / 1000)} seconds old`);
           } else {
             actualStatus = 'pending';
-            console.log(`🔧 [CATERING] URL status missing, determined status as 'pending' based on payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
+            console.log(`🔧 [CATERING] Determined status as 'pending' - order is ${Math.round(orderAge / (1000 * 60))} minutes old`);
           }
         }
 

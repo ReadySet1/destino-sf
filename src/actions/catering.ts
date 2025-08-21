@@ -384,19 +384,25 @@ export async function createCateringOrderAndProcessPayment(data: {
           data.deliveryFee || 0
         );
 
-        const { checkoutUrl, checkoutId } = await createCheckoutLink({
+        // Clean app URL to prevent double slashes
+        const cleanAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
+        
+        const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
           orderId: orderResult.orderId,
           locationId: process.env.SQUARE_LOCATION_ID!,
           lineItems: lineItemsWithDelivery,
-          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/catering/confirmation?orderId=${orderResult.orderId}`,
+          redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${orderResult.orderId}`,
           customerEmail: data.email,
+          customerName: data.name,   // Pass actual customer name
+          customerPhone: data.phone, // Pass actual customer phone
         });
 
-        // Update order with Square checkout ID
+        // Update order with Square IDs
         await db.cateringOrder.update({
           where: { id: orderResult.orderId },
           data: { 
             squareCheckoutId: checkoutId,
+            squareOrderId: squareOrderId, // Save Square order ID immediately
             paymentStatus: PaymentStatus.PENDING,
           },
         });
