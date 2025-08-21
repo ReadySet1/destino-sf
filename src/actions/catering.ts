@@ -9,6 +9,7 @@ import {
   determineDeliveryZone,
   validateMinimumPurchase,
   getZoneConfig,
+  type DeliveryAddress,
 } from '@/types/catering';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
@@ -21,6 +22,12 @@ import {
   formatEmailForSquare,
   formatCustomerDataForSquarePaymentLink,
 } from '@/lib/square/formatting';
+import { 
+  createCheckoutLink, 
+  formatCateringItemsForSquare, 
+  addDeliveryFeeLineItem 
+} from '@/lib/square/checkout-links';
+import { sendCateringOrderNotification } from '@/lib/email';
 import { env } from '@/env'; // Import the validated environment configuration
 
 /**
@@ -238,7 +245,7 @@ export async function submitCateringInquiry(data: {
 }
 
 /**
- * Save contact information for catering orders
+ * Save contact information for catering orders with improved delivery address handling
  */
 export async function saveContactInfo(data: {
   name: string;
@@ -248,12 +255,12 @@ export async function saveContactInfo(data: {
   numberOfPeople: number;
   packageType: string;
   specialRequests?: string;
-  deliveryAddress?: string;
+  deliveryAddress?: DeliveryAddress; // Changed to DeliveryAddress object
   deliveryZone?: string;
   deliveryFee?: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;
-  customerId?: string | null; // Add customerId parameter
+  customerId?: string | null;
   items?: Array<{
     itemType: string;
     itemId?: string | null;
@@ -263,13 +270,18 @@ export async function saveContactInfo(data: {
     pricePerUnit: number;
     totalPrice: number;
     notes?: string | null;
-  }>; // Add items parameter
+  }>;
 }): Promise<{ success: boolean; error?: string; orderId?: string }> {
   try {
+    // Create formatted delivery address string for backward compatibility
+    const deliveryAddressString = data.deliveryAddress 
+      ? `${data.deliveryAddress.street}${data.deliveryAddress.street2 ? `, ${data.deliveryAddress.street2}` : ''}, ${data.deliveryAddress.city}, ${data.deliveryAddress.state} ${data.deliveryAddress.postalCode}`
+      : null;
+
     // Create a new catering order with items
     const newOrder = await db.cateringOrder.create({
       data: {
-        customerId: data.customerId || null, // Use provided customerId if available
+        customerId: data.customerId || null,
         email: data.email,
         name: data.name,
         phone: data.phone,
@@ -278,7 +290,8 @@ export async function saveContactInfo(data: {
         totalAmount: data.totalAmount,
         status: CateringStatus.PENDING,
         notes: data.specialRequests,
-        deliveryAddress: data.deliveryAddress,
+        deliveryAddress: deliveryAddressString, // Keep the string format for backward compatibility
+        deliveryAddressJson: data.deliveryAddress ? data.deliveryAddress as any : null, // Store structured JSON data
         deliveryZone: data.deliveryZone,
         deliveryFee: data.deliveryFee,
         paymentMethod: data.paymentMethod,
@@ -311,7 +324,7 @@ export async function saveContactInfo(data: {
 }
 
 /**
- * Create catering order and process payment
+ * Create catering order and process payment with Square integration
  */
 export async function createCateringOrderAndProcessPayment(data: {
   name: string;
@@ -321,13 +334,13 @@ export async function createCateringOrderAndProcessPayment(data: {
   numberOfPeople: number;
   packageType: string;
   specialRequests?: string;
-  deliveryAddress?: string;
+  deliveryAddress?: DeliveryAddress; // Updated to DeliveryAddress object
   deliveryZone?: string;
   deliveryFee?: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;
   packageId?: string;
-  customerId?: string | null; // Add customerId parameter
+  customerId?: string | null;
   items?: Array<{
     itemType: string;
     itemId?: string | null;
@@ -337,7 +350,7 @@ export async function createCateringOrderAndProcessPayment(data: {
     pricePerUnit: number;
     totalPrice: number;
     notes?: string | null;
-  }>; // Add items parameter
+  }>;
 }): Promise<{ success: boolean; error?: string; orderId?: string; checkoutUrl?: string }> {
   try {
     // Create the catering order
@@ -345,21 +358,85 @@ export async function createCateringOrderAndProcessPayment(data: {
       ...data,
       totalAmount: data.totalAmount,
       paymentMethod: data.paymentMethod,
-      customerId: data.customerId, // Pass customerId to saveContactInfo
-      items: data.items, // Pass items to saveContactInfo
+      customerId: data.customerId,
+      items: data.items,
     });
 
     if (!orderResult.success || !orderResult.orderId) {
       return { success: false, error: 'Failed to create catering order' };
     }
 
-    // TODO: Implement Square payment processing for catering orders
-    // For now, just return success without payment processing
+    // Process payment based on method
+    if (data.paymentMethod === PaymentMethod.SQUARE) {
+      try {
+        // Create Square checkout link for credit card payment
+        const formattedItems = formatCateringItemsForSquare(
+          data.items?.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            pricePerUnit: item.pricePerUnit,
+          })) || []
+        );
+
+        // Add delivery fee if applicable
+        const lineItemsWithDelivery = addDeliveryFeeLineItem(
+          formattedItems,
+          data.deliveryFee || 0
+        );
+
+        const { checkoutUrl, checkoutId } = await createCheckoutLink({
+          orderId: orderResult.orderId,
+          locationId: process.env.SQUARE_LOCATION_ID!,
+          lineItems: lineItemsWithDelivery,
+          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/catering/confirmation?orderId=${orderResult.orderId}`,
+          customerEmail: data.email,
+        });
+
+        // Update order with Square checkout ID
+        await db.cateringOrder.update({
+          where: { id: orderResult.orderId },
+          data: { 
+            squareCheckoutId: checkoutId,
+            paymentStatus: PaymentStatus.PENDING,
+          },
+        });
+
+        // Send admin notification email
+        await sendCateringOrderNotification(orderResult.orderId);
+
+        return {
+          success: true,
+          orderId: orderResult.orderId,
+          checkoutUrl, // Return the Square checkout URL
+        };
+      } catch (squareError) {
+        console.error('Error creating Square checkout link:', squareError);
+        
+        // Still send notification email even if Square fails
+        await sendCateringOrderNotification(orderResult.orderId);
+        
+        return {
+          success: false,
+          error: 'Failed to create payment checkout. Please contact us to complete your order.',
+          orderId: orderResult.orderId,
+        };
+      }
+    } else if (data.paymentMethod === PaymentMethod.CASH) {
+      // For cash orders, just mark as pending and send notification
+      await sendCateringOrderNotification(orderResult.orderId);
+      
+      return {
+        success: true,
+        orderId: orderResult.orderId,
+      };
+    }
+
+    // Default return for other payment methods
+    await sendCateringOrderNotification(orderResult.orderId);
     
-    return { 
-      success: true, 
+    return {
+      success: true,
       orderId: orderResult.orderId,
-      checkoutUrl: undefined // Will be implemented when Square integration is ready
     };
   } catch (error) {
     console.error('Error creating catering order and processing payment:', error);

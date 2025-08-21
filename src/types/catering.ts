@@ -1,6 +1,6 @@
 // Define enums directly instead of importing from @prisma/client
 // After running prisma generate, these imports can be replaced
-import { Product, Category } from '@prisma/client';
+import { Product, Category, PaymentMethod } from '@prisma/client';
 export enum CateringPackageType {
   INDIVIDUAL = 'INDIVIDUAL',
   BUFFET = 'BUFFET',
@@ -195,6 +195,17 @@ export interface CateringRating {
   reviewerName?: string | null;
 }
 
+// Delivery Address interface for structured storage
+export interface DeliveryAddress {
+  street: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  deliveryDate: string;
+  deliveryTime: string;
+}
+
 export interface CateringOrder {
   id: string;
   customerId?: string | null;
@@ -209,7 +220,9 @@ export interface CateringOrder {
   specialRequests?: string | null;
   deliveryZone?: DeliveryZone;
   deliveryAddress?: string | null;
+  deliveryAddressJson?: DeliveryAddress | null;
   deliveryFee?: number;
+  squareCheckoutId?: string | null;
   items: CateringOrderItem[];
 }
 
@@ -233,6 +246,31 @@ export interface CateringFormData {
   numberOfPeople: number;
   notes?: string;
   specialRequests?: string;
+}
+
+// Request interface for creating catering orders
+export interface CateringOrderRequest {
+  name: string;
+  email: string;
+  phone: string;
+  eventDate: string;
+  numberOfPeople: number;
+  packageType: string;
+  specialRequests?: string;
+  deliveryAddress?: DeliveryAddress;
+  deliveryZone?: string;
+  deliveryFee?: number;
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  customerId?: string | null;
+  items?: CateringOrderItem[];
+}
+
+// Square checkout response interface
+export interface SquareCheckoutResponse {
+  checkoutId: string;
+  checkoutPageUrl: string;
+  orderId: string;
 }
 
 // Funciones de utilidad para trabajar con categorías de Square

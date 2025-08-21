@@ -197,6 +197,8 @@ class SquareClientSingleton {
       logger.info('Adding direct payments API implementation to Square client');
       (client as any).paymentsApi = directPaymentsApi;
 
+
+
       // Check for locations API
       if (client.locations) {
         (client as any).locationsApi = client.locations;

@@ -29,7 +29,7 @@ import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector'
 import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
-import { getActiveDeliveryZones } from '@/types/catering';
+import { getActiveDeliveryZones, type DeliveryAddress } from '@/types/catering';
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -299,7 +299,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         packageType: 'A_LA_CARTE', // Default package type for a-la-carte orders
         specialRequests: customerInfo.specialRequests,
         ...(fulfillmentMethod === 'local_delivery' && {
-          deliveryAddress: `${deliveryAddress}, ${format(pickupDate, 'yyyy-MM-dd')} ${pickupTime}`,
+          deliveryAddress: {
+            street: deliveryAddress.street,
+            street2: deliveryAddress.street2,
+            city: deliveryAddress.city,
+            state: deliveryAddress.state,
+            postalCode: deliveryAddress.postalCode,
+            deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
+            deliveryTime: pickupTime,
+          },
           deliveryZone: deliveryValidation?.deliveryZone || 'UNKNOWN',
           deliveryFee: deliveryValidation?.deliveryFee || 0,
         }),

@@ -32,6 +32,57 @@ const formatCurrency = (amount: number | string | null | undefined): string => {
   }).format(numericAmount);
 };
 
+// Helper to parse delivery address and extract delivery info
+const parseDeliveryInfo = (address: any): { address: string; deliveryDateTime?: string } => {
+  if (!address) return { address: '' };
+  
+  if (typeof address === 'string') {
+    // Check if it contains "[object Object]" - this means the original object wasn't properly serialized
+    if (address.includes('[object Object]')) {
+      // Extract the date/time part after the comma
+      const parts = address.split(', ');
+      if (parts.length > 1) {
+        return {
+          address: 'Address information unavailable (data corruption)',
+          deliveryDateTime: parts.slice(1).join(', ')
+        };
+      }
+      return { address: 'Address information unavailable (data corruption)' };
+    }
+    
+    // Check if it's a JSON string
+    try {
+      const parsed = JSON.parse(address);
+      if (typeof parsed === 'object') {
+        const parts = [];
+        if (parsed.street) parts.push(parsed.street);
+        if (parsed.street2) parts.push(parsed.street2);
+        if (parsed.city) parts.push(parsed.city);
+        if (parsed.state) parts.push(parsed.state);
+        if (parsed.postalCode) parts.push(parsed.postalCode);
+        return { address: parts.join(', ') };
+      }
+    } catch {
+      // Not a JSON string, return as-is
+      return { address };
+    }
+    return { address };
+  }
+  
+  // If it's an object, format it properly
+  if (typeof address === 'object') {
+    const parts = [];
+    if (address.street) parts.push(address.street);
+    if (address.street2) parts.push(address.street2);
+    if (address.city) parts.push(address.city);
+    if (address.state) parts.push(address.state);
+    if (address.postalCode) parts.push(address.postalCode);
+    return { address: parts.join(', ') };
+  }
+  
+  return { address: String(address) };
+};
+
 // Helper to get badge variant for different order statuses
 const getStatusVariant = (
   status: string | null | undefined
@@ -218,7 +269,15 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                       <MapPin className="h-4 w-4 text-gray-600 mt-1" />
                       <div>
                         <p className="text-sm text-gray-600">Delivery Address</p>
-                        <p className="text-gray-900">{cateringOrder.deliveryAddress}</p>
+                        <p className="text-gray-900">{parseDeliveryInfo(cateringOrder.deliveryAddress).address}</p>
+                        {/* Debug info - remove this after fixing */}
+                        <details className="mt-2 text-xs text-gray-500">
+                          <summary>Debug Info (will be removed)</summary>
+                          <pre className="mt-1 bg-gray-100 p-2 rounded text-xs overflow-auto">
+                            Type: {typeof cateringOrder.deliveryAddress}{'\n'}
+                            Raw: {JSON.stringify(cateringOrder.deliveryAddress, null, 2)}
+                          </pre>
+                        </details>
                       </div>
                     </div>
                   )}
