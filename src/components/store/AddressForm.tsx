@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { US_STATES } from '@/lib/constants/us-states';
 
 interface AddressFormProps {
   form: UseFormReturn<any>;
@@ -94,15 +95,26 @@ export const AddressForm: React.FC<AddressFormProps> = ({
 
         <div>
           <Label htmlFor={`${prefix}.state`}>State</Label>
-          <Input
-            id={`${prefix}.state`}
-            {...register(`${prefix}.state`)}
-            onChange={e => {
-              register(`${prefix}.state`).onChange(e);
-              handleInputChange(e);
+          <Select
+            value={form.watch(`${prefix}.state`) || ''}
+            onValueChange={(value) => {
+              form.setValue(`${prefix}.state`, value);
+              if (onAddressChange) {
+                setTimeout(onAddressChange, 100);
+              }
             }}
-            className={getError('state') ? 'border-red-500' : ''}
-          />
+          >
+            <SelectTrigger className={getError('state') ? 'border-red-500' : ''}>
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent>
+              {US_STATES.map((state) => (
+                <SelectItem key={state.code} value={state.code}>
+                  {state.code} - {state.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {getError('state') && <p className="mt-1 text-sm text-red-500">{getError('state')}</p>}
         </div>
       </div>

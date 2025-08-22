@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
 import { getActiveDeliveryZones, type DeliveryAddress } from '@/types/catering';
+import { US_STATES } from '@/lib/constants/us-states';
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -513,15 +514,23 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
                         <div>
                           <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            placeholder="CA"
+                          <Select
                             value={deliveryAddress.state}
-                            onChange={e =>
-                              setDeliveryAddress({ ...deliveryAddress, state: e.target.value })
+                            onValueChange={(value) =>
+                              setDeliveryAddress({ ...deliveryAddress, state: value })
                             }
-                            required
-                          />
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select state" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {US_STATES.map((state) => (
+                                <SelectItem key={state.code} value={state.code}>
+                                  {state.code} - {state.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 

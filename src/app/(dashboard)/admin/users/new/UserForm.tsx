@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createUserAction, updateUserAction } from '../actions';
 import { useRouter } from 'next/navigation';
 import { prisma } from '@/lib/db';
+import { US_STATES } from '@/lib/constants/us-states';
 
 type UserRole = Parameters<typeof prisma.profile.create>[0]['data']['role'];
 
@@ -237,14 +238,20 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                   <label htmlFor="state" className="block text-sm font-medium text-gray-700">
                     State / Province
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="state"
                     id="state"
                     defaultValue={defaultAddress.state || ''}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
                     required={hasAddress}
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {US_STATES.map((state) => (
+                      <option key={state.code} value={state.code}>
+                        {state.code} - {state.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
