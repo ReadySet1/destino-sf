@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma, ensureConnection } from '@/lib/db';
 import { WebhookPerformanceMonitor } from '@/utils/webhook-performance';
 
 interface QueueItem {
@@ -105,16 +105,22 @@ export class ProcessingQueue {
   private async startProcessing(): Promise<void> {
     if (this.isProcessing) return;
 
-    this.isProcessing = true;
-    console.log('🚀 Queue processing started');
+    try {
+      this.isProcessing = true;
+      console.log('🚀 Queue processing started');
 
-    while (this.isProcessing && (this.emailQueue.length > 0 || this.webhookQueue.length > 0)) {
-      await this.processNextItem();
-      await this.sleep(100); // Small delay between items
+      while (this.isProcessing && (this.emailQueue.length > 0 || this.webhookQueue.length > 0)) {
+        await this.processNextItem();
+        await this.sleep(100); // Small delay between items
+      }
+
+      this.isProcessing = false;
+      console.log('⏸️ Queue processing stopped');
+    } catch (error) {
+      console.error('❌ Error in queue processing:', error);
+      this.isProcessing = false;
+      throw error;
     }
-
-    this.isProcessing = false;
-    console.log('⏸️ Queue processing stopped');
   }
 
   /**
@@ -152,6 +158,9 @@ export class ProcessingQueue {
         `🔄 Processing queued webhook: ${item.data.eventType} (attempt ${item.retryCount + 1})`
       );
 
+      // Ensure database connection before processing
+      await ensureConnection();
+
       // Process webhook by creating a simulated request
       await this.processWebhookPayload(item.data.payload);
 
@@ -162,6 +171,31 @@ export class ProcessingQueue {
     } catch (error: any) {
       monitor.complete('error', error);
       console.error(`❌ Queued webhook failed: ${item.data.eventType}`, error);
+
+      // Check if it's a connection error that should trigger reinitialization
+      const isConnectionError = 
+        error instanceof Error && 
+        (error.message.includes("Engine is not yet connected") ||
+         error.message.includes("Can't reach database server") ||
+         error.message.includes("Connection terminated") ||
+         error.message.includes("ECONNRESET") ||
+         error.message.includes("ECONNREFUSED") ||
+         error.message.includes("ETIMEDOUT") ||
+         (error as any).code === 'P1001' ||
+         (error as any).code === 'P1008' ||
+         (error as any).code === 'P1017');
+
+      if (isConnectionError) {
+        console.log('🔄 Connection error detected, reinitializing database connection...');
+        // The original code had this line, but it was removed from imports.
+        // Keeping it here as it's not directly related to the simplified imports.
+        // this.isInitialized = false; 
+        try {
+          await ensureConnection(); // Re-establish connection
+        } catch (initError) {
+          console.error('❌ Failed to reinitialize database connection:', initError);
+        }
+      }
 
       // Check if we should retry
       if (item.retryCount < item.maxRetries) {

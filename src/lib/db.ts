@@ -64,6 +64,9 @@ const shouldRegenerateClient = () => {
   return !globalForPrisma.prisma || globalForPrisma.prismaVersion !== CURRENT_PRISMA_VERSION;
 };
 
+// Initialize Prisma client
+let prismaClient: PrismaClient;
+
 if (shouldRegenerateClient()) {
   // Disconnect old client if it exists
   if (globalForPrisma.prisma) {
@@ -74,11 +77,15 @@ if (shouldRegenerateClient()) {
     }
   }
   
-  globalForPrisma.prisma = prismaClientSingleton();
+  prismaClient = prismaClientSingleton();
+  globalForPrisma.prisma = prismaClient;
   globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+} else {
+  prismaClient = globalForPrisma.prisma!;
 }
 
-export const prisma = globalForPrisma.prisma!;
+// Export the base Prisma client
+export const prisma = prismaClient;
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
@@ -92,19 +99,55 @@ export async function forceRegenerateClient(): Promise<void> {
     console.warn('Error during client disconnect:', error);
   }
   
-  globalForPrisma.prisma = prismaClientSingleton();
+  const newClient = prismaClientSingleton();
+  globalForPrisma.prisma = newClient;
   globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+  
+  // Update the exported prisma instance
+  Object.assign(prismaClient, newClient);
+  
   console.log('Prisma client regenerated successfully');
 }
 
-// Serverless-specific connection management
+// Simple connection check function
 export async function ensureConnection(): Promise<void> {
   try {
-    // Test connection
     await prisma.$queryRaw`SELECT 1`;
   } catch (error) {
-    console.warn('Connection test failed, regenerating client...');
-    await forceRegenerateClient();
+    console.warn('Connection test failed, attempting to reconnect...');
+    try {
+      await prisma.$connect();
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection re-established');
+    } catch (reconnectError) {
+      console.error('❌ Failed to reconnect to database:', reconnectError);
+      throw reconnectError;
+    }
+  }
+}
+
+// Initialize database connection explicitly
+export async function initializeDatabase(): Promise<void> {
+  try {
+    console.log('🔌 Initializing database connection...');
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connection established successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize database connection:', error);
+    throw error;
+  }
+}
+
+// Startup function to ensure database is ready
+export async function startupDatabase(): Promise<void> {
+  try {
+    console.log('🚀 Starting database connection...');
+    await initializeDatabase();
+    console.log('✅ Database startup completed successfully');
+  } catch (error) {
+    console.error('❌ Database startup failed:', error);
+    throw error;
   }
 }
 
@@ -137,6 +180,8 @@ export async function withRetry<T>(
   
   for (let i = 0; i < maxRetries; i++) {
     try {
+      // Ensure connection before each attempt
+      await ensureConnection();
       return await operation();
     } catch (error) {
       lastError = error as Error;
@@ -150,6 +195,7 @@ export async function withRetry<T>(
          error.message.includes("ECONNREFUSED") ||
          error.message.includes("ETIMEDOUT") ||
          error.message.includes("prepared statement") ||
+         error.message.includes("Engine is not yet connected") ||
          (error as any).code === 'P1001' ||
          (error as any).code === 'P1008' ||
          (error as any).code === 'P1017');
@@ -164,11 +210,10 @@ export async function withRetry<T>(
         console.log(`Database operation attempt ${i + 1} failed, retrying in ${delay}ms...`);
         console.log(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         
-        // For prepared statement errors, try to clean up and regenerate client
+        // For prepared statement errors, try to clean up
         if (isPreparedStatementError) {
           try {
             await cleanupForServerless();
-            await forceRegenerateClient();
           } catch (cleanupError) {
             console.warn('Error during cleanup:', cleanupError);
           }
@@ -210,7 +255,7 @@ export async function checkDatabaseHealth(): Promise<{
   const start = Date.now();
   
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await ensureConnection();
     return {
       connected: true,
       latency: Date.now() - start,
@@ -237,6 +282,9 @@ export async function withConnectionManagement<T>(
     const startTime = Date.now();
     
     try {
+      // Ensure connection before operation
+      await ensureConnection();
+      
       // Add timeout wrapper for the operation
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -275,6 +323,7 @@ export async function withConnectionManagement<T>(
          error.message.includes("ETIMEDOUT") ||
          error.message.includes("timeout") ||
          error.message.includes("Connection pool timeout") ||
+         error.message.includes("Engine is not yet connected") ||
          (error as any).code === 'P1001' ||
          (error as any).code === 'P1008' ||
          (error as any).code === 'P1017' ||
