@@ -48,6 +48,8 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const router = useRouter();
   const { items, removeItem, clearCart } = useCateringCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('customer-info');
 
   // Customer info state
@@ -88,6 +90,14 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
   // Use catering cart items directly instead of filtering
   const cateringItems = items;
+
+  // Generate idempotency key on mount
+  useEffect(() => {
+    if (!idempotencyKey) {
+      const key = `catering-checkout-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setIdempotencyKey(key);
+    }
+  }, [idempotencyKey]);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -180,7 +190,14 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
   // Handle final order submission
   const handleCompleteOrder = async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Order submission already in progress, ignoring');
+      return;
+    }
+
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       // Store the original form data in localStorage for reference
@@ -211,7 +228,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           method: paymentMethod,
         },
         items: cateringItems.map(item => {
-          const metadata = JSON.parse(item.variantId || '{}');
+                  // Safely parse metadata with error handling
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        try {
+          metadata = JSON.parse(item.variantId || '{}');
+        } catch (error) {
+          console.warn('Failed to parse item metadata in order submission:', item.variantId, error);
+          // If variantId is not JSON, treat it as a simple name
+          metadata = { name: item.variantId, type: 'item' };
+        }
           const pricePerUnit = item.price;
           const totalPrice = item.price * item.quantity;
 
@@ -251,7 +276,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
-        const metadata = JSON.parse(item.variantId || '{}');
+        // Safely parse metadata with error handling
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        try {
+          metadata = JSON.parse(item.variantId || '{}');
+        } catch (error) {
+          console.warn('Failed to parse item metadata in formatted items:', item.variantId, error);
+          // If variantId is not JSON, treat it as a simple name
+          metadata = { name: item.variantId, type: 'item' };
+        }
         const pricePerUnit = item.price;
         const totalPrice = item.price * item.quantity;
 
@@ -315,6 +348,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         paymentMethod: paymentMethod,
         customerId: customerId, // Pass the user ID to associate the order with the logged-in user
         items: formattedItems, // Pass the catering order items
+        idempotencyKey: idempotencyKey, // Add idempotency protection
       });
 
       if (result.success) {
@@ -329,14 +363,26 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           router.push(`/catering/confirmation?orderId=${result.orderId}`);
         }
       } else {
-        // Handle error
-        toast.error(`Error creating order: ${result.error}`);
-        setIsSubmitting(false);
+        // Handle error - store the error and provide better user feedback
+        const errorMessage = result.error || 'Failed to create order';
+        setSubmitError(errorMessage);
+        toast.error(`Error creating order: ${errorMessage}`);
+        
+        // Add a delay before allowing retry to prevent rapid submissions
+        setTimeout(() => {
+          setIsSubmitting(false);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error submitting order:', error);
-      toast.error('Failed to process your order. Please try again.');
-      setIsSubmitting(false);
+      const errorMessage = 'Failed to process your order. Please try again.';
+      setSubmitError(errorMessage);
+      toast.error(errorMessage);
+      
+      // Add a delay before allowing retry
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 2000);
     }
   };
 
@@ -756,10 +802,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             <Button
               onClick={handleCompleteOrder}
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !idempotencyKey}
             >
-              {isSubmitting ? 'Processing...' : 'Complete Order'}
+              {isSubmitting ? (
+                'Processing...'
+              ) : submitError ? (
+                'Retry Order'
+              ) : (
+                'Complete Order'
+              )}
             </Button>
+            {submitError && (
+              <div className="mt-2 text-sm text-red-600 text-center">
+                {submitError}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -772,7 +829,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
             <div className="space-y-4 mb-6">
               {cateringItems.map(item => {
-                const metadata = JSON.parse(item.variantId || '{}');
+                        // Safely parse metadata with error handling
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        try {
+          metadata = JSON.parse(item.variantId || '{}');
+        } catch (error) {
+          console.warn('Failed to parse item metadata:', item.variantId, error);
+          // If variantId is not JSON, treat it as a simple name
+          metadata = { name: item.variantId, type: 'item' };
+        }
                 const isPackage = metadata.type === 'package';
 
                 // Function to get the correct image URL with better fallbacks

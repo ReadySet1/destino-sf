@@ -372,7 +372,7 @@ model CateringRating {
 }
 
 model CateringOrder {
-  id                  String              @id @default(uuid()) @db.Uuid
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   customerId          String?             @db.Uuid
   email               String
   name                String
@@ -385,19 +385,20 @@ model CateringOrder {
   specialRequests     String?
   deliveryZone        String?
   deliveryAddress     String?
-  deliveryAddressJson Json?               @map("delivery_address_json")
   deliveryFee         Decimal?            @db.Decimal(10, 2)
   paymentMethod       PaymentMethod       @default(SQUARE)
   paymentStatus       PaymentStatus       @default(PENDING)
   squareOrderId       String?             @unique
   squareCheckoutUrl   String?
-  squareCheckoutId    String?             @map("square_checkout_id")
   createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  updatedAt           DateTime            @default(now()) @updatedAt
   archiveReason       String?             @map("archive_reason")
   archivedAt          DateTime?           @map("archived_at")
   archivedBy          String?             @map("archived_by") @db.Uuid
   isArchived          Boolean             @default(false) @map("is_archived")
+  deliveryAddressJson Json?               @map("delivery_address_json")
+  squareCheckoutId    String?             @map("square_checkout_id")
+  metadata            Json?
   items               CateringOrderItem[]
   archivedByUser      Profile?            @relation("ArchivedCateringOrders", fields: [archivedBy], references: [id])
   customer            Profile?            @relation(fields: [customerId], references: [id])

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { logger } from '@/utils/logger';
+import { formatPhoneForSquarePaymentLink, formatEmailForSquare } from './formatting';
 
 export interface SquareCheckoutLinkParams {
   orderId: string;
@@ -68,13 +69,28 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
         redirect_url: params.redirectUrl,
         merchant_support_email: params.merchantSupportEmail || process.env.ADMIN_EMAIL,
       },
-      pre_populated_data: {
-        buyer_email: params.customerEmail,
-        // Add buyer phone if available
-        ...(params.customerPhone && {
-          buyer_phone_number: params.customerPhone,
-        }),
-      },
+      pre_populated_data: (() => {
+        const data: any = {};
+        
+        // Format email for Square API compatibility
+        if (params.customerEmail) {
+          try {
+            data.buyer_email = formatEmailForSquare(params.customerEmail);
+          } catch (error) {
+            logger.warn('Failed to format email for Square API:', error);
+          }
+        }
+        
+        // Format phone number for Square API compatibility
+        if (params.customerPhone) {
+          const formattedPhone = formatPhoneForSquarePaymentLink(params.customerPhone);
+          if (formattedPhone) {
+            data.buyer_phone_number = formattedPhone;
+          }
+        }
+        
+        return data;
+      })(),
     };
     
     logger.info('Sending Square payment link request', { 

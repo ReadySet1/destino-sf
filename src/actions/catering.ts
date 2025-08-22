@@ -271,6 +271,11 @@ export async function saveContactInfo(data: {
     totalPrice: number;
     notes?: string | null;
   }>;
+  // New parameters for duplicate prevention and Square integration
+  squareCheckoutId?: string;
+  squareOrderId?: string;
+  idempotencyKey?: string;
+  tempOrderId?: string;
 }): Promise<{ success: boolean; error?: string; orderId?: string }> {
   try {
     // Create formatted delivery address string for backward compatibility
@@ -281,7 +286,14 @@ export async function saveContactInfo(data: {
     // Create a new catering order with items
     const newOrder = await db.cateringOrder.create({
       data: {
-        customerId: data.customerId || null,
+        // Use tempOrderId if provided (for Square orders), otherwise let DB generate
+        ...(data.tempOrderId && { id: data.tempOrderId }),
+        // Connect customer using the relation if customerId is provided
+        ...(data.customerId && { 
+          customer: { 
+            connect: { id: data.customerId } 
+          } 
+        }),
         email: data.email,
         name: data.name,
         phone: data.phone,
@@ -296,6 +308,12 @@ export async function saveContactInfo(data: {
         deliveryFee: data.deliveryFee,
         paymentMethod: data.paymentMethod,
         paymentStatus: PaymentStatus.PENDING,
+        // Add Square integration fields
+        ...(data.squareCheckoutId && { squareCheckoutId: data.squareCheckoutId }),
+        ...(data.squareOrderId && { squareOrderId: data.squareOrderId }),
+        ...(data.idempotencyKey && { 
+          metadata: { idempotencyKey: data.idempotencyKey } as any 
+        }),
         // Create associated catering order items if provided
         ...(data.items && data.items.length > 0 && {
           items: {
@@ -325,6 +343,7 @@ export async function saveContactInfo(data: {
 
 /**
  * Create catering order and process payment with Square integration
+ * Now with idempotency protection and atomic operations
  */
 export async function createCateringOrderAndProcessPayment(data: {
   name: string;
@@ -351,25 +370,29 @@ export async function createCateringOrderAndProcessPayment(data: {
     totalPrice: number;
     notes?: string | null;
   }>;
+  idempotencyKey?: string; // Add idempotency protection
 }): Promise<{ success: boolean; error?: string; orderId?: string; checkoutUrl?: string }> {
   try {
-    // Create the catering order
-    const orderResult = await saveContactInfo({
-      ...data,
-      totalAmount: data.totalAmount,
-      paymentMethod: data.paymentMethod,
-      customerId: data.customerId,
-      items: data.items,
-    });
-
-    if (!orderResult.success || !orderResult.orderId) {
-      return { success: false, error: 'Failed to create catering order' };
+    // Generate idempotency key if not provided (based on user, items hash, and timestamp)
+    const idempotencyKey = data.idempotencyKey || generateIdempotencyKey(data);
+    
+    // Check for duplicate orders using idempotency key
+    const existingOrder = await checkForDuplicateOrder(data, idempotencyKey);
+    if (existingOrder) {
+      console.log(`Duplicate order detected, returning existing order: ${existingOrder.id}`);
+      return {
+        success: true,
+        orderId: existingOrder.id,
+        checkoutUrl: existingOrder.squareCheckoutId ? 
+          `${process.env.NEXT_PUBLIC_APP_URL}/catering/confirmation?orderId=${existingOrder.id}` : 
+          undefined,
+      };
     }
 
     // Process payment based on method
     if (data.paymentMethod === PaymentMethod.SQUARE) {
       try {
-        // Create Square checkout link for credit card payment
+        // For Square payments: Create checkout link FIRST, then create order
         const formattedItems = formatCateringItemsForSquare(
           data.items?.map(item => ({
             name: item.name,
@@ -387,25 +410,39 @@ export async function createCateringOrderAndProcessPayment(data: {
         // Clean app URL to prevent double slashes
         const cleanAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
         
+        // Create a temporary order ID for Square (we'll use this for the actual order)
+        const tempOrderId = generateTempOrderId();
+        
         const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
-          orderId: orderResult.orderId,
+          orderId: tempOrderId,
           locationId: process.env.SQUARE_LOCATION_ID!,
           lineItems: lineItemsWithDelivery,
-          redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${orderResult.orderId}`,
+          redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${tempOrderId}`,
           customerEmail: data.email,
-          customerName: data.name,   // Pass actual customer name
-          customerPhone: data.phone, // Pass actual customer phone
+          customerName: data.name,
+          customerPhone: data.phone,
         });
 
-        // Update order with Square IDs
-        await db.cateringOrder.update({
-          where: { id: orderResult.orderId },
-          data: { 
-            squareCheckoutId: checkoutId,
-            squareOrderId: squareOrderId, // Save Square order ID immediately
-            paymentStatus: PaymentStatus.PENDING,
-          },
+        // Now create the catering order with Square IDs (atomic operation)
+        const orderResult = await saveContactInfo({
+          ...data,
+          totalAmount: data.totalAmount,
+          paymentMethod: data.paymentMethod,
+          customerId: data.customerId,
+          items: data.items,
+          squareCheckoutId: checkoutId,
+          squareOrderId: squareOrderId,
+          idempotencyKey,
+          tempOrderId, // Pass temp order ID to use as the actual order ID
         });
+
+        if (!orderResult.success || !orderResult.orderId) {
+          console.error('Failed to create catering order after Square checkout was created');
+          return { 
+            success: false, 
+            error: 'Failed to create catering order. Please contact support with reference: ' + checkoutId 
+          };
+        }
 
         // Send admin notification email
         await sendCateringOrderNotification(orderResult.orderId);
@@ -413,22 +450,32 @@ export async function createCateringOrderAndProcessPayment(data: {
         return {
           success: true,
           orderId: orderResult.orderId,
-          checkoutUrl, // Return the Square checkout URL
+          checkoutUrl,
         };
       } catch (squareError) {
         console.error('Error creating Square checkout link:', squareError);
         
-        // Still send notification email even if Square fails
-        await sendCateringOrderNotification(orderResult.orderId);
-        
         return {
           success: false,
-          error: 'Failed to create payment checkout. Please contact us to complete your order.',
-          orderId: orderResult.orderId,
+          error: 'Failed to create payment checkout. Please try again or contact us for assistance.',
         };
       }
     } else if (data.paymentMethod === PaymentMethod.CASH) {
-      // For cash orders, just mark as pending and send notification
+      // For cash orders, create order directly
+      const orderResult = await saveContactInfo({
+        ...data,
+        totalAmount: data.totalAmount,
+        paymentMethod: data.paymentMethod,
+        customerId: data.customerId,
+        items: data.items,
+        idempotencyKey,
+      });
+
+      if (!orderResult.success || !orderResult.orderId) {
+        return { success: false, error: 'Failed to create catering order' };
+      }
+      
+      // Send admin notification email
       await sendCateringOrderNotification(orderResult.orderId);
       
       return {
@@ -438,6 +485,19 @@ export async function createCateringOrderAndProcessPayment(data: {
     }
 
     // Default return for other payment methods
+    const orderResult = await saveContactInfo({
+      ...data,
+      totalAmount: data.totalAmount,
+      paymentMethod: data.paymentMethod,
+      customerId: data.customerId,
+      items: data.items,
+      idempotencyKey,
+    });
+
+    if (!orderResult.success || !orderResult.orderId) {
+      return { success: false, error: 'Failed to create catering order' };
+    }
+
     await sendCateringOrderNotification(orderResult.orderId);
     
     return {
@@ -446,8 +506,104 @@ export async function createCateringOrderAndProcessPayment(data: {
     };
   } catch (error) {
     console.error('Error creating catering order and processing payment:', error);
-    return { success: false, error: 'Failed to create catering order and process payment' };
+    return { 
+      success: false, 
+      error: 'Failed to create catering order and process payment. Please try again.' 
+    };
   }
+}
+
+/**
+ * Helper function to generate an idempotency key for duplicate prevention
+ */
+function generateIdempotencyKey(data: {
+  email: string;
+  eventDate: string;
+  totalAmount: number;
+  items?: Array<{ name: string; quantity: number; pricePerUnit: number }>;
+}): string {
+  // Create a hash based on user email, event date, total amount, and items
+  const itemsHash = data.items 
+    ? data.items.map(item => `${item.name}-${item.quantity}-${item.pricePerUnit}`).join('|')
+    : '';
+  
+  const baseString = `${data.email}-${data.eventDate}-${data.totalAmount}-${itemsHash}`;
+  
+  // Simple hash function (in production, you might want to use crypto)
+  let hash = 0;
+  for (let i = 0; i < baseString.length; i++) {
+    const char = baseString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return `catering-${Math.abs(hash)}-${Date.now()}`;
+}
+
+/**
+ * Helper function to check for duplicate orders within a reasonable time window
+ */
+async function checkForDuplicateOrder(
+  data: {
+    email: string;
+    eventDate: string;
+    totalAmount: number;
+    customerId?: string | null;
+  },
+  idempotencyKey: string
+): Promise<{ id: string; squareCheckoutId?: string | null } | null> {
+  try {
+    // Check for orders with same idempotency key first
+    const existingByKey = await db.cateringOrder.findFirst({
+      where: {
+        metadata: {
+          path: ['idempotencyKey'],
+          equals: idempotencyKey,
+        },
+      },
+      select: { id: true, squareCheckoutId: true },
+    });
+
+    if (existingByKey) {
+      return existingByKey;
+    }
+
+    // Fallback: check for potential duplicates by email, event date, and amount
+    // within the last 10 minutes (to catch rapid double-clicks)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    
+    const potentialDuplicate = await db.cateringOrder.findFirst({
+      where: {
+        email: data.email,
+        eventDate: new Date(data.eventDate),
+        totalAmount: data.totalAmount,
+        ...(data.customerId && { 
+          customer: { 
+            id: data.customerId 
+          } 
+        }),
+        createdAt: {
+          gte: tenMinutesAgo,
+        },
+      },
+      select: { id: true, squareCheckoutId: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return potentialDuplicate || null;
+  } catch (error) {
+    console.error('Error checking for duplicate orders:', error);
+    // If we can't check for duplicates, allow the order to proceed
+    return null;
+  }
+}
+
+/**
+ * Helper function to generate a temporary order ID for Square checkout
+ */
+function generateTempOrderId(): string {
+  // Generate a proper UUID for the temporary order ID
+  return randomUUID();
 }
 
 // Boxed Lunch Functions - These can be updated later as mentioned
@@ -574,9 +730,20 @@ export async function initializeBoxedLunchDataAction(): Promise<{
 }
 
 // Missing functions needed by components (backward compatibility)
+const lastCallCache = new Map<string, number>();
+
 export async function saveCateringContactInfo(data: any) {
   // Stub implementation - replaced by new catering order system
-  console.log('saveCateringContactInfo called with:', data);
+  const cacheKey = `${data.name}-${data.email}-${data.phone}`;
+  const now = Date.now();
+  const lastCall = lastCallCache.get(cacheKey) || 0;
+  
+  // Only log if it's been more than 5 seconds since last call with same data
+  if (now - lastCall > 5000) {
+    console.log('saveCateringContactInfo called with:', data);
+    lastCallCache.set(cacheKey, now);
+  }
+  
   return { success: true, message: 'Using new catering order system' };
 }
 

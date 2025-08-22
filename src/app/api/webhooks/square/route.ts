@@ -66,20 +66,30 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 
   console.log('🆕 Processing order.created event:', data.id);
 
-  // Check if this is a catering order first to prevent overwriting customer data
-  const cateringOrder = await safeQuery(() =>
-    prisma.cateringOrder.findUnique({
+  // CRITICAL: Check if this is a catering order first to prevent duplicates
+  console.log(`🔍 [WEBHOOK-DEBUG] Checking for existing catering order with Square ID: ${data.id}`);
+  
+  let cateringOrder = null;
+  try {
+    // Direct query without safeQuery wrapper to avoid potential issues
+    console.log(`🔍 [WEBHOOK-DEBUG] Attempting direct catering order query...`);
+    cateringOrder = await prisma.cateringOrder.findUnique({
       where: { squareOrderId: data.id },
       select: { id: true, name: true, email: true, phone: true },
-    })
-  );
+    });
+    console.log(`🔍 [WEBHOOK-DEBUG] Catering order query result:`, cateringOrder);
+  } catch (error) {
+    console.error(`❌ [WEBHOOK-DEBUG] Error checking for catering order:`, error);
+  }
 
   if (cateringOrder) {
     // This is a catering order - don't create a regular order
-    // Catering orders already have customer data from the form
-    console.log(`✅ Catering order ${cateringOrder.id} already exists with Square ID ${data.id}`);
+    console.log(`✅ [WEBHOOK-DEBUG] CATERING ORDER FOUND! ID: ${cateringOrder.id} with Square ID ${data.id} - SKIPPING REGULAR ORDER CREATION`);
+    console.log(`✅ [WEBHOOK-DEBUG] Catering order details:`, cateringOrder);
     return;
   }
+  
+  console.log(`⚠️ [WEBHOOK-DEBUG] NO CATERING ORDER FOUND - PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
 
   // Enhanced duplicate check with event ID tracking using safe query
   const existingOrder = await safeQuery(() =>

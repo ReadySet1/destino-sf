@@ -120,7 +120,15 @@ export const BoxedLunchBuilder: React.FC<BoxedLunchBuilderProps> = ({ onClose })
       price: selectedTier.price,
       quantity,
       image: selectedEntree.imageUrl || undefined,
-      variantId: nameLabel || undefined,
+      variantId: JSON.stringify({
+        type: 'build-your-own-box',
+        tierId: selectedTier.tier,
+        tierName: selectedTier.name,
+        entreeId: selectedEntree.id,
+        entreeName: selectedEntree.name,
+        nameLabel: nameLabel || undefined,
+        notes: notes || undefined,
+      }),
       category: 'BUILD_YOUR_OWN_BOX',
       customizations: cartItem.customizations,
     });
