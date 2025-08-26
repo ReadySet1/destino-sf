@@ -44,12 +44,12 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
   const itemImage = getItemImage();
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6 hover:bg-destino-cream/20 transition-colors duration-200">
       {/* Mobile Layout: Image and Content Side by Side */}
       <div className="flex gap-3 sm:gap-4 mb-4 sm:mb-0">
         {/* Product Image */}
         <div className="flex-shrink-0">
-          <div className="relative h-20 w-20 sm:h-16 sm:w-16 overflow-hidden rounded-lg bg-gray-200">
+          <div className="relative h-20 w-20 sm:h-16 sm:w-16 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm">
             {itemImage ? (
               <Image src={itemImage} alt={item.name} fill className="object-cover" />
             ) : (
@@ -62,7 +62,7 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 leading-tight mb-1 sm:truncate">
+          <h3 className="font-semibold text-destino-charcoal leading-tight mb-1 sm:truncate">
             <span className="block sm:hidden">{item.name}</span>
             <span className="hidden sm:block truncate">{item.name}</span>
           </h3>
@@ -70,21 +70,21 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
           
           {/* Mobile: Show total price prominently */}
           <div className="block sm:hidden">
-            <p className="text-lg font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+            <p className="text-lg font-bold text-destino-charcoal">${(item.price * item.quantity).toFixed(2)}</p>
           </div>
         </div>
 
         {/* Desktop: Total Price */}
-        <div className="hidden sm:block sm:mx-4 font-semibold text-lg text-gray-900">
+        <div className="hidden sm:block sm:mx-4 font-semibold text-lg text-destino-charcoal">
           ${(item.price * item.quantity).toFixed(2)}
         </div>
       </div>
 
       {/* Controls Row - Better Spacing for Mobile */}
-      <div className="flex items-center justify-between sm:justify-end pt-3 sm:pt-0 border-t border-gray-100 sm:border-t-0">
+      <div className="flex items-center justify-between sm:justify-end pt-3 sm:pt-0 border-t border-destino-cream/50 sm:border-t-0">
         {/* Quantity Stepper */}
         <div className="flex items-center">
-          <span className="text-sm font-medium text-gray-700 mr-3 sm:hidden">Quantity:</span>
+          <span className="text-sm font-medium text-destino-charcoal mr-3 sm:hidden">Quantity:</span>
           <QuantityStepper value={item.quantity} min={1} max={20} onChange={onUpdateQuantity} />
         </div>
 
@@ -93,7 +93,7 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
           variant="ghost" 
           size="sm" 
           onClick={onRemove} 
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 sm:px-2 sm:py-2"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 sm:px-2 sm:py-2 transition-all duration-200 hover:shadow-sm"
           title="Remove item"
         >
           <Trash2 className="h-4 w-4 mr-1 sm:mr-0" />

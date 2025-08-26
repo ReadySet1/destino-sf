@@ -129,22 +129,22 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
         <div className="container mx-auto py-16 text-center">
-          <div className="mx-auto max-w-md">
+          <div className="mx-auto max-w-md bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-lg border border-destino-yellow/30">
             <div className="mb-8 flex justify-center">
-              <div className="rounded-full bg-gray-100 p-6">
-                <User className="h-12 w-12 text-gray-600" />
+              <div className="rounded-full bg-gradient-to-br from-destino-yellow to-destino-orange p-6 shadow-lg">
+                <User className="h-12 w-12 text-white" />
               </div>
             </div>
-            <h1 className="mb-4 text-2xl font-bold text-gray-900">Account Access</h1>
+            <h1 className="mb-4 text-2xl font-bold text-destino-charcoal">Account Access</h1>
             <p className="mb-6 text-gray-600">Please sign in to access your order details.</p>
-            <Button asChild size="lg" className="bg-[#2d3538] hover:bg-[#2d3538]/90">
+            <Button asChild size="lg" className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -249,15 +249,15 @@ export default async function OrderDetailsPage({ params }: PageProps) {
   const totalQuantity = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto py-8 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
+      <div className="container mx-auto py-8 px-4">
         {/* Header Navigation */}
         <div className="mb-6">
           <Button
             asChild
             variant="outline"
             size="sm"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            className="border-destino-yellow/40 text-destino-charcoal hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all bg-white/80 backdrop-blur-sm"
           >
             <Link href="/account">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -267,13 +267,13 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         </div>
 
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-8 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg">
           <div className="flex items-center gap-4">
-            <div className="rounded-full bg-gray-100 p-3">
-              <Package className="h-6 w-6 text-gray-600" />
+            <div className="rounded-full bg-gradient-to-br from-destino-orange to-amber-600 p-3 shadow-lg">
+              <Package className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Order Details</h1>
+              <h1 className="text-3xl font-bold text-destino-charcoal">Order Details</h1>
               <p className="text-gray-600">
                 {orderData.type === 'catering' ? 'Catering Order' : 'Regular Order'} • Placed{' '}
                 {formatDistance(new Date(orderData.createdAt), new Date(), { addSuffix: true })}
@@ -285,13 +285,13 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Order Summary */}
           <div className="md:col-span-2">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-gray-600" />
+            <Card className="bg-white/95 backdrop-blur-sm border-destino-orange/30 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-destino-cream/30 to-white border-b border-destino-orange/20">
+                <CardTitle className="flex items-center gap-2 text-destino-charcoal">
+                  <Package className="h-5 w-5 text-destino-orange" />
                   Order Summary
                 </CardTitle>
-                <CardDescription>Order #{orderData.id.slice(-8)}</CardDescription>
+                <CardDescription className="text-gray-600">Order #{orderData.id.slice(-8)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -372,7 +372,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       </div>
                     )}
                     {orderData.trackingNumber && (
-                      <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="bg-gradient-to-r from-blue-50 to-destino-cream/30 p-4 rounded-lg border border-blue-200/50 backdrop-blur-sm">
                         <h4 className="font-semibold text-blue-900 mb-2">Shipping Information</h4>
                         <div className="space-y-1 text-sm">
                           <p>
@@ -394,7 +394,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 underline font-medium"
+                                className="text-blue-600 hover:text-destino-charcoal underline font-medium transition-colors hover:no-underline"
                               >
                                 Track Your Package
                               </a>
@@ -439,7 +439,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       </div>
                     )}
                     {orderData.specialRequests && (
-                      <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="bg-gradient-to-r from-purple-50 to-destino-cream/30 p-4 rounded-lg border border-purple-200/50 backdrop-blur-sm">
                         <h4 className="font-semibold text-purple-900 mb-1">Special Requests</h4>
                         <p className="text-purple-800 text-sm">{orderData.specialRequests}</p>
                       </div>
@@ -456,10 +456,10 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
           {/* Customer Information */}
           <div>
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-600" />
+            <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-destino-cream/30 to-white border-b border-destino-yellow/20">
+                <CardTitle className="flex items-center gap-2 text-destino-charcoal">
+                  <User className="h-5 w-5 text-destino-orange" />
                   Your Information
                 </CardTitle>
               </CardHeader>
@@ -482,10 +482,10 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         </div>
 
         {/* Order Items */}
-        <Card className="shadow-sm mb-8">
-          <CardHeader>
-            <CardTitle>Items Ordered ({orderData.items.length})</CardTitle>
-            <CardDescription>
+        <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg mb-8">
+          <CardHeader className="bg-gradient-to-r from-destino-cream/30 to-white border-b border-destino-yellow/20">
+            <CardTitle className="text-destino-charcoal">Items Ordered ({orderData.items.length})</CardTitle>
+            <CardDescription className="text-gray-600">
               {totalQuantity} total items • {formatCurrency(orderData.total)}
             </CardDescription>
           </CardHeader>
@@ -499,7 +499,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
+                    className="flex items-center gap-4 p-4 border border-destino-yellow/30 rounded-lg hover:bg-destino-cream/20 transition-colors backdrop-blur-sm"
                   >
                     {/* Item Image - Only show for regular orders, not catering orders */}
                     {!isCateringOrder && (
@@ -553,9 +553,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         </Card>
 
         {/* Support section */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Need Help?</CardTitle>
+        <Card className="bg-white/95 backdrop-blur-sm border-blue-300/30 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-50/50 to-destino-cream/30 border-b border-blue-200/20">
+            <CardTitle className="text-destino-charcoal">Need Help?</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
@@ -565,22 +565,22 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <Button
                 asChild
                 variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                className="border-blue-300/40 text-destino-charcoal hover:bg-blue-50/50 hover:border-blue-400 hover:text-destino-charcoal transition-all transform hover:scale-[1.02]"
               >
                 <Link href="/contact">Contact Us</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                className="border-destino-orange/40 text-destino-charcoal hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all transform hover:scale-[1.02]"
               >
                 <Link href="/account/orders">View All Orders</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
 

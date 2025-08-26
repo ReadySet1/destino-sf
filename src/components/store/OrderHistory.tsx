@@ -293,7 +293,7 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
           <Button
             asChild
             variant="outline"
-            className="border-amber-200 text-amber-600 hover:bg-amber-50"
+            className="border-destino-orange/40 text-destino-orange hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all duration-200"
           >
             <Link href="/account/orders">View All Orders ({orders.length}+)</Link>
           </Button>

@@ -176,7 +176,7 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
           <Button
             type="submit"
             disabled={isSaving || !isDirty}
-            className="flex-1 bg-primary hover:bg-primary/90 text-white"
+            className="flex-1 bg-destino-yellow hover:bg-yellow-400 text-destino-charcoal hover:text-destino-charcoal transition-all duration-200"
           >
             {isSaving ? (
               <>
@@ -196,7 +196,7 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
             variant="outline"
             onClick={onSignOut}
             disabled={isSaving}
-            className="flex-1 border-gray-300 hover:bg-gray-50"
+            className="flex-1 border-destino-orange/40 text-destino-charcoal hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all duration-200"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out

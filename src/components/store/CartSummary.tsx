@@ -14,29 +14,35 @@ export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: Cart
 
   return (
     <div
-      className={`rounded-xl border p-4 sm:p-6 bg-white shadow-sm lg:shadow-lg ${
-        cartType === 'catering' ? 'border-amber-200 lg:border-amber-300' : 'border-gray-200 lg:border-gray-300'
+      className={`rounded-xl border p-4 sm:p-6 bg-gradient-to-br from-white to-gray-50/30 shadow-sm lg:shadow-lg ${
+        cartType === 'catering' 
+          ? 'border-destino-orange/30 lg:border-destino-orange/40 shadow-destino-orange/10' 
+          : 'border-destino-yellow/30 lg:border-destino-yellow/40 shadow-destino-yellow/10'
       }`}
       data-testid="cart-summary"
     >
       <h2
         className={`text-lg sm:text-xl font-bold mb-4 ${
-          cartType === 'catering' ? 'text-amber-700' : 'text-gray-900'
+          cartType === 'catering' ? 'text-destino-orange' : 'text-destino-charcoal'
         }`}
       >
         {cartType === 'catering' ? 'Catering' : 'Order'} Summary
       </h2>
       <div className="space-y-3">
-        <div className="flex justify-between text-gray-700" data-testid="order-subtotal">
+        <div className="flex justify-between text-destino-charcoal/80" data-testid="order-subtotal">
           <span className="text-sm sm:text-base">Subtotal ({totalItems} items)</span>
           <span className="font-semibold text-sm sm:text-base">{formatCurrency(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-gray-700" data-testid="order-tax">
+        <div className="flex justify-between text-destino-charcoal/80" data-testid="order-tax">
           <span className="text-sm sm:text-base">Tax</span>
           <span className="font-semibold text-sm sm:text-base">{formatCurrency(tax)}</span>
         </div>
         <div
-          className="border-t-2 border-gray-200 mt-3 pt-3 font-bold flex justify-between text-gray-900"
+          className={`border-t-2 mt-3 pt-3 font-bold flex justify-between ${
+            cartType === 'catering'
+              ? 'border-destino-orange/40 text-destino-orange'
+              : 'border-destino-yellow/40 text-destino-charcoal'
+          }`}
           data-testid="order-total"
         >
           <span className="text-base sm:text-lg">Total</span>

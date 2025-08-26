@@ -56,42 +56,51 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
-      {!initialUserData ? (
-        <Alert variant="default" className="mb-6 bg-blue-50 border-blue-200">
-          <UserIcon className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            Have an account?{' '}
-            <Link
-              href="/sign-in?redirect=/checkout"
-              className="font-medium text-blue-600 hover:underline"
-            >
-              <LogInIcon className="inline h-4 w-4 mr-1" />
-              Log in
-            </Link>{' '}
-            for faster checkout or{' '}
-            <Link
-              href="/sign-up?redirect=/checkout"
-              className="font-medium text-blue-600 hover:underline"
-            >
-              <UserPlusIcon className="inline h-4 w-4 mr-1" />
-              Sign up
-            </Link>
-            . You can also continue as a guest.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert variant="default" className="mb-6 bg-green-50 border-green-200">
-          <UserIcon className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-700">
-            Logged in as {initialUserData.email}. Your details have been pre-filled.
-          </AlertDescription>
-        </Alert>
-      )}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <CheckoutForm initialUserData={initialUserData} />
+    <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
+      {/* Header */}
+      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200/50 px-4 py-6 shadow-sm">
+        <div className="container mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-destino-charcoal">Checkout</h1>
+          <p className="text-gray-600 mt-1">Complete your order securely</p>
+        </div>
       </div>
-    </div>
+
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        {!initialUserData ? (
+          <Alert variant="default" className="mb-6 bg-gradient-to-r from-destino-yellow/20 to-yellow-100/50 border-destino-yellow/40 backdrop-blur-sm shadow-sm">
+            <UserIcon className="h-4 w-4 text-destino-charcoal" />
+            <AlertDescription className="text-destino-charcoal">
+              Have an account?{' '}
+              <Link
+                href="/sign-in?redirect=/checkout"
+                className="font-medium text-destino-orange hover:text-destino-charcoal transition-colors underline hover:no-underline"
+              >
+                <LogInIcon className="inline h-4 w-4 mr-1" />
+                Log in
+              </Link>{' '}
+              for faster checkout or{' '}
+              <Link
+                href="/sign-up?redirect=/checkout"
+                className="font-medium text-destino-orange hover:text-destino-charcoal transition-colors underline hover:no-underline"
+              >
+                <UserPlusIcon className="inline h-4 w-4 mr-1" />
+                Sign up
+              </Link>
+              . You can also continue as a guest.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert variant="default" className="mb-6 bg-gradient-to-r from-green-50 to-destino-cream/50 border-green-300/50 backdrop-blur-sm shadow-sm">
+            <UserIcon className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700">
+              Logged in as {initialUserData.email}. Your details have been pre-filled.
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
+          <CheckoutForm initialUserData={initialUserData} />
+        </div>
+      </div>
+    </main>
   );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { UseFormReturn, FieldErrors } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { US_STATES } from '@/lib/constants/us-states';
+import { US_STATES, CA_ONLY_STATES } from '@/lib/constants/us-states';
 
 interface AddressFormProps {
   form: UseFormReturn<any>;
   prefix: string;
   title: string;
   onAddressChange?: () => void;
+  fulfillmentMethod?: 'pickup' | 'local_delivery' | 'nationwide_shipping';
 }
 
 export const AddressForm: React.FC<AddressFormProps> = ({
@@ -24,11 +25,28 @@ export const AddressForm: React.FC<AddressFormProps> = ({
   prefix,
   title,
   onAddressChange,
+  fulfillmentMethod,
 }) => {
   const {
     register,
     formState: { errors },
   } = form;
+
+  // Determine which states to show based on fulfillment method
+  const availableStates = fulfillmentMethod === 'local_delivery' ? CA_ONLY_STATES : US_STATES;
+
+  // Auto-select CA for local delivery if no state is selected
+  useEffect(() => {
+    if (fulfillmentMethod === 'local_delivery') {
+      const currentState = form.watch(`${prefix}.state`);
+      if (!currentState) {
+        form.setValue(`${prefix}.state`, 'CA');
+        if (onAddressChange) {
+          setTimeout(onAddressChange, 100);
+        }
+      }
+    }
+  }, [fulfillmentMethod, form, prefix, onAddressChange]);
 
   // Get nested error
   const getError = (field: string): string => {
@@ -108,7 +126,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
-              {US_STATES.map((state) => (
+              {availableStates.map((state) => (
                 <SelectItem key={state.code} value={state.code}>
                   {state.code} - {state.name}
                 </SelectItem>

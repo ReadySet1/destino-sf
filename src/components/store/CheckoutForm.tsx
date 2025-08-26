@@ -113,7 +113,13 @@ const localDeliverySchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
   phone: phoneSchema,
-  deliveryAddress: addressSchema,
+  deliveryAddress: addressSchema.refine(
+    (data) => data.state === 'CA',
+    {
+      message: 'Local delivery is only available in California (CA)',
+      path: ['state'],
+    }
+  ),
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
@@ -322,7 +328,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                   street: '',
                   street2: '',
                   city: '',
-                  state: '',
+                  state: 'CA', // Default to CA for local delivery
                   postalCode: '',
                   country: 'US',
                 },
@@ -834,9 +840,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         />
 
         {/* Customer Information */}
-        <div className="space-y-4 border-t pt-6">
+        <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Contact Information</h2>
+            <h2 className="text-xl font-semibold text-destino-charcoal">Contact Information</h2>
             {contactSaved && (
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -874,8 +880,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         {/* Conditional Fields based on Fulfillment Method */}
         {currentMethod === 'pickup' && (
-          <div className="space-y-4 border-t pt-6">
-            <h2 className="text-xl font-semibold">Pickup Details</h2>
+          <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+            <h2 className="text-xl font-semibold text-destino-charcoal">Pickup Details</h2>
             <div>
               <Label htmlFor="pickupDate">Pickup Date</Label>
               <Controller
@@ -954,25 +960,26 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         {currentMethod === 'local_delivery' && (
           <>
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Delivery Address</h3>
+            <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-medium text-destino-charcoal">Delivery Address</h3>
 
               <AddressForm
                 form={typedForm}
                 prefix="deliveryAddress"
                 title="Delivery Address"
                 onAddressChange={handleAddressChange}
+                fulfillmentMethod={currentMethod}
               />
 
               {/* Add delivery fee information message */}
               {deliveryFee && (
-                <div className="text-sm mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                <div className="text-sm mt-2 p-2 bg-gradient-to-r from-destino-yellow/20 to-yellow-100/30 border border-destino-yellow/40 rounded-lg backdrop-blur-sm">
                   {getDeliveryFeeMessage(deliveryFee)}
                 </div>
               )}
 
               {!deliveryFee && isMounted && (
-                <div className="text-sm mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="text-sm mt-2 p-2 bg-gradient-to-r from-amber-50 to-destino-cream/30 border border-amber-300/50 rounded-lg backdrop-blur-sm">
                   Please enter a valid delivery address to see delivery fees.
                 </div>
               )}
@@ -985,12 +992,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                   render={({ field }) => (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !field.value && 'text-muted-foreground'
-                          )}
+                                              <Button
+                        variant={'outline'}
+                        className={cn(
+                          'w-full justify-start text-left font-normal border-destino-yellow/40 hover:bg-destino-cream/30 hover:border-destino-yellow/60 hover:text-destino-charcoal transition-all',
+                          !field.value && 'text-muted-foreground'
+                        )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? (
@@ -1056,7 +1063,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                 <Label htmlFor="deliveryInstructions">Delivery Instructions (Optional)</Label>
                 <textarea
                   id="deliveryInstructions"
-                  className="w-full rounded-md border border-input p-2 mt-1"
+                  className="w-full rounded-md border border-destino-yellow/40 focus:border-destino-orange focus:ring-2 focus:ring-destino-orange/20 p-2 mt-1 transition-all bg-white/80 backdrop-blur-sm"
                   placeholder="Gate code, delivery preferences, etc."
                   {...register('deliveryInstructions')}
                 />
@@ -1066,16 +1073,16 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         )}
 
         {currentMethod === 'nationwide_shipping' && (
-          <div className="space-y-4 border-t pt-6">
-            <h2 className="text-xl font-semibold">Shipping Details</h2>
-            <AddressForm form={typedForm} prefix="shippingAddress" title="Shipping Address" />
+          <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+            <h2 className="text-xl font-semibold text-destino-charcoal">Shipping Details</h2>
+            <AddressForm form={typedForm} prefix="shippingAddress" title="Shipping Address" fulfillmentMethod={currentMethod} />
             {/* Shipping Rate Fetch Button */}
             <Button
               type="button"
               onClick={() => void fetchShippingRates()}
               disabled={shippingLoading}
               variant="outline"
-              className="w-full"
+              className="w-full border-destino-yellow hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all"
             >
               {shippingLoading ? 'Fetching Rates...' : 'Fetch Shipping Rates'}
             </Button>
@@ -1112,7 +1119,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         )}
 
         {/* Payment Method Selector */}
-        <div className="border-t pt-6">
+        <div className="border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
           <PaymentMethodSelector
             selectedMethod={currentPaymentMethod}
             onSelectMethod={method => {
@@ -1128,15 +1135,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+          <Alert variant="destructive" className="bg-red-50/80 backdrop-blur-sm border-red-300/50">
+            <AlertDescription className="text-red-700">{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full"
+          className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
           disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
         >
           {pendingOrderCheck.isChecking

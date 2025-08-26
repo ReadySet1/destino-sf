@@ -16,6 +16,7 @@ import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { env } from '@/env'; // Import the validated environment configuration
+import { getTaxRate, isStoreOpen } from '@/lib/store-settings'; // Import store settings service
 
 // Re-add BigInt patch if needed directly in actions, or ensure it runs globally
 (BigInt.prototype as any).toJSON = function () {
@@ -23,7 +24,7 @@ import { env } from '@/env'; // Import the validated environment configuration
 };
 
 // --- Constants ---
-const TAX_RATE = new Decimal(0.0825); // 8.25%
+// Tax rate is now fetched from store settings
 const SERVICE_FEE_RATE = new Decimal(0.035); // 3.5%
 
 // --- Schemas ---
@@ -530,6 +531,17 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   const { items, customerInfo, fulfillment, paymentMethod } = validationResult.data; // Use validated data
 
+  // Check if store is open
+  const storeOpen = await isStoreOpen();
+  if (!storeOpen) {
+    return {
+      success: false,
+      error: 'Store is currently closed. Please check our hours or try again later.',
+      checkoutUrl: null,
+      orderId: null,
+    };
+  }
+
   // Add minimum order validation
   const orderValidation = await validateOrderMinimums(items);
   if (!orderValidation.isValid) {
@@ -558,7 +570,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     };
   });
 
-  const taxAmount = subtotal.times(TAX_RATE).toDecimalPlaces(2);
+  // Get tax rate from store settings
+  const taxRateDecimal = await getTaxRate();
+  const taxAmount = subtotal.times(new Decimal(taxRateDecimal)).toDecimalPlaces(2);
 
   // Get shipping cost directly from the validated fulfillment data
   const shippingCostCents =
@@ -787,7 +801,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       squareTaxes.push({
         // uid: randomUUID().substring(0, 6), // Optional: helps Square UI
         name: 'Sales Tax',
-        percentage: TAX_RATE.times(100).toFixed(2), // e.g., "8.25"
+        percentage: new Decimal(taxRateDecimal).times(100).toFixed(2), // e.g., "8.25"
         scope: 'ORDER', // Apply to order subtotal (before service fees)
       });
     }
@@ -1065,6 +1079,17 @@ export async function createManualPaymentOrder(formData: {
 
   const { items, customerInfo, fulfillment, paymentMethod } = formData;
 
+  // Check if store is open
+  const storeOpen = await isStoreOpen();
+  if (!storeOpen) {
+    return {
+      success: false,
+      error: 'Store is currently closed. Please check our hours or try again later.',
+      checkoutUrl: null,
+      orderId: null,
+    };
+  }
+
   // Add minimum order validation
   const orderValidation = await validateOrderMinimums(items);
   if (!orderValidation.isValid) {
@@ -1090,7 +1115,9 @@ export async function createManualPaymentOrder(formData: {
     };
   });
 
-  const taxAmount = subtotal.times(TAX_RATE).toDecimalPlaces(2);
+  // Get tax rate from store settings
+  const taxRateDecimal = await getTaxRate();
+  const taxAmount = subtotal.times(new Decimal(taxRateDecimal)).toDecimalPlaces(2);
   const shippingCostCents =
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);

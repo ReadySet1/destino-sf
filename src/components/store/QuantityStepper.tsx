@@ -22,11 +22,11 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
   };
 
   return (
-    <div className="inline-flex items-center rounded-lg border border-gray-300 bg-white shadow-sm">
+    <div className="inline-flex items-center rounded-lg border border-destino-yellow/40 bg-white shadow-sm">
       <Button
         variant="ghost"
         size="icon"
-        className="h-10 w-10 sm:h-8 sm:w-8 rounded-l-lg rounded-r-none border-r border-gray-300 hover:bg-gray-50 touch-manipulation"
+        className="h-10 w-10 sm:h-8 sm:w-8 rounded-l-lg rounded-r-none border-r border-destino-yellow/40 hover:bg-destino-cream/50 hover:text-destino-charcoal touch-manipulation transition-colors"
         onClick={handleDecrement}
         disabled={value <= min}
         type="button"
@@ -35,14 +35,14 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
         <Minus className="h-4 w-4 sm:h-3 sm:w-3" />
       </Button>
 
-      <div className="w-12 sm:w-10 h-10 sm:h-8 flex items-center justify-center text-sm font-medium bg-gray-50">
+      <div className="w-12 sm:w-10 h-10 sm:h-8 flex items-center justify-center text-sm font-medium bg-destino-cream/30 text-destino-charcoal">
         <span>{value}</span>
       </div>
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-10 w-10 sm:h-8 sm:w-8 rounded-r-lg rounded-l-none border-l border-gray-300 hover:bg-gray-50 touch-manipulation"
+        className="h-10 w-10 sm:h-8 sm:w-8 rounded-r-lg rounded-l-none border-l border-destino-yellow/40 hover:bg-destino-cream/50 hover:text-destino-charcoal touch-manipulation transition-colors"
         onClick={handleIncrement}
         disabled={value >= max}
         type="button"
