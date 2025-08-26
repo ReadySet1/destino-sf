@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@prisma/client';
+import { ensureUserProfile } from '@/middleware/profile-sync';
 
 export interface AdminAuthResult {
   authorized: boolean;
@@ -31,20 +32,18 @@ export async function verifyAdminAccess(): Promise<AdminAuthResult> {
       };
     }
 
-    // Check admin role from profiles table
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, role, email')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
+    // Ensure profile exists and get it (this will create one if needed, but won't overwrite existing roles)
+    const profileResult = await ensureUserProfile(user.id, user.email);
+    
+    if (!profileResult.success || !profileResult.profile) {
       return { 
         authorized: false, 
         error: 'Profile not found',
         statusCode: 404 
       };
     }
+    
+    const profile = profileResult.profile;
 
     if (profile.role !== UserRole.ADMIN) {
       return { 
