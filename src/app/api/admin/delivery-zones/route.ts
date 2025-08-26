@@ -1,56 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
-import { UserRole } from '@prisma/client';
-
-// Schema for delivery zone validation
-const deliveryZoneSchema = z.object({
-  id: z.string().optional(),
-  zone: z.string().min(1, 'Zone identifier is required'),
-  name: z.string().min(1, 'Zone name is required'),
-  description: z.string().optional().nullable(),
-  minimumAmount: z.number().min(0, 'Minimum amount must be non-negative'),
-  deliveryFee: z.number().min(0, 'Delivery fee must be non-negative'),
-  estimatedDeliveryTime: z.string().optional().nullable(),
-  isActive: z.boolean(),
-  postalCodes: z.array(z.string()).optional().default([]),
-  cities: z.array(z.string()).optional().default([]),
-  displayOrder: z.number().int().min(0).optional().default(0),
-});
-
-type DeliveryZoneData = z.infer<typeof deliveryZoneSchema>;
-
-// Helper function to check if user is admin
-async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    return profile?.role === UserRole.ADMIN;
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    return false;
-  }
-}
+import { requireAdminAccess } from '@/lib/auth/admin-guard';
+import { setAuditContext } from '@/lib/audit/delivery-zone-audit';
+import { 
+  DeliveryZoneRequestSchema, 
+  DeliveryZoneUpdateSchema,
+  BulkDeliveryZoneUpdateSchema,
+  type DeliveryZoneRequest,
+  type DeliveryZoneUpdate,
+  type DeliveryZoneResponse 
+} from '@/types/delivery-zones';
 
 // GET - Fetch all delivery zones
 export async function GET(request: NextRequest) {
-  try {
-    console.log('🔄 GET /api/admin/delivery-zones - Fetching delivery zones');
-    
-    const supabase = await createClient();
+  console.log('🔄 GET /api/admin/delivery-zones - Starting request');
+  
+  const authResult = await requireAdminAccess();
+  
+  if (!authResult.authorized) {
+    console.error('❌ Unauthorized access attempt:', authResult.response?.status);
+    return authResult.response!;
+  }
 
-    if (!(await isUserAdmin(supabase))) {
-      console.log('❌ Unauthorized access attempt to delivery zones API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  console.log('✅ Admin verified:', authResult.user?.email);
+  
+  try {
 
     const deliveryZones = await prisma.cateringDeliveryZone.findMany({
       orderBy: { displayOrder: 'asc' },
@@ -74,23 +49,37 @@ export async function GET(request: NextRequest) {
 
 // POST - Create or update delivery zone
 export async function POST(request: NextRequest) {
-  try {
-    console.log('🔄 POST /api/admin/delivery-zones - Processing request');
-    
-    const supabase = await createClient();
+  console.log('🔄 POST /api/admin/delivery-zones - Starting request');
+  
+  const authResult = await requireAdminAccess();
+  
+  if (!authResult.authorized) {
+    console.error('❌ Unauthorized access attempt:', authResult.response?.status);
+    return authResult.response!;
+  }
 
-    if (!(await isUserAdmin(supabase))) {
-      console.log('❌ Unauthorized access attempt to delivery zones API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  console.log('✅ Admin verified:', authResult.user?.email);
+  
+  try {
+    // Set audit context for this transaction
+    await setAuditContext({
+      adminUserId: authResult.user?.id || '',
+      adminEmail: authResult.user?.email || '',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     const body = await request.json();
     console.log('📥 Request body:', JSON.stringify(body, null, 2));
 
     // Validate request body
-    let zoneData: DeliveryZoneData;
+    let zoneData: DeliveryZoneRequest | DeliveryZoneUpdate;
     try {
-      zoneData = deliveryZoneSchema.parse(body);
+      // Check if this is an update (has ID) or create (no ID)
+      const isUpdate = !!body.id;
+      zoneData = isUpdate 
+        ? DeliveryZoneUpdateSchema.parse(body)
+        : DeliveryZoneRequestSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.log('❌ Validation error:', error.errors);
@@ -106,20 +95,21 @@ export async function POST(request: NextRequest) {
     }
 
     let result;
-    const isUpdate = !!zoneData.id;
+    const isUpdate = 'id' in zoneData;
 
     try {
       if (isUpdate) {
         // Update existing zone
-        console.log(`🔄 Updating zone with ID: ${zoneData.id}`);
+        const updateData = zoneData as DeliveryZoneUpdate;
+        console.log(`🔄 Updating zone with ID: ${updateData.id}`);
         
         // First, check if zone exists
         const existingZone = await prisma.cateringDeliveryZone.findUnique({
-          where: { id: zoneData.id },
+          where: { id: updateData.id },
         });
 
         if (!existingZone) {
-          console.log(`❌ Zone not found with ID: ${zoneData.id}`);
+          console.log(`❌ Zone not found with ID: ${updateData.id}`);
           return NextResponse.json(
             { error: 'Zone not found' },
             { status: 404 }
@@ -127,38 +117,39 @@ export async function POST(request: NextRequest) {
         }
 
         result = await prisma.cateringDeliveryZone.update({
-          where: { id: zoneData.id },
+          where: { id: updateData.id },
           data: {
-            zone: zoneData.zone,
-            name: zoneData.name,
-            description: zoneData.description,
-            minimumAmount: zoneData.minimumAmount,
-            deliveryFee: zoneData.deliveryFee,
-            estimatedDeliveryTime: zoneData.estimatedDeliveryTime,
-            active: zoneData.isActive, // Map frontend isActive to database active
-            postalCodes: zoneData.postalCodes,
-            cities: zoneData.cities,
-            displayOrder: zoneData.displayOrder,
+            zone: updateData.zone,
+            name: updateData.name,
+            description: updateData.description,
+            minimumAmount: updateData.minimumAmount,
+            deliveryFee: updateData.deliveryFee,
+            estimatedDeliveryTime: updateData.estimatedDeliveryTime,
+            active: updateData.isActive, // Map frontend isActive to database active
+            postalCodes: updateData.postalCodes,
+            cities: updateData.cities,
+            displayOrder: updateData.displayOrder,
           },
         });
         
         console.log(`✅ Zone updated successfully: ${result.name}`);
       } else {
         // Create new zone
+        const createData = zoneData as DeliveryZoneRequest;
         console.log('🔄 Creating new zone');
         
         result = await prisma.cateringDeliveryZone.create({
           data: {
-            zone: zoneData.zone,
-            name: zoneData.name,
-            description: zoneData.description,
-            minimumAmount: zoneData.minimumAmount,
-            deliveryFee: zoneData.deliveryFee,
-            estimatedDeliveryTime: zoneData.estimatedDeliveryTime,
-            active: zoneData.isActive, // Map frontend isActive to database active
-            postalCodes: zoneData.postalCodes || [],
-            cities: zoneData.cities || [],
-            displayOrder: zoneData.displayOrder || 0,
+            zone: createData.zone,
+            name: createData.name,
+            description: createData.description,
+            minimumAmount: createData.minimumAmount,
+            deliveryFee: createData.deliveryFee,
+            estimatedDeliveryTime: createData.estimatedDeliveryTime,
+            active: createData.isActive, // Map frontend isActive to database active
+            postalCodes: createData.postalCodes || [],
+            cities: createData.cities || [],
+            displayOrder: createData.displayOrder || 0,
           },
         });
         
@@ -215,15 +206,25 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update multiple zones (bulk update)
 export async function PUT(request: NextRequest) {
-  try {
-    console.log('🔄 PUT /api/admin/delivery-zones - Bulk update request');
-    
-    const supabase = await createClient();
+  console.log('🔄 PUT /api/admin/delivery-zones - Starting bulk update');
+  
+  const authResult = await requireAdminAccess();
+  
+  if (!authResult.authorized) {
+    console.error('❌ Unauthorized access attempt:', authResult.response?.status);
+    return authResult.response!;
+  }
 
-    if (!(await isUserAdmin(supabase))) {
-      console.log('❌ Unauthorized access attempt to delivery zones API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  console.log('✅ Admin verified:', authResult.user?.email);
+  
+  try {
+    // Set audit context for bulk update
+    await setAuditContext({
+      adminUserId: authResult.user?.id || '',
+      adminEmail: authResult.user?.email || '',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     const body = await request.json();
     const { zones } = body;
@@ -235,8 +236,8 @@ export async function PUT(request: NextRequest) {
 
     console.log(`🔄 Processing bulk update for ${zones.length} zones`);
 
-    // Validate all zones
-    const validatedZones = zones.map(zone => deliveryZoneSchema.parse(zone));
+    // Validate bulk update request
+    const { zones: validatedZones } = BulkDeliveryZoneUpdateSchema.parse({ zones });
 
     // Update zones in transaction
     const results = await prisma.$transaction(
@@ -274,6 +275,61 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ Error updating delivery zones:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// DELETE - Delete delivery zone
+export async function DELETE(request: NextRequest) {
+  console.log('🔄 DELETE /api/admin/delivery-zones - Starting request');
+  
+  const authResult = await requireAdminAccess();
+  
+  if (!authResult.authorized) {
+    console.error('❌ Unauthorized access attempt:', authResult.response?.status);
+    return authResult.response!;
+  }
+
+  console.log('✅ Admin verified:', authResult.user?.email);
+
+  try {
+    const url = new URL(request.url);
+    const zoneId = url.searchParams.get('id');
+
+    if (!zoneId) {
+      console.error('❌ Zone ID not provided');
+      return NextResponse.json({ error: 'Zone ID is required' }, { status: 400 });
+    }
+
+    console.log(`🗑️ Attempting to delete zone with ID: ${zoneId}`);
+
+    // Check if zone exists
+    const existingZone = await prisma.cateringDeliveryZone.findUnique({
+      where: { id: zoneId }
+    });
+
+    if (!existingZone) {
+      console.error(`❌ Zone not found: ${zoneId}`);
+      return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+    }
+
+    // Delete the zone
+    await prisma.cateringDeliveryZone.delete({
+      where: { id: zoneId }
+    });
+
+    console.log(`✅ Successfully deleted zone: ${existingZone.name} (${existingZone.zone})`);
+    
+    return NextResponse.json({
+      message: `Delivery zone "${existingZone.name}" deleted successfully`,
+      deletedZone: {
+        id: existingZone.id,
+        name: existingZone.name,
+        zone: existingZone.zone,
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error deleting delivery zone:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

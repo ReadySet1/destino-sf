@@ -9,14 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Save, Trash2, MapPin, DollarSign, Clock, Info, Utensils } from 'lucide-react';
+import { PlusCircle, Save, Trash2, MapPin, DollarSign, Clock, Info, ShoppingBag } from 'lucide-react';
 
-interface DeliveryZone {
+interface RegularDeliveryZone {
   id: string;
   zone: string;
   name: string;
   description?: string | null;
-  minimumAmount: number;
+  minimumOrderForFree: number;
   deliveryFee: number;
   estimatedDeliveryTime?: string | null;
   isActive: boolean;
@@ -27,12 +27,12 @@ interface DeliveryZone {
   updatedAt: Date;
 }
 
-interface DeliveryZoneManagerProps {
+interface RegularDeliveryZoneManagerProps {
   className?: string;
 }
 
 interface ZoneCardProps {
-  zone: DeliveryZone;
+  zone: RegularDeliveryZone;
   index: number;
   onEdit: () => void;
   onToggle: (isActive: boolean) => void;
@@ -66,18 +66,20 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
             
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
               <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <div>
-                  <span className="text-gray-500">Min Order:</span>
-                  <div className="font-medium">${zone.minimumAmount.toFixed(2)}</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-4 w-4 text-blue-600" />
                 <div>
                   <span className="text-gray-500">Delivery Fee:</span>
                   <div className="font-medium">${zone.deliveryFee.toFixed(2)}</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <div>
+                  <span className="text-gray-500">Free Over:</span>
+                  <div className="font-medium">
+                    {zone.minimumOrderForFree > 0 ? `$${zone.minimumOrderForFree.toFixed(2)}` : 'No minimum'}
+                  </div>
                 </div>
               </div>
               
@@ -169,11 +171,11 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
   );
 }
 
-export default function DeliveryZoneManager({ className }: DeliveryZoneManagerProps) {
-  const [zones, setZones] = useState<DeliveryZone[]>([]);
+export default function RegularDeliveryZoneManager({ className }: RegularDeliveryZoneManagerProps) {
+  const [zones, setZones] = useState<RegularDeliveryZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
+  const [editingZone, setEditingZone] = useState<RegularDeliveryZone | null>(null);
   const [isNewZone, setIsNewZone] = useState(false);
   
   // Track loading states for individual zone toggles
@@ -187,7 +189,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     zone: '',
     name: '',
     description: '',
-    minimumAmount: 0,
+    minimumOrderForFree: 0,
     deliveryFee: 0,
     estimatedDeliveryTime: '',
     isActive: true,
@@ -198,17 +200,17 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
   const loadDeliveryZones = useCallback(async () => {
     try {
-      console.log('🔄 Loading delivery zones...');
-      const response = await fetch('/api/admin/delivery-zones');
+      console.log('🔄 Loading regular delivery zones...');
+      const response = await fetch('/api/admin/regular-delivery-zones');
       if (!response.ok) {
-        throw new Error(`Failed to load delivery zones: ${response.status}`);
+        throw new Error(`Failed to load regular delivery zones: ${response.status}`);
       }
       const data = await response.json();
-      console.log('✅ Delivery zones loaded:', data.deliveryZones);
+      console.log('✅ Regular delivery zones loaded:', data.deliveryZones);
       setZones(data.deliveryZones || []);
     } catch (error) {
-      console.error('❌ Error loading delivery zones:', error);
-      toast.error('Failed to load delivery zones');
+      console.error('❌ Error loading regular delivery zones:', error);
+      toast.error('Failed to load regular delivery zones');
     } finally {
       setLoading(false);
     }
@@ -224,7 +226,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       zone: '',
       name: '',
       description: '',
-      minimumAmount: 0,
+      minimumOrderForFree: 0,
       deliveryFee: 0,
       estimatedDeliveryTime: '',
       isActive: true,
@@ -242,12 +244,12 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     setEditingZone(null);
   };
 
-  const startEditZone = (zone: DeliveryZone) => {
+  const startEditZone = (zone: RegularDeliveryZone) => {
     setFormData({
       zone: zone.zone,
       name: zone.name,
       description: zone.description || '',
-      minimumAmount: zone.minimumAmount,
+      minimumOrderForFree: zone.minimumOrderForFree,
       deliveryFee: zone.deliveryFee,
       estimatedDeliveryTime: zone.estimatedDeliveryTime || '',
       isActive: zone.isActive,
@@ -280,7 +282,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
           .filter(city => city.length > 0),
       };
 
-      const response = await fetch('/api/admin/delivery-zones', {
+      const response = await fetch('/api/admin/regular-delivery-zones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +291,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save delivery zone');
+        throw new Error('Failed to save regular delivery zone');
       }
 
       const result = await response.json();
@@ -299,8 +301,8 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       await loadDeliveryZones();
       resetForm();
     } catch (error) {
-      console.error('Error saving delivery zone:', error);
-      toast.error('Failed to save delivery zone');
+      console.error('Error saving regular delivery zone:', error);
+      toast.error('Failed to save regular delivery zone');
     } finally {
       setSaving(false);
     }
@@ -322,14 +324,13 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
     // Store original state for rollback
     const originalZones = [...zones];
-    const originalZoneState = zone.isActive;
 
     try {
       // Add to loading set
       setTogglingZones(prev => new Set(prev).add(zoneId));
       
       // Optimistic update - immediately update UI
-      console.log(`🔄 Optimistically updating zone ${zoneId} to ${isActive}`);
+      console.log(`🔄 Optimistically updating regular zone ${zoneId} to ${isActive}`);
       setZones(prevZones => 
         prevZones.map(z => 
           z.id === zoneId ? { ...z, isActive } : z
@@ -337,8 +338,8 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       );
 
       // Make API call
-      console.log(`📡 Making API call to update zone ${zoneId}`);
-      const response = await fetch('/api/admin/delivery-zones', {
+      console.log(`📡 Making API call to update regular zone ${zoneId}`);
+      const response = await fetch('/api/admin/regular-delivery-zones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -355,20 +356,20 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       }
 
       const result = await response.json();
-      console.log('✅ Zone status updated successfully:', result);
+      console.log('✅ Regular zone status updated successfully:', result);
       
       // Success - no need to reload since we already updated optimistically
-      toast.success(`Zone ${isActive ? 'activated' : 'deactivated'} successfully`);
+      toast.success(`Regular zone ${isActive ? 'activated' : 'deactivated'} successfully`);
       
     } catch (error) {
-      console.error('❌ Error updating zone status:', error);
+      console.error('❌ Error updating regular zone status:', error);
       
       // Rollback optimistic update on error
       console.log('🔄 Rolling back optimistic update for zone:', zoneId);
       setZones(originalZones);
       
       // Show error message
-      toast.error(`Failed to ${isActive ? 'activate' : 'deactivate'} zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to ${isActive ? 'activate' : 'deactivate'} regular zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
     } finally {
       // Remove from loading set
@@ -383,20 +384,20 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
   const deleteZone = async (zoneId: string) => {
     // Prevent multiple rapid clicks
     if (deletingZones.has(zoneId)) {
-      console.log('⚠️ Zone delete already in progress for:', zoneId);
+      console.log('⚠️ Regular zone delete already in progress for:', zoneId);
       return;
     }
 
     // Find the zone to delete
     const zone = zones.find(z => z.id === zoneId);
     if (!zone) {
-      console.error('❌ Zone not found:', zoneId);
+      console.error('❌ Regular zone not found:', zoneId);
       return;
     }
 
     // Show confirmation dialog
     const confirmed = window.confirm(
-      `Are you sure you want to delete the delivery zone "${zone.name}"?\n\nThis action cannot be undone.`
+      `Are you sure you want to delete the regular delivery zone "${zone.name}"?\n\nThis action cannot be undone.`
     );
 
     if (!confirmed) {
@@ -407,10 +408,10 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       // Add to loading set
       setDeletingZones(prev => new Set(prev).add(zoneId));
       
-      console.log(`🗑️ Deleting zone: ${zone.name} (${zoneId})`);
+      console.log(`🗑️ Deleting regular zone: ${zone.name} (${zoneId})`);
 
       // Make API call
-      const response = await fetch(`/api/admin/delivery-zones?id=${zoneId}`, {
+      const response = await fetch(`/api/admin/regular-delivery-zones?id=${zoneId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -423,7 +424,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       }
 
       const result = await response.json();
-      console.log('✅ Zone deleted successfully:', result);
+      console.log('✅ Regular zone deleted successfully:', result);
       
       // Remove zone from UI
       setZones(prevZones => prevZones.filter(z => z.id !== zoneId));
@@ -433,11 +434,11 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
         resetForm();
       }
       
-      toast.success(`Delivery zone "${zone.name}" deleted successfully`);
+      toast.success(`Regular delivery zone "${zone.name}" deleted successfully`);
       
     } catch (error) {
-      console.error('❌ Error deleting zone:', error);
-      toast.error(`Failed to delete zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error deleting regular zone:', error);
+      toast.error(`Failed to delete regular zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
     } finally {
       // Remove from loading set
@@ -453,7 +454,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Loading Delivery Zones...</CardTitle>
+          <CardTitle>Loading Regular Delivery Zones...</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -466,13 +467,13 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Utensils className="h-5 w-5 text-orange-600" />
-                Catering Delivery Zones
+                <ShoppingBag className="h-5 w-5 text-blue-600" />
+                Regular Product Delivery Zones
               </CardTitle>
               <CardDescription className="mt-2 max-w-2xl">
-                Configure minimum order requirements and delivery fees for catering orders 
-                based on delivery location. These settings only apply to catering orders, 
-                not regular product shipping.
+                Configure delivery fees for regular products (empanadas, alfajores) 
+                based on delivery location. These settings only apply to regular orders, 
+                not catering deliveries.
               </CardDescription>
             </div>
             <Button onClick={startNewZone} className="flex items-center gap-2">
@@ -488,13 +489,13 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
               <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
                 <h4 className="text-sm font-medium text-blue-900 mb-2">
-                  How Delivery Zones Work
+                  How Regular Product Delivery Works
                 </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Zones determine minimum order amounts for catering delivery</li>
-                  <li>• Customers see requirements based on their delivery address</li>
-                  <li>• Delivery fees are automatically calculated per zone</li>
-                  <li>• Multiple postal codes and cities can map to one zone</li>
+                  <li>• Fixed delivery fees for empanadas, alfajores, and other regular products</li>
+                  <li>• Optional free delivery threshold (e.g., free over $75)</li>
+                  <li>• Automatic fee calculation based on customer address</li>
+                  <li>• Separate from catering delivery zones and pricing</li>
                 </ul>
               </div>
             </div>
@@ -505,8 +506,8 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
             {zones.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No delivery zones configured</p>
-                <p className="text-sm">Create your first catering delivery zone to get started</p>
+                <p className="text-lg font-medium mb-2">No regular delivery zones configured</p>
+                <p className="text-sm">Create your first regular product delivery zone to get started</p>
               </div>
             ) : (
               zones.map((zone, index) => (
@@ -523,7 +524,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
               ))
             )}
 
-
             {/* Add/Edit Zone Form */}
             {(isNewZone || editingZone) && (
               <>
@@ -531,13 +531,13 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Utensils className="h-5 w-5 text-orange-600" />
-                      {isNewZone ? 'Add New Catering Zone' : 'Edit Catering Zone'}
+                      <ShoppingBag className="h-5 w-5 text-blue-600" />
+                      {isNewZone ? 'Add New Regular Zone' : 'Edit Regular Zone'}
                     </CardTitle>
                     <CardDescription>
                       {isNewZone 
-                        ? 'Configure minimum order and delivery fee requirements for a new catering delivery area'
-                        : 'Update the settings for this catering delivery zone'
+                        ? 'Configure delivery fees for regular products in a new delivery area'
+                        : 'Update the delivery settings for this regular product zone'
                       }
                     </CardDescription>
                   </CardHeader>
@@ -549,7 +549,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           id="zone"
                           value={formData.zone}
                           onChange={e => setFormData({ ...formData, zone: e.target.value })}
-                          placeholder="e.g., sf_downtown"
+                          placeholder="e.g., sf_nearby"
                         />
                       </div>
 
@@ -559,7 +559,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           id="name"
                           value={formData.name}
                           onChange={e => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g., Downtown San Francisco"
+                          placeholder="e.g., San Francisco Nearby"
                         />
                       </div>
                     </div>
@@ -577,24 +577,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="minimumAmount" className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          Minimum Catering Order ($)
-                        </Label>
-                        <Input
-                          id="minimumAmount"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.minimumAmount}
-                          onChange={e => setFormData({ ...formData, minimumAmount: parseFloat(e.target.value) || 0 })}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Minimum order value required for catering delivery in this zone
-                        </p>
-                      </div>
-
-                      <div>
                         <Label htmlFor="deliveryFee" className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-blue-600" />
                           Delivery Fee ($)
@@ -608,7 +590,25 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           onChange={e => setFormData({ ...formData, deliveryFee: parseFloat(e.target.value) || 0 })}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Fixed delivery charge for catering orders to this zone
+                          Fixed delivery charge for regular products to this zone
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="minimumOrderForFree" className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          Free Delivery Over ($)
+                        </Label>
+                        <Input
+                          id="minimumOrderForFree"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.minimumOrderForFree}
+                          onChange={e => setFormData({ ...formData, minimumOrderForFree: parseFloat(e.target.value) || 0 })}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Minimum order value for free delivery (0 = no free delivery)
                         </p>
                       </div>
 
@@ -621,7 +621,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           id="estimatedDeliveryTime"
                           value={formData.estimatedDeliveryTime}
                           onChange={e => setFormData({ ...formData, estimatedDeliveryTime: e.target.value })}
-                          placeholder="e.g., 1-2 hours"
+                          placeholder="e.g., 30-60 minutes"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           Typical delivery time customers can expect

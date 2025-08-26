@@ -1,10 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import SettingsFormWrapper from './components/SettingsForm';
-import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
+import AdminSettingsTabs from '@/components/admin/AdminSettingsTabs';
 import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
-import { Separator } from '@/components/ui/separator';
 
 export const metadata = {
   title: 'Store Settings | Admin',
@@ -40,25 +38,25 @@ export default async function SettingsPage() {
       }
     : null;
 
+  // Process delivery zones to convert Decimal to numbers
+  const processedDeliveryZones = deliveryZones.map(zone => ({
+    ...zone,
+    minimumAmount: Number(zone.minimumAmount),
+    deliveryFee: Number(zone.deliveryFee),
+  }));
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Store Settings</h1>
-      </div>
-
-      {/* Basic Store Settings */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-500">Configure your store&apos;s basic information.</p>
-        <Separator className="mb-6" />
-        <SettingsFormWrapper settings={processedSettings} />
-      </div>
-
-      {/* Delivery Zone Management */}
-      <DeliveryZoneManager />
+    <div className="container mx-auto py-6">
+      <AdminSettingsTabs 
+        storeSettings={processedSettings}
+        deliveryZones={processedDeliveryZones}
+      />
       
       {/* Debugger for development */}
       {process.env.NODE_ENV === 'development' && (
-        <DeliveryZoneDebugger />
+        <div className="mt-8">
+          <DeliveryZoneDebugger />
+        </div>
       )}
     </div>
   );

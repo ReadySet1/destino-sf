@@ -53,7 +53,7 @@ import {
 } from '@/lib/dateUtils';
 // Import the delivery fee utilities
 import {
-  calculateDeliveryFee,
+  calculateDeliveryFeeAction,
   getDeliveryFeeMessage,
   DeliveryFeeResult,
 } from '@/lib/deliveryUtils';
@@ -766,7 +766,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // --- End getErrorMessage ---
 
   // Add a new function to calculate delivery fees
-  const calculateLocalDeliveryFee = useCallback(() => {
+  const calculateLocalDeliveryFee = useCallback(async () => {
     if (currentMethod !== 'local_delivery') {
       setDeliveryFee(null);
       return;
@@ -774,10 +774,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
     const formValues = form.getValues();
     if (formValues.fulfillmentMethod === 'local_delivery' && formValues.deliveryAddress) {
-      const address = formValues.deliveryAddress;
-      const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const feeResult = calculateDeliveryFee(address, subtotal);
-      setDeliveryFee(feeResult);
+      try {
+        const address = formValues.deliveryAddress;
+        const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const feeResult = await calculateDeliveryFeeAction(address, subtotal);
+        setDeliveryFee(feeResult);
+      } catch (error) {
+        console.error('Error calculating delivery fee:', error);
+        setDeliveryFee(null);
+      }
     }
   }, [currentMethod, form, items, setDeliveryFee]);
 
