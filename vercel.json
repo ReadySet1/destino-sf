@@ -4,19 +4,19 @@
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
   "functions": {
-    "src/app/api/**/*": {
+    "app/api/**/*": {
       "maxDuration": 30
     },
-    "src/app/api/square/unified-sync/route.ts": {
+    "app/api/square/unified-sync/route.ts": {
       "maxDuration": 300
     },
-    "src/app/api/square/enhanced-sync/route.ts": {
+    "app/api/square/enhanced-sync/route.ts": {
       "maxDuration": 300
     },
-    "src/app/api/square/sync/route.ts": {
+    "app/api/square/sync/route.ts": {
       "maxDuration": 300
     },
-    "src/app/sitemap.xml/route.ts": {
+    "app/sitemap.xml/route.ts": {
       "maxDuration": 60
     }
   },

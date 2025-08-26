@@ -14,6 +14,10 @@ import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { prisma } from '@/lib/db';
 
+// Explicit Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes
+
 // Request validation schema
 const EnhancedSyncRequestSchema = z.object({
   preview: z.boolean().optional().default(false),
