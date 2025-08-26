@@ -57,6 +57,11 @@ export const US_STATES: USState[] = [
   { code: 'WY', name: 'Wyoming' },
 ];
 
+// California only - for local delivery
+export const CA_ONLY_STATES: USState[] = [
+  { code: 'CA', name: 'California' },
+];
+
 export const getStateNameByCode = (code: string): string | undefined => {
   return US_STATES.find(state => state.code === code.toUpperCase())?.name;
 };

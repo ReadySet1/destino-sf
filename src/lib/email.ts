@@ -320,6 +320,36 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
                   ` : ''}
                 </div>
 
+                <!-- Order Items -->
+                ${order.items && order.items.length > 0 ? `
+                <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                  <h3 style="margin: 0 0 16px 0; color: #495057; font-size: 18px; border-bottom: 2px solid #6c757d; padding-bottom: 8px;">🍽️ Order Items</h3>
+                  <div style="background-color: #ffffff; border-radius: 6px; overflow: hidden; border: 1px solid #e9ecef;">
+                    
+                    <!-- Table Header -->
+                    <div style="background-color: #e9ecef; padding: 12px; border-bottom: 1px solid #dee2e6;">
+                      <div style="display: table; width: 100%; table-layout: fixed;">
+                        <div style="display: table-cell; width: 50%; font-weight: bold; color: #495057; font-size: 14px;">Item</div>
+                        <div style="display: table-cell; width: 25%; text-align: center; font-weight: bold; color: #495057; font-size: 14px;">Qty</div>
+                        <div style="display: table-cell; width: 25%; text-align: right; font-weight: bold; color: #495057; font-size: 14px;">Total</div>
+                      </div>
+                    </div>
+                    
+                    <!-- Table Items -->
+                    ${order.items.map((item: any) => `
+                      <div style="padding: 12px; border-bottom: 1px solid #f1f3f4; last-child:border-bottom: none;">
+                        <div style="display: table; width: 100%; table-layout: fixed;">
+                          <div style="display: table-cell; width: 50%; color: #495057; font-size: 14px; vertical-align: middle;">${item.itemName || item.name || 'Unknown Item'}</div>
+                          <div style="display: table-cell; width: 25%; text-align: center; color: #6c757d; font-size: 14px; vertical-align: middle;">${item.quantity}</div>
+                          <div style="display: table-cell; width: 25%; text-align: right; color: #495057; font-size: 14px; font-weight: 500; vertical-align: middle;">$${((item.totalPrice || (item.pricePerUnit * item.quantity)) || 0).toFixed(2)}</div>
+                        </div>
+                      </div>
+                    `).join('')}
+                    
+                  </div>
+                </div>
+                ` : ''}
+
                 <!-- Next Steps -->
                 <div style="background-color: #fff3cd; border: 1px solid #fbbf24; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
                   <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">📞 What's Next?</h3>

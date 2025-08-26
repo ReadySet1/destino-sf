@@ -1,81 +1,80 @@
 import { z } from 'zod';
 
-// Store settings validation schema
+/**
+ * Zod schema for store settings validation
+ */
 export const StoreSettingsSchema = z.object({
-  storeName: z.string().min(1, 'Store name is required'),
-  email: z.string().email('Valid email required'),
-  phone: z.string().min(10, 'Valid phone required'),
-  address: z.string().min(1, 'Address required'),
-  city: z.string().min(1, 'City required'),
-  state: z.string().min(2, 'State required'),
-  zipCode: z.string().min(5, 'ZIP code required'),
-  taxRate: z.number().min(0).max(100),
-  minOrderAmount: z.number().min(0),
-  cateringMinimumAmount: z.number().min(0),
-  minimumAdvanceHours: z.number().min(0),
-  maximumDaysInAdvance: z.number().min(1),
-  isOpenForOrders: z.boolean(),
+  id: z.string().uuid(),
+  name: z.string().min(1, 'Store name is required'),
+  address: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  zipCode: z.string().nullable(),
+  phone: z.string().nullable(),
+  email: z.string().email('Invalid email format').nullable(),
+  taxRate: z.number().min(0, 'Tax rate must be non-negative').max(100, 'Tax rate cannot exceed 100%'),
+  minOrderAmount: z.number().min(0, 'Minimum order amount must be non-negative'),
+  cateringMinimumAmount: z.number().min(0, 'Catering minimum amount must be non-negative'),
+  minAdvanceHours: z.number().int().min(0, 'Minimum advance hours must be non-negative'),
+  maxDaysInAdvance: z.number().int().min(1, 'Maximum days in advance must be at least 1'),
+  isStoreOpen: z.boolean(),
+  temporaryClosureMsg: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 });
 
+/**
+ * TypeScript type inferred from the Zod schema
+ */
 export type StoreSettings = z.infer<typeof StoreSettingsSchema>;
 
-// Store settings update schema (all fields optional)
-export const StoreSettingsUpdateSchema = StoreSettingsSchema.partial();
-export type StoreSettingsUpdate = z.infer<typeof StoreSettingsUpdateSchema>;
-
-// Usage tracking interface
-export interface StoreSettingsUsage {
-  taxCalculation: boolean;
-  orderMinimums: boolean;
-  cateringMinimums: boolean;
-  customerNotifications: boolean;
-  shippingLabels: boolean;
-}
-
-// Store settings with usage metadata
-export interface StoreSettingsWithUsage extends StoreSettings {
-  usage: StoreSettingsUsage;
-  lastUpdated: Date;
-  updatedBy?: string;
-}
-
-// Store business hours
-export const BusinessHoursSchema = z.object({
-  monday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  tuesday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  wednesday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  thursday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  friday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  saturday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
-  sunday: z.object({
-    isOpen: z.boolean(),
-    openTime: z.string().optional(),
-    closeTime: z.string().optional(),
-  }),
+/**
+ * Schema for updating store settings (excludes readonly fields)
+ */
+export const StoreSettingsUpdateSchema = StoreSettingsSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export type BusinessHours = z.infer<typeof BusinessHoursSchema>;
+export type StoreSettingsUpdate = z.infer<typeof StoreSettingsUpdateSchema>;
+
+/**
+ * Result type for settings operations
+ */
+export type SettingsResult<T = StoreSettings> = 
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+/**
+ * Default settings fallback values
+ */
+export const DEFAULT_STORE_SETTINGS: Omit<StoreSettings, 'id' | 'createdAt' | 'updatedAt'> = {
+  name: 'Destino SF',
+  address: null,
+  city: null,
+  state: null,
+  zipCode: null,
+  phone: null,
+  email: null,
+  taxRate: 8.25, // 8.25% San Francisco tax rate
+  minOrderAmount: 0,
+  cateringMinimumAmount: 0,
+  minAdvanceHours: 2,
+  maxDaysInAdvance: 30,
+  isStoreOpen: true,
+  temporaryClosureMsg: null,
+};
+
+/**
+ * Settings fields that affect order processing
+ */
+export const ORDER_AFFECTING_FIELDS = [
+  'taxRate',
+  'minOrderAmount',
+  'cateringMinimumAmount',
+  'isStoreOpen',
+  'temporaryClosureMsg',
+] as const;
+
+export type OrderAffectingField = typeof ORDER_AFFECTING_FIELDS[number];
