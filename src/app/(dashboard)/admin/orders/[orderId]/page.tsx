@@ -259,7 +259,57 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
     if (!order) {
       console.error(`Order not found for ID: ${orderId}`);
-      notFound(); // Trigger 404 if order doesn't exist
+      
+      // Return custom error page instead of generic 404
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              
+              <h1 className="text-2xl font-bold text-red-900 mb-2">Order Not Found</h1>
+              <p className="text-red-700 mb-4">
+                The order with ID <code className="bg-red-100 px-2 py-1 rounded font-mono text-sm">{orderId}</code> could not be found.
+              </p>
+              
+              <div className="text-sm text-red-600 mb-6">
+                <p>This could happen if:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>The order was deleted or archived</li>
+                  <li>This is a catering order (check the catering orders section)</li>
+                  <li>The order ID was mistyped or is invalid</li>
+                  <li>There was a temporary database issue</li>
+                </ul>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/admin/orders"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  View All Orders
+                </Link>
+                <Link
+                  href="/admin/catering"
+                  className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Check Catering Orders
+                </Link>
+                <button
+                  onClick={() => window.history.back()}
+                  className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Go Back
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
     }
 
     // Log key info about the raw order

@@ -70,16 +70,41 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   console.log(`🔍 [WEBHOOK-DEBUG] Checking for existing catering order with Square ID: ${data.id}`);
   
   let cateringOrder = null;
-  try {
-    // Direct query without safeQuery wrapper to avoid potential issues
-    console.log(`🔍 [WEBHOOK-DEBUG] Attempting direct catering order query...`);
-    cateringOrder = await prisma.cateringOrder.findUnique({
-      where: { squareOrderId: data.id },
-      select: { id: true, name: true, email: true, phone: true },
-    });
-    console.log(`🔍 [WEBHOOK-DEBUG] Catering order query result:`, cateringOrder);
-  } catch (error) {
-    console.error(`❌ [WEBHOOK-DEBUG] Error checking for catering order:`, error);
+  
+  // Add retry logic to handle race conditions with catering order creation
+  const maxRetries = 3;
+  const retryDelay = 1000; // 1 second
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔍 [WEBHOOK-DEBUG] Attempting catering order query (attempt ${attempt}/${maxRetries})...`);
+      cateringOrder = await prisma.cateringOrder.findUnique({
+        where: { squareOrderId: data.id },
+        select: { id: true, name: true, email: true, phone: true },
+      });
+      console.log(`🔍 [WEBHOOK-DEBUG] Catering order query result (attempt ${attempt}):`, cateringOrder);
+      
+      if (cateringOrder) {
+        // Found catering order, break out of retry loop
+        break;
+      }
+      
+      // If not found and not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        console.log(`⏳ [WEBHOOK-DEBUG] Catering order not found, waiting ${retryDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    } catch (error) {
+      console.error(`❌ [WEBHOOK-DEBUG] Error checking for catering order (attempt ${attempt}):`, error);
+      
+      // If this was the last attempt, proceed with error logged
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      // Wait before retrying even on error
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
 
   if (cateringOrder) {
@@ -89,7 +114,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
     return;
   }
   
-  console.log(`⚠️ [WEBHOOK-DEBUG] NO CATERING ORDER FOUND - PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
+  console.log(`⚠️ [WEBHOOK-DEBUG] NO CATERING ORDER FOUND after ${maxRetries} attempts - PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
 
   // Enhanced duplicate check with event ID tracking using safe query
   const existingOrder = await safeQuery(() =>
