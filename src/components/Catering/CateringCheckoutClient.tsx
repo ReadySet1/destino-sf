@@ -278,7 +278,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; nameLabel?: string; notes?: string } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
@@ -306,6 +306,26 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }
         // For synthetic items (lunch packets, service add-ons, etc.), leave both as null
 
+        // Combine customizations from cart item and metadata
+        const customizations = {
+          ...(item.customizations || {}),
+          ...(metadata.nameLabel && { nameLabel: metadata.nameLabel }),
+          ...(metadata.notes && { notes: metadata.notes })
+        };
+
+        // Create formatted notes that include all customizations
+        let formattedNotes = null;
+        if (customizations.nameLabel || customizations.notes) {
+          const notesParts = [];
+          if (customizations.nameLabel) {
+            notesParts.push(`Name Label: ${customizations.nameLabel}`);
+          }
+          if (customizations.notes) {
+            notesParts.push(`Special Instructions: ${customizations.notes}`);
+          }
+          formattedNotes = notesParts.join(' | ');
+        }
+
         return {
           itemType: metadata.type || 'item',
           itemId: itemId,
@@ -314,7 +334,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           quantity: item.quantity,
           pricePerUnit,
           totalPrice,
-          notes: null,
+          notes: formattedNotes,
         };
       });
 
