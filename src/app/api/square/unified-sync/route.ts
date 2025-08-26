@@ -19,6 +19,11 @@ import { cachedSearchCatalogObjects } from '@/lib/square/api-cache';
 import { prisma } from '@/lib/db';
 import { archiveRemovedSquareProducts } from '@/lib/square/archive-handler';
 import type { SyncVerificationResult } from '@/types/square-sync';
+import pLimit from 'p-limit';
+
+// Explicit Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes
 
 // Request validation schema
 const UnifiedSyncRequestSchema = z.object({
@@ -322,31 +327,36 @@ async function detectSuspiciousCategories(allValidSquareIds: string[]): Promise<
 
 /**
  * Get ALL active Square product IDs from ALL categories to prevent false archiving
- * Now uses parallel fetching for improved performance
+ * Now uses controlled concurrency with p-limit for optimized performance
  */
 async function getAllActiveSquareProductIds(): Promise<string[]> {
   const allSquareIds: string[] = [];
   
   try {
-    logger.info('🔍 Fetching ALL Square product IDs for archive verification (parallel)...');
+    logger.info('🔍 Fetching ALL Square product IDs for archive verification (controlled concurrency)...');
     
     // Get ALL categories (both CATERING and CORE PRODUCTS)
     const allCategories = Object.entries(LEGACY_CATEGORY_MAPPINGS);
     
-    // Create promises for parallel execution
-    const fetchPromises = allCategories.map(async ([squareId, categoryName]) => {
-      try {
-        const items = await fetchSquareItemsForCategory(squareId, categoryName, true); // true = use cache
-        const categoryIds = items.map(item => item.id);
-        logger.info(`✅ Category "${categoryName}": ${categoryIds.length} items`);
-        return { success: true, categoryName, ids: categoryIds };
-      } catch (error) {
-        logger.error(`❌ Failed to fetch items for category "${categoryName}" (${squareId}):`, error);
-        return { success: false, categoryName, ids: [], error };
-      }
-    });
+    // Create concurrency limiter - process 5 categories at a time
+    const limit = pLimit(5);
     
-    // Execute all fetches in parallel
+    // Create promises for controlled parallel execution
+    const fetchPromises = allCategories.map(([squareId, categoryName]) => 
+      limit(async () => {
+        try {
+          const items = await fetchSquareItemsForCategory(squareId, categoryName, true); // true = use cache
+          const categoryIds = items.map(item => item.id);
+          logger.info(`✅ Category "${categoryName}": ${categoryIds.length} items`);
+          return { success: true, categoryName, ids: categoryIds };
+        } catch (error) {
+          logger.error(`❌ Failed to fetch items for category "${categoryName}" (${squareId}):`, error);
+          return { success: false, categoryName, ids: [], error };
+        }
+      })
+    );
+    
+    // Execute all fetches with controlled concurrency
     const results = await Promise.all(fetchPromises);
     
     // Collect all IDs from successful fetches
@@ -813,18 +823,36 @@ async function batchSyncToProducts(
         }
       }
     } else {
-      // ALL OTHER CATEGORIES: Individual products (existing logic)
-      logger.info(`📦 Processing regular category "${items[0]?.categoryName}" as individual products`);
+      // ALL OTHER CATEGORIES: Bulk optimized processing
+      logger.info(`📦 Processing regular category "${items[0]?.categoryName}" with bulk operations`);
       
-      for (const item of items) {
-        try {
-          const existingProduct = await prisma.product.findFirst({
-            where: { squareId: item.id }
-          });
-          const isUpdate = !!existingProduct;
-          
-          // Check for duplicates if it's a new item
-          if (!isUpdate) {
+      try {
+        // STEP 1: Fetch all existing products in one query
+        const squareIds = items.map(item => item.id);
+        const existingProducts = await prisma.product.findMany({
+          where: { squareId: { in: squareIds } },
+          include: { variants: true }
+        });
+        
+        // Create lookup map for performance
+        const existingMap = new Map(existingProducts.map(p => [p.squareId, p]));
+        logger.info(`📊 Found ${existingProducts.length} existing products out of ${items.length} items`);
+        
+        // STEP 2: Separate creates and updates
+        const itemsToCreate: SquareItem[] = [];
+        const itemsToUpdate: SquareItem[] = [];
+        
+        for (const item of items) {
+          const existingProduct = existingMap.get(item.id);
+          if (existingProduct) {
+            if (forceUpdate) {
+              itemsToUpdate.push(item);
+            } else {
+              syncLogger.logItemProcessed(item.id, item.name, 'duplicate', 'Product already exists');
+              skippedCount++;
+            }
+          } else {
+            // Check for duplicates by name for new items
             const { isDuplicate, existingItem } = await CateringDuplicateDetector.checkForDuplicate({
               name: item.name,
               squareProductId: item.id,
@@ -833,79 +861,137 @@ async function batchSyncToProducts(
             if (isDuplicate && existingItem) {
               syncLogger.logItemProcessed(item.id, item.name, 'duplicate', `Duplicate of existing item: ${existingItem.name}`);
               skippedCount++;
-              continue;
+            } else {
+              itemsToCreate.push(item);
             }
           }
+        }
+        
+        logger.info(`📋 Bulk operation plan: ${itemsToCreate.length} creates, ${itemsToUpdate.length} updates`);
+        
+        // Get or create category (shared for all items in this batch)
+        const category = await getOrCreateCategory(items[0].categoryId, items[0].categoryName);
+        
+        // STEP 3: Bulk create new products
+        if (itemsToCreate.length > 0) {
+          logger.info(`🚀 Bulk creating ${itemsToCreate.length} new products...`);
           
-          // Get or create category
-          const category = await getOrCreateCategory(item.categoryId, item.categoryName);
-          
-          // Generate unique slug
-          const uniqueSlug = await generateUniqueSlug(item.name, item.id, existingProduct?.slug || undefined);
-          
-          const productData = {
-            name: item.name,
-            description: item.description || '',
-            price: item.price,
-            squareId: item.id,
-            category: { connect: { id: category.id } },
-            active: true,
-            images: item.imageUrl ? [item.imageUrl] : [],
-            slug: uniqueSlug,
-          };
-          
-          let baseProduct;
-          if (isUpdate) {
-            baseProduct = await prisma.product.update({
-              where: { id: existingProduct.id },
-              data: productData,
-              include: { variants: true }
+          // Prepare data for bulk create
+          const createData = [];
+          for (const item of itemsToCreate) {
+            const uniqueSlug = await generateUniqueSlug(item.name, item.id);
+            createData.push({
+              squareId: item.id,
+              name: item.name,
+              slug: uniqueSlug,
+              description: item.description || '',
+              price: item.price,
+              images: item.imageUrl ? [item.imageUrl] : [],
+              categoryId: category.id,
+              featured: false,
+              active: true,
             });
-            syncLogger.logItemSynced(item.id, item.name, 'Updated individual product');
-          } else {
-            baseProduct = await prisma.product.create({
-              data: productData,
-              include: { variants: true }
-            });
-            syncLogger.logItemSynced(item.id, item.name, 'Created individual product');
           }
           
-          // FALLBACK: If this item has multiple variations (like Share Platters), create variants
-          if (item.variations && item.variations.length > 1) {
-            logger.info(`🔧 FALLBACK: Creating ${item.variations.length} variants for ${item.name} in regular processing:`, {
-              productId: baseProduct.id,
-              variations: item.variations
-            });
-            
-            // Clear existing variants first
-            await prisma.variant.deleteMany({
-              where: { productId: baseProduct.id }
-            });
-            
-            // Create variants for each variation
-            for (const variation of item.variations) {
-              logger.info(`🔨 FALLBACK: Creating variant: ${variation.name} with price $${variation.price}`);
+          // Bulk create all products
+          await prisma.product.createMany({
+            data: createData,
+            skipDuplicates: true
+          });
+          
+          // Log success for each created item
+          for (const item of itemsToCreate) {
+            syncLogger.logItemSynced(item.id, item.name, 'Bulk created product');
+            syncedCount++;
+          }
+          
+          logger.info(`✅ Bulk created ${itemsToCreate.length} products successfully`);
+        }
+        
+        // STEP 4: Bulk update existing products
+        if (itemsToUpdate.length > 0) {
+          logger.info(`🔄 Bulk updating ${itemsToUpdate.length} existing products...`);
+          
+          // Process updates in a transaction for atomicity
+          await prisma.$transaction(
+            itemsToUpdate.map(item => {
+              const existingProduct = existingMap.get(item.id)!;
+              const uniqueSlug = existingProduct.slug || item.name.toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim();
               
-              const createdVariant = await prisma.variant.create({
+              return prisma.product.update({
+                where: { id: existingProduct.id },
                 data: {
-                  productId: baseProduct.id,
-                  squareVariantId: variation.id,
-                  name: variation.name,
-                  price: variation.price || item.price,
+                  name: item.name,
+                  slug: uniqueSlug,
+                  description: item.description || '',
+                  price: item.price,
+                  images: item.imageUrl ? [item.imageUrl] : [],
+                  categoryId: category.id,
+                  active: true,
+                  updatedAt: new Date()
                 }
               });
-              
-              logger.info(`✅ FALLBACK: Successfully created variant "${variation.name}": $${variation.price} (DB ID: ${createdVariant.id})`);
-            }
+            })
+          );
+          
+          // Log success for each updated item
+          for (const item of itemsToUpdate) {
+            syncLogger.logItemSynced(item.id, item.name, 'Bulk updated product');
+            syncedCount++;
           }
           
-          syncedCount++;
-          
-        } catch (error) {
-          errorCount++;
-          logger.error(`❌ Error processing item ${item.name}:`, error);
-          syncLogger.logError(item.name, error as Error);
+          logger.info(`✅ Bulk updated ${itemsToUpdate.length} products successfully`);
         }
+        
+        // Handle variants for items with multiple variations (optimized)
+        const itemsWithVariations = [...itemsToCreate, ...itemsToUpdate].filter(item => 
+          item.variations && item.variations.length > 1
+        );
+        
+        if (itemsWithVariations.length > 0) {
+          logger.info(`🔧 Processing variants for ${itemsWithVariations.length} items with multiple variations...`);
+          
+          // Get the created/updated products with their IDs
+          const processedProducts = await prisma.product.findMany({
+            where: { squareId: { in: itemsWithVariations.map(item => item.id) } },
+            select: { id: true, squareId: true, name: true }
+          });
+          
+          const productMap = new Map(processedProducts.map(p => [p.squareId, p]));
+          
+          for (const item of itemsWithVariations) {
+            const product = productMap.get(item.id);
+            if (product) {
+              // Clear existing variants
+              await prisma.variant.deleteMany({
+                where: { productId: product.id }
+              });
+              
+              // Bulk create variants
+              const variantData = item.variations.map(variation => ({
+                productId: product.id,
+                squareVariantId: variation.id,
+                name: variation.name,
+                price: variation.price || item.price,
+              }));
+              
+              await prisma.variant.createMany({
+                data: variantData,
+                skipDuplicates: true
+              });
+              
+              logger.info(`✅ Created ${item.variations.length} variants for "${item.name}"`);
+            }
+          }
+        }
+        
+      } catch (error) {
+        logger.error(`❌ Error in bulk processing:`, error);
+        errorCount++;
       }
     }
     

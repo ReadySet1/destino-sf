@@ -5,6 +5,10 @@ import { syncProductsProduction } from '@/lib/square/production-sync';
 import { logger } from '@/utils/logger';
 import { prisma } from '@/lib/db';
 
+// Explicit Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes
+
 export async function POST(request: Request) {
   try {
     logger.info('🚀 Square sync API triggered via POST');
