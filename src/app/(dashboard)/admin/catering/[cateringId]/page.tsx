@@ -270,14 +270,6 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                       <div>
                         <p className="text-sm text-gray-600">Delivery Address</p>
                         <p className="text-gray-900">{parseDeliveryInfo(cateringOrder.deliveryAddress).address}</p>
-                        {/* Debug info - remove this after fixing */}
-                        <details className="mt-2 text-xs text-gray-500">
-                          <summary>Debug Info (will be removed)</summary>
-                          <pre className="mt-1 bg-gray-100 p-2 rounded text-xs overflow-auto">
-                            Type: {typeof cateringOrder.deliveryAddress}{'\n'}
-                            Raw: {JSON.stringify(cateringOrder.deliveryAddress, null, 2)}
-                          </pre>
-                        </details>
                       </div>
                     </div>
                   )}
@@ -353,6 +345,13 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                       </Badge>
                       <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
                     </div>
+                    {/* Build Your Own Box Customizations */}
+                    {item.notes && (
+                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                        <div className="text-xs font-medium text-blue-800 mb-1">Customizations:</div>
+                        <div className="text-xs text-blue-700">{item.notes}</div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Pricing */}
