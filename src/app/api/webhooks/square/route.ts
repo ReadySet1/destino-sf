@@ -533,27 +533,8 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
           updateData.status = OrderStatus.PROCESSING;
         }
 
-        // TRIGGER SHIPPO LABEL CREATION for national shipping orders
-        if (
-          currentOrder.fulfillmentType === 'nationwide_shipping' && 
-          currentOrder.shippingRateId
-        ) {
-          console.log(`📦 FALLBACK: Triggering label purchase for shipping order ${currentOrder.id}`);
-          
-          // Use setTimeout to trigger label creation after the database update
-          setTimeout(async () => {
-            try {
-              const labelResult = await purchaseShippingLabel(currentOrder.id, currentOrder.shippingRateId!);
-              if (labelResult.success) {
-                console.log(`✅ FALLBACK: Successfully purchased label for order ${currentOrder.id}. Tracking: ${labelResult.trackingNumber}`);
-              } else {
-                console.error(`❌ FALLBACK: Failed to purchase label for order ${currentOrder.id}: ${labelResult.error}`);
-              }
-            } catch (labelError: any) {
-              console.error(`❌ FALLBACK: Error purchasing label for order ${currentOrder.id}:`, labelError);
-            }
-          }, 1000); // Wait 1 second for database update to complete
-        }
+        // Label creation is now handled ONLY by payment.updated webhook to prevent race conditions
+        // Removed duplicate trigger from order.updated to eliminate database lock contention
       }
     }
   }
@@ -1149,49 +1130,9 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       }
     }
 
-    // --- Purchase Shipping Label if applicable ---
-    if (
-      updatedPaymentStatus === 'PAID' && // Payment just completed
-      order.fulfillmentType === 'nationwide_shipping' && // It's a shipping order
-      order.shippingRateId // We have a Shippo rate ID
-    ) {
-      console.log(
-        `Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
-      );
-      try {
-        const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
-        if (labelResult.success) {
-          console.log(
-            `Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`
-          );
-        } else {
-          console.error(
-            `Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`
-          );
-          // Note: The purchaseShippingLabel action already attempts to update order notes on failure.
-        }
-      } catch (labelError: any) {
-        console.error(
-          `Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`
-        );
-        // Attempt to update notes here as a fallback
-        await prisma.order
-          .update({
-            where: { id: order.id },
-            data: { notes: `Label purchase action failed: ${labelError?.message}` },
-          })
-          .catch(e => console.error('Failed to update order notes on label action catch:', e));
-      }
-    } else if (
-      updatedPaymentStatus === 'PAID' &&
-      order.fulfillmentType === 'nationwide_shipping' &&
-      !order.shippingRateId
-    ) {
-      console.warn(
-        `Order ${order.id} is paid and shipping, but missing shippingRateId. Cannot purchase label automatically.`
-      );
-    }
-    // --- End Purchase Shipping Label ---
+    // --- Purchase Shipping Label --- 
+    // Label creation is now handled ONLY by lib/webhook-handlers.ts to prevent race conditions
+    // This ensures a single point of truth for automatic label generation
   } catch (error: any) {
     console.error(`❌ CRITICAL ERROR in handlePaymentUpdated for payment ${squarePaymentId} (Event: ${payload.event_id}):`, error);
     

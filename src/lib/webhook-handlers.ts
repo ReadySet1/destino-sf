@@ -552,30 +552,32 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       `Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`
     );
 
-    // Purchase shipping label if applicable
+    // Purchase shipping label if applicable (PRIMARY trigger - no duplicates)
     if (
       updatedPaymentStatus === 'PAID' &&
       order.fulfillmentType === 'nationwide_shipping' &&
       order.shippingRateId
     ) {
       console.log(
-        `Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
+        `🔄 Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
       );
       try {
         const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
         if (labelResult.success) {
           console.log(
-            `Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`
+            `✅ Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`
           );
         } else {
           console.error(
-            `Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`
+            `❌ Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`
           );
+          // Note: Don't throw here to avoid webhook retry loops
         }
       } catch (labelError: any) {
         console.error(
-          `Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`
+          `❌ Unexpected error calling purchaseShippingLabel for order ${order.id}: ${labelError?.message}`
         );
+        // Note: Don't throw here to avoid webhook retry loops
       }
     }
   } catch (error: any) {

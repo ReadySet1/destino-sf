@@ -71,7 +71,18 @@ export function ShippingLabelButton({
         // Refresh the page to show updated data
         window.location.reload();
       } else {
-        toast.error(`Failed to create label: ${result.error}`);
+        // Handle specific error cases
+        if (result.errorCode === 'CONCURRENT_PROCESSING') {
+          toast.warning(
+            'Label creation in progress',
+            { 
+              description: 'Please wait a moment and try again if the label doesn\'t appear automatically.',
+              duration: 8000
+            }
+          );
+        } else {
+          toast.error(`Failed to create label: ${result.error}`);
+        }
       }
     } catch (error) {
       console.error('Error creating label:', error);
@@ -243,6 +254,12 @@ export function ShippingLabelButton({
           {hasRetryIssues && (
             <div className="text-xs text-gray-500">
               Previous attempts failed. Try &quot;Refresh &amp; Retry&quot; to get fresh shipping rates.
+            </div>
+          )}
+          
+          {!hasRetryIssues && paymentStatus === 'PAID' && shippingRateId && (
+            <div className="text-xs text-gray-500">
+              Note: Labels are created automatically when payment is confirmed. Manual creation is for backup only.
             </div>
           )}
         </div>

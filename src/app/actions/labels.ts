@@ -71,7 +71,7 @@ export async function purchaseShippingLabel(
 }
 
 /**
- * Attempt label purchase with retry logic
+ * Attempt label purchase with optimized transaction handling
  */
 async function attemptLabelPurchase(
   order: any,
@@ -83,18 +83,54 @@ async function attemptLabelPurchase(
   try {
     console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
     
+    // Check if label creation is already in progress or completed
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { 
+        id: true, 
+        trackingNumber: true, 
+        labelUrl: true,
+        updatedAt: true,
+        status: true 
+      }
+    });
+
+    if (!currentOrder) {
+      throw new Error(`Order not found: ${orderId}`);
+    }
+
+    // Prevent concurrent operations - if already has label
+    if (currentOrder.trackingNumber) {
+      return {
+        success: true,
+        labelUrl: currentOrder.labelUrl || undefined,
+        trackingNumber: currentOrder.trackingNumber,
+        retryAttempt: retryAttempt,
+      };
+    }
+
+    // Prevent concurrent operations - if updated very recently (within 2 minutes)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    if (currentOrder.updatedAt > twoMinutesAgo && currentOrder.status === 'PROCESSING') {
+      console.log(`⏳ Order ${orderId} was recently updated, skipping to prevent concurrent processing`);
+      return {
+        success: false,
+        error: 'Label creation already in progress. Please wait before retrying.',
+        errorCode: 'CONCURRENT_PROCESSING',
+        retryAttempt: retryAttempt,
+      };
+    }
+    
     // Get Shippo client
     const shippo = ShippoClientManager.getInstance();
     
-    // Update retry tracking
-    await updateRetryTracking(orderId, retryAttempt);
-
     // Validate rate ID before attempting transaction
     if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
       throw new Error(`Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`);
     }
 
-    // Attempt transaction creation
+    // Call Shippo API FIRST (no database lock held during external API call)
+    console.log(`📦 Creating Shippo transaction for Order ID: ${orderId}`);
     const transaction = await shippo.transactions.create({
       rate: shippoRateId,
       labelFileType: 'PDF_4x6',
@@ -112,7 +148,7 @@ async function attemptLabelPurchase(
     if (transaction.status === 'SUCCESS' && transaction.labelUrl && transaction.trackingNumber) {
       console.log(`✅ Label purchased successfully for Order ID: ${orderId}`);
 
-      // Update order with success
+      // QUICK database update (minimal lock time - external API call already completed)
       await prisma.order.update({
         where: { id: orderId },
         data: {
@@ -138,10 +174,24 @@ async function attemptLabelPurchase(
         retryAttempt: retryAttempt + 1,
       };
     } else {
-      // Handle transaction failure
+      // Handle transaction failure - update retry count without throwing
       const errorMessage = transaction.messages?.map((m: any) => m.text).join(', ') || 
                           `Transaction failed with status: ${transaction.status}`;
-      throw new Error(errorMessage);
+      
+      // Update retry tracking safely
+      try {
+        await updateRetryTracking(orderId, retryAttempt);
+      } catch (updateError) {
+        console.error(`Failed to update retry tracking for order ${orderId}:`, updateError);
+      }
+      
+      console.error(`❌ Label creation failed for Order ID: ${orderId}: ${errorMessage}`);
+      return {
+        success: false,
+        error: errorMessage,
+        errorCode: 'SHIPPO_TRANSACTION_FAILED',
+        retryAttempt: retryAttempt + 1,
+      };
     }
   } catch (error: any) {
     console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
