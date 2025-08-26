@@ -104,9 +104,15 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
   }
 
   const handleAddToCart = () => {
+    // Create proper item name that includes both product name and variation
+    // If there are multiple variations, include the variation name, otherwise just use the product name
+    const itemName = sortedVariations.length > 1 
+      ? `${toTitleCase(item.name)} - ${toTitleCase(selectedVariation.name)}`
+      : toTitleCase(item.name);
+
     const cartItem = {
       id: selectedVariation.id,
-      name: toTitleCase(selectedVariation.name),
+      name: itemName,
       price: Number(selectedVariation.price || item.price),
       quantity: 1,
       image: item.imageUrl || '/images/catering/default-item.jpg',
@@ -115,12 +121,13 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
         itemId: item.id,
         variationId: selectedVariation.id,
         variationName: selectedVariation.name,
+        productName: item.name,
         servingSize: item.servingSize,
       }),
     };
 
     addItem(cartItem);
-    toast.success(`${toTitleCase(cartItem.name)} added to your catering cart`);
+    toast.success(`${itemName} added to your catering cart`);
   };
 
   return (

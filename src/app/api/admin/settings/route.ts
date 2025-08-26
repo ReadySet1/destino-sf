@@ -2,24 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
+import { getStoreSettings, updateStoreSettings } from '@/lib/store-settings';
 
 // Schema for validation
 const settingsSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Store name is required'),
-  address: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-  zipCode: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  email: z.string().email('Invalid email format').optional().nullable(),
+  address: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  zipCode: z.string().nullable(),
+  phone: z.string().nullable(),
+  email: z.string().email('Invalid email format').nullable(),
   taxRate: z.number().min(0).max(100),
   minAdvanceHours: z.number().int().min(0),
   minOrderAmount: z.number().min(0),
   cateringMinimumAmount: z.number().min(0),
   maxDaysInAdvance: z.number().int().min(1),
   isStoreOpen: z.boolean(),
-  temporaryClosureMsg: z.string().optional().nullable(),
+  temporaryClosureMsg: z.string().nullable(),
 });
 
 type SettingsData = z.infer<typeof settingsSchema>;
@@ -52,25 +53,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch store settings and delivery zones
+    // Fetch store settings and delivery zones using the service
     const [storeSettings, deliveryZones] = await Promise.all([
-      prisma.storeSettings.findFirst({
-        orderBy: { createdAt: 'asc' },
-      }),
+      getStoreSettings(),
       prisma.cateringDeliveryZone.findMany({
         orderBy: { displayOrder: 'asc' },
       }),
     ]);
-
-    // Convert Decimal objects to numbers for client compatibility
-    const processedSettings = storeSettings
-      ? {
-          ...storeSettings,
-          taxRate: Number(storeSettings.taxRate),
-          minOrderAmount: Number(storeSettings.minOrderAmount),
-          cateringMinimumAmount: Number(storeSettings.cateringMinimumAmount),
-        }
-      : null;
 
     const processedZones = deliveryZones.map(zone => ({
       ...zone,
@@ -79,7 +68,7 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({
-      storeSettings: processedSettings,
+      storeSettings: storeSettings, // Already processed by the service
       deliveryZones: processedZones,
     });
   } catch (error) {
@@ -118,57 +107,34 @@ export async function POST(request: NextRequest) {
 
     const settings: SettingsData = body;
 
-    // Check if a settings record exists
-    const existingSettings = await prisma.storeSettings.findFirst();
+    // Use the store settings service to update settings
+    const updateResult = await updateStoreSettings({
+      name: settings.name,
+      address: settings.address,
+      city: settings.city,
+      state: settings.state,
+      zipCode: settings.zipCode,
+      phone: settings.phone,
+      email: settings.email,
+      taxRate: settings.taxRate,
+      minAdvanceHours: settings.minAdvanceHours,
+      minOrderAmount: settings.minOrderAmount,
+      cateringMinimumAmount: settings.cateringMinimumAmount,
+      maxDaysInAdvance: settings.maxDaysInAdvance,
+      isStoreOpen: settings.isStoreOpen,
+      temporaryClosureMsg: settings.isStoreOpen ? null : settings.temporaryClosureMsg,
+    });
 
-    let updatedSettings;
-
-    if (existingSettings) {
-      // Update existing settings
-      updatedSettings = await prisma.storeSettings.update({
-        where: { id: existingSettings.id },
-        data: {
-          name: settings.name,
-          address: settings.address,
-          city: settings.city,
-          state: settings.state,
-          zipCode: settings.zipCode,
-          phone: settings.phone,
-          email: settings.email,
-          taxRate: settings.taxRate,
-          minAdvanceHours: settings.minAdvanceHours,
-          minOrderAmount: settings.minOrderAmount,
-          cateringMinimumAmount: settings.cateringMinimumAmount,
-          maxDaysInAdvance: settings.maxDaysInAdvance,
-          isStoreOpen: settings.isStoreOpen,
-          temporaryClosureMsg: settings.isStoreOpen ? null : settings.temporaryClosureMsg,
-        },
-      });
-    } else {
-      // Create new settings
-      updatedSettings = await prisma.storeSettings.create({
-        data: {
-          name: settings.name,
-          address: settings.address,
-          city: settings.city,
-          state: settings.state,
-          zipCode: settings.zipCode,
-          phone: settings.phone,
-          email: settings.email,
-          taxRate: settings.taxRate,
-          minAdvanceHours: settings.minAdvanceHours,
-          minOrderAmount: settings.minOrderAmount,
-          cateringMinimumAmount: settings.cateringMinimumAmount,
-          maxDaysInAdvance: settings.maxDaysInAdvance,
-          isStoreOpen: settings.isStoreOpen,
-          temporaryClosureMsg: settings.isStoreOpen ? null : settings.temporaryClosureMsg,
-        },
-      });
+    if (!updateResult.success) {
+      return NextResponse.json(
+        { error: updateResult.error },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       message: 'Settings updated successfully',
-      settings: updatedSettings,
+      settings: updateResult.data,
     });
   } catch (error) {
     console.error('Error updating settings:', error);

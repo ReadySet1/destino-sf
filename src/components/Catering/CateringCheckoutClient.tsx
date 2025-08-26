@@ -30,7 +30,7 @@ import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
 import { getActiveDeliveryZones, type DeliveryAddress } from '@/types/catering';
-import { US_STATES } from '@/lib/constants/us-states';
+import { US_STATES, CA_ONLY_STATES } from '@/lib/constants/us-states';
 
 // Define the PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -106,6 +106,13 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       router.push('/catering');
     }
   }, [cateringItems.length, router]);
+
+  // Auto-select CA for local delivery
+  useEffect(() => {
+    if (fulfillmentMethod === 'local_delivery' && !deliveryAddress.state) {
+      setDeliveryAddress(prev => ({ ...prev, state: 'CA' }));
+    }
+  }, [fulfillmentMethod, deliveryAddress.state]);
 
   // Validate delivery zone minimum when address changes
   useEffect(() => {
@@ -230,7 +237,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         },
         items: cateringItems.map(item => {
                   // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
@@ -278,7 +285,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; nameLabel?: string; notes?: string } = {};
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; nameLabel?: string; notes?: string; productName?: string; variationName?: string } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
@@ -326,11 +333,24 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           formattedNotes = notesParts.join(' | ');
         }
 
+        // Ensure we have a proper item name, with fallbacks for edge cases
+        let itemName = item.name;
+        
+        // If the name is just a size/variation (like "Large") and we have product name in metadata, combine them
+        if (metadata.productName && (itemName === metadata.variationName || itemName?.toLowerCase().match(/^(small|medium|large|regular)$/))) {
+          itemName = metadata.variationName ? `${metadata.productName} - ${metadata.variationName}` : metadata.productName;
+        }
+        
+        // Additional fallback: if name is still just a variant name and we have more metadata
+        if (!itemName || itemName.toLowerCase().match(/^(small|medium|large|regular)$/)) {
+          itemName = metadata.name || metadata.productName || item.name || 'Unknown Item';
+        }
+
         return {
           itemType: metadata.type || 'item',
           itemId: itemId,
           packageId: packageId,
-          name: item.name,
+          name: itemName,
           quantity: item.quantity,
           pricePerUnit,
           totalPrice,
@@ -544,7 +564,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                               <SelectValue placeholder="Select state" />
                             </SelectTrigger>
                             <SelectContent>
-                              {US_STATES.map((state) => (
+                              {CA_ONLY_STATES.map((state) => (
                                 <SelectItem key={state.code} value={state.code}>
                                   {state.code} - {state.name}
                                 </SelectItem>
@@ -859,7 +879,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             <div className="space-y-4 mb-6">
               {cateringItems.map(item => {
                         // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string } = {};
+        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
