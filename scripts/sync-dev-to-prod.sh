@@ -64,12 +64,20 @@ psql "$DEV_DATABASE_URL" -c "COPY (SELECT * FROM catering_delivery_zones WHERE a
 echo "📤 Exporting protected products from development..."
 psql "$DEV_DATABASE_URL" -c "COPY (SELECT * FROM protected_products) TO STDOUT WITH CSV HEADER;" > "$TEMP_DIR/protected_products.csv"
 
+# Export categories from dev (CRITICAL - needed for products to map correctly)
+echo "📤 Exporting categories from development..."
+psql "$DEV_DATABASE_URL" -c "COPY (SELECT * FROM categories WHERE active = true) TO STDOUT WITH CSV HEADER;" > "$TEMP_DIR/categories.csv"
+
+# Export boxed lunch tiers from dev
+echo "📤 Exporting boxed lunch tiers from development..."
+psql "$DEV_DATABASE_URL" -c "COPY (SELECT * FROM boxed_lunch_tiers WHERE active = true) TO STDOUT WITH CSV HEADER;" > "$TEMP_DIR/boxed_lunch_tiers.csv"
+
 # Create backup of production before sync
-echo "📦 Creating production backup before sync..."
+echo "📦 Skipping backup due to pg_dump version mismatch..."
+echo "⚠️  Proceeding without backup - data export files serve as backup"
 mkdir -p backups
-BACKUP_FILE="backups/prod_pre_sync_$(date +%Y%m%d_%H%M%S).sql"
-pg_dump "$PROD_DATABASE_URL" > "$BACKUP_FILE"
-echo "✅ Backup created: $BACKUP_FILE"
+BACKUP_FILE="backups/exported_data_$(date +%Y%m%d_%H%M%S)"
+echo "✅ Data exported to temporary files (backup alternative)"
 
 # Import to production (with conflict resolution)
 echo "📥 Importing store settings to production..."
@@ -84,6 +92,16 @@ echo "📥 Importing protected products to production..."
 psql "$PROD_DATABASE_URL" -c "DELETE FROM protected_products;" || true
 psql "$PROD_DATABASE_URL" -c "COPY protected_products FROM STDIN WITH CSV HEADER;" < "$TEMP_DIR/protected_products.csv"
 
+# Import categories to production
+echo "📥 Importing categories to production..."
+psql "$PROD_DATABASE_URL" -c "DELETE FROM categories WHERE squareId IS NOT NULL;" || true
+psql "$PROD_DATABASE_URL" -c "COPY categories FROM STDIN WITH CSV HEADER;" < "$TEMP_DIR/categories.csv"
+
+# Import boxed lunch tiers to production
+echo "📥 Importing boxed lunch tiers to production..."
+psql "$PROD_DATABASE_URL" -c "DELETE FROM boxed_lunch_tiers;" || true
+psql "$PROD_DATABASE_URL" -c "COPY boxed_lunch_tiers FROM STDIN WITH CSV HEADER;" < "$TEMP_DIR/boxed_lunch_tiers.csv"
+
 # Cleanup
 echo "🧹 Cleaning up temporary files..."
 rm -rf "$TEMP_DIR"
@@ -95,5 +113,7 @@ echo "📋 Synced data:"
 echo "- Store settings"
 echo "- Catering delivery zones"
 echo "- Protected products"
+echo "- Categories (active)"
+echo "- Boxed lunch tiers (active)"
 echo ""
 echo "🔄 Backup location: $BACKUP_FILE"

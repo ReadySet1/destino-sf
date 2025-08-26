@@ -107,9 +107,33 @@ else
     echo "   ✅ Storage buckets configured"
 fi
 
+# Check catering categories
+echo ""
+echo "8. 📂 Checking catering categories..."
+CATERING_CATEGORIES=$(psql "$DATABASE_URL" -t -c "SELECT count(*) FROM categories WHERE name LIKE 'CATERING-%' AND active = true;")
+echo "   Catering categories: $CATERING_CATEGORIES"
+
+if [ "$CATERING_CATEGORIES" -eq 0 ]; then
+    echo "   ⚠️  No catering categories found"
+else
+    echo "   ✅ Catering categories exist"
+fi
+
+# Check boxed lunch tiers
+echo ""
+echo "9. 📦 Checking boxed lunch tiers..."
+TIER_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT count(*) FROM boxed_lunch_tiers WHERE active = true;")
+echo "   Active boxed lunch tiers: $TIER_COUNT"
+
+if [ "$TIER_COUNT" -eq 0 ]; then
+    echo "   ⚠️  No boxed lunch tiers found"
+else
+    echo "   ✅ Boxed lunch tiers exist"
+fi
+
 # Check migration status
 echo ""
-echo "8. 🔄 Checking migration status..."
+echo "10. 🔄 Checking migration status..."
 MIGRATION_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL;")
 echo "   Completed migrations: $MIGRATION_COUNT"
 
@@ -127,13 +151,15 @@ CHECKS_PASSED=0
 [ "$PROTECTED_COUNT" -gt 0 ] && ((CHECKS_PASSED++))
 [ "$RLS_COUNT" -gt 0 ] && ((CHECKS_PASSED++))
 [ "$BUCKET_COUNT" -eq 3 ] && ((CHECKS_PASSED++))
+[ "$CATERING_CATEGORIES" -gt 0 ] && ((CHECKS_PASSED++))
+[ "$TIER_COUNT" -gt 0 ] && ((CHECKS_PASSED++))
 
-echo "Checks passed: $CHECKS_PASSED/7"
+echo "Checks passed: $CHECKS_PASSED/9"
 
-if [ "$CHECKS_PASSED" -eq 7 ]; then
+if [ "$CHECKS_PASSED" -eq 9 ]; then
     echo "✅ All validation checks passed!"
     echo "🚀 Your production database is ready!"
-elif [ "$CHECKS_PASSED" -ge 5 ]; then
+elif [ "$CHECKS_PASSED" -ge 7 ]; then
     echo "⚠️  Most checks passed, but there are some warnings"
     echo "🔧 Review the warnings above and fix if necessary"
 else
