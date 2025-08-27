@@ -8,19 +8,44 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('🍽️ Fetching buffet products from database...');
     
-    // Fetch buffet products from the products table
+    // Optimized query: Get category IDs first to avoid complex JOIN
+    const categoryIds = await prisma.category.findMany({
+      where: {
+        name: {
+          in: ['CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES'],
+          mode: 'insensitive'
+        }
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    });
+
+    const categoryIdMap = new Map(categoryIds.map(cat => [cat.id, cat.name]));
+    const categoryIdList = categoryIds.map(cat => cat.id);
+
+    // Optimized main query using categoryId instead of JOIN
     const buffetItems = await prisma.product.findMany({
       where: {
         active: true,
-        category: {
-          name: {
-            in: ['CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES'],
-            mode: 'insensitive'
-          }
+        categoryId: {
+          in: categoryIdList
         }
       },
-      include: {
-        category: true,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        images: true,
+        dietaryPreferences: true,
+        active: true,
+        ordinal: true,
+        categoryId: true,
+        squareId: true,
+        createdAt: true,
+        updatedAt: true,
         variants: {
           select: {
             id: true,
@@ -30,17 +55,8 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: [
-        {
-          category: {
-            name: 'asc'  // Keep category ordering
-          }
-        },
-        {
-          ordinal: 'asc'  // Admin-controlled order within category
-        },
-        {
-          name: 'asc'     // Alphabetical fallback
-        }
+        { ordinal: 'asc' },     // Admin-controlled order
+        { name: 'asc' }         // Alphabetical fallback
       ]
     });
 
@@ -48,6 +64,8 @@ export async function GET(request: NextRequest) {
 
     // Transform to match the CateringItem interface
     const transformedBuffetItems = buffetItems.map(product => {
+      const categoryName = categoryIdMap.get(product.categoryId) || '';
+      
       // Parse dietary information from description or product metadata
       const description = product.description || '';
       const isGlutenFree = description.toLowerCase().includes('-gf') || 
@@ -63,7 +81,6 @@ export async function GET(request: NextRequest) {
 
       // Determine category type based on category name
       let categoryType = 'BUFFET_ITEM';
-      const categoryName = product.category.name;
       
       if (categoryName.includes('STARTERS')) {
         categoryType = 'BUFFET_STARTER';
@@ -85,7 +102,7 @@ export async function GET(request: NextRequest) {
         servingSize: 'per person',
         imageUrl: product.images?.[0] || null,
         isActive: product.active,
-        squareCategory: product.category.name,
+        squareCategory: categoryName,
         squareProductId: product.squareId,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,

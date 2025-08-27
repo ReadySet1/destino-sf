@@ -57,6 +57,25 @@ export async function POST(request: NextRequest) {
     if (requestData.id) {
       console.log(`🔄 Updating existing zone: ${requestData.id}`);
 
+      // Validate ID before proceeding with database operations
+      if (!requestData.id || requestData.id.trim() === '') {
+        console.log('❌ Invalid ID provided for update: empty or undefined');
+        return NextResponse.json(
+          { error: 'Missing ID for update' },
+          { status: 400 }
+        );
+      }
+
+      // Validate ID format (basic UUID check)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(requestData.id)) {
+        console.log(`❌ Invalid ID format for update: ${requestData.id}`);
+        return NextResponse.json(
+          { error: 'Invalid ID format for update' },
+          { status: 400 }
+        );
+      }
+
       const updatedZone = await prisma.regularDeliveryZone.update({
         where: { id: requestData.id },
         data: {

@@ -32,7 +32,9 @@ export function AuthHandler() {
           }
 
           if (data.user) {
-            console.log('Magic link authentication successful:', data.user.email);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Magic link authentication successful');
+            }
 
             // Clear the URL fragment
             window.history.replaceState(null, '', window.location.pathname);

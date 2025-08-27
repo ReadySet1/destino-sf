@@ -28,6 +28,7 @@ import {
   addDeliveryFeeLineItem 
 } from '@/lib/square/checkout-links';
 import { sendCateringOrderNotification } from '@/lib/email';
+import { isStoreOpen } from '@/lib/store-settings';
 import { env } from '@/env'; // Import the validated environment configuration
 
 /**
@@ -278,6 +279,15 @@ export async function saveContactInfo(data: {
   tempOrderId?: string;
 }): Promise<{ success: boolean; error?: string; orderId?: string }> {
   try {
+    // Check if store is open
+    const storeOpen = await isStoreOpen();
+    if (!storeOpen) {
+      return {
+        success: false,
+        error: 'Store is currently closed. Please check our hours or try again later.',
+      };
+    }
+
     // Create formatted delivery address string for backward compatibility
     const deliveryAddressString = data.deliveryAddress 
       ? `${data.deliveryAddress.street}${data.deliveryAddress.street2 ? `, ${data.deliveryAddress.street2}` : ''}, ${data.deliveryAddress.city}, ${data.deliveryAddress.state} ${data.deliveryAddress.postalCode}`
@@ -373,6 +383,15 @@ export async function createCateringOrderAndProcessPayment(data: {
   idempotencyKey?: string; // Add idempotency protection
 }): Promise<{ success: boolean; error?: string; orderId?: string; checkoutUrl?: string }> {
   try {
+    // Check if store is open
+    const storeOpen = await isStoreOpen();
+    if (!storeOpen) {
+      return {
+        success: false,
+        error: 'Store is currently closed. Please check our hours or try again later.',
+      };
+    }
+
     // Generate idempotency key if not provided (based on user, items hash, and timestamp)
     const idempotencyKey = data.idempotencyKey || generateIdempotencyKey(data);
     
@@ -732,19 +751,45 @@ export async function initializeBoxedLunchDataAction(): Promise<{
 // Missing functions needed by components (backward compatibility)
 const lastCallCache = new Map<string, number>();
 
-export async function saveCateringContactInfo(data: any) {
-  // Stub implementation - replaced by new catering order system
-  const cacheKey = `${data.name}-${data.email}-${data.phone}`;
-  const now = Date.now();
-  const lastCall = lastCallCache.get(cacheKey) || 0;
-  
-  // Only log if it's been more than 5 seconds since last call with same data
-  if (now - lastCall > 5000) {
-    console.log('saveCateringContactInfo called with:', data);
-    lastCallCache.set(cacheKey, now);
+export async function saveCateringContactInfo(data: {
+  name: string;
+  email: string;
+  phone: string;
+}): Promise<{ success: boolean; message: string; error?: string }> {
+  try {
+    const cacheKey = `${data.name}-${data.email}-${data.phone}`;
+    const now = Date.now();
+    const lastCall = lastCallCache.get(cacheKey) || 0;
+    
+    // Only save if it's been more than 5 seconds since last call with same data
+    if (now - lastCall > 5000) {
+      console.log('✅ Saving catering contact info:', data);
+      lastCallCache.set(cacheKey, now);
+      
+      // Save to ContactSubmission table as a catering contact for future follow-up
+      await db.contactSubmission.create({
+        data: {
+          name: data.name.trim(),
+          email: data.email.trim(),
+          subject: 'Catering Contact Info - Auto-saved',
+          message: `Contact info auto-saved during catering checkout. Phone: ${data.phone}`,
+          type: 'catering_contact',
+          status: 'auto_saved',
+        },
+      });
+      
+      return { success: true, message: 'Contact info saved successfully' };
+    }
+    
+    return { success: true, message: 'Contact info already saved recently' };
+  } catch (error) {
+    console.error('❌ Error saving catering contact info:', error);
+    return { 
+      success: false, 
+      message: 'Failed to save contact info',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
-  
-  return { success: true, message: 'Using new catering order system' };
 }
 
 export async function getCateringItems() {

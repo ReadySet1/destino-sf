@@ -7,18 +7,33 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('🥪 Fetching lunch products from database...');
 
+    // Optimized query: Get category IDs first to avoid JOIN in main query
+    const categoryIds = await prisma.category.findMany({
+      where: {
+        name: {
+          in: [
+            'CATERING- LUNCH, STARTERS',
+            'CATERING- LUNCH, ENTREES',
+            'CATERING- LUNCH, SIDES',
+            'CATERING- DESSERTS'
+          ]
+        }
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    });
+
+    const categoryIdMap = new Map(categoryIds.map(cat => [cat.id, cat.name]));
+    const categoryIdList = categoryIds.map(cat => cat.id);
+
+    // Optimized main query using categoryId instead of JOIN
     const products = await prisma.product.findMany({
       where: {
         active: true,
-        category: {
-          name: {
-            in: [
-              'CATERING- LUNCH, STARTERS',
-              'CATERING- LUNCH, ENTREES',
-              'CATERING- LUNCH, SIDES',
-              'CATERING- DESSERTS'
-            ]
-          }
+        categoryId: {
+          in: categoryIdList
         }
       },
       select: {
@@ -30,34 +45,32 @@ export async function GET(request: NextRequest) {
         dietaryPreferences: true,
         active: true,
         ordinal: true,
-        category: {
-          select: {
-            name: true
-          }
-        }
+        categoryId: true
       },
       orderBy: [
-        { category: { name: 'asc' } },  // Keep category ordering  
-        { ordinal: 'asc' },             // Admin-controlled order within category
-        { name: 'asc' }                 // Alphabetical fallback
+        { ordinal: 'asc' },     // Admin-controlled order
+        { name: 'asc' }         // Alphabetical fallback
       ]
     });
 
-    const transformedItems = products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: Number(product.price),
-      squareCategory: product.category?.name || '',
-      category: mapSquareCategoryToCateringCategory(product.category?.name || ''),
-      imageUrl: product.images?.[0] || null,
-      isVegetarian: product.dietaryPreferences?.includes('vegetarian') || false,
-      isVegan: product.dietaryPreferences?.includes('vegan') || false,
-      isGlutenFree: product.dietaryPreferences?.includes('gluten-free') || false,
-      servingSize: 'per serving', // Default serving size since it's not stored in the database
-      isActive: product.active,
-      ordinal: Number(product.ordinal || 0) // Include ordinal for proper sorting
-    }));
+    const transformedItems = products.map(product => {
+      const categoryName = categoryIdMap.get(product.categoryId) || '';
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: Number(product.price),
+        squareCategory: categoryName,
+        category: mapSquareCategoryToCateringCategory(categoryName),
+        imageUrl: product.images?.[0] || null,
+        isVegetarian: product.dietaryPreferences?.includes('vegetarian') || false,
+        isVegan: product.dietaryPreferences?.includes('vegan') || false,
+        isGlutenFree: product.dietaryPreferences?.includes('gluten-free') || false,
+        servingSize: 'per serving', // Default serving size since it's not stored in the database
+        isActive: product.active,
+        ordinal: Number(product.ordinal || 0) // Include ordinal for proper sorting
+      };
+    });
 
     // Sort items in the desired order: STARTERS, ENTREES, SIDES, DESSERTS
     const categoryOrder: Record<string, number> = {

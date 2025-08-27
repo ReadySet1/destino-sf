@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useFormStatus } from 'react-dom';
 import { signInAction, magicLinkSignInAction } from '@/app/actions/auth';
 import { SubmitButton } from '@/components/submit-button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,119 @@ type SignInMethod = 'password' | 'magic-link';
 
 interface SignInFormProps {
   redirectUrl?: string;
+}
+
+// Separate form components to properly use useFormStatus hook
+function PasswordForm({ redirectUrl }: { redirectUrl?: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <form action={signInAction} className="space-y-5">
+      {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">
+            Email
+          </Label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <Input
+              name="email"
+              id="email"
+              placeholder="you@example.com"
+              type="email"
+              autoComplete="email"
+              required
+              className="pl-10"
+              disabled={pending}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
+            <Link
+              className="text-xs text-primary hover:text-primary/90 underline underline-offset-4"
+              href="/forgot-password"
+            >
+              Forgot Password?
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <Input
+              type="password"
+              name="password"
+              id="password"
+              placeholder="Your password"
+              autoComplete="current-password"
+              required
+              className="pl-10"
+              disabled={pending}
+            />
+          </div>
+        </div>
+      </div>
+
+      <SubmitButton 
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+        pendingText="Signing in..."
+      >
+        Sign in
+      </SubmitButton>
+    </form>
+  );
+}
+
+function MagicLinkForm({ redirectUrl }: { redirectUrl?: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <form action={magicLinkSignInAction} className="space-y-5">
+      {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="magic-email" className="text-sm font-medium">
+            Email
+          </Label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <Input
+              name="email"
+              id="magic-email"
+              placeholder="you@example.com"
+              type="email"
+              autoComplete="email"
+              required
+              className="pl-10"
+              disabled={pending}
+            />
+          </div>
+          <p className="text-xs text-gray-500 flex items-center gap-1">
+            <Wand2 className="w-3 h-3" />
+            We&apos;ll send you a secure link to sign in without a password
+          </p>
+        </div>
+      </div>
+
+      <SubmitButton 
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+        pendingText="Sending..."
+      >
+        <Wand2 className="w-4 h-4 mr-2" />
+        Send Magic Link
+      </SubmitButton>
+    </form>
+  );
 }
 
 export function SignInForm({ redirectUrl }: SignInFormProps) {
@@ -84,101 +198,10 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
       </div>
 
       {/* Password form */}
-      {method === 'password' && (
-        <form action={signInAction} className="space-y-5">
-          {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <Input
-                  name="email"
-                  id="email"
-                  placeholder="you@example.com"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <Link
-                  className="text-xs text-primary hover:text-primary/90 underline underline-offset-4"
-                  href="/forgot-password"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <Input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="Your password"
-                  autoComplete="current-password"
-                  required
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          <SubmitButton className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11">
-            Sign in
-          </SubmitButton>
-        </form>
-      )}
+      {method === 'password' && <PasswordForm redirectUrl={redirectUrl} />}
 
       {/* Magic Link form */}
-      {method === 'magic-link' && (
-        <form action={magicLinkSignInAction} className="space-y-5">
-          {redirectUrl && <input type="hidden" name="redirect" value={redirectUrl} />}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="magic-email" className="text-sm font-medium">
-                Email
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <Input
-                  name="email"
-                  id="magic-email"
-                  placeholder="you@example.com"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="pl-10"
-                />
-              </div>
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Wand2 className="w-3 h-3" />
-                We&apos;ll send you a secure link to sign in without a password
-              </p>
-            </div>
-          </div>
-
-          <SubmitButton className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11">
-            <Wand2 className="w-4 h-4 mr-2" />
-            Send Magic Link
-          </SubmitButton>
-        </form>
-      )}
+      {method === 'magic-link' && <MagicLinkForm redirectUrl={redirectUrl} />}
     </div>
   );
 }

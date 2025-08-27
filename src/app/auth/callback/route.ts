@@ -93,7 +93,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/sign-in?error=User verification failed`);
   }
 
-  console.log('✅ User authenticated successfully:', user.email);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ User authenticated successfully');
+  }
 
   // If we have a redirect_to parameter, use it
   if (redirectTo) {

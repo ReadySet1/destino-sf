@@ -53,25 +53,113 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const [idempotencyKey, setIdempotencyKey] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('customer-info');
 
-  // Customer info state
-  const [customerInfo, setCustomerInfo] = useState({
-    name: userData?.name || '',
-    email: userData?.email || '',
-    phone: userData?.phone || '',
-    specialRequests: '',
-    eventDate: addDays(new Date(), 5),
+  // Customer info state with localStorage persistence
+  const [customerInfo, setCustomerInfo] = useState(() => {
+    // Try to load from localStorage first, then fallback to userData
+    if (typeof window !== 'undefined') {
+      const savedCustomerInfo = localStorage.getItem('cateringCustomerInfo');
+      if (savedCustomerInfo) {
+        try {
+          const parsed = JSON.parse(savedCustomerInfo);
+          return {
+            name: parsed.name || userData?.name || '',
+            email: parsed.email || userData?.email || '',
+            phone: parsed.phone || userData?.phone || '',
+            specialRequests: parsed.specialRequests || '',
+            eventDate: parsed.eventDate ? new Date(parsed.eventDate) : addDays(new Date(), 5),
+          };
+        } catch (error) {
+          console.error('Error parsing saved customer info:', error);
+        }
+      }
+    }
+    
+    // Fallback to default values
+    return {
+      name: userData?.name || '',
+      email: userData?.email || '',
+      phone: userData?.phone || '',
+      specialRequests: '',
+      eventDate: addDays(new Date(), 5),
+    };
   });
 
-  // Fulfillment info state
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
-  const [pickupDate, setPickupDate] = useState<Date>(addDays(new Date(), 5));
-  const [pickupTime, setPickupTime] = useState<string>('10:00 AM');
-  const [deliveryAddress, setDeliveryAddress] = useState({
-    street: '',
-    street2: '',
-    city: '',
-    state: '',
-    postalCode: '',
+  // Fulfillment info state with localStorage persistence
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(() => {
+    // Try to load fulfillment method from localStorage
+    if (typeof window !== 'undefined') {
+      const savedFulfillmentInfo = localStorage.getItem('cateringFulfillmentInfo');
+      if (savedFulfillmentInfo) {
+        try {
+          const parsed = JSON.parse(savedFulfillmentInfo);
+          return parsed.method || 'pickup';
+        } catch (error) {
+          console.error('Error parsing saved fulfillment info:', error);
+        }
+      }
+    }
+    return 'pickup';
+  });
+  
+  const [pickupDate, setPickupDate] = useState<Date>(() => {
+    // Try to load pickup date from localStorage
+    if (typeof window !== 'undefined') {
+      const savedFulfillmentInfo = localStorage.getItem('cateringFulfillmentInfo');
+      if (savedFulfillmentInfo) {
+        try {
+          const parsed = JSON.parse(savedFulfillmentInfo);
+          return parsed.pickupDate ? new Date(parsed.pickupDate) : addDays(new Date(), 5);
+        } catch (error) {
+          console.error('Error parsing saved fulfillment info:', error);
+        }
+      }
+    }
+    return addDays(new Date(), 5);
+  });
+  
+  const [pickupTime, setPickupTime] = useState<string>(() => {
+    // Try to load pickup time from localStorage
+    if (typeof window !== 'undefined') {
+      const savedFulfillmentInfo = localStorage.getItem('cateringFulfillmentInfo');
+      if (savedFulfillmentInfo) {
+        try {
+          const parsed = JSON.parse(savedFulfillmentInfo);
+          return parsed.pickupTime || '10:00 AM';
+        } catch (error) {
+          console.error('Error parsing saved fulfillment info:', error);
+        }
+      }
+    }
+    return '10:00 AM';
+  });
+  const [deliveryAddress, setDeliveryAddress] = useState(() => {
+    // Try to load delivery address from localStorage
+    if (typeof window !== 'undefined') {
+      const savedDeliveryAddress = localStorage.getItem('cateringDeliveryAddress');
+      if (savedDeliveryAddress) {
+        try {
+          const parsed = JSON.parse(savedDeliveryAddress);
+          return {
+            street: parsed.street || '',
+            street2: parsed.street2 || '',
+            city: parsed.city || '',
+            state: parsed.state || '',
+            postalCode: parsed.postalCode || '',
+          };
+        } catch (error) {
+          console.error('Error parsing saved delivery address:', error);
+        }
+      }
+    }
+    
+    // Fallback to default empty values
+    return {
+      street: '',
+      street2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+    };
   });
 
   // Payment method state
@@ -110,7 +198,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Auto-select CA for local delivery
   useEffect(() => {
     if (fulfillmentMethod === 'local_delivery' && !deliveryAddress.state) {
-      setDeliveryAddress(prev => ({ ...prev, state: 'CA' }));
+      updateDeliveryAddress(prev => ({ ...prev, state: 'CA' }));
     }
   }, [fulfillmentMethod, deliveryAddress.state]);
 
@@ -162,6 +250,104 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     return () => clearTimeout(timeoutId);
   }, [fulfillmentMethod, deliveryAddress.city, deliveryAddress.postalCode, cateringItems]);
 
+  // Function to save customer info to localStorage
+  const saveCustomerInfoToLocalStorage = (info: typeof customerInfo) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cateringCustomerInfo', JSON.stringify({
+          ...info,
+          eventDate: info.eventDate.toISOString(),
+        }));
+      } catch (error) {
+        console.error('Error saving customer info to localStorage:', error);
+      }
+    }
+  };
+
+  // Function to clear customer info from localStorage (when order is completed)
+  const clearCustomerInfoFromLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('cateringCustomerInfo');
+      } catch (error) {
+        console.error('Error clearing customer info from localStorage:', error);
+      }
+    }
+  };
+
+  // Function to save delivery address to localStorage
+  const saveDeliveryAddressToLocalStorage = (address: typeof deliveryAddress) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cateringDeliveryAddress', JSON.stringify(address));
+      } catch (error) {
+        console.error('Error saving delivery address to localStorage:', error);
+      }
+    }
+  };
+
+  // Function to clear delivery address from localStorage (when order is completed)
+  const clearDeliveryAddressFromLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('cateringDeliveryAddress');
+      } catch (error) {
+        console.error('Error clearing delivery address from localStorage:', error);
+      }
+    }
+  };
+
+  // Function to save fulfillment info to localStorage
+  const saveFulfillmentInfoToLocalStorage = (method: FulfillmentMethod, date: Date, time: string) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cateringFulfillmentInfo', JSON.stringify({
+          method,
+          pickupDate: date.toISOString(),
+          pickupTime: time,
+        }));
+      } catch (error) {
+        console.error('Error saving fulfillment info to localStorage:', error);
+      }
+    }
+  };
+
+  // Function to clear fulfillment info from localStorage
+  const clearFulfillmentInfoFromLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('cateringFulfillmentInfo');
+      } catch (error) {
+        console.error('Error clearing fulfillment info from localStorage:', error);
+      }
+    }
+  };
+
+  // Custom function to update delivery address and save to localStorage
+  const updateDeliveryAddress = (newAddress: typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)) => {
+    setDeliveryAddress(prevAddress => {
+      const updatedAddress = typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
+      saveDeliveryAddressToLocalStorage(updatedAddress);
+      return updatedAddress;
+    });
+  };
+
+  // Custom functions to update fulfillment info and save to localStorage
+  const updateFulfillmentMethod = (method: FulfillmentMethod) => {
+    setFulfillmentMethod(method);
+    saveFulfillmentInfoToLocalStorage(method, pickupDate, pickupTime);
+  };
+
+  const updatePickupDate = (date: Date) => {
+    setPickupDate(date);
+    saveFulfillmentInfoToLocalStorage(fulfillmentMethod, date, pickupTime);
+  };
+
+  const updatePickupTime = (time: string) => {
+    setPickupTime(time);
+    saveFulfillmentInfoToLocalStorage(fulfillmentMethod, pickupDate, time);
+  };
+
   // Calculate total with delivery fee
   const calculateTotal = () => {
     const subtotal = cateringItems.reduce((sum, item) => {
@@ -174,13 +360,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
   // Handle customer info form submission
   const handleCustomerInfoSubmit = (values: any) => {
-    setCustomerInfo({
+    const newCustomerInfo = {
       name: values.name,
       email: values.email,
       phone: values.phone,
       specialRequests: values.specialRequests || '',
       eventDate: values.eventDate,
-    });
+    };
+    
+    setCustomerInfo(newCustomerInfo);
+    saveCustomerInfoToLocalStorage(newCustomerInfo);
     setCurrentStep('fulfillment');
   };
 
@@ -395,6 +584,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       if (result.success) {
         // Clear the cart
         clearCart();
+        
+        // Clear all saved data from localStorage since order was successful
+        clearCustomerInfoFromLocalStorage();
+        clearDeliveryAddressFromLocalStorage();
+        clearFulfillmentInfoFromLocalStorage();
 
         // If there's a checkout URL (Square payment), redirect to it
         if (result.checkoutUrl) {
@@ -476,7 +670,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
             <FulfillmentSelector
               selectedMethod={fulfillmentMethod}
-              onSelectMethod={setFulfillmentMethod}
+              onSelectMethod={updateFulfillmentMethod}
             />
 
             <Card>
@@ -520,7 +714,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           placeholder="123 Main St"
                           value={deliveryAddress.street}
                           onChange={e =>
-                            setDeliveryAddress({ ...deliveryAddress, street: e.target.value })
+                            updateDeliveryAddress({ ...deliveryAddress, street: e.target.value })
                           }
                           required
                         />
@@ -533,7 +727,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           placeholder="Apt #42"
                           value={deliveryAddress.street2}
                           onChange={e =>
-                            setDeliveryAddress({ ...deliveryAddress, street2: e.target.value })
+                            updateDeliveryAddress({ ...deliveryAddress, street2: e.target.value })
                           }
                         />
                       </div>
@@ -546,7 +740,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                             placeholder="San Francisco"
                             value={deliveryAddress.city}
                             onChange={e =>
-                              setDeliveryAddress({ ...deliveryAddress, city: e.target.value })
+                              updateDeliveryAddress({ ...deliveryAddress, city: e.target.value })
                             }
                             required
                           />
@@ -557,7 +751,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           <Select
                             value={deliveryAddress.state}
                             onValueChange={(value) =>
-                              setDeliveryAddress({ ...deliveryAddress, state: value })
+                              updateDeliveryAddress({ ...deliveryAddress, state: value })
                             }
                           >
                             <SelectTrigger>
@@ -581,7 +775,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           placeholder="94110"
                           value={deliveryAddress.postalCode}
                           onChange={e =>
-                            setDeliveryAddress({ ...deliveryAddress, postalCode: e.target.value })
+                            updateDeliveryAddress({ ...deliveryAddress, postalCode: e.target.value })
                           }
                           required
                         />
@@ -681,7 +875,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                               <Calendar
                                 mode="single"
                                 selected={pickupDate}
-                                onSelect={date => date && setPickupDate(date)}
+                                onSelect={date => date && updatePickupDate(date)}
                                 initialFocus
                                 disabled={date => {
                                   const today = new Date();
@@ -697,7 +891,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
                       <div>
                         <Label htmlFor="deliveryTime">Delivery Time</Label>
-                        <Select value={pickupTime} onValueChange={setPickupTime}>
+                        <Select value={pickupTime} onValueChange={updatePickupTime}>
                           <SelectTrigger id="deliveryTime">
                             <SelectValue placeholder="Select a time" />
                           </SelectTrigger>

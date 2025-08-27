@@ -75,7 +75,7 @@ export class WebhookValidator {
   }
 
   /**
-   * Validate webhook signature for different providers
+   * Validate webhook signature for Square with enhanced security
    */
   async validateSquareSignature(
     signature: string,
@@ -83,8 +83,73 @@ export class WebhookValidator {
     timestamp: string,
     eventId: string
   ): Promise<boolean> {
-    // Square uses x-square-hmacsha256-signature header
-    return this.validateSignature(signature, body, timestamp, eventId);
+    try {
+      // Enhanced Square-specific validation
+      if (!signature || !body || !timestamp || !eventId) {
+        console.error('🔒 Square webhook validation failed: Missing required parameters');
+        return false;
+      }
+
+      // Validate signature format for Square (base64)
+      const base64Regex = /^[A-Za-z0-9+/]+=*$/;
+      if (!base64Regex.test(signature)) {
+        console.error('🔒 Square webhook validation failed: Invalid signature format');
+        return false;
+      }
+
+      // Call the general validation method
+      const isValid = await this.validateSignature(signature, body, timestamp, eventId);
+      
+      if (isValid) {
+        console.log(`✅ Square webhook signature validated for event: ${eventId}`);
+      } else {
+        console.error(`🔒 Square webhook signature validation failed for event: ${eventId}`);
+      }
+
+      return isValid;
+    } catch (error) {
+      console.error('🔒 Error validating Square webhook signature:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Validate webhook signature with additional Square-specific checks
+   */
+  async validateSquareWebhookHeaders(
+    headers: Headers,
+    body: string
+  ): Promise<{ isValid: boolean; eventId?: string; timestamp?: string }> {
+    try {
+      const signature = headers.get('x-square-hmacsha256-signature');
+      const timestamp = headers.get('x-square-timestamp');
+      
+      // Parse body to get event ID
+      let eventId: string | undefined;
+      try {
+        const payload = JSON.parse(body);
+        eventId = payload.event_id;
+      } catch (error) {
+        console.error('🔒 Failed to parse webhook body for event ID:', error);
+        return { isValid: false };
+      }
+
+      if (!signature || !timestamp || !eventId) {
+        console.error('🔒 Missing required Square webhook headers or event ID');
+        return { isValid: false };
+      }
+
+      const isValid = await this.validateSquareSignature(signature, body, timestamp, eventId);
+      
+      return {
+        isValid,
+        eventId,
+        timestamp,
+      };
+    } catch (error) {
+      console.error('🔒 Error validating Square webhook headers:', error);
+      return { isValid: false };
+    }
   }
 
   /**

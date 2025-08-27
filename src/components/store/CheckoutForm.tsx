@@ -188,9 +188,31 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const { items, totalPrice, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Get saved checkout data from localStorage
+  const getSavedCheckoutData = () => {
+    if (typeof window !== 'undefined') {
+      const savedData = localStorage.getItem('regularCheckoutData');
+      if (savedData) {
+        try {
+          return JSON.parse(savedData);
+        } catch (error) {
+          console.error('Error parsing saved checkout data:', error);
+        }
+      }
+    }
+    return null;
+  };
+
+  const savedCheckoutData = getSavedCheckoutData();
+  
   // User state is now derived from initialUserData prop
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>('pickup');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.SQUARE);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(() => {
+    return savedCheckoutData?.fulfillmentMethod || 'pickup';
+  });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
+    return savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE;
+  });
   const [isMounted, setIsMounted] = useState(false);
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
   const [shippingLoading, setShippingLoading] = useState<boolean>(false);
@@ -219,18 +241,47 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // Client Supabase needed only if performing client-side auth actions, otherwise remove
   // const supabase = createClient();
 
+  // Functions to save and clear checkout data in localStorage
+  const saveCheckoutDataToLocalStorage = (data: any) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const existingData = getSavedCheckoutData() || {};
+        const updatedData = { ...existingData, ...data };
+        localStorage.setItem('regularCheckoutData', JSON.stringify(updatedData));
+      } catch (error) {
+        console.error('Error saving checkout data to localStorage:', error);
+      }
+    }
+  };
+
+  const clearCheckoutDataFromLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('regularCheckoutData');
+      } catch (error) {
+        console.error('Error clearing checkout data from localStorage:', error);
+      }
+    }
+  };
+
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
-    // --- Set defaultValues using initialUserData ---
+    // --- Set defaultValues using savedData, then initialUserData ---
     defaultValues: {
-      fulfillmentMethod: 'pickup',
-      paymentMethod: PaymentMethod.SQUARE,
-      name: initialUserData?.name || '',
-      email: initialUserData?.email || '',
-      phone: initialUserData?.phone || '',
-      pickupDate: format(defaultPickupDate, 'yyyy-MM-dd'),
-      pickupTime: defaultPickupTime,
-      rateId: '',
+      fulfillmentMethod: savedCheckoutData?.fulfillmentMethod || 'pickup',
+      paymentMethod: savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
+      name: savedCheckoutData?.name || initialUserData?.name || '',
+      email: savedCheckoutData?.email || initialUserData?.email || '',
+      phone: savedCheckoutData?.phone || initialUserData?.phone || '',
+      pickupDate: savedCheckoutData?.pickupDate || format(defaultPickupDate, 'yyyy-MM-dd'),
+      pickupTime: savedCheckoutData?.pickupTime || defaultPickupTime,
+      deliveryDate: savedCheckoutData?.deliveryDate || format(defaultDeliveryDate, 'yyyy-MM-dd'),
+      deliveryTime: savedCheckoutData?.deliveryTime || defaultDeliveryTime,
+      deliveryInstructions: savedCheckoutData?.deliveryInstructions || '',
+      rateId: savedCheckoutData?.rateId || '',
+      // Initialize address fields with saved data if available
+      ...(savedCheckoutData?.deliveryAddress && { deliveryAddress: savedCheckoutData.deliveryAddress }),
+      ...(savedCheckoutData?.shippingAddress && { shippingAddress: savedCheckoutData.shippingAddress }),
       // Initialize other fields based on the default fulfillment method ('pickup')
       // We don't need to initialize all possible fields here, the reset effect handles it
     } as Partial<CheckoutFormData>,
@@ -290,10 +341,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   useEffect(() => {
     reset(currentValues => {
       const commonData = {
-        name: currentValues.name || initialUserData?.name || '', // Prioritize current, then initial, then empty
-        email: currentValues.email || initialUserData?.email || '',
-        phone: currentValues.phone || initialUserData?.phone || '',
-        paymentMethod: currentValues.paymentMethod || PaymentMethod.SQUARE,
+        name: currentValues.name || savedCheckoutData?.name || initialUserData?.name || '', // Prioritize current, then saved, then initial
+        email: currentValues.email || savedCheckoutData?.email || initialUserData?.email || '',
+        phone: currentValues.phone || savedCheckoutData?.phone || initialUserData?.phone || '',
+        paymentMethod: currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
       };
 
       let recipientName = commonData.name;
@@ -323,7 +374,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           deliveryAddress:
             currentValues.fulfillmentMethod === 'local_delivery'
               ? currentValues.deliveryAddress
-              : {
+              : savedCheckoutData?.deliveryAddress || {
                   recipientName: recipientName,
                   street: '',
                   street2: '',
@@ -351,7 +402,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           shippingAddress:
             currentValues.fulfillmentMethod === 'nationwide_shipping'
               ? currentValues.shippingAddress
-              : {
+              : savedCheckoutData?.shippingAddress || {
                   recipientName: recipientName,
                   street: '',
                   street2: '',
@@ -393,6 +444,35 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Watch form values and save to localStorage
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      // Only save if component is mounted and form has values
+      if (isMounted && value) {
+        // Debounce the save operation
+        const timeoutId = setTimeout(() => {
+          saveCheckoutDataToLocalStorage(value);
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(timeoutId);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, isMounted]);
+
+  // Custom handler for fulfillment method change that saves to localStorage
+  const handleFulfillmentMethodChange = (method: FulfillmentMethod) => {
+    setFulfillmentMethod(method);
+    saveCheckoutDataToLocalStorage({ fulfillmentMethod: method });
+  };
+
+  // Custom handler for payment method change that saves to localStorage
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    saveCheckoutDataToLocalStorage({ paymentMethod: method });
+  };
 
   // --- REMOVE useEffect for getUser() ---
   // This data is now passed via props (initialUserData)
@@ -697,6 +777,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           return;
         }
         clearCart();
+        clearCheckoutDataFromLocalStorage(); // Clear saved checkout data on successful order
         console.log('Redirecting to Square Checkout:', result.checkoutUrl);
         window.location.href = result.checkoutUrl;
       } else {
@@ -741,6 +822,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         }
 
         clearCart();
+        clearCheckoutDataFromLocalStorage(); // Clear saved checkout data on successful order
         // Redirect to manual checkout success page
         window.location.href = `/checkout/success/manual?orderId=${result.orderId}&paymentMethod=${formData.paymentMethod}`;
       }
@@ -836,7 +918,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         {/* Fulfillment Method Selector */}
         <FulfillmentSelector
           selectedMethod={currentMethod as AppFulfillmentMethod}
-          onSelectMethod={method => setFulfillmentMethod(method as FulfillmentMethod)}
+          onSelectMethod={method => handleFulfillmentMethodChange(method as FulfillmentMethod)}
         />
 
         {/* Customer Information */}
@@ -1123,7 +1205,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           <PaymentMethodSelector
             selectedMethod={currentPaymentMethod}
             onSelectMethod={method => {
-              setPaymentMethod(method as PaymentMethod);
+              handlePaymentMethodChange(method as PaymentMethod);
               setValue('paymentMethod', method as PaymentMethod.SQUARE | PaymentMethod.CASH);
             }}
             showCash={currentMethod === 'pickup'}

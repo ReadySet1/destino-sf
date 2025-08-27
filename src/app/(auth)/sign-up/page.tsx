@@ -3,6 +3,7 @@
 import { signUpAction } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SubmitButton } from '@/components/submit-button';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -123,13 +124,13 @@ export default function Signup() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-11 px-4 py-2"
-            disabled={isLoading}
+          <SubmitButton 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+            loading={isLoading}
+            pendingText="Creating account..."
           >
-            {isLoading ? 'Creating account...' : 'Sign up'}
-          </button>
+            Sign up
+          </SubmitButton>
         </form>
       </div>
 

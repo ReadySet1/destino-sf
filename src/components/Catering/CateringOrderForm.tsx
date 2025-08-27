@@ -78,13 +78,37 @@ export function CateringOrderForm({
   const minDate = addDays(today, 5);
   minDate.setHours(0, 0, 0, 0);
 
-  const formDefaults = {
-    name: defaultValues?.name || '',
-    email: defaultValues?.email || '',
-    phone: defaultValues?.phone || '',
-    eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
-    specialRequests: defaultValues?.specialRequests || '',
+  // Try to get saved values from localStorage first, then fall back to defaultValues
+  const getSavedCustomerInfo = () => {
+    if (typeof window !== 'undefined') {
+      const savedCustomerInfo = localStorage.getItem('cateringCustomerInfo');
+      if (savedCustomerInfo) {
+        try {
+          const parsed = JSON.parse(savedCustomerInfo);
+          return {
+            name: parsed.name || defaultValues?.name || '',
+            email: parsed.email || defaultValues?.email || '',
+            phone: parsed.phone || defaultValues?.phone || '',
+            eventDate: parsed.eventDate ? new Date(parsed.eventDate) : (defaultValues?.eventDate || addDays(new Date(), 5)),
+            specialRequests: parsed.specialRequests || defaultValues?.specialRequests || '',
+          };
+        } catch (error) {
+          console.error('Error parsing saved customer info in form:', error);
+        }
+      }
+    }
+    
+    // Fallback to defaultValues
+    return {
+      name: defaultValues?.name || '',
+      email: defaultValues?.email || '',
+      phone: defaultValues?.phone || '',
+      eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
+      specialRequests: defaultValues?.specialRequests || '',
+    };
   };
+
+  const formDefaults = getSavedCustomerInfo();
 
   // Initialize form with defaultValues
   const form = useForm<FormValues>({
@@ -124,25 +148,50 @@ export function CateringOrderForm({
     }
   };
 
+  // Function to save form values to localStorage
+  const saveFormValuesToLocalStorage = (values: Partial<FormValues>) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const existingData = localStorage.getItem('cateringCustomerInfo');
+        let currentData = {};
+        
+        if (existingData) {
+          try {
+            currentData = JSON.parse(existingData);
+          } catch (error) {
+            console.error('Error parsing existing customer info:', error);
+          }
+        }
+        
+        const updatedData = {
+          ...currentData,
+          ...values,
+          ...(values.eventDate && { eventDate: values.eventDate.toISOString() }),
+        };
+        
+        localStorage.setItem('cateringCustomerInfo', JSON.stringify(updatedData));
+      } catch (error) {
+        console.error('Error saving form values to localStorage:', error);
+      }
+    }
+  };
+
   // Fix hydration issue by resetting form values after mount
   useEffect(() => {
-    if (defaultValues) {
-      console.log('🔄 Resetting form with defaultValues after mount:', defaultValues);
-      const resetValues = {
-        name: defaultValues.name || '',
-        email: defaultValues.email || '',
-        phone: defaultValues.phone || '',
-        eventDate: defaultValues.eventDate || addDays(new Date(), 5),
-        specialRequests: defaultValues.specialRequests || '',
-      };
-      form.reset(resetValues);
-    }
-  }, [defaultValues, form]);
+    const savedInfo = getSavedCustomerInfo();
+    console.log('🔄 Resetting form with saved info after mount:', savedInfo);
+    form.reset(savedInfo);
+  }, [form]);
 
   // Watch for changes in contact fields and save automatically
   useEffect(() => {
     const subscription = form.watch((value, { name: fieldName }) => {
-      // Only save when all contact fields are filled and not already saved
+      // Save to localStorage immediately for any field change
+      if (fieldName && value[fieldName as keyof FormValues]) {
+        saveFormValuesToLocalStorage(value);
+      }
+      
+      // Only save to backend when all contact fields are filled and not already saved
       if (!contactSaved && fieldName && ['name', 'email', 'phone'].includes(fieldName)) {
         const { name, email, phone } = value;
 

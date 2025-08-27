@@ -90,7 +90,7 @@ async function attemptLabelPurchase(
         id: true, 
         trackingNumber: true, 
         labelUrl: true,
-        updatedAt: true,
+        lastRetryAt: true,
         status: true 
       }
     });
@@ -109,10 +109,12 @@ async function attemptLabelPurchase(
       };
     }
 
-    // Prevent concurrent operations - if updated very recently (within 2 minutes)
+    // Prevent concurrent operations - check for active label creation attempts
+    // Only block if there's a recent lastRetryAt (indicating actual label creation attempts)
+    // Don't block on general order updates from webhooks
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    if (currentOrder.updatedAt > twoMinutesAgo && currentOrder.status === 'PROCESSING') {
-      console.log(`⏳ Order ${orderId} was recently updated, skipping to prevent concurrent processing`);
+    if (currentOrder.lastRetryAt && currentOrder.lastRetryAt > twoMinutesAgo) {
+      console.log(`⏳ Order ${orderId} has recent label creation attempt, skipping to prevent concurrent processing`);
       return {
         success: false,
         error: 'Label creation already in progress. Please wait before retrying.',
@@ -128,6 +130,14 @@ async function attemptLabelPurchase(
     if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
       throw new Error(`Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`);
     }
+
+    // Update lastRetryAt to prevent concurrent processing during this attempt
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        lastRetryAt: new Date(),
+      },
+    });
 
     // Call Shippo API FIRST (no database lock held during external API call)
     console.log(`📦 Creating Shippo transaction for Order ID: ${orderId}`);
@@ -540,6 +550,33 @@ export async function validateShippoConnection(): Promise<{ connected: boolean; 
       connected: false,
       version: 'unknown',
       error: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+/**
+ * Reset shipping rate for an order (useful when carrier issues occur)
+ */
+export async function resetOrderShippingRate(orderId: string, preferredCarrier: string = 'USPS'): Promise<{ success: boolean; message: string }> {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        shippingRateId: null,
+        shippingCarrier: preferredCarrier,
+        retryCount: 0,
+        lastRetryAt: null,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Order ${orderId} shipping rate reset successfully. Carrier set to ${preferredCarrier}.`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
 }

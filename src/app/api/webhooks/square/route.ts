@@ -1652,14 +1652,28 @@ async function processWebhookWithBody(request: NextRequest, bodyText: string): P
     } else {
       console.warn('⚠️ Webhook signature verification skipped - missing secret or headers');
       
-      // Allow development/preview environments to process webhooks without signatures for debugging
-      const isProductionEnvironment = process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production';
+      // Enhanced security: Only allow in true development environment
+      const isProductionEnvironment = process.env.NODE_ENV === 'production';
+      const isPreviewEnvironment = process.env.VERCEL_ENV === 'preview';
+      const isLocalDevelopment = process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV;
       
-      if (isProductionEnvironment) {
-        console.error('🔒 Webhook signature verification is required in true production environment');
+      // Require signature verification in production and preview environments
+      if (isProductionEnvironment || isPreviewEnvironment) {
+        console.error('🔒 Webhook signature verification is required in production/preview environments');
+        await errorMonitor.captureWebhookError(
+          new Error('Missing webhook signature in production environment'),
+          'signature_missing',
+          payload.event_id,
+          payload.type
+        );
         return;
+      } else if (isLocalDevelopment) {
+        console.warn('🚧 Local Development: Processing webhook without signature verification');
+        console.warn('🔔 Remember to set SQUARE_WEBHOOK_SECRET for production');
       } else {
-        console.warn('🚧 Development/Preview: Processing webhook without signature verification');
+        // Unknown environment - require signature
+        console.error('🔒 Unknown environment - webhook signature verification required');
+        return;
       }
     }
 

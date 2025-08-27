@@ -103,6 +103,25 @@ export async function POST(request: NextRequest) {
         const updateData = zoneData as DeliveryZoneUpdate;
         console.log(`🔄 Updating zone with ID: ${updateData.id}`);
         
+        // Validate ID before proceeding with database operations
+        if (!updateData.id || updateData.id.trim() === '') {
+          console.log('❌ Invalid ID provided for update: empty or undefined');
+          return NextResponse.json(
+            { error: 'Missing ID for update' },
+            { status: 400 }
+          );
+        }
+
+        // Validate ID format (basic UUID check)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(updateData.id)) {
+          console.log(`❌ Invalid ID format for update: ${updateData.id}`);
+          return NextResponse.json(
+            { error: 'Invalid ID format for update' },
+            { status: 400 }
+          );
+        }
+        
         // First, check if zone exists
         const existingZone = await prisma.cateringDeliveryZone.findUnique({
           where: { id: updateData.id },
@@ -238,6 +257,25 @@ export async function PUT(request: NextRequest) {
 
     // Validate bulk update request
     const { zones: validatedZones } = BulkDeliveryZoneUpdateSchema.parse({ zones });
+
+    // Validate all IDs before proceeding with bulk update
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    for (const zone of validatedZones) {
+      if (!zone.id || zone.id.trim() === '') {
+        console.log('❌ Invalid ID in bulk update: empty or undefined');
+        return NextResponse.json(
+          { error: 'Missing ID for bulk update' },
+          { status: 400 }
+        );
+      }
+      if (!uuidRegex.test(zone.id)) {
+        console.log(`❌ Invalid ID format in bulk update: ${zone.id}`);
+        return NextResponse.json(
+          { error: `Invalid ID format for bulk update: ${zone.id}` },
+          { status: 400 }
+        );
+      }
+    }
 
     // Update zones in transaction
     const results = await prisma.$transaction(
