@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { 
   reorderProducts, 
   validateProductsInCategory,
@@ -28,28 +28,13 @@ const QuickSortSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication and admin role
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Check authentication and admin role using centralized guard
+    const authResult = await verifyAdminAccess();
     
-    if (authError || !user) {
+    if (!authResult.authorized) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
+        { error: authResult.error },
+        { status: authResult.statusCode }
       );
     }
     
@@ -111,28 +96,13 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Check authentication and admin role
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Check authentication and admin role using centralized guard
+    const authResult = await verifyAdminAccess();
     
-    if (authError || !user) {
+    if (!authResult.authorized) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
+        { error: authResult.error },
+        { status: authResult.statusCode }
       );
     }
     

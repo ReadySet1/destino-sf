@@ -1,30 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createClient } from '@/utils/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check admin role
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Check authentication and admin role using centralized guard
+    const authResult = await verifyAdminAccess();
+    
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.statusCode }
+      );
     }
 
     // Get query parameters
@@ -116,26 +104,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
 
-    // Check authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check admin role
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || profile?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Check authentication and admin role using centralized guard
+    const authResult = await verifyAdminAccess();
+    
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.statusCode }
+      );
     }
 
     // Find existing order
@@ -195,15 +171,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check authentication
-      const supabase = await createClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Check authentication and admin role using centralized guard
+      const authResult = await verifyAdminAccess();
+      
+      if (!authResult.authorized) {
+        return NextResponse.json(
+          { error: authResult.error },
+          { status: authResult.statusCode }
+        );
       }
 
       // Bulk update orders

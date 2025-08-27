@@ -139,6 +139,13 @@ RATE_LIMIT_MAX_REQUESTS="100"
 ADMIN_RATE_LIMIT_MAX="1000"
 ```
 
+### Admin Configuration
+
+```env
+# Admin promotion secret key
+ADMIN_PROMOTION_SECRET="your-secure-admin-secret-key"
+```
+
 ## Development Environment Variables
 
 ### Local Development
