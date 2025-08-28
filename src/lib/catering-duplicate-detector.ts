@@ -42,6 +42,7 @@ export class CateringDuplicateDetector {
 
   /**
    * Verificar si un item de catering ya existe (usando solo tabla products)
+   * FIXED VERSION: Prevents false positives from cross-category name matches
    */
   static async checkForDuplicate(itemData: {
     name: string;
@@ -51,8 +52,8 @@ export class CateringDuplicateDetector {
     
     const { name, squareProductId, squareCategory } = itemData;
     
-    // 1. Verificación exacta por squareProductId (máxima prioridad)
-    // Verificar solo en tabla products (fuente única de verdad)
+    // 1. Verificación exacta por squareProductId (máxima prioridad y más confiable)
+    // First check by Square ID (this is authoritative and prevents legitimate updates from being skipped)
     if (squareProductId) {
       const existingInProducts = await prisma.product.findFirst({
         where: {
@@ -62,7 +63,12 @@ export class CateringDuplicateDetector {
         select: {
           id: true,
           name: true,
-          squareId: true
+          squareId: true,
+          category: {
+            select: {
+              name: true
+            }
+          }
         }
       });
 
@@ -81,7 +87,9 @@ export class CateringDuplicateDetector {
       }
     }
 
-    // 2. Verificación exacta por nombre (solo tabla products)
+    // 2. Only check name within the same category to prevent cross-category false positives
+    // This fixes the issue where legitimate items were being skipped due to name collisions
+    // with items in different categories
     const existingProductByName = await prisma.product.findFirst({
       where: {
         name: {
@@ -89,12 +97,13 @@ export class CateringDuplicateDetector {
           mode: 'insensitive'
         },
         active: true,
-        // Check if it's in a catering category
-        category: {
-          name: {
-            contains: 'CATERING'
+        // Add category constraint to prevent cross-category duplicates
+        // This is the KEY FIX from the master plan
+        ...(squareCategory && {
+          category: {
+            name: squareCategory
           }
-        }
+        })
       },
       select: {
         id: true,
@@ -123,17 +132,24 @@ export class CateringDuplicateDetector {
     }
 
     // 3. Verificación por nombre normalizado (para detectar variaciones)
-    // Verificar solo en tabla products para nombres normalizados
+    // FIXED: Also apply category constraint to normalized name checking
     const normalizedName = this.normalizeItemName(name);
     
     const allProducts = await prisma.product.findMany({
       where: {
         active: true,
-        category: {
-          name: {
-            contains: 'CATERING'
+        // Apply category constraint to prevent cross-category false positives
+        ...(squareCategory ? {
+          category: {
+            name: squareCategory
           }
-        }
+        } : {
+          category: {
+            name: {
+              contains: 'CATERING'
+            }
+          }
+        })
       },
       select: {
         id: true,
@@ -147,7 +163,7 @@ export class CateringDuplicateDetector {
       }
     });
 
-    // Verificar coincidencias normalizadas en tabla products
+    // Verificar coincidencias normalizadas en tabla products (now within same category)
     const normalizedProductMatch = allProducts.find(item => 
       this.normalizeItemName(item.name) === normalizedName
     );
