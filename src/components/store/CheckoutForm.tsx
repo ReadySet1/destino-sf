@@ -242,7 +242,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // const supabase = createClient();
 
   // Functions to save and clear checkout data in localStorage
-  const saveCheckoutDataToLocalStorage = (data: any) => {
+  const saveCheckoutDataToLocalStorage = useCallback((data: any) => {
     if (typeof window !== 'undefined') {
       try {
         const existingData = getSavedCheckoutData() || {};
@@ -252,7 +252,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         console.error('Error saving checkout data to localStorage:', error);
       }
     }
-  };
+  }, []);
 
   const clearCheckoutDataFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -460,7 +460,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     });
 
     return () => subscription.unsubscribe();
-  }, [form, isMounted]);
+  }, [form, isMounted, saveCheckoutDataToLocalStorage]);
 
   // Custom handler for fulfillment method change that saves to localStorage
   const handleFulfillmentMethodChange = (method: FulfillmentMethod) => {

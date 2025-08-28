@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -79,7 +79,7 @@ export function CateringOrderForm({
   minDate.setHours(0, 0, 0, 0);
 
   // Try to get saved values from localStorage first, then fall back to defaultValues
-  const getSavedCustomerInfo = () => {
+  const getSavedCustomerInfo = useCallback(() => {
     if (typeof window !== 'undefined') {
       const savedCustomerInfo = localStorage.getItem('cateringCustomerInfo');
       if (savedCustomerInfo) {
@@ -106,7 +106,7 @@ export function CateringOrderForm({
       eventDate: defaultValues?.eventDate || addDays(new Date(), 5),
       specialRequests: defaultValues?.specialRequests || '',
     };
-  };
+  }, [defaultValues]);
 
   const formDefaults = getSavedCustomerInfo();
 
@@ -181,7 +181,7 @@ export function CateringOrderForm({
     const savedInfo = getSavedCustomerInfo();
     console.log('🔄 Resetting form with saved info after mount:', savedInfo);
     form.reset(savedInfo);
-  }, [form]);
+  }, [form, getSavedCustomerInfo]);
 
   // Watch for changes in contact fields and save automatically
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringOrderForm } from '@/components/Catering/CateringOrderForm';
@@ -195,12 +195,32 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
   }, [cateringItems.length, router]);
 
+  // Function to save delivery address to localStorage
+  const saveDeliveryAddressToLocalStorage = useCallback((address: typeof deliveryAddress) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cateringDeliveryAddress', JSON.stringify(address));
+      } catch (error) {
+        console.error('Error saving delivery address to localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Custom function to update delivery address and save to localStorage
+  const updateDeliveryAddress = useCallback((newAddress: typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)) => {
+    setDeliveryAddress(prevAddress => {
+      const updatedAddress = typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
+      saveDeliveryAddressToLocalStorage(updatedAddress);
+      return updatedAddress;
+    });
+  }, [saveDeliveryAddressToLocalStorage]);
+
   // Auto-select CA for local delivery
   useEffect(() => {
     if (fulfillmentMethod === 'local_delivery' && !deliveryAddress.state) {
       updateDeliveryAddress(prev => ({ ...prev, state: 'CA' }));
     }
-  }, [fulfillmentMethod, deliveryAddress.state]);
+  }, [fulfillmentMethod, deliveryAddress.state, updateDeliveryAddress]);
 
   // Validate delivery zone minimum when address changes
   useEffect(() => {
@@ -275,17 +295,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
   };
 
-  // Function to save delivery address to localStorage
-  const saveDeliveryAddressToLocalStorage = (address: typeof deliveryAddress) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('cateringDeliveryAddress', JSON.stringify(address));
-      } catch (error) {
-        console.error('Error saving delivery address to localStorage:', error);
-      }
-    }
-  };
-
   // Function to clear delivery address from localStorage (when order is completed)
   const clearDeliveryAddressFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -321,15 +330,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         console.error('Error clearing fulfillment info from localStorage:', error);
       }
     }
-  };
-
-  // Custom function to update delivery address and save to localStorage
-  const updateDeliveryAddress = (newAddress: typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)) => {
-    setDeliveryAddress(prevAddress => {
-      const updatedAddress = typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
-      saveDeliveryAddressToLocalStorage(updatedAddress);
-      return updatedAddress;
-    });
   };
 
   // Custom functions to update fulfillment info and save to localStorage
