@@ -4,9 +4,6 @@
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
   "functions": {
-    "app/api/**/*": {
-      "maxDuration": 30
-    },
     "app/api/square/unified-sync/route.ts": {
       "maxDuration": 300
     },
@@ -18,6 +15,9 @@
     },
     "app/sitemap.xml/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/**/*": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
