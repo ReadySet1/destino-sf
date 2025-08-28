@@ -28,7 +28,7 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
         body: JSON.stringify({
           dryRun: false,
           categories: [], // Sync all categories
-          forceUpdate: false
+          forceUpdate: true // Always update existing products with latest Square data
         })
       });
 
@@ -36,9 +36,34 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
 
       if (response.ok && data.success) {
         setSyncState('started');
-        toast.success("Synchronization completed", {
-          description: `${data.sync?.syncedProducts || 0} products synchronized successfully.`,
-        });
+        
+        const syncedCount = data.sync?.syncedProducts || 0;
+        const skippedCount = data.sync?.skippedProducts || 0;
+        const totalProcessed = syncedCount + skippedCount;
+        
+        // Improved messaging based on sync results
+        let title = "Synchronization completed";
+        let description: string;
+        
+        if (syncedCount > 0) {
+          // Some products were updated
+          description = `${syncedCount} products synchronized successfully.`;
+          if (skippedCount > 0) {
+            description += ` ${skippedCount} products were already up to date.`;
+          }
+        } else if (skippedCount > 0) {
+          // All products were already up to date
+          title = "Products are up to date";
+          description = `All ${skippedCount} products are already synchronized with Square. No updates needed.`;
+        } else if (totalProcessed === 0) {
+          // No products found to sync
+          description = "No products found to synchronize.";
+        } else {
+          // Fallback
+          description = "Synchronization completed successfully.";
+        }
+        
+        toast.success(title, { description });
         
         // Note: This sync is synchronous - no need for progress tracking
         // Only call onSyncStarted if parent component specifically needs it

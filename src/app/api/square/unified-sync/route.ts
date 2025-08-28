@@ -42,6 +42,7 @@ interface SquareItem {
   categoryId: string;
   categoryName: string;
   imageUrl?: string;
+  isDeleted: boolean;
   variations: Array<{
     id: string;
     name: string;
@@ -662,6 +663,7 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
             categoryId,
             categoryName,
             imageUrl,
+            isDeleted: item.is_deleted || false,
             variations
           });
         }
@@ -767,7 +769,7 @@ async function batchSyncToProducts(
             price: item.price, // Base price from first variation
             squareId: item.id,
             category: { connect: { id: category.id } },
-            active: true,
+            active: !item.isDeleted, // Set active based on Square status
             images: item.imageUrl ? [item.imageUrl] : [],
             slug: uniqueSlug,
           };
@@ -889,7 +891,7 @@ async function batchSyncToProducts(
               images: item.imageUrl ? [item.imageUrl] : [],
               categoryId: category.id,
               featured: false,
-              active: true,
+              active: !item.isDeleted, // Set active based on Square status
             });
           }
           
@@ -931,7 +933,7 @@ async function batchSyncToProducts(
                   price: item.price,
                   images: item.imageUrl ? [item.imageUrl] : [],
                   categoryId: category.id,
-                  active: true,
+                  active: !item.isDeleted, // Set active based on Square status
                   updatedAt: new Date()
                 }
               });
@@ -1133,7 +1135,7 @@ async function syncToProductsTable(
         connect: { id: category.id }
       },
       featured: false,
-      active: true,
+      active: !item.isDeleted, // Set active based on Square status
               variants: {
           create: item.variations.map((v: { name: string; price?: number; id: string }) => ({
             name: v.name,

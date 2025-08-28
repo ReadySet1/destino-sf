@@ -104,7 +104,7 @@ export function EnhancedSyncButton() {
           strategy: 'PRODUCTS_ONLY',
           dryRun: false,
           categories: ['CATERING- APPETIZERS', 'CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS', 'CATERING- LUNCH, STARTERS', 'CATERING- LUNCH, ENTREES', 'CATERING- LUNCH, SIDES'],
-          forceUpdate: false
+          forceUpdate: true // Always update existing products with latest Square data
         })
       });
 

@@ -192,7 +192,12 @@ export function SimpleSyncHistory({ refreshTrigger }: SimpleSyncHistoryProps) {
                 <div className="flex items-center gap-2">
                   {record.summary && (
                     <span className="text-xs text-muted-foreground">
-                      {record.summary.syncedProducts} synced
+                      {record.summary.syncedProducts > 0 
+                        ? `${record.summary.syncedProducts} synced`
+                        : record.summary.skippedProducts > 0
+                          ? `${record.summary.skippedProducts} up to date`
+                          : '0 synced'
+                      }
                     </span>
                   )}
                   {getStatusBadge(record.status)}
