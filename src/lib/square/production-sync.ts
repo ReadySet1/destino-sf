@@ -4,11 +4,14 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 import CategoryMapper from './category-mapper';
 import type { Prisma } from '@prisma/client';
+import type { SquareItemAvailability, ProductAvailability, EnhancedSyncResult } from '@/types/square-sync';
 
 // Type definitions
 interface SquareCatalogObject {
   type: string;
   id: string;
+  is_deleted?: boolean;
+  custom_attribute_values?: Record<string, any>;
   item_data?: {
     name: string;
     description?: string | null;
@@ -19,6 +22,11 @@ interface SquareCatalogObject {
     }>;
     variations?: SquareCatalogObject[];
     image_ids?: string[];
+    // Availability fields
+    visibility?: string;
+    available_online?: boolean;
+    available_for_pickup?: boolean;
+    present_at_all_locations?: boolean;
   };
   item_variation_data?: {
     name?: string;
@@ -81,6 +89,10 @@ export class ProductionSyncManager {
     imagesProcessed: 0,
     imagesValidated: 0,
     imagesFailed: 0,
+    availabilityUpdates: 0,
+    preorderItems: 0,
+    hiddenItems: 0,
+    seasonalItems: 0,
   };
 
   constructor(options: ProductSyncOptions = {}) {
@@ -98,7 +110,7 @@ export class ProductionSyncManager {
   /**
    * Main sync method - production ready with comprehensive error handling
    */
-  async syncProducts(): Promise<SyncResult> {
+  async syncProducts(): Promise<EnhancedSyncResult> {
     try {
       logger.info('🚀 Starting Production Sync Process', {
         options: this.options,
@@ -140,6 +152,7 @@ export class ProductionSyncManager {
         message: `Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         syncedProducts: this.stats.processed,
         skippedProducts: this.stats.skipped,
+        protectedItems: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         warnings: [],
         productDetails: {
@@ -147,6 +160,14 @@ export class ProductionSyncManager {
           updated: this.stats.updated,
           withImages: this.stats.imagesValidated,
           withoutImages: this.stats.processed - this.stats.imagesValidated,
+          skipped: this.stats.skipped,
+        },
+        availabilityStats: {
+          totalProcessed: 0,
+          availableItems: 0,
+          preorderItems: 0,
+          hiddenItems: 0,
+          seasonalItems: 0,
         },
       };
     }
@@ -308,6 +329,16 @@ export class ProductionSyncManager {
     // Generate unique slug
     const slug = await this.generateUniqueSlug(productName, existingProduct?.id);
 
+    // Extract availability metadata
+    const availabilityMeta = this.extractAvailabilityMetadata(squareProduct);
+    const availability = this.determineAvailability(availabilityMeta, productName);
+
+    // Track availability statistics
+    this.stats.availabilityUpdates++;
+    if (availability.isPreorder) this.stats.preorderItems++;
+    if (availability.visibility === 'PRIVATE') this.stats.hiddenItems++;
+    if (availability.seasonalDates) this.stats.seasonalItems++;
+
     // Upsert product with transaction safety
     const productData = {
       squareId,
@@ -320,6 +351,18 @@ export class ProductionSyncManager {
       featured: false,
       active: true, // All products should be active by default
       updatedAt: new Date(),
+      
+      // Availability fields
+      visibility: availability.visibility,
+      isAvailable: availability.isAvailable,
+      isPreorder: availability.isPreorder,
+      preorderStartDate: availability.preorderDates?.start,
+      preorderEndDate: availability.preorderDates?.end,
+      availabilityStart: availability.seasonalDates?.start,
+      availabilityEnd: availability.seasonalDates?.end,
+      itemState: availability.state,
+      availabilityMeta: availabilityMeta as any, // Cast to avoid TypeScript index signature issue
+      customAttributes: availabilityMeta.customAttributes || {},
     };
 
     if (existingProduct) {
@@ -766,13 +809,239 @@ export class ProductionSyncManager {
   }
 
   /**
+   * Extract availability metadata from Square catalog object
+   */
+  private extractAvailabilityMetadata(
+    catalogObject: SquareCatalogObject
+  ): SquareItemAvailability {
+    const itemData = catalogObject.item_data;
+    
+    // Extract Square's visibility settings
+    const visibility = itemData?.visibility || 'PUBLIC';
+    const availableOnline = itemData?.available_online ?? true;
+    const availableForPickup = itemData?.available_for_pickup ?? true;
+    
+    // Map Square Dashboard visibility options to API fields:
+    // - "Visible" = present_at_all_locations: true, available_online: true
+    // - "Hidden" = present_at_all_locations: false OR visibility: "PRIVATE"  
+    // - "Unavailable" = available_online: false
+    
+    const presentAtAllLocations = itemData?.present_at_all_locations ?? true;
+    const itemState = catalogObject.is_deleted ? 'ARCHIVED' : 
+                     (!presentAtAllLocations ? 'INACTIVE' : 'ACTIVE');
+    
+    // Determine effective visibility based on Square settings
+    let effectiveVisibility = visibility;
+    let effectiveAvailableOnline = availableOnline;
+    
+    // If item is not present at all locations, it's effectively hidden
+    if (!presentAtAllLocations) {
+      effectiveVisibility = 'PRIVATE';
+      effectiveAvailableOnline = false;
+    }
+    
+    // If visibility is explicitly set to PRIVATE, respect that
+    if (visibility === 'PRIVATE') {
+      effectiveAvailableOnline = false;
+    }
+    
+    return {
+      visibility: effectiveVisibility as 'PUBLIC' | 'PRIVATE',
+      state: itemState as 'ACTIVE' | 'INACTIVE' | 'ARCHIVED',
+      availableOnline: effectiveAvailableOnline,
+      availableForPickup: availableForPickup,
+      preorderCutoffDate: undefined, // TODO: Add fulfillment field to interface if needed
+      presentAtAllLocations: presentAtAllLocations,
+      customAttributes: this.extractCustomAttributes(catalogObject),
+    };
+  }
+
+  /**
+   * Extract custom attributes that might contain pre-order/seasonal info
+   * Square stores these in custom_attribute_values
+   */
+  private extractCustomAttributes(catalogObject: any): Record<string, any> {
+    const attributes: Record<string, any> = {};
+    
+    if (catalogObject.custom_attribute_values) {
+      for (const [key, value] of Object.entries(catalogObject.custom_attribute_values)) {
+        // Look for pre-order and seasonal attributes
+        if (key.toLowerCase().includes('preorder') || 
+            key.toLowerCase().includes('seasonal') ||
+            key.toLowerCase().includes('availability')) {
+          attributes[key] = value;
+        }
+      }
+    }
+    
+    // Also check item_data for modifier lists that might indicate availability
+    if (catalogObject.item_data?.modifier_list_info) {
+      catalogObject.item_data.modifier_list_info.forEach((modifier: any) => {
+        if (modifier.modifier_list_id?.includes('PREORDER')) {
+          attributes.has_preorder_modifier = true;
+        }
+      });
+    }
+    
+    return attributes;
+  }
+
+  /**
+   * Determine product availability based on Square metadata
+   */
+  private determineAvailability(
+    metadata: SquareItemAvailability,
+    productName: string
+  ): ProductAvailability {
+    const now = new Date();
+    
+    // PRIORITY 1: Square's explicit visibility settings
+    // Check if item is archived first
+    if (metadata.state === 'ARCHIVED') {
+      return {
+        isAvailable: false,
+        isPreorder: false,
+        visibility: metadata.visibility,
+        state: metadata.state,
+        availabilityReason: 'Item is archived in Square',
+      };
+    }
+    
+    // Check if item is set to "Hidden" in Square (present_at_all_locations: false)
+    if (metadata.state === 'INACTIVE' || metadata.visibility === 'PRIVATE') {
+      return {
+        isAvailable: false,
+        isPreorder: false,
+        visibility: metadata.visibility,
+        state: metadata.state,
+        availabilityReason: 'Hidden in Square Dashboard',
+      };
+    }
+    
+    // Check if item is not available online according to Square
+    if (metadata.availableOnline === false) {
+      return {
+        isAvailable: false,
+        isPreorder: false,
+        visibility: metadata.visibility,
+        state: metadata.state,
+        availabilityReason: 'Not available online (Square setting)',
+      };
+    }
+    
+    // Check for pre-order indicators in name or attributes
+    const isPreorderItem = 
+      productName.toLowerCase().includes('pre-order') ||
+      productName.toLowerCase().includes('preorder') ||
+      productName.toLowerCase().includes('gingerbread') ||
+      productName.toLowerCase().includes('coming soon') ||
+      metadata.customAttributes?.preorder_enabled === 'true' ||
+      metadata.customAttributes?.has_preorder_modifier;
+    
+    // Check for seasonal indicators (Pride Alfajores case)
+    const isSeasonalItem = 
+      productName.toLowerCase().includes('pride') ||
+      productName.toLowerCase().includes('seasonal') ||
+      productName.toLowerCase().includes('holiday') ||
+      productName.toLowerCase().includes('halloween') ||
+      productName.toLowerCase().includes('christmas') ||
+      metadata.customAttributes?.seasonal_item === 'true';
+    
+    // Extract dates from custom attributes if available
+    let preorderDates = null;
+    let seasonalDates = null;
+    
+    if (isPreorderItem) {
+      // Check for custom attributes first
+      let startDate = metadata.customAttributes?.preorder_start_date;
+      let endDate = metadata.customAttributes?.preorder_end_date || 
+                   metadata.preorderCutoffDate;
+      
+      // If no custom dates, use defaults based on product name
+      if (!startDate && !endDate) {
+        if (productName.toLowerCase().includes('gingerbread')) {
+          startDate = '2025-02-01';
+          endDate = '2025-02-14';
+        }
+      }
+      
+      if (startDate || endDate) {
+        preorderDates = {
+          start: startDate ? new Date(startDate) : null,
+          end: endDate ? new Date(endDate) : null,
+        };
+      }
+    }
+    
+    if (isSeasonalItem) {
+      // Check for custom attributes first
+      let startDate = metadata.customAttributes?.seasonal_start_date;
+      let endDate = metadata.customAttributes?.seasonal_end_date;
+      
+      // If no custom dates, use defaults based on product name
+      if (!startDate && !endDate) {
+        if (productName.toLowerCase().includes('pride')) {
+          startDate = '2025-06-01';
+          endDate = '2025-06-30';
+        } else if (productName.toLowerCase().includes('halloween')) {
+          startDate = '2025-10-01';
+          endDate = '2025-10-31';
+        } else if (productName.toLowerCase().includes('christmas')) {
+          startDate = '2025-12-01';
+          endDate = '2025-12-31';
+        }
+      }
+      
+      if (startDate && endDate) {
+        seasonalDates = {
+          start: new Date(startDate),
+          end: new Date(endDate),
+        };
+        
+        // Check if currently in season
+        if (now < seasonalDates.start || now > seasonalDates.end) {
+          return {
+            isAvailable: false,
+            isPreorder: false,
+            visibility: metadata.visibility,
+            state: metadata.state,
+            seasonalDates,
+            availabilityReason: 'Out of season',
+          };
+        }
+      }
+    }
+    
+    // Check if item is marked as unavailable online
+    if (!metadata.availableOnline) {
+      return {
+        isAvailable: false,
+        isPreorder: false,
+        visibility: metadata.visibility,
+        state: metadata.state,
+        availabilityReason: 'Not available online',
+      };
+    }
+    
+    return {
+      isAvailable: true, // Pre-order items are available for purchase (pre-order)
+      isPreorder: isPreorderItem,
+      visibility: metadata.visibility,
+      state: metadata.state,
+      preorderDates: preorderDates || undefined,
+      seasonalDates: seasonalDates || undefined,
+      availabilityReason: isPreorderItem ? 'Available for pre-order' : 'Available',
+    };
+  }
+
+  /**
    * Generate comprehensive sync report
    */
   private generateSyncReport(syncResult: {
     success: boolean;
     errors: string[];
     warnings: string[];
-  }): SyncResult {
+  }): EnhancedSyncResult {
     const duration = Date.now() - this.syncStartTime.getTime();
 
     logger.info('📊 Sync Statistics:', {
@@ -786,6 +1055,10 @@ export class ProductionSyncManager {
       imagesProcessed: this.stats.imagesProcessed,
       imagesValidated: this.stats.imagesValidated,
       imagesFailed: this.stats.imagesFailed,
+      availabilityUpdates: this.stats.availabilityUpdates,
+      preorderItems: this.stats.preorderItems,
+      hiddenItems: this.stats.hiddenItems,
+      seasonalItems: this.stats.seasonalItems,
     });
 
     return {
@@ -795,6 +1068,7 @@ export class ProductionSyncManager {
         : `Sync completed with ${syncResult.errors.length} errors`,
       syncedProducts: this.stats.processed,
       skippedProducts: this.stats.skipped,
+      protectedItems: 0,
       errors: syncResult.errors,
       warnings: syncResult.warnings,
       productDetails: {
@@ -802,13 +1076,21 @@ export class ProductionSyncManager {
         updated: this.stats.updated,
         withImages: this.stats.imagesValidated,
         withoutImages: this.stats.processed - this.stats.imagesValidated,
+        skipped: this.stats.skipped,
+      },
+      availabilityStats: {
+        totalProcessed: this.stats.availabilityUpdates,
+        availableItems: this.stats.processed - this.stats.preorderItems,
+        preorderItems: this.stats.preorderItems,
+        hiddenItems: this.stats.hiddenItems,
+        seasonalItems: this.stats.seasonalItems,
       },
     };
   }
 }
 
 // Convenience function for immediate use
-export async function syncProductsProduction(options?: ProductSyncOptions): Promise<SyncResult> {
+export async function syncProductsProduction(options?: ProductSyncOptions): Promise<EnhancedSyncResult> {
   const syncManager = new ProductionSyncManager(options);
   return await syncManager.syncProducts();
 }

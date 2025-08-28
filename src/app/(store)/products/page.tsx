@@ -106,6 +106,8 @@ export default async function ProductsPage() {
           },
         },
       },
+      // IMPORTANT: We still fetch all products but let ProductCard filter them
+      // This ensures consistent behavior and allows pre-order items to show
       orderBy: [
         // Order by category order first, then by Square ordinal (if available), then by product name
         { category: { order: 'asc' } },
@@ -156,6 +158,16 @@ export default async function ProductsPage() {
       updatedAt: p.updatedAt,
       // Add slug if it exists on the product model
       slug: p.slug || p.id, // Fallback to ID if slug is not present
+      
+      // Add availability fields for proper filtering
+      isAvailable: p.isAvailable,
+      isPreorder: p.isPreorder,
+      visibility: p.visibility,
+      itemState: p.itemState,
+      preorderStartDate: p.preorderStartDate,
+      preorderEndDate: p.preorderEndDate,
+      availabilityStart: p.availabilityStart,
+      availabilityEnd: p.availabilityEnd,
     };
     return mappedProduct;
   });

@@ -100,8 +100,9 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
       data: {
         syncedProducts: result.syncedProducts,
-        skippedProducts: result.skippedProducts,
+        skippedProducts: result.skippedProducts || 0,
         productDetails: result.productDetails,
+        availabilityStats: result.availabilityStats,
         errors: result.errors,
         warnings: result.warnings,
         empanadasInfo: empanadasCategory ? {
@@ -123,6 +124,7 @@ export async function POST(request: Request) {
       syncedProducts: result.syncedProducts,
       errors: result.errors.length,
       warnings: result.warnings.length,
+      availabilityStats: result.availabilityStats,
     });
 
     return NextResponse.json(response, { status: statusCode });
@@ -143,6 +145,13 @@ export async function POST(request: Request) {
             updated: 0,
             withImages: 0,
             withoutImages: 0,
+          },
+          availabilityStats: {
+            totalProcessed: 0,
+            availableItems: 0,
+            preorderItems: 0,
+            hiddenItems: 0,
+            seasonalItems: 0,
           },
           errors: [error instanceof Error ? error.message : 'Unknown error'],
           warnings: [],

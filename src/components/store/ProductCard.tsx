@@ -42,8 +42,9 @@ const getFallbackImage = (productName: string, categoryName?: string): string =>
 // Image validation is now handled by ProductImage component
 
 export function ProductCard({ product }: ProductCardProps) {
+  // Move all hooks to the top before any early returns
   const { addItem } = useCartStore();
-
+  
   // Check if product has valid variants
   const hasVariants =
     product.variants &&
@@ -54,6 +55,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     hasVariants && product.variants ? product.variants[0] : null
   );
+
+  // Don't show unavailable items at all (like Pride Alfajores out of season)
+  // Handle undefined/null values gracefully
+  const isAvailable = product.isAvailable ?? true;
+  const isPreorder = product.isPreorder ?? false;
+  
+  if (!isAvailable && !isPreorder) {
+    return null;
+  }
 
   // Calculate display price based on selected variant or product price
   const displayPrice =
@@ -71,6 +81,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageUrl = firstImage ? getProxiedImageUrl(firstImage) : null;
 
   const handleAddToCart = () => {
+    if (isPreorder) {
+      // For pre-order items, show a special modal or alert
+      const preorderMessage = formatPreorderMessage(product);
+      if (!confirm(preorderMessage)) {
+        return;
+      }
+    }
+
     // Extract price as number
     const priceToAdd =
       typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice
@@ -85,6 +103,24 @@ export function ProductCard({ product }: ProductCardProps) {
       image: imageUrl || getFallbackImage(product.name, product.category?.name),
       variantId: selectedVariant?.id,
     });
+  };
+
+  // Helper function to format pre-order message
+  const formatPreorderMessage = (product: Product): string => {
+    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
+      year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    let message = `This item is available for pre-order only.\n\n`;
+    
+    if (product.preorderStartDate && product.preorderEndDate) {
+      message += `Expected availability: ${formatDate(product.preorderStartDate)} - ${formatDate(product.preorderEndDate)}\n\n`;
+    } else if (product.preorderEndDate) {
+      message += `Expected availability by: ${formatDate(product.preorderEndDate)}\n\n`;
+    }
+    
+    message += `Would you like to place a pre-order for this item?`;
+    return message;
   };
 
   return (
@@ -124,12 +160,19 @@ export function ProductCard({ product }: ProductCardProps) {
               {shortDescription}
             </p>
 
-            {/* Category Badge */}
-            {product.category?.name && (
-              <Badge variant="secondary" className="text-xs mb-2 md:mb-3">
-                {product.category.name}
-              </Badge>
-            )}
+            {/* Category Badge and Pre-order Badge */}
+            <div className="flex flex-wrap gap-1 mb-2 md:mb-3">
+              {product.category?.name && (
+                <Badge variant="secondary" className="text-xs">
+                  {product.category.name}
+                </Badge>
+              )}
+              {isPreorder && (
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                  Pre-order
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Price and variants */}
@@ -165,10 +208,16 @@ export function ProductCard({ product }: ProductCardProps) {
                   e.preventDefault();
                   handleAddToCart();
                 }}
-                className="bg-yellow-400 hover:bg-yellow-500 text-black text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
+                className={cn(
+                  "text-xs md:text-sm px-2 md:px-3 py-1 md:py-2",
+                  isPreorder
+                    ? "bg-blue-500 hover:bg-blue-600 text-white"
+                    : "bg-yellow-400 hover:bg-yellow-500 text-black"
+                )}
+                disabled={!isAvailable && !isPreorder}
               >
                 <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                Add
+                {isPreorder ? 'Pre-order' : 'Add'}
               </Button>
             </div>
           </div>

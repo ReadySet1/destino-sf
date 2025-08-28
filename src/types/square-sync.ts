@@ -31,6 +31,8 @@ export interface SyncResult {
   message: string;
   /** Number of products that were synced */
   syncedProducts: number;
+  /** Number of products that were skipped */
+  skippedProducts?: number;
   /** Number of items that were protected from modification */
   protectedItems: number;
   /** List of errors that occurred during sync */
@@ -226,4 +228,57 @@ export interface SyncReport {
   };
   timestamp: Date;
   duration: number;
+}
+
+// === AVAILABILITY TYPES FOR PRE-ORDER & SEASONAL ITEMS ===
+
+/**
+ * Square item metadata with availability information
+ */
+export interface SquareItemAvailability {
+  visibility: 'PUBLIC' | 'PRIVATE';
+  state: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+  availableOnline?: boolean;
+  availableForPickup?: boolean;
+  preorderCutoffDate?: string;
+  presentAtAllLocations?: boolean;
+  fulfillmentAvailability?: {
+    pickupEnabled: boolean;
+    deliveryEnabled: boolean;
+    shippingEnabled: boolean;
+  };
+  customAttributes?: Record<string, any>;
+}
+
+/**
+ * Product availability information
+ */
+export interface ProductAvailability {
+  isAvailable: boolean;
+  isPreorder: boolean;
+  preorderDates?: {
+    start: Date | null;
+    end: Date | null;
+  };
+  seasonalDates?: {
+    start: Date | null;
+    end: Date | null;
+  };
+  availabilityReason?: string;
+  visibility: 'PUBLIC' | 'PRIVATE';
+  state: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+}
+
+/**
+ * Enhanced sync result with availability statistics
+ */
+export interface EnhancedSyncResult extends SyncResult {
+  skippedProducts: number;
+  availabilityStats?: {
+    totalProcessed: number;
+    availableItems: number;
+    preorderItems: number;
+    hiddenItems: number;
+    seasonalItems: number;
+  };
 }

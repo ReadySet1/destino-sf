@@ -55,6 +55,19 @@ model Product {
   ingredients        String?
   allergens          String[]
   nutritionFacts     Json?           @map("nutrition_facts")
+  
+  // Availability fields for pre-order and seasonal items
+  visibility           String?   @default("PUBLIC") @db.VarChar(20)
+  isAvailable         Boolean   @default(true) @map("is_available")
+  isPreorder          Boolean   @default(false) @map("is_preorder")
+  preorderStartDate   DateTime? @map("preorder_start_date")
+  preorderEndDate     DateTime? @map("preorder_end_date")
+  availabilityStart   DateTime? @map("availability_start_date")
+  availabilityEnd     DateTime? @map("availability_end_date")
+  itemState           String?   @default("ACTIVE") @map("item_state") @db.VarChar(20)
+  availabilityMeta    Json?     @map("availability_metadata")
+  customAttributes    Json?     @map("custom_attributes")
+  
   orderItems         OrderItem[]
   category           Category        @relation(fields: [categoryId], references: [id])
   spotlightPicks     SpotlightPick[]
@@ -72,6 +85,7 @@ model Product {
   @@index([calories], map: "idx_products_calories")
   @@index([dietaryPreferences], map: "idx_products_dietary_preferences", type: Gin)
   @@index([nutritionFacts], map: "idx_products_nutrition_facts", type: Gin)
+  @@index([isAvailable, visibility, active], map: "idx_products_availability")
   @@map("products")
 }
 
@@ -604,6 +618,9 @@ model SyncLog {
   itemsUpdated Int       @default(0) @map("items_updated")
   itemsDeleted Int       @default(0) @map("items_deleted")
   itemsSkipped Int       @default(0) @map("items_skipped")
+  availabilityUpdates Int       @default(0) @map("availability_updates")
+  preorderItems       Int       @default(0) @map("preorder_items")
+  hiddenItems         Int       @default(0) @map("hidden_items")
   errors       Json?
   warnings     Json?
   metadata     Json?

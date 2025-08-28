@@ -17,6 +17,18 @@ export interface Product {
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Availability fields for pre-order and seasonal items
+  visibility?: string | null;
+  isAvailable?: boolean;
+  isPreorder?: boolean;
+  preorderStartDate?: Date | null;
+  preorderEndDate?: Date | null;
+  availabilityStart?: Date | null;
+  availabilityEnd?: Date | null;
+  itemState?: string | null;
+  availabilityMeta?: Record<string, any> | null;
+  customAttributes?: Record<string, any> | null;
 }
 
 export interface Category {

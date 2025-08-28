@@ -179,6 +179,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           createdAt: true,
           updatedAt: true,
           ordinal: true, // Include ordinal for proper ordering
+          
+          // Add availability fields for filtering
+          isAvailable: true,
+          isPreorder: true,
+          visibility: true,
+          itemState: true,
+          preorderStartDate: true,
+          preorderEndDate: true,
+          availabilityStart: true,
+          availabilityEnd: true,
           variants: {
             select: {
               id: true,
@@ -231,6 +241,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             createdAt: v.createdAt,
             updatedAt: v.updatedAt,
           })),
+          
+          // Add availability fields for proper filtering
+          isAvailable: p.isAvailable,
+          isPreorder: p.isPreorder,
+          visibility: p.visibility,
+          itemState: p.itemState,
+          preorderStartDate: p.preorderStartDate,
+          preorderEndDate: p.preorderEndDate,
+          availabilityStart: p.availabilityStart,
+          availabilityEnd: p.availabilityEnd,
         };
       })
     );
