@@ -87,100 +87,14 @@ export class CateringDuplicateDetector {
       }
     }
 
-    // 2. Only check name within the same category to prevent cross-category false positives
-    // This fixes the issue where legitimate items were being skipped due to name collisions
-    // with items in different categories
-    const existingProductByName = await prisma.product.findFirst({
-      where: {
-        name: {
-          equals: name,
-          mode: 'insensitive'
-        },
-        active: true,
-        // Add category constraint to prevent cross-category duplicates
-        // This is the KEY FIX from the master plan
-        ...(squareCategory && {
-          category: {
-            name: squareCategory
-          }
-        })
-      },
-      select: {
-        id: true,
-        name: true,
-        squareId: true,
-        category: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
+    // 2. ONLY check by Square ID for sync operations
+    // Name checking removed because legitimate items can have same names in different categories
+    // Square ID is the authoritative unique identifier
+    // Skip name-based duplicate detection for Square sync operations
 
-    if (existingProductByName) {
-      return {
-        isDuplicate: true,
-        existingItem: {
-          id: existingProductByName.id,
-          name: existingProductByName.name,
-          squareProductId: existingProductByName.squareId,
-          source: existingProductByName.squareId ? 'square' : 'manual'
-        },
-        matchType: 'exact_name',
-        confidence: 0.95
-      };
-    }
-
-    // 3. Verificación por nombre normalizado (para detectar variaciones)
-    // FIXED: Also apply category constraint to normalized name checking
-    const normalizedName = this.normalizeItemName(name);
-    
-    const allProducts = await prisma.product.findMany({
-      where: {
-        active: true,
-        // Apply category constraint to prevent cross-category false positives
-        ...(squareCategory ? {
-          category: {
-            name: squareCategory
-          }
-        } : {
-          category: {
-            name: {
-              contains: 'CATERING'
-            }
-          }
-        })
-      },
-      select: {
-        id: true,
-        name: true,
-        squareId: true,
-        category: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
-
-    // Verificar coincidencias normalizadas en tabla products (now within same category)
-    const normalizedProductMatch = allProducts.find(item => 
-      this.normalizeItemName(item.name) === normalizedName
-    );
-
-    if (normalizedProductMatch) {
-      return {
-        isDuplicate: true,
-        existingItem: {
-          id: normalizedProductMatch.id,
-          name: normalizedProductMatch.name,
-          squareProductId: normalizedProductMatch.squareId,
-          source: normalizedProductMatch.squareId ? 'square' : 'manual'
-        },
-        matchType: 'normalized_name',
-        confidence: 0.85
-      };
-    }
+    // 3. Skip all name-based duplicate detection for Square sync operations
+    // Items with the same name can legitimately exist in different categories
+    // Square ID is the authoritative unique identifier
 
     // 4. No se encontraron duplicados
     return {
