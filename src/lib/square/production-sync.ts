@@ -816,6 +816,11 @@ export class ProductionSyncManager {
   ): SquareItemAvailability {
     const itemData = catalogObject.item_data;
     
+    // Note: Square's "Site visibility" settings (Visible/Hidden/Unavailable) are NOT 
+    // accessible through the Catalog API. These settings don't affect available_online 
+    // or other API fields. Manual overrides may be needed for items marked as 
+    // "Site visibility: Unavailable" in Square Dashboard.
+    
     // Extract Square's visibility settings
     const visibility = itemData?.visibility || 'PUBLIC';
     const availableOnline = itemData?.available_online ?? true;

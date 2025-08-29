@@ -59,6 +59,12 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     const active = formData.has('active');
     const squareId = formData.get('squareId') as string;
     const productId = formData.get('productId') as string;
+    
+    // Availability fields for manual override
+    const isAvailable = formData.has('isAvailable');
+    const isPreorder = formData.has('isPreorder');
+    const visibility = formData.get('visibility') as string || 'PUBLIC';
+    const itemState = formData.get('itemState') as string || 'ACTIVE';
 
     if (!name || !price || isNaN(price) || !productId) {
       logger.error('Invalid product data');
@@ -96,6 +102,11 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           featured,
           active,
           squareId,
+          // Availability fields for manual override
+          isAvailable,
+          isPreorder,
+          visibility,
+          itemState,
         },
       });
       logger.info('Database update successful');
@@ -265,6 +276,79 @@ export default async function EditProductPage({ params, searchParams }: PageProp
               <label htmlFor="active" className="text-sm font-medium text-gray-700">
                 Active Product
               </label>
+            </div>
+
+            {/* Availability Override Section */}
+            <div className="sm:col-span-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-yellow-800 mb-3">
+                  Manual Availability Override
+                </h3>
+                <p className="text-xs text-yellow-700 mb-4">
+                  Square&apos;s &quot;Site visibility&quot; settings (like &quot;Unavailable&quot;) are not accessible through their API. 
+                  Use these controls to manually override availability when needed.
+                </p>
+                
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isAvailable"
+                      id="isAvailable"
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                      defaultChecked={product.isAvailable ?? true}
+                    />
+                    <label htmlFor="isAvailable" className="text-sm font-medium text-gray-700">
+                      Available for Purchase
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isPreorder"
+                      id="isPreorder"
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                      defaultChecked={product.isPreorder ?? false}
+                    />
+                    <label htmlFor="isPreorder" className="text-sm font-medium text-gray-700">
+                      Pre-order Item
+                    </label>
+                  </div>
+
+                  <div>
+                    <label htmlFor="visibility" className="block text-sm font-medium text-gray-700 mb-1">
+                      Site Visibility
+                    </label>
+                    <select
+                      name="visibility"
+                      id="visibility"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border"
+                      defaultValue={product.visibility || 'PUBLIC'}
+                    >
+                      <option value="PUBLIC">Public (Visible)</option>
+                      <option value="PRIVATE">Private (Hidden)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="itemState" className="block text-sm font-medium text-gray-700 mb-1">
+                      Item State
+                    </label>
+                    <select
+                      name="itemState"
+                      id="itemState"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border"
+                      defaultValue={product.itemState || 'ACTIVE'}
+                    >
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="SEASONAL">Seasonal</option>
+                      <option value="ARCHIVED">Archived</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Product Variants Section */}
