@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Decimal } from '@prisma/client/runtime/library';
 import { redirect } from 'next/navigation';
 import ProductsClientWrapper from './client-wrapper';
@@ -302,6 +303,9 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                   <th className="hidden lg:table-cell w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Variants
                   </th>
+                  <th className="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -408,11 +412,19 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                           <span className="text-gray-400 text-xs">No variants</span>
                         )}
                       </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          href={`/admin/products/${product.id}`}
+                          className="text-indigo-600 hover:text-indigo-900 text-xs bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors"
+                        >
+                          Edit
+                        </Link>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       No products found. Try adjusting your filters.
                     </td>
                   </tr>
