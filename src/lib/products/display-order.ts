@@ -31,6 +31,11 @@ export async function getProductsByCategory(
       images: true,
       active: true,
       categoryId: true,
+      // Additional fields for badge display
+      isAvailable: true,
+      isPreorder: true,
+      visibility: true,
+      itemState: true,
     }
   });
 
@@ -42,6 +47,11 @@ export async function getProductsByCategory(
     imageUrl: product.images?.[0] || undefined,
     price: Number(product.price),
     active: product.active,
+    // Additional fields for badge display
+    isAvailable: product.isAvailable,
+    isPreorder: product.isPreorder,
+    visibility: product.visibility,
+    itemState: product.itemState,
   }));
 }
 

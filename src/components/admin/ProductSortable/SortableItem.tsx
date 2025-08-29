@@ -77,19 +77,73 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
         </p>
       </div>
 
-      {/* Status Badge */}
-      <div className="flex-shrink-0">
-        <span
-          className={`
-            inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-            ${product.active 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-            }
-          `}
-        >
-          {product.active ? 'Active' : 'Inactive'}
-        </span>
+      {/* Status Badges */}
+      <div className="flex-shrink-0 flex flex-col gap-1">
+        {/* Primary Status - Use hierarchy to show most important status */}
+        {(() => {
+          // Determine the primary status with clear hierarchy
+          if (!product.active) {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                Inactive
+              </span>
+            );
+          }
+          
+          if (product.visibility === 'PRIVATE') {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                Hidden
+              </span>
+            );
+          }
+          
+          if (product.isAvailable === false) {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                Unavailable
+              </span>
+            );
+          }
+          
+          if (product.itemState === 'SEASONAL') {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                Seasonal
+              </span>
+            );
+          }
+          
+          if (product.itemState === 'ARCHIVED') {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                Archived
+              </span>
+            );
+          }
+          
+          if (product.itemState === 'INACTIVE') {
+            return (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                Inactive State
+              </span>
+            );
+          }
+          
+          // Default to active
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Active
+            </span>
+          );
+        })()}
+
+        {/* Secondary badges for additional info */}
+        {product.isPreorder === true && product.active && product.isAvailable !== false && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Pre-order
+          </span>
+        )}
       </div>
     </div>
   );

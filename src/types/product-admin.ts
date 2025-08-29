@@ -8,6 +8,11 @@ export interface ProductDisplayOrder {
   imageUrl?: string;
   price: number;
   active: boolean;
+  // Additional fields for badge display
+  isAvailable?: boolean | null;
+  isPreorder?: boolean | null;
+  visibility?: string | null;
+  itemState?: string | null;
 }
 
 export interface ReorderRequest {

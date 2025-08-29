@@ -41,6 +41,7 @@ interface SerializedOrder {
   id: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod: string | null;
   total: number;
   customerName: string;
   email: string;
@@ -139,6 +140,7 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     id: order.id,
     status: order.status,
     paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
     total: decimalToNumber(order.total),
     customerName: order.customerName || '',
     email: order.email || '',
@@ -181,11 +183,25 @@ function getStatusColor(status: string | null | undefined): string {
   }
 }
 
+// Helper function to get the display text for payment status
+function getPaymentStatusDisplay(paymentStatus: string | null | undefined, paymentMethod: string | null | undefined): string {
+  // If payment method is CASH and status is PENDING, show CASH
+  if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus?.toUpperCase() === 'PENDING') {
+    return 'CASH';
+  }
+  return paymentStatus || 'PENDING';
+}
+
 // Helper for payment status badge colors
-function getPaymentStatusColor(status: string | null | undefined): string {
-  switch (status?.toUpperCase()) {
+function getPaymentStatusColor(paymentStatus: string | null | undefined, paymentMethod: string | null | undefined): string {
+  // Get the display status first
+  const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
+  
+  switch (displayStatus.toUpperCase()) {
     case 'PAID':
       return 'bg-green-100 text-green-800';
+    case 'CASH':
+      return 'bg-blue-100 text-blue-800';
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
     case 'REFUNDED':
@@ -388,9 +404,9 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
               <div>
                 <strong>Payment Status:</strong>{' '}
                 <Badge
-                  className={`text-xs ${getPaymentStatusColor(serializedOrder?.paymentStatus)}`}
+                  className={`text-xs ${getPaymentStatusColor(serializedOrder?.paymentStatus, serializedOrder?.paymentMethod)}`}
                 >
-                  {serializedOrder?.paymentStatus || 'PENDING'}
+                  {getPaymentStatusDisplay(serializedOrder?.paymentStatus, serializedOrder?.paymentMethod)}
                 </Badge>
               </div>
               <p>
@@ -595,7 +611,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         {payment.squarePaymentId || 'N/A'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge className={`text-xs ${getPaymentStatusColor(payment.status)}`}>
+                        <Badge className={`text-xs ${getPaymentStatusColor(payment.status, serializedOrder?.paymentMethod)}`}>
                           {payment.status || 'UNKNOWN'}
                         </Badge>
                       </td>

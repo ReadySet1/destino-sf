@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { SyncDashboard } from '@/components/admin/sync/SyncDashboard';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
 
 export const metadata = {
   title: 'Square Sync | Admin',
@@ -20,17 +22,15 @@ export default async function SquareSyncPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      {/* Simple Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Square Synchronization</h1>
-        <p className="mt-2 text-gray-600">
-          Keep your products updated with Square POS
-        </p>
-      </div>
+    <FormContainer>
+      <FormHeader
+        title="Square Synchronization"
+        description="Keep your products updated with Square POS"
+        backUrl="/admin"
+        backLabel="Back to Dashboard"
+      />
 
-      {/* Simple Sync Dashboard */}
       <SyncDashboard />
-    </div>
+    </FormContainer>
   );
 }

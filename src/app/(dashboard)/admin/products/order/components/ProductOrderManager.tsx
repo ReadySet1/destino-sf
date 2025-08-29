@@ -19,8 +19,28 @@ export function ProductOrderManager({
 }: ProductOrderManagerProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(defaultCategoryId);
   const [products, setProducts] = useState<ProductDisplayOrder[]>([]);
+  const [allProducts, setAllProducts] = useState<ProductDisplayOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSort, setIsLoadingSort] = useState(false);
+  const [showUnavailable, setShowUnavailable] = useState(false);
+
+  // Filter products based on availability settings
+  const filterProducts = useCallback((productList: ProductDisplayOrder[]) => {
+    if (showUnavailable) {
+      return productList;
+    }
+    
+    // Hide products that are problematic or confusing
+    return productList.filter(product => {
+      // Keep products that are clearly available
+      if (product.active && product.isAvailable !== false && product.visibility !== 'PRIVATE') {
+        return true;
+      }
+      
+      // Hide products that are inactive or explicitly unavailable
+      return false;
+    });
+  }, [showUnavailable]);
 
   // Load products for selected category
   const loadProducts = useCallback(async (categoryId: string) => {
@@ -33,15 +53,18 @@ export function ProductOrderManager({
       }
       
       const data = await response.json();
-      setProducts(data.products || []);
+      const fetchedProducts = data.products || [];
+      setAllProducts(fetchedProducts);
+      setProducts(filterProducts(fetchedProducts));
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error('Failed to load products');
       setProducts([]);
+      setAllProducts([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filterProducts]);
 
   // Load products for default category on mount
   useEffect(() => {
@@ -49,6 +72,11 @@ export function ProductOrderManager({
       loadProducts(defaultCategoryId);
     }
   }, [defaultCategoryId, loadProducts]);
+
+  // Re-filter products when showUnavailable changes
+  useEffect(() => {
+    setProducts(filterProducts(allProducts));
+  }, [showUnavailable, allProducts, filterProducts]);
 
   // Handle category selection
   const handleCategoryChange = useCallback(async (categoryId: string) => {
@@ -144,6 +172,39 @@ export function ProductOrderManager({
             products={products}
             isLoading={isLoading}
           />
+
+          {/* Filter Controls */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Display Options
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Control which products are shown in the list
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="showUnavailable"
+                    checked={showUnavailable}
+                    onChange={(e) => setShowUnavailable(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="showUnavailable" className="ml-2 text-sm font-medium text-gray-700">
+                    Show unavailable products
+                  </label>
+                </div>
+                {!showUnavailable && (
+                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    Hiding {allProducts.length - products.length} products
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Quick Sort Actions */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">

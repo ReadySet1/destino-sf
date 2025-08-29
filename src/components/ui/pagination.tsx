@@ -69,88 +69,96 @@ export default function Pagination({ currentPage, totalPages, searchParams }: Pa
 
   return (
     <nav
-      className="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6"
+      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 border-t border-gray-200/70 px-6 py-6 bg-white rounded-b-xl shadow-sm"
       aria-label="Pagination"
     >
-      <div className="hidden sm:block">
-        <p className="text-sm text-gray-700">
-          Showing page <span className="font-medium">{currentPage}</span> of{' '}
-          <span className="font-medium">{totalPages}</span>
+      {/* Page info */}
+      <div className="flex-shrink-0">
+        <p className="text-sm text-gray-600 font-medium">
+          Showing page <span className="font-semibold text-gray-900">{currentPage}</span> of{' '}
+          <span className="font-semibold text-gray-900">{totalPages}</span>
         </p>
       </div>
-      <div className="flex flex-1 justify-between sm:justify-end">
-        <div className="flex items-center gap-2">
-          {/* Previous button */}
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!hasPreviousPage}
-            asChild={hasPreviousPage}
-            className="text-sm font-medium"
-          >
-            {hasPreviousPage ? (
-              <Link href={createPageURL(currentPage - 1)}>
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Link>
-            ) : (
-              <>
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </>
-            )}
-          </Button>
 
-          {/* Page numbers */}
-          <div className="hidden md:flex items-center gap-1">
-            {pageItems.map((page, index) => {
-              // Add ellipsis when there's a gap
-              const needsEllipsisBefore = index > 0 && pageItems[index - 1] !== page - 1;
-              return (
-                <div key={page} className="flex items-center">
-                  {needsEllipsisBefore && (
-                    <span className="mx-1">
-                      <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                    </span>
+      {/* Pagination controls */}
+      <div className="flex items-center gap-2">
+        {/* Previous button */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!hasPreviousPage}
+          asChild={hasPreviousPage}
+          className="text-sm font-medium px-3 py-2"
+        >
+          {hasPreviousPage ? (
+            <Link href={createPageURL(currentPage - 1)}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Link>
+          ) : (
+            <>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </>
+          )}
+        </Button>
+
+        {/* Page numbers */}
+        <div className="hidden md:flex items-center gap-1">
+          {pageItems.map((page, index) => {
+            // Add ellipsis when there's a gap
+            const needsEllipsisBefore = index > 0 && pageItems[index - 1] !== page - 1;
+            return (
+              <div key={page} className="flex items-center">
+                {needsEllipsisBefore && (
+                  <span className="px-2">
+                    <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                  </span>
+                )}
+                <Button
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size="sm"
+                  className="w-10 h-10 p-0 font-medium"
+                  asChild={currentPage !== page}
+                >
+                  {currentPage !== page ? (
+                    <Link href={createPageURL(page)}>{page}</Link>
+                  ) : (
+                    <span>{page}</span>
                   )}
-                  <Button
-                    variant={currentPage === page ? 'default' : 'outline'}
-                    size="sm"
-                    className="w-8 h-8 p-0"
-                    asChild={currentPage !== page}
-                  >
-                    {currentPage !== page ? (
-                      <Link href={createPageURL(page)}>{page}</Link>
-                    ) : (
-                      <span>{page}</span>
-                    )}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Next button */}
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!hasNextPage}
-            asChild={hasNextPage}
-            className="text-sm font-medium"
-          >
-            {hasNextPage ? (
-              <Link href={createPageURL(currentPage + 1)}>
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
-            ) : (
-              <>
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </>
-            )}
-          </Button>
+                </Button>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Mobile page indicator */}
+        <div className="md:hidden">
+          <span className="text-sm text-gray-600 font-medium px-3 py-2 bg-gray-50 rounded-md border">
+            {currentPage} / {totalPages}
+          </span>
+        </div>
+
+        {/* Next button */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!hasNextPage}
+          asChild={hasNextPage}
+          className="text-sm font-medium px-3 py-2"
+        >
+          {hasNextPage ? (
+            <Link href={createPageURL(currentPage + 1)}>
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Link>
+          ) : (
+            <>
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </>
+          )}
+        </Button>
       </div>
     </nav>
   );

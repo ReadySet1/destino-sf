@@ -178,8 +178,8 @@ export function ResponsiveTable<T = any>({
             {getVisibleColumns().map(column => (
               <th
                 key={column.key}
-                className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                  column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
+                className={`px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  column.sortable ? 'cursor-pointer hover:bg-gray-100 transition-colors duration-150' : ''
                 } ${column.className || ''}`}
                 onClick={() => column.sortable && handleSort(column.key)}
               >
@@ -191,16 +191,16 @@ export function ResponsiveTable<T = any>({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white divide-y divide-gray-200/60">
           {data.map((item, index) => (
             <tr
               key={(item as any).id || index}
-              className="hover:bg-gray-50 transition-colors duration-150"
+              className="hover:bg-gray-50/60 transition-colors duration-200"
             >
               {getVisibleColumns().map(column => (
                 <td
                   key={column.key}
-                  className={`px-4 py-4 text-sm text-gray-900 ${column.className || ''}`}
+                  className={`px-6 py-5 text-sm text-gray-900 ${column.className || ''}`}
                 >
                   {column.accessor(item)}
                 </td>

@@ -1,11 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { createUserAction, updateUserAction } from '../actions';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { US_STATES } from '@/lib/constants/us-states';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormField } from '@/components/ui/form/FormField';
+import { FormInput } from '@/components/ui/form/FormInput';
+import { FormSelect } from '@/components/ui/form/FormSelect';
+import { FormCheckbox } from '@/components/ui/form/FormCheckbox';
+import { FormGrid } from '@/components/ui/form/FormGrid';
+import { FormStack } from '@/components/ui/form/FormStack';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 type UserRole = Parameters<typeof prisma.profile.create>[0]['data']['role'];
 
@@ -76,298 +88,223 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{isEditing ? 'Edit User' : 'Add New User'}</h1>
-        <Link
-          href="/admin/users"
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-        >
-          Cancel
-        </Link>
-      </div>
+    <FormContainer>
+      <FormHeader
+        title={isEditing ? 'Edit User' : 'Add New User'}
+        description={isEditing ? 'Update user information and settings' : 'Create a new user account'}
+        backUrl="/admin/users"
+        backLabel="Back to Users"
+      />
 
-      {error && <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-md">{error}</div>}
+      {error && <div className="mb-6 p-4 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {user?.id && <input type="hidden" name="id" id="id" value={user.id} />}
-
-            <div className="col-span-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                required
-                defaultValue={user?.email || ''}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                defaultValue={user?.name || ''}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                id="phone"
-                defaultValue={user?.phone || ''}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <select
-                name="role"
-                id="role"
-                defaultValue={user?.role || 'CUSTOMER'}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                required
-              >
-                <option value="CUSTOMER">Customer</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-
-            <div className="col-span-2 mt-6">
-              <div className="flex items-center mb-4">
-                <input
-                  type="checkbox"
-                  id="hasAddress"
-                  name="hasAddress"
-                  checked={hasAddress}
-                  onChange={e => setHasAddress(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+      <form onSubmit={handleSubmit}>
+        <FormStack spacing={10}>
+          {/* Basic Information */}
+          <FormSection
+            title="Basic Information"
+            description="Essential user account details"
+            icon={FormIcons.user}
+          >
+            {user?.id && <input type="hidden" name="id" value={user.id} />}
+            
+            <FormStack spacing={6}>
+              <FormField label="Email" required>
+                <FormInput
+                  type="email"
+                  name="email"
+                  placeholder="user@example.com"
+                  defaultValue={user?.email || ''}
+                  required
                 />
-                <label
-                  htmlFor="hasAddress"
-                  className="ml-2 block text-sm font-medium text-gray-700"
+              </FormField>
+
+              <FormGrid cols={2}>
+                <FormField label="Name">
+                  <FormInput
+                    name="name"
+                    placeholder="John Doe"
+                    defaultValue={user?.name || ''}
+                  />
+                </FormField>
+                <FormField label="Phone">
+                  <FormInput
+                    type="tel"
+                    name="phone"
+                    placeholder="(555) 123-4567"
+                    defaultValue={user?.phone || ''}
+                  />
+                </FormField>
+              </FormGrid>
+
+              <FormField label="Role" required>
+                <FormSelect
+                  name="role"
+                  defaultValue={user?.role || 'CUSTOMER'}
+                  required
                 >
-                  Add Address Information
-                </label>
-              </div>
-            </div>
+                  <option value="CUSTOMER">Customer</option>
+                  <option value="ADMIN">Admin</option>
+                </FormSelect>
+              </FormField>
+            </FormStack>
+          </FormSection>
 
-            {hasAddress && (
-              <>
-                <div className="col-span-2">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
-                </div>
+          {/* Address Information Toggle */}
+          <FormSection
+            title="Address Information"
+            description="Optional address details for the user"
+            icon={FormIcons.home}
+            variant="blue"
+          >
+            <FormStack spacing={6}>
+              <FormCheckbox
+                name="hasAddress"
+                label="Add Address Information"
+                description="Include shipping and billing address for this user"
+                checked={hasAddress}
+                onChange={(e) => setHasAddress(e.target.checked)}
+              />
 
-                {defaultAddress.id && (
-                  <input type="hidden" name="addressId" value={defaultAddress.id} />
-                )}
+              {hasAddress && (
+                <>
+                  {defaultAddress.id && (
+                    <input type="hidden" name="addressId" value={defaultAddress.id} />
+                  )}
 
-                <div>
-                  <label htmlFor="address_name" className="block text-sm font-medium text-gray-700">
-                    Address Label (optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="address_name"
-                    id="address_name"
-                    defaultValue={defaultAddress.name || ''}
-                    placeholder="Home, Work, etc."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                  />
-                </div>
+                  <FormField label="Address Label" helpText="Optional label for this address">
+                    <FormInput
+                      name="address_name"
+                      placeholder="Home, Work, etc."
+                      defaultValue={defaultAddress.name || ''}
+                    />
+                  </FormField>
 
-                <div className="col-span-2">
-                  <label htmlFor="street" className="block text-sm font-medium text-gray-700">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    name="street"
-                    id="street"
-                    defaultValue={defaultAddress.street || ''}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    required={hasAddress}
-                  />
-                </div>
+                  <FormField label="Street Address" required={hasAddress}>
+                    <FormInput
+                      name="street"
+                      placeholder="123 Main Street"
+                      defaultValue={defaultAddress.street || ''}
+                      required={hasAddress}
+                    />
+                  </FormField>
 
-                <div className="col-span-2">
-                  <label htmlFor="street2" className="block text-sm font-medium text-gray-700">
-                    Apartment, Suite, etc. (optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="street2"
-                    id="street2"
-                    defaultValue={defaultAddress.street2 || ''}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                  />
-                </div>
+                  <FormField label="Apartment, Suite, etc." helpText="Optional">
+                    <FormInput
+                      name="street2"
+                      placeholder="Apt 4B, Suite 200, etc."
+                      defaultValue={defaultAddress.street2 || ''}
+                    />
+                  </FormField>
 
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    id="city"
-                    defaultValue={defaultAddress.city || ''}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    required={hasAddress}
-                  />
-                </div>
+                  <FormGrid cols={3}>
+                    <FormField label="City" required={hasAddress}>
+                      <FormInput
+                        name="city"
+                        placeholder="San Francisco"
+                        defaultValue={defaultAddress.city || ''}
+                        required={hasAddress}
+                      />
+                    </FormField>
+                    <FormField label="State" required={hasAddress}>
+                      <FormSelect
+                        name="state"
+                        placeholder="Select state"
+                        defaultValue={defaultAddress.state || ''}
+                        required={hasAddress}
+                      >
+                        <option value="">Select state</option>
+                        {US_STATES.map((state) => (
+                          <option key={state.code} value={state.code}>
+                            {state.code} - {state.name}
+                          </option>
+                        ))}
+                      </FormSelect>
+                    </FormField>
+                    <FormField label="Postal Code" required={hasAddress}>
+                      <FormInput
+                        name="postalCode"
+                        placeholder="94102"
+                        defaultValue={defaultAddress.postalCode || ''}
+                        required={hasAddress}
+                      />
+                    </FormField>
+                  </FormGrid>
 
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                    State / Province
-                  </label>
-                  <select
-                    name="state"
-                    id="state"
-                    defaultValue={defaultAddress.state || ''}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    required={hasAddress}
-                  >
-                    <option value="">Select state</option>
-                    {US_STATES.map((state) => (
-                      <option key={state.code} value={state.code}>
-                        {state.code} - {state.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <FormField label="Country" required={hasAddress}>
+                    <FormInput
+                      name="country"
+                      placeholder="United States"
+                      defaultValue={defaultAddress.country || 'US'}
+                      required={hasAddress}
+                    />
+                  </FormField>
 
-                <div>
-                  <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    id="postalCode"
-                    defaultValue={defaultAddress.postalCode || ''}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    required={hasAddress}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    name="country"
-                    id="country"
-                    defaultValue={defaultAddress.country || 'US'}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    required={hasAddress}
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center mt-4">
-                    <input
-                      type="checkbox"
-                      id="isDefaultShipping"
+                  <FormGrid cols={2}>
+                    <FormCheckbox
                       name="isDefaultShipping"
+                      label="Default Shipping Address"
+                      description="Use this as the default shipping address"
                       defaultChecked={defaultAddress.isDefaultShipping}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <label
-                      htmlFor="isDefaultShipping"
-                      className="ml-2 block text-sm font-medium text-gray-700"
-                    >
-                      Default Shipping Address
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center mt-4">
-                    <input
-                      type="checkbox"
-                      id="isDefaultBilling"
+                    <FormCheckbox
                       name="isDefaultBilling"
+                      label="Default Billing Address"
+                      description="Use this as the default billing address"
                       defaultChecked={defaultAddress.isDefaultBilling}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <label
-                      htmlFor="isDefaultBilling"
-                      className="ml-2 block text-sm font-medium text-gray-700"
-                    >
-                      Default Billing Address
-                    </label>
-                  </div>
-                </div>
-              </>
-            )}
+                  </FormGrid>
+                </>
+              )}
+            </FormStack>
+          </FormSection>
 
-            <div className="col-span-2 flex justify-end space-x-4 mt-6">
-              <Link
-                href="/admin/users"
-                className={`px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                aria-disabled={isSubmitting}
-                onClick={e => isSubmitting && e.preventDefault()}
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    {isEditing ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : isEditing ? (
-                  'Update User'
-                ) : (
-                  'Create User'
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+          {/* Form Actions */}
+          <FormActions>
+            <FormButton
+              variant="secondary"
+              href="/admin/users"
+            >
+              Cancel
+            </FormButton>
+            <FormButton
+              type="submit"
+              disabled={isSubmitting}
+              leftIcon={isSubmitting ? undefined : FormIcons.save}
+            >
+              {isSubmitting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  {isEditing ? 'Updating...' : 'Creating...'}
+                </>
+              ) : isEditing ? (
+                'Update User'
+              ) : (
+                'Create User'
+              )}
+            </FormButton>
+          </FormActions>
+        </FormStack>
+      </form>
+    </FormContainer>
   );
 }

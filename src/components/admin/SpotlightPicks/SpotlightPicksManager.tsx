@@ -128,72 +128,69 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
   const activePicksCount = normalizedPicks.filter(pick => pick.isActive).length;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-8xl">
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8 lg:mb-10">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Spotlight Picks Management
-          </h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base">
-            Manage the 4 featured products that appear in the &quot;Spotlight Picks&quot; section on
-            the homepage
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            onClick={refreshPicks}
-            disabled={isLoading}
-            className="flex items-center gap-2 text-sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-2 text-sm"
-          >
-            <Eye className="h-4 w-4" />
-            Preview
-          </Button>
-          <Button asChild variant="outline" className="flex items-center gap-2 text-sm">
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              <Eye className="h-4 w-4" />
-              View Live
-            </a>
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-10">
+      {/* Action Buttons */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+            <Button
+              variant="secondary"
+              onClick={refreshPicks}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsPreviewOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Eye />
+              Preview
+            </Button>
+            <Button asChild variant="secondary" className="flex items-center gap-2">
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <Eye />
+                View Live
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 lg:mb-10">
-        <Card>
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Active Picks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold text-blue-600">{activePicksCount}</div>
-            <p className="text-xs sm:text-sm text-gray-600">out of 4 positions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Completion</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold text-amber-600">
-              {Math.round((activePicksCount / 4) * 100)}%
+      {/* Statistics Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+            Spotlight Picks Statistics
+          </CardTitle>
+          <p className="text-sm text-gray-600">Overview of your current spotlight pick configuration</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="text-3xl font-bold text-blue-600 mb-2">{activePicksCount}</div>
+              <p className="text-sm text-blue-700">Active Picks</p>
+              <p className="text-xs text-blue-600">out of 4 positions</p>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600">of positions filled</p>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Status Alert */}
+            <div className="text-center p-6 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="text-3xl font-bold text-amber-600 mb-2">
+                {Math.round((activePicksCount / 4) * 100)}%
+              </div>
+              <p className="text-sm text-amber-700">Completion</p>
+              <p className="text-xs text-amber-600">of positions filled</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status Alerts */}
       {activePicksCount === 0 && (
-        <Alert className="mb-6 sm:mb-8 border-amber-200 bg-amber-50">
+        <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800 text-sm">
             No spotlight picks are currently active. Add some picks to showcase your featured
@@ -203,7 +200,7 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
       )}
 
       {activePicksCount === 4 && (
-        <Alert className="mb-6 sm:mb-8 border-green-200 bg-green-50">
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 text-sm">
             All spotlight pick positions are filled! Your homepage is showcasing 4 featured items.
@@ -211,48 +208,58 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
         </Alert>
       )}
 
-      {/* Spotlight Picks Grid */}
-      <div className="mb-8 lg:mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Spotlight Pick Positions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {normalizedPicks.map(pick => (
-            <SpotlightPickCard
-              key={pick.position}
-              pick={pick}
-              onProductSelect={productId => handleProductSelect(pick.position, productId)}
-              onClear={() => handleClearPick(pick.position)}
-              isLoading={isLoading}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Spotlight Picks Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            Spotlight Pick Positions
+          </CardTitle>
+          <p className="text-sm text-gray-600">Configure which products appear in each of the 4 spotlight positions on your homepage</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-6">
+            {normalizedPicks.map(pick => (
+              <SpotlightPickCard
+                key={pick.position}
+                pick={pick}
+                onProductSelect={productId => handleProductSelect(pick.position, productId)}
+                onClear={() => handleClearPick(pick.position)}
+                isLoading={isLoading}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Instructions */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800 text-base sm:text-lg">
-            <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-purple-600" />
             How to Use Spotlight Picks
           </CardTitle>
+          <p className="text-sm text-gray-600">Guidelines for managing your featured products effectively</p>
         </CardHeader>
-        <CardContent className="text-blue-700">
-          <ul className="space-y-2 text-xs sm:text-sm">
-            <li>
-              • <strong>Product Selection:</strong> Choose an existing product to feature in each
-              position
-            </li>
-            <li>
-              • <strong>Automatic Content:</strong> Product details (title, description, image,
-              price) are automatically used
-            </li>
-            <li>
-              • <strong>Flexible Positioning:</strong> Any position can be left empty if you want
-              fewer than 4 picks
-            </li>
-            <li>
-              • <strong>Live Updates:</strong> Changes are reflected immediately on your homepage
-            </li>
-          </ul>
+        <CardContent>
+          <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <Eye className="h-5 w-5 text-purple-400" />
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-semibold text-purple-900 mb-2">
+                  Best Practices
+                </h4>
+                <ul className="text-sm text-purple-800 space-y-1">
+                  <li>• <strong>Product Selection:</strong> Choose an existing product to feature in each position</li>
+                  <li>• <strong>Automatic Content:</strong> Product details (title, description, image, price) are automatically used</li>
+                  <li>• <strong>Flexible Positioning:</strong> Any position can be left empty if you want fewer than 4 picks</li>
+                  <li>• <strong>Live Updates:</strong> Changes are reflected immediately on your homepage</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

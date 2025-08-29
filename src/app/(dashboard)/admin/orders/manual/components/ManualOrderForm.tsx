@@ -8,6 +8,19 @@ import {
 } from '@/app/(dashboard)/admin/orders/manual/actions';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormField } from '@/components/ui/form/FormField';
+import { FormInput } from '@/components/ui/form/FormInput';
+import { FormTextarea } from '@/components/ui/form/FormTextarea';
+import { FormSelect } from '@/components/ui/form/FormSelect';
+import { FormCheckbox } from '@/components/ui/form/FormCheckbox';
+import { FormGrid } from '@/components/ui/form/FormGrid';
+import { FormStack } from '@/components/ui/form/FormStack';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -235,186 +248,157 @@ export function ManualOrderForm() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
+      <FormContainer>
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </FormContainer>
     );
   }
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <FormContainer>
+      <FormHeader
+        title="Create Manual Order"
+        description="Create a new order manually for customers"
+        backUrl="/admin/orders"
+        backLabel="Back to Orders"
+      />
+
+      <form onSubmit={handleSubmit}>
+        <FormStack spacing={10}>
         {/* Customer Information */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="customerName"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Customer Name *
-              </label>
-              <input
-                type="text"
-                id="customerName"
+        <FormSection
+          title="Customer Information"
+          description="Required customer details for the order"
+          icon={FormIcons.user}
+        >
+          <FormGrid cols={2}>
+            <FormField label="Customer Name" required>
+              <FormInput
                 name="customerName"
+                placeholder="Enter customer name"
                 value={formState.customerName}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
-              </label>
-              <input
+            </FormField>
+            <FormField label="Email" required>
+              <FormInput
                 type="email"
-                id="email"
                 name="email"
+                placeholder="customer@example.com"
                 value={formState.email}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone *
-              </label>
-              <input
+            </FormField>
+            <FormField label="Phone" required>
+              <FormInput
                 type="tel"
-                id="phone"
                 name="phone"
+                placeholder="(555) 123-4567"
                 value={formState.phone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-          </div>
-        </div>
+            </FormField>
+          </FormGrid>
+        </FormSection>
 
         {/* Order Details */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="fulfillmentType"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Fulfillment Type
-              </label>
-              <select
-                id="fulfillmentType"
+        <FormSection
+          title="Order Details"
+          description="Fulfillment and order configuration"
+          icon={FormIcons.truck}
+          variant="blue"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Fulfillment Type">
+              <FormSelect
                 name="fulfillmentType"
                 value={formState.fulfillmentType}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value="pickup">Pickup</option>
                 <option value="local_delivery">Local Delivery</option>
                 <option value="nationwide_shipping">Nationwide Shipping</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="pickupTime" className="block text-sm font-medium text-gray-700 mb-1">
-                Pickup/Delivery Time
-              </label>
-              <input
+              </FormSelect>
+            </FormField>
+            <FormField label="Pickup/Delivery Time">
+              <FormInput
                 type="datetime-local"
-                id="pickupTime"
                 name="pickupTime"
                 value={formState.pickupTime}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               />
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Order Status
-              </label>
-              <select
-                id="status"
+            </FormField>
+            <FormField label="Order Status">
+              <FormSelect
                 name="status"
                 value={formState.status}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 {Object.values(OrderStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Order Notes
-              </label>
-              <textarea
-                id="notes"
+              </FormSelect>
+            </FormField>
+            <FormField label="Order Notes">
+              <FormTextarea
                 name="notes"
+                placeholder="Special instructions or notes..."
                 value={formState.notes}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 rows={2}
               />
-            </div>
-          </div>
-        </div>
+            </FormField>
+          </FormGrid>
+        </FormSection>
 
         {/* Payment Information */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="paymentMethod"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Payment Method
-              </label>
-              <select
-                id="paymentMethod"
+        <FormSection
+          title="Payment Information"
+          description="Payment method and status"
+          icon={FormIcons.creditCard}
+          variant="green"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Payment Method">
+              <FormSelect
                 name="paymentMethod"
                 value={formState.paymentMethod}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value={PaymentMethod.CASH}>Cash</option>
                 <option value={PaymentMethod.SQUARE}>Square</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="paymentStatus"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Payment Status
-              </label>
-              <select
-                id="paymentStatus"
+              </FormSelect>
+            </FormField>
+            <FormField label="Payment Status">
+              <FormSelect
                 name="paymentStatus"
                 value={formState.paymentStatus}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 {Object.values(PaymentStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
-              </select>
-            </div>
-          </div>
-        </div>
+              </FormSelect>
+            </FormField>
+          </FormGrid>
+        </FormSection>
 
         {/* Order Items */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+        <FormSection
+          title="Order Items"
+          description="Add products to the order"
+          icon={FormIcons.package}
+          variant="amber"
+        >
 
           {/* Add new item */}
           <div className="bg-gray-50 p-4 rounded-md mb-4">
@@ -574,7 +558,7 @@ export function ManualOrderForm() {
               No items added yet. Please add at least one item.
             </div>
           )}
-        </div>
+        </FormSection>
 
         {/* Error and Success Messages */}
         {error && <div className="bg-red-50 text-red-700 p-3 rounded-md">{error}</div>}
@@ -582,11 +566,17 @@ export function ManualOrderForm() {
         {success && <div className="bg-green-50 text-green-700 p-3 rounded-md">{success}</div>}
 
         {/* Submit Button */}
-        <div className="flex justify-end">
-          <button
+        <FormActions>
+          <FormButton
+            variant="secondary"
+            href="/admin/orders"
+          >
+            Cancel
+          </FormButton>
+          <FormButton
             type="submit"
             disabled={isSubmitting || formState.items.length === 0}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex items-center"
+            leftIcon={isSubmitting ? undefined : FormIcons.save}
           >
             {isSubmitting ? (
               <>
@@ -595,9 +585,10 @@ export function ManualOrderForm() {
             ) : (
               'Create Order'
             )}
-          </button>
-        </div>
+          </FormButton>
+        </FormActions>
+        </FormStack>
       </form>
-    </div>
+    </FormContainer>
   );
 }

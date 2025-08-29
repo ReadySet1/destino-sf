@@ -5,6 +5,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormField } from '@/components/ui/form/FormField';
+import { FormInput } from '@/components/ui/form/FormInput';
+import { FormTextarea } from '@/components/ui/form/FormTextarea';
+import { FormCheckbox } from '@/components/ui/form/FormCheckbox';
+import { FormGrid } from '@/components/ui/form/FormGrid';
+import { FormStack } from '@/components/ui/form/FormStack';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 interface StoreSettings {
   id: string;
@@ -90,25 +102,34 @@ function SettingsForm({ settings }: StoreSettingsProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Store info section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="col-span-2">
-          <h3 className="text-lg font-medium mb-4">Store Information</h3>
-        </div>
+    <FormContainer>
+      <FormHeader
+        title="Store Settings"
+        description="Configure your store information and order settings"
+        backUrl="/admin"
+        backLabel="Back to Dashboard"
+      />
 
-        <div className="col-span-2">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Store Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            {...register('name')}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-          />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <FormStack spacing={10}>
+          {/* Store Information */}
+          <FormSection
+            title="Store Information"
+            description="Basic information about your restaurant"
+            icon={FormIcons.info}
+          >
+            <FormStack>
+              <FormField 
+                label="Store Name" 
+                required
+                error={errors.name?.message}
+              >
+                <FormInput
+                  {...register('name')}
+                  placeholder="Enter your store name"
+                  error={!!errors.name}
+                />
+              </FormField>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -320,10 +341,11 @@ function SettingsForm({ settings }: StoreSettingsProps) {
             />
           </div>
         )}
-      </div>
+            </FormStack>
+          </FormSection>
 
-      <div className="pt-5">
-        <div className="flex justify-end">
+          <div className="pt-5">
+            <div className="flex justify-end">
           <button
             type="submit"
             disabled={isSubmitting}
@@ -331,9 +353,11 @@ function SettingsForm({ settings }: StoreSettingsProps) {
           >
             {isSubmitting ? 'Saving...' : 'Save Settings'}
           </button>
-        </div>
-      </div>
-    </form>
+            </div>
+          </div>
+        </FormStack>
+      </form>
+    </FormContainer>
   );
 }
 

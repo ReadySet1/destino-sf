@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Archive, Package, Calendar, CreditCard } from 'lucide-react';
+import { MoreHorizontal, Eye, Archive, Package, Calendar, CreditCard, ShoppingBag, User } from 'lucide-react';
 
 // Define our unified order type (same as in page.tsx)
 interface UnifiedOrder {
@@ -37,6 +37,7 @@ interface UnifiedOrder {
   shippingCarrier: string | null;
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
+  paymentMethod: string | null;
 }
 
 interface ResponsiveOrdersTableProps {
@@ -65,10 +66,24 @@ function getStatusColor(status: OrderStatus | CateringStatus) {
   }
 }
 
-function getPaymentStatusColor(status: PaymentStatus) {
-  switch (status) {
+// Helper function to get the display text for payment status
+function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: string | null): string {
+  // If payment method is CASH and status is PENDING, show CASH
+  if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus === 'PENDING') {
+    return 'CASH';
+  }
+  return paymentStatus;
+}
+
+function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: string | null) {
+  // Get the display status first
+  const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
+  
+  switch (displayStatus) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
+    case 'CASH':
+      return 'bg-blue-100 text-blue-800';
     case 'PAID':
       return 'bg-green-100 text-green-800';
     case 'FAILED':
@@ -163,9 +178,21 @@ export default function ResponsiveOrdersTable({
       'id',
       'Order ID',
       (order) => (
-        <span className="font-mono text-sm">
-          {order.id.slice(-8).toUpperCase()}
-        </span>
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <ShoppingBag className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-mono font-semibold text-gray-900">
+              {order.id.slice(-8).toUpperCase()}
+            </p>
+            <p className="text-sm text-gray-600 capitalize">
+              {order.type} order
+            </p>
+          </div>
+        </div>
       ),
       {
         sortable: true,
@@ -178,9 +205,18 @@ export default function ResponsiveOrdersTable({
       'customerName',
       'Customer',
       (order) => (
-        <span className="font-medium">
-          {order.customerName || 'Anonymous'}
-        </span>
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-600" />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-900">
+              {order.customerName || 'Anonymous Customer'}
+            </p>
+          </div>
+        </div>
       ),
       {
         sortable: true,
@@ -193,7 +229,8 @@ export default function ResponsiveOrdersTable({
       'status',
       'Status',
       (order) => (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+          <Package className="h-3 w-3" />
           {order.status}
         </span>
       ),
@@ -208,9 +245,14 @@ export default function ResponsiveOrdersTable({
       'total',
       'Total',
       (order) => (
-        <span className="font-medium">
-          {formatCurrency(order.total)}
-        </span>
+        <div className="text-sm">
+          <span className="font-semibold text-gray-900 text-lg">
+            {formatCurrency(order.total)}
+          </span>
+          <div className="text-xs text-gray-600 mt-1">
+            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+          </div>
+        </div>
       ),
       {
         sortable: true,
@@ -223,15 +265,24 @@ export default function ResponsiveOrdersTable({
       'date',
       'Date',
       (order) => (
-        <div className="flex items-center space-x-1">
-          <Calendar className="h-4 w-4 text-gray-400" />
-          <span className="text-sm">
-            {order.type === 'catering' && order.eventDate
-              ? formatDateTime(new Date(order.eventDate))
-              : order.pickupTime
-              ? formatDateTime(new Date(order.pickupTime))
-              : formatDateTime(new Date(order.createdAt))}
-          </span>
+        <div className="flex items-center text-sm text-gray-500">
+          <Calendar className="h-4 w-4 mr-3 text-gray-400" />
+          <div className="space-y-1">
+            <div className="text-gray-900 font-medium">
+              {order.type === 'catering' && order.eventDate
+                ? formatDistance(new Date(order.eventDate), new Date(), { addSuffix: true })
+                : order.pickupTime
+                ? formatDistance(new Date(order.pickupTime), new Date(), { addSuffix: true })
+                : formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
+            </div>
+            <div className="text-xs text-gray-500">
+              {order.type === 'catering' && order.eventDate
+                ? new Date(order.eventDate).toLocaleDateString()
+                : order.pickupTime
+                ? new Date(order.pickupTime).toLocaleDateString()
+                : new Date(order.createdAt).toLocaleDateString()}
+            </div>
+          </div>
         </div>
       ),
       {
@@ -245,12 +296,10 @@ export default function ResponsiveOrdersTable({
       'paymentStatus',
       'Payment',
       (order) => (
-        <div className="flex items-center space-x-1">
-          <CreditCard className="h-4 w-4 text-gray-400" />
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
-            {order.paymentStatus}
-          </span>
-        </div>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus, order.paymentMethod)}`}>
+          <CreditCard className="h-3 w-3" />
+          {getPaymentStatusDisplay(order.paymentStatus, order.paymentMethod)}
+        </span>
       ),
       {
         sortable: true,
@@ -259,24 +308,7 @@ export default function ResponsiveOrdersTable({
         desktopVisible: true,
       }
     ),
-    createTableColumn(
-      'type',
-      'Type',
-      (order) => (
-        <div className="flex items-center space-x-1">
-          <Package className="h-4 w-4 text-gray-400" />
-          <span className="capitalize text-sm">
-            {order.type}
-          </span>
-        </div>
-      ),
-      {
-        sortable: true,
-        mobileVisible: false,
-        tabletVisible: true,
-        desktopVisible: true,
-      }
-    ),
+
     createTableColumn(
       'actions',
       'Actions',
@@ -299,7 +331,8 @@ export default function ResponsiveOrdersTable({
         onSort={onSort}
         sortKey={sortKey}
         sortDirection={sortDirection}
-        emptyMessage="No orders found"
+        emptyMessage="No orders found. Orders will appear here once customers place them."
+        className="bg-white rounded-xl border border-gray-200/70 overflow-hidden shadow-sm"
         config={{
           mobileCardLayout: true,
           horizontalScroll: false,

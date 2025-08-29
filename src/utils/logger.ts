@@ -24,6 +24,11 @@ const formatValue = (value: any): string => {
         return JSON.stringify(
           obj,
           (key, value) => {
+            // Skip undefined values entirely to prevent access errors
+            if (value === undefined) {
+              return '[undefined]';
+            }
+            
             // Handle circular references
             if (typeof value === 'object' && value !== null) {
               if (seen.has(value)) {
@@ -31,10 +36,17 @@ const formatValue = (value: any): string => {
               }
               seen.add(value);
             }
+            
             // Handle BigInt - convert to string
             if (typeof value === 'bigint') {
               return value.toString() + 'n';
             }
+            
+            // Handle functions
+            if (typeof value === 'function') {
+              return '[Function]';
+            }
+            
             return value;
           },
           indent
@@ -43,7 +55,9 @@ const formatValue = (value: any): string => {
 
       return safeStringify(value);
     } catch (err) {
-      return String(value);
+      // Enhanced error handling for edge cases
+      const fallbackMessage = err instanceof Error ? err.message : 'Failed to stringify object';
+      return `[Object stringify failed: ${fallbackMessage}]`;
     }
   }
 
@@ -52,6 +66,9 @@ const formatValue = (value: any): string => {
 
 // Format arguments for logging
 const formatArgs = (args: any[]): string => {
+  if (!Array.isArray(args)) {
+    return formatValue(args);
+  }
   return args.map(arg => formatValue(arg)).join(' ');
 };
 

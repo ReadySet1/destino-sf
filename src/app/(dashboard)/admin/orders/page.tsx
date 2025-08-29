@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma, withConnectionManagement } from '@/lib/db';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
 import { OrderStatus, CateringStatus, PaymentStatus } from '@prisma/client';
@@ -9,7 +9,12 @@ import { Decimal } from '@prisma/client/runtime/library';
 import Pagination from '@/components/ui/pagination';
 import OrderFilters from './components/OrderFilters';
 import OrdersTableWrapper from './components/OrdersTableWrapper';
-import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
+
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
+import { FormContainer } from '@/components/ui/form/FormContainer';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -52,6 +57,7 @@ interface UnifiedOrder {
   shippingCarrier: string | null;
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
+  paymentMethod: string | null;
 }
 
 // Safe conversion of Decimal to number
@@ -78,56 +84,74 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
 
 // Manual serialization for regular orders
 function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
+  if (!Array.isArray(orders)) {
+    return [];
+  }
+  
   return orders.map(order => {
+    if (!order) {
+      throw new Error('Received null/undefined order in serializeRegularOrders');
+    }
+
     const itemsCount = order.items?.length || 0;
     const totalItems =
-      order.items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
+      order.items?.reduce((total: number, item: any) => total + (item?.quantity || 0), 0) || 0;
 
     return {
-      id: order.id,
-      status: order.status,
-      customerName: order.customerName,
+      id: order.id || '',
+      status: order.status || 'PENDING',
+      customerName: order.customerName || null,
       total: Number(order.total || 0),
       items:
         order.items?.map((item: any) => ({
-          id: item.id,
-          quantity: item.quantity,
-          price: Number(item.price || 0),
+          id: item?.id || '',
+          quantity: item?.quantity || 0,
+          price: Number(item?.price || 0),
         })) || [],
       pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
-      createdAt: order.createdAt.toISOString(),
+      createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
       trackingNumber: order.trackingNumber || null,
       shippingCarrier: order.shippingCarrier || null,
       type: order.isCateringOrder ? 'catering' : 'regular',
-      paymentStatus: order.paymentStatus,
+      paymentStatus: order.paymentStatus || 'PENDING',
+      paymentMethod: order.paymentMethod || null,
     };
   });
 }
 
 // Manual serialization for catering orders
 function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
+  if (!Array.isArray(orders)) {
+    return [];
+  }
+  
   return orders.map(order => {
+    if (!order) {
+      throw new Error('Received null/undefined order in serializeCateringOrders');
+    }
+
     // Serialize items
     const serializedItems =
       order.items?.map((item: any) => ({
-        id: item.id,
-        quantity: item.quantity,
-        price: decimalToNumber(item.totalPrice),
+        id: item?.id || '',
+        quantity: item?.quantity || 0,
+        price: decimalToNumber(item?.totalPrice),
       })) || [];
 
     return {
-      id: order.id,
-      status: order.status,
-      customerName: order.name,
+      id: order.id || '',
+      status: order.status || 'PENDING',
+      customerName: order.name || null,
       total: decimalToNumber(order.totalAmount),
       items: serializedItems,
       pickupTime: null,
       eventDate: order.eventDate ? new Date(order.eventDate).toISOString() : null,
-      createdAt: order.createdAt.toISOString(),
+      createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
       trackingNumber: null,
       shippingCarrier: null,
       type: 'catering',
-      paymentStatus: order.paymentStatus,
+      paymentStatus: order.paymentStatus || 'PENDING',
+      paymentMethod: order.paymentMethod || null,
     };
   });
 }
@@ -166,19 +190,42 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
   // Await the searchParams promise
   const searchParamsResolved = await searchParams;
 
-  // Parse search params
-  const currentPage = Number(searchParamsResolved?.page || 1);
-  const searchQuery = searchParamsResolved?.search || '';
+  // Parse search params with proper validation
+  const currentPage = Math.max(1, Number(searchParamsResolved?.page || 1) || 1);
+  const searchQuery = (searchParamsResolved?.search || '').trim();
   const typeFilter = searchParamsResolved?.type || 'all';
   const statusFilter = searchParamsResolved?.status || 'all';
   const paymentFilter = searchParamsResolved?.payment || 'all';
   const sortField = searchParamsResolved?.sort || 'createdAt';
-  const sortDirection = searchParamsResolved?.direction || 'desc';
+  const sortDirection = (searchParamsResolved?.direction === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
 
-  const itemsPerPage = 15;
-  const skip = (currentPage - 1) * itemsPerPage;
+  const itemsPerPage = 10;
+  const skip = Math.max(0, (currentPage - 1) * itemsPerPage);
 
   try {
+    // Log debug information
+    logger.info('OrdersPage: Starting to fetch orders', {
+      currentPage,
+      searchQuery,
+      typeFilter,
+      statusFilter,
+      paymentFilter,
+      sortField,
+      sortDirection,
+      skip,
+      itemsPerPage
+    });
+
+    // Quick database connectivity check using robust connection management
+    await withConnectionManagement(
+      async () => {
+        await prisma.$queryRaw`SELECT 1 as test`;
+        logger.info('OrdersPage: Database connectivity confirmed');
+      },
+      'Database connectivity check',
+      5000 // 5 second timeout
+    );
+
     // Build where conditions for regular orders
     const regularOrdersWhere: any = {
       isArchived: false, // Exclude archived orders by default
@@ -225,36 +272,90 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     let totalCount = 0;
 
     if (typeFilter === 'all' || typeFilter === 'regular') {
-      // Fetch regular orders
-      const regularOrders = await prisma.order.findMany({
-        where: regularOrdersWhere,
-        orderBy: getOrderByClause(sortField, sortDirection, 'regular'),
-        include: { items: true },
-        ...(typeFilter === 'regular' ? { skip, take: itemsPerPage } : {}),
-      });
+      try {
+        logger.info('OrdersPage: Fetching regular orders');
+        
+        // Fetch regular orders with safe pagination
+        const regularOrdersQuery: any = {
+          where: regularOrdersWhere,
+          orderBy: getOrderByClause(sortField, sortDirection, 'regular'),
+          include: { items: true },
+        };
+        
+        // Only add pagination for single type filter
+        if (typeFilter === 'regular') {
+          regularOrdersQuery.skip = skip;
+          regularOrdersQuery.take = itemsPerPage;
+        }
 
-      const serializedRegularOrders = serializeRegularOrders(regularOrders);
-      allOrders.push(...serializedRegularOrders);
+        logger.info('OrdersPage: Regular orders query', regularOrdersQuery);
+        
+        const regularOrders = await withConnectionManagement(
+          () => prisma.order.findMany(regularOrdersQuery),
+          'Fetch regular orders',
+          15000 // 15 second timeout
+        );
+        
+        logger.info(`OrdersPage: Found ${regularOrders?.length || 0} regular orders`);
 
-      if (typeFilter === 'regular') {
-        totalCount = await prisma.order.count({ where: regularOrdersWhere });
+        const serializedRegularOrders = serializeRegularOrders(regularOrders || []);
+        allOrders.push(...serializedRegularOrders);
+
+        if (typeFilter === 'regular') {
+          totalCount = await withConnectionManagement(
+            () => prisma.order.count({ where: regularOrdersWhere }),
+            'Count regular orders',
+            10000 // 10 second timeout
+          );
+          logger.info(`OrdersPage: Regular orders total count: ${totalCount}`);
+        }
+      } catch (regularOrdersError) {
+        logger.error('OrdersPage: Error fetching regular orders:', regularOrdersError);
+        throw regularOrdersError;
       }
     }
 
     if (typeFilter === 'all' || typeFilter === 'catering') {
-      // Fetch catering orders
-      const cateringOrders = await prisma.cateringOrder.findMany({
-        where: cateringOrdersWhere,
-        orderBy: getOrderByClause(sortField, sortDirection, 'catering'),
-        include: { items: true },
-        ...(typeFilter === 'catering' ? { skip, take: itemsPerPage } : {}),
-      });
+      try {
+        logger.info('OrdersPage: Fetching catering orders');
+        
+        // Fetch catering orders with safe pagination
+        const cateringOrdersQuery: any = {
+          where: cateringOrdersWhere,
+          orderBy: getOrderByClause(sortField, sortDirection, 'catering'),
+          include: { items: true },
+        };
+        
+        // Only add pagination for single type filter
+        if (typeFilter === 'catering') {
+          cateringOrdersQuery.skip = skip;
+          cateringOrdersQuery.take = itemsPerPage;
+        }
 
-      const serializedCateringOrders = serializeCateringOrders(cateringOrders);
-      allOrders.push(...serializedCateringOrders);
+        logger.info('OrdersPage: Catering orders query', cateringOrdersQuery);
+        
+        const cateringOrders = await withConnectionManagement(
+          () => prisma.cateringOrder.findMany(cateringOrdersQuery),
+          'Fetch catering orders',
+          15000 // 15 second timeout
+        );
+        
+        logger.info(`OrdersPage: Found ${cateringOrders?.length || 0} catering orders`);
 
-      if (typeFilter === 'catering') {
-        totalCount = await prisma.cateringOrder.count({ where: cateringOrdersWhere });
+        const serializedCateringOrders = serializeCateringOrders(cateringOrders || []);
+        allOrders.push(...serializedCateringOrders);
+
+        if (typeFilter === 'catering') {
+          totalCount = await withConnectionManagement(
+            () => prisma.cateringOrder.count({ where: cateringOrdersWhere }),
+            'Count catering orders',
+            10000 // 10 second timeout
+          );
+          logger.info(`OrdersPage: Catering orders total count: ${totalCount}`);
+        }
+      } catch (cateringOrdersError) {
+        logger.error('OrdersPage: Error fetching catering orders:', cateringOrdersError);
+        throw cateringOrdersError;
       }
     }
 
@@ -305,8 +406,13 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         return 0;
       });
 
+      // Store total count before slicing for pagination
       totalCount = allOrders.length;
+      
+      // Apply pagination by slicing the sorted array
       allOrders = allOrders.slice(skip, skip + itemsPerPage);
+      
+      logger.info(`After sorting and pagination: totalCount=${totalCount}, showing ${allOrders.length} orders for page ${currentPage}`);
     }
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -314,78 +420,110 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
     logger.info(`Found ${allOrders.length} orders for display (page ${currentPage}/${totalPages})`);
 
     return (
-      <div className="space-y-6 md:space-y-8">
-        <ResponsivePageHeader
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <FormHeader
           title="Order Management"
-          subtitle="Manage and track customer orders"
-          breadcrumbs={
-            <>
-              <BreadcrumbItem href="/admin">Dashboard</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem isCurrent>Orders</BreadcrumbItem>
-            </>
-          }
-          actions={
-            <>
-              <Link
-                href="/admin/orders/archived"
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 text-center transition-colors duration-200"
-              >
-                View Archived Orders
-              </Link>
-              <Link
-                href="/admin/orders/manual"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-center transition-colors duration-200"
-              >
-                Add Manual Order
-              </Link>
-            </>
-          }
+          description="Manage and track customer orders"
+          backUrl="/admin"
+          backLabel="Back to Dashboard"
         />
 
-        {/* Filters Section */}
-        <OrderFilters
-          currentSearch={searchQuery}
-          currentType={typeFilter}
-          currentStatus={statusFilter}
-          currentPayment={paymentFilter}
-        />
+        <div className="space-y-10 mt-8">
+          {/* Action Buttons */}
+          <FormActions>
+            <FormButton
+              variant="secondary"
+              href="/admin/orders/archived"
+              leftIcon={FormIcons.archive}
+            >
+              View Archived Orders
+            </FormButton>
+            <FormButton
+              href="/admin/orders/manual"
+              leftIcon={FormIcons.plus}
+            >
+              Add Manual Order
+            </FormButton>
+          </FormActions>
 
-        {allOrders.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            No orders found{searchQuery && ` matching "${searchQuery}"`}.
-          </div>
-        ) : (
-          <>
-            <OrdersTableWrapper 
-              orders={allOrders}
-              sortKey={sortField}
-              sortDirection={sortDirection}
-            />
+          {/* Filters Section */}
+          <OrderFilters
+            currentSearch={searchQuery}
+            currentType={typeFilter}
+            currentStatus={statusFilter}
+            currentPayment={paymentFilter}
+          />
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                searchParams={searchParamsResolved || {}}
+          {allOrders.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              No orders found{searchQuery && ` matching "${searchQuery}"`}.
+            </div>
+          ) : (
+            <>
+              <OrdersTableWrapper 
+                orders={allOrders}
+                sortKey={sortField}
+                sortDirection={sortDirection}
               />
-            )}
-          </>
-        )}
+
+              {/* Pagination - matching products page design */}
+              {totalPages > 1 && (
+                <div className="flex justify-center">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    searchParams={searchParamsResolved || {}}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     );
   } catch (error) {
-    logger.error('Error fetching orders:', error);
+    // Enhanced error handling with more detailed information
+    let errorInfo: any = {
+      timestamp: new Date().toISOString(),
+      searchParams: {
+        page: currentPage,
+        search: searchQuery,
+        type: typeFilter,
+        status: statusFilter,
+        payment: paymentFilter,
+        sort: sortField,
+        direction: sortDirection
+      }
+    };
+
+    if (error instanceof Error) {
+      errorInfo.message = error.message;
+      errorInfo.name = error.name;
+      errorInfo.stack = error.stack;
+    } else if (error && typeof error === 'object') {
+      errorInfo.errorObject = JSON.stringify(error, null, 2);
+    } else {
+      errorInfo.message = String(error) || 'Unknown error with no details';
+    }
+
+    // Log both the original error and our formatted info
+    console.error('[ORDERS_PAGE_ERROR]', error);
+    logger.error('Error fetching orders:', errorInfo);
+    
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Order Management</h1>
+      <FormContainer>
+        <FormHeader
+          title="Order Management"
+          description="Manage and track customer orders"
+          backUrl="/admin"
+          backLabel="Back to Dashboard"
+        />
         <ErrorDisplay
           title="Failed to Load Orders"
           message="There was an error loading the orders. Please try again later."
           returnLink={{ href: '/admin', label: 'Return to dashboard' }}
         />
-      </div>
+      </FormContainer>
     );
   }
 }

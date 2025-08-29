@@ -1,0 +1,47 @@
+import React from 'react';
+import { 
+  Info, 
+  Shield, 
+  Image, 
+  Check, 
+  AlertTriangle, 
+  Grid3X3, 
+  ArrowLeft, 
+  Save,
+  RefreshCw,
+  Plus,
+  Archive,
+  Truck,
+  User,
+  CreditCard,
+  Package,
+  Home,
+  Store,
+  Utensils,
+  ShoppingBag
+} from 'lucide-react';
+
+// Icon components for form components
+export const FormIcons = {
+  info: <Info className="w-full h-full" />,
+  shield: <Shield className="w-full h-full" />, 
+  image: <Image className="w-full h-full" aria-label="image icon" />,
+  check: <Check className="w-full h-full" />,
+  warning: <AlertTriangle className="w-full h-full" />,
+  grid: <Grid3X3 className="w-full h-full" />,
+  arrowLeft: <ArrowLeft className="w-full h-full" />,
+  save: <Save className="w-full h-full" />,
+  refresh: <RefreshCw className="w-full h-full" />,
+  plus: <Plus className="w-full h-full" />,
+  archive: <Archive className="w-full h-full" />,
+  truck: <Truck className="w-full h-full" />,
+  user: <User className="w-full h-full" />,
+  creditCard: <CreditCard className="w-full h-full" />,
+  package: <Package className="w-full h-full" />,
+  home: <Home className="w-full h-full" />,
+  store: <Store className="w-full h-full" />,
+  catering: <Utensils className="w-full h-full" />,
+  shipping: <ShoppingBag className="w-full h-full" />,
+} as const;
+
+export type FormIconType = typeof FormIcons[keyof typeof FormIcons];

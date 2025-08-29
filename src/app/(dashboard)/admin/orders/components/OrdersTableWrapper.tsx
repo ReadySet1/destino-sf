@@ -22,6 +22,7 @@ interface UnifiedOrder {
   shippingCarrier: string | null;
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
+  paymentMethod: string | null;
 }
 
 interface OrdersTableWrapperProps {

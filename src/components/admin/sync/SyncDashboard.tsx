@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { SimpleSyncTrigger } from './SimpleSyncTrigger';
-import { SyncProgress } from './SyncProgress';
-import { SimpleSyncHistory } from './SimpleSyncHistory';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormIcons } from '@/components/ui/form/FormIcons';
+import { SimpleSyncTriggerWithDesignSystem } from './SimpleSyncTriggerWithDesignSystem';
+import { SyncProgressWithDesignSystem } from './SyncProgressWithDesignSystem';
+import { SimpleSyncHistoryWithDesignSystem } from './SimpleSyncHistoryWithDesignSystem';
 
 export function SyncDashboard() {
   const [currentSyncId, setCurrentSyncId] = useState<string | null>(null);
@@ -26,15 +28,38 @@ export function SyncDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Simple Sync Trigger */}
-      <SimpleSyncTrigger onSyncStarted={handleSyncStarted} disabled={!!currentSyncId} />
+    <div className="space-y-10">
+      {/* Sync Controls */}
+      <FormSection
+        title="Synchronize Products"
+        description="Synchronize products, categories, and images from Square POS. This will update products, prices, categories, images, and active/inactive status."
+        icon={FormIcons.refresh}
+        variant="blue"
+      >
+        <SimpleSyncTriggerWithDesignSystem onSyncStarted={handleSyncStarted} disabled={!!currentSyncId} />
+      </FormSection>
 
       {/* Sync Progress (only shown when there's an active sync) */}
-      {currentSyncId && <SyncProgress syncId={currentSyncId} onSyncComplete={handleSyncComplete} />}
+      {currentSyncId && (
+        <FormSection
+          title="Sync Progress"
+          description="Monitor the current synchronization progress and status."
+          icon={FormIcons.refresh}
+          variant="amber"
+        >
+          <SyncProgressWithDesignSystem syncId={currentSyncId} onSyncComplete={handleSyncComplete} />
+        </FormSection>
+      )}
 
-      {/* Simple Sync History */}
-      <SimpleSyncHistory refreshTrigger={historyRefreshTrigger} />
+      {/* Sync History */}
+      <FormSection
+        title="Synchronization History"
+        description="View recent synchronization attempts and their results."
+        icon={FormIcons.archive}
+        variant="default"
+      >
+        <SimpleSyncHistoryWithDesignSystem refreshTrigger={historyRefreshTrigger} />
+      </FormSection>
     </div>
   );
 }

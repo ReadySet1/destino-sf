@@ -5,13 +5,24 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Trash2, Plus, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Plus, Save } from 'lucide-react';
 import { type ShippingWeightConfig } from '@/lib/shippingUtils';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormField } from '@/components/ui/form/FormField';
+import { FormInput } from '@/components/ui/form/FormInput';
+import { FormCheckbox } from '@/components/ui/form/FormCheckbox';
+import { FormGrid } from '@/components/ui/form/FormGrid';
+import { FormStack } from '@/components/ui/form/FormStack';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 interface ShippingConfigurationFormProps {
   configurations: ShippingWeightConfig[];

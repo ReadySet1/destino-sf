@@ -34,6 +34,7 @@ interface UnifiedOrder {
   shippingCarrier: string | null;
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
+  paymentMethod: string | null;
 }
 
 interface OrdersTableProps {
@@ -59,10 +60,24 @@ function getStatusColor(status: OrderStatus | CateringStatus) {
   }
 }
 
-function getPaymentStatusColor(status: PaymentStatus) {
-  switch (status) {
+// Helper function to get the display text for payment status
+function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: string | null): string {
+  // If payment method is CASH and status is PENDING, show CASH
+  if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus === 'PENDING') {
+    return 'CASH';
+  }
+  return paymentStatus;
+}
+
+function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: string | null) {
+  // Get the display status first
+  const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
+  
+  switch (displayStatus) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
+    case 'CASH':
+      return 'bg-blue-100 text-blue-800';
     case 'PAID':
       return 'bg-green-100 text-green-800';
     case 'FAILED':
@@ -273,9 +288,9 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus, order.paymentMethod)}`}
                   >
-                    {order.paymentStatus}
+                    {getPaymentStatusDisplay(order.paymentStatus, order.paymentMethod)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

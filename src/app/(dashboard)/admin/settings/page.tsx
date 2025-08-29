@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import AdminSettingsTabs from '@/components/admin/AdminSettingsTabs';
+import AdminSettingsWithDesignSystem from '@/components/admin/AdminSettingsWithDesignSystem';
 import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
 
 export const metadata = {
@@ -46,8 +46,8 @@ export default async function SettingsPage() {
   }));
 
   return (
-    <div className="container mx-auto py-6">
-      <AdminSettingsTabs 
+    <>
+      <AdminSettingsWithDesignSystem 
         storeSettings={processedSettings}
         deliveryZones={processedDeliveryZones}
       />
@@ -58,6 +58,6 @@ export default async function SettingsPage() {
           <DeliveryZoneDebugger />
         </div>
       )}
-    </div>
+    </>
   );
 }

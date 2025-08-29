@@ -1,7 +1,9 @@
-import Link from 'next/link';
 import { getCategories } from './actions';
-
 import DeleteCategoryForm from './DeleteCategoryForm';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
@@ -10,48 +12,45 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div>
-
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Category Management</h1>
-        <Link
-          href="/admin/products"
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-        >
-          Back to Products
-        </Link>
-      </div>
+    <FormContainer>
+      <FormHeader
+        title="Category Management"
+        description="Organize your products with custom categories"
+        backUrl="/admin/products"
+        backLabel="Back to Products"
+      />
 
       {/* Warning about Square categories */}
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-blue-700">
-              Categories are managed locally and used for organizing products in your store. While
-              products sync from Square, categories are independent and help you structure your
-              online catalog.
-            </p>
-          </div>
+      <FormSection
+        title="Category Information"
+        description="Categories are managed locally and used for organizing products in your store. While products sync from Square, categories are independent and help you structure your online catalog."
+        icon={FormIcons.info}
+        variant="blue"
+      >
+        <div className="text-sm text-blue-700">
+          <p className="mb-2">
+            <strong>Local Management:</strong> Categories are created and managed within this system.
+          </p>
+          <p>
+            <strong>Product Organization:</strong> Use categories to structure your online catalog for better customer navigation.
+          </p>
         </div>
-      </div>
+      </FormSection>
 
       {/* Categories List */}
-      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Categories</h2>
-
+      <FormSection
+        title={`Categories (${categories.length})`}
+        description="View and manage your product categories"
+        icon={FormIcons.grid}
+      >
         {categories.length === 0 ? (
-          <p className="text-gray-500">
-            No categories created yet. Create your first category below.
-          </p>
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+              {FormIcons.grid}
+            </div>
+            <p className="text-gray-500 text-lg mb-2">No categories created yet</p>
+            <p className="text-gray-400 text-sm">Create your first category to organize your products</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -91,7 +90,7 @@ export default async function CategoriesPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {categories.map(category => (
-                  <tr key={category.id}>
+                  <tr key={category.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{category.name}</div>
                     </td>
@@ -121,7 +120,7 @@ export default async function CategoriesPage() {
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </FormSection>
+    </FormContainer>
   );
 }

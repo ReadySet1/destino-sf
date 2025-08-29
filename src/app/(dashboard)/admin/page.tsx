@@ -73,41 +73,134 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <ResponsivePageHeader
-        title="Admin Dashboard"
-        subtitle="Manage your store operations and settings"
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Manage your store operations and settings
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <DashboardCard title="Orders" href="/admin/orders" description="Manage customer orders" />
-        <DashboardCard
-          title="Manual Orders"
-          href="/admin/orders/manual"
-          description="Create and manage manual orders (cash only)"
-        />
-        <DashboardCard
-          title="Products"
-          href="/admin/products"
-          description="Manage store products"
-        />
-        <DashboardCard
-          title="Categories"
-          href="/admin/categories"
-          description="Manage product categories"
-        />
-        <DashboardCard
-          title="Settings"
-          href="/admin/settings"
-          description="Configure store settings"
-        />
-        <DashboardCard
-          title="Shipping Config"
-          href="/admin/shipping"
-          description="Manage shipping weight calculations"
-        />
-        <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
-        {/* <DashboardCard title="Business Hours" href="/admin/hours" description="Set store hours" /> */}
+        <div className="space-y-10">
+          {/* Quick Actions */}
+          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-200 bg-indigo-50">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-6 h-6 text-indigo-600">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Quick Actions</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Most commonly used admin functions
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DashboardCard title="Orders" href="/admin/orders" description="Manage customer orders" />
+                <DashboardCard
+                  title="Manual Orders"
+                  href="/admin/orders/manual"
+                  description="Create manual orders"
+                />
+                <DashboardCard
+                  title="Add Product"
+                  href="/admin/products/new"
+                  description="Add new product to catalog"
+                />
+                <DashboardCard
+                  title="Product Order"
+                  href="/admin/products/order"
+                  description="Arrange product display order"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Catalog Management */}
+          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-200 bg-blue-50">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-6 h-6 text-blue-600">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Catalog Management</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Manage your product catalog and inventory
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <DashboardCard
+                  title="Products"
+                  href="/admin/products"
+                  description="Manage store products"
+                />
+                <DashboardCard
+                  title="Categories"
+                  href="/admin/categories"
+                  description="Organize product categories"
+                />
+                <DashboardCard
+                  title="Product Sync"
+                  href="/admin/square-sync"
+                  description="Sync with Square catalog"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Administration */}
+          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-200 bg-purple-50">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-6 h-6 text-purple-600">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Administration</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    User management and system configuration
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
+                <DashboardCard
+                  title="Store Settings"
+                  href="/admin/settings"
+                  description="Configure store settings"
+                />
+                <DashboardCard
+                  title="Shipping Config"
+                  href="/admin/shipping"
+                  description="Manage shipping calculations"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
