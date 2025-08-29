@@ -37,6 +37,15 @@ type ProductWithCategory = {
     price: number | string | Decimal | null;
     squareVariantId: string | null;
   }>;
+  // Add availability fields for admin badges
+  isAvailable?: boolean;
+  isPreorder?: boolean;
+  visibility?: string;
+  itemState?: string;
+  preorderStartDate?: Date | null;
+  preorderEndDate?: Date | null;
+  availabilityStart?: Date | null;
+  availabilityEnd?: Date | null;
 };
 
 type ProductPageProps = {
@@ -137,6 +146,15 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
     featured: product.featured,
     active: product.active,
     variants: product.variants || [],
+    // Add availability fields for admin badges
+    isAvailable: product.isAvailable,
+    isPreorder: product.isPreorder,
+    visibility: product.visibility,
+    itemState: product.itemState,
+    preorderStartDate: product.preorderStartDate,
+    preorderEndDate: product.preorderEndDate,
+    availabilityStart: product.availabilityStart,
+    availabilityEnd: product.availabilityEnd,
   }));
 
   async function deleteProduct(formData: FormData) {
@@ -266,6 +284,9 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                   <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Availability
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
@@ -305,6 +326,44 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                       </td>
                       <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-[150px] capitalize">
                         {product.name}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-1">
+                          {/* Availability Status Badge */}
+                          {product.isAvailable === false && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              Unavailable
+                            </span>
+                          )}
+                          
+                          {/* Pre-order Badge */}
+                          {product.isPreorder && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              Pre-order
+                            </span>
+                          )}
+                          
+                          {/* Visibility Badge */}
+                          {product.visibility === 'PRIVATE' && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              Hidden
+                            </span>
+                          )}
+                          
+                          {/* Seasonal Badge */}
+                          {product.itemState === 'SEASONAL' && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                              Seasonal
+                            </span>
+                          )}
+                          
+                          {/* Show "Available" only if no other status badges */}
+                          {product.isAvailable !== false && !product.isPreorder && product.visibility !== 'PRIVATE' && product.itemState !== 'SEASONAL' && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              Available
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <CategorySelect
@@ -353,7 +412,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       No products found. Try adjusting your filters.
                     </td>
                   </tr>
