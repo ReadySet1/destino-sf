@@ -160,11 +160,39 @@ export default async function ProductPage({ params }: PageProps) {
   // Fetch from database using slug or id (if it's a UUID)
   const dbProduct = await prisma.product.findFirst({
     where: {
-      OR: [
-        { slug: slug }, // Try matching by slug field
-        ...(isUUID ? [{ id: slug }] : []), // Conditionally add ID match if slug is a UUID
+      AND: [
+        {
+          OR: [
+            { slug: slug }, // Try matching by slug field
+            ...(isUUID ? [{ id: slug }] : []), // Conditionally add ID match if slug is a UUID
+          ],
+        },
+        {
+          active: true, // Only fetch active products
+        },
+        {
+          // Properly filter by visibility fields
+          OR: [
+            { visibility: 'PUBLIC' },
+            { visibility: null }, // Default to PUBLIC if null
+          ],
+        },
+        {
+          // Allow both available items AND pre-order items
+          OR: [
+            { isAvailable: true },
+            { isPreorder: true },
+          ],
+        },
+        {
+          NOT: {
+            OR: [
+              { itemState: 'INACTIVE' },
+              { itemState: 'ARCHIVED' },
+            ],
+          },
+        },
       ],
-      active: true, // Only fetch active products
     },
     include: {
       variants: true,
@@ -225,6 +253,16 @@ export default async function ProductPage({ params }: PageProps) {
     active: dbProduct.active, // Should always be true based on query, but include it
     createdAt: dbProduct.createdAt,
     updatedAt: dbProduct.updatedAt,
+    
+    // Add availability fields for pre-order functionality
+    isAvailable: dbProduct.isAvailable ?? true,
+    isPreorder: dbProduct.isPreorder ?? false,
+    visibility: dbProduct.visibility,
+    itemState: dbProduct.itemState,
+    preorderStartDate: dbProduct.preorderStartDate,
+    preorderEndDate: dbProduct.preorderEndDate,
+    availabilityStart: dbProduct.availabilityStart,
+    availabilityEnd: dbProduct.availabilityEnd,
   };
 
   // Use the transformed product directly

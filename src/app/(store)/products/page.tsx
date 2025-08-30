@@ -71,14 +71,26 @@ export default async function ProductsPage() {
     return await prisma.product.findMany({
       where: {
         active: true, // Fetch only active products
-        // Exclude catering products from main products page
-        category: {
-          NOT: {
-            name: {
-              startsWith: 'CATERING',
-              mode: 'insensitive',
+        // Properly filter by visibility fields
+        OR: [
+          { visibility: 'PUBLIC' },
+          { visibility: null }, // Default to PUBLIC if null
+        ],
+        isAvailable: true, // Only show available items
+        NOT: {
+          OR: [
+            { itemState: 'INACTIVE' },
+            { itemState: 'ARCHIVED' },
+            // Exclude catering products from main products page
+            {
+              category: {
+                name: {
+                  startsWith: 'CATERING',
+                  mode: 'insensitive',
+                },
+              },
             },
-          },
+          ],
         },
       },
       include: {

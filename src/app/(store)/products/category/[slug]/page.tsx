@@ -155,14 +155,26 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         where: {
           categoryId: category.id,
           active: true, // Only fetch active products
-          // Exclude catering products from category pages
-          category: {
-            NOT: {
-              name: {
-                startsWith: 'CATERING',
-                mode: 'insensitive',
+          // Properly filter by visibility fields
+          OR: [
+            { visibility: 'PUBLIC' },
+            { visibility: null }, // Default to PUBLIC if null
+          ],
+          isAvailable: true, // Only show available items
+          NOT: {
+            OR: [
+              { itemState: 'INACTIVE' },
+              { itemState: 'ARCHIVED' },
+              // Exclude catering products from category pages
+              {
+                category: {
+                  name: {
+                    startsWith: 'CATERING',
+                    mode: 'insensitive',
+                  },
+                },
               },
-            },
+            ],
           },
         },
         select: {

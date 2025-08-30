@@ -210,6 +210,48 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
 const getProductHighlights = (product: Product) => {
   const categoryName = product.category?.name?.toLowerCase() || '';
   const productName = product.name.toLowerCase();
+  const isPreorder = product.isPreorder ?? false;
+
+  // Special highlights for pre-order items
+  if (isPreorder) {
+    const highlights = [
+      {
+        icon: <Clock className="w-4 h-4 text-blue-300" />,
+        text: 'Pre-order',
+        color: 'text-blue-300',
+      },
+    ];
+
+    // Add expected delivery date if available
+    if (product.preorderEndDate) {
+      const endDate = new Date(product.preorderEndDate);
+      // Use consistent date formatting to avoid hydration issues
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const formattedDate = `${months[endDate.getMonth()]} ${endDate.getDate()}`;
+      highlights.push({
+        icon: <Clock className="w-4 h-4 text-blue-300" />,
+        text: `Available ${formattedDate}`,
+        color: 'text-blue-300',
+      });
+    }
+
+    // Add category-specific third highlight
+    if (categoryName.includes('alfajor') || productName.includes('alfajor')) {
+      highlights.push({
+        icon: <Users className="w-4 h-4 text-purple-300" />,
+        text: '6-pack combo',
+        color: 'text-purple-300',
+      });
+    } else {
+      highlights.push({
+        icon: <Users className="w-4 h-4 text-purple-300" />,
+        text: '4 pack',
+        color: 'text-purple-300',
+      });
+    }
+
+    return highlights;
+  }
 
   // Check if it's alfajores
   if (categoryName.includes('alfajor') || productName.includes('alfajor')) {
@@ -352,10 +394,39 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active ?? true;
+  const isAvailable = product.isAvailable ?? true;
+  const isPreorder = product.isPreorder ?? false;
   const stock: number = 999; // Explicitly type as number
+
+  // Helper function to format pre-order message
+  const formatPreorderMessage = (product: Product): string => {
+    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
+      year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    let message = `This item is available for pre-order only.\n\n`;
+    
+    if (product.preorderStartDate && product.preorderEndDate) {
+      message += `Expected availability: ${formatDate(product.preorderStartDate)} - ${formatDate(product.preorderEndDate)}\n\n`;
+    } else if (product.preorderEndDate) {
+      message += `Expected availability by: ${formatDate(product.preorderEndDate)}\n\n`;
+    }
+    
+    message += `Would you like to place a pre-order for this item?`;
+    return message;
+  };
 
   const handleAddToCart = () => {
     console.log('Adding to cart:', { productName, quantity, selectedVariant });
+    
+    if (isPreorder) {
+      // For pre-order items, show a special confirmation dialog
+      const preorderMessage = formatPreorderMessage(product);
+      if (!confirm(preorderMessage)) {
+        return;
+      }
+    }
+    
     const priceToAdd =
       typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice
         ? displayPrice.toNumber()
@@ -372,9 +443,12 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
     addItem(cartItem);
     console.log('Showing alert for:', cartItem);
-    showAlert(
-      `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart.`
-    );
+    
+    const alertMessage = isPreorder 
+      ? `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been pre-ordered and added to your cart.`
+      : `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart.`;
+    
+    showAlert(alertMessage);
   };
 
   const incrementQuantity = () => {
@@ -395,7 +469,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     <div className="relative mb-0">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Image Gallery */}
-        <div className="w-full">
+        <div className="w-full relative">
           <div className="aspect-square overflow-hidden rounded-3xl bg-white/10">
             <Image
               src={mainImage}
@@ -405,6 +479,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               className="h-full w-full object-cover object-center"
               priority
             />
+            {/* Pre-order Badge */}
+            {isPreorder && (
+              <div className="absolute top-4 right-4 z-10">
+                <span className="bg-blue-500 text-white px-3 py-1 text-sm font-semibold rounded-full shadow-lg">
+                  Pre-order
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -418,10 +500,10 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               {getProductHighlights(product).map((highlight, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-full"
+                  className="flex items-center gap-2 bg-white/40 backdrop-blur-md border border-white/50 px-4 py-2 rounded-full"
                 >
                   <span className={`${highlight.color} w-4 h-4`}>{highlight.icon}</span>
-                  <span className="text-sm text-white">{highlight.text}</span>
+                  <span className="text-sm font-medium text-white drop-shadow-sm">{highlight.text}</span>
                 </div>
               ))}
             </div>
@@ -537,13 +619,41 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                     </div>
                   </div>
 
-                  {/* Add to Cart Button */}
+                  {/* Add to Cart / Pre-order Button */}
                   <button
                     onClick={handleAddToCart}
-                    className="h-10 px-6 bg-[#F7B614] text-white rounded-full text-sm font-semibold hover:bg-[#E5A912] transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!isActive || stock === 0}
+                    className={`h-10 px-6 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                      isPreorder
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500'
+                        : 'bg-[#F7B614] hover:bg-[#E5A912] text-white focus:ring-orange-500'
+                    }`}
+                    disabled={(!isActive && !isPreorder) || stock === 0}
                   >
-                    Add to Cart
+                    {isPreorder ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
+                          />
+                        </svg>
+                        Pre-order Now
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9"
+                          />
+                        </svg>
+                        Add to Cart
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>

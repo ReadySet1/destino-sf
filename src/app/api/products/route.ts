@@ -49,16 +49,44 @@ export async function GET(request: NextRequest) {
       featured: featured,
     };
 
+    // Add proper visibility filtering for customer-facing queries
+    if (onlyActive) {
+      // Only apply visibility filters when fetching active products for customers
+      whereCondition.OR = [
+        { visibility: 'PUBLIC' },
+        { visibility: null }, // Default to PUBLIC if null
+      ];
+      whereCondition.isAvailable = true;
+      whereCondition.NOT = {
+        OR: [
+          { itemState: 'INACTIVE' },
+          { itemState: 'ARCHIVED' },
+        ],
+      };
+    }
+
     // Exclude catering products by default (unless explicitly requested)
     if (excludeCatering) {
-      whereCondition.category = {
-        NOT: {
-          name: {
-            startsWith: 'CATERING',
-            mode: 'insensitive',
+      // Need to merge with existing NOT conditions
+      if (whereCondition.NOT) {
+        whereCondition.NOT.OR.push({
+          category: {
+            name: {
+              startsWith: 'CATERING',
+              mode: 'insensitive',
+            },
           },
-        },
-      };
+        });
+      } else {
+        whereCondition.category = {
+          NOT: {
+            name: {
+              startsWith: 'CATERING',
+              mode: 'insensitive',
+            },
+          },
+        };
+      }
     }
 
     // Add search condition if provided
