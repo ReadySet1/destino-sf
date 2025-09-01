@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
       ? selectedVariant.price
       : product.price;
 
-  // Generate short description if none exists
+  // Generate short description - always prefer the actual description from database
   const shortDescription = product.description
     ? truncateText(product.description, 80)
     : generateShortDescription(product.name, product.category?.name);
@@ -233,6 +233,7 @@ function truncateText(text: string, maxLength: number): string {
   return text.substring(0, maxLength).trim() + '...';
 }
 
+// FALLBACK ONLY: This function should only be called when there's no description in the database
 function generateShortDescription(productName: string, categoryName?: string): string {
   const category = categoryName?.toLowerCase() || '';
 
