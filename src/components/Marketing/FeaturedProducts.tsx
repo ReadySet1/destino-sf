@@ -55,11 +55,19 @@ export function FeaturedProducts() {
   const ProductCard = ({ pick, className }: { pick: SpotlightPick; className?: string }) => {
     const productData = {
       name: pick.product?.name || 'Product',
+      description: pick.product?.description || '',
       price:
         pick.product?.price && pick.product.price > 0 ? `$${pick.product.price.toFixed(2)}` : '',
       imageUrl: getProductImage(pick),
       slug: pick.product?.slug || '#',
     };
+
+    // Generate short description (max 80 characters)
+    const shortDescription = productData.description
+      ? productData.description.length > 80
+        ? productData.description.substring(0, 80).trim() + '...'
+        : productData.description
+      : '';
 
     const linkHref = pick.product?.slug ? `/products/${pick.product.slug}` : '#';
 
@@ -80,7 +88,10 @@ export function FeaturedProducts() {
         </div>
         <div className="mt-4">
           <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
-          {productData.price && <p className="font-medium text-amber-600">{productData.price}</p>}
+          {shortDescription && (
+            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{shortDescription}</p>
+          )}
+          {productData.price && <p className="font-medium text-amber-600 mt-2">{productData.price}</p>}
         </div>
       </Link>
     );
