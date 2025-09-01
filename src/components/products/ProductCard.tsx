@@ -38,9 +38,19 @@ const formatPrice = (price: any): string => {
 
 // Helper function to create short, card-appropriate descriptions
 const getShortDescription = (productName: string, fullDescription?: string): string => {
+  // ALWAYS prefer the actual description from the database first
+  if (fullDescription && fullDescription.length > 0) {
+    const truncated =
+      fullDescription.length > 80
+        ? fullDescription.substring(0, 80).trim() + '...'
+        : fullDescription;
+    return truncated;
+  }
+
+  // Only use fallbacks if there's no description in the database
   const name = productName.toLowerCase();
 
-  // Create concise descriptions based on product name
+  // Create concise descriptions based on product name (FALLBACK ONLY)
   if (name.includes('argentine beef') || name.includes('carne asada')) {
     return 'Traditional Argentine beef empanadas with ground beef, pimiento and spices.';
   }
@@ -63,15 +73,6 @@ const getShortDescription = (productName: string, fullDescription?: string): str
 
   if (name.includes('alfajor')) {
     return 'Buttery shortbread cookies filled with rich dulce de leche.';
-  }
-
-  // If no specific match, truncate the original description or create a generic one
-  if (fullDescription && fullDescription.length > 0) {
-    const truncated =
-      fullDescription.length > 60
-        ? fullDescription.substring(0, 60).trim() + '...'
-        : fullDescription;
-    return truncated;
   }
 
   return 'Handcrafted with premium ingredients and traditional recipes.';
