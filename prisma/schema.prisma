@@ -25,6 +25,7 @@ model Profile {
   archivedOrders           Order[]                    @relation("ArchivedOrders")
   orders                   Order[]
   userSyncLogs             UserSyncLog[]
+  resolvedMappingAudits    ProductMappingAudit[]      @relation("ResolvedMappingAudits")
 
   @@map("profiles")
 }
@@ -68,10 +69,17 @@ model Product {
   availabilityMeta    Json?     @map("availability_metadata")
   customAttributes    Json?     @map("custom_attributes")
   
+  // Product descriptor validation fields
+  correctDescription     String?   @map("correct_description")
+  descriptionSource      String?   @default("SQUARE") @map("description_source") @db.VarChar(50)
+  descriptionValidatedAt DateTime? @map("description_validated_at")
+  mappingStatus          String?   @default("NEEDS_REVIEW") @map("mapping_status") @db.VarChar(20)
+  
   orderItems         OrderItem[]
   category           Category        @relation(fields: [categoryId], references: [id])
   spotlightPicks     SpotlightPick[]
   variants           Variant[]
+  mappingAudits      ProductMappingAudit[]
 
   @@index([categoryId])
   @@index([ordinal])
@@ -86,6 +94,7 @@ model Product {
   @@index([dietaryPreferences], map: "idx_products_dietary_preferences", type: Gin)
   @@index([nutritionFacts], map: "idx_products_nutrition_facts", type: Gin)
   @@index([isAvailable, visibility, active], map: "idx_products_availability")
+  @@index([mappingStatus], map: "idx_products_mapping_status")
   @@map("products")
 }
 
@@ -656,6 +665,31 @@ model user_sync_queue {
 
   @@index([processed], map: "idx_user_sync_queue_processed")
   @@index([user_id], map: "idx_user_sync_queue_user_id")
+}
+
+model ProductMappingAudit {
+  id            String    @id @default(uuid()) @db.Uuid
+  productId     String    @map("product_id") @db.Uuid
+  squareId      String    @map("square_id") @db.VarChar(255)
+  issueType     String    @map("issue_type") @db.VarChar(50)
+  severity      String    @db.VarChar(20)
+  fieldName     String?   @map("field_name") @db.VarChar(100)
+  expectedValue String?   @map("expected_value")
+  actualValue   String?   @map("actual_value")
+  message       String?
+  resolved      Boolean   @default(false)
+  resolvedAt    DateTime? @map("resolved_at")
+  resolvedBy    String?   @map("resolved_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  resolvedByUser Profile? @relation("ResolvedMappingAudits", fields: [resolvedBy], references: [id])
+
+  @@index([productId], map: "idx_mapping_audit_product")
+  @@index([issueType], map: "idx_mapping_audit_issue_type")
+  @@index([resolved], map: "idx_mapping_audit_resolved")
+  @@map("product_mapping_audit")
 }
 
 enum UserRole {
