@@ -5,55 +5,61 @@ const globalForPrisma = globalThis as unknown as {
   prismaVersion: string | undefined;
 };
 
-// Version identifier for the current Prisma client
-const CURRENT_PRISMA_VERSION = '2025-01-28-fix-prepared-statements';
+// Version identifier for the current Prisma client - Updated for comprehensive prepared statement fix
+const CURRENT_PRISMA_VERSION = '2025-01-28-comprehensive-prepared-statement-fix';
 
-// Optimized Prisma configuration for Vercel/Serverless with better connection handling
+// Detect Vercel environment
+const isVercel = process.env.VERCEL === '1';
+
+// Build connection string with proper parameters for comprehensive prepared statement fix
+function getDatabaseUrl() {
+  const baseUrl = process.env.DATABASE_URL;
+  if (!baseUrl) throw new Error('DATABASE_URL not defined');
+  
+  const url = new URL(baseUrl);
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // For Vercel production, add pgBouncer compatibility parameters
+  if (isVercel && isProduction) {
+    console.log('🔗 Configuring Prisma for Vercel production with pgBouncer compatibility');
+    
+    // Disable prepared statements for pgBouncer compatibility - CRITICAL FIX
+    url.searchParams.set('pgbouncer', 'true');
+    url.searchParams.set('statement_cache_size', '0');
+    url.searchParams.set('prepared_statements', 'false');
+    
+    // Additional compatibility parameters
+    url.searchParams.set('pool_timeout', '60');
+    url.searchParams.set('statement_timeout', '30000'); // 30 seconds
+    url.searchParams.set('idle_in_transaction_session_timeout', '30000');
+    
+    // Remove conflicting parameters
+    url.searchParams.delete('connection_limit');
+    url.searchParams.delete('prepare');
+    
+    console.log('🔧 Prisma configured for Vercel serverless with disabled prepared statements');
+  } else if (isProduction) {
+    // For non-Vercel production environments
+    url.searchParams.set('statement_timeout', '30000');
+    url.searchParams.set('idle_in_transaction_session_timeout', '30000');
+    console.log('🔗 Configuring Prisma for production environment');
+  } else if (isDevelopment) {
+    // For development, use longer timeouts for debugging
+    url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
+    url.searchParams.set('idle_in_transaction_session_timeout', '60000');
+    console.log('🔧 Configuring Prisma for development environment');
+  }
+  
+  return url.toString();
+}
+
+// Optimized Prisma configuration for Vercel/Serverless with comprehensive prepared statement fix
 const prismaClientSingleton = () => {
   const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Get database URL and optimize for Supabase pooler
-  let databaseUrl = process.env.DATABASE_URL;
-  if (databaseUrl) {
-    const url = new URL(databaseUrl);
-    
-    // Check if it's a Supabase pooler URL (already optimized for connection pooling)
-    const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
-    
-    if (isSupabasePooler) {
-      // For Supabase pooler, use optimized settings and don't override their pooling
-      console.log('🔗 Using Supabase pooler with optimized configuration');
-      
-      // Only set timeouts for better error handling, let Supabase handle pooling
-      url.searchParams.set('statement_timeout', '30000'); // 30 seconds
-      url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
-      
-      // CRITICAL: Disable prepared statements for pgBouncer transaction mode
-      // This prevents "prepared statement does not exist" and "already exists" errors
-      url.searchParams.set('prepare', 'false');
-      
-      // Remove any connection_limit parameters that might conflict with Supabase pooler
-      url.searchParams.delete('connection_limit');
-      url.searchParams.delete('pool_timeout');
-      url.searchParams.delete('pgbouncer');
-      
-      databaseUrl = url.toString();
-    } else if (isProduction) {
-      // For non-Supabase databases in production, use custom pooling
-      url.searchParams.set('pgbouncer', 'true');
-      url.searchParams.set('connection_limit', '1');
-      url.searchParams.set('pool_timeout', '20');
-      url.searchParams.set('statement_timeout', '30000'); // 30 seconds
-      url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
-      databaseUrl = url.toString();
-    } else if (isDevelopment) {
-      // For development, use longer timeouts for debugging
-      url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
-      url.searchParams.set('idle_in_transaction_session_timeout', '60000');
-      databaseUrl = url.toString();
-    }
-  }
+  const databaseUrl = getDatabaseUrl();
   
   return new PrismaClient({
     log: isDevelopment ? [
@@ -104,6 +110,18 @@ if (shouldRegenerateClient()) {
 export const prisma = prismaClient;
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+// Ensure proper cleanup in serverless environment
+if (isVercel) {
+  process.on('beforeExit', async () => {
+    try {
+      await prisma.$disconnect();
+      console.log('🔌 Prisma client disconnected on serverless function exit');
+    } catch (error) {
+      console.warn('Non-fatal error during Prisma disconnect:', error);
+    }
+  });
+}
 
 // Function to force client regeneration (for emergency use)
 export async function forceRegenerateClient(): Promise<void> {
