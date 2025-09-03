@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { CateringOrderForm } from '@/components/Catering/CateringOrderForm';
@@ -385,14 +385,25 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     setCurrentStep('review');
   };
 
+  // Enhanced submission state management
+  const [submissionAttempts, setSubmissionAttempts] = useState(0);
+  const isSubmittingRef = useRef(false);
+
   // Handle final order submission
   const handleCompleteOrder = async () => {
-    // Prevent double submission
-    if (isSubmitting) {
-      console.log('Order submission already in progress, ignoring');
+    // Prevent any submission if already in progress
+    if (isSubmittingRef.current || isSubmitting) {
+      console.log('⚠️ Submission already in progress, ignoring click');
       return;
     }
 
+    // Set ref immediately to prevent race conditions
+    isSubmittingRef.current = true;
+    
+    // Track submission attempts
+    setSubmissionAttempts(prev => prev + 1);
+    console.log(`📤 Catering checkout submission attempt #${submissionAttempts + 1}`);
+    
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -590,6 +601,10 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         clearDeliveryAddressFromLocalStorage();
         clearFulfillmentInfoFromLocalStorage();
 
+        // Reset submission state immediately on success
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+
         // If there's a checkout URL (Square payment), redirect to it
         if (result.checkoutUrl) {
           window.location.href = result.checkoutUrl;
@@ -605,8 +620,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         
         // Add a delay before allowing retry to prevent rapid submissions
         setTimeout(() => {
+          isSubmittingRef.current = false;
           setIsSubmitting(false);
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Error submitting order:', error);
@@ -616,8 +632,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       
       // Add a delay before allowing retry
       setTimeout(() => {
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
-      }, 2000);
+      }, 3000);
     }
   };
 
@@ -1045,10 +1062,14 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             <Button
               onClick={handleCompleteOrder}
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
-              disabled={isSubmitting || !idempotencyKey}
+              disabled={isSubmitting || isSubmittingRef.current || !idempotencyKey}
+              style={{ pointerEvents: isSubmitting || isSubmittingRef.current ? 'none' : 'auto' }}
             >
-              {isSubmitting ? (
-                'Processing...'
+              {isSubmitting || isSubmittingRef.current ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
+                  Processing Order...
+                </span>
               ) : submitError ? (
                 'Retry Order'
               ) : (
@@ -1205,6 +1226,22 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           </CardContent>
         </Card>
       </div>
+
+      {/* Loading overlay when submitting */}
+      {(isSubmitting || isSubmittingRef.current) && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm mx-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d3538] mx-auto" />
+            <p className="mt-4 text-lg font-medium text-center">Processing your catering order...</p>
+            <p className="mt-2 text-sm text-gray-500 text-center">Please do not close this window</p>
+            {submissionAttempts > 1 && (
+              <p className="mt-2 text-xs text-orange-600 text-center">
+                Attempt #{submissionAttempts}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

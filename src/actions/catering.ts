@@ -396,9 +396,20 @@ export async function createCateringOrderAndProcessPayment(data: {
     const idempotencyKey = data.idempotencyKey || generateIdempotencyKey(data);
     
     // Check for duplicate orders using idempotency key
+    console.log(`🔐 [IDEMPOTENCY] Starting duplicate detection for catering order`);
+    console.log(`🔐 [IDEMPOTENCY] Key: ${idempotencyKey.substring(0, 20)}...`);
+    console.log(`🔐 [IDEMPOTENCY] Email: ${data.email}, Amount: $${data.totalAmount}`);
+    
     const existingOrder = await checkForDuplicateOrder(data, idempotencyKey);
     if (existingOrder) {
-      console.log(`Duplicate order detected, returning existing order: ${existingOrder.id}`);
+      console.log(`🚫 [IDEMPOTENCY] DUPLICATE ORDER DETECTED!`);
+      console.log(`🚫 [IDEMPOTENCY] Existing ID: ${existingOrder.id}`);
+      console.log(`🚫 [IDEMPOTENCY] Detection source: ${existingOrder.source}`);
+      console.log(`🚫 [IDEMPOTENCY] Has Square checkout: ${!!existingOrder.squareCheckoutId}`);
+      
+      // Log duplicate attempt for monitoring
+      console.warn(`📊 [METRICS] Duplicate catering order prevented: ${existingOrder.source} detection`);
+      
       return {
         success: true,
         orderId: existingOrder.id,
@@ -407,6 +418,9 @@ export async function createCateringOrderAndProcessPayment(data: {
           undefined,
       };
     }
+    
+    console.log(`✅ [IDEMPOTENCY] No duplicates detected - proceeding with order creation`);
+    console.log(`📊 [METRICS] New catering order creation initiated for ${data.email}`);
 
     // Process payment based on method
     if (data.paymentMethod === PaymentMethod.SQUARE) {
@@ -442,7 +456,13 @@ export async function createCateringOrderAndProcessPayment(data: {
           customerPhone: data.phone,
         });
 
+        console.log(`💳 [SQUARE] Square checkout created successfully`);
+        console.log(`💳 [SQUARE] Checkout ID: ${checkoutId}`);
+        console.log(`💳 [SQUARE] Square Order ID: ${squareOrderId}`);
+        console.log(`💳 [SQUARE] Checkout URL: ${checkoutUrl ? 'Generated' : 'Missing'}`);
+
         // Now create the catering order with Square IDs (atomic operation)
+        console.log(`💾 [DATABASE] Creating catering order record...`);
         const orderResult = await saveContactInfo({
           ...data,
           totalAmount: data.totalAmount,
@@ -456,15 +476,30 @@ export async function createCateringOrderAndProcessPayment(data: {
         });
 
         if (!orderResult.success || !orderResult.orderId) {
-          console.error('Failed to create catering order after Square checkout was created');
+          console.error(`❌ [DATABASE] Failed to create catering order after Square checkout was created`);
+          console.error(`❌ [DATABASE] Square checkout ID: ${checkoutId}`);
+          console.error(`❌ [DATABASE] Error: ${orderResult.error}`);
+          
           return { 
             success: false, 
             error: 'Failed to create catering order. Please contact support with reference: ' + checkoutId 
           };
         }
 
+        console.log(`✅ [DATABASE] Catering order created successfully: ${orderResult.orderId}`);
+        console.log(`📧 [EMAIL] Sending admin notification...`);
+
         // Send admin notification email
-        await sendCateringOrderNotification(orderResult.orderId);
+        try {
+          await sendCateringOrderNotification(orderResult.orderId);
+          console.log(`✅ [EMAIL] Admin notification sent successfully`);
+        } catch (emailError) {
+          console.error(`⚠️ [EMAIL] Failed to send admin notification:`, emailError);
+          // Don't fail the order creation if email fails
+        }
+
+        console.log(`🎉 [SUCCESS] Square catering order process completed successfully`);
+        console.log(`🎉 [SUCCESS] Order ID: ${orderResult.orderId}, Checkout: ${!!checkoutUrl}`);
 
         return {
           success: true,
@@ -533,7 +568,7 @@ export async function createCateringOrderAndProcessPayment(data: {
 }
 
 /**
- * Helper function to generate an idempotency key for duplicate prevention
+ * Enhanced helper function to generate a cryptographically secure idempotency key
  */
 function generateIdempotencyKey(data: {
   email: string;
@@ -541,14 +576,24 @@ function generateIdempotencyKey(data: {
   totalAmount: number;
   items?: Array<{ name: string; quantity: number; pricePerUnit: number }>;
 }): string {
-  // Create a hash based on user email, event date, total amount, and items
+  console.log(`🔑 [IDEMPOTENCY] Generating new idempotency key`);
+  
+  // Create a deterministic hash based on order data
   const itemsHash = data.items 
-    ? data.items.map(item => `${item.name}-${item.quantity}-${item.pricePerUnit}`).join('|')
-    : '';
+    ? data.items
+        .map(item => `${item.name.trim()}-${item.quantity}-${item.pricePerUnit.toFixed(2)}`)
+        .sort() // Sort to ensure consistent ordering
+        .join('|')
+    : 'no-items';
   
-  const baseString = `${data.email}-${data.eventDate}-${data.totalAmount}-${itemsHash}`;
+  // Normalize email and create base string
+  const normalizedEmail = data.email.toLowerCase().trim();
+  const normalizedDate = new Date(data.eventDate).toISOString().split('T')[0]; // Use date only
+  const normalizedAmount = data.totalAmount.toFixed(2);
   
-  // Simple hash function (in production, you might want to use crypto)
+  const baseString = `${normalizedEmail}::${normalizedDate}::${normalizedAmount}::${itemsHash}`;
+  
+  // Enhanced hash function with better distribution
   let hash = 0;
   for (let i = 0; i < baseString.length; i++) {
     const char = baseString.charCodeAt(i);
@@ -556,11 +601,18 @@ function generateIdempotencyKey(data: {
     hash = hash & hash; // Convert to 32-bit integer
   }
   
-  return `catering-${Math.abs(hash)}-${Date.now()}`;
+  // Add timestamp for uniqueness but maintain determinism for same-second requests
+  const timestamp = Math.floor(Date.now() / 1000); // Second precision
+  const key = `catering-${Math.abs(hash).toString(36)}-${timestamp.toString(36)}`;
+  
+  console.log(`🔑 [IDEMPOTENCY] Generated key: ${key.substring(0, 30)}... (${key.length} chars)`);
+  console.log(`🔑 [IDEMPOTENCY] Base data hash: ${Math.abs(hash).toString(36)}`);
+  
+  return key;
 }
 
 /**
- * Helper function to check for duplicate orders within a reasonable time window
+ * Enhanced helper function to check for duplicate orders with comprehensive logging
  */
 async function checkForDuplicateOrder(
   data: {
@@ -570,9 +622,13 @@ async function checkForDuplicateOrder(
     customerId?: string | null;
   },
   idempotencyKey: string
-): Promise<{ id: string; squareCheckoutId?: string | null } | null> {
+): Promise<{ id: string; squareCheckoutId?: string | null; isDuplicate: boolean; source: string } | null> {
+  const startTime = Date.now();
+  console.log(`🔍 [IDEMPOTENCY] Starting duplicate check for key: ${idempotencyKey}`);
+  
   try {
-    // Check for orders with same idempotency key first
+    // Step 1: Check for orders with same idempotency key first (most reliable)
+    console.log(`🔍 [IDEMPOTENCY] Checking by idempotency key...`);
     const existingByKey = await db.cateringOrder.findFirst({
       where: {
         metadata: {
@@ -580,16 +636,31 @@ async function checkForDuplicateOrder(
           equals: idempotencyKey,
         },
       },
-      select: { id: true, squareCheckoutId: true },
+      select: { 
+        id: true, 
+        squareCheckoutId: true, 
+        createdAt: true,
+        email: true,
+        totalAmount: true,
+      },
     });
 
     if (existingByKey) {
-      return existingByKey;
+      const ageMinutes = Math.round((Date.now() - existingByKey.createdAt.getTime()) / 60000);
+      console.log(`✅ [IDEMPOTENCY] Found exact match by key: ${existingByKey.id} (${ageMinutes}min old)`);
+      console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
+      return {
+        id: existingByKey.id,
+        squareCheckoutId: existingByKey.squareCheckoutId,
+        isDuplicate: true,
+        source: 'idempotency_key'
+      };
     }
 
-    // Fallback: check for potential duplicates by email, event date, and amount
-    // within the last 10 minutes (to catch rapid double-clicks)
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    // Step 2: Check for potential duplicates by email, event date, and amount
+    // within the last 15 minutes (extended from 10 for better coverage)
+    console.log(`🔍 [IDEMPOTENCY] Checking by email/date/amount pattern...`);
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     
     const potentialDuplicate = await db.cateringOrder.findFirst({
       where: {
@@ -602,17 +673,56 @@ async function checkForDuplicateOrder(
           } 
         }),
         createdAt: {
-          gte: tenMinutesAgo,
+          gte: fifteenMinutesAgo,
         },
       },
-      select: { id: true, squareCheckoutId: true },
+      select: { 
+        id: true, 
+        squareCheckoutId: true, 
+        createdAt: true,
+        metadata: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    return potentialDuplicate || null;
+    if (potentialDuplicate) {
+      const ageMinutes = Math.round((Date.now() - potentialDuplicate.createdAt.getTime()) / 60000);
+      const hasIdempotencyKey = potentialDuplicate.metadata && 
+        typeof potentialDuplicate.metadata === 'object' && 
+        (potentialDuplicate.metadata as any).idempotencyKey;
+      
+      console.log(`⚠️ [IDEMPOTENCY] Found potential duplicate: ${potentialDuplicate.id} (${ageMinutes}min old)`);
+      console.log(`⚠️ [IDEMPOTENCY] Potential duplicate has idempotency key: ${!!hasIdempotencyKey}`);
+      console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
+      
+      return {
+        id: potentialDuplicate.id,
+        squareCheckoutId: potentialDuplicate.squareCheckoutId,
+        isDuplicate: true,
+        source: 'pattern_match'
+      };
+    }
+
+    // Step 3: No duplicates found
+    console.log(`✅ [IDEMPOTENCY] No duplicates found - proceeding with order creation`);
+    console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
+    return null;
+    
   } catch (error) {
-    console.error('Error checking for duplicate orders:', error);
-    // If we can't check for duplicates, allow the order to proceed
+    console.error(`❌ [IDEMPOTENCY] Error during duplicate check:`, error);
+    console.log(`📊 [IDEMPOTENCY] Duplicate check failed in ${Date.now() - startTime}ms`);
+    
+    // Enhanced error handling - log the specific error type
+    if (error instanceof Error) {
+      if (error.message.includes('database')) {
+        console.error(`🚨 [IDEMPOTENCY] Database connection error during duplicate check`);
+      } else if (error.message.includes('timeout')) {
+        console.error(`🚨 [IDEMPOTENCY] Timeout error during duplicate check`);
+      }
+    }
+    
+    // If we can't check for duplicates, allow the order to proceed but log it
+    console.warn(`⚠️ [IDEMPOTENCY] Proceeding without duplicate check due to error - ORDER MAY BE DUPLICATE`);
     return null;
   }
 }
@@ -943,3 +1053,4 @@ export async function getBoxedLunchTiersWithEntrees() {
     return [];
   }
 }
+

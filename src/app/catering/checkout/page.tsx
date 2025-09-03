@@ -1,37 +1,20 @@
 import React from 'react';
-import { createClient } from '@/utils/supabase/server';
 import { CateringCheckoutClient } from '@/components/Catering/CateringCheckoutClient';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogInIcon, UserIcon } from 'lucide-react';
 import Link from 'next/link';
-import { getUserProfile } from '@/utils/auth-optimized';
+import { getAuthenticatedUserProfile } from '@/app/actions/auth';
 import { measurePerformance } from '@/utils/performance';
 import { PageErrorBoundary } from '@/components/ErrorBoundary';
 
 export default async function CateringCheckoutPage() {
-  const supabase = await createClient();
+  // Use the new Server Action to safely handle authentication and cookie operations
+  const { isLoggedIn, userData, error } = await measurePerformance(
+    'getAuthenticatedUserProfile',
+    () => getAuthenticatedUserProfile()
+  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let userData = null;
-  let isLoggedIn = false;
-
-  if (user) {
-    // Use the optimized cached profile function with performance monitoring
-    const profileResult = await measurePerformance('getUserProfile', () => getUserProfile(user.id));
-
-    isLoggedIn = profileResult.isLoggedIn;
-    userData = profileResult.userData;
-
-    // Fallback to auth email if no profile email
-    if (userData && !userData.email && user.email) {
-      userData.email = user.email;
-    }
-
-    console.log('📊 Optimized profile fetch result:', { isLoggedIn, userData });
-  }
+  console.log('📊 Auth profile fetch result:', { isLoggedIn, userData, error });
 
   return (
     <PageErrorBoundary>
