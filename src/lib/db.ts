@@ -29,6 +29,10 @@ const prismaClientSingleton = () => {
       url.searchParams.set('statement_timeout', '30000'); // 30 seconds
       url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
       
+      // CRITICAL: Disable prepared statements for pgBouncer transaction mode
+      // This prevents "prepared statement does not exist" and "already exists" errors
+      url.searchParams.set('prepare', 'false');
+      
       // Remove any connection_limit parameters that might conflict with Supabase pooler
       url.searchParams.delete('connection_limit');
       url.searchParams.delete('pool_timeout');
@@ -216,7 +220,10 @@ export async function withRetry<T>(
       const isPreparedStatementError = 
         error instanceof Error && 
         (error.message.includes("prepared statement") ||
-         (error as any).code === '42P05');
+         error.message.includes("does not exist") ||
+         error.message.includes("already exists") ||
+         (error as any).code === '42P05' || // prepared statement already exists
+         (error as any).code === '26000'); // prepared statement does not exist
       
       if ((isConnectionError || isPreparedStatementError) && i < maxRetries - 1) {
         console.log(`Database operation attempt ${i + 1} failed, retrying in ${delay}ms...`);
@@ -319,12 +326,14 @@ export async function withConnectionManagement<T>(
       lastError = error as Error;
       const duration = Date.now() - startTime;
       
-      // Enhanced error classification
+      // Enhanced error classification for prepared statement issues
       const isPreparedStatementError = 
         error instanceof Error && 
         (error.message.includes("prepared statement") ||
          error.message.includes("already exists") ||
-         (error as any).code === '42P05');
+         error.message.includes("does not exist") ||
+         (error as any).code === '42P05' || // prepared statement already exists
+         (error as any).code === '26000'); // prepared statement does not exist
       
       const isConnectionError = 
         error instanceof Error && 

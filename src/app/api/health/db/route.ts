@@ -1,39 +1,83 @@
-import { NextResponse } from 'next/server';
-import { checkDatabaseHealth } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { checkDatabaseHealth, prisma } from '@/lib/db';
+import type { ConnectionHealth } from '@/types/database';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const health = await checkDatabaseHealth();
+    // Perform basic health check
+    const basicHealth = await checkDatabaseHealth();
     
-    const status = health.connected ? 'healthy' : 'unhealthy';
-    const httpStatus = health.connected ? 200 : 503;
+    // Get additional metrics
+    const startTime = Date.now();
     
-    return NextResponse.json({
+    // Test a simple query to measure response time
+    await prisma.$queryRaw`SELECT 1 as health_check`;
+    
+    const queryTime = Date.now() - startTime;
+    
+    // Determine status based on performance
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (!basicHealth.connected) {
+      status = 'unhealthy';
+    } else if (basicHealth.latency > 500 || queryTime > 500) {
+      status = 'degraded';
+    }
+    
+    const health: ConnectionHealth = {
       status,
-      database: {
-        connected: health.connected,
-        latency: `${health.latency}ms`,
-        error: health.error,
-      },
-      environment: {
-        node_env: process.env.NODE_ENV,
-        vercel_env: process.env.VERCEL_ENV,
-        has_database_url: !!process.env.DATABASE_URL,
-        has_direct_url: !!process.env.DIRECT_URL,
-        database_host: process.env.DATABASE_URL?.split('@')[1]?.split(':')[0] || 'unknown',
-      },
-      timestamp: new Date().toISOString(),
-    }, { status: httpStatus });
-  } catch (error) {
-    console.error('Database health check failed:', error);
+      activeConnections: 0, // Not available with Prisma client
+      idleConnections: 0,   // Not available with Prisma client
+      waitingRequests: 0,   // Not available with Prisma client
+      errors: basicHealth.error ? [{
+        type: 'CONNECTION_TIMEOUT',
+        timeoutMs: basicHealth.latency
+      }] : [],
+      lastChecked: new Date()
+    };
     
-    return NextResponse.json({
-      status: 'error',
-      database: {
-        connected: false,
+    // Add performance metrics
+    const response = {
+      ...health,
+      metrics: {
+        connectionLatency: basicHealth.latency,
+        queryLatency: queryTime,
+        connected: basicHealth.connected,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    // Return appropriate HTTP status
+    const httpStatus = status === 'healthy' ? 200 : status === 'degraded' ? 200 : 503;
+    
+    return NextResponse.json(response, { status: httpStatus });
+    
+  } catch (error) {
+    console.error('Health check failed:', error);
+    
+    const errorResponse: ConnectionHealth = {
+      status: 'unhealthy',
+      activeConnections: 0,
+      idleConnections: 0,
+      waitingRequests: 0,
+      errors: [{
+        type: 'CONNECTION_TIMEOUT',
+        timeoutMs: 0
+      }],
+      lastChecked: new Date()
+    };
+    
+    return NextResponse.json(
+      {
+        ...errorResponse,
         error: error instanceof Error ? error.message : 'Unknown error',
+        metrics: {
+          connectionLatency: -1,
+          queryLatency: -1,
+          connected: false,
+          timestamp: new Date().toISOString()
+        }
       },
-      timestamp: new Date().toISOString(),
-    }, { status: 503 });
+      { status: 503 }
+    );
   }
 }

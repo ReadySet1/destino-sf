@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma, withPreparedStatementHandling } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
 
 // Define the structure for regular orders
@@ -88,61 +88,65 @@ export async function GET() {
     console.log('API Route: Querying orders for User ID:', user.id);
 
     // 2. Fetch regular orders for the authenticated user
-    const regularOrders: RegularOrder[] = await prisma.order.findMany({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        id: true,
-        createdAt: true,
-        status: true,
-        total: true,
-        paymentStatus: true,
-        trackingNumber: true,
-        shippingCarrier: true,
-        items: {
-          select: {
-            id: true,
-            quantity: true,
-            price: true,
-            product: { select: { name: true } },
-            variant: { select: { name: true } },
+    const regularOrders: RegularOrder[] = await withPreparedStatementHandling(async () => {
+      return await prisma.order.findMany({
+        where: {
+          userId: user.id,
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          total: true,
+          paymentStatus: true,
+          trackingNumber: true,
+          shippingCarrier: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              price: true,
+              product: { select: { name: true } },
+              variant: { select: { name: true } },
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }, `user-orders-${user.id}`);
 
     // 3. Fetch catering orders for the authenticated user
-    const cateringOrders = await prisma.cateringOrder.findMany({
-      where: {
-        customerId: user.id,
-      },
-      select: {
-        id: true,
-        createdAt: true,
-        status: true,
-        totalAmount: true,
-        paymentStatus: true,
-        eventDate: true,
-        numberOfPeople: true,
-        items: {
-          select: {
-            id: true,
-            quantity: true,
-            pricePerUnit: true,
-            totalPrice: true,
-            itemName: true,
-            itemType: true,
+    const cateringOrders = await withPreparedStatementHandling(async () => {
+      return await prisma.cateringOrder.findMany({
+        where: {
+          customerId: user.id,
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          totalAmount: true,
+          paymentStatus: true,
+          eventDate: true,
+          numberOfPeople: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              pricePerUnit: true,
+              totalPrice: true,
+              itemName: true,
+              itemType: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }, `user-catering-orders-${user.id}`);
 
     // 4. Transform regular orders to unified format
     const unifiedRegularOrders: UserOrder[] = regularOrders.map(order => ({
