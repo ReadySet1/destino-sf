@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
 
-export const revalidate = 0; // Disable caching for real-time data
+export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
+export const dynamic = 'force-static'; // Use static generation for better caching
 
 export async function GET(request: NextRequest) {
+  const cacheKey = 'catering-appetizers-products';
+  const startTime = Date.now();
+  
   try {
-    logger.info('🍴 Fetching appetizer products, share platters and desserts from database...');
+    logger.info('🍴 [CACHE-OPT] Fetching appetizer products, share platters and desserts from database...');
+    logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
     
     // Fetch appetizer products, share platter products AND dessert products from the products table
     const appetizers = await prisma.product.findMany({
@@ -35,7 +40,10 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    logger.info(`✅ Found ${appetizers.length} appetizer, share platter and dessert products`);
+    logger.info(`✅ [CACHE-OPT] Found ${appetizers.length} appetizer, share platter and dessert products`);
+    
+    const processingTime = Date.now() - startTime;
+    logger.info(`⚡ [CACHE-OPT] ${cacheKey} processed in ${processingTime}ms`);
 
     // Transform to match the CateringItem interface
     const transformedAppetizers = appetizers.map(product => {
@@ -82,6 +90,12 @@ export async function GET(request: NextRequest) {
       success: true,
       items: transformedAppetizers,
       count: transformedAppetizers.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        'X-Cache-Source': 'catering-appetizers-api',
+        'X-Data-Timestamp': new Date().toISOString(),
+      },
     });
 
   } catch (error) {

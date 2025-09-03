@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
 
-export const revalidate = 0; // Disable caching for real-time data
+export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
+export const dynamic = 'force-static'; // Use static generation for better caching
 
 export async function GET(request: NextRequest) {
+  const cacheKey = 'catering-buffet-products';
+  const startTime = Date.now();
+  
   try {
-    logger.info('🍽️ Fetching buffet products from database...');
+    logger.info('🍽️ [CACHE-OPT] Fetching buffet products from database...');
+    logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
     
     // Optimized query: Get category IDs first to avoid complex JOIN
     const categoryIds = await prisma.category.findMany({
@@ -60,7 +65,10 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    logger.info(`✅ Found ${buffetItems.length} buffet products`);
+    logger.info(`✅ [CACHE-OPT] Found ${buffetItems.length} buffet products`);
+    
+    const processingTime = Date.now() - startTime;
+    logger.info(`⚡ [CACHE-OPT] ${cacheKey} processed in ${processingTime}ms`);
 
     // Transform to match the CateringItem interface
     const transformedBuffetItems = buffetItems.map(product => {
@@ -113,6 +121,12 @@ export async function GET(request: NextRequest) {
       success: true,
       items: transformedBuffetItems,
       count: transformedBuffetItems.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        'X-Cache-Source': 'catering-buffet-api',
+        'X-Data-Timestamp': new Date().toISOString(),
+      },
     });
 
   } catch (error) {
