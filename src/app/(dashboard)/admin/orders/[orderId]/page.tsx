@@ -237,31 +237,115 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     // Log before database query
     console.log('Fetching order with ID:', orderId);
 
-    // Try to fetch as a regular order first
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            product: true,
-            variant: true,
+    // Try to fetch as a regular order first with enhanced error handling
+    let order = null;
+    let cateringOrder = null;
+    
+    try {
+      order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
           },
+          payments: true,
         },
-        payments: true,
-      },
-      // Include all fields needed for shipping label functionality
-    });
+        // Include all fields needed for shipping label functionality
+      });
+    } catch (error) {
+      // Log error with context
+      console.error('Failed to fetch admin order:', {
+        orderId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code
+      });
+      
+      // Check if it's a prepared statement error
+      if (error instanceof Error && 
+          ((error as any).code === '42P05' || // prepared statement already exists
+           (error as any).code === '26000' || // prepared statement does not exist
+           error.message.includes('prepared statement'))) {
+        console.log('Detected prepared statement error in admin order query, attempting retry...');
+        
+        // Attempt one retry with a fresh connection
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: {
+              items: {
+                include: {
+                  product: true,
+                  variant: true,
+                },
+              },
+              payments: true,
+            },
+          });
+          
+          console.log('✅ Admin order retry successful after prepared statement error');
+        } catch (retryError) {
+          console.error('❌ Admin order retry failed:', retryError);
+          throw retryError;
+        }
+      } else {
+        throw error;
+      }
+    }
 
-    // If not found as regular order, try as catering order
-    const cateringOrder = !order
-      ? await prisma.cateringOrder.findUnique({
+    // If not found as regular order, try as catering order with same error handling
+    if (!order) {
+      try {
+        cateringOrder = await prisma.cateringOrder.findUnique({
           where: { id: orderId },
           include: {
             items: true,
             customer: true,
           },
-        })
-      : null;
+        });
+      } catch (error) {
+        // Log error with context
+        console.error('Failed to fetch admin catering order:', {
+          orderId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          code: (error as any)?.code
+        });
+        
+        // Check if it's a prepared statement error
+        if (error instanceof Error && 
+            ((error as any).code === '42P05' || // prepared statement already exists
+             (error as any).code === '26000' || // prepared statement does not exist
+             error.message.includes('prepared statement'))) {
+          console.log('Detected prepared statement error in admin catering order query, attempting retry...');
+          
+          // Attempt one retry with a fresh connection
+          try {
+            await prisma.$disconnect();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            cateringOrder = await prisma.cateringOrder.findUnique({
+              where: { id: orderId },
+              include: {
+                items: true,
+                customer: true,
+              },
+            });
+            
+            console.log('✅ Admin catering order retry successful after prepared statement error');
+          } catch (retryError) {
+            console.error('❌ Admin catering order retry failed:', retryError);
+            throw retryError;
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
 
     // Log database query result
     console.log('Database query result:', order ? 'Regular order found' : (cateringOrder ? 'Catering order found' : 'No order found'));

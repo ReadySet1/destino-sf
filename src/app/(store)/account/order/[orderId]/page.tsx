@@ -155,25 +155,75 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // Try to fetch as a regular order first
-  const regularOrder = await prisma.order.findUnique({
-    where: {
-      id: orderId,
-      userId: user.id, // Ensure the order belongs to the authenticated user
-    },
-    include: {
-      items: {
-        include: {
-          product: true,
-          variant: true,
+  // Try to fetch as a regular order first with enhanced error handling
+  let regularOrder = null;
+  let cateringOrder = null;
+  
+  try {
+    regularOrder = await prisma.order.findUnique({
+      where: {
+        id: orderId,
+        userId: user.id, // Ensure the order belongs to the authenticated user
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    // Log error with context
+    console.error('Failed to fetch regular order:', {
+      orderId,
+      userId: user.id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code
+    });
+    
+    // Check if it's a prepared statement error
+    if (error instanceof Error && 
+        ((error as any).code === '42P05' || // prepared statement already exists
+         (error as any).code === '26000' || // prepared statement does not exist
+         error.message.includes('prepared statement'))) {
+      console.log('Detected prepared statement error, attempting retry with fresh connection...');
+      
+      // Attempt one retry with a fresh connection
+      try {
+        await prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        regularOrder = await prisma.order.findUnique({
+          where: {
+            id: orderId,
+            userId: user.id,
+          },
+          include: {
+            items: {
+              include: {
+                product: true,
+                variant: true,
+              },
+            },
+          },
+        });
+        
+        console.log('✅ Retry successful after prepared statement error');
+      } catch (retryError) {
+        console.error('❌ Retry failed:', retryError);
+        throw retryError;
+      }
+    } else {
+      throw error;
+    }
+  }
 
-  // If not found as regular order, try as catering order
-  const cateringOrder = !regularOrder
-    ? await prisma.cateringOrder.findUnique({
+  // If not found as regular order, try as catering order with same error handling
+  if (!regularOrder) {
+    try {
+      cateringOrder = await prisma.cateringOrder.findUnique({
         where: {
           id: orderId,
           customerId: user.id, // Ensure the order belongs to the authenticated user
@@ -181,8 +231,48 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         include: {
           items: true,
         },
-      })
-    : null;
+      });
+    } catch (error) {
+      // Log error with context
+      console.error('Failed to fetch catering order:', {
+        orderId,
+        customerId: user.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code
+      });
+      
+      // Check if it's a prepared statement error
+      if (error instanceof Error && 
+          ((error as any).code === '42P05' || // prepared statement already exists
+           (error as any).code === '26000' || // prepared statement does not exist
+           error.message.includes('prepared statement'))) {
+        console.log('Detected prepared statement error in catering order query, attempting retry...');
+        
+        // Attempt one retry with a fresh connection
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          cateringOrder = await prisma.cateringOrder.findUnique({
+            where: {
+              id: orderId,
+              customerId: user.id,
+            },
+            include: {
+              items: true,
+            },
+          });
+          
+          console.log('✅ Catering order retry successful after prepared statement error');
+        } catch (retryError) {
+          console.error('❌ Catering order retry failed:', retryError);
+          throw retryError;
+        }
+      } else {
+        throw error;
+      }
+    }
+  }
 
   // If neither order type exists, show 404
   if (!regularOrder && !cateringOrder) {
@@ -196,19 +286,19 @@ export default async function OrderDetailsPage({ params }: PageProps) {
   // Common order data structure
   const orderData = isRegularOrder
     ? {
-        id: regularOrder.id,
-        status: regularOrder.status,
-        paymentStatus: regularOrder.paymentStatus,
-        total: regularOrder.total?.toNumber() ?? 0,
-        createdAt: regularOrder.createdAt,
-        customerName: regularOrder.customerName,
-        email: regularOrder.email,
-        phone: regularOrder.phone,
-        pickupTime: regularOrder.pickupTime,
-        fulfillmentType: regularOrder.fulfillmentType,
-        trackingNumber: regularOrder.trackingNumber,
-        shippingCarrier: regularOrder.shippingCarrier,
-        items: regularOrder.items.map(item => ({
+        id: regularOrder!.id,
+        status: regularOrder!.status,
+        paymentStatus: regularOrder!.paymentStatus,
+        total: regularOrder!.total?.toNumber() ?? 0,
+        createdAt: regularOrder!.createdAt,
+        customerName: regularOrder!.customerName,
+        email: regularOrder!.email,
+        phone: regularOrder!.phone,
+        pickupTime: regularOrder!.pickupTime,
+        fulfillmentType: regularOrder!.fulfillmentType,
+        trackingNumber: regularOrder!.trackingNumber,
+        shippingCarrier: regularOrder!.shippingCarrier,
+        items: regularOrder!.items.map(item => ({
           id: item.id,
           quantity: item.quantity,
           price: item.price?.toNumber() ?? 0,
@@ -312,16 +402,16 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     {/* Show retry payment button for eligible orders */}
                     {isRegularOrder &&
                       (orderData.status === 'PENDING' || orderData.status === 'PAYMENT_FAILED') &&
-                      (orderData.paymentStatus === 'PENDING' ||
-                        orderData.paymentStatus === 'FAILED') &&
-                      regularOrder.paymentMethod === 'SQUARE' && (
-                        <div className="mt-2">
-                          <RetryPaymentButton
-                            orderId={orderData.id}
-                            retryCount={regularOrder.retryCount || 0}
-                            disabled={(regularOrder.retryCount || 0) >= 3}
-                          />
-                        </div>
+                                          (orderData.paymentStatus === 'PENDING' ||
+                      orderData.paymentStatus === 'FAILED') &&
+                    regularOrder?.paymentMethod === 'SQUARE' && (
+                      <div className="mt-2">
+                        <RetryPaymentButton
+                          orderId={orderData.id}
+                          retryCount={regularOrder?.retryCount || 0}
+                          disabled={(regularOrder?.retryCount || 0) >= 3}
+                        />
+                      </div>
                       )}
                   </div>
                 </div>
@@ -332,7 +422,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     <p className="text-sm text-gray-600 font-medium">Payment Method</p>
                     <Badge variant="outline" className="mt-1">
                       {isRegularOrder
-                        ? regularOrder.paymentMethod || 'SQUARE'
+                        ? regularOrder?.paymentMethod || 'SQUARE'
                         : cateringOrder!.paymentMethod || 'SQUARE'}
                     </Badge>
                   </div>
