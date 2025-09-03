@@ -82,6 +82,17 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
+// Shipping address schema with required recipient name
+const shippingAddressSchema = z.object({
+  recipientName: z.string().min(1, 'Recipient name is required'),
+  street: z.string().min(1, 'Street address is required'),
+  street2: z.string().optional(),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  postalCode: z.string().min(5, 'Valid postal code is required'),
+  country: z.string().optional(),
+});
+
 // Phone number validation schema
 const phoneSchema = z
   .string()
@@ -131,7 +142,7 @@ const nationwideShippingSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
   phone: phoneSchema,
-  shippingAddress: addressSchema,
+  shippingAddress: shippingAddressSchema,
   rateId: z.string().min(1, 'Please select a shipping method.'),
   paymentMethod: z.nativeEnum(PaymentMethod),
 });
@@ -479,16 +490,18 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // --- Keep fetchShippingRates function ---
   const fetchShippingRates = async () => {
-    const address = typedForm.getValues('shippingAddress') as z.infer<typeof addressSchema>;
+    const address = typedForm.getValues('shippingAddress') as z.infer<typeof shippingAddressSchema>;
     if (
       !address ||
+      !address.recipientName ||
+      !address.recipientName.trim() ||
       !address.street ||
       !address.city ||
       !address.state ||
       !address.postalCode ||
       !address.country
     ) {
-      setShippingError('Please complete the shipping address to fetch rates.');
+      setShippingError('Please complete all shipping address fields, including recipient name, to fetch rates.');
       setShippingRates([]);
       return;
     }

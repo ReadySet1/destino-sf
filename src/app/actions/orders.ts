@@ -39,6 +39,17 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
+// Shipping address schema with optional recipient name (validated at runtime)
+const shippingAddressSchema = z.object({
+  recipientName: z.string().optional(),
+  street: z.string().min(1, 'Street address is required'),
+  street2: z.string().optional(),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  postalCode: z.string().min(5, 'Valid postal code is required'),
+  country: z.string().optional(),
+});
+
 const CustomerInfoSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
@@ -66,7 +77,7 @@ const LocalDeliverySchema = FulfillmentBaseSchema.extend({
 
 const NationwideShippingSchema = FulfillmentBaseSchema.extend({
   method: z.literal('nationwide_shipping'),
-  shippingAddress: addressSchema,
+  shippingAddress: shippingAddressSchema,
   shippingMethod: z.string(), // Service level TOKEN (e.g., "usps_priority")
   shippingCarrier: z.string(), // Carrier name (e.g., "USPS")
   shippingCost: z.number().positive().int(), // Cost in cents (now required as it's selected)
@@ -852,6 +863,18 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       };
     } else if (fulfillment.method === 'nationwide_shipping' && fulfillment.shippingAddress) {
       const address = fulfillment.shippingAddress;
+      
+      // Validate that recipient name is provided for shipping orders
+      if (!address.recipientName || !address.recipientName.trim()) {
+        console.error('❌ Order creation failed: Missing recipient name for shipping address');
+        return {
+          success: false,
+          error: 'Recipient name is required for shipping orders. Please provide a complete shipping address.',
+          checkoutUrl: null,
+          orderId: null,
+        };
+      }
+      
       squareFulfillment = {
         type: 'SHIPMENT',
         shipment_details: {

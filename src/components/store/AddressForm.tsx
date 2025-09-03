@@ -71,6 +71,21 @@ export const AddressForm: React.FC<AddressFormProps> = ({
       <Separator />
 
       <div>
+        <Label htmlFor={`${prefix}.recipientName`}>Recipient Name</Label>
+        <Input
+          id={`${prefix}.recipientName`}
+          {...register(`${prefix}.recipientName`)}
+          onChange={e => {
+            register(`${prefix}.recipientName`).onChange(e);
+            handleInputChange(e);
+          }}
+          className={getError('recipientName') ? 'border-red-500' : ''}
+          placeholder="Full name of the recipient"
+        />
+        {getError('recipientName') && <p className="mt-1 text-sm text-red-500">{getError('recipientName')}</p>}
+      </div>
+
+      <div>
         <Label htmlFor={`${prefix}.street`}>Street Address</Label>
         <Input
           id={`${prefix}.street`}

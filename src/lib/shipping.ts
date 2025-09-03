@@ -182,6 +182,17 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
     const shippingAddress = request.shippingAddress ?? request.toAddress;
     const cartItems = request.cartItems ?? request.items;
 
+    // Validate that recipient name is provided for shipping
+    const recipientName = shippingAddress?.recipientName || shippingAddress?.name || '';
+    if (!recipientName || !recipientName.trim()) {
+      console.error('❌ Shipping rate request failed: Missing recipient name');
+      return { 
+        success: false, 
+        error: 'Recipient name is required for shipping. Please provide a complete address with recipient name before generating shipping rates.',
+        errorType: 'VALIDATION_ERROR'
+      };
+    }
+
     // Cache key – identical requests should hit cache
     const cacheKey = buildCacheKey(request);
     if (rateCache.has(cacheKey)) {

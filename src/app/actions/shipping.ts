@@ -21,7 +21,7 @@ console.log('Server action environment check:', {
 
 // --- Enhanced Schemas for Shippo Integration ---
 const addressSchema = z.object({
-  recipientName: z.string().optional(),
+  recipientName: z.string().min(1, 'Recipient name is required for shipping'),
   street: z.string().min(1, 'Street address is required'),
   street2: z.string().optional(),
   city: z.string().min(1, 'City is required'),
