@@ -1,4 +1,4 @@
-import { prisma, ensureConnection } from '@/lib/db';
+import { prisma, ensureConnection, withConnectionManagement } from '@/lib/db';
 import { WebhookPerformanceMonitor } from '@/utils/webhook-performance';
 
 interface QueueItem {
@@ -158,11 +158,12 @@ export class ProcessingQueue {
         `🔄 Processing queued webhook: ${item.data.eventType} (attempt ${item.retryCount + 1})`
       );
 
-      // Ensure database connection before processing
-      await ensureConnection();
-
-      // Process webhook by creating a simulated request
-      await this.processWebhookPayload(item.data.payload);
+      // Process webhook with connection management
+      await withConnectionManagement(
+        () => this.processWebhookPayload(item.data.payload),
+        `webhook-queue-${item.data.eventType}`,
+        60000 // 60 second timeout for queued processing
+      );
 
       // Success - remove from queue
       this.removeWebhookFromQueue(item.id);
@@ -347,8 +348,12 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
   const processingQueue = ProcessingQueue.getInstance();
   
   try {
-    // Try immediate processing first
-    await processingQueue['processWebhookPayload'](payload);
+    // Try immediate processing first with connection management
+    await withConnectionManagement(
+      () => processingQueue['processWebhookPayload'](payload),
+      `webhook-immediate-${eventType}`,
+      30000 // 30 second timeout for immediate processing
+    );
     
     console.log(`✅ Webhook processed successfully via queue: ${eventType} (${payload.event_id})`);
   } catch (error: any) {

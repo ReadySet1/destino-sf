@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, withConnectionManagement } from '@/lib/db';
+import { webhookDb, executeWebhookQuery, executeWebhookTransaction } from '@/lib/db-webhook-optimized';
 import { safeQuery, safeTransaction } from '@/lib/db-utils';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
@@ -10,7 +11,7 @@ import https from 'https';
 import { purchaseShippingLabel } from '@/app/actions/labels'; // Import the new action
 import { headers } from 'next/headers';
 import crypto from 'crypto';
-import { AlertService } from '@/lib/alerts'; // Import the alert service
+import { resilientAlertService } from '@/lib/alerts-resilient'; // Import the resilient alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { applyWebhookRateLimit } from '@/middleware/rate-limit';
 import { handleWebhookWithQueue } from '@/lib/webhook-queue';
@@ -532,8 +533,7 @@ async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayload): Pro
             });
 
             if (orderWithItems) {
-              const alertService = new AlertService();
-              await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+              await resilientAlertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
               console.log(
                 `Fulfillment status change alert sent for order ${squareOrderId}: ${previousStatus} → ${newStatus}`
               );
@@ -697,8 +697,7 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
         });
 
         if (orderWithItems) {
-          const alertService = new AlertService();
-          await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
+          await resilientAlertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
           console.log(
             `Order status change alert sent for order ${data.id}: ${previousStatus} → ${updateData.status}`
           );
@@ -1217,7 +1216,6 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
         });
 
         if (orderWithItems) {
-          const alertService = new AlertService();
           const errorMessage = paymentData?.last_4
             ? `Payment failed via webhook for card ending in ${paymentData.last_4}`
             : 'Payment failed via webhook';
@@ -1227,7 +1225,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
             squareData: paymentData,
           });
 
-          await alertService.sendPaymentFailedAlert(orderWithItems, errorMessage);
+          await resilientAlertService.sendPaymentFailedAlert(orderWithItems, errorMessage);
           console.log(`Payment failed alert sent for order ${order.id}`);
         }
       } catch (alertError: any) {
@@ -1253,8 +1251,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
         });
 
         if (orderWithItems) {
-          const alertService = new AlertService();
-          await alertService.sendOrderStatusChangeAlert(orderWithItems, order.status);
+          await resilientAlertService.sendOrderStatusChangeAlert(orderWithItems, order.status);
           console.log(
             `Payment status change alert sent for order ${order.id}: ${order.status} → ${updatedOrderStatus}`
           );

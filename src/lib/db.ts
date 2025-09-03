@@ -10,29 +10,41 @@ const CURRENT_PRISMA_VERSION = '2025-01-28-fix-prepared-statements';
 
 // Optimized Prisma configuration for Vercel/Serverless with better connection handling
 const prismaClientSingleton = () => {
-  const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Add connection pooling parameters to prevent prepared statement conflicts
+  // Get database URL and optimize for Supabase pooler
   let databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl) {
     const url = new URL(databaseUrl);
     
-    // Check if it's a Supabase pooler URL (already has pgbouncer)
+    // Check if it's a Supabase pooler URL (already optimized for connection pooling)
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
     
-    if (!isSupabasePooler && isServerless) {
-      // Only add these parameters for non-Supabase databases in serverless environment
+    if (isSupabasePooler) {
+      // For Supabase pooler, use optimized settings and don't override their pooling
+      console.log('🔗 Using Supabase pooler with optimized configuration');
+      
+      // Only set timeouts for better error handling, let Supabase handle pooling
+      url.searchParams.set('statement_timeout', '30000'); // 30 seconds
+      url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
+      
+      // Remove any connection_limit parameters that might conflict with Supabase pooler
+      url.searchParams.delete('connection_limit');
+      url.searchParams.delete('pool_timeout');
+      url.searchParams.delete('pgbouncer');
+      
+      databaseUrl = url.toString();
+    } else if (isProduction) {
+      // For non-Supabase databases in production, use custom pooling
       url.searchParams.set('pgbouncer', 'true');
       url.searchParams.set('connection_limit', '1');
       url.searchParams.set('pool_timeout', '20');
       url.searchParams.set('statement_timeout', '30000'); // 30 seconds
       url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
       databaseUrl = url.toString();
-    }
-    
-    // For development, ensure we have proper timeouts
-    if (isDevelopment && !isSupabasePooler) {
+    } else if (isDevelopment) {
+      // For development, use longer timeouts for debugging
       url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
       url.searchParams.set('idle_in_transaction_session_timeout', '60000');
       databaseUrl = url.toString();

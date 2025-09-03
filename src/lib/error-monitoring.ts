@@ -1,4 +1,4 @@
-import { AlertService } from '@/lib/alerts';
+import { resilientAlertService } from '@/lib/alerts-resilient';
 import { env } from '@/env';
 import * as Sentry from '@sentry/nextjs';
 
@@ -57,12 +57,10 @@ const DEFAULT_CONFIG: MonitoringConfig = {
  * Captures, categorizes, and alerts on system errors
  */
 export class ErrorMonitor {
-  private alertService: AlertService;
   private config: MonitoringConfig;
   private criticalErrorCount: Map<string, number> = new Map(); // hour -> count
 
   constructor(config: MonitoringConfig = DEFAULT_CONFIG) {
-    this.alertService = new AlertService();
     this.config = config;
   }
 
@@ -254,7 +252,7 @@ export class ErrorMonitor {
     severity: ErrorSeverity
   ): Promise<void> {
     try {
-      await this.alertService.sendSystemErrorAlert(error, {
+      await resilientAlertService.sendSystemErrorAlert(error, {
         ...context,
         severity,
         timestamp: new Date(),
