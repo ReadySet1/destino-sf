@@ -519,3 +519,90 @@ export const magicLinkSignInAction = async (formData: FormData) => {
 
   return encodedRedirect('success', '/sign-in', 'Check your email for a magic link to sign in!');
 };
+
+/**
+ * Server Action to safely get authenticated user profile
+ * This handles cookie operations properly within a Server Action context
+ */
+export async function getAuthenticatedUserProfile(): Promise<{
+  isLoggedIn: boolean;
+  userData: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  } | null;
+  error: string | null;
+}> {
+  try {
+    // Create Supabase client within Server Action context - this safely handles cookies
+    const supabase = await createClient();
+
+    // This call may trigger a token refresh and cookie setting, but it's safe in Server Actions
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        isLoggedIn: false,
+        userData: null,
+        error: authError?.message || 'User not authenticated',
+      };
+    }
+
+    // Fetch user profile from database
+    try {
+      const profile = await prisma.profile.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      });
+
+      if (!profile) {
+        return {
+          isLoggedIn: false,
+          userData: null,
+          error: 'User profile not found',
+        };
+      }
+
+      return {
+        isLoggedIn: true,
+        userData: {
+          id: profile.id,
+          name: profile.name || '',
+          email: profile.email || user.email || '',
+          phone: profile.phone || '',
+        },
+        error: null,
+      };
+    } catch (dbError) {
+      console.error('Database error fetching user profile:', dbError);
+      
+      // Fallback to auth user data if database fails
+      return {
+        isLoggedIn: true,
+        userData: {
+          id: user.id,
+          name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          email: user.email || '',
+          phone: user.phone || user.user_metadata?.phone || '',
+        },
+        error: null,
+      };
+    }
+  } catch (error) {
+    console.error('Error in getAuthenticatedUserProfile:', error);
+    return {
+      isLoggedIn: false,
+      userData: null,
+      error: 'Failed to fetch user profile',
+    };
+  }
+}
