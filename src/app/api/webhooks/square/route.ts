@@ -59,6 +59,58 @@ function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStat
   }
 }
 
+/**
+ * Queue webhook for later processing when catering orders might still be in creation
+ */
+async function queueWebhookForLaterProcessing(
+  payload: SquareWebhookPayload, 
+  eventType: string, 
+  squareOrderId: string
+): Promise<void> {
+  try {
+    console.log(`📥 [WEBHOOK-QUEUE] Queuing webhook for later processing`);
+    console.log(`📥 [WEBHOOK-QUEUE] Event: ${eventType}, Order: ${squareOrderId}, Event ID: ${payload.event_id}`);
+    
+    // Simple queue implementation using setTimeout for immediate needs
+    // In production, you might want to use Redis or a proper queue system
+    setTimeout(async () => {
+      console.log(`🔄 [WEBHOOK-QUEUE] Processing delayed webhook for ${squareOrderId}`);
+      
+      try {
+        // Retry the catering order lookup one more time
+        const cateringOrder = await prisma.cateringOrder.findUnique({
+          where: { squareOrderId: squareOrderId },
+          select: { id: true, email: true, status: true },
+        });
+        
+        if (cateringOrder) {
+          console.log(`✅ [WEBHOOK-QUEUE] Delayed processing found catering order: ${cateringOrder.id}`);
+          console.log(`✅ [WEBHOOK-QUEUE] Successfully prevented placeholder order for ${squareOrderId}`);
+          return;
+        }
+        
+        // If still no catering order found, proceed with regular order creation
+        console.log(`⚠️ [WEBHOOK-QUEUE] Delayed processing: still no catering order for ${squareOrderId}`);
+        console.log(`⚠️ [WEBHOOK-QUEUE] This appears to be a legitimate regular order`);
+        
+        // Re-run the order creation process
+        await handleOrderCreated(payload);
+        
+      } catch (error) {
+        console.error(`❌ [WEBHOOK-QUEUE] Error in delayed webhook processing:`, error);
+        // Optionally queue for another retry or send to dead letter queue
+      }
+    }, 10000); // Wait 10 seconds before retry
+    
+    console.log(`✅ [WEBHOOK-QUEUE] Webhook queued for processing in 10 seconds`);
+    
+  } catch (error) {
+    console.error(`❌ [WEBHOOK-QUEUE] Error queuing webhook:`, error);
+    // If queueing fails, continue with regular processing as fallback
+    throw error;
+  }
+}
+
 // Event handlers with enhanced duplicate prevention
 async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
@@ -71,50 +123,122 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   
   let cateringOrder = null;
   
-  // Add retry logic to handle race conditions with catering order creation
-  const maxRetries = 3;
-  const retryDelay = 1000; // 1 second
+  // Enhanced retry logic with exponential backoff for race conditions
+  const maxRetries = 5; // Increased from 3
+  const baseRetryDelay = 2000; // Increased from 1 second to 2 seconds
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`🔍 [WEBHOOK-DEBUG] Attempting catering order query (attempt ${attempt}/${maxRetries})...`);
+      console.log(`🔍 [WEBHOOK-QUEUE] Attempting catering order lookup (${attempt}/${maxRetries})...`);
+      console.log(`🔍 [WEBHOOK-QUEUE] Looking for Square Order ID: ${data.id}`);
+      
+      // Enhanced query with additional metadata
       cateringOrder = await prisma.cateringOrder.findUnique({
         where: { squareOrderId: data.id },
-        select: { id: true, name: true, email: true, phone: true },
+        select: { 
+          id: true, 
+          name: true, 
+          email: true, 
+          phone: true, 
+          createdAt: true,
+          status: true,
+          squareCheckoutId: true,
+        },
       });
-      console.log(`🔍 [WEBHOOK-DEBUG] Catering order query result (attempt ${attempt}):`, cateringOrder);
+      
+      console.log(`🔍 [WEBHOOK-QUEUE] Query result (attempt ${attempt}):`, cateringOrder ? {
+        id: cateringOrder.id,
+        email: cateringOrder.email,
+        status: cateringOrder.status,
+        age: `${Math.round((Date.now() - cateringOrder.createdAt.getTime()) / 1000)}s`,
+      } : 'NOT_FOUND');
       
       if (cateringOrder) {
-        // Found catering order, break out of retry loop
+        console.log(`✅ [WEBHOOK-QUEUE] Catering order found on attempt ${attempt}`);
         break;
       }
       
-      // If not found and not the last attempt, wait before retrying
+      // If not found and not the last attempt, wait with exponential backoff
       if (attempt < maxRetries) {
-        console.log(`⏳ [WEBHOOK-DEBUG] Catering order not found, waiting ${retryDelay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        const delay = baseRetryDelay * Math.pow(1.5, attempt - 1); // Exponential backoff
+        console.log(`⏳ [WEBHOOK-QUEUE] Catering order not found, waiting ${delay}ms before retry...`);
+        console.log(`⏳ [WEBHOOK-QUEUE] This may be a race condition - catering order creation in progress`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     } catch (error) {
-      console.error(`❌ [WEBHOOK-DEBUG] Error checking for catering order (attempt ${attempt}):`, error);
+      console.error(`❌ [WEBHOOK-QUEUE] Error checking for catering order (attempt ${attempt}):`, error);
       
       // If this was the last attempt, proceed with error logged
       if (attempt === maxRetries) {
+        console.error(`🚨 [WEBHOOK-QUEUE] All attempts failed - database may be unstable`);
         break;
       }
       
-      // Wait before retrying even on error
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      // Wait before retrying even on error (with backoff)
+      const errorDelay = baseRetryDelay * Math.pow(1.5, attempt - 1);
+      console.log(`⏳ [WEBHOOK-QUEUE] Error retry delay: ${errorDelay}ms`);
+      await new Promise(resolve => setTimeout(resolve, errorDelay));
     }
   }
 
   if (cateringOrder) {
     // This is a catering order - don't create a regular order
-    console.log(`✅ [WEBHOOK-DEBUG] CATERING ORDER FOUND! ID: ${cateringOrder.id} with Square ID ${data.id} - SKIPPING REGULAR ORDER CREATION`);
-    console.log(`✅ [WEBHOOK-DEBUG] Catering order details:`, cateringOrder);
+    console.log(`✅ [WEBHOOK-QUEUE] CATERING ORDER CONFIRMED! Skipping regular order creation`);
+    console.log(`✅ [WEBHOOK-QUEUE] Catering Order ID: ${cateringOrder.id}`);
+    console.log(`✅ [WEBHOOK-QUEUE] Customer: ${cateringOrder.email}`);
+    console.log(`✅ [WEBHOOK-QUEUE] Status: ${cateringOrder.status}`);
+    console.log(`✅ [WEBHOOK-QUEUE] Square Order ID: ${data.id} handled by catering system`);
     return;
   }
   
-  console.log(`⚠️ [WEBHOOK-DEBUG] NO CATERING ORDER FOUND after ${maxRetries} attempts - PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
+  // ENHANCED: Check if this might be a very recent catering order by looking for recent orders
+  // This is a final safety check before creating a placeholder order
+  console.log(`🔍 [WEBHOOK-QUEUE] Final safety check: looking for recent catering orders...`);
+  
+  try {
+    const recentCateringOrders = await prisma.cateringOrder.findMany({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 30000), // Last 30 seconds
+        },
+        squareOrderId: null, // Orders that haven't been linked to Square yet
+      },
+      select: { 
+        id: true, 
+        email: true, 
+        totalAmount: true, 
+        createdAt: true,
+        squareCheckoutId: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    
+    if (recentCateringOrders.length > 0) {
+      console.log(`⚠️ [WEBHOOK-QUEUE] Found ${recentCateringOrders.length} recent catering orders without Square IDs`);
+      console.log(`⚠️ [WEBHOOK-QUEUE] This Square webhook might be for one of these orders`);
+      console.log(`⚠️ [WEBHOOK-QUEUE] Recent orders:`, recentCateringOrders.map(o => ({
+        id: o.id.substring(0, 8),
+        email: o.email,
+        age: `${Math.round((Date.now() - o.createdAt.getTime()) / 1000)}s`,
+        hasCheckout: !!o.squareCheckoutId,
+      })));
+      
+      // CRITICAL: Don't create placeholder order if there are recent catering orders
+      console.log(`🛑 [WEBHOOK-QUEUE] PREVENTING PLACEHOLDER ORDER CREATION - Recent catering activity detected`);
+      console.log(`🛑 [WEBHOOK-QUEUE] Deferring Square Order ID ${data.id} - may be linked by subsequent webhooks`);
+      
+      // Queue this webhook for later processing
+      await queueWebhookForLaterProcessing(payload, 'order.created', data.id);
+      return;
+    }
+  } catch (error) {
+    console.error(`❌ [WEBHOOK-QUEUE] Error checking recent catering orders:`, error);
+    // Continue with regular processing on error
+  }
+  
+  console.log(`⚠️ [WEBHOOK-QUEUE] NO CATERING ORDER FOUND after ${maxRetries} attempts + safety checks`);
+  console.log(`⚠️ [WEBHOOK-QUEUE] PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
 
   // Enhanced duplicate check with event ID tracking using safe query
   const existingOrder = await safeQuery(() =>
@@ -153,14 +277,17 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
           squareOrderId: data.id,
           status: orderStatus,
           total: 0, // Will be updated by payment webhook
-          customerName: 'Pending', // Will be updated with real data
-          email: 'pending@example.com', // Will be updated with real data
-          phone: 'pending', // Will be updated with real data
+          customerName: 'Pending Order', // Enhanced placeholder - will be updated with real data
+          email: 'pending-order@webhook.temp', // Enhanced placeholder to distinguish from catering
+          phone: 'pending-order', // Enhanced placeholder - will be updated with real data
           pickupTime: new Date(),
           rawData: {
             ...data.object,
             lastProcessedEventId: eventId,
             lastProcessedAt: new Date().toISOString(),
+            webhookSource: 'order.created',
+            placeholderOrder: true, // Mark as placeholder for tracking
+            cateringOrderCheckPerformed: true, // Indicate we checked for catering orders
           } as unknown as Prisma.InputJsonValue,
         },
       })
@@ -756,11 +883,22 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
       updateData.status = 'PROCESSING';
     }
 
-    // Update customer information if order has placeholder data
+    // Update customer information if order has placeholder data (enhanced detection)
     const hasPlaceholderData =
       currentOrder.customerName === 'Pending' ||
+      currentOrder.customerName === 'Pending Order' ||
       currentOrder.email === 'pending@example.com' ||
-      currentOrder.phone === 'pending';
+      currentOrder.email === 'pending-order@webhook.temp' ||
+      currentOrder.phone === 'pending' ||
+      currentOrder.phone === 'pending-order';
+    
+    // Enhanced logging for placeholder detection
+    if (hasPlaceholderData) {
+      console.log(`🔄 [PLACEHOLDER-UPDATE] Detected placeholder data in order ${internalOrderId}`);
+      console.log(`🔄 [PLACEHOLDER-UPDATE] Current name: "${currentOrder.customerName}"`);
+      console.log(`🔄 [PLACEHOLDER-UPDATE] Current email: "${currentOrder.email}"`);
+      console.log(`🔄 [PLACEHOLDER-UPDATE] Current phone: "${currentOrder.phone}"`);
+    }
 
     if (hasPlaceholderData) {
       // Extract customer information from payment data
