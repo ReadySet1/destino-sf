@@ -27,6 +27,17 @@ export default async function PaymentPage({ params, searchParams }: PageProps) {
     redirect('/');
   }
 
+  // Validate UUID format before making database query
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
+  if (!isValidUUID(orderId)) {
+    console.error(`Invalid UUID format for orderId: ${orderId}`);
+    redirect('/');
+  }
+
   // Fetch order details from the database
   const order = await prisma.order.findUnique({
     where: { id: orderId },

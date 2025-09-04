@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderConfirmationLayout } from '@/components/shared/OrderConfirmationLayout';
+import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
 import type { SerializableCateringOrderData } from './page';
 import type { CateringOrderData, CustomerInfo } from '@/types/confirmation';
 
@@ -116,15 +117,25 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <div className="mb-4 text-5xl">❌</div>
             <h1 className="mb-4 text-2xl font-bold">Payment Failed</h1>
             <p className="text-gray-600">
-              Your catering order payment was not successful. Please try placing your order again or contact support.
+              Your catering order payment was not successful. You can retry the payment or place a new order.
             </p>
           </div>
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-4">
+            {/* Show retry payment button for Square payments if order data is available */}
+            {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
+             orderData.status === 'PENDING' && // Only show for PENDING status (catering orders don't have PAYMENT_FAILED)
+             (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+              <RetryPaymentButton
+                orderId={orderData.id}
+                retryCount={orderData.retryCount || 0}
+                disabled={(orderData.retryCount || 0) >= 3}
+              />
+            )}
             <button
               onClick={() => router.push('/catering')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
             >
-              Try Again
+              Place New Order
             </button>
           </div>
         </div>
@@ -140,10 +151,20 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <div className="mb-4 text-5xl">⏳</div>
             <h1 className="mb-4 text-2xl font-bold">Payment Processing</h1>
             <p className="text-gray-600">
-              Your catering order is being processed. Please check your email for updates or contact support if you have questions.
+              Your catering order is being processed. You can retry the payment if needed or check your email for updates.
             </p>
           </div>
           <div className="flex justify-center space-x-4">
+            {/* Show retry payment button for Square payments if order data is available */}
+            {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
+             orderData.status === 'PENDING' && // Only show for PENDING status (catering orders don't have PAYMENT_FAILED)
+             (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+              <RetryPaymentButton
+                orderId={orderData.id}
+                retryCount={orderData.retryCount || 0}
+                disabled={(orderData.retryCount || 0) >= 3}
+              />
+            )}
             <button
               onClick={() => window.location.reload()}
               className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"

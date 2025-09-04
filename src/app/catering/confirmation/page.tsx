@@ -21,7 +21,12 @@ type FetchedCateringOrderData =
       | 'deliveryAddressJson'
       | 'createdAt'
       | 'paymentStatus'
+      | 'paymentMethod'
       | 'squareOrderId'
+      | 'retryCount'
+      | 'lastRetryAt'
+      | 'paymentUrl'
+      | 'paymentUrlExpiresAt'
     > & {
       items: Array<{
         id: string;
@@ -52,7 +57,12 @@ export type SerializableCateringOrderData =
       | 'deliveryAddressJson'
       | 'createdAt'
       | 'paymentStatus'
+      | 'paymentMethod'
       | 'squareOrderId'
+      | 'retryCount'
+      | 'lastRetryAt'
+      | 'paymentUrl'
+      | 'paymentUrlExpiresAt'
     > & {
       totalAmount: number;
       items: Array<{
@@ -75,18 +85,38 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
   // Await searchParams
   const params = await searchParams;
   const urlStatus = typeof params.status === 'string' ? params.status : '';
-  const orderId = typeof params.orderId === 'string' ? params.orderId : null;
+  let orderId = typeof params.orderId === 'string' ? params.orderId : null;
   const squareOrderId = typeof params.squareOrderId === 'string' ? params.squareOrderId : null;
 
   let orderData: FetchedCateringOrderData = null;
   let serializableOrderData: SerializableCateringOrderData = null;
   let actualStatus = urlStatus;
 
+  // URL decode the orderId in case it was encoded
+  if (orderId) {
+    try {
+      orderId = decodeURIComponent(orderId);
+    } catch (error) {
+      console.warn(`Failed to decode catering orderId: ${orderId}`, error);
+    }
+  }
+
+  // Validate UUID format before making database query
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   // Always fetch order data if orderId is provided (regardless of URL status)
   // This handles Square redirects that don't include status parameter
   if (orderId) {
-    console.log(`🔧 [CATERING] Fetching catering order details for ID: ${orderId}`);
-    try {
+    // Validate UUID format before database query
+    if (!isValidUUID(orderId)) {
+      console.error(`🔧 [CATERING] Invalid UUID format for orderId: ${orderId}`);
+      actualStatus = 'not_found';
+    } else {
+      console.log(`🔧 [CATERING] Fetching catering order details for ID: ${orderId}`);
+      try {
       orderData = await prisma.cateringOrder.findUnique({
         where: { id: orderId },
         select: {
@@ -104,7 +134,12 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
           deliveryAddressJson: true,
           createdAt: true,
           paymentStatus: true,
+          paymentMethod: true,
           squareOrderId: true,
+          retryCount: true,
+          lastRetryAt: true,
+          paymentUrl: true,
+          paymentUrlExpiresAt: true,
           items: {
             select: {
               id: true,
@@ -158,10 +193,11 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
           })),
         };
       }
-    } catch (error) {
-      console.error(`🔧 [CATERING] Error fetching catering order ${orderId}:`, error);
-      actualStatus = 'error';
-      // Keep orderData as null, the client component can show an error message
+      } catch (error) {
+        console.error(`🔧 [CATERING] Error fetching catering order ${orderId}:`, error);
+        actualStatus = 'error';
+        // Keep orderData as null, the client component can show an error message
+      }
     }
   } else if (urlStatus) {
     console.warn('🔧 [CATERING] Status provided but no orderId for catering confirmation');

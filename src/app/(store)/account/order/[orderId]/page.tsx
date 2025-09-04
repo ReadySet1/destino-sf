@@ -155,6 +155,17 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     notFound();
   }
 
+  // Validate UUID format before making database query
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
+  if (!isValidUUID(orderId)) {
+    console.error(`Invalid UUID format for orderId: ${orderId}`);
+    notFound();
+  }
+
   // Try to fetch as a regular order first with enhanced error handling
   let regularOrder = null;
   let cateringOrder = null;
@@ -228,8 +239,35 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           id: orderId,
           customerId: user.id, // Ensure the order belongs to the authenticated user
         },
-        include: {
-          items: true,
+        select: {
+          id: true,
+          status: true,
+          totalAmount: true,
+          name: true,
+          email: true,
+          phone: true,
+          eventDate: true,
+          numberOfPeople: true,
+          specialRequests: true,
+          deliveryAddress: true,
+          deliveryFee: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          retryCount: true,
+          lastRetryAt: true,
+          paymentUrl: true,
+          paymentUrlExpiresAt: true,
+          createdAt: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              pricePerUnit: true,
+              totalPrice: true,
+              itemName: true,
+              itemType: true,
+            },
+          },
         },
       });
     } catch (error) {
@@ -258,8 +296,35 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               id: orderId,
               customerId: user.id,
             },
-            include: {
-              items: true,
+            select: {
+              id: true,
+              status: true,
+              totalAmount: true,
+              name: true,
+              email: true,
+              phone: true,
+              eventDate: true,
+              numberOfPeople: true,
+              specialRequests: true,
+              deliveryAddress: true,
+              deliveryFee: true,
+              paymentMethod: true,
+              paymentStatus: true,
+              retryCount: true,
+              lastRetryAt: true,
+              paymentUrl: true,
+              paymentUrlExpiresAt: true,
+              createdAt: true,
+              items: {
+                select: {
+                  id: true,
+                  quantity: true,
+                  pricePerUnit: true,
+                  totalPrice: true,
+                  itemName: true,
+                  itemType: true,
+                },
+              },
             },
           });
           
@@ -400,16 +465,19 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       {orderData.paymentStatus}
                     </Badge>
                     {/* Show retry payment button for eligible orders */}
-                    {isRegularOrder &&
+                    {((isRegularOrder &&
                       (orderData.status === 'PENDING' || orderData.status === 'PAYMENT_FAILED') &&
-                                          (orderData.paymentStatus === 'PENDING' ||
-                      orderData.paymentStatus === 'FAILED') &&
-                    regularOrder?.paymentMethod === 'SQUARE' && (
+                      (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
+                      regularOrder?.paymentMethod === 'SQUARE') ||
+                      (isCateringOrder &&
+                      orderData.status === 'PENDING' && // CateringStatus only has PENDING (no PAYMENT_FAILED)
+                      (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
+                      cateringOrder?.paymentMethod === 'SQUARE')) && (
                       <div className="mt-2">
                         <RetryPaymentButton
                           orderId={orderData.id}
-                          retryCount={regularOrder?.retryCount || 0}
-                          disabled={(regularOrder?.retryCount || 0) >= 3}
+                          retryCount={isRegularOrder ? (regularOrder?.retryCount || 0) : (cateringOrder?.retryCount || 0)}
+                          disabled={isRegularOrder ? ((regularOrder?.retryCount || 0) >= 3) : ((cateringOrder?.retryCount || 0) >= 3)}
                         />
                       </div>
                       )}

@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import OrderConfirmationContent from './OrderConfirmationContent';
 import { prisma } from '@/lib/db'; // Import Prisma client
 import type { Order, Prisma } from '@prisma/client'; // Import Order type and Prisma namespace
+import { validateOrderId } from '@/utils/validation';
 
 // Type fetched directly from Prisma (might include Decimal)
 type FetchedOrderData =
@@ -62,53 +63,57 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
   // Await searchParams
   const params = await searchParams;
   const status = typeof params.status === 'string' ? params.status : '';
-  const orderId = typeof params.orderId === 'string' ? params.orderId : null;
+  const rawOrderId = typeof params.orderId === 'string' ? params.orderId : null;
 
   let orderData: FetchedOrderData = null;
   let serializableOrderData: SerializableFetchedOrderData = null; // New variable for serializable data
 
+  // Validate and sanitize the order ID
+  const orderId = validateOrderId(rawOrderId);
+
   if (status === 'success' && orderId) {
     console.log(`Fetching order details for ID: ${orderId}`);
+    
     try {
       orderData = await prisma.order.findUnique({
-        where: { id: orderId },
-        select: {
-          // Select only needed fields
-          id: true,
-          status: true,
-          total: true,
-          customerName: true,
-          pickupTime: true,
-          paymentStatus: true,
-          trackingNumber: true,
-          shippingCarrier: true,
-          fulfillmentType: true,
-          notes: true,
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              price: true,
-              product: { select: { name: true } },
-              variant: { select: { name: true } },
+          where: { id: orderId },
+          select: {
+            // Select only needed fields
+            id: true,
+            status: true,
+            total: true,
+            customerName: true,
+            pickupTime: true,
+            paymentStatus: true,
+            trackingNumber: true,
+            shippingCarrier: true,
+            fulfillmentType: true,
+            notes: true,
+            items: {
+              select: {
+                id: true,
+                quantity: true,
+                price: true,
+                product: { select: { name: true } },
+                variant: { select: { name: true } },
+              },
             },
           },
-        },
-      });
-      if (!orderData) {
-        console.warn(`Order with ID ${orderId} not found in database.`);
-      }
-      // Convert Decimal fields to numbers for serialization
-      if (orderData) {
-        serializableOrderData = {
-          ...orderData,
-          total: orderData.total?.toNumber() ?? null,
-          items: orderData.items.map(item => ({
-            ...item,
-            price: item.price.toNumber(),
-          })),
-        };
-      }
+        });
+        if (!orderData) {
+          console.warn(`Order with ID ${orderId} not found in database.`);
+        }
+        // Convert Decimal fields to numbers for serialization
+        if (orderData) {
+          serializableOrderData = {
+            ...orderData,
+            total: orderData.total?.toNumber() ?? null,
+            items: orderData.items.map(item => ({
+              ...item,
+              price: item.price.toNumber(),
+            })),
+          };
+        }
     } catch (error) {
       console.error(`Error fetching order ${orderId}:`, error);
       // Keep orderData as null, the client component can show an error message

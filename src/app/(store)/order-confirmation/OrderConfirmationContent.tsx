@@ -90,6 +90,44 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
     );
   }
 
+  // Handle case where order data could not be retrieved (e.g., invalid UUID, not found)
+  if (status === 'success' && !orderData) {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-lg rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">✅</div>
+            <h1 className="mb-4 text-2xl font-bold text-green-600">Thank You for Your Order!</h1>
+            <p className="text-gray-600">
+              Thank you for your order. We&apos;ll send you updates about your order status.
+            </p>
+          </div>
+          
+          <div className="rounded-lg border bg-yellow-50 p-4 mb-6">
+            <p className="text-sm text-yellow-800">
+              Could not retrieve order details at this time. Please check your email for order confirmation.
+            </p>
+          </div>
+
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => router.push('/')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Continue Shopping
+            </button>
+            <button
+              onClick={() => router.push('/account')}
+              className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50"
+            >
+              View Account
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // Transform orderData to match StoreOrderData interface
   const transformedOrderData: StoreOrderData | null = orderData
     ? {
