@@ -115,7 +115,12 @@ export async function handleSquareWebhook(
     }
 
     const event = req.body as SquareWebhookEvent;
-    logger.info(`Processing Square webhook event: ${event.type}`);
+    logger.info(`Processing Square webhook event: ${event.type}`, {
+      eventId: event.event_id,
+      merchantId: event.merchant_id,
+      dataType: event.data?.type,
+      dataId: event.data?.id
+    });
 
     // Handle different event types
     switch (event.type) {
@@ -185,6 +190,17 @@ export async function handleSquareWebhook(
           } else {
             console.log('DEBUG: Inside ELSE block (not isFulfillmentUpdate)');
             squareOrderId = eventObjectId; // For these events, the data.id is the order_id
+            
+            // Check for duplicate order creation - prevent $0.00 duplicates
+            const existingOrder = await prisma.order.findFirst({
+              where: { squareOrderId: squareOrderId },
+              select: { id: true, total: true, createdAt: true }
+            });
+            
+            if (existingOrder) {
+              console.log(`DEBUG: Order with Square ID ${squareOrderId} already exists in database with total ${existingOrder.total}. Skipping duplicate creation.`);
+              break; // Skip processing this webhook to prevent duplicates
+            }
           }
 
           if (!squareOrderId) {
@@ -256,6 +272,14 @@ export async function handleSquareWebhook(
             // Determine status using the mapping function based on the overall order state
             const mappedStatusFromSquare = mapSquareOrderStatus(sqOrder.state);
 
+            // Check if this order update includes payment information
+            let paymentStatus = 'PENDING';
+            if (sqOrder.tenders && sqOrder.tenders.length > 0) {
+              const tender = sqOrder.tenders[0] as any;
+              paymentStatus = mapSquarePaymentStatus(tender.status || 'PENDING');
+              logger.info(`Order ${sqOrder.id} has payment tender with status: ${tender.status} -> ${paymentStatus}`);
+            }
+
             // Prevent overwriting a more advanced status (like READY) with PROCESSING from a generic OPEN state update
             let finalStatus = mappedStatusFromSquare;
             if (currentOrder?.status === 'READY' && mappedStatusFromSquare === 'PROCESSING') {
@@ -284,8 +308,7 @@ export async function handleSquareWebhook(
                 status: finalStatus, // Use the potentially adjusted status
                 total: sqOrder.totalMoney ? Number(sqOrder.totalMoney.amount) / 100 : 0,
                 customerName: sqOrder.customerName ?? undefined, // Use ?? for potential null
-                // Consider fetching/updating email/phone if available in sqOrder
-                paymentStatus: 'PENDING', // Default status for mock order
+                paymentStatus: paymentStatus as any, // Use the extracted payment status
                 updatedAt: new Date(),
               },
               create: {
@@ -296,11 +319,24 @@ export async function handleSquareWebhook(
                 email: '', // Placeholder - fetch if available
                 phone: '', // Placeholder - fetch if available
                 pickupTime: new Date(), // Default pickup time for mock order
-                paymentStatus: 'PENDING', // Default for create
+                paymentStatus: paymentStatus as any, // Use the extracted payment status
                 createdAt: new Date(),
                 updatedAt: new Date(),
               },
             });
+            
+            // Also try to update catering orders with the same Square order ID
+            const cateringUpdateResult = await prisma.cateringOrder.updateMany({
+              where: { squareOrderId: sqOrder.id },
+              data: {
+                paymentStatus: paymentStatus as any,
+                updatedAt: new Date(),
+              },
+            });
+            
+            if (cateringUpdateResult.count > 0) {
+              logger.info(`Updated catering order payment status to ${paymentStatus} for Square order ${sqOrder.id}`);
+            }
             logger.info(
               `[Order Upsert] Successfully upserted order ${sqOrder.id} with status ${finalStatus}`
             );
@@ -317,35 +353,56 @@ export async function handleSquareWebhook(
       }
       case 'payment.created':
       case 'payment.updated': {
-        // Fetch payment details
+        // Process real payment webhook data
         try {
-          const paymentId = event.data.id;
-          // Mock payment response for webhook processing since paymentsApi is not available
-          const paymentResp = {
-            result: {
-              payment: {
-                id: paymentId,
-                orderId: 'unknown',
-                status: 'COMPLETED',
-              },
-            },
-          };
-          const sqPayment = paymentResp.result.payment;
-          if (!sqPayment) throw new Error('No payment found in Square response');
+          const paymentData = event.data.object as any;
+          const paymentId = paymentData.id;
+          const orderId = paymentData.order_id;
+          const paymentStatus = paymentData.status;
+          
+          logger.info(`Processing payment webhook: ${event.type}`, { 
+            paymentId, 
+            orderId, 
+            paymentStatus,
+            eventId: event.event_id 
+          });
 
-          // Update order payment status
-          if (sqPayment.orderId) {
-            await prisma.order.updateMany({
-              where: { squareOrderId: sqPayment.orderId },
+          // Update order payment status if we have an order ID
+          if (orderId) {
+            const mappedStatus = mapSquarePaymentStatus(paymentStatus);
+            
+            // Try to update regular orders first
+            const orderUpdateResult = await prisma.order.updateMany({
+              where: { squareOrderId: orderId },
               data: {
-                paymentStatus: mapSquarePaymentStatus(sqPayment.status),
+                paymentStatus: mappedStatus,
                 updatedAt: new Date(),
               },
             });
-            logger.info(`Order payment status updated for order ${sqPayment.orderId}`);
+            
+            // If no regular orders found, try catering orders
+            if (orderUpdateResult.count === 0) {
+              const cateringUpdateResult = await prisma.cateringOrder.updateMany({
+                where: { squareOrderId: orderId },
+                data: {
+                  paymentStatus: mappedStatus,
+                  updatedAt: new Date(),
+                },
+              });
+              
+              if (cateringUpdateResult.count > 0) {
+                logger.info(`Catering order payment status updated to ${mappedStatus} for Square order ${orderId}`);
+              } else {
+                logger.warn(`No order found with Square order ID ${orderId} for payment ${paymentId}`);
+              }
+            } else {
+              logger.info(`Order payment status updated to ${mappedStatus} for Square order ${orderId}`);
+            }
+          } else {
+            logger.warn(`Payment webhook received without order ID: ${paymentId}`);
           }
         } catch (err) {
-          logger.error('Error updating payment status:', err);
+          logger.error('Error processing payment webhook:', err);
         }
         break;
       }

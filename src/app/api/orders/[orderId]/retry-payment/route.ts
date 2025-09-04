@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { randomUUID } from 'crypto';
 import { applyUserBasedRateLimit } from '@/middleware/rate-limit';
 import { env } from '@/env'; // Import the validated environment configuration
+import { createCheckoutLink } from '@/lib/square/checkout-links'; // Use existing working Square checkout
+import { logger } from '@/utils/logger';
 
 const MAX_RETRY_ATTEMPTS = 3;
 const CHECKOUT_URL_EXPIRY_HOURS = 24;
@@ -30,8 +32,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
 
     const { orderId } = await params;
 
-    // Fetch order with validation
-    const order = await prisma.order.findUnique({
+    // Try to find as regular order first
+    let order = await prisma.order.findUnique({
       where: {
         id: orderId,
         userId: user.id, // Ensure user owns the order
@@ -48,15 +50,37 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       },
     });
 
+    // If not found as regular order, try as catering order
+    let cateringOrder = null;
     if (!order) {
+      cateringOrder = await prisma.cateringOrder.findUnique({
+        where: {
+          id: orderId,
+          customerId: user.id, // Ensure user owns the catering order
+          status: { in: ['PENDING'] }, // CateringStatus doesn't have PAYMENT_FAILED
+          paymentMethod: 'SQUARE', // Only allow retries for Square payments
+          paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status instead
+        },
+        include: {
+          items: true,
+        },
+      });
+    }
+
+    // If neither order type found
+    if (!order && !cateringOrder) {
       return NextResponse.json(
         { error: 'Order not found, not eligible for retry, or uses cash payment method' },
         { status: 404 }
       );
     }
 
+    const targetOrder = order || cateringOrder;
+    const isRegularOrder = !!order;
+    const isCateringOrder = !!cateringOrder;
+
     // Additional check for payment method (extra safety)
-    if (order.paymentMethod !== 'SQUARE') {
+    if (targetOrder!.paymentMethod !== 'SQUARE') {
       return NextResponse.json(
         { error: 'Payment retry is only available for credit card orders' },
         { status: 400 }
@@ -64,36 +88,75 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
     }
 
     // Check retry limits
-    if (order.retryCount >= MAX_RETRY_ATTEMPTS) {
+    if (targetOrder!.retryCount >= MAX_RETRY_ATTEMPTS) {
       return NextResponse.json({ error: 'Maximum retry attempts exceeded' }, { status: 429 });
     }
 
     // Check if existing URL is still valid
-    if (order.paymentUrl && order.paymentUrlExpiresAt && order.paymentUrlExpiresAt > new Date()) {
+    if (targetOrder!.paymentUrl && targetOrder!.paymentUrlExpiresAt && targetOrder!.paymentUrlExpiresAt > new Date()) {
       return NextResponse.json({
         success: true,
-        checkoutUrl: order.paymentUrl,
-        expiresAt: order.paymentUrlExpiresAt,
+        checkoutUrl: targetOrder!.paymentUrl,
+        expiresAt: targetOrder!.paymentUrlExpiresAt,
       });
     }
 
-    // Create new Square checkout session
-    const squareResult = await createSquareCheckoutSession({
-      orderId: order.id,
-      orderItems: order.items,
-      customerInfo: {
-        name: order.customerName,
-        email: order.email,
-        phone: order.phone,
-      },
-      total: order.total,
-      redirectUrl: `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}`,
-      cancelUrl: `${env.NEXT_PUBLIC_APP_URL}/orders/${order.id}?payment=cancelled`,
-    });
+    // Prepare order items based on order type
+    const orderItems = isRegularOrder 
+      ? order!.items.map(item => ({
+          quantity: item.quantity,
+          price: item.price,
+          product: { name: item.product.name },
+          variant: item.variant,
+        }))
+      : cateringOrder!.items.map(item => ({
+          quantity: item.quantity,
+          price: item.pricePerUnit,
+          product: { name: item.itemName },
+          variant: null,
+        }));
 
-    if (!squareResult.success || !squareResult.checkoutUrl) {
+    // Create new Square checkout session
+    const redirectUrl = isRegularOrder 
+      ? `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${targetOrder!.id}`
+      : `${env.NEXT_PUBLIC_APP_URL}/catering/confirmation?status=success&orderId=${targetOrder!.id}`;
+
+    const cancelUrl = isRegularOrder
+      ? `${env.NEXT_PUBLIC_APP_URL}/orders/${targetOrder!.id}?payment=cancelled`
+      : `${env.NEXT_PUBLIC_APP_URL}/catering/confirmation?status=cancelled&orderId=${targetOrder!.id}`;
+
+    // Format items for the existing working checkout function
+    const lineItems = orderItems.map(item => ({
+      name: item.product.name + (item.variant ? ` (${item.variant.name})` : ''),
+      quantity: String(item.quantity),
+      basePriceMoney: {
+        amount: Math.round(Number(item.price) * 100), // Convert to cents
+        currency: 'USD'
+      }
+    }));
+    
+    // Use the existing working Square checkout function (handles sandbox/production logic)
+    const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
+    const locationId = squareEnv === 'sandbox' 
+      ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
+      : process.env.SQUARE_LOCATION_ID;         // Use production location ID
+      
+    let checkoutUrl: string;
+    try {
+      const result = await createCheckoutLink({
+        orderId: targetOrder!.id,
+        locationId: locationId!,
+        lineItems,
+        redirectUrl,
+        customerEmail: targetOrder!.email,
+        customerName: isRegularOrder ? order!.customerName : cateringOrder!.name,
+        customerPhone: targetOrder!.phone,
+      });
+      checkoutUrl = result.checkoutUrl;
+    } catch (error) {
+      logger.error('Failed to create Square checkout link:', error);
       return NextResponse.json(
-        { error: squareResult.error || 'Failed to create checkout session' },
+        { error: 'Failed to create checkout session' },
         { status: 500 }
       );
     }
@@ -102,22 +165,35 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + CHECKOUT_URL_EXPIRY_HOURS);
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        paymentUrl: squareResult.checkoutUrl,
-        paymentUrlExpiresAt: expiresAt,
-        retryCount: order.retryCount + 1,
-        lastRetryAt: new Date(),
-        status: 'PENDING', // Reset to pending for new attempt
-      },
-    });
+    if (isRegularOrder) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentUrl: checkoutUrl,
+          paymentUrlExpiresAt: expiresAt,
+          retryCount: order!.retryCount + 1,
+          lastRetryAt: new Date(),
+          status: 'PENDING', // Reset to pending for new attempt
+        },
+      });
+    } else {
+      await prisma.cateringOrder.update({
+        where: { id: orderId },
+        data: {
+          paymentUrl: checkoutUrl,
+          paymentUrlExpiresAt: expiresAt,
+          retryCount: cateringOrder!.retryCount + 1,
+          lastRetryAt: new Date(),
+          status: 'PENDING', // Reset to pending for new attempt
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      checkoutUrl: squareResult.checkoutUrl,
+      checkoutUrl: checkoutUrl,
       expiresAt,
-      retryAttempt: order.retryCount + 1,
+      retryAttempt: targetOrder!.retryCount + 1,
     });
   } catch (error) {
     console.error('Error in retry payment:', error);
@@ -125,97 +201,3 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
   }
 }
 
-// Helper function to create Square checkout session
-async function createSquareCheckoutSession({
-  orderId,
-  orderItems,
-  customerInfo,
-  total,
-  redirectUrl,
-  cancelUrl,
-}: {
-  orderId: string;
-  orderItems: any[];
-  customerInfo: { name: string; email: string; phone: string };
-  total: any;
-  redirectUrl: string;
-  cancelUrl: string;
-}) {
-  try {
-    const locationId = process.env.SQUARE_LOCATION_ID;
-    const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
-    const accessToken =
-      squareEnv === 'sandbox'
-        ? process.env.SQUARE_SANDBOX_TOKEN
-        : process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-
-    if (!locationId || !accessToken) {
-      return { success: false, error: 'Square configuration missing' };
-    }
-
-    const BASE_URL =
-      squareEnv === 'sandbox'
-        ? 'https://connect.squareupsandbox.com'
-        : 'https://connect.squareup.com';
-
-    // Prepare Square line items
-    const squareLineItems = orderItems.map(item => ({
-      quantity: item.quantity.toString(),
-      base_price_money: {
-        amount: Math.round(Number(item.price) * 100), // Price in cents
-        currency: 'USD',
-      },
-      name: item.product.name + (item.variant ? ` (${item.variant.name})` : ''),
-    }));
-
-    const squareRequestBody = {
-      idempotency_key: randomUUID(),
-      order: {
-        location_id: locationId,
-        reference_id: orderId,
-        line_items: squareLineItems,
-        metadata: { retryPayment: 'true' },
-      },
-      checkout_options: {
-        allow_tipping: true,
-        redirect_url: redirectUrl,
-        merchant_support_email: process.env.SUPPORT_EMAIL || 'info@destinosf.com',
-        accepted_payment_methods: {
-          apple_pay: true,
-          google_pay: true,
-          cash_app_pay: false,
-          afterpay_clearpay: false,
-          venmo: false,
-        },
-      },
-    };
-
-    const paymentLinkUrl = `${BASE_URL}/v2/online-checkout/payment-links`;
-    const fetchResponse = await fetch(paymentLinkUrl, {
-      method: 'POST',
-      headers: {
-        'Square-Version': '2025-05-21',
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(squareRequestBody),
-    });
-
-    const responseData = await fetchResponse.json();
-
-    if (!fetchResponse.ok || responseData.errors || !responseData.payment_link?.url) {
-      const errorDetail =
-        responseData.errors?.[0]?.detail || 'Failed to create Square payment link';
-      return { success: false, error: errorDetail };
-    }
-
-    return {
-      success: true,
-      checkoutUrl: responseData.payment_link.url,
-      squareOrderId: responseData.payment_link.order_id,
-    };
-  } catch (error) {
-    console.error('Error creating Square checkout session:', error);
-    return { success: false, error: 'Failed to create checkout session' };
-  }
-}
