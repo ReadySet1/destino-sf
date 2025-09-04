@@ -732,8 +732,13 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   }
 
   // --- Square API Interaction ---
-  const locationId = process.env.SQUARE_LOCATION_ID;
   const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
+  
+  // Use the correct location ID based on environment
+  const locationId = squareEnv === 'sandbox' 
+    ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
+    : process.env.SQUARE_LOCATION_ID;         // Use production location ID
+    
   const accessToken =
     squareEnv === 'sandbox'
       ? process.env.SQUARE_SANDBOX_TOKEN

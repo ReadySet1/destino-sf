@@ -288,6 +288,57 @@ export async function saveContactInfo(data: {
       };
     }
 
+    // Check for duplicate orders using idempotency key or email+date combination
+    if (data.idempotencyKey) {
+      const existingOrderByKey = await db.cateringOrder.findFirst({
+        where: {
+          OR: [
+            { 
+              metadata: {
+                path: ['idempotencyKey'],
+                equals: data.idempotencyKey
+              }
+            },
+            // Also check by squareOrderId if provided
+            ...(data.squareOrderId ? [{ squareOrderId: data.squareOrderId }] : [])
+          ]
+        },
+        select: { id: true, totalAmount: true, paymentStatus: true }
+      });
+      
+      if (existingOrderByKey) {
+        console.log(`🔧 [CATERING] Duplicate order detected with idempotency key: ${data.idempotencyKey}`);
+        return {
+          success: true,
+          orderId: existingOrderByKey.id,
+          error: 'Order already exists'
+        };
+      }
+    }
+
+    // Additional check for duplicate orders by email and event date (within 1 hour window)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const duplicateCheck = await db.cateringOrder.findFirst({
+      where: {
+        email: data.email,
+        eventDate: new Date(data.eventDate),
+        totalAmount: data.totalAmount,
+        createdAt: {
+          gte: oneHourAgo
+        }
+      },
+      select: { id: true, totalAmount: true }
+    });
+    
+    if (duplicateCheck) {
+      console.log(`🔧 [CATERING] Potential duplicate order detected for ${data.email} on ${data.eventDate}`);
+      return {
+        success: true,
+        orderId: duplicateCheck.id,
+        error: 'Similar order already exists'
+      };
+    }
+
     // Create formatted delivery address string for backward compatibility
     const deliveryAddressString = data.deliveryAddress 
       ? `${data.deliveryAddress.street}${data.deliveryAddress.street2 ? `, ${data.deliveryAddress.street2}` : ''}, ${data.deliveryAddress.city}, ${data.deliveryAddress.state} ${data.deliveryAddress.postalCode}`
@@ -446,9 +497,18 @@ export async function createCateringOrderAndProcessPayment(data: {
         // Create a temporary order ID for Square (we'll use this for the actual order)
         const tempOrderId = generateTempOrderId();
         
+        // Generate idempotency key to prevent duplicate orders
+        const idempotencyKey = data.idempotencyKey || `catering_${data.email}_${tempOrderId}_${Date.now()}`;
+        
+        // Use the correct location ID based on environment
+        const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
+        const locationId = squareEnv === 'sandbox' 
+          ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
+          : process.env.SQUARE_LOCATION_ID;         // Use production location ID
+
         const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
           orderId: tempOrderId,
-          locationId: process.env.SQUARE_LOCATION_ID!,
+          locationId: locationId!,
           lineItems: lineItemsWithDelivery,
           redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${tempOrderId}`,
           customerEmail: data.email,

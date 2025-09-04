@@ -39,22 +39,41 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       customerEmail: params.customerEmail
     });
 
+    // DEBUG: Log environment variables
+    console.error('🔧 [CHECKOUT-LINKS] NODE_ENV:', process.env.NODE_ENV);
+    console.error('🔧 [CHECKOUT-LINKS] USE_SQUARE_SANDBOX:', process.env.USE_SQUARE_SANDBOX);
+    console.error('🔧 [CHECKOUT-LINKS] SQUARE_TRANSACTIONS_USE_SANDBOX:', process.env.SQUARE_TRANSACTIONS_USE_SANDBOX);
+
     // Get Square access token from environment
     const accessToken = process.env.SQUARE_SANDBOX_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error('Square access token not configured');
     }
 
-    // Determine the base URL based on environment
-    const isProduction = process.env.NODE_ENV === 'production' && !process.env.USE_SQUARE_SANDBOX;
+    // Fix environment detection to properly use sandbox in development
+    const useTransactionSandbox = process.env.SQUARE_TRANSACTIONS_USE_SANDBOX === 'true';
+    const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true';
+    const isProduction = process.env.NODE_ENV === 'production' && !useSandbox && !useTransactionSandbox;
+    
     const BASE_URL = isProduction 
       ? 'https://connect.squareup.com' 
       : 'https://connect.squareupsandbox.com';
 
+    console.error('🔧 [CHECKOUT-LINKS] isProduction:', isProduction);
+    console.error('🔧 [CHECKOUT-LINKS] BASE_URL:', BASE_URL);
+
+    // Use correct location ID - LMV06M1ER6HCC for sandbox (Default Test Account), provided locationId for production
+    const actualLocationId = isProduction ? params.locationId : 'LMV06M1ER6HCC';
+    
+    console.error('🔧 [CHECKOUT-LINKS] actualLocationId:', actualLocationId);
+
+    // Generate idempotency key with catering context to prevent duplicates
+    const idempotencyKey = `catering_${params.orderId}_${Date.now()}`;
+    
     const squareRequestBody = {
-      idempotency_key: randomUUID(),
+      idempotency_key: idempotencyKey,
       order: {
-        location_id: params.locationId,
+        location_id: actualLocationId,
         reference_id: params.orderId,
         line_items: params.lineItems.map(item => ({
           quantity: item.quantity,
@@ -64,6 +83,27 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
           },
           name: item.name,
         })),
+        // Add fulfillment to mark this as a FOOD order (pickup type)
+        fulfillments: [{
+          type: 'PICKUP',
+          state: 'PROPOSED',
+          pickup_details: {
+            schedule_type: 'SCHEDULED',
+            recipient: {
+              display_name: params.customerName || 'Catering Customer',
+              email_address: params.customerEmail,
+              phone_number: params.customerPhone,
+            },
+            note: 'Catering order - please prepare for scheduled pickup',
+          },
+        }],
+        // Add metadata to explicitly identify this as a catering/food order
+        metadata: {
+          order_type: 'CATERING',
+          fulfillment_type: 'FOOD',
+          source: 'catering_checkout',
+          idempotency_key: idempotencyKey,
+        },
       },
       checkout_options: {
         redirect_url: params.redirectUrl,
@@ -72,16 +112,10 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       pre_populated_data: (() => {
         const data: any = {};
         
-        // Format email for Square API compatibility
-        if (params.customerEmail) {
-          try {
-            data.buyer_email = formatEmailForSquare(params.customerEmail);
-          } catch (error) {
-            logger.warn('Failed to format email for Square API:', error);
-          }
-        }
+        // Note: Cannot set buyer_email when fulfillments are present per Square API
+        // Customer email is already set in fulfillment recipient details above
         
-        // Format phone number for Square API compatibility
+        // Format phone number for Square API compatibility - this is allowed with fulfillments
         if (params.customerPhone) {
           const formattedPhone = formatPhoneForSquarePaymentLink(params.customerPhone);
           if (formattedPhone) {
@@ -133,6 +167,8 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       checkoutId: responseData.payment_link.id,
       checkoutUrl: responseData.payment_link.url
     });
+
+    console.error('🔧 [CHECKOUT-LINKS] SUCCESS! Final checkout URL:', responseData.payment_link.url);
 
     return {
       checkoutUrl: responseData.payment_link.url,
