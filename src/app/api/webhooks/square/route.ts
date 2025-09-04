@@ -78,11 +78,13 @@ async function queueWebhookForLaterProcessing(
       console.log(`🔄 [WEBHOOK-QUEUE] Processing delayed webhook for ${squareOrderId}`);
       
       try {
-        // Retry the catering order lookup one more time
-        const cateringOrder = await prisma.cateringOrder.findUnique({
-          where: { squareOrderId: squareOrderId },
-          select: { id: true, email: true, status: true },
-        });
+        // Retry the catering order lookup one more time with connection management
+        const cateringOrder = await safeQuery(() =>
+          prisma.cateringOrder.findUnique({
+            where: { squareOrderId: squareOrderId },
+            select: { id: true, email: true, status: true },
+          })
+        );
         
         if (cateringOrder) {
           console.log(`✅ [WEBHOOK-QUEUE] Delayed processing found catering order: ${cateringOrder.id}`);
@@ -134,19 +136,21 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
       console.log(`🔍 [WEBHOOK-QUEUE] Attempting catering order lookup (${attempt}/${maxRetries})...`);
       console.log(`🔍 [WEBHOOK-QUEUE] Looking for Square Order ID: ${data.id}`);
       
-      // Enhanced query with additional metadata
-      cateringOrder = await prisma.cateringOrder.findUnique({
-        where: { squareOrderId: data.id },
-        select: { 
-          id: true, 
-          name: true, 
-          email: true, 
-          phone: true, 
-          createdAt: true,
-          status: true,
-          squareCheckoutId: true,
-        },
-      });
+      // Enhanced query with additional metadata and connection management
+      cateringOrder = await safeQuery(() =>
+        prisma.cateringOrder.findUnique({
+          where: { squareOrderId: data.id },
+          select: { 
+            id: true, 
+            name: true, 
+            email: true, 
+            phone: true, 
+            createdAt: true,
+            status: true,
+            squareCheckoutId: true,
+          },
+        })
+      );
       
       console.log(`🔍 [WEBHOOK-QUEUE] Query result (attempt ${attempt}):`, cateringOrder ? {
         id: cateringOrder.id,
@@ -198,23 +202,25 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   console.log(`🔍 [WEBHOOK-QUEUE] Final safety check: looking for recent catering orders...`);
   
   try {
-    const recentCateringOrders = await prisma.cateringOrder.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(Date.now() - 30000), // Last 30 seconds
+    const recentCateringOrders = await safeQuery(() =>
+      prisma.cateringOrder.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 30000), // Last 30 seconds
+          },
+          squareOrderId: null, // Orders that haven't been linked to Square yet
         },
-        squareOrderId: null, // Orders that haven't been linked to Square yet
-      },
-      select: { 
-        id: true, 
-        email: true, 
-        totalAmount: true, 
-        createdAt: true,
-        squareCheckoutId: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
+        select: { 
+          id: true, 
+          email: true, 
+          totalAmount: true, 
+          createdAt: true,
+          squareCheckoutId: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      })
+    );
     
     if (recentCateringOrders.length > 0) {
       console.log(`⚠️ [WEBHOOK-QUEUE] Found ${recentCateringOrders.length} recent catering orders without Square IDs`);
@@ -980,11 +986,13 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     try {
       console.log(`🔍 Checking for catering order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
       
-      // Check if a catering order with this Square order ID exists using Prisma
-      const cateringOrder = await prisma.cateringOrder.findUnique({
-        where: { squareOrderId },
-        select: { id: true, paymentStatus: true, status: true },
-      });
+      // Check if a catering order with this Square order ID exists using Prisma with connection management
+      const cateringOrder = await safeQuery(() =>
+        prisma.cateringOrder.findUnique({
+          where: { squareOrderId },
+          select: { id: true, paymentStatus: true, status: true },
+        })
+      );
 
       if (cateringOrder) {
         console.log(`✅ Found catering order with squareOrderId ${squareOrderId}:`, {
@@ -1046,10 +1054,12 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
 
         console.log(`💾 Updating catering order ${cateringOrder.id} with:`, cateringUpdateData);
 
-        await prisma.cateringOrder.update({
-          where: { id: cateringOrder.id },
-          data: cateringUpdateData,
-        });
+        await safeQuery(() =>
+          prisma.cateringOrder.update({
+            where: { id: cateringOrder.id },
+            data: cateringUpdateData,
+          })
+        );
 
         console.log(
           `✅ Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus}`
@@ -1073,32 +1083,36 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     // If not a catering order, find our internal order using the Square Order ID
     console.log(`🔍 Checking for regular order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
     
-    const order = await prisma.order.findUnique({
-      where: { squareOrderId: squareOrderId },
-      select: {
-        id: true,
-        status: true,
-        paymentStatus: true,
-        fulfillmentType: true,
-        shippingRateId: true, // Select the shipping rate ID
-      },
-    });
+    const order = await safeQuery(() =>
+      prisma.order.findUnique({
+        where: { squareOrderId: squareOrderId },
+        select: {
+          id: true,
+          status: true,
+          paymentStatus: true,
+          fulfillmentType: true,
+          shippingRateId: true, // Select the shipping rate ID
+        },
+      })
+    );
 
     if (!order) {
       console.error(`❌ CRITICAL: Order with squareOrderId ${squareOrderId} not found for payment update (Event: ${payload.event_id})`);
       
-      // Debug: List recent orders to help identify the issue
-      const recentOrders = await prisma.order.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          squareOrderId: true,
-          status: true,
-          paymentStatus: true,
-          createdAt: true,
-        },
-      });
+      // Debug: List recent orders to help identify the issue with connection management
+      const recentOrders = await safeQuery(() =>
+        prisma.order.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            squareOrderId: true,
+            status: true,
+            paymentStatus: true,
+            createdAt: true,
+          },
+        })
+      );
       
       console.error(`📋 Recent orders for comparison:`, recentOrders);
       
@@ -1164,15 +1178,17 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     console.log(`💾 Updating order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`);
 
     try {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentStatus: updatedPaymentStatus,
-          status: updatedOrderStatus,
-          rawData: data.object as unknown as Prisma.InputJsonValue, // Append or replace raw data
-          updatedAt: new Date(),
-        },
-      });
+      await safeQuery(() =>
+        prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentStatus: updatedPaymentStatus,
+            status: updatedOrderStatus,
+            rawData: data.object as unknown as Prisma.InputJsonValue, // Append or replace raw data
+            updatedAt: new Date(),
+          },
+        })
+      );
       
       console.log(
         `✅ SUCCESS: Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus} (Event: ${payload.event_id})`

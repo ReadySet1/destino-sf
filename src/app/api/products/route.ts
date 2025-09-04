@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { safeQuery } from '@/lib/db-utils';
 import { logger } from '@/utils/logger';
 
 type PrismaVariant = {
@@ -131,47 +132,49 @@ export async function GET(request: NextRequest) {
     const itemsPerPage = limit || (includePagination ? 10 : undefined);
     const skip = includePagination && itemsPerPage ? (page - 1) * itemsPerPage : undefined;
 
-    // Get total count if pagination is requested
+    // Get total count if pagination is requested with connection management
     const totalCount = includePagination
-      ? await prisma.product.count({ where: whereCondition })
+      ? await safeQuery(() => prisma.product.count({ where: whereCondition }))
       : undefined;
 
-    // Get products with optional variants
-    const products = await prisma.product.findMany({
-      where: whereCondition,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        images: true,
-        slug: true,
-        categoryId: true,
-        featured: true,
-        active: true,
-        variants: includeVariants
-          ? {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-              },
-            }
-          : false,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+    // Get products with optional variants with connection management
+    const products = await safeQuery(() =>
+      prisma.product.findMany({
+        where: whereCondition,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          images: true,
+          slug: true,
+          categoryId: true,
+          featured: true,
+          active: true,
+          variants: includeVariants
+            ? {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                },
+              }
+            : false,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
           },
         },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-      skip: skip,
-      take: itemsPerPage,
-    });
+        orderBy: {
+          name: 'asc',
+        },
+        skip: skip,
+        take: itemsPerPage,
+      })
+    );
 
     // Convert BigInt price to regular number for JSON serialization
     const serializedProducts = products.map(product => ({

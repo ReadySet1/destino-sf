@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { safeQuery } from '@/lib/db-utils';
 import { logger } from '@/utils/logger';
 import { mapSquareCategoryToCateringCategory } from '@/utils/catering-optimized';
 
@@ -14,8 +15,9 @@ export async function GET(request: NextRequest) {
     logger.info('🥪 [CACHE-OPT] Fetching lunch products from database...');
     logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
 
-    // Optimized query: Get category IDs first to avoid JOIN in main query
-    const categoryIds = await prisma.category.findMany({
+    // Optimized query: Get category IDs first to avoid JOIN in main query with connection management
+    const categoryIds = await safeQuery(() =>
+      prisma.category.findMany({
       where: {
         name: {
           in: [
@@ -30,13 +32,15 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true
       }
-    });
+    })
+    );
 
     const categoryIdMap = new Map(categoryIds.map(cat => [cat.id, cat.name]));
     const categoryIdList = categoryIds.map(cat => cat.id);
 
-    // Optimized main query using categoryId instead of JOIN
-    const products = await prisma.product.findMany({
+    // Optimized main query using categoryId instead of JOIN with connection management
+    const products = await safeQuery(() =>
+      prisma.product.findMany({
       where: {
         active: true,
         categoryId: {
@@ -58,7 +62,8 @@ export async function GET(request: NextRequest) {
         { ordinal: 'asc' },     // Admin-controlled order
         { name: 'asc' }         // Alphabetical fallback
       ]
-    });
+    })
+    );
 
     const transformedItems = products.map(product => {
       const categoryName = categoryIdMap.get(product.categoryId) || '';

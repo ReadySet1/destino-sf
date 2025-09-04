@@ -3,6 +3,7 @@ import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
+import { safeQuery } from '@/lib/db-utils';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 
 // Helper function moved outside the POST handler
@@ -80,21 +81,23 @@ export async function POST(request: Request) {
     // Calculate total
     const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Create order in database
-    const order = await prisma.order.create({
-      data: {
-        status: 'PENDING',
-        total,
-        userId: user?.id,
-        customerName: customerInfo.name,
-        email: customerInfo.email,
-        phone: customerInfo.phone,
-        pickupTime: new Date(customerInfo.pickupTime),
-        items: {
-          create: orderItems,
+    // Create order in database with connection management
+    const order = await safeQuery(() =>
+      prisma.order.create({
+        data: {
+          status: 'PENDING',
+          total,
+          userId: user?.id,
+          customerName: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          pickupTime: new Date(customerInfo.pickupTime),
+          items: {
+            create: orderItems,
+          },
         },
-      },
-    });
+      })
+    );
 
     // Create order in Square
     // This is simplified - you'd map your products to Square catalog items
@@ -106,11 +109,13 @@ export async function POST(request: Request) {
       })),
     });
 
-    // Update our order with Square order ID
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { squareOrderId: squareOrder.id },
-    });
+    // Update our order with Square order ID with connection management
+    await safeQuery(() =>
+      prisma.order.update({
+        where: { id: order.id },
+        data: { squareOrderId: squareOrder.id },
+      })
+    );
 
     return NextResponse.json({ orderId: order.id });
   } catch (error) {

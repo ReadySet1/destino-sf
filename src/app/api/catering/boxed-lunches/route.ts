@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { safeQuery } from '@/lib/db-utils';
 import { logger } from '@/utils/logger';
 import { 
   BoxedLunchEntree, 
@@ -38,31 +39,33 @@ export async function GET(request: NextRequest) {
 }
 
 async function getLegacyBoxedLunchItems() {
-  const products = await prisma.product.findMany({
-    where: {
-      active: true,
-      category: {
-        name: {
-          in: ['CATERING- BOXED LUNCHES'],
-          mode: 'insensitive'
+  const products = await safeQuery(() =>
+    prisma.product.findMany({
+      where: {
+        active: true,
+        category: {
+          name: {
+            in: ['CATERING- BOXED LUNCHES'],
+            mode: 'insensitive'
+          }
         }
-      }
-    },
-    include: {
-      category: true,
-      variants: {
-        select: {
-          id: true,
-          name: true,
-          price: true,
+      },
+      include: {
+        category: true,
+        variants: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          }
         }
-      }
-    },
-    orderBy: [
-      { ordinal: 'asc' },  // Admin-controlled order first
-      { name: 'asc' }      // Alphabetical fallback
-    ]
-  });
+      },
+      orderBy: [
+        { ordinal: 'asc' },  // Admin-controlled order first
+        { name: 'asc' }      // Alphabetical fallback
+      ]
+    })
+  );
 
   logger.info(`✅ Found ${products.length} legacy boxed lunch products`);
 
@@ -131,44 +134,48 @@ async function getLegacyBoxedLunchItems() {
 }
 
 async function getBuildYourOwnBoxData() {
-  // Fetch both tiers and entrees in parallel
+  // Fetch both tiers and entrees in parallel with connection management
   const [tiers, entreeProducts] = await Promise.all([
     // Get tier configurations from the new table
-    prisma.$queryRaw<BoxedLunchTierModel[]>`
-      SELECT id, tier_number as "tierNumber", name, price_cents as "priceCents", 
-             protein_amount as "proteinAmount", sides, active, created_at as "createdAt", 
-             updated_at as "updatedAt"
-      FROM boxed_lunch_tiers 
-      WHERE active = true 
-      ORDER BY tier_number
-    `,
+    safeQuery(() =>
+      prisma.$queryRaw<BoxedLunchTierModel[]>`
+        SELECT id, tier_number as "tierNumber", name, price_cents as "priceCents", 
+               protein_amount as "proteinAmount", sides, active, created_at as "createdAt", 
+               updated_at as "updatedAt"
+        FROM boxed_lunch_tiers 
+        WHERE active = true 
+        ORDER BY tier_number
+      `
+    ),
     
     // Get entree products from the new category
-    prisma.product.findMany({
-      where: {
-        active: true,
-        category: {
-          name: {
-            in: ['CATERING- BOXED LUNCH ENTREES'],
-            mode: 'insensitive'
+    safeQuery(() =>
+      prisma.product.findMany({
+        where: {
+          active: true,
+          category: {
+            name: {
+              in: ['CATERING- BOXED LUNCH ENTREES'],
+              mode: 'insensitive'
+            }
           }
-        }
-      },
-      include: {
-        category: true,
-        variants: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
+        },
+        include: {
+          category: true,
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+            }
           }
-        }
-      },
-      orderBy: [
-        { ordinal: 'asc' },
-        { name: 'asc' }
-      ]
-    })
+        },
+        orderBy: [
+          { ordinal: 'asc' },
+          { name: 'asc' }
+        ]
+      })
+    )
   ]);
 
   logger.info(`✅ Found ${tiers.length} tiers and ${entreeProducts.length} entree products`);

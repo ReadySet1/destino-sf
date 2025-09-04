@@ -3,6 +3,7 @@ import { NextResponse, NextRequest } from 'next/server';
 // import { type CookieOptions, createServerClient } from '@supabase/ssr';
 // import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
+import { safeQuery } from '@/lib/db-utils';
 // Import the server client utility
 import { createClient } from '@/utils/supabase/server';
 
@@ -25,25 +26,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Authentication failed' }, { status: 401 });
     }
 
-    // Fetch orders using the authenticated user's ID
-    const orders = await prisma.order.findMany({
-      where: { userId: user.id }, // Use user.id directly
-      include: {
-        items: {
-          include: {
-            product: {
-              select: { name: true, images: true },
-            },
-            variant: {
-              select: { name: true },
+    // Fetch orders using the authenticated user's ID with connection management
+    const orders = await safeQuery(() =>
+      prisma.order.findMany({
+        where: { userId: user.id }, // Use user.id directly
+        include: {
+          items: {
+            include: {
+              product: {
+                select: { name: true, images: true },
+              },
+              variant: {
+                select: { name: true },
+              },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+    );
 
     return NextResponse.json({ orders });
   } catch (error) {
