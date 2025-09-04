@@ -20,6 +20,7 @@ SQUARE_LOCATION_ID=your_location_id_here_starts_with_L
 # Get these from: https://developer.squareup.com/apps → Your App → Sandbox → Credentials
 SQUARE_SANDBOX_TOKEN=your_sandbox_token_here_starts_with_EAAA
 SQUARE_SANDBOX_APPLICATION_ID=your_sandbox_app_id_here
+SQUARE_SANDBOX_LOCATION_ID=your_sandbox_location_id_here_starts_with_F
 
 # === WEBHOOK CONFIGURATION ===
 SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_signature_key
@@ -46,12 +47,17 @@ USE_SQUARE_SANDBOX=false
    - Copy the **Access Token** (starts with `EAAA`)
    - Replace `your_sandbox_token_here_starts_with_EAAA`
 
-4. **Get your Location ID:**
+4. **Get your Production Location ID:**
    - In Square Dashboard, go to **Account & Settings** → **Locations**
    - Copy the Location ID (starts with `L`)
    - Replace `your_location_id_here_starts_with_L`
 
-5. **Test your configuration:**
+5. **Get your Sandbox Location ID:**
+   - In Square Developer Dashboard, go to **Sandbox** tab → **Test Accounts**
+   - Use the default sandbox location ID: `FN04F7551EZWX`
+   - Replace `your_sandbox_location_id_here_starts_with_F`
+
+6. **Test your configuration:**
 
    ```bash
    # Start your dev server

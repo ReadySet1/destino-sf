@@ -35,6 +35,7 @@ const envSchema = z.object({
   SQUARE_PRODUCTION_TOKEN: z.string().optional(),
   SQUARE_SANDBOX_APPLICATION_ID: z.string().optional(),
   SQUARE_SANDBOX_TOKEN: z.string().optional(),
+  SQUARE_SANDBOX_LOCATION_ID: z.string().optional(),
   SQUARE_CATALOG_USE_PRODUCTION: z.string().optional(),
   SQUARE_TRANSACTIONS_USE_SANDBOX: z.string().optional(),
   USE_SQUARE_SANDBOX: z.string().optional(),

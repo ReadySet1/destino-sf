@@ -442,6 +442,11 @@ model CateringOrder {
   deliveryAddressJson Json?               @map("delivery_address_json")
   squareCheckoutId    String?             @map("square_checkout_id")
   metadata            Json?
+  // Retry payment fields (matching regular orders)
+  lastRetryAt         DateTime?           @map("last_retry_at")
+  paymentUrl          String?             @map("payment_url")
+  paymentUrlExpiresAt DateTime?           @map("payment_url_expires_at")
+  retryCount          Int                 @default(0) @map("retry_count")
   items               CateringOrderItem[]
   archivedByUser      Profile?            @relation("ArchivedCateringOrders", fields: [archivedBy], references: [id])
   customer            Profile?            @relation(fields: [customerId], references: [id])
