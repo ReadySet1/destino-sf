@@ -63,35 +63,55 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
 
   const orderStatus = mapSquareStateToOrderStatus(squareOrderData?.state);
 
+  // FIXED: Check if this is likely a catering order by looking at recent activity
+  const recentCateringCheck = await safeQuery(() =>
+    prisma.cateringOrder.findFirst({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 60000), // Last minute
+        },
+      },
+      select: { id: true, squareOrderId: true },
+    })
+  );
+
+  if (recentCateringCheck) {
+    console.log(`⚠️ [WEBHOOK-HANDLERS] Recent catering activity detected.`);
+    console.log(`⚠️ [WEBHOOK-HANDLERS] Skipping order creation for ${data.id} to prevent phantom orders.`);
+    console.log(`⚠️ [WEBHOOK-HANDLERS] This webhook is likely for a catering order being processed.`);
+    return;
+  }
+
+  // FIXED: For non-catering orders, only update if it exists - never create phantom orders
+  if (existingOrder) {
+    try {
+      await safeQuery(() =>
+        prisma.order.update({
+          where: { squareOrderId: data.id },
+          data: {
+            status: orderStatus,
+            rawData: {
+              ...data.object,
+              lastProcessedEventId: eventId,
+              lastProcessedAt: new Date().toISOString(),
+            } as unknown as Prisma.InputJsonValue,
+            updatedAt: new Date(),
+          },
+        })
+      );
+      console.log(`✅ Updated existing order ${data.id}`);
+    } catch (updateError: any) {
+      console.error(`❌ Error updating existing order ${data.id}:`, updateError);
+      throw updateError;
+    }
+  } else {
+    console.log(`⚠️ [WEBHOOK-HANDLERS] Order ${data.id} not found. Skipping creation to prevent phantom orders.`);
+    console.log(`⚠️ [WEBHOOK-HANDLERS] Orders should only be created by the checkout flow, not webhooks.`);
+    return;
+  }
+
   try {
-    await safeQuery(() =>
-      prisma.order.upsert({
-        where: { squareOrderId: data.id },
-        update: {
-          status: orderStatus,
-          rawData: {
-            ...data.object,
-            lastProcessedEventId: eventId,
-            lastProcessedAt: new Date().toISOString(),
-          } as unknown as Prisma.InputJsonValue,
-          updatedAt: new Date(),
-        },
-        create: {
-          squareOrderId: data.id,
-          status: orderStatus,
-          total: 0, // Will be updated by payment webhook
-          customerName: 'Pending', // Will be updated with real data
-          email: 'pending@example.com', // Will be updated with real data
-          phone: 'pending', // Will be updated with real data
-          pickupTime: new Date(),
-          rawData: {
-            ...data.object,
-            lastProcessedEventId: eventId,
-            lastProcessedAt: new Date().toISOString(),
-          } as unknown as Prisma.InputJsonValue,
-        },
-      })
-    );
+    // This block is now unreachable but preserved for reference
 
     console.log(`✅ Successfully processed order.created event for order ${data.id}`);
   } catch (error: any) {
