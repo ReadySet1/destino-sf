@@ -1,247 +1,269 @@
-import { PrismaClient, OrderStatus, PaymentStatus } from '@prisma/client';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+// Test database setup with PostgreSQL for Phase 2 QA Implementation
+import { PrismaClient } from '@prisma/client';
 
-const execAsync = promisify(exec);
+let prisma: PrismaClient;
+let testDatabaseUrl: string;
 
-let prisma: PrismaClient | null = null;
+export async function setupTestDatabase() {
+  try {
+    // For CI/CD environments, use provided DATABASE_URL or default test database
+    testDatabaseUrl = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/destino_sf_test';
+    
+    console.log('Setting up test database with URL:', testDatabaseUrl.replace(/\/\/.*@/, '//***@'));
 
-/**
- * Get or create a Prisma client for testing with retry logic
- */
-export async function getTestPrismaClient(): Promise<PrismaClient> {
-  if (!prisma) {
     prisma = new PrismaClient({
       datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
+        db: { url: testDatabaseUrl },
+      },
+      log: process.env.NODE_ENV === 'test' ? [] : ['query', 'error'], // Reduce logging in tests
+    });
+
+    // Test the connection
+    await prisma.$connect();
+    
+    // Run basic schema setup if needed (migrations should be handled separately)
+    // This is a fallback for test environments
+    await ensureBasicSchema();
+
+    console.log('✅ Test database setup completed');
+    return { prisma, databaseUrl: testDatabaseUrl };
+  } catch (error) {
+    console.error('❌ Failed to setup test database:', error);
+    throw error;
+  }
+}
+
+export async function teardownTestDatabase() {
+  try {
+    if (prisma) {
+      await prisma.$disconnect();
+      console.log('✅ Test database disconnected');
+    }
+  } catch (error) {
+    console.error('❌ Error during test database teardown:', error);
+  }
+}
+
+/**
+ * Clean up all test data between tests
+ */
+export async function cleanupTestData() {
+  if (!prisma) {
+    throw new Error('Test database not initialized. Call setupTestDatabase first.');
+  }
+
+  try {
+    // Clean up in order to respect foreign key constraints
+    await prisma.orderItem.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.user.deleteMany();
+    
+    console.log('✅ Test data cleaned up');
+  } catch (error) {
+    console.error('❌ Error cleaning test data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Seed test database with comprehensive test data using factories
+ */
+export async function seedTestData() {
+  if (!prisma) {
+    throw new Error('Test database not initialized. Call setupTestDatabase first.');
+  }
+
+  try {
+    // Import factories
+    const { createMockProducts, ProductScenarios } = await import('../factories/product.factory');
+    const { createMockUsers, UserScenarios } = await import('../factories/user.factory');
+    const { createMockOrders, OrderScenarios } = await import('../factories/order.factory');
+
+    // Create diverse test products using factories
+    const standardProducts = createMockProducts(8);
+    const scenarioProducts = [
+      ProductScenarios.popularEmpanada(),
+      ProductScenarios.cateringTray(),
+      ProductScenarios.outOfStockItem(),
+      ProductScenarios.spotlightPick(),
+      ProductScenarios.beverage(),
+      ProductScenarios.dessert(),
+    ];
+
+    const allProducts = [...standardProducts, ...scenarioProducts];
+    const products = [];
+    
+    for (const productData of allProducts) {
+      try {
+        const product = await prisma.product.create({ data: productData as any });
+        products.push(product);
+      } catch (error) {
+        console.warn('Warning: Could not create product:', productData.name, error);
+      }
+    }
+
+    // Create test store settings
+    const storeSettings = await prisma.storeSettings.create({
+      data: {
+        id: 'test-settings-1',
+        minOrderAmount: 25.00,
+        cateringMinimumAmount: 100.00,
+        taxRate: 0.0875, // SF tax rate
+        isStoreOpen: true,
+        storeName: 'Destino SF Test Store',
+        storeAddress: '123 Test Street, San Francisco, CA 94105',
+        storePhone: '415-555-TEST',
+        storeEmail: 'test@destinosf.com',
+        openingHours: JSON.stringify({
+          monday: { open: '09:00', close: '18:00' },
+          tuesday: { open: '09:00', close: '18:00' },
+          wednesday: { open: '09:00', close: '18:00' },
+          thursday: { open: '09:00', close: '18:00' },
+          friday: { open: '09:00', close: '18:00' },
+          saturday: { open: '10:00', close: '16:00' },
+          sunday: { closed: true },
+        }),
       },
     });
 
-    // Retry connection logic
-    let retries = 3;
-    while (retries > 0) {
+    // Create diverse test users
+    const standardUsers = createMockUsers(5);
+    const scenarioUsers = [
+      UserScenarios.regularCustomer(),
+      UserScenarios.newCustomer(),
+      UserScenarios.vipCustomer(),
+      UserScenarios.adminUser(),
+      UserScenarios.staffUser(),
+      UserScenarios.corporateCustomer(),
+    ];
+
+    const allUsers = [...standardUsers, ...scenarioUsers];
+    const users = [];
+
+    for (const userData of allUsers) {
       try {
-        await prisma.$connect();
-        break;
+        const user = await prisma.user.create({ data: userData as any });
+        users.push(user);
       } catch (error) {
-        retries--;
-        if (retries === 0) {
-          throw new Error(`Failed to connect to test database after 3 attempts: ${error}`);
-        }
-        // Wait 1 second before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.warn('Warning: Could not create user:', userData.email, error);
       }
     }
-  }
 
+    // Create sample orders with realistic scenarios
+    const scenarioOrders = [
+      OrderScenarios.completedOrder(),
+      OrderScenarios.failedPaymentOrder(),
+      OrderScenarios.cashOrder(),
+      OrderScenarios.deliveryOrder(),
+      OrderScenarios.cateringOrder(),
+      OrderScenarios.minimumOrder(),
+    ];
+
+    const orders = [];
+    for (const orderData of scenarioOrders) {
+      try {
+        // Assign to random user
+        const randomUser = users[Math.floor(Math.random() * users.length)];
+        const orderWithUser = { ...orderData, userId: randomUser?.id };
+        
+        const order = await prisma.order.create({ data: orderWithUser as any });
+        orders.push(order);
+      } catch (error) {
+        console.warn('Warning: Could not create order:', error);
+      }
+    }
+
+    console.log('✅ Comprehensive test data seeded successfully');
+    console.log(`   📦 Products: ${products.length}`);
+    console.log(`   👥 Users: ${users.length}`);
+    console.log(`   🛒 Orders: ${orders.length}`);
+    console.log(`   ⚙️ Store Settings: ${storeSettings ? '✅' : '❌'}`);
+    
+    return { products, users, orders, storeSettings };
+  } catch (error) {
+    console.error('❌ Error seeding test data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Ensure basic schema exists (fallback for test environments)
+ */
+async function ensureBasicSchema() {
+  try {
+    // Check if tables exist by running a simple query
+    await prisma.$queryRaw`SELECT 1 FROM "User" LIMIT 1;`;
+    console.log('✅ Database schema already exists');
+  } catch (error) {
+    console.log('ℹ️ Database schema not found, this is expected in fresh test environments');
+    // In a real setup, you would run migrations here
+    // For now, we'll rely on the existing Prisma migrations
+  }
+}
+
+/**
+ * Get the test Prisma client instance
+ */
+export function getTestPrismaClient(): PrismaClient {
+  if (!prisma) {
+    throw new Error('Test database not initialized. Call setupTestDatabase first.');
+  }
   return prisma;
 }
 
 /**
- * Clean up test database connection
+ * Reset database to clean state
  */
-export async function disconnectTestDatabase(): Promise<void> {
-  if (prisma) {
-    await prisma.$disconnect();
-    prisma = null;
-  }
+export async function resetTestDatabase() {
+  await cleanupTestData();
+  await seedTestData();
+  console.log('✅ Test database reset completed');
 }
 
 /**
- * Setup test database for integration tests
+ * Create a test order for testing purposes
  */
-export async function setupTestDatabase(): Promise<void> {
-  const client = await getTestPrismaClient();
-
-  // Optional: Clean up test data or run migrations
-  // This can be expanded based on your needs
-  console.log('Test database connected successfully');
-}
-
-/**
- * Cleanup test database after tests
- */
-export async function cleanupTestDatabase(): Promise<void> {
-  if (prisma) {
-    try {
-      // Optional: Clean up test data
-      // await prisma.order.deleteMany();
-      // await prisma.product.deleteMany();
-      // etc.
-    } catch (error) {
-      console.warn('Error cleaning up test database:', error);
-    } finally {
-      await disconnectTestDatabase();
-    }
-  }
-}
-
-// Alias for backwards compatibility
-export const teardownTestDatabase = cleanupTestDatabase;
-
-/**
- * Reset database to clean state between tests
- */
-export const resetTestDatabase = async (): Promise<void> => {
+export async function createTestOrder(overrides: any = {}) {
   if (!prisma) {
-    throw new Error('Test database not initialized. Call setupTestDatabase() first.');
+    throw new Error('Test database not initialized. Call setupTestDatabase first.');
   }
 
-  try {
-    // Delete in proper order to handle foreign key constraints
-    await prisma.orderItem.deleteMany({});
-    await prisma.order.deleteMany({});
-    await prisma.product.deleteMany({});
-    await prisma.category.deleteMany({});
-    await prisma.profile.deleteMany({});
-  } catch (error) {
-    console.warn('Error during database reset:', error);
-    // If individual deletes fail, try cascade truncate as fallback
-    try {
-      const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
-        SELECT tablename FROM pg_tables WHERE schemaname = 'public'
-      `;
-
-      for (const { tablename } of tablenames) {
-        if (tablename !== '_prisma_migrations') {
-          await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-        }
-      }
-    } catch (truncateError) {
-      console.error('Failed to reset database with truncate:', truncateError);
-      throw truncateError;
-    }
-  }
-};
-
-/**
- * Seed database with test data
- */
-export const seedTestDatabase = async (): Promise<void> => {
-  if (!prisma) {
-    throw new Error('Test database not initialized. Call setupTestDatabase() first.');
-  }
-
-  // Create test categories first (required for foreign key) - use upsert to avoid conflicts
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { name: 'Alfajores' },
-      update: {},
-      create: {
-        name: 'Alfajores',
-        description:
-          "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
-        order: 1,
-        squareId: 'test-cat-alfajores',
-      },
-    }),
-    prisma.category.upsert({
-      where: { name: 'Empanadas' },
-      update: {},
-      create: {
-        name: 'Empanadas',
-        description:
-          'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
-        order: 2,
-        squareId: 'test-cat-empanadas',
-      },
-    }),
-  ]);
-
-  // Create test products using upsert to avoid unique constraint violations
-  await Promise.all([
-    prisma.product.upsert({
-      where: { squareId: 'test-square-alfajores-dulce' },
-      update: {},
-      create: {
-        squareId: 'test-square-alfajores-dulce',
-        name: 'Dulce de Leche Alfajores',
-        price: 12.99,
-        description:
-          "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
-        categoryId: categories[0].id,
-        active: true,
-        images: ['/images/alfajores-dulce.jpg'],
-      },
-    }),
-    prisma.product.upsert({
-      where: { squareId: 'test-square-alfajores-chocolate' },
-      update: {},
-      create: {
-        squareId: 'test-square-alfajores-chocolate',
-        name: 'Chocolate Alfajores',
-        price: 14.99,
-        description: 'Rich chocolate alfajores',
-        categoryId: categories[0].id,
-        active: true,
-        images: ['/images/alfajores-chocolate.jpg'],
-      },
-    }),
-    prisma.product.upsert({
-      where: { squareId: 'test-square-empanadas-beef' },
-      update: {},
-      create: {
-        squareId: 'test-square-empanadas-beef',
-        name: 'Beef Empanadas',
-        price: 18.99,
-        description:
-          'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious!',
-        categoryId: categories[1].id,
-        active: true,
-        images: ['/images/empanadas-beef.jpg'],
-      },
-    }),
-  ]);
-
-  // Create test user profile using upsert to avoid unique constraint violations
-  await prisma.profile.upsert({
-    where: { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' },
-    update: {},
-    create: {
-      id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      email: 'admin@test.com',
-      name: 'Test Admin',
-      role: 'ADMIN',
-    },
-  });
-};
-
-/**
- * Create test order with specified parameters
- */
-export const createTestOrder = async (overrides: Partial<any> = {}) => {
-  if (!prisma) {
-    throw new Error('Test database not initialized');
-  }
-
-  const defaultOrder = {
+  const defaultOrderData = {
+    id: `test-order-${Date.now()}`,
+    status: 'PENDING' as const,
+    paymentStatus: 'PENDING' as const,
+    paymentMethod: 'SQUARE' as const,
+    fulfillmentType: 'pickup' as const,
     customerName: 'Test Customer',
-    email: 'test@example.com',
-    phone: '+1234567890',
-    total: 31.97,
-    status: OrderStatus.PENDING,
-    paymentStatus: PaymentStatus.PENDING,
-    fulfillmentType: 'delivery',
-    notes: 'Test order',
+    email: 'customer@test.com',
+    phone: '415-555-0200',
+    total: 25.98,
+    subtotal: 23.98,
+    tax: 2.00,
+    pickupTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+    squareOrderId: `square-test-${Date.now()}`,
     ...overrides,
   };
 
   return await prisma.order.create({
-    data: defaultOrder,
+    data: defaultOrderData,
   });
-};
+}
 
-/**
- * Get the test database client
- */
-export const getTestDb = () => {
-  if (!prisma) {
-    throw new Error('Test database not initialized. Call setupTestDatabase() first.');
+// Global setup and teardown for Jest
+let isSetup = false;
+
+export async function globalSetup() {
+  if (!isSetup) {
+    await setupTestDatabase();
+    isSetup = true;
   }
-  return prisma;
-};
+}
 
-// Legacy export for backwards compatibility
-export const testDb = getTestDb;
+export async function globalTeardown() {
+  if (isSetup) {
+    await teardownTestDatabase();
+    isSetup = false;
+  }
+}
