@@ -406,8 +406,8 @@ export async function withConnectionManagement<T>(
   throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
 }
 
-// Retry function with exponential backoff
-export async function withRetry<T>(
+// Simple retry function with exponential backoff (alternative implementation)
+export async function simpleWithRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   baseDelayMs: number = 1000
