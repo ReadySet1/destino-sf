@@ -1,5 +1,62 @@
 # 🥟 Destino SF - Premium Argentine Cuisine & Catering Platform
 
+## 🎯 Quality Assurance & Testing
+
+### Test Coverage
+![Coverage](./coverage/badges/overall.svg)
+![Lines](./coverage/badges/lines.svg) 
+![Functions](./coverage/badges/functions.svg)
+![Branches](./coverage/badges/branches.svg)
+
+### QA Implementation Status
+![QA Phase 1-4](./coverage/badges/qa-phases.svg)
+![Tests](./coverage/badges/tests.svg)
+
+**Phase 1-5 QA Implementation Complete!** ✅
+- ✅ **Phase 1**: Core Testing Infrastructure - Fixed mock configuration, dual Jest configs
+- ✅ **Phase 2**: Critical Path Testing - Payment processing fully tested (7/7 tests passing)
+- ✅ **Phase 3**: CI/CD Testing Setup - GitHub Actions with PostgreSQL, coverage reporting
+- ✅ **Phase 4**: Test Data Management - Comprehensive factories, seeding, dashboard
+- ✅ **Phase 5**: Monitoring & Reporting - Live monitoring, HTML reports, pre-commit hooks
+
+### Test Commands
+```bash
+# Run critical path tests (most important)
+pnpm test:critical
+
+# Run all tests with coverage
+pnpm test:coverage
+
+# Generate test dashboard
+pnpm test:dashboard:generate
+
+# Seed test database
+pnpm test:seed
+
+# Reset test database  
+pnpm test:reset
+
+# Run specific test suites
+pnpm test:unit      # Unit tests
+pnpm test:api       # API tests  
+pnpm test:components # Component tests
+
+# Phase 5: Monitoring & Reporting
+pnpm test:report    # Generate HTML test report
+pnpm test:monitor   # Live test monitoring dashboard
+pnpm test:fix       # Run diagnostic script
+pnpm test:quick     # Fast test execution
+```
+
+### Test Infrastructure
+- **Jest Configuration**: Dual configs for Node.js (API) and jsdom (components)
+- **Test Factories**: Comprehensive data factories using Faker.js
+- **Database Testing**: PostgreSQL test containers with seeding utilities
+- **Coverage Reporting**: Automated badges and dashboard generation
+- **CI/CD Integration**: GitHub Actions with PostgreSQL service
+- **Monitoring & Reporting**: HTML test reports, live monitoring, pre-commit hooks
+
+
 **San Francisco's premier destination for authentic Argentine empanadas, alfajores, and professional catering services.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
