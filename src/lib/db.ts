@@ -406,6 +406,33 @@ export async function withConnectionManagement<T>(
   throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
 }
 
+// Retry function with exponential backoff
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = baseDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError || new Error(`Operation failed after ${maxRetries} attempts`);
+}
+
 // Alias for backward compatibility
 export const withPreparedStatementHandling = withConnectionManagement;
 

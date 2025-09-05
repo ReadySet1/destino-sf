@@ -220,6 +220,9 @@ importers:
       '@eslint/js':
         specifier: ^9.23.0
         version: 9.29.0
+      '@faker-js/faker':
+        specifier: ^10.0.0
+        version: 10.0.0
       '@playwright/test':
         specifier: ^1.53.1
         version: 1.53.1
@@ -811,6 +814,10 @@ packages:
   '@eslint/js@9.29.0':
     resolution: {integrity: sha512-3PIF4cBw/y+1u2EazflInpV+lYsSG0aByVIQzAgb1m1MhHFSbqTyNqtBKHgWf/9Ykud+DhILS9EGkmekVhbKoQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@faker-js/faker@10.0.0':
+    resolution: {integrity: sha512-UollFEUkVXutsaP+Vndjxar40Gs5JL2HeLcl8xO1QAjJgOdhc3OmBFWyEylS+RddWaaBiAzH+5/17PLQJwDiLw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@floating-ui/core@1.7.1':
     resolution: {integrity: sha512-azI0DrjMMfIug/ExbBaeDVJXcY0a7EPvPjb2xAJPa4HeimBX+Z18HK8QQR3jb6356SnDDdxx+hinMLcJEDdOjw==}
@@ -6806,6 +6813,8 @@ snapshots:
   '@eslint/js@8.57.1': {}
 
   '@eslint/js@9.29.0': {}
+
+  '@faker-js/faker@10.0.0': {}
 
   '@floating-ui/core@1.7.1':
     dependencies:
