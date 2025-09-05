@@ -1,42 +1,33 @@
-const { TextEncoder, TextDecoder } = require('util');
-const fetch = require('node-fetch');
+// Enhanced jest setup file following Phase 1 QA Implementation Plan
+import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+
+// Fix TextEncoder/TextDecoder for Node environment
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 // Load test environment variables
 require('dotenv').config({ path: '.env.test' });
 
-// Ensure test environment using Object.assign to avoid readonly issues
-Object.assign(process.env, {
-  NODE_ENV: 'test',
+// Ensure test environment
+process.env.NODE_ENV = 'test';
+
+// Mock environment variables for tests
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-key';
+process.env.SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN || 'test-token';
+process.env.SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT || 'sandbox';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test';
+
+// Mock fetch for tests
+global.fetch = jest.fn();
+
+// Clean up after each test
+afterEach(() => {
+  jest.clearAllMocks();
 });
 
-if (typeof global.TextEncoder === 'undefined') {
-  global.TextEncoder = TextEncoder;
-}
-if (typeof global.TextDecoder === 'undefined') {
-  global.TextDecoder = TextDecoder;
-}
-
-if (!global.fetch) {
-  global.fetch = fetch;
-}
-if (!global.Request) {
-  global.Request = fetch.Request;
-}
-if (!global.Response) {
-  global.Response = fetch.Response;
-}
-if (!global.Headers) {
-  global.Headers = fetch.Headers;
-}
-
-// Import jest-dom for DOM testing extensions
-require('@testing-library/jest-dom');
-
-// Setup test environment variables
-process.env.DATABASE_URL =
-  process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/destino_sf_test';
-
-// Mock next/navigation
+// Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
@@ -44,10 +35,11 @@ jest.mock('next/navigation', () => ({
     prefetch: jest.fn(),
     back: jest.fn(),
     forward: jest.fn(),
+    refresh: jest.fn(),
   }),
-  useParams: () => ({}),
-  usePathname: () => '',
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '',
+  useParams: () => ({}),
 }));
 
 // Mock next-themes
@@ -169,19 +161,7 @@ jest.mock('@/lib/cart-helpers', () => ({
   }),
 }));
 
-// Mock Next.js router
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(() => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-    back: jest.fn(),
-    forward: jest.fn(),
-    refresh: jest.fn(),
-  })),
-  usePathname: jest.fn(() => '/'),
-  useSearchParams: jest.fn(() => new URLSearchParams()),
-}));
+// Duplicate removed - using mock above
 
 // Add console mock for cleaner test output
 global.console = {

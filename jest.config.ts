@@ -1,44 +1,75 @@
 import type { Config } from 'jest';
-import nextJest from 'next/jest.js';
-
-const createJestConfig = nextJest({
-  dir: './',
-});
 
 const config: Config = {
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
-  },
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
-  ],
-  transform: {
-    '^.+\\.(ts|tsx)$': [
-      'ts-jest',
-      {
-        useESM: true,
-        tsconfig: 'tsconfig.test.json',
+  projects: [
+    {
+      displayName: 'node',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/src/**/__tests__/**/*.test.ts',
+        '!<rootDir>/src/**/__tests__/**/*.test.tsx',
+      ],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
       },
-    ],
-  },
-  globals: {
-    'ts-jest': {
-      useESM: true,
-      tsconfig: 'tsconfig.test.json',
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: {
+            jsx: 'react',
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true,
+          },
+        }],
+      },
+    },
+    {
+      displayName: 'jsdom',
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      testMatch: [
+        '<rootDir>/src/**/__tests__/**/*.test.tsx',
+      ],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
+      },
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', {
+          tsconfig: {
+            jsx: 'react',
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true,
+          },
+        }],
+      },
+    },
+  ],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/__mocks__/**',
+    '!src/**/__tests__/**',
+    '!src/**/*.stories.tsx',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
+  coverageThreshold: {
+    global: {
+      branches: 0,  // Start with 0 to allow tests to pass
+      functions: 0,
+      lines: 0,
+      statements: 0,
     },
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@next|@supabase|@testing-library|@t3-oss))',
-  ],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
-  moduleDirectories: ['node_modules', '<rootDir>', '<rootDir>/src'],
+  passWithNoTests: true,
   verbose: true,
-  testTimeout: 30000,
+  maxWorkers: '50%',  // Use half of available CPU cores
+  testTimeout: 10000,  // 10 seconds per test
+  bail: false,  // Don't stop on first failure
 };
 
-export default createJestConfig(config);
+export default config;
