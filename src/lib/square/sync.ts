@@ -14,6 +14,7 @@ import type { Prisma } from '@prisma/client';
 interface SquareCatalogObject {
   type: string;
   id: string;
+  is_deleted?: boolean;
   item_data?: {
     name: string;
     description?: string | null;
@@ -24,6 +25,11 @@ interface SquareCatalogObject {
     }>;
     variations?: SquareCatalogObject[];
     image_ids?: string[];
+    // Square API availability fields
+    visibility?: string;
+    available_online?: boolean;
+    available_for_pickup?: boolean;
+    present_at_all_locations?: boolean;
     // Nutrition information from Square API
     food_and_beverage_details?: {
       calorie_count?: number;
@@ -948,6 +954,25 @@ async function processSquareItem(
     ordinal = BigInt(itemData.categories[0].ordinal);
   }
 
+  // Determine if product should be active based on Square settings
+  const visibility = itemData.visibility || 'PUBLIC';
+  const availableOnline = itemData.available_online ?? true;
+  const presentAtAllLocations = itemData.present_at_all_locations ?? true;
+  const isNotDeleted = !item.is_deleted;
+  
+  // Product should be active if it's not deleted, available online, and present at locations
+  const shouldBeActive = isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
+  
+  // Log visibility status for debugging
+  if (!shouldBeActive) {
+    const reasons = [];
+    if (item.is_deleted) reasons.push('deleted in Square');
+    if (!availableOnline) reasons.push('not available online');
+    if (!presentAtAllLocations) reasons.push('not present at all locations');
+    if (visibility === 'PRIVATE') reasons.push('visibility set to private');
+    logger.info(`🔒 Setting product "${itemName}" as inactive: ${reasons.join(', ')}`);
+  }
+
   if (existingProduct) {
     logger.debug(`Updating existing product: ${itemName} (${item.id})`);
     await withDatabaseRetry(async () => {
@@ -964,7 +989,7 @@ async function processSquareItem(
             create: variants,
           },
           categoryId: categoryId,
-          active: true, // FIXED: Ensure products stay active on update
+          active: shouldBeActive, // IMPROVED: Check Square ecommerce visibility settings
           updatedAt: new Date(),
           // Add nutrition information
           calories: nutritionInfo.calories,
@@ -1001,7 +1026,7 @@ async function processSquareItem(
             ordinal: ordinal,
             categoryId: categoryId,
             featured: false,
-            active: true,
+            active: shouldBeActive, // IMPROVED: Check Square ecommerce visibility settings
             variants: {
               create: variants,
             },
@@ -1044,6 +1069,14 @@ async function handleUniqueConstraintViolation(
   baseSlug: string
 ): Promise<void> {
   const itemName = item.item_data?.name || '';
+  
+  // Calculate shouldBeActive within this function
+  const itemData = item.item_data;
+  const visibility = itemData?.visibility || 'PUBLIC';
+  const availableOnline = itemData?.available_online ?? true;
+  const presentAtAllLocations = itemData?.present_at_all_locations ?? true;
+  const isNotDeleted = !item.is_deleted;
+  const shouldBeActive = isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
   const constraintField = createError.meta?.target?.[0];
   logger.warn(`Constraint violation on ${constraintField} for item ${itemName}`);
 
@@ -1071,6 +1104,7 @@ async function handleUniqueConstraintViolation(
             images: finalImages,
             ordinal: ordinal,
             categoryId: categoryId,
+            active: shouldBeActive, // IMPROVED: Check Square ecommerce visibility settings
             variants: {
               deleteMany: {},
               create: variants,
@@ -1102,7 +1136,7 @@ async function handleUniqueConstraintViolation(
         ordinal: ordinal,
         categoryId: categoryId,
         featured: false,
-        active: true,
+        active: shouldBeActive, // IMPROVED: Check Square ecommerce visibility settings
         variants: {
           create: variants,
         },

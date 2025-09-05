@@ -524,6 +524,25 @@ export class FilteredSyncManager {
       logger.warn(`⚠️  Image extraction failed for product ${itemData.name} (${product.id}) - has ${product.item_data.image_ids.length} image IDs but extracted 0 URLs`);
     }
 
+    // Determine if product should be active based on Square settings
+    const visibility = itemData.visibility || 'PUBLIC';
+    const availableOnline = itemData.available_online ?? true;
+    const presentAtAllLocations = itemData.present_at_all_locations ?? true;
+    const isNotDeleted = !product.is_deleted;
+    
+    // Product should be active if it's not deleted, available online, and present at locations
+    const shouldBeActive = isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
+    
+    // Log visibility status for debugging
+    if (!shouldBeActive) {
+      const reasons = [];
+      if (product.is_deleted) reasons.push('deleted in Square');
+      if (!availableOnline) reasons.push('not available online');
+      if (!presentAtAllLocations) reasons.push('not present at all locations');
+      if (visibility === 'PRIVATE') reasons.push('visibility set to private');
+      logger.info(`🔒 Setting product "${itemData.name}" as inactive: ${reasons.join(', ')}`);
+    }
+
     // Prepare product data
     const productData = {
       name: itemData.name || 'Unknown Product',
@@ -532,7 +551,7 @@ export class FilteredSyncManager {
       squareId: product.id,
       categoryId: category.id,
       images: extractedImages,
-      active: !itemData.isDeleted,
+      active: shouldBeActive,
       updatedAt: new Date()
     };
 
