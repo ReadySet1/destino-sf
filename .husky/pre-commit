@@ -1,0 +1,15 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🧪 Running pre-commit tests..."
+
+# Run critical path tests
+pnpm test:critical --bail --silent
+
+# Check if tests passed
+if [ $? -ne 0 ]; then
+  echo "❌ Critical tests failed. Please fix before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit tests passed!"
