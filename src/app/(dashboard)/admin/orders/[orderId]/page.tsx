@@ -11,7 +11,6 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { FormattedNotes } from '@/components/Order/FormattedNotes';
 import { ShippingLabelButton } from '../components/ShippingLabelButton';
 import { ManualPaymentButton } from './components/ManualPaymentButton';
-import { SquareErrorFixer } from '@/components/admin/SquareErrorFixer';
 
 // Define types for serialized data
 interface SerializedOrderItem {
@@ -547,11 +546,6 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 paymentStatus={serializedOrder.paymentStatus}
                 status={serializedOrder.status}
               />
-            </div>
-
-            {/* Square Error Fixer - Show for orders with Square payment issues */}
-            <div className="mt-4">
-              <SquareErrorFixer orderId={serializedOrder.id} />
             </div>
           </div>
 
