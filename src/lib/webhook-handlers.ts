@@ -23,14 +23,16 @@ interface SquareWebhookPayload {
 function mapSquareStateToOrderStatus(state: string): OrderStatus {
   switch (state?.toUpperCase()) {
     case 'OPEN':
-      return OrderStatus.PROCESSING;
+      return OrderStatus.PENDING; // FIXED: OPEN means "awaiting payment", not "processing"
     case 'COMPLETED':
       return OrderStatus.COMPLETED;
     case 'CANCELED':
     case 'CANCELLED':
       return OrderStatus.CANCELLED;
+    case 'DRAFT':
+      return OrderStatus.PENDING;
     default:
-      return OrderStatus.PROCESSING;
+      return OrderStatus.PENDING; // FIXED: Default to PENDING instead of PROCESSING
   }
 }
 

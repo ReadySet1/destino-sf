@@ -45,7 +45,7 @@ interface SquareWebhookPayload {
 function mapSquareStateToOrderStatus(squareState: string | undefined): OrderStatus {
   switch (squareState?.toUpperCase()) {
     case 'OPEN':
-      return OrderStatus.PROCESSING; // Or map OPEN to PENDING/PROCESSING as needed
+      return OrderStatus.PENDING; // FIXED: OPEN means "awaiting payment", not "processing"
     case 'COMPLETED':
       return OrderStatus.COMPLETED;
     case 'CANCELED':
@@ -868,7 +868,8 @@ async function handlePaymentCreated(payload: SquareWebhookPayload): Promise<void
     // Update payment status if not already paid
     if (currentOrder.paymentStatus !== 'PAID' && mappedPaymentStatus === 'PAID') {
       updateData.paymentStatus = 'PAID';
-      updateData.status = 'PROCESSING';
+      updateData.status = 'PROCESSING'; // Only move to PROCESSING when payment is confirmed
+      console.log(`💳 Order ${internalOrderId} payment confirmed - status updated to PROCESSING`);
     }
 
     // Update customer information if order has placeholder data (enhanced detection)
@@ -1171,9 +1172,12 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     // Update order status only if payment is newly PAID
     const updatedOrderStatus =
       order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID'
-        ? OrderStatus.PROCESSING // Update to PROCESSING when paid
+        ? OrderStatus.PROCESSING // Only move to PROCESSING when payment is confirmed
         : order.status; // Otherwise keep current status
 
+    if (order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID') {
+      console.log(`💳 Order ${order.id} payment confirmed - moving from ${order.status} to PROCESSING (Event: ${payload.event_id})`);
+    }
     console.log(`📊 Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`);
     console.log(`💾 Updating order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`);
 

@@ -12,11 +12,13 @@ function mapSquareOrderStatus(
 ): 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'CANCELLED' {
   switch (state?.toUpperCase()) {
     case 'OPEN':
-      return 'PROCESSING';
+      return 'PENDING'; // FIXED: OPEN means "awaiting payment", not "processing"
     case 'COMPLETED':
       return 'COMPLETED';
     case 'CANCELED':
       return 'CANCELLED';
+    case 'DRAFT':
+      return 'PENDING';
     default:
       return 'PENDING';
   }

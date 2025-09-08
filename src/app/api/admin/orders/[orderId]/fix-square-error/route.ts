@@ -59,10 +59,13 @@ export async function POST(
       );
     }
 
-    // Check if this order actually has a payment issue
-    if (order.paymentStatus !== PaymentStatus.PENDING && order.paymentStatus !== 'FAILED') {
+    // Check if this order has issues that need fixing
+    const hasPaymentIssue = order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === 'FAILED';
+    const hasStatusIssue = order.status === 'PROCESSING' && order.paymentStatus === 'PENDING'; // Wrong status for unpaid orders
+    
+    if (!hasPaymentIssue && !hasStatusIssue) {
       return NextResponse.json(
-        { error: 'Order does not have a payment issue that needs fixing' },
+        { error: 'Order does not have payment or status issues that need fixing' },
         { status: 400 }
       );
     }
@@ -75,8 +78,8 @@ export async function POST(
       paymentStatus: PaymentStatus.PENDING, // Reset to pending
       status: OrderStatus.PENDING, // Reset order status
       notes: order.notes 
-        ? `${order.notes}\n\n[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data for payment retry`
-        : `[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data for payment retry`,
+        ? `${order.notes}\n\n[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data and corrected status for payment retry`
+        : `[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data and corrected status for payment retry`,
       // Clear potentially problematic rawData
       rawData: {
         ...(order.rawData && typeof order.rawData === 'object' ? order.rawData : {}),
@@ -108,6 +111,7 @@ export async function POST(
       },
       actions: [
         'The corrupted Square order data has been cleared',
+        'Order status corrected from PROCESSING to PENDING (awaiting payment)',
         'Customer can now retry payment through the checkout process',
         'A new Square order will be created on retry',
         'All order items and customer information have been preserved',
@@ -193,19 +197,25 @@ export async function GET(
       order.notes?.includes('payment provider error') ||
       order.notes?.includes('INVALID_VALUE');
 
+    const statusIssueDetected = 
+      order.status === 'PROCESSING' && order.paymentStatus === 'PENDING'; // Wrong status for unpaid orders
+
     return NextResponse.json({
       orderId: order.id,
-      needsFixing: needsFixing || squareErrorDetected,
+      needsFixing: needsFixing || squareErrorDetected || statusIssueDetected,
       squareErrorDetected,
+      statusIssueDetected,
       currentStatus: {
         order: order.status,
         payment: order.paymentStatus,
         hasSquareOrderId: !!order.squareOrderId,
         hasValidPaymentUrl: !!(order.paymentUrl && order.paymentUrlExpiresAt && order.paymentUrlExpiresAt > new Date()),
       },
-      recommendations: needsFixing || squareErrorDetected ? [
-        'This order appears to have a Square payment error',
-        'Use the POST endpoint to clear corrupted data',
+      recommendations: (needsFixing || squareErrorDetected || statusIssueDetected) ? [
+        ...(statusIssueDetected ? ['Order status is PROCESSING but payment is still PENDING (incorrect status mapping)'] : []),
+        ...(squareErrorDetected ? ['This order appears to have a Square payment error'] : []),
+        ...(needsFixing ? ['Order has corrupted payment data'] : []),
+        'Use the POST endpoint to clear corrupted data and fix status',
         'Customer will then be able to retry payment',
       ] : [
         'Order does not appear to need Square error fixing',
