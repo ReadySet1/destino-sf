@@ -13,6 +13,7 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
 import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
+import { safeSquareOrderPayload } from '@/lib/square/order-validation';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { env } from '@/env'; // Import the validated environment configuration
@@ -971,6 +972,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       // }
     };
 
+    // Sanitize the Square request body to remove any invalid fields
+    const sanitizedSquareRequestBody = safeSquareOrderPayload(squareRequestBody, 'createOrderAndGenerateCheckoutUrl');
+
     console.log('Calling Square Create Payment Link API...');
     const paymentLinkUrl = `${BASE_URL}/v2/online-checkout/payment-links`;
     const fetchResponse = await fetch(paymentLinkUrl, {
@@ -980,7 +984,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(squareRequestBody),
+      body: JSON.stringify(sanitizedSquareRequestBody),
     });
 
     const responseData = await fetchResponse.json();

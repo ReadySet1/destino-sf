@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { logger } from '@/utils/logger';
+import { safeSquareOrderPayload } from './order-validation';
 import { formatPhoneForSquarePaymentLink, formatEmailForSquare } from './formatting';
 
 export interface SquareCheckoutLinkParams {
@@ -97,11 +98,12 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
             note: 'Catering order - please prepare for scheduled pickup',
           },
         }],
-        // Add metadata to explicitly identify this as a catering/food order
+        // Add metadata - avoid 'FOOD' fulfillment_type to prevent Weebly Digital Commerce classification
         metadata: {
           order_type: 'CATERING',
-          fulfillment_type: 'FOOD',
+          // fulfillment_type: 'FOOD', // REMOVED: This triggers Square's Weebly Digital validation
           source: 'catering_checkout',
+          platform_source: 'destino_sf',
           idempotency_key: idempotencyKey,
         },
       },
@@ -127,9 +129,12 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       })(),
     };
     
+    // Sanitize the Square request body to remove any invalid fields
+    const sanitizedSquareRequestBody = safeSquareOrderPayload(squareRequestBody, 'catering_checkout');
+    
     logger.info('Sending Square payment link request', { 
       baseUrl: BASE_URL,
-      requestBody: squareRequestBody 
+      requestBody: sanitizedSquareRequestBody 
     });
     
     const paymentLinkUrl = `${BASE_URL}/v2/online-checkout/payment-links`;
@@ -140,7 +145,7 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(squareRequestBody),
+      body: JSON.stringify(sanitizedSquareRequestBody),
     });
 
     const responseData = await fetchResponse.json();
