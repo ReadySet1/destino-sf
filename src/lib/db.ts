@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { validateDatabaseEnvironment } from './db-environment-validator';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -85,6 +86,26 @@ const prismaClientSingleton = () => {
 const shouldRegenerateClient = () => {
   return !globalForPrisma.prisma || globalForPrisma.prismaVersion !== CURRENT_PRISMA_VERSION;
 };
+
+// Validate database environment before initialization
+try {
+  const validation = validateDatabaseEnvironment();
+  if (!validation.isValid) {
+    console.error('🚨 Database environment validation failed:', validation.errors);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Critical database configuration error: ${validation.errors.join(', ')}`);
+    }
+  }
+  
+  if (validation.warnings.length > 0) {
+    validation.warnings.forEach(warning => console.warn(warning));
+  }
+} catch (error) {
+  console.error('Database environment validation error:', error);
+  if (process.env.NODE_ENV === 'production') {
+    throw error;
+  }
+}
 
 // Initialize Prisma client
 let prismaClient: PrismaClient;

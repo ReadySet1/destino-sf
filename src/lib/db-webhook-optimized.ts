@@ -41,14 +41,18 @@ class WebhookOptimizedDatabaseClient {
         // For Supabase pooler, use minimal configuration to avoid conflicts
         console.log('🚀 Creating webhook-optimized client for Supabase pooler');
         
+        // Ensure pgbouncer is enabled for pooler connections
+        url.searchParams.set('pgbouncer', 'true');
+        url.searchParams.set('prepared_statements', 'false');
+        
         // Set aggressive timeouts for webhook processing
         url.searchParams.set('statement_timeout', '20000'); // 20 seconds for webhooks
         url.searchParams.set('idle_in_transaction_session_timeout', '20000');
         
-        // Remove any conflicting parameters
+        // Remove any conflicting parameters but preserve pgbouncer
         url.searchParams.delete('connection_limit');
         url.searchParams.delete('pool_timeout');
-        url.searchParams.delete('pgbouncer');
+        // Keep pgbouncer=true for Supabase pooler compatibility
         
         optimizedUrl = url.toString();
       } else {

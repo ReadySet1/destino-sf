@@ -61,6 +61,7 @@
     "type-check:watch": "tsc --noEmit --watch",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "validate": "pnpm run type-check && pnpm run lint",
+    "validate-db": "tsx scripts/validate-database-config.ts",
     "fix-all": "pnpm run format && pnpm run lint:fix",
     "seed": "tsx prisma/seed.ts",
     "db:seed": "tsx prisma/seed.ts",
