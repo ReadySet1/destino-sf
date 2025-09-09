@@ -44,7 +44,7 @@ export class ProcessingQueue {
 
   // Rate limiting constants
   private readonly EMAIL_RATE_LIMIT = 2000; // 2 seconds between emails (Resend limit)
-  private readonly WEBHOOK_RETRY_DELAYS = [5000, 15000, 60000, 300000]; // 5s, 15s, 1m, 5m
+  private readonly WEBHOOK_RETRY_DELAYS = [5000, 20000, 90000, 300000]; // 5s, 20s, 1.5m, 5m
 
   static getInstance(): ProcessingQueue {
     if (!ProcessingQueue.instance) {
@@ -155,14 +155,17 @@ export class ProcessingQueue {
 
     try {
       console.log(
-        `🔄 Processing queued webhook: ${item.data.eventType} (attempt ${item.retryCount + 1})`
+        `🔄 Processing queued webhook: ${item.data.eventType} (attempt ${item.retryCount + 1}/${item.maxRetries})`
       );
+      console.log(`📊 Queue item: Event ID ${item.data.eventId}, Order ID ${item.data.orderId || 'N/A'}`);
+      console.log(`⏱️ Queue processing timeout: 120 seconds`);
 
       // Process webhook with connection management
+      // Increased timeout for better resilience during connection issues
       await withConnectionManagement(
         () => this.processWebhookPayload(item.data.payload),
         `webhook-queue-${item.data.eventType}`,
-        60000 // 60 second timeout for queued processing
+        120000 // 120 second timeout for queued processing (was 60s)
       );
 
       // Success - remove from queue
@@ -179,22 +182,25 @@ export class ProcessingQueue {
         (error.message.includes("Engine is not yet connected") ||
          error.message.includes("Can't reach database server") ||
          error.message.includes("Connection terminated") ||
+         error.message.includes("connection terminated") ||
          error.message.includes("ECONNRESET") ||
          error.message.includes("ECONNREFUSED") ||
          error.message.includes("ETIMEDOUT") ||
+         error.message.includes("timed out after") ||
          (error as any).code === 'P1001' ||
          (error as any).code === 'P1008' ||
          (error as any).code === 'P1017');
 
       if (isConnectionError) {
-        console.log('🔄 Connection error detected, reinitializing database connection...');
-        // The original code had this line, but it was removed from imports.
-        // Keeping it here as it's not directly related to the simplified imports.
-        // this.isInitialized = false; 
+        console.log('🔄 Connection/timeout error detected, reinitializing database connection...');
+        console.log(`🔍 Error details: ${error.message}`);
+        
         try {
           await ensureConnection(); // Re-establish connection
+          console.log('✅ Database connection reinitialized successfully');
         } catch (initError) {
           console.error('❌ Failed to reinitialize database connection:', initError);
+          // For connection failures, we still want to retry but with longer delays
         }
       }
 
@@ -349,10 +355,11 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
   
   try {
     // Try immediate processing first with connection management
+    // Increased timeout for complex operations and better resilience
     await withConnectionManagement(
       () => processingQueue['processWebhookPayload'](payload),
       `webhook-immediate-${eventType}`,
-      30000 // 30 second timeout for immediate processing
+      90000 // 90 second timeout for immediate processing (was 30s)
     );
     
     console.log(`✅ Webhook processed successfully via queue: ${eventType} (${payload.event_id})`);
@@ -402,18 +409,27 @@ function determineShouldRetry(error: any, eventType: string): boolean {
     return true;
   }
   
-  // Retry database connection issues
+  // Retry database connection issues (common in serverless environments)
   if (error.code === 'P1001' || error.code === 'P1008' || error.code === 'P1017') {
     return true;
   }
   
-  // Retry timeout errors
+  // Retry timeout errors (now more common with longer operations)
   if (error.message?.includes('timeout') || error.code === 'TIMEOUT') {
     return true;
   }
   
-  // Retry temporary database issues
-  if (error.message?.includes('connection') || error.message?.includes('ECONNRESET')) {
+  // Retry webhook processing timeouts specifically
+  if (error.message?.includes('timed out after')) {
+    return true;
+  }
+  
+  // Retry temporary database issues and connection errors
+  if (error.message?.includes('connection') || 
+      error.message?.includes('ECONNRESET') ||
+      error.message?.includes("Can't reach database server") ||
+      error.message?.includes('connection terminated') ||
+      error.message?.includes('Engine is not yet connected')) {
     return true;
   }
   
@@ -430,14 +446,24 @@ function determineShouldRetry(error: any, eventType: string): boolean {
  * Calculate retry delay based on error type and event type
  */
 function calculateRetryDelay(error: any, eventType: string): number {
-  // Race conditions get shorter delays
-  if (error.code === 'P2025' && error.message?.includes('not found')) {
-    return eventType === 'order.updated' ? 10000 : 5000; // 10s for order.updated, 5s for others
+  // Webhook processing timeouts get longer delays since they need more time
+  if (error.message?.includes('timed out after')) {
+    return 30000; // 30 seconds for timeout errors
   }
   
-  // Database connection issues get medium delays
-  if (error.code === 'P1001' || error.code === 'P1008') {
-    return 15000; // 15 seconds
+  // Database connection issues get shorter delays (they often resolve quickly)
+  if (error.code === 'P1001' || 
+      error.code === 'P1008' || 
+      error.code === 'P1017' ||
+      error.message?.includes("Can't reach database server") ||
+      error.message?.includes('connection terminated') ||
+      error.message?.includes('Engine is not yet connected')) {
+    return 5000; // 5 seconds for connection issues
+  }
+  
+  // Race conditions get shorter delays
+  if (error.code === 'P2025' && error.message?.includes('not found')) {
+    return eventType === 'order.updated' ? 10000 : 7000; // 10s for order.updated, 7s for others
   }
   
   // Payment processing gets priority with shorter delays
