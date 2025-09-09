@@ -5,7 +5,7 @@ import { logger } from '@/utils/logger';
 import { mapSquareCategoryToCateringCategory } from '@/utils/catering-optimized';
 
 export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
-export const dynamic = 'force-static'; // Use static generation for better caching
+export const dynamic = 'force-dynamic'; // Ensure admin ordering changes are reflected immediately
 
 export async function GET(request: NextRequest) {
   const cacheKey = 'catering-lunch-products';
