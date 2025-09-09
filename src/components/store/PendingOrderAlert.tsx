@@ -72,20 +72,20 @@ export default function PendingOrderAlert({
   const minutesAgo = Math.floor((orderAge % (1000 * 60 * 60)) / (1000 * 60));
 
   return (
-    <Card className="border-orange-200 bg-orange-50">
+    <Card className="border-orange-200 bg-orange-50 shadow-lg">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <CardTitle className="text-lg text-orange-800">
-              Orden Pendiente Encontrada
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+            <CardTitle className="text-lg text-orange-800 truncate">
+              Pending Order Found
             </CardTitle>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onDismiss}
-            className="h-6 w-6 p-0 text-orange-600 hover:text-orange-800"
+            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-800 hover:bg-orange-100 flex-shrink-0 ml-2"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -96,66 +96,76 @@ export default function PendingOrderAlert({
         <Alert className="border-orange-200 bg-orange-100">
           <Clock className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800">
-            Ya tienes una orden con los mismos productos creada hace{' '}
-            {hoursAgo > 0 ? `${hoursAgo}h ${minutesAgo}m` : `${minutesAgo}m`}.
-            Puedes completar el pago de la orden existente en lugar de crear una nueva.
+            You already have an order with the same products created{' '}
+            {hoursAgo > 0 ? `${hoursAgo}h ${minutesAgo}m` : `${minutesAgo}m`} ago.
+            You can complete payment for the existing order instead of creating a new one.
           </AlertDescription>
         </Alert>
 
         <div className="rounded-lg border border-orange-200 bg-white p-4">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-700">Orden #{existingOrder.id.slice(-8)}</span>
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                Pago Pendiente
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+              <span className="font-medium text-gray-700">Order #{existingOrder.id.slice(-8)}</span>
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 w-fit">
+                Payment Pending
               </Badge>
             </div>
             
-            <div className="text-sm text-gray-600">
-              <div>Total: <span className="font-semibold text-green-600">${existingOrder.total.toFixed(2)}</span></div>
-              <div>Creada: {format(new Date(existingOrder.createdAt), 'MMM d, yyyy h:mm a')}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+              <div>
+                <span className="text-gray-500">Total:</span>{' '}
+                <span className="font-semibold text-green-600">${existingOrder.total.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Created:</span>{' '}
+                {format(new Date(existingOrder.createdAt), 'MMM d, yyyy h:mm a')}
+              </div>
               {existingOrder.retryCount > 0 && (
-                <div>Intentos de pago: {existingOrder.retryCount}/3</div>
+                <div className="sm:col-span-2">
+                  <span className="text-gray-500">Payment attempts:</span> {existingOrder.retryCount}/3
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-2">
           {canRetryPayment && (
             <Button
               onClick={handleRetryPayment}
               disabled={isProcessing}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700"
             >
               <CreditCard className="h-4 w-4" />
-              {isProcessing ? 'Procesando...' : 'Completar Pago Existente'}
+              {isProcessing ? 'Processing...' : 'Complete Existing Payment'}
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            onClick={onCreateNew}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50"
-          >
-            Crear Nueva Orden
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={onCreateNew}
+              className="w-full sm:w-auto border-orange-300 text-orange-700 hover:bg-orange-50"
+            >
+              Create New Order
+            </Button>
 
-          <Button
-            variant="ghost"
-            onClick={onContinueExisting}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            Ver Orden Existente
-          </Button>
+            <Button
+              variant="ghost"
+              onClick={onContinueExisting}
+              className="w-full sm:w-auto text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            >
+              View Existing Order
+            </Button>
+          </div>
         </div>
 
         {!canRetryPayment && (
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              Esta orden ha alcanzado el límite máximo de intentos de pago (3/3).
-              Puedes crear una nueva orden o contactar soporte.
+              This order has reached the maximum payment attempt limit (3/3).
+              You can create a new order or contact support for assistance.
             </AlertDescription>
           </Alert>
         )}

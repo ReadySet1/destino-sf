@@ -36,9 +36,9 @@ import {
   FulfillmentMethod as AppFulfillmentMethod,
 } from '@/components/store/FulfillmentSelector';
 import { AddressForm } from '@/components/store/AddressForm';
-import { createOrderAndGenerateCheckoutUrl, getShippingRates } from '@/app/actions';
+import { createOrderAndGenerateCheckoutUrl, getShippingRates, createManualPaymentOrder } from '@/app/actions';
 import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
-import type { FulfillmentData, ShippingRate } from '@/app/actions';
+import type { ShippingRate } from '@/app/actions';
 import { checkForDuplicateOrders } from '@/app/actions/duplicate-prevention';
 import PendingOrderAlert from './PendingOrderAlert';
 // --- Import Date Utilities ---
@@ -655,14 +655,171 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     }
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     setShowDuplicateAlert(false);
     setPendingOrderCheck({
       isChecking: false,
       hasPendingOrder: false,
     });
-    // Continue with normal checkout flow
-    handleSubmit(onSubmit)();
+    
+    // Validate form and get current values
+    const isValid = await form.trigger();
+    if (isValid) {
+      const formData = form.getValues();
+      // Call submitOrder directly with form data, bypassing duplicate check
+      await submitOrderWithoutDuplicateCheck(formData);
+    } else {
+      // If form is invalid, the validation errors will be shown automatically
+      console.log('Form validation failed');
+    }
+  };
+
+  // Helper function to submit order without duplicate checking
+  const submitOrderWithoutDuplicateCheck = async (formData: CheckoutFormData) => {
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      // First check if cart is empty
+      if (!items || items.length === 0) {
+        setError('Your cart is empty.');
+        toast.error('Your cart is empty.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Skip duplicate check since user explicitly chose to create new order
+
+      // Validate minimum order requirements
+      const orderValidation = await validateOrderMinimums(items);
+      if (!orderValidation.isValid) {
+        setError(orderValidation.errorMessage || 'Order does not meet minimum requirements');
+        toast.error(orderValidation.errorMessage || 'Order does not meet minimum requirements');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Continue with the rest of the submission logic from onSubmit
+      let fulfillmentData: any = null;
+      let customerInfo: { name: string; email: string; phone: string };
+
+      console.log('Form data submitted:', formData);
+      if (formData.fulfillmentMethod === 'pickup') {
+        if (!formData.pickupDate || !formData.pickupTime)
+          throw new Error('Missing pickup date or time.');
+        fulfillmentData = {
+          method: 'pickup',
+          pickupTime: formatISO(parseISO(`${formData.pickupDate}T${formData.pickupTime}:00`)),
+        };
+        customerInfo = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+        };
+      } else if (formData.fulfillmentMethod === 'local_delivery') {
+        if (!formData.deliveryDate || !formData.deliveryTime || !formData.deliveryAddress)
+          throw new Error('Missing delivery details.');
+        fulfillmentData = {
+          method: 'local_delivery',
+          deliveryDate: formData.deliveryDate,
+          deliveryTime: formData.deliveryTime,
+          deliveryAddress: { ...formData.deliveryAddress, country: 'US' },
+          deliveryInstructions: formData.deliveryInstructions,
+        };
+        customerInfo = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+        };
+      } else if (formData.fulfillmentMethod === 'nationwide_shipping') {
+        const selectedRate = shippingRates.find(rate => rate.id === formData.rateId);
+        if (!selectedRate) {
+          throw new Error('Please select a shipping method');
+        }
+
+        fulfillmentData = {
+          method: 'nationwide_shipping',
+          shippingAddress: {
+            recipientName: formData.shippingAddress?.recipientName || formData.name,
+            street: formData.shippingAddress!.street,
+            street2: formData.shippingAddress?.street2,
+            city: formData.shippingAddress!.city,
+            state: formData.shippingAddress!.state,
+            postalCode: formData.shippingAddress!.postalCode,
+            country: formData.shippingAddress?.country || 'US',
+          },
+          shippingMethod: selectedRate.serviceLevelToken,
+          shippingCarrier: selectedRate.carrier || 'Unknown',
+          shippingCost: Math.round(selectedRate.amount * 100), // Convert to cents
+          rateId: selectedRate.id,
+        };
+        customerInfo = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+        };
+      } else {
+        throw new Error('Invalid fulfillment method');
+      }
+
+      if (!fulfillmentData) {
+        throw new Error('Fulfillment data is required');
+      }
+
+      // Proceed with order creation
+      let result;
+      if (formData.paymentMethod === PaymentMethod.CASH) {
+        const manualPaymentPayload = {
+          customerInfo,
+          fulfillment: fulfillmentData,
+          paymentMethod: formData.paymentMethod,
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            variantId: item.variantId,
+          })),
+        };
+        result = await createManualPaymentOrder(manualPaymentPayload);
+      } else {
+        const actionPayload = {
+          customerInfo,
+          fulfillment: fulfillmentData,
+          paymentMethod: formData.paymentMethod,
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            variantId: item.variantId,
+          })),
+        };
+        result = await createOrderAndGenerateCheckoutUrl(actionPayload);
+      }
+
+      if (result.success) {
+        if (formData.paymentMethod === PaymentMethod.CASH && result.orderId) {
+          toast.success('Manual order created successfully!');
+          clearCart();
+          localStorage.removeItem('regularCheckoutData');
+          router.push(`/orders/${result.orderId}`);
+        } else if (result.checkoutUrl) {
+          toast.success('Redirecting to payment...');
+          clearCart();
+          localStorage.removeItem('regularCheckoutData');
+          window.location.href = result.checkoutUrl;
+        }
+      } else {
+        throw new Error(result.error || 'Failed to create order');
+      }
+    } catch (error) {
+      console.error('Order creation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create order';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setIsSubmitting(false);
+    }
   };
 
   const handleDismissAlert = () => {
@@ -699,7 +856,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         return;
       }
 
-      let fulfillmentData: FulfillmentData | null = null;
+      let fulfillmentData: any = null;
       let customerInfo: { name: string; email: string; phone: string };
 
       console.log('Form data submitted:', formData);
@@ -917,7 +1074,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     <>
       {/* Pending Order Alert */}
       {showDuplicateAlert && pendingOrderCheck.existingOrder && (
-        <div className="mb-6">
+        <div className="mb-6 relative z-10">
           <PendingOrderAlert
             existingOrder={pendingOrderCheck.existingOrder}
             onContinueExisting={handleContinueExisting}

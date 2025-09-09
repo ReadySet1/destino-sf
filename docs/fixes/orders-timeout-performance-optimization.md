@@ -74,3 +74,4 @@ If issues occur:
 - `prisma/schema.prisma` - Added index definitions
 - `prisma/migrations/add_orders_performance_indexes.sql` - Index creation script
 
+

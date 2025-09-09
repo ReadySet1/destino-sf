@@ -26,3 +26,4 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_orders_tracking_search" ON "orders"
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_catering_orders_name_search" ON "catering_orders" USING gin ("name" gin_trgm_ops);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_catering_orders_email_search" ON "catering_orders" USING gin ("email" gin_trgm_ops);
 
+
