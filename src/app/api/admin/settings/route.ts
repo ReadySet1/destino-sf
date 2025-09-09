@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { getStoreSettings, updateStoreSettings } from '@/lib/store-settings';
 
 // Schema for validation

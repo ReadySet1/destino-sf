@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { prisma, withConnectionManagement } from '@/lib/db';
-import { webhookDb, executeWebhookQuery, executeWebhookTransaction } from '@/lib/db-webhook-optimized';
-import { safeQuery, safeTransaction, safeWebhookQuery } from '@/lib/db-utils';
+import { prisma, withRetry, withWebhookRetry, withTransaction, ensureConnection } from '@/lib/db-unified';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
@@ -79,11 +77,12 @@ async function queueWebhookForLaterProcessing(
       
       try {
         // Retry the catering order lookup one more time with connection management
-        const cateringOrder = await safeQuery(() =>
+        const cateringOrder = await withWebhookRetry(() =>
           prisma.cateringOrder.findUnique({
             where: { squareOrderId: squareOrderId },
             select: { id: true, email: true, status: true },
-          })
+          }),
+          'delayed-catering-order-lookup'
         );
         
         if (cateringOrder) {
@@ -138,7 +137,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
       
       // Enhanced query with additional metadata and connection management
       // FIXED: Use optimized webhook query for faster processing
-      cateringOrder = await safeWebhookQuery(() =>
+      cateringOrder = await withWebhookRetry(() =>
         prisma.cateringOrder.findUnique({
           where: { squareOrderId: data.id },
           select: { 
@@ -150,7 +149,9 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
             status: true,
             squareCheckoutId: true,
           },
-        })
+        }),
+        'catering-order-lookup',
+        20000 // 20 second timeout for webhooks
       );
       
       console.log(`🔍 [WEBHOOK-QUEUE] Query result (attempt ${attempt}):`, cateringOrder ? {
@@ -203,7 +204,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   console.log(`🔍 [WEBHOOK-QUEUE] Final safety check: looking for recent catering orders...`);
   
   try {
-    const recentCateringOrders = await safeQuery(() =>
+    const recentCateringOrders = await withRetry(() =>
       prisma.cateringOrder.findMany({
         where: {
           createdAt: {
@@ -251,11 +252,12 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 
   // Enhanced duplicate check with event ID tracking using safe query
   // FIXED: Use optimized webhook query for faster processing
-  const existingOrder = await safeWebhookQuery(() =>
+  const existingOrder = await withWebhookRetry(() =>
     prisma.order.findUnique({
       where: { squareOrderId: data.id },
       select: { id: true, rawData: true },
-    })
+    }),
+    'duplicate-check'
   );
 
   // Check if this specific event was already processed
@@ -561,7 +563,7 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
 
   // Check if the order exists in our database first
   // FIXED: Use optimized webhook query for faster processing
-  const existingOrder = await safeWebhookQuery(() =>
+  const existingOrder = await withWebhookRetry(() =>
     prisma.order.findUnique({
       where: { squareOrderId: data.id },
       select: { 
@@ -570,7 +572,8 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
         paymentStatus: true, 
         rawData: true 
       },
-    })
+    }),
+    'order-updated-check'
   );
 
   if (!existingOrder) {
@@ -665,7 +668,7 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
     // Get the previous status for comparison
     const previousStatus = existingOrder.status;
 
-    await safeQuery(() =>
+    await withRetry(() =>
       prisma.order.update({
         where: { squareOrderId: data.id },
         data: updateData, // Apply updates (only includes status if terminal)
@@ -991,7 +994,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       console.log(`🔍 Checking for catering order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
       
       // Check if a catering order with this Square order ID exists using Prisma with connection management
-      const cateringOrder = await safeQuery(() =>
+      const cateringOrder = await withRetry(() =>
         prisma.cateringOrder.findUnique({
           where: { squareOrderId },
           select: { id: true, paymentStatus: true, status: true },
@@ -1058,7 +1061,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
 
         console.log(`💾 Updating catering order ${cateringOrder.id} with:`, cateringUpdateData);
 
-        await safeQuery(() =>
+        await withRetry(() =>
           prisma.cateringOrder.update({
             where: { id: cateringOrder.id },
             data: cateringUpdateData,
@@ -1087,7 +1090,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     // If not a catering order, find our internal order using the Square Order ID
     console.log(`🔍 Checking for regular order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
     
-    const order = await safeQuery(() =>
+    const order = await withRetry(() =>
       prisma.order.findUnique({
         where: { squareOrderId: squareOrderId },
         select: {
@@ -1104,7 +1107,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       console.error(`❌ CRITICAL: Order with squareOrderId ${squareOrderId} not found for payment update (Event: ${payload.event_id})`);
       
       // Debug: List recent orders to help identify the issue with connection management
-      const recentOrders = await safeQuery(() =>
+      const recentOrders = await withRetry(() =>
         prisma.order.findMany({
           take: 5,
           orderBy: { createdAt: 'desc' },
@@ -1185,7 +1188,7 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     console.log(`💾 Updating order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`);
 
     try {
-      await safeQuery(() =>
+      await withRetry(() =>
         prisma.order.update({
           where: { id: order.id },
           data: {

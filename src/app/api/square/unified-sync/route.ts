@@ -16,7 +16,7 @@ import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { VariationGrouper } from '@/lib/square/variation-grouper';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { cachedSearchCatalogObjects } from '@/lib/square/api-cache';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { archiveRemovedSquareProducts } from '@/lib/square/archive-handler';
 import type { SyncVerificationResult } from '@/types/square-sync';
 import pLimit from 'p-limit';

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
-import { prisma, withPreparedStatementHandling } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 // GET: Fetch active spotlight picks for public display
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
   try {
-    const spotlightPicks = await withPreparedStatementHandling(async () => {
+    const spotlightPicks = await withRetry(async () => {
       // Fetch spotlight picks with product data using Prisma
       const rawSpotlightPicks = await prisma.spotlightPick.findMany({
         where: {
@@ -67,7 +67,7 @@ export async function GET(
               : undefined,
           },
         }));
-    }, 'spotlight-picks-fetch');
+    }, 3, 'spotlight-picks-fetch');
 
     return NextResponse.json({
       success: true,

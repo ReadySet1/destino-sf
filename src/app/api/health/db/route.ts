@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkDatabaseHealth, prisma } from '@/lib/db';
+import { getHealthStatus, prisma, withRetry } from '@/lib/db-unified';
 import type { ConnectionHealth } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
     // Perform basic health check
-    const basicHealth = await checkDatabaseHealth();
+    const basicHealth = await getHealthStatus();
     
     // Get additional metrics
     const startTime = Date.now();

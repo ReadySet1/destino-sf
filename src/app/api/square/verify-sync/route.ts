@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { logger } from '@/utils/logger';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import type { CategoryMapping, SyncVerificationResult } from '@/types/square-sync';
 
 // Category mappings from Square to local DB (from enhanced-sync)

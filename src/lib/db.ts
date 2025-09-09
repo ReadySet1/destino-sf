@@ -21,41 +21,59 @@ function getDatabaseUrl() {
   const isVercel = !!process.env.VERCEL;
   const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
   
-  // For Vercel production, add pgBouncer compatibility parameters with optimized connection pooling
-  if (isVercel && isProduction) {
-    console.log('🔗 Configuring Prisma for Vercel production with optimized connection pooling');
+  console.log(`🔗 Configuring database connection for ${isVercel ? 'Vercel' : 'non-Vercel'} ${process.env.NODE_ENV} environment`);
+  console.log(`🔗 Supabase pooler detected: ${isSupabasePooler}`);
+  
+  if (isSupabasePooler) {
+    // For Supabase pooler, use optimized settings to prevent connection pool issues
+    console.log('🚀 Optimizing for Supabase pooler (pgBouncer mode)');
     
-    // Disable prepared statements for pgBouncer compatibility - CRITICAL FIX
+    // Essential pgBouncer compatibility
     url.searchParams.set('pgbouncer', 'true');
-    url.searchParams.set('statement_cache_size', '0');
     url.searchParams.set('prepared_statements', 'false');
+    url.searchParams.set('statement_cache_size', '0');
     
-    // FIXED: Optimized connection pool settings for webhook processing
-    url.searchParams.set('connection_limit', '20'); // Increased from default 5 to handle concurrent webhooks
-    url.searchParams.set('pool_timeout', '120'); // Increased from 60 to 120 seconds to match webhook timeouts
-    url.searchParams.set('statement_timeout', '45000'); // 45 seconds - shorter than webhook timeout
-    url.searchParams.set('idle_in_transaction_session_timeout', '45000');
-    
-    // Additional optimization parameters
-    url.searchParams.set('connect_timeout', '10'); // 10 seconds to connect
-    url.searchParams.set('socket_timeout', '45'); // 45 seconds socket timeout
-    
-    console.log('🔧 Prisma configured for Vercel serverless with optimized connection pooling (20 connections, 120s pool timeout)');
-  } else if (isProduction) {
-    // For non-Vercel production environments
-    url.searchParams.set('connection_limit', '15'); // Optimized for production
-    url.searchParams.set('pool_timeout', '90');
-    url.searchParams.set('statement_timeout', '45000');
-    url.searchParams.set('idle_in_transaction_session_timeout', '45000');
-    console.log('🔗 Configuring Prisma for production environment with optimized pooling');
-  } else if (isDevelopment) {
-    // For development, use longer timeouts for debugging
-    url.searchParams.set('connection_limit', '10');
-    url.searchParams.set('pool_timeout', '120');
-    url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
-    url.searchParams.set('idle_in_transaction_session_timeout', '60000');
-    console.log('🔧 Configuring Prisma for development environment with debug-friendly timeouts');
+    // CRITICAL: Optimized connection and timeout settings for high-load webhook processing
+    if (isProduction) {
+      // Production settings optimized for webhook load
+      url.searchParams.set('pool_timeout', '180'); // 3 minutes - increased for high load
+      url.searchParams.set('connection_timeout', '15'); // 15 seconds to establish connection
+      url.searchParams.set('statement_timeout', '30000'); // 30 seconds for queries
+      url.searchParams.set('idle_in_transaction_session_timeout', '30000'); // 30 seconds
+      url.searchParams.set('socket_timeout', '60'); // 60 seconds socket timeout
+      
+      // Remove connection_limit to let Supabase pooler handle it
+      url.searchParams.delete('connection_limit');
+      
+      console.log('🔧 Production Supabase pooler: 180s pool timeout, 30s statement timeout, 60s socket timeout');
+    } else {
+      // Development settings
+      url.searchParams.set('pool_timeout', '120');
+      url.searchParams.set('connection_timeout', '10');
+      url.searchParams.set('statement_timeout', '60000');
+      url.searchParams.set('idle_in_transaction_session_timeout', '60000');
+      url.searchParams.set('socket_timeout', '45');
+      url.searchParams.delete('connection_limit');
+      
+      console.log('🔧 Development Supabase pooler: 120s pool timeout, 60s statement timeout');
+    }
+  } else {
+    // For non-Supabase databases, use connection limits
+    if (isProduction) {
+      url.searchParams.set('connection_limit', '15');
+      url.searchParams.set('pool_timeout', '120');
+      url.searchParams.set('statement_timeout', '30000');
+      url.searchParams.set('idle_in_transaction_session_timeout', '30000');
+      console.log('🔗 Non-Supabase production: 15 connections, 120s pool timeout');
+    } else {
+      url.searchParams.set('connection_limit', '10');
+      url.searchParams.set('pool_timeout', '90');
+      url.searchParams.set('statement_timeout', '60000');
+      url.searchParams.set('idle_in_transaction_session_timeout', '60000');
+      console.log('🔧 Non-Supabase development: 10 connections, 90s pool timeout');
+    }
   }
   
   return url.toString();
@@ -133,8 +151,20 @@ if (shouldRegenerateClient()) {
   prismaClient = globalForPrisma.prisma!;
 }
 
-// Export the base Prisma client
+// DEPRECATED: Use @/lib/db-unified instead for new code
+// This export is maintained for backward compatibility
 export const prisma = prismaClient;
+
+// Re-export unified client functions for migration
+export { 
+  prisma as unifiedPrisma,
+  withRetry as unifiedWithRetry,
+  withWebhookRetry,
+  withTransaction as unifiedWithTransaction,
+  ensureConnection as unifiedEnsureConnection,
+  getHealthStatus,
+  checkConnection as unifiedCheckConnection
+} from './db-unified';
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
@@ -170,21 +200,57 @@ export async function forceRegenerateClient(): Promise<void> {
   console.log('Prisma client regenerated successfully');
 }
 
-// Simple connection check function
-export async function ensureConnection(): Promise<void> {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-  } catch (error) {
-    console.warn('Connection test failed, attempting to reconnect...');
+// Enhanced connection check function with proper error handling
+export async function ensureConnection(maxRetries: number = 3): Promise<void> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await prisma.$connect();
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('✅ Database connection re-established');
-    } catch (reconnectError) {
-      console.error('❌ Failed to reconnect to database:', reconnectError);
-      throw reconnectError;
+      // Test with a simple query
+      await prisma.$queryRaw`SELECT 1 as health_check`;
+      return; // Success
+    } catch (error) {
+      lastError = error as Error;
+      
+      const isConnectionError = 
+        error instanceof Error && 
+        (error.message.includes("Can't reach database server") ||
+         error.message.includes("Connection terminated") ||
+         error.message.includes("ECONNRESET") ||
+         error.message.includes("ECONNREFUSED") ||
+         error.message.includes("ETIMEDOUT") ||
+         error.message.includes("Engine is not yet connected") ||
+         error.message.includes("Socket timeout") ||
+         error.message.includes("Connection pool timeout") ||
+         (error as any).code === 'P1001' ||
+         (error as any).code === 'P1008' ||
+         (error as any).code === 'P2024');
+
+      if (attempt === 1) {
+        console.warn(`Connection test failed (attempt ${attempt}/${maxRetries}), attempting to reconnect...`);
+      }
+      
+      if (isConnectionError && attempt < maxRetries) {
+        try {
+          // Force disconnect and reconnect
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Progressive delay
+          await prisma.$connect();
+          
+          // Test the new connection
+          await prisma.$queryRaw`SELECT 1 as reconnect_test`;
+          console.log('✅ Database connection re-established');
+          return;
+        } catch (reconnectError) {
+          console.warn(`Reconnection attempt ${attempt} failed:`, (reconnectError as Error).message);
+          lastError = reconnectError as Error;
+        }
+      }
     }
   }
+  
+  console.error('❌ Failed to establish database connection after all retries:', lastError?.message);
+  throw lastError || new Error('Database connection failed after all retries');
 }
 
 // Initialize database connection explicitly

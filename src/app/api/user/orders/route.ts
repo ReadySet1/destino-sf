@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { prisma, withPreparedStatementHandling } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import type { Prisma } from '@prisma/client';
 
 // Define the structure for regular orders
@@ -108,8 +108,8 @@ async function fetchUserOrders(userId: string) {
 
   // Use a single optimized query with minimal data selection
   const [regularOrders, cateringOrders] = await Promise.all([
-    withPreparedStatementHandling(async () => {
-      return await prisma.order.findMany({
+    withRetry(() => 
+      prisma.order.findMany({
         where: { userId },
         select: {
           id: true,
@@ -132,11 +132,13 @@ async function fetchUserOrders(userId: string) {
         },
         orderBy: { createdAt: 'desc' },
         take: 20, // Limit orders for faster response
-      });
-    }, `user-orders-${userId}`),
+      }),
+      3,
+      'user-orders'
+    ),
     
-    withPreparedStatementHandling(async () => {
-      return await prisma.cateringOrder.findMany({
+    withRetry(() => 
+      prisma.cateringOrder.findMany({
         where: { customerId: userId },
         select: {
           id: true,
@@ -159,8 +161,10 @@ async function fetchUserOrders(userId: string) {
         },
         orderBy: { createdAt: 'desc' },
         take: 20, // Limit orders for faster response
-      });
-    }, `user-catering-orders-${userId}`)
+      }),
+      3,
+      'user-catering-orders'
+    )
   ]);
 
   // Simplified transformation

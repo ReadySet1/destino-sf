@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 /**
  * GET /api/square/categories

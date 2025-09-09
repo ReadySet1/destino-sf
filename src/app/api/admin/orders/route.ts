@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 

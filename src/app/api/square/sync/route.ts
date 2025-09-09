@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { syncProductsProduction } from '@/lib/square/production-sync';
 import { logger } from '@/utils/logger';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 // Explicit Vercel runtime configuration
 export const runtime = 'nodejs';

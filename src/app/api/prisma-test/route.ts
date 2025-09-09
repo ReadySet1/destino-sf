@@ -1,11 +1,11 @@
-import { db } from '@/lib/db';
+import { withRetry, prisma } from '@/lib/db-unified';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     // Simple query to test Prisma connection
     // Replace with an actual model from your schema if needed
-    const result = await db.$queryRaw`SELECT 1 as test`;
+    const result = await withRetry(() => prisma.$queryRaw`SELECT 1 as test`, 3, 'prisma-test');
 
     return NextResponse.json({
       success: true,

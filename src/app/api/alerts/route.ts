@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { AlertService } from '@/lib/alerts';
 import { AlertType, AlertPriority, AlertStatus } from '@prisma/client';
 import { z } from 'zod';

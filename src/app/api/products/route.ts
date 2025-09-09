@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { safeQuery } from '@/lib/db-utils';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 
 type PrismaVariant = {
@@ -134,11 +133,11 @@ export async function GET(request: NextRequest) {
 
     // Get total count if pagination is requested with connection management
     const totalCount = includePagination
-      ? await safeQuery(() => prisma.product.count({ where: whereCondition }))
+      ? await withRetry(() => prisma.product.count({ where: whereCondition }), 3, 'product-count')
       : undefined;
 
     // Get products with optional variants with connection management
-    const products = await safeQuery(() =>
+    const products = await withRetry(() =>
       prisma.product.findMany({
         where: whereCondition,
         select: {
@@ -173,7 +172,9 @@ export async function GET(request: NextRequest) {
         },
         skip: skip,
         take: itemsPerPage,
-      })
+      }),
+      3,
+      'products-fetch'
     );
 
     // Convert BigInt price to regular number for JSON serialization

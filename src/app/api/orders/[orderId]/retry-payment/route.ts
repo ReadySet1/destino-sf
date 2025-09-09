@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { randomUUID } from 'crypto';
 import { applyUserBasedRateLimit } from '@/middleware/rate-limit';
 import { env } from '@/env'; // Import the validated environment configuration

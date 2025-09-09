@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { requireAdminAccess } from '@/lib/auth/admin-guard';
 import { setAuditContext } from '@/lib/audit/delivery-zone-audit';
 import { 

@@ -12,7 +12,7 @@ import { logger } from '@/utils/logger';
 import { z } from 'zod';
 import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 // Explicit Vercel runtime configuration
 export const runtime = 'nodejs';

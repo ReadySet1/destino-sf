@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createPayment } from '@/lib/square/orders';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 import { getSquareService } from '@/lib/square/service';
 import { randomUUID } from 'crypto';

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { safeQuery } from '@/lib/db-utils';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 import { 
   BoxedLunchEntree, 
@@ -39,8 +38,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function getLegacyBoxedLunchItems() {
-  const products = await safeQuery(() =>
-    prisma.product.findMany({
+  const products = await withRetry(() => prisma.product.findMany({
       where: {
         active: true,
         category: {
@@ -64,8 +62,7 @@ async function getLegacyBoxedLunchItems() {
         { ordinal: 'asc' },  // Admin-controlled order first
         { name: 'asc' }      // Alphabetical fallback
       ]
-    })
-  );
+    }), 3, 'find-many');
 
   logger.info(`✅ Found ${products.length} legacy boxed lunch products`);
 
@@ -137,7 +134,7 @@ async function getBuildYourOwnBoxData() {
   // Fetch both tiers and entrees in parallel with connection management
   const [tiers, entreeProducts] = await Promise.all([
     // Get tier configurations from the new table
-    safeQuery(() =>
+    withRetry(() =>
       prisma.$queryRaw<BoxedLunchTierModel[]>`
         SELECT id, tier_number as "tierNumber", name, price_cents as "priceCents", 
                protein_amount as "proteinAmount", sides, active, created_at as "createdAt", 
@@ -145,11 +142,13 @@ async function getBuildYourOwnBoxData() {
         FROM boxed_lunch_tiers 
         WHERE active = true 
         ORDER BY tier_number
-      `
+      `,
+      3,
+      'boxed-lunch-tiers'
     ),
     
     // Get entree products from the new category
-    safeQuery(() =>
+    withRetry(() =>
       prisma.product.findMany({
         where: {
           active: true,
@@ -174,7 +173,9 @@ async function getBuildYourOwnBoxData() {
           { ordinal: 'asc' },
           { name: 'asc' }
         ]
-      })
+      }),
+      3,
+      'boxed-lunch-entrees'
     )
   ]);
 

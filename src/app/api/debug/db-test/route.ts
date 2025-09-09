@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
-import { safeQuery, safeQueryRaw, checkDatabaseHealth } from '@/lib/db-utils';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry, getHealthStatus } from '@/lib/db-unified';
 
 export async function GET() {
   try {
     // Enhanced database health check
-    const healthCheck = await checkDatabaseHealth();
+    const healthCheck = await getHealthStatus();
 
     if (!healthCheck.connected) {
       return NextResponse.json(
         {
           success: false,
           error: healthCheck.error,
-          diagnostics: healthCheck.diagnostics,
+          latency: healthCheck.latency,
           timestamp: new Date().toISOString(),
         },
         { status: 500 }
@@ -21,9 +20,9 @@ export async function GET() {
 
     // Test safe query operations
     const [databaseTest, profileCount, testQuery] = await Promise.all([
-      safeQueryRaw`SELECT NOW() as server_time`,
-      safeQuery(() => prisma.profile.count()),
-      safeQueryRaw`SELECT current_database(), current_user, version()`,
+      withRetry(() => prisma.$queryRaw`SELECT NOW() as server_time`, 3, 'db-time'),
+      withRetry(() => prisma.profile.count(), 3, 'profile-count'),
+      withRetry(() => prisma.$queryRaw`SELECT current_database(), current_user, version()`, 3, 'db-info'),
     ]);
 
     return NextResponse.json({
@@ -32,13 +31,13 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       healthCheck: {
         connected: healthCheck.connected,
-        responseTime: healthCheck.responseTime,
+        latency: healthCheck.latency,
       },
       databaseInfo: testQuery,
       profileCount,
       databaseTest,
       optimizations: [
-        'Using safeQuery utilities',
+        'Using unified database client with retry',
         'Connection pool management',
         'Auto-retry on failures',
         'Auto-disconnect on inactivity',

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/db';
-import { safeQuery } from '@/lib/db-utils';
+import { prisma, withRetry } from '@/lib/db-unified';
+;
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 
 // Helper function moved outside the POST handler
@@ -82,8 +82,7 @@ export async function POST(request: Request) {
     const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     // Create order in database with connection management
-    const order = await safeQuery(() =>
-      prisma.order.create({
+    const order = await withRetry(() => prisma.order.create({
         data: {
           status: 'PENDING',
           total,
@@ -110,12 +109,10 @@ export async function POST(request: Request) {
     });
 
     // Update our order with Square order ID with connection management
-    await safeQuery(() =>
-      prisma.order.update({
+    await withRetry(() => prisma.order.update({
         where: { id: order.id },
         data: { squareOrderId: squareOrder.id },
-      })
-    );
+      }), 3, 'update');
 
     return NextResponse.json({ orderId: order.id });
   } catch (error) {

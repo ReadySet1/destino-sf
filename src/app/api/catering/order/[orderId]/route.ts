@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 
 /**
@@ -25,16 +25,9 @@ export async function GET(
 
     logger.info(`[CATERING-API] Fetching catering order: ${orderId}`);
 
-    // Execute query with timeout handling
-    let orderData;
-    try {
-      // Create AbortController for query timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 10000); // 10 second timeout
-
-      orderData = await prisma.cateringOrder.findUnique({
+    // Execute query with unified retry mechanism
+    const orderData = await withRetry(
+      () => prisma.cateringOrder.findUnique({
         where: { id: orderId },
         select: {
           id: true,
@@ -69,20 +62,10 @@ export async function GET(
             },
           },
         },
-      });
-
-      clearTimeout(timeoutId);
-      
-    } catch (queryError) {
-      // Check if it's a timeout-related error
-      if (queryError instanceof Error && (
-        queryError.message.includes('timeout') || 
-        queryError.message.includes('aborted')
-      )) {
-        throw new Error('Database query timeout');
-      }
-      throw queryError;
-    }
+      }),
+      3,
+      'catering-order-fetch'
+    );
 
     if (!orderData) {
       logger.warn(`[CATERING-API] Order not found: ${orderId}`);

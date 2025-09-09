@@ -2,8 +2,8 @@ import { NextResponse, NextRequest } from 'next/server';
 // Remove unused imports
 // import { type CookieOptions, createServerClient } from '@supabase/ssr';
 // import { cookies } from 'next/headers';
-import { prisma } from '@/lib/db';
-import { safeQuery } from '@/lib/db-utils';
+import { prisma, withRetry } from '@/lib/db-unified';
+;
 // Import the server client utility
 import { createClient } from '@/utils/supabase/server';
 
@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch orders using the authenticated user's ID with connection management
-    const orders = await safeQuery(() =>
-      prisma.order.findMany({
+    const orders = await withRetry(() => prisma.order.findMany({
         where: { userId: user.id }, // Use user.id directly
         include: {
           items: {
@@ -45,8 +44,7 @@ export async function GET(request: NextRequest) {
         orderBy: {
           createdAt: 'desc',
         },
-      })
-    );
+      }), 3, 'find-many');
 
     return NextResponse.json({ orders });
   } catch (error) {

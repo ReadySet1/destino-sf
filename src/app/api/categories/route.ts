@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma, withPreparedStatementHandling } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 
 export async function GET() {
   try {
     // Get all categories
-    const categories = await withPreparedStatementHandling(async () => {
-      return await prisma.category.findMany({
+    const categories = await withRetry(() => 
+      prisma.category.findMany({
         select: {
           id: true,
           name: true,
@@ -15,8 +15,10 @@ export async function GET() {
         orderBy: {
           name: 'asc',
         },
-      });
-    }, 'categories-fetch');
+      }),
+      3,
+      'categories-fetch'
+    );
 
     return NextResponse.json(categories);
   } catch (error) {
