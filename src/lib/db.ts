@@ -18,38 +18,44 @@ function getDatabaseUrl() {
   if (!baseUrl) throw new Error('DATABASE_URL not defined');
   
   const url = new URL(baseUrl);
+  const isVercel = !!process.env.VERCEL;
   const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // For Vercel production, add pgBouncer compatibility parameters
+  // For Vercel production, add pgBouncer compatibility parameters with optimized connection pooling
   if (isVercel && isProduction) {
-    console.log('🔗 Configuring Prisma for Vercel production with pgBouncer compatibility');
+    console.log('🔗 Configuring Prisma for Vercel production with optimized connection pooling');
     
     // Disable prepared statements for pgBouncer compatibility - CRITICAL FIX
     url.searchParams.set('pgbouncer', 'true');
     url.searchParams.set('statement_cache_size', '0');
     url.searchParams.set('prepared_statements', 'false');
     
-    // Additional compatibility parameters
-    url.searchParams.set('pool_timeout', '60');
-    url.searchParams.set('statement_timeout', '30000'); // 30 seconds
-    url.searchParams.set('idle_in_transaction_session_timeout', '30000');
+    // FIXED: Optimized connection pool settings for webhook processing
+    url.searchParams.set('connection_limit', '20'); // Increased from default 5 to handle concurrent webhooks
+    url.searchParams.set('pool_timeout', '120'); // Increased from 60 to 120 seconds to match webhook timeouts
+    url.searchParams.set('statement_timeout', '45000'); // 45 seconds - shorter than webhook timeout
+    url.searchParams.set('idle_in_transaction_session_timeout', '45000');
     
-    // Remove conflicting parameters
-    url.searchParams.delete('connection_limit');
-    url.searchParams.delete('prepare');
+    // Additional optimization parameters
+    url.searchParams.set('connect_timeout', '10'); // 10 seconds to connect
+    url.searchParams.set('socket_timeout', '45'); // 45 seconds socket timeout
     
-    console.log('🔧 Prisma configured for Vercel serverless with disabled prepared statements');
+    console.log('🔧 Prisma configured for Vercel serverless with optimized connection pooling (20 connections, 120s pool timeout)');
   } else if (isProduction) {
     // For non-Vercel production environments
-    url.searchParams.set('statement_timeout', '30000');
-    url.searchParams.set('idle_in_transaction_session_timeout', '30000');
-    console.log('🔗 Configuring Prisma for production environment');
+    url.searchParams.set('connection_limit', '15'); // Optimized for production
+    url.searchParams.set('pool_timeout', '90');
+    url.searchParams.set('statement_timeout', '45000');
+    url.searchParams.set('idle_in_transaction_session_timeout', '45000');
+    console.log('🔗 Configuring Prisma for production environment with optimized pooling');
   } else if (isDevelopment) {
     // For development, use longer timeouts for debugging
+    url.searchParams.set('connection_limit', '10');
+    url.searchParams.set('pool_timeout', '120');
     url.searchParams.set('statement_timeout', '60000'); // 60 seconds for development
     url.searchParams.set('idle_in_transaction_session_timeout', '60000');
-    console.log('🔧 Configuring Prisma for development environment');
+    console.log('🔧 Configuring Prisma for development environment with debug-friendly timeouts');
   }
   
   return url.toString();

@@ -61,6 +61,13 @@ export async function safeQuery<T>(queryFn: () => Promise<T>): Promise<T> {
 }
 
 /**
+ * Optimized safe query for webhook processing with faster timeouts
+ */
+export async function safeWebhookQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+  return withDatabaseConnection(queryFn, 2); // Reduced retries from 3 to 2 for webhooks
+}
+
+/**
  * Safe raw query execution with timeout handling
  */
 export async function safeQueryRaw<T = unknown>(

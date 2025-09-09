@@ -43,9 +43,11 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
     });
 
     // DEBUG: Log environment variables
-    console.error('🔧 [CHECKOUT-LINKS] NODE_ENV:', process.env.NODE_ENV);
-    console.error('🔧 [CHECKOUT-LINKS] USE_SQUARE_SANDBOX:', process.env.USE_SQUARE_SANDBOX);
-    console.error('🔧 [CHECKOUT-LINKS] SQUARE_TRANSACTIONS_USE_SANDBOX:', process.env.SQUARE_TRANSACTIONS_USE_SANDBOX);
+    logger.debug('🔧 [CHECKOUT-LINKS] Environment configuration', {
+      NODE_ENV: process.env.NODE_ENV,
+      USE_SQUARE_SANDBOX: process.env.USE_SQUARE_SANDBOX,
+      SQUARE_TRANSACTIONS_USE_SANDBOX: process.env.SQUARE_TRANSACTIONS_USE_SANDBOX
+    });
 
     // Get Square access token from environment
     const accessToken = process.env.SQUARE_SANDBOX_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
@@ -62,13 +64,14 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       ? 'https://connect.squareup.com' 
       : 'https://connect.squareupsandbox.com';
 
-    console.error('🔧 [CHECKOUT-LINKS] isProduction:', isProduction);
-    console.error('🔧 [CHECKOUT-LINKS] BASE_URL:', BASE_URL);
+    logger.debug('🔧 [CHECKOUT-LINKS] Configuration details', {
+      isProduction,
+      BASE_URL,
+      actualLocationId: isProduction ? params.locationId : 'LMV06M1ER6HCC'
+    });
 
     // Use correct location ID - LMV06M1ER6HCC for sandbox (Default Test Account), provided locationId for production
     const actualLocationId = isProduction ? params.locationId : 'LMV06M1ER6HCC';
-    
-    console.error('🔧 [CHECKOUT-LINKS] actualLocationId:', actualLocationId);
 
     // Generate idempotency key with catering context to prevent duplicates
     const idempotencyKey = `catering_${params.orderId}_${Date.now()}`;
@@ -175,7 +178,7 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
       checkoutUrl: responseData.payment_link.url
     });
 
-    console.error('🔧 [CHECKOUT-LINKS] SUCCESS! Final checkout URL:', responseData.payment_link.url);
+    logger.info('🔧 [CHECKOUT-LINKS] SUCCESS! Final checkout URL:', responseData.payment_link.url);
 
     return {
       checkoutUrl: responseData.payment_link.url,

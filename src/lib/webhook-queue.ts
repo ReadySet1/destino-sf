@@ -42,6 +42,11 @@ export class ProcessingQueue {
   private emailQueue: EmailQueueItem[] = [];
   private webhookQueue: WebhookQueueItem[] = [];
 
+  // FIXED: Add concurrency control for webhook processing
+  private activeWebhookConnections = 0;
+  private readonly maxConcurrentWebhooks = 3; // Limit concurrent webhooks to prevent connection pool exhaustion
+  private readonly maxConcurrentConnections = 15; // Overall connection limit
+
   // Rate limiting constants
   private readonly EMAIL_RATE_LIMIT = 2000; // 2 seconds between emails (Resend limit)
   private readonly WEBHOOK_RETRY_DELAYS = [5000, 20000, 90000, 300000]; // 5s, 20s, 1.5m, 5m
@@ -148,10 +153,22 @@ export class ProcessingQueue {
   }
 
   /**
-   * Process a webhook queue item
+   * Process a webhook queue item with concurrency control
    */
   private async processWebhookItem(item: WebhookQueueItem): Promise<void> {
+    // FIXED: Check concurrency limits before processing
+    if (this.activeWebhookConnections >= this.maxConcurrentWebhooks) {
+      console.log(`⏸️ Webhook processing at capacity (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks}), delaying: ${item.data.eventType}`);
+      // Delay this item for 2 seconds
+      item.nextAttempt = new Date(Date.now() + 2000);
+      return;
+    }
+
     const monitor = new WebhookPerformanceMonitor(`queue-${item.data.eventType}`, 'RETRY');
+
+    // Increment active connection count
+    this.activeWebhookConnections++;
+    console.log(`🔗 Starting webhook processing (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`);
 
     try {
       console.log(
@@ -218,6 +235,10 @@ export class ProcessingQueue {
         );
         this.removeWebhookFromQueue(item.id);
       }
+    } finally {
+      // FIXED: Always decrement active connection count to prevent leaks
+      this.activeWebhookConnections--;
+      console.log(`🔗 Webhook processing completed (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`);
     }
   }
 
@@ -353,7 +374,30 @@ export const processingQueue = ProcessingQueue.getInstance();
 export async function handleWebhookWithQueue(payload: any, eventType: string): Promise<void> {
   const processingQueue = ProcessingQueue.getInstance();
   
+  // FIXED: Check concurrency limits for immediate processing as well
+  if ((processingQueue as any).activeWebhookConnections >= (processingQueue as any).maxConcurrentWebhooks) {
+    console.log(`⏸️ Immediate webhook processing at capacity, queuing instead: ${eventType}`);
+    
+    // Queue immediately with short delay instead of trying immediate processing
+    await processingQueue.queueWebhook(
+      {
+        payload,
+        eventType,
+        eventId: payload.event_id,
+        orderId: payload.data?.id,
+        error: 'Concurrency limit reached',
+        errorCode: 'CONCURRENCY_LIMIT',
+      },
+      2000 // 2 second delay
+    );
+    return;
+  }
+  
   try {
+    // Increment connection count for immediate processing
+    (processingQueue as any).activeWebhookConnections++;
+    console.log(`🔗 Starting immediate webhook processing (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`);
+    
     // Try immediate processing first with connection management
     // Increased timeout for complex operations and better resilience
     await withConnectionManagement(
@@ -397,6 +441,10 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
     
     // Always re-throw for fallback processing
     throw error;
+  } finally {
+    // FIXED: Always decrement active connection count for immediate processing
+    (processingQueue as any).activeWebhookConnections--;
+    console.log(`🔗 Immediate webhook processing completed (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`);
   }
 }
 

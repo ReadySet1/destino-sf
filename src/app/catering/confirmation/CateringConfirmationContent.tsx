@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderConfirmationLayout } from '@/components/shared/OrderConfirmationLayout';
 import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
-import type { SerializableCateringOrderData } from './page';
+import type { SerializableCateringOrderData } from './CateringConfirmationLoader';
 import type { CateringOrderData, CustomerInfo } from '@/types/confirmation';
 
 interface Props {

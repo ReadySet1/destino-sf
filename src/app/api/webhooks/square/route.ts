@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma, withConnectionManagement } from '@/lib/db';
 import { webhookDb, executeWebhookQuery, executeWebhookTransaction } from '@/lib/db-webhook-optimized';
-import { safeQuery, safeTransaction } from '@/lib/db-utils';
+import { safeQuery, safeTransaction, safeWebhookQuery } from '@/lib/db-utils';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
@@ -137,7 +137,8 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
       console.log(`🔍 [WEBHOOK-QUEUE] Looking for Square Order ID: ${data.id}`);
       
       // Enhanced query with additional metadata and connection management
-      cateringOrder = await safeQuery(() =>
+      // FIXED: Use optimized webhook query for faster processing
+      cateringOrder = await safeWebhookQuery(() =>
         prisma.cateringOrder.findUnique({
           where: { squareOrderId: data.id },
           select: { 
@@ -249,7 +250,8 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
   console.log(`⚠️ [WEBHOOK-QUEUE] PROCEEDING WITH REGULAR ORDER CREATION FOR SQUARE ID: ${data.id}`);
 
   // Enhanced duplicate check with event ID tracking using safe query
-  const existingOrder = await safeQuery(() =>
+  // FIXED: Use optimized webhook query for faster processing
+  const existingOrder = await safeWebhookQuery(() =>
     prisma.order.findUnique({
       where: { squareOrderId: data.id },
       select: { id: true, rawData: true },
@@ -558,7 +560,8 @@ async function handleOrderUpdated(payload: SquareWebhookPayload): Promise<void> 
   console.log('🔄 Processing order.updated event:', data.id);
 
   // Check if the order exists in our database first
-  const existingOrder = await safeQuery(() =>
+  // FIXED: Use optimized webhook query for faster processing
+  const existingOrder = await safeWebhookQuery(() =>
     prisma.order.findUnique({
       where: { squareOrderId: data.id },
       select: { 
