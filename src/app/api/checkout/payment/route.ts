@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createPayment } from '@/lib/square/orders';
 import { prisma } from '@/lib/db';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
+import { getSquareService } from '@/lib/square/service';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: Request) {
   // Apply strict rate limiting for payment endpoint (5 requests per minute per IP)
@@ -76,6 +78,12 @@ export async function POST(request: Request) {
     // Process payment with Square
     const payment = await createPayment(sourceId, order.squareOrderId, amount);
 
+    // NEW: Ensure order is finalized in Square (fallback if autocomplete doesn't work)
+    if (payment.status === 'COMPLETED' || payment.status === 'APPROVED') {
+      // Update order state in Square to OPEN (makes it visible)
+      await finalizeSquareOrder(order.squareOrderId);
+    }
+
     // Update order status
     await prisma.order.update({
       where: { id: orderId },
@@ -98,5 +106,31 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Fallback function to finalize Square order if autocomplete doesn't work
+ */
+async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
+  try {
+    const squareService = getSquareService();
+    
+    // Update order to OPEN state
+    const updateRequest = {
+      order: {
+        locationId: process.env.SQUARE_LOCATION_ID!,
+        state: 'OPEN',
+        version: undefined, // Let Square handle versioning
+      },
+      fieldsToClear: [],
+      idempotencyKey: randomUUID(),
+    };
+    
+    await squareService.updateOrder(squareOrderId, updateRequest);
+    console.log(`✅ Square order ${squareOrderId} finalized and visible`);
+  } catch (error) {
+    console.error(`Failed to finalize Square order ${squareOrderId}:`, error);
+    // Don't throw - payment succeeded, this is a secondary operation
   }
 }

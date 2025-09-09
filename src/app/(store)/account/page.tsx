@@ -53,13 +53,13 @@ export default async function AccountPage() {
       prisma.profile.findUnique({
         where: { id: userId },
       }),
-      // Use raw SQL for faster aggregation
+      // Use raw SQL for faster aggregation with proper UUID casting
       prisma.$queryRaw<Array<{totalCount: bigint, recentCount: bigint}>>`
         SELECT 
-          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}) +
-          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}) as "totalCount",
-          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId} AND "createdAt" >= ${thirtyDaysAgo}) +
-          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId} AND "createdAt" >= ${thirtyDaysAgo}) as "recentCount"
+          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid) +
+          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid) as "totalCount",
+          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) +
+          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) as "recentCount"
       `
     ]);
 

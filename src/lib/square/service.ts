@@ -132,6 +132,38 @@ export class SquareService {
     }
   }
 
+  /**
+   * Updates a Square order (fallback for finalizing orders)
+   */
+  async updateOrder(orderId: string, updateData: any): Promise<any> {
+    this.ensureClient();
+
+    try {
+      logger.debug('SquareService - Updating order', { orderId, updateData });
+      const response = await this.client.ordersApi.updateOrder(orderId, updateData);
+      return response.result;
+    } catch (error) {
+      logger.error('SquareService - Error updating order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves a Square order by ID
+   */
+  async retrieveOrder(orderId: string): Promise<any> {
+    this.ensureClient();
+
+    try {
+      logger.debug('SquareService - Retrieving order', { orderId });
+      const response = await this.client.ordersApi.retrieveOrder(orderId);
+      return response.result;
+    } catch (error) {
+      logger.error('SquareService - Error retrieving order:', error);
+      throw error;
+    }
+  }
+
 
 
   /**
