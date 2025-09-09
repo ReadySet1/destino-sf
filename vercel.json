@@ -18,6 +18,15 @@
     },
     "app/api/**/*": {
       "maxDuration": 30
+    },
+    "app/(store)/account/page.tsx": {
+      "maxDuration": 60
+    },
+    "app/(store)/account/**/page.tsx": {
+      "maxDuration": 60
+    },
+    "app/**/page.tsx": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

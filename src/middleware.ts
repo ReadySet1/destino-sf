@@ -75,8 +75,13 @@ export async function middleware(request: NextRequest) {
   // Add enhanced security headers for all responses
   addSecurityHeaders(response, pathname);
 
-  // Optimized authentication check for admin routes
-  if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
+  // Consolidated authentication check for protected routes
+  const needsAuth = pathname.startsWith('/admin') || 
+                   pathname.startsWith('/protected') || 
+                   pathname.startsWith('/account/') || 
+                   pathname.startsWith('/user/');
+  
+  if (needsAuth) {
     try {
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -104,8 +109,7 @@ export async function middleware(request: NextRequest) {
         }
       );
 
-      // Check user authentication securely using getUser()
-      // This validates the session with the Supabase server for security
+      // Single auth check for all protected routes
       const {
         data: { user },
         error,
@@ -116,13 +120,12 @@ export async function middleware(request: NextRequest) {
         response.cookies.set('sb-access-token', '', { maxAge: 0 });
         response.cookies.set('sb-refresh-token', '', { maxAge: 0 });
 
-        // Redirect to sign-in for admin routes
+        // Redirect to sign-in for admin/protected routes (but not account routes)
         if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
           return NextResponse.redirect(new URL('/sign-in', request.url));
         }
       } else {
         // User is authenticated, add user info to headers for downstream use
-        // This avoids database calls in individual page components
         response.headers.set('X-User-ID', user.id);
         response.headers.set('X-User-Email', user.email || '');
       }
@@ -130,56 +133,10 @@ export async function middleware(request: NextRequest) {
       console.error('Auth middleware error:', error);
       response.headers.set('X-Auth-Error', 'true');
       
-      // For admin routes, redirect to sign-in on auth errors
+      // For admin/protected routes, redirect to sign-in on auth errors
       if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
         return NextResponse.redirect(new URL('/sign-in', request.url));
       }
-    }
-  }
-  
-  // Only check auth for specific routes that need user context (like account pages)
-  // but don't log warnings for public routes
-  if (pathname.startsWith('/account/') || pathname.startsWith('/user/')) {
-    try {
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return request.cookies.get(name)?.value;
-            },
-            set(name: string, value: string, options: CookieOptions) {
-              response.cookies.set({
-                name,
-                value,
-                ...options,
-              });
-            },
-            remove(name: string, options: CookieOptions) {
-              response.cookies.set({
-                name,
-                value: '',
-                ...options,
-              });
-            },
-          },
-        }
-      );
-
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (!error && user) {
-        // Add user info to headers for downstream use
-        response.headers.set('X-User-ID', user.id);
-        response.headers.set('X-User-Email', user.email || '');
-      }
-      // Note: No logging for auth failures on account routes - let the page handle redirects
-    } catch (error) {
-      // Silently fail for account routes - let the page handle auth
     }
   }
 

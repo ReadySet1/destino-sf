@@ -44,37 +44,31 @@ export default async function AccountPage() {
   let recentOrders = 0;
 
   try {
-    // Optimized: Fetch profile and order statistics with proper timeouts
+    // Get user data from middleware headers to avoid extra auth call
+    const userId = user.id;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    const [profileResult, regularOrderCount, cateringOrderCount, recentRegularOrders, recentCateringOrders] = await Promise.all([
+    // Single optimized query using raw SQL for better performance
+    const [profileResult, orderStats] = await Promise.all([
       prisma.profile.findUnique({
-        where: { id: user.id },
+        where: { id: userId },
       }),
-      // Separate optimized count queries with timeouts
-      prisma.order.count({
-        where: { userId: user.id },
-      }),
-      prisma.cateringOrder.count({
-        where: { customerId: user.id },
-      }),
-      prisma.order.count({
-        where: {
-          userId: user.id,
-          createdAt: { gte: thirtyDaysAgo },
-        },
-      }),
-      prisma.cateringOrder.count({
-        where: {
-          customerId: user.id,
-          createdAt: { gte: thirtyDaysAgo },
-        },
-      }),
+      // Use raw SQL for faster aggregation
+      prisma.$queryRaw<Array<{totalCount: bigint, recentCount: bigint}>>`
+        SELECT 
+          (SELECT COUNT(*) FROM "Order" WHERE "userId" = ${userId}) +
+          (SELECT COUNT(*) FROM "CateringOrder" WHERE "customerId" = ${userId}) as "totalCount",
+          (SELECT COUNT(*) FROM "Order" WHERE "userId" = ${userId} AND "createdAt" >= ${thirtyDaysAgo}) +
+          (SELECT COUNT(*) FROM "CateringOrder" WHERE "customerId" = ${userId} AND "createdAt" >= ${thirtyDaysAgo}) as "recentCount"
+      `
     ]);
 
     profile = profileResult;
-    orderCount = regularOrderCount + cateringOrderCount;
-    recentOrders = recentRegularOrders + recentCateringOrders;
+    
+    if (orderStats && orderStats.length > 0) {
+      orderCount = Number(orderStats[0].totalCount);
+      recentOrders = Number(orderStats[0].recentCount);
+    }
   } catch (error) {
     console.error('Failed to fetch profile or order data:', error);
     // Set safe defaults if queries fail

@@ -70,29 +70,47 @@ export interface UserOrder {
   }[];
 }
 
-export async function GET() {
-  const supabase = await createClient();
-
+export async function GET(request: Request) {
   try {
-    // 1. Get the current user session
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get user from middleware headers to avoid extra auth call
+    const headers = new Headers(request.headers);
+    const userId = headers.get('X-User-ID');
+    
+    if (!userId) {
+      // Fallback to Supabase auth if headers not available
+      const supabase = await createClient();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      console.error('API Auth Error:', authError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (authError || !user) {
+        console.error('API Auth Error:', authError);
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      
+      return await fetchUserOrders(user.id);
     }
 
-    console.log('API Route: Querying orders for User ID:', user.id);
+    return await fetchUserOrders(userId);
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json(
+      { error: 'Failed to fetch orders', details: errorMessage },
+      { status: 500 }
+    );
+  }
+}
 
-    // 2. Fetch regular orders for the authenticated user
-    const regularOrders: RegularOrder[] = await withPreparedStatementHandling(async () => {
+async function fetchUserOrders(userId: string) {
+  console.log('API Route: Querying orders for User ID:', userId);
+
+  // Use a single optimized query with minimal data selection
+  const [regularOrders, cateringOrders] = await Promise.all([
+    withPreparedStatementHandling(async () => {
       return await prisma.order.findMany({
-        where: {
-          userId: user.id,
-        },
+        where: { userId },
         select: {
           id: true,
           createdAt: true,
@@ -109,20 +127,17 @@ export async function GET() {
               product: { select: { name: true } },
               variant: { select: { name: true } },
             },
+            take: 3, // Limit items for faster loading
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
+        take: 20, // Limit orders for faster response
       });
-    }, `user-orders-${user.id}`);
-
-    // 3. Fetch catering orders for the authenticated user
-    const cateringOrders = await withPreparedStatementHandling(async () => {
+    }, `user-orders-${userId}`),
+    
+    withPreparedStatementHandling(async () => {
       return await prisma.cateringOrder.findMany({
-        where: {
-          customerId: user.id,
-        },
+        where: { customerId: userId },
         select: {
           id: true,
           createdAt: true,
@@ -136,27 +151,25 @@ export async function GET() {
               id: true,
               quantity: true,
               pricePerUnit: true,
-              totalPrice: true,
               itemName: true,
               itemType: true,
             },
+            take: 3, // Limit items for faster loading
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
+        take: 20, // Limit orders for faster response
       });
-    }, `user-catering-orders-${user.id}`);
+    }, `user-catering-orders-${userId}`)
+  ]);
 
-    // 4. Transform regular orders to unified format
-    const unifiedRegularOrders: UserOrder[] = regularOrders.map(order => ({
+  // Simplified transformation
+  const allOrders: UserOrder[] = [
+    ...regularOrders.map(order => ({
       id: order.id,
       createdAt: order.createdAt,
       status: order.status || 'UNKNOWN',
-      total:
-        typeof order.total === 'object' && order.total !== null
-          ? Number(order.total)
-          : Number(order.total) || 0,
+      total: Number(order.total) || 0,
       paymentStatus: order.paymentStatus || 'UNKNOWN',
       trackingNumber: order.trackingNumber,
       shippingCarrier: order.shippingCarrier,
@@ -164,24 +177,16 @@ export async function GET() {
       items: order.items.map(item => ({
         id: item.id,
         quantity: item.quantity,
-        price:
-          typeof item.price === 'object' && item.price !== null
-            ? Number(item.price)
-            : Number(item.price) || 0,
+        price: Number(item.price) || 0,
         product: item.product,
         variant: item.variant,
       })),
-    }));
-
-    // 5. Transform catering orders to unified format
-    const unifiedCateringOrders: UserOrder[] = cateringOrders.map(order => ({
+    })),
+    ...cateringOrders.map(order => ({
       id: order.id,
       createdAt: order.createdAt,
       status: order.status || 'UNKNOWN',
-      total:
-        typeof order.totalAmount === 'object' && order.totalAmount !== null
-          ? Number(order.totalAmount)
-          : Number(order.totalAmount) || 0,
+      total: Number(order.totalAmount) || 0,
       paymentStatus: order.paymentStatus || 'UNKNOWN',
       type: 'catering' as const,
       eventDate: order.eventDate,
@@ -189,33 +194,19 @@ export async function GET() {
       items: order.items.map(item => ({
         id: item.id,
         quantity: item.quantity,
-        price:
-          typeof item.pricePerUnit === 'object' && item.pricePerUnit !== null
-            ? Number(item.pricePerUnit)
-            : Number(item.pricePerUnit) || 0,
+        price: Number(item.pricePerUnit) || 0,
         name: item.itemName,
       })),
-    }));
+    }))
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // 6. Combine and sort all orders by creation date
-    const allOrders = [...unifiedRegularOrders, ...unifiedCateringOrders].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+  console.log(
+    `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${userId}`
+  );
 
-    console.log(
-      `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${user.id}`
-    );
-
-    return NextResponse.json(allOrders);
-  } catch (error) {
-    console.error('Error fetching user orders:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return NextResponse.json(
-      { error: 'Failed to fetch orders', details: errorMessage },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(allOrders);
 }
 
 // Optional: Define explicit types for request and response if needed
 // export type GetUserOrdersResponse = UserOrder[] | { error: string; details?: string };
+
