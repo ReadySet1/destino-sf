@@ -143,7 +143,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       
     let checkoutUrl: string;
     try {
-      const result = await createCheckoutLink({
+      const checkoutParams: any = {
         orderId: targetOrder!.id,
         locationId: locationId!,
         lineItems,
@@ -151,7 +151,16 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
         customerEmail: targetOrder!.email,
         customerName: isRegularOrder ? order!.customerName : cateringOrder!.name,
         customerPhone: targetOrder!.phone,
-      });
+      };
+
+      // Add eventDate for catering orders to ensure proper pickup_at scheduling
+      if (isCateringOrder && cateringOrder) {
+        checkoutParams.eventDate = cateringOrder.eventDate.toISOString();
+        console.log(`🔧 [RETRY-PAYMENT] Added eventDate for catering order: ${checkoutParams.eventDate}`);
+      }
+
+      console.log(`🔧 [RETRY-PAYMENT] Creating checkout link for ${isRegularOrder ? 'regular' : 'catering'} order`);
+      const result = await createCheckoutLink(checkoutParams);
       checkoutUrl = result.checkoutUrl;
     } catch (error) {
       logger.error('Failed to create Square checkout link:', error);

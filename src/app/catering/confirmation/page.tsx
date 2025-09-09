@@ -159,6 +159,7 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
         actualStatus = 'not_found';
       } else {
         console.log(`✅ [CATERING] Successfully fetched catering order with ${orderData.items.length} items`);
+        console.log(`🔧 [CATERING] Order payment status: ${orderData.paymentStatus}, order status: ${orderData.status}`);
         
         // Trust database state over URL parameters
         if (orderData.paymentStatus === 'PAID') {
@@ -180,6 +181,10 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
             actualStatus = 'pending';
             console.log(`🔧 [CATERING] Determined status as 'pending' - order is ${Math.round(orderAge / (1000 * 60))} minutes old`);
           }
+        } else {
+          // Handle unexpected payment status
+          console.log(`🔧 [CATERING] Unexpected payment status: ${orderData.paymentStatus}, defaulting to processing`);
+          actualStatus = 'processing';
         }
 
         // Convert Decimal fields to numbers for serialization
@@ -203,6 +208,9 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
     console.warn('🔧 [CATERING] Status provided but no orderId for catering confirmation');
     actualStatus = 'invalid';
   }
+
+  console.log(`🔧 [CATERING] Final status: ${actualStatus}, Order data: ${serializableOrderData ? 'Available' : 'Not available'}`);
+  console.log(`🔧 [CATERING] Passing to component - Status: ${actualStatus}, OrderId: ${orderId}`);
 
   return (
     <Suspense

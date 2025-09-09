@@ -514,6 +514,7 @@ export async function createCateringOrderAndProcessPayment(data: {
           customerEmail: data.email,
           customerName: data.name,
           customerPhone: data.phone,
+          eventDate: data.eventDate, // Pass the event date for pickup_at
         });
 
         console.log(`💳 [SQUARE] Square checkout created successfully`);

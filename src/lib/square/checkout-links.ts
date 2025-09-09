@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '@/utils/logger';
 import { safeSquareOrderPayload } from './order-validation';
 import { formatPhoneForSquarePaymentLink, formatEmailForSquare } from './formatting';
+import { createRegularOrderTipSettings } from './tip-settings';
 
 export interface SquareCheckoutLinkParams {
   orderId: string;
@@ -19,6 +20,7 @@ export interface SquareCheckoutLinkParams {
   customerName?: string;    // ADD
   customerPhone?: string;   // ADD
   merchantSupportEmail?: string;
+  eventDate?: string;       // ADD: For scheduled pickup time
 }
 
 export interface SquareCheckoutResponse {
@@ -90,6 +92,9 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
           state: 'PROPOSED',
           pickup_details: {
             schedule_type: 'SCHEDULED',
+            pickup_at: params.eventDate 
+              ? new Date(params.eventDate).toISOString() 
+              : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Use event date or default to 24 hours from now
             recipient: {
               display_name: params.customerName || 'Catering Customer',
               email_address: params.customerEmail,
@@ -108,25 +113,22 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
         },
       },
       checkout_options: {
+        allow_tipping: true,
         redirect_url: params.redirectUrl,
         merchant_support_email: params.merchantSupportEmail || process.env.ADMIN_EMAIL,
+        ask_for_shipping_address: false, // Address provided via fulfillment
+        accepted_payment_methods: {
+          apple_pay: true,
+          google_pay: true,
+          cash_app_pay: false,
+          afterpay_clearpay: false,
+          venmo: false,
+        },
+        tip_settings: createRegularOrderTipSettings(),
       },
-      pre_populated_data: (() => {
-        const data: any = {};
-        
-        // Note: Cannot set buyer_email when fulfillments are present per Square API
-        // Customer email is already set in fulfillment recipient details above
-        
-        // Format phone number for Square API compatibility - this is allowed with fulfillments
-        if (params.customerPhone) {
-          const formattedPhone = formatPhoneForSquarePaymentLink(params.customerPhone);
-          if (formattedPhone) {
-            data.buyer_phone_number = formattedPhone;
-          }
-        }
-        
-        return data;
-      })(),
+      // Remove pre_populated_data entirely when fulfillments are present
+      // Square's sandbox test payments work better without conflicting buyer data
+      // The customer info is already provided in the fulfillment recipient details
     };
     
     // Sanitize the Square request body to remove any invalid fields

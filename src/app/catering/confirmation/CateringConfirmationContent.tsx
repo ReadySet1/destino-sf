@@ -16,6 +16,11 @@ interface Props {
 export default function CateringConfirmationContent({ status, orderData, squareOrderId }: Props) {
   const router = useRouter();
 
+  // Debug logging for status determination
+  console.log('🔧 [CATERING-CONFIRMATION] Status received:', status);
+  console.log('🔧 [CATERING-CONFIRMATION] Order data exists:', !!orderData);
+  console.log('🔧 [CATERING-CONFIRMATION] Square Order ID:', squareOrderId);
+
   // Clear localStorage catering order data on successful confirmation
   useEffect(() => {
     if (status === 'success' && typeof window !== 'undefined') {
@@ -174,6 +179,76 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <button
               onClick={() => router.push('/catering')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Catering
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Handle processing status - order was created but payment is still being processed
+  if (status === 'processing') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">⏳</div>
+            <h1 className="mb-4 text-2xl font-bold">Payment Processing</h1>
+            <p className="text-gray-600 mb-4">
+              Your catering order has been received and payment is being processed. 
+              You should receive a confirmation email shortly.
+            </p>
+            <p className="text-sm text-gray-500">
+              Order ID: {orderData?.id}
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/catering')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Catering
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Handle pending status - order exists but payment hasn't been completed yet
+  if (status === 'pending') {
+    return (
+      <main className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-xl rounded-lg border bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-5xl">📋</div>
+            <h1 className="mb-4 text-2xl font-bold">Payment Required</h1>
+            <p className="text-gray-600 mb-4">
+              Your catering order has been created but payment is still required to confirm your order.
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Order ID: {orderData?.id}
+            </p>
+            {orderData && (
+              <div className="text-sm text-gray-600 mb-6 p-4 bg-gray-50 rounded-lg">
+                <p><strong>Event Date:</strong> {new Date(orderData.eventDate).toLocaleDateString()}</p>
+                <p><strong>Total Amount:</strong> ${orderData.totalAmount.toFixed(2)}</p>
+                <p><strong>Items:</strong> {orderData.items.length} items</p>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.push(`/account/order/${orderData?.id}`)}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+            >
+              Complete Payment
+            </button>
+            <button
+              onClick={() => router.push('/catering')}
+              className="text-gray-600 hover:text-gray-800 py-2"
             >
               Back to Catering
             </button>
