@@ -23,7 +23,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       USE_SQUARE_SANDBOX: process.env.USE_SQUARE_SANDBOX,
       SQUARE_TRANSACTIONS_USE_SANDBOX: process.env.SQUARE_TRANSACTIONS_USE_SANDBOX,
     },
-    recommendations: []
+    recommendations: [] as string[]
   };
 
   // Add recommendations based on findings
