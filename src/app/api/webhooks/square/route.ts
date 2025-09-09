@@ -123,8 +123,32 @@ async function quickValidation(bodyText: string, headers: Headers): Promise<bool
   const timestamp = headers.get('x-square-hmacsha256-timestamp');
   const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
 
+  // Debug logging for signature validation
+  console.log('🔍 Webhook signature debug:', {
+    hasSignature: !!signature,
+    hasTimestamp: !!timestamp,
+    hasSecret: !!webhookSecret,
+    secretLength: webhookSecret?.length,
+    secretPrefix: webhookSecret?.substring(0, 8),
+    signatureLength: signature?.length,
+    timestampValue: timestamp,
+    allHeaders: Object.fromEntries(headers.entries())
+  });
+
   if (!signature || !timestamp || !webhookSecret) {
-    console.warn('⚠️ Missing webhook signature or secret');
+    console.warn('⚠️ Missing webhook signature or secret:', {
+      signature: !!signature,
+      timestamp: !!timestamp, 
+      secret: !!webhookSecret
+    });
+    
+    // TEMPORARY: Allow webhooks to process in development/staging while debugging
+    const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production';
+    if (!isProduction) {
+      console.log('🔧 TEMP: Allowing webhook in non-production environment for debugging');
+      return true;
+    }
+    
     return false;
   }
 
