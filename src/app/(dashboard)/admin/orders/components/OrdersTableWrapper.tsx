@@ -10,11 +10,7 @@ interface UnifiedOrder {
   status: OrderStatus | CateringStatus;
   customerName: string | null;
   total: number;
-  items: Array<{
-    id: string;
-    quantity: number;
-    price: number;
-  }>;
+  itemCount: number;
   pickupTime: string | null;
   eventDate?: string | null;
   createdAt: string;
@@ -23,6 +19,12 @@ interface UnifiedOrder {
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
   paymentMethod: string | null;
+  email?: string | null;
+  phone?: string | null;
+  deliveryDate?: string | null;
+  deliveryTime?: string | null;
+  fulfillmentType?: string | null;
+  isArchived?: boolean;
 }
 
 interface OrdersTableWrapperProps {

@@ -25,11 +25,7 @@ interface UnifiedOrder {
   status: OrderStatus | CateringStatus;
   customerName: string | null;
   total: number;
-  items: Array<{
-    id: string;
-    quantity: number;
-    price: number;
-  }>;
+  itemCount: number;
   pickupTime: string | null;
   eventDate?: string | null;
   createdAt: string;
@@ -38,6 +34,12 @@ interface UnifiedOrder {
   type: 'regular' | 'catering';
   paymentStatus: PaymentStatus;
   paymentMethod: string | null;
+  email?: string | null;
+  phone?: string | null;
+  deliveryDate?: string | null;
+  deliveryTime?: string | null;
+  fulfillmentType?: string | null;
+  isArchived?: boolean;
 }
 
 interface ResponsiveOrdersTableProps {
@@ -250,7 +252,7 @@ export default function ResponsiveOrdersTable({
             {formatCurrency(order.total)}
           </span>
           <div className="text-xs text-gray-600 mt-1">
-            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+            {order.itemCount} item{order.itemCount !== 1 ? 's' : ''}
           </div>
         </div>
       ),

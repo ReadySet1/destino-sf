@@ -39,25 +39,65 @@ type OrderPageProps = {
   }>;
 };
 
+// Define types for orders with count
+type OrderWithCount = {
+  id: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  total: Decimal;
+  createdAt: Date;
+  pickupTime: Date | null;
+  deliveryDate: Date | null;
+  deliveryTime: string | null;
+  trackingNumber: string | null;
+  fulfillmentType: string;
+  isArchived: boolean;
+  _count: {
+    items: number;
+  };
+};
+
+type CateringOrderWithCount = {
+  id: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  status: CateringStatus;
+  paymentStatus: PaymentStatus;
+  total: Decimal;
+  createdAt: Date;
+  eventDate: Date | null;
+  isArchived: boolean;
+  paymentMethod: string | null;
+  _count: {
+    items: number;
+  };
+};
+
 // Define our unified order type
 interface UnifiedOrder {
   id: string;
-  status: OrderStatus | CateringStatus;
-  customerName: string | null;
-  total: number;
-  items: Array<{
-    id: string;
-    quantity: number;
-    price: number;
-  }>;
-  pickupTime: string | null;
-  eventDate?: string | null;
-  createdAt: string;
-  trackingNumber: string | null;
-  shippingCarrier: string | null;
   type: 'regular' | 'catering';
+  customerName: string;
+  email: string;
+  phone: string;
+  status: OrderStatus | CateringStatus;
   paymentStatus: PaymentStatus;
+  total: number;
+  createdAt: string;
+  pickupTime: string | null;
+  deliveryDate?: string | null;
+  deliveryTime?: string | null;
+  eventDate?: string | null;
+  trackingNumber: string | null;
+  fulfillmentType?: string;
+  isArchived: boolean;
+  itemCount: number;
   paymentMethod: string | null;
+  shippingCarrier: string | null;
 }
 
 // Safe conversion of Decimal to number
@@ -83,78 +123,7 @@ function decimalToNumber(value: Decimal | number | null | undefined): number {
 }
 
 // Manual serialization for regular orders
-function serializeRegularOrders(orders: any[]): UnifiedOrder[] {
-  if (!Array.isArray(orders)) {
-    return [];
-  }
-  
-  return orders.map(order => {
-    if (!order) {
-      throw new Error('Received null/undefined order in serializeRegularOrders');
-    }
 
-    const itemsCount = order.items?.length || 0;
-    const totalItems =
-      order.items?.reduce((total: number, item: any) => total + (item?.quantity || 0), 0) || 0;
-
-    return {
-      id: order.id || '',
-      status: order.status || 'PENDING',
-      customerName: order.customerName || null,
-      total: Number(order.total || 0),
-      items:
-        order.items?.map((item: any) => ({
-          id: item?.id || '',
-          quantity: item?.quantity || 0,
-          price: Number(item?.price || 0),
-        })) || [],
-      pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
-      createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
-      trackingNumber: order.trackingNumber || null,
-      shippingCarrier: order.shippingCarrier || null,
-      type: order.isCateringOrder ? 'catering' : 'regular',
-      paymentStatus: order.paymentStatus || 'PENDING',
-      paymentMethod: order.paymentMethod || null,
-    };
-  });
-}
-
-// Manual serialization for catering orders
-function serializeCateringOrders(orders: any[]): UnifiedOrder[] {
-  if (!Array.isArray(orders)) {
-    return [];
-  }
-  
-  return orders.map(order => {
-    if (!order) {
-      throw new Error('Received null/undefined order in serializeCateringOrders');
-    }
-
-    // Serialize items
-    const serializedItems =
-      order.items?.map((item: any) => ({
-        id: item?.id || '',
-        quantity: item?.quantity || 0,
-        price: decimalToNumber(item?.totalPrice),
-      })) || [];
-
-    return {
-      id: order.id || '',
-      status: order.status || 'PENDING',
-      customerName: order.name || null,
-      total: decimalToNumber(order.totalAmount),
-      items: serializedItems,
-      pickupTime: null,
-      eventDate: order.eventDate ? new Date(order.eventDate).toISOString() : null,
-      createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
-      trackingNumber: null,
-      shippingCarrier: null,
-      type: 'catering',
-      paymentStatus: order.paymentStatus || 'PENDING',
-      paymentMethod: order.paymentMethod || null,
-    };
-  });
-}
 
 // Helper function to get the correct orderBy clause for database queries
 function getOrderByClause(
@@ -216,15 +185,8 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       itemsPerPage
     });
 
-    // Quick database connectivity check using robust connection management
-    await withConnectionManagement(
-      async () => {
-        await prisma.$queryRaw`SELECT 1 as test`;
-        logger.info('OrdersPage: Database connectivity confirmed');
-      },
-      'Database connectivity check',
-      5000 // 5 second timeout
-    );
+    // Quick database connectivity check - removed for better performance
+    // The actual queries below will handle connection issues gracefully
 
     // Build where conditions for regular orders
     const regularOrdersWhere: any = {
@@ -275,37 +237,82 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       try {
         logger.info('OrdersPage: Fetching regular orders');
         
-        // Fetch regular orders with safe pagination
+        // Optimized query: Always use pagination to prevent loading all data
         const regularOrdersQuery: any = {
           where: regularOrdersWhere,
           orderBy: getOrderByClause(sortField, sortDirection, 'regular'),
-          include: { items: true },
+          select: {
+            id: true,
+            customerName: true,
+            email: true,
+            phone: true,
+            status: true,
+            paymentStatus: true,
+            total: true,
+            createdAt: true,
+            pickupTime: true,
+            deliveryDate: true,
+            deliveryTime: true,
+            trackingNumber: true,
+            fulfillmentType: true,
+            isArchived: true,
+            // Only include items count for performance
+            _count: {
+              select: { items: true }
+            }
+          },
         };
         
-        // Only add pagination for single type filter
+        // Apply pagination for all filters (including 'all')
         if (typeFilter === 'regular') {
           regularOrdersQuery.skip = skip;
           regularOrdersQuery.take = itemsPerPage;
+        } else if (typeFilter === 'all') {
+          // For 'all' filter, fetch limited data for both order types
+          regularOrdersQuery.skip = 0;
+          regularOrdersQuery.take = Math.max(itemsPerPage * 2, 50); // Get more for mixed sorting
         }
 
-        logger.info('OrdersPage: Regular orders query', regularOrdersQuery);
+        logger.info('OrdersPage: Regular orders query', { ...regularOrdersQuery, where: 'filtered for logging' });
         
         const regularOrders = await withConnectionManagement(
           () => prisma.order.findMany(regularOrdersQuery),
           'Fetch regular orders',
-          15000 // 15 second timeout
-        );
+          10000 // Reduced timeout since less data
+        ) as unknown as OrderWithCount[];
         
         logger.info(`OrdersPage: Found ${regularOrders?.length || 0} regular orders`);
 
-        const serializedRegularOrders = serializeRegularOrders(regularOrders || []);
+        // Convert to unified format with lightweight data
+        const serializedRegularOrders = regularOrders?.map(order => ({
+          id: order.id,
+          type: 'regular' as const,
+          customerName: order.customerName,
+          email: order.email,
+          phone: order.phone,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          total: decimalToNumber(order.total),
+          createdAt: order.createdAt.toISOString(),
+          pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
+          deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
+          deliveryTime: order.deliveryTime,
+          eventDate: null,
+          trackingNumber: order.trackingNumber,
+          fulfillmentType: order.fulfillmentType,
+          isArchived: order.isArchived,
+          itemCount: order._count.items,
+          paymentMethod: null,
+          shippingCarrier: null,
+        })) || [];
+
         allOrders.push(...serializedRegularOrders);
 
         if (typeFilter === 'regular') {
           totalCount = await withConnectionManagement(
             () => prisma.order.count({ where: regularOrdersWhere }),
             'Count regular orders',
-            10000 // 10 second timeout
+            5000 // Reduced timeout for count queries
           );
           logger.info(`OrdersPage: Regular orders total count: ${totalCount}`);
         }
@@ -319,37 +326,82 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       try {
         logger.info('OrdersPage: Fetching catering orders');
         
-        // Fetch catering orders with safe pagination
+        // Optimized query: Always use pagination to prevent loading all data
         const cateringOrdersQuery: any = {
           where: cateringOrdersWhere,
           orderBy: getOrderByClause(sortField, sortDirection, 'catering'),
-          include: { items: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            status: true,
+            paymentStatus: true,
+            totalAmount: true,
+            createdAt: true,
+            eventDate: true,
+            numberOfPeople: true,
+            deliveryZone: true,
+            deliveryAddress: true,
+            isArchived: true,
+            paymentMethod: true,
+            // Only include items count for performance
+            _count: {
+              select: { items: true }
+            }
+          },
         };
         
-        // Only add pagination for single type filter
+        // Apply pagination for all filters (including 'all')
         if (typeFilter === 'catering') {
           cateringOrdersQuery.skip = skip;
           cateringOrdersQuery.take = itemsPerPage;
+        } else if (typeFilter === 'all') {
+          // For 'all' filter, fetch limited data for both order types
+          cateringOrdersQuery.skip = 0;
+          cateringOrdersQuery.take = Math.max(itemsPerPage * 2, 50); // Get more for mixed sorting
         }
 
-        logger.info('OrdersPage: Catering orders query', cateringOrdersQuery);
+        logger.info('OrdersPage: Catering orders query', { ...cateringOrdersQuery, where: 'filtered for logging' });
         
         const cateringOrders = await withConnectionManagement(
           () => prisma.cateringOrder.findMany(cateringOrdersQuery),
           'Fetch catering orders',
-          15000 // 15 second timeout
-        );
+          10000 // Reduced timeout since less data
+        ) as unknown as CateringOrderWithCount[];
         
         logger.info(`OrdersPage: Found ${cateringOrders?.length || 0} catering orders`);
 
-        const serializedCateringOrders = serializeCateringOrders(cateringOrders || []);
+        // Convert to unified format with lightweight data
+        const serializedCateringOrders = cateringOrders?.map(order => ({
+          id: order.id,
+          type: 'catering' as const,
+          customerName: order.customerName,
+          email: order.email,
+          phone: order.phone,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          total: decimalToNumber(order.total),
+          createdAt: order.createdAt.toISOString(),
+          pickupTime: null,
+          deliveryDate: null,
+          deliveryTime: null,
+          eventDate: order.eventDate ? order.eventDate.toISOString() : null,
+          trackingNumber: null,
+          fulfillmentType: 'pickup', // Default for catering orders
+          isArchived: order.isArchived,
+          itemCount: order._count.items,
+          paymentMethod: order.paymentMethod,
+          shippingCarrier: null,
+        })) || [];
+
         allOrders.push(...serializedCateringOrders);
 
         if (typeFilter === 'catering') {
           totalCount = await withConnectionManagement(
             () => prisma.cateringOrder.count({ where: cateringOrdersWhere }),
             'Count catering orders',
-            10000 // 10 second timeout
+            5000 // Reduced timeout for count queries
           );
           logger.info(`OrdersPage: Catering orders total count: ${totalCount}`);
         }
@@ -359,7 +411,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
       }
     }
 
-    // If showing all orders, sort and paginate manually
+    // If showing all orders, sort and paginate manually (optimized)
     if (typeFilter === 'all') {
       // Sort based on the selected field and direction
       allOrders.sort((a, b) => {
@@ -406,8 +458,27 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
         return 0;
       });
 
-      // Store total count before slicing for pagination
-      totalCount = allOrders.length;
+      // Estimate total count using fast count queries instead of loading all data
+      try {
+        const [regularCount, cateringCount] = await Promise.all([
+          withConnectionManagement(
+            () => prisma.order.count({ where: regularOrdersWhere }),
+            'Count regular orders for all filter',
+            3000 // Fast timeout for count
+          ),
+          withConnectionManagement(
+            () => prisma.cateringOrder.count({ where: cateringOrdersWhere }),
+            'Count catering orders for all filter',
+            3000 // Fast timeout for count
+          ),
+        ]);
+        
+        totalCount = regularCount + cateringCount;
+        logger.info(`OrdersPage: Combined total count: ${totalCount} (${regularCount} regular + ${cateringCount} catering)`);
+      } catch (countError) {
+        logger.error('OrdersPage: Error counting orders, using loaded data count:', countError);
+        totalCount = allOrders.length; // Fallback to what we have
+      }
       
       // Apply pagination by slicing the sorted array
       allOrders = allOrders.slice(skip, skip + itemsPerPage);

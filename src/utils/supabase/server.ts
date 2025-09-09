@@ -27,9 +27,11 @@ export async function createClient() {
             });
           } catch (error) {
             // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-            console.warn('Failed to set cookie in Server Component:', name, error);
+            // This can be ignored since middleware handles session refreshing.
+            // Silently ignore the error to prevent application crashes.
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Failed to set cookie in Server Component:', name, 'This is expected and handled by middleware');
+            }
           }
         },
         remove(name: string, options: CookieOptions) {
@@ -43,9 +45,11 @@ export async function createClient() {
             });
           } catch (error) {
             // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-            console.warn('Failed to remove cookie in Server Component:', name, error);
+            // This can be ignored since middleware handles session refreshing.
+            // Silently ignore the error to prevent application crashes.
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Failed to remove cookie in Server Component:', name, 'This is expected and handled by middleware');
+            }
           }
         },
       },

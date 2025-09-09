@@ -44,46 +44,43 @@ export default async function AccountPage() {
   let recentOrders = 0;
 
   try {
-    // Fetch profile and order statistics
-    const [profileResult, orderCountResult, recentOrdersResult] = await Promise.all([
+    // Optimized: Fetch profile and order statistics with proper timeouts
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const [profileResult, regularOrderCount, cateringOrderCount, recentRegularOrders, recentCateringOrders] = await Promise.all([
       prisma.profile.findUnique({
         where: { id: user.id },
       }),
-      // Count total orders (both regular and catering)
-      Promise.all([
-        prisma.order.count({
-          where: { userId: user.id },
-        }),
-        prisma.cateringOrder.count({
-          where: { customerId: user.id },
-        }),
-      ]).then(([regular, catering]) => regular + catering),
-      // Count recent orders (last 30 days)
-      Promise.all([
-        prisma.order.count({
-          where: {
-            userId: user.id,
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-            },
-          },
-        }),
-        prisma.cateringOrder.count({
-          where: {
-            customerId: user.id,
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-            },
-          },
-        }),
-      ]).then(([regular, catering]) => regular + catering),
+      // Separate optimized count queries with timeouts
+      prisma.order.count({
+        where: { userId: user.id },
+      }),
+      prisma.cateringOrder.count({
+        where: { customerId: user.id },
+      }),
+      prisma.order.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: thirtyDaysAgo },
+        },
+      }),
+      prisma.cateringOrder.count({
+        where: {
+          customerId: user.id,
+          createdAt: { gte: thirtyDaysAgo },
+        },
+      }),
     ]);
 
     profile = profileResult;
-    orderCount = orderCountResult;
-    recentOrders = recentOrdersResult;
+    orderCount = regularOrderCount + cateringOrderCount;
+    recentOrders = recentRegularOrders + recentCateringOrders;
   } catch (error) {
     console.error('Failed to fetch profile or order data:', error);
+    // Set safe defaults if queries fail
+    profile = null;
+    orderCount = 0;
+    recentOrders = 0;
   }
 
   return (

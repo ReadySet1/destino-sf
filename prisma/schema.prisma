@@ -179,6 +179,11 @@ model Order {
   @@index([createdAt])
   @@index([isCateringOrder])
   @@index([isArchived])
+  // Compound indexes for admin orders page performance
+  @@index([isArchived, status, createdAt])
+  @@index([isArchived, paymentStatus, createdAt])
+  @@index([isArchived, customerName, createdAt])
+  @@index([isArchived, createdAt, status])
   @@map("orders")
 }
 
@@ -456,6 +461,12 @@ model CateringOrder {
   @@index([eventDate])
   @@index([createdAt])
   @@index([isArchived])
+  // Compound indexes for admin catering orders page performance
+  @@index([isArchived, status, createdAt])
+  @@index([isArchived, paymentStatus, createdAt])
+  @@index([isArchived, name, createdAt])
+  @@index([isArchived, createdAt, status])
+  @@index([isArchived, eventDate, createdAt])
   @@map("catering_orders")
 }
 

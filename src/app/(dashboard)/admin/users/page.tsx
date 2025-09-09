@@ -111,41 +111,50 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
       orderBy = { email: 'asc' }; // Default sort for DB query
     }
 
-    // Fetch users with their orders using robust connection management
+    // Optimized: Fetch users with order counts using robust connection management
     const usersFromDb = await withConnectionManagement(
       () => prisma.profile.findMany({
         where: userWhere,
         orderBy,
         skip,
         take: itemsPerPage,
-        include: {
-          orders: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          created_at: true,
+          // Use _count instead of including all order records
+          _count: {
             select: {
-              id: true,
+              orders: true,
+              cateringOrders: true,
             },
           },
         },
       }),
-      'Fetch users with orders',
-      15000 // 15 second timeout
+      'Fetch users with order counts',
+      10000 // Reduced timeout since less data
     );
 
     // Get total count for pagination
     const totalCount = await withConnectionManagement(
       () => prisma.profile.count({ where: userWhere }),
       'Count total users',
-      10000 // 10 second timeout
+      5000 // Reduced timeout for count queries
     );
 
-    // Transform the users to match our expected type
-    let users: UserTableData[] = usersFromDb.map((user: UserWithOrders) => ({
+    // Transform the users to match our expected type (optimized)
+    let users: UserTableData[] = usersFromDb.map((user: any) => ({
       id: user.id,
       email: user.email,
       name: user.name,
       phone: user.phone,
       role: user.role,
       created_at: user.created_at,
-      orderCount: user.orders.length,
+      // Use _count for total order count (regular + catering)
+      orderCount: (user._count?.orders || 0) + (user._count?.cateringOrders || 0),
     }));
 
     // Handle order count sorting in memory if needed
