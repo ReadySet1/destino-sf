@@ -29,6 +29,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/process-webhooks",
+      "schedule": "* * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/icon0.svg",

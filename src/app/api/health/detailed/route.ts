@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { dbManager } from '@/lib/db-optimized';
+import { getHealthStatus } from '@/lib/db-unified';
 import { cacheService } from '@/lib/cache-service';
 import { performanceMonitor } from '@/lib/performance-monitor';
 
@@ -9,26 +9,35 @@ export async function GET() {
   try {
     // Run health checks in parallel
     const [databaseHealth, cacheHealth, performanceHealth] = await Promise.allSettled([
-      dbManager.checkHealth(),
+      getHealthStatus(),
       cacheService.healthCheck(),
       checkPerformanceHealth(),
     ]);
 
     // Process results
-    const database =
-      databaseHealth.status === 'fulfilled'
-        ? databaseHealth.value
-        : { status: 'unhealthy', details: { error: databaseHealth.reason } };
+    const databaseResult = databaseHealth.status === 'fulfilled'
+      ? databaseHealth.value
+      : null;
+    
+    const database = databaseResult 
+      ? {
+          status: databaseResult.connected ? 'healthy' : 'unhealthy',
+          connected: databaseResult.connected,
+          latency: databaseResult.latency,
+          version: databaseResult.version,
+          error: databaseResult.error
+        }
+      : { status: 'unhealthy', details: { error: databaseHealth.status === 'rejected' ? databaseHealth.reason : 'Unknown error' } };
 
     const cache =
       cacheHealth.status === 'fulfilled'
         ? cacheHealth.value
-        : { status: 'unhealthy', details: { error: cacheHealth.reason } };
+        : { status: 'unhealthy', details: { error: cacheHealth.status === 'rejected' ? cacheHealth.reason : 'Unknown error' } };
 
     const performance =
       performanceHealth.status === 'fulfilled'
         ? performanceHealth.value
-        : { status: 'unhealthy', details: { error: performanceHealth.reason } };
+        : { status: 'unhealthy', details: { error: performanceHealth.status === 'rejected' ? performanceHealth.reason : 'Unknown error' } };
 
     // Determine overall system health
     const allHealthy =
@@ -53,7 +62,7 @@ export async function GET() {
       services: {
         database: {
           ...database,
-          connectionStats: dbManager.getConnectionStats(),
+          // Connection stats would be available in a full db manager implementation
         },
         cache: {
           ...cache,

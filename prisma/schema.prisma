@@ -708,6 +708,25 @@ model ProductMappingAudit {
   @@map("product_mapping_audit")
 }
 
+model WebhookQueue {
+  id              String    @id @default(uuid()) @db.Uuid
+  eventId         String    @unique @map("event_id") @db.VarChar(255)
+  eventType       String    @map("event_type") @db.VarChar(100)
+  payload         Json
+  status          String    @default("PENDING") @db.VarChar(50)
+  attempts        Int       @default(0)
+  lastAttemptAt   DateTime? @map("last_attempt_at")
+  errorMessage    String?   @map("error_message")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  processedAt     DateTime? @map("processed_at")
+
+  @@index([status], map: "idx_webhook_queue_status")
+  @@index([createdAt], map: "idx_webhook_queue_created")
+  @@index([eventId], map: "idx_webhook_queue_event_id")
+  @@index([attempts], map: "idx_webhook_queue_attempts")
+  @@map("webhook_queue")
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN

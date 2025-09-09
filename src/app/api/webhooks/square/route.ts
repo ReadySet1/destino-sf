@@ -15,6 +15,7 @@ import { applyWebhookRateLimit } from '@/middleware/rate-limit';
 import { handleWebhookWithQueue } from '@/lib/webhook-queue';
 import { patchSquareApiClient } from '@/lib/square/square-api-fix';
 import { WebhookValidator } from '@/lib/square/webhook-validator';
+import { webhookQueries } from '@/lib/db-optimized';
 
 type SquareEventType =
   | 'order.created'
@@ -111,6 +112,83 @@ async function queueWebhookForLaterProcessing(
     console.error(`❌ [WEBHOOK-QUEUE] Error queuing webhook:`, error);
     // If queueing fails, continue with regular processing as fallback
     throw error;
+  }
+}
+
+/**
+ * Quick validation for webhook signature (optimized for speed)
+ */
+async function quickValidation(bodyText: string, headers: Headers): Promise<boolean> {
+  const signature = headers.get('x-square-hmacsha256-signature');
+  const timestamp = headers.get('x-square-hmacsha256-timestamp');
+  const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
+
+  if (!signature || !timestamp || !webhookSecret) {
+    console.warn('⚠️ Missing webhook signature or secret');
+    return false;
+  }
+
+  try {
+    // Quick timestamp check (prevent replay attacks)
+    const requestTime = parseInt(timestamp);
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (Math.abs(currentTime - requestTime) > 300) { // 5 minutes tolerance
+      console.warn('⚠️ Webhook timestamp too old:', currentTime - requestTime, 'seconds');
+      return false;
+    }
+
+    // Verify signature
+    const payload = timestamp + bodyText;
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(payload)
+      .digest('base64');
+
+    return expectedSignature === signature;
+  } catch (error) {
+    console.error('❌ Signature validation error:', error);
+    return false;
+  }
+}
+
+/**
+ * Store webhook in queue for background processing
+ */
+async function storeWebhookInQueue(payload: any): Promise<void> {
+  try {
+    await webhookQueries.storeWebhookInQueue(
+      payload.event_id,
+      payload.type,
+      payload
+    );
+    
+    // Trigger async processing (don't await)
+    processQueuedWebhook(payload.event_id).catch(console.error);
+  } catch (error) {
+    console.error('❌ Failed to store webhook in queue:', error);
+    throw error;
+  }
+}
+
+/**
+ * Trigger async webhook processing
+ */
+async function processQueuedWebhook(eventId: string): Promise<void> {
+  // Import processor dynamically to avoid circular imports
+  const { WebhookProcessor } = await import('@/lib/webhook-processor');
+  const processor = new WebhookProcessor();
+  
+  // Process with timeout
+  const timeout = setTimeout(() => {
+    processor.stop();
+  }, 55000); // 55 second timeout
+  
+  try {
+    await processor.processQueue();
+  } catch (error) {
+    console.error('❌ Queue processing failed:', error);
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -1610,43 +1688,39 @@ async function getOrderTracking(orderId: string) {
  * @returns A NextResponse indicating successful receipt or an error.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  console.log('Received Square webhook request');
-  console.log('Request method:', request.method);
-  console.log('Content-Type:', request.headers.get('content-type'));
-  console.log('Content-Length:', request.headers.get('content-length'));
-
+  console.log('🔔 Received Square webhook request');
+  
   try {
-    // Read the body once at the start to avoid ReadableStream locked errors
-    let bodyText = '';
-    try {
-      bodyText = await request.text();
-      console.log('Successfully read body - length:', bodyText?.length || 0);
-    } catch (error) {
-      console.error('Failed to read request body:', error);
-      bodyText = '';
+    // Step 1: Read body once at the start
+    const bodyText = await request.text();
+    console.log('📄 Successfully read body - length:', bodyText?.length || 0);
+    
+    // Step 2: Quick validation (under 500ms)
+    const isValid = await quickValidation(bodyText, request.headers);
+    if (!isValid) {
+      console.warn('⚠️ Invalid webhook signature');
+      return NextResponse.json({ error: 'Invalid' }, { status: 400 });
     }
-
-    // Step 1: Quick acknowledgment to Square (within 1 second)
-    const acknowledgmentPromise = quickAcknowledgment(request, bodyText);
-
-    // Step 2: Process webhook asynchronously (don't await - let it run in background)
-    processWebhookAsync(request, bodyText).catch(error => {
-      console.error('Async webhook processing failed:', error);
-      // Log error but don't affect the response to Square
-    });
-
-    // Return immediate acknowledgment to Square
-    return await acknowledgmentPromise;
+    
+    // Step 3: Parse payload
+    let payload;
+    try {
+      payload = JSON.parse(bodyText);
+    } catch (error) {
+      console.error('❌ Failed to parse webhook payload:', error);
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    
+    // Step 4: Store in queue for processing (fast database insert)
+    await storeWebhookInQueue(payload);
+    
+    // Step 5: Return immediate acknowledgment (target: <1 second total)
+    console.log('✅ Webhook queued successfully:', payload.type, payload.event_id);
+    return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
-    console.error('Webhook acknowledgment failed:', error);
-    // Always return 200 to Square to prevent retries
-    return NextResponse.json(
-      {
-        error: 'Webhook acknowledgment failed',
-        received: true,
-      },
-      { status: 200 }
-    );
+    console.error('❌ Webhook processing failed:', error);
+    // Always return 200 to prevent Square retries
+    return NextResponse.json({ received: true }, { status: 200 });
   }
 }
 
