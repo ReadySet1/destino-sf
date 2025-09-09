@@ -202,7 +202,7 @@ export function demonstrateSupabaseMCPUsage() {
   logger.info('  project_id: "proyecto-id",');
   logger.info('  query: `');
   logger.info('    SELECT name, ordinal ');
-  logger.info('    FROM "Product" ');
+  logger.info('    FROM "products" ');
   logger.info('    WHERE active = true ');
   logger.info('    ORDER BY ordinal ASC, name ASC');
   logger.info('  `');

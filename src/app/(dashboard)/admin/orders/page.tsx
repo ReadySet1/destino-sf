@@ -50,7 +50,7 @@ type OrderWithCount = {
   total: Decimal;
   createdAt: Date;
   pickupTime: Date | null;
-  deliveryDate: Date | null;
+  deliveryDate: string | null; // Fixed: deliveryDate is a string in schema, not Date
   deliveryTime: string | null;
   trackingNumber: string | null;
   fulfillmentType: string;
@@ -295,7 +295,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
           total: decimalToNumber(order.total),
           createdAt: order.createdAt.toISOString(),
           pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
-          deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
+          deliveryDate: order.deliveryDate, // deliveryDate is already a string, no need to convert
           deliveryTime: order.deliveryTime,
           eventDate: null,
           trackingNumber: order.trackingNumber,

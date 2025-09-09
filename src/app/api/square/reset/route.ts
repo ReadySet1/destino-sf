@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // Use a direct SQL query to clear all Square IDs
     const queryResult = await prisma.$queryRaw`
-      UPDATE "Product" 
+      UPDATE "products" 
       SET "squareId" = '', "updatedAt" = NOW() 
       WHERE "squareId" IS NOT NULL
     `;
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Now check how many products still have Square IDs (not empty)
     const productsWithSquareId = await prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(*) FROM "Product" WHERE "squareId" <> ''
+      SELECT COUNT(*) FROM "products" WHERE "squareId" <> ''
     `;
 
     return NextResponse.json({

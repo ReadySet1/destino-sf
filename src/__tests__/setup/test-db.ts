@@ -193,7 +193,7 @@ export async function seedTestData() {
 async function ensureBasicSchema() {
   try {
     // Check if tables exist by running a simple query
-    await prisma.$queryRaw`SELECT 1 FROM "User" LIMIT 1;`;
+    await prisma.$queryRaw`SELECT 1 FROM "profiles" LIMIT 1;`;
     console.log('✅ Database schema already exists');
   } catch (error) {
     console.log('ℹ️ Database schema not found, this is expected in fresh test environments');
