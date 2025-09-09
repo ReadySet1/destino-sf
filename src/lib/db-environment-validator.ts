@@ -71,13 +71,39 @@ export function validateDatabaseEnvironment(): ValidationResult {
   }
 
   // Find matching database configuration
-  const databaseConfig = Object.values(KNOWN_DATABASES).find(db => 
-    host === db.host || host.includes(db.projectId)
-  );
+  // Handle both direct Supabase URLs and pooler URLs
+  const databaseConfig = Object.values(KNOWN_DATABASES).find(db => {
+    // Direct host match
+    if (host === db.host) return true;
+    
+    // Project ID in host
+    if (host.includes(db.projectId)) return true;
+    
+    // Handle Supabase pooler URLs (format: aws-0-us-west-1.pooler.supabase.com)
+    if (host.includes('pooler.supabase.com')) {
+      // Extract potential project ID from the pooled URL
+      // The project ID might be in the database URL path or a separate parameter
+      const fullUrl = new URL(databaseUrl);
+      const pathname = fullUrl.pathname;
+      // Check if project ID is in the path or database name
+      if (pathname.includes(db.projectId) || fullUrl.searchParams.get('db')?.includes(db.projectId)) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
 
   if (!databaseConfig) {
-    result.warnings.push(`Unknown database host: ${host}`);
-    return result;
+    // For pooler URLs, this might be expected - add as warning instead of error
+    if (host.includes('pooler.supabase.com')) {
+      result.warnings.push(`Using Supabase pooler connection: ${host}`);
+      result.warnings.push('Unable to determine specific database from pooler URL - this is normal for production deployments');
+      return result;
+    } else {
+      result.warnings.push(`Unknown database host: ${host}`);
+      return result;
+    }
   }
 
   result.currentDatabase = databaseConfig;

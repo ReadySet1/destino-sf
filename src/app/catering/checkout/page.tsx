@@ -7,6 +7,9 @@ import { getAuthenticatedUserProfile } from '@/app/actions/auth';
 import { measurePerformance } from '@/utils/performance';
 import { PageErrorBoundary } from '@/components/ErrorBoundary';
 
+// Force dynamic rendering to allow cookie usage
+export const dynamic = 'force-dynamic';
+
 export default async function CateringCheckoutPage() {
   // Use the new Server Action to safely handle authentication and cookie operations
   const { isLoggedIn, userData, error } = await measurePerformance(
