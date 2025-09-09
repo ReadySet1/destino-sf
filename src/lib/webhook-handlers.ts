@@ -478,11 +478,21 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
   const squarePaymentId = data.id;
   const squareOrderId = paymentData?.order_id;
   const paymentStatus = paymentData?.status?.toUpperCase();
-  console.log(`Processing payment.updated event: ${squarePaymentId}`);
+  const eventId = payload.event_id;
+
+  console.log(`🔄 Processing payment.updated event: ${squarePaymentId} (Event: ${eventId})`);
+  console.log(`📋 Payment data:`, {
+    squarePaymentId,
+    squareOrderId,
+    paymentStatus,
+    amount: paymentData?.amount_money?.amount,
+    eventId,
+  });
 
   if (!squareOrderId) {
-    console.warn(
-      `No order_id found in payment.updated payload for payment ${squarePaymentId}. Skipping.`
+    console.error(
+      `❌ CRITICAL: No order_id found in payment.updated payload for payment ${squarePaymentId}. Event ID: ${eventId}. Payload:`,
+      JSON.stringify(paymentData, null, 2)
     );
     return;
   }
@@ -547,31 +557,92 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       return;
     }
 
-    // Update payment status
-    let updatedPaymentStatus: Prisma.PaymentUpdateInput['status'] = undefined;
-    if (paymentStatus === 'COMPLETED') updatedPaymentStatus = 'PAID';
-    else if (paymentStatus === 'FAILED') updatedPaymentStatus = 'FAILED';
-    else if (paymentStatus === 'CANCELED') updatedPaymentStatus = 'FAILED';
-    else if (paymentStatus === 'REFUNDED') updatedPaymentStatus = 'REFUNDED';
-    else updatedPaymentStatus = 'PENDING';
+    console.log(`🔍 Found order ${order.id} for payment ${squarePaymentId} (Event: ${payload.event_id})`);
 
+    // Check if this event was already processed to prevent duplicates
+    const existingPayment = await prisma.payment.findUnique({
+      where: { squarePaymentId: squarePaymentId },
+      select: { id: true, rawData: true, status: true },
+    });
+
+    if (existingPayment?.rawData && typeof existingPayment.rawData === 'object') {
+      const rawData = existingPayment.rawData as any;
+      if (rawData?.lastProcessedEventId === payload.event_id) {
+        console.log(`⚠️ Event ${payload.event_id} already processed, skipping`);
+        return;
+      }
+    }
+
+    // Map payment status properly
+    function mapSquarePaymentStatus(status: string): PaymentStatus {
+      switch (status?.toUpperCase()) {
+        case 'COMPLETED':
+          return PaymentStatus.PAID;
+        case 'FAILED':
+        case 'CANCELED':
+          return PaymentStatus.FAILED;
+        case 'REFUNDED':
+          return PaymentStatus.REFUNDED;
+        case 'PENDING':
+        case 'APPROVED':
+        default:
+          return PaymentStatus.PENDING;
+      }
+    }
+
+    const updatedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
+    console.log(`📊 Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`);
+
+    // Update order status only if payment is newly PAID
     const updatedOrderStatus =
       order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID'
         ? OrderStatus.PROCESSING
         : order.status;
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        paymentStatus: updatedPaymentStatus,
-        status: updatedOrderStatus,
-        rawData: data.object as unknown as Prisma.InputJsonValue,
-        updatedAt: new Date(),
-      },
+    console.log(`📊 Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`);
+
+    // Use transaction to update both order and payment atomically
+    await prisma.$transaction(async (tx) => {
+      // Update the order
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          paymentStatus: updatedPaymentStatus,
+          status: updatedOrderStatus,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Upsert the payment record with event deduplication
+      await tx.payment.upsert({
+        where: { squarePaymentId: squarePaymentId },
+        update: {
+          status: updatedPaymentStatus,
+          rawData: {
+            ...paymentData,
+            lastProcessedEventId: payload.event_id,
+            lastUpdated: new Date().toISOString(),
+          } as unknown as Prisma.InputJsonValue,
+          updatedAt: new Date(),
+        },
+        create: {
+          squarePaymentId: squarePaymentId,
+          orderId: order.id,
+          amount: paymentData?.amount_money?.amount || 0,
+          status: updatedPaymentStatus,
+          rawData: {
+            ...paymentData,
+            lastProcessedEventId: payload.event_id,
+            lastUpdated: new Date().toISOString(),
+          } as unknown as Prisma.InputJsonValue,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
     });
 
     console.log(
-      `Order ${order.id} payment status updated to ${updatedPaymentStatus}, order status to ${updatedOrderStatus}.`
+      `✅ Order ${order.id} and Payment ${squarePaymentId} updated - payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`
     );
 
     // Purchase shipping label if applicable (PRIMARY trigger - no duplicates)
@@ -603,7 +674,25 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       }
     }
   } catch (error: any) {
-    console.error(`Error processing payment.updated event for order ${squareOrderId}:`, error);
+    console.error(`❌ CRITICAL ERROR in handlePaymentUpdated for payment ${squarePaymentId} (Event: ${eventId}):`, error);
+    
+    // Enhanced error logging for different types of database errors
+    if (error.code === 'P2025') {
+      console.error(`🔍 Record not found error for payment ${squarePaymentId}, order ${squareOrderId} (Event: ${eventId}) - the order might have been deleted or never created`);
+    } else if (error.code === 'P2002') {
+      console.error(`🔍 Unique constraint violation for payment ${squarePaymentId} (Event: ${eventId}) - possible duplicate processing`);
+    } else if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+      console.error(`🔍 Database connection error for payment ${squarePaymentId} (Event: ${eventId}) - this will trigger webhook retry`);
+    } else {
+      console.error(`🔍 Unexpected error for payment ${squarePaymentId} (Event: ${eventId}):`, {
+        message: error.message,
+        code: error.code,
+        stack: error.stack?.substring(0, 500),
+      });
+    }
+    
+    // Re-throw the error to trigger webhook retry
+    throw error;
   }
 }
 
