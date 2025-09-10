@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { validateWebhookSignature, quickSignatureValidation } from '@/lib/square/webhook-signature-fix';
+import { validateWebhookSignature, quickSignatureValidation, debugWebhookSignature } from '@/lib/square/webhook-signature-fix';
 import { queueWebhook } from '@/lib/webhook-queue-fix';
+
+// CRITICAL: App Router automatically handles raw request body correctly for signature validation
 
 /**
  * FIXED Square Webhook Handler
@@ -19,15 +21,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔔 Received Square webhook request');
     
-    // Step 1: Read body once at the start (fast)
-    const bodyText = await request.text();
+    // Step 1: Read raw body as buffer for signature validation
+    const bodyBuffer = await request.arrayBuffer();
+    const bodyText = new TextDecoder().decode(bodyBuffer);
     console.log('📄 Body read successfully - length:', bodyText?.length || 0);
     
-    // Step 2: Quick signature validation (under 100ms)
-    const isValid = await quickSignatureValidation(request, bodyText);
-    if (!isValid) {
+    // Step 2: Enhanced signature validation with debugging
+    const debugResult = await debugWebhookSignature(request, bodyText);
+    console.log('🔐 Signature validation debug:', {
+      valid: debugResult.valid,
+      hasSecret: debugResult.details.hasSecret,
+      hasSignature: debugResult.details.hasSignature,
+      bodyLength: debugResult.details.bodyLength
+    });
+    
+    if (!debugResult.valid) {
       console.warn('⚠️ Invalid webhook signature - rejecting request');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      console.warn('🔍 Debug details:', debugResult.details);
+      return NextResponse.json({ 
+        error: 'Invalid signature',
+        debug: process.env.NODE_ENV === 'development' ? debugResult.details : undefined
+      }, { status: 401 });
     }
     
     console.log('✅ Signature validation passed');

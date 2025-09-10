@@ -9,8 +9,12 @@ export async function validateWebhookSignature(
   body: string
 ): Promise<boolean> {
   try {
-    const signature = request.headers.get('x-square-hmacsha256-signature');
+    // Try both possible header names Square might use
+    const signatureV1 = request.headers.get('x-square-signature');
+    const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
+    const signature = signatureV2 || signatureV1;
     const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
+    
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
     
     if (!webhookSecret) {
@@ -20,8 +24,12 @@ export async function validateWebhookSignature(
     
     if (!signature) {
       console.warn('⚠️ No signature header found in webhook request');
+      console.warn('🔍 Available headers:', Array.from(request.headers.keys()));
       return false;
     }
+    
+    const headerUsed = signatureV2 ? 'x-square-hmacsha256-signature' : 'x-square-signature';
+    console.log(`🔐 Using signature header: ${headerUsed}`);
     
     // For Square webhooks without timestamp header (common case)
     if (signature && !timestamp) {
@@ -40,6 +48,7 @@ export async function validateWebhookSignature(
           console.log('Expected:', expectedSignature);
           console.log('Received:', signature);
           console.log('Body length:', body.length);
+          console.log('Body preview:', body.substring(0, 200));
         }
       } else {
         console.log('✅ Webhook signature validated successfully (no timestamp method)');
@@ -67,6 +76,7 @@ export async function validateWebhookSignature(
           console.log('Received:', signature);
           console.log('Timestamp:', timestamp);
           console.log('Body length:', body.length);
+          console.log('Body preview:', body.substring(0, 200));
         }
       } else {
         console.log('✅ Webhook signature validated successfully (timestamp method)');
@@ -93,7 +103,11 @@ export async function quickSignatureValidation(
   body: string
 ): Promise<boolean> {
   try {
-    const signature = request.headers.get('x-square-hmacsha256-signature');
+    // Try both possible header names Square might use
+    const signatureV1 = request.headers.get('x-square-signature');
+    const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
+    const signature = signatureV2 || signatureV1;
+    
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
     
     if (!webhookSecret || !signature) {
@@ -120,21 +134,28 @@ export async function debugWebhookSignature(
   request: Request,
   body: string
 ): Promise<{ valid: boolean; details: Record<string, any> }> {
+  const signatureV1 = request.headers.get('x-square-signature');
+  const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
+  const signature = signatureV2 || signatureV1;
+  
   const details: Record<string, any> = {
     hasSecret: !!process.env.SQUARE_WEBHOOK_SECRET,
-    hasSignature: !!request.headers.get('x-square-hmacsha256-signature'),
+    hasSignatureV1: !!signatureV1,
+    hasSignatureV2: !!signatureV2,
     hasTimestamp: !!request.headers.get('x-square-hmacsha256-timestamp'),
     bodyLength: body.length,
     bodyPreview: body.substring(0, 100),
+    headerUsed: signatureV2 ? 'x-square-hmacsha256-signature' : (signatureV1 ? 'x-square-signature' : 'none'),
+    allHeaders: Object.fromEntries(request.headers.entries()),
   };
   
   try {
-    const signature = request.headers.get('x-square-hmacsha256-signature');
     const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
     
     details.signature = signature;
     details.timestamp = timestamp;
+    details.secretLength = webhookSecret ? webhookSecret.length : 0;
     
     if (!webhookSecret) {
       details.error = 'Missing SQUARE_WEBHOOK_SECRET';
@@ -142,7 +163,7 @@ export async function debugWebhookSignature(
     }
     
     if (!signature) {
-      details.error = 'Missing signature header';
+      details.error = 'Missing signature header (tried both x-square-signature and x-square-hmacsha256-signature)';
       return { valid: false, details };
     }
     
@@ -165,7 +186,23 @@ export async function debugWebhookSignature(
       details.timestampSignatureMatch = timestampSignature === signature;
     }
     
-    const valid = details.directSignatureMatch || details.timestampSignatureMatch;
+    // Try with URL encoding/decoding in case there's a mismatch
+    let urlDecodedMatch = false;
+    try {
+      const urlDecodedBody = decodeURIComponent(body);
+      const urlDecodedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(urlDecodedBody)
+        .digest('base64');
+      
+      details.urlDecodedSignature = urlDecodedSignature;
+      urlDecodedMatch = urlDecodedSignature === signature;
+      details.urlDecodedMatch = urlDecodedMatch;
+    } catch (urlError) {
+      details.urlDecodingError = 'Failed to URL decode body';
+    }
+    
+    const valid = details.directSignatureMatch || details.timestampSignatureMatch || urlDecodedMatch;
     
     return { valid, details };
   } catch (error) {
