@@ -15,7 +15,16 @@ export async function validateWebhookSignature(
     const signature = signatureV2 || signatureV1;
     const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
     
-    const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
+    // Detect Square environment and use appropriate secret
+    const squareEnvironment = request.headers.get('square-environment');
+    const isSandbox = squareEnvironment?.toLowerCase() === 'sandbox';
+    
+    const webhookSecret = isSandbox 
+      ? (process.env.SQUARE_WEBHOOK_SECRET_SANDBOX || process.env.SQUARE_WEBHOOK_SECRET)
+      : process.env.SQUARE_WEBHOOK_SECRET;
+    
+    console.log(`🔐 Square environment detected: ${squareEnvironment} (sandbox: ${isSandbox})`);
+    console.log(`🔑 Using webhook secret for: ${isSandbox ? 'sandbox' : 'production'}`);
     
     if (!webhookSecret) {
       console.error('❌ SQUARE_WEBHOOK_SECRET environment variable not set');
@@ -108,7 +117,13 @@ export async function quickSignatureValidation(
     const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
     const signature = signatureV2 || signatureV1;
     
-    const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
+    // Detect Square environment and use appropriate secret
+    const squareEnvironment = request.headers.get('square-environment');
+    const isSandbox = squareEnvironment?.toLowerCase() === 'sandbox';
+    
+    const webhookSecret = isSandbox 
+      ? (process.env.SQUARE_WEBHOOK_SECRET_SANDBOX || process.env.SQUARE_WEBHOOK_SECRET)
+      : process.env.SQUARE_WEBHOOK_SECRET;
     
     if (!webhookSecret || !signature) {
       return false;
@@ -138,8 +153,15 @@ export async function debugWebhookSignature(
   const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
   const signature = signatureV2 || signatureV1;
   
+  // Detect Square environment from headers
+  const squareEnvironment = request.headers.get('square-environment');
+  const isSandbox = squareEnvironment?.toLowerCase() === 'sandbox';
+  
   const details: Record<string, any> = {
-    hasSecret: !!process.env.SQUARE_WEBHOOK_SECRET,
+    squareEnvironment,
+    isSandbox,
+    hasProductionSecret: !!process.env.SQUARE_WEBHOOK_SECRET,
+    hasSandboxSecret: !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
     hasSignatureV1: !!signatureV1,
     hasSignatureV2: !!signatureV2,
     hasTimestamp: !!request.headers.get('x-square-hmacsha256-timestamp'),
@@ -151,7 +173,11 @@ export async function debugWebhookSignature(
   
   try {
     const timestamp = request.headers.get('x-square-hmacsha256-timestamp');
-    const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
+    
+    // Use environment-specific webhook secret
+    const webhookSecret = isSandbox 
+      ? (process.env.SQUARE_WEBHOOK_SECRET_SANDBOX || process.env.SQUARE_WEBHOOK_SECRET)
+      : process.env.SQUARE_WEBHOOK_SECRET;
     
     details.signature = signature;
     details.timestamp = timestamp;

@@ -10,6 +10,7 @@ export function validateWebhookEnvironment(): { valid: boolean; missing: string[
   ];
   
   const optional = [
+    'SQUARE_WEBHOOK_SECRET_SANDBOX',
     'DIRECT_DATABASE_URL',
     'CRON_SECRET',
     'NODE_ENV'
@@ -39,6 +40,10 @@ export function validateWebhookEnvironment(): { valid: boolean; missing: string[
   
   if (!process.env.CRON_SECRET) {
     warnings.push('CRON_SECRET not set - cron endpoints will be unprotected');
+  }
+  
+  if (!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX) {
+    warnings.push('SQUARE_WEBHOOK_SECRET_SANDBOX not set - sandbox webhooks will use production secret');
   }
   
   const valid = missing.length === 0;
@@ -78,6 +83,7 @@ export function logWebhookEnvironmentStatus(): void {
   
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'unknown'}`);
   console.log(`🔗 Database URL configured: ${!!process.env.DATABASE_URL}`);
-  console.log(`🔐 Webhook secret configured: ${!!process.env.SQUARE_WEBHOOK_SECRET}`);
+  console.log(`🔐 Production webhook secret: ${!!process.env.SQUARE_WEBHOOK_SECRET}`);
+  console.log(`🔐 Sandbox webhook secret: ${!!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX}`);
   console.log('=====================================\n');
 }
