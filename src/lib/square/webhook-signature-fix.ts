@@ -198,7 +198,7 @@ export async function debugWebhookSignature(
       return { valid: false, details };
     }
     
-    // Try both validation methods
+    // Try both validation methods with detailed debugging
     const directSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(body)
@@ -206,6 +206,18 @@ export async function debugWebhookSignature(
     
     details.expectedDirectSignature = directSignature;
     details.directSignatureMatch = directSignature === signature;
+    
+    // Add detailed debugging for HMAC calculation
+    details.bodyAsBuffer = Buffer.from(body, 'utf8').toString('hex').substring(0, 200) + '...';
+    details.secretAsBuffer = Buffer.from(webhookSecret, 'utf8').toString('hex');
+    details.hmacCalculation = {
+      algorithm: 'sha256',
+      secretLength: webhookSecret.length,
+      bodyLength: body.length,
+      bodyPreview: body.substring(0, 100),
+      expectedResult: directSignature,
+      receivedSignature: signature
+    };
     
     if (timestamp) {
       const timestampSignature = crypto
