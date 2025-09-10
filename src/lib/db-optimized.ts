@@ -27,16 +27,31 @@ class OptimizedPrismaClient {
     
     const url = new URL(baseUrl);
     
+    // Check if using Supabase pooler
+    const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
+    
     // Vercel-specific optimizations
     if (process.env.VERCEL) {
       console.log('🚀 Configuring database for Vercel environment');
       
       url.searchParams.set('pgbouncer', 'true');
-      url.searchParams.set('connection_limit', '1'); // Single connection per function
-      url.searchParams.set('pool_timeout', '10'); // 10 second timeout
-      url.searchParams.set('statement_timeout', '5000'); // 5 second query timeout
       url.searchParams.set('prepared_statements', 'false');
       url.searchParams.set('statement_cache_size', '0');
+      
+      if (isSupabasePooler) {
+        // For Supabase pooler, let Supabase handle connection pooling
+        // Remove connection_limit to avoid conflicts with Supabase pooler
+        url.searchParams.delete('connection_limit');
+        url.searchParams.set('pool_timeout', '60'); // 60 second timeout for webhook processing
+        url.searchParams.set('statement_timeout', '30000'); // 30 second query timeout
+        console.log('🔧 Supabase pooler detected: Using pooler-optimized settings');
+      } else {
+        // For non-Supabase databases, use modest connection limits
+        url.searchParams.set('connection_limit', '3'); // Allow a few concurrent connections
+        url.searchParams.set('pool_timeout', '30'); // 30 second timeout
+        url.searchParams.set('statement_timeout', '15000'); // 15 second query timeout
+        console.log('🔧 Non-Supabase database: Using connection-limited settings');
+      }
     }
     
     return new PrismaClient({
