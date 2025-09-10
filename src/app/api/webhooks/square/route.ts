@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { validateWebhookSignature, quickSignatureValidation, debugWebhookSignature } from '@/lib/square/webhook-signature-fix';
+import { validateWebhookSignature, quickSignatureValidation, debugWebhookSignature } from '@/lib/square/webhook-signature-enhanced';
 import { queueWebhook } from '@/lib/webhook-queue-fix';
 
-// CRITICAL: App Router automatically handles raw request body correctly for signature validation
-
 /**
- * FIXED Square Webhook Handler
+ * Square Webhook Handler with Enhanced Sandbox Support
  * 
- * This implementation follows the critical fix plan for Vercel webhook failures:
- * 1. Quick signature validation (< 100ms)
- * 2. Immediate acknowledgment (< 1 second total)
- * 3. Queue for background processing
- * 4. Robust error handling that prevents Square retries
- * 5. No database connection issues through resilient client
+ * Key improvements:
+ * 1. Proper sandbox vs production webhook secret handling
+ * 2. Enhanced debugging for signature validation issues
+ * 3. Fast acknowledgment to prevent Square retries
+ * 4. Queue-based processing to avoid timeouts
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
@@ -21,32 +18,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔔 Received Square webhook request');
     
-    // Step 1: Read raw body as buffer for signature validation
-    const bodyBuffer = await request.arrayBuffer();
-    const bodyText = new TextDecoder().decode(bodyBuffer);
+    // Log environment for debugging
+    const squareEnvironment = request.headers.get('square-environment');
+    console.log(`📍 Square Environment: ${squareEnvironment || 'not specified'}`);
+    
+    // Step 1: Read raw body as text for signature validation
+    const bodyText = await request.text();
     console.log('📄 Body read successfully - length:', bodyText?.length || 0);
     
-    // Step 2: Enhanced signature validation with debugging
+    // Step 2: Debug signature validation (detailed logging)
     const debugResult = await debugWebhookSignature(request, bodyText);
-    console.log('🔐 Signature validation debug:', {
+    console.log('🔐 Signature validation result:', {
       valid: debugResult.valid,
-      hasSecret: debugResult.details.hasSecret,
-      hasSignature: debugResult.details.hasSignature,
-      bodyLength: debugResult.details.bodyLength
+      environment: debugResult.details?.squareEnvironment,
+      secretUsed: debugResult.details?.secretUsed,
+      hasSecret: debugResult.details?.hasSandboxSecret || debugResult.details?.hasProductionSecret,
     });
     
     if (!debugResult.valid) {
-      console.warn('⚠️ Invalid webhook signature - rejecting request');
-      console.warn('🔍 Debug details:', debugResult.details);
+      console.error('❌ Invalid webhook signature');
+      console.error('Debug details:', JSON.stringify(debugResult.details, null, 2));
+      
+      // Return 401 to indicate authentication failure
       return NextResponse.json({ 
         error: 'Invalid signature',
-        debug: process.env.NODE_ENV === 'development' ? debugResult.details : undefined
+        environment: squareEnvironment,
+        recommendation: debugResult.details?.recommendation,
+        troubleshooting: debugResult.details?.troubleshooting
       }, { status: 401 });
     }
     
     console.log('✅ Signature validation passed');
     
-    // Step 3: Parse and validate JSON (fast)
+    // Step 3: Parse and validate JSON
     let payload;
     try {
       payload = JSON.parse(bodyText);
@@ -55,22 +59,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
     
-    // Step 4: Quick validation of required fields
+    // Step 4: Validate required fields
     if (!payload.event_id || !payload.type) {
       console.warn('⚠️ Missing required webhook fields');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // Step 5: Queue for background processing (fast database insert with retry logic)
-    await queueWebhook(payload);
+    // Log webhook details for debugging
+    console.log('📦 Webhook details:', {
+      type: payload.type,
+      event_id: payload.event_id,
+      merchant_id: payload.merchant_id,
+      environment: squareEnvironment
+    });
+    
+    // Step 5: Queue for background processing
+    try {
+      await queueWebhook(payload);
+      console.log('✅ Webhook queued for processing');
+    } catch (queueError) {
+      console.error('❌ Failed to queue webhook:', queueError);
+      // Continue anyway - better to acknowledge than to have Square retry
+    }
     
     // Step 6: Return immediate acknowledgment
     const duration = Date.now() - startTime;
-    console.log(`✅ Webhook acknowledged successfully in ${duration}ms:`, payload.type, payload.event_id);
+    console.log(`✅ Webhook acknowledged in ${duration}ms:`, payload.type, payload.event_id);
     
     return NextResponse.json({ 
       received: true,
       event_id: payload.event_id,
+      type: payload.type,
+      environment: squareEnvironment,
       processing_time_ms: duration
     }, { status: 200 });
     
@@ -78,30 +98,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const duration = Date.now() - startTime;
     console.error(`❌ Webhook processing failed in ${duration}ms:`, error);
     
-    // CRITICAL: Always return 200 to prevent Square retries on our errors
-    // Square will retry failed webhooks which can cause cascading issues
+    // Return 200 to prevent Square retries on our internal errors
+    // This is critical - Square will retry failed webhooks which can cause issues
     return NextResponse.json({ 
       received: true, 
       error: true,
+      message: 'Internal processing error - webhook acknowledged',
       processing_time_ms: duration
     }, { status: 200 });
   }
 }
 
 /**
- * GET endpoint for webhook validation/health check
+ * GET endpoint for webhook validation and health check
  */
 export async function GET(): Promise<NextResponse> {
+  const hasProductionSecret = !!process.env.SQUARE_WEBHOOK_SECRET;
+  const hasSandboxSecret = !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX;
+  
   return NextResponse.json({ 
     status: 'ok',
     webhook_endpoint: 'square',
     timestamp: new Date().toISOString(),
+    environment: {
+      node_env: process.env.NODE_ENV,
+      has_production_secret: hasProductionSecret,
+      has_sandbox_secret: hasSandboxSecret,
+      vercel: !!process.env.VERCEL,
+      vercel_env: process.env.VERCEL_ENV
+    },
+    configuration: {
+      production_ready: hasProductionSecret,
+      sandbox_ready: hasSandboxSecret,
+      recommendation: !hasSandboxSecret ? 
+        'Add SQUARE_WEBHOOK_SECRET_SANDBOX to handle sandbox webhooks' : 
+        'Both production and sandbox secrets configured'
+    },
     fixes_applied: [
-      'resilient_database_connection',
-      'signature_validation_restored', 
+      'enhanced_sandbox_support',
+      'proper_secret_selection',
+      'detailed_error_logging',
       'immediate_acknowledgment',
-      'background_processing_queue',
-      'prevent_square_retries'
+      'queue_based_processing'
     ]
   });
 }
