@@ -182,6 +182,11 @@ export async function debugWebhookSignature(
     details.signature = signature;
     details.timestamp = timestamp;
     details.secretLength = webhookSecret ? webhookSecret.length : 0;
+    details.secretUsed = isSandbox ? 'sandbox' : 'production';
+    details.sandboxSecretValue = process.env.SQUARE_WEBHOOK_SECRET_SANDBOX ? 
+      process.env.SQUARE_WEBHOOK_SECRET_SANDBOX.substring(0, 4) + '...' : 'not_set';
+    details.productionSecretValue = process.env.SQUARE_WEBHOOK_SECRET ? 
+      process.env.SQUARE_WEBHOOK_SECRET.substring(0, 4) + '...' : 'not_set';
     
     if (!webhookSecret) {
       details.error = 'Missing SQUARE_WEBHOOK_SECRET';
