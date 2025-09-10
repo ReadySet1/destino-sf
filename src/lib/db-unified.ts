@@ -79,9 +79,9 @@ function buildDatabaseUrl(): string {
 }
 
 /**
- * Create optimized Prisma client
+ * Create optimized Prisma client with explicit connection
  */
-function createPrismaClient(): PrismaClient {
+async function createPrismaClient(): Promise<PrismaClient> {
   const isProduction = process.env.NODE_ENV === 'production';
   const databaseUrl = buildDatabaseUrl();
   
@@ -103,6 +103,20 @@ function createPrismaClient(): PrismaClient {
     });
   }
 
+  // CRITICAL: Explicitly connect the client to start the engine
+  try {
+    console.log('🔌 Connecting Prisma client...');
+    await client.$connect();
+    console.log('✅ Prisma client connected successfully');
+    
+    // Verify connection with a simple query
+    await client.$queryRaw`SELECT 1 as connection_test`;
+    console.log('✅ Prisma connection verified');
+  } catch (error) {
+    console.error('❌ Failed to connect Prisma client:', error);
+    throw error;
+  }
+
   return client;
 }
 
@@ -115,36 +129,95 @@ function shouldRegenerateClient(): boolean {
 }
 
 /**
- * Initialize the singleton Prisma client
+ * Initialize the singleton Prisma client with proper connection management
  */
-let prismaClient: PrismaClient;
+let prismaClient: PrismaClient | null = null;
+let isInitializing = false;
+let initPromise: Promise<PrismaClient> | null = null;
 
-if (shouldRegenerateClient()) {
-  // Disconnect old client if it exists
-  if (globalForPrisma.prisma) {
-    try {
-      globalForPrisma.prisma.$disconnect();
-    } catch (error) {
-      console.warn('Error disconnecting old Prisma client:', error);
-    }
+async function initializePrismaClient(): Promise<PrismaClient> {
+  if (isInitializing && initPromise) {
+    return initPromise;
   }
-  
-  prismaClient = createPrismaClient();
-  globalForPrisma.prisma = prismaClient;
-  globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
-  
-  console.log('✅ Unified Prisma client created successfully');
-} else {
-  prismaClient = globalForPrisma.prisma!;
-  console.log('♻️ Reusing existing Prisma client');
+
+  if (prismaClient && !shouldRegenerateClient()) {
+    console.log('♻️ Reusing existing Prisma client');
+    return prismaClient;
+  }
+
+  isInitializing = true;
+  initPromise = (async () => {
+    try {
+      // Disconnect old client if it exists
+      if (globalForPrisma.prisma) {
+        try {
+          await globalForPrisma.prisma.$disconnect();
+        } catch (error) {
+          console.warn('Error disconnecting old Prisma client:', error);
+        }
+      }
+      
+      const client = await createPrismaClient();
+      
+      // Store in global and local references
+      globalForPrisma.prisma = client;
+      globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+      prismaClient = client;
+      
+      console.log('✅ Unified Prisma client initialized successfully');
+      return client;
+    } finally {
+      isInitializing = false;
+    }
+  })();
+
+  return initPromise;
 }
 
-// Export the unified client
-export const prisma = prismaClient;
+// Initialize client immediately if needed
+if (shouldRegenerateClient()) {
+  initializePrismaClient().catch(error => {
+    console.error('Failed to initialize Prisma client:', error);
+  });
+} else if (globalForPrisma.prisma) {
+  prismaClient = globalForPrisma.prisma;
+  console.log('♻️ Using existing global Prisma client');
+}
 
-// Keep global reference in development
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+/**
+ * Get the Prisma client, ensuring it's properly initialized
+ */
+async function getPrismaClient(): Promise<PrismaClient> {
+  if (prismaClient && !shouldRegenerateClient()) {
+    return prismaClient;
+  }
+  
+  return await initializePrismaClient();
+}
+
+// Export the client with lazy initialization
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    if (prismaClient && typeof prismaClient[prop as keyof PrismaClient] === 'function') {
+      const method = prismaClient[prop as keyof PrismaClient] as Function;
+      return method.bind(prismaClient);
+    }
+    
+    // For async operations, ensure client is ready
+    return async (...args: any[]) => {
+      const client = await getPrismaClient();
+      const method = client[prop as keyof PrismaClient] as Function;
+      return method.apply(client, args);
+    };
+  }
+});
+
+// Keep global reference in development (but don't override the managed instance)
+if (process.env.NODE_ENV !== 'production' && !globalForPrisma.prisma) {
+  // Only set if not already managed
+  if (prismaClient) {
+    globalForPrisma.prisma = prismaClient;
+  }
 }
 
 /**
@@ -168,7 +241,9 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await prisma.$queryRaw`SELECT 1 as health_check`;
+      // Ensure we have a properly initialized client
+      const client = await getPrismaClient();
+      await client.$queryRaw`SELECT 1 as health_check`;
       return; // Success
     } catch (error) {
       lastError = error as Error;
@@ -179,10 +254,14 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
         console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
         
         try {
-          // Force reconnection
-          await prisma.$disconnect();
+          // Force client reinitialization on connection errors
+          const client = await getPrismaClient();
+          await client.$disconnect();
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          await prisma.$connect();
+          
+          // Reset client to force reinitialization
+          prismaClient = null;
+          globalForPrisma.prisma = undefined;
         } catch (reconnectError) {
           console.warn(`Reconnection attempt ${attempt} failed:`, (reconnectError as Error).message);
         }
@@ -228,14 +307,17 @@ export async function withRetry<T>(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Ensure connection before operation
+      // Ensure we have a properly initialized client before each attempt
+      await getPrismaClient();
+      
+      // On retry attempts, verify connection
       if (attempt > 1) {
-        await ensureConnection(1); // Single attempt for retries
+        await ensureConnection(1);
       }
       
       const result = await operation();
       
-      // Log slow operations
+      // Log successful recoveries
       if (attempt > 1) {
         console.log(`✅ ${operationName} succeeded on attempt ${attempt}`);
       }
@@ -247,13 +329,25 @@ export async function withRetry<T>(
       if (isConnectionError(lastError) && attempt < maxRetries) {
         console.warn(`${operationName} failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
         
-        // Progressive backoff
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        // For connection errors, force client reinitialization
+        try {
+          prismaClient = null;
+          globalForPrisma.prisma = undefined;
+          initPromise = null;
+        } catch (cleanupError) {
+          console.warn('Error during client cleanup:', cleanupError);
+        }
+        
+        // Progressive backoff with jitter
+        const baseDelay = 1000 * Math.pow(2, attempt - 1);
+        const jitter = Math.random() * 500; // Add 0-500ms jitter
+        const delay = Math.min(baseDelay + jitter, 5000);
+        
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
       
-      // Don't retry non-connection errors
+      // Don't retry non-connection errors or if max retries reached
       throw error;
     }
   }
