@@ -6,12 +6,11 @@ import { queueWebhook } from '@/lib/webhook-queue-fix';
 /**
  * FIXED Square Webhook Handler
  * 
- * This implementation follows the critical fix plan for Vercel webhook failures:
- * 1. Quick signature validation (< 100ms)
- * 2. Immediate acknowledgment (< 1 second total)
+ * This implementation follows the critical fix plan:
+ * 1. Quick signature validation
+ * 2. Immediate acknowledgment (< 1 second)
  * 3. Queue for background processing
- * 4. Robust error handling that prevents Square retries
- * 5. No database connection issues through resilient client
+ * 4. Robust error handling
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // Step 5: Queue for background processing (fast database insert with retry logic)
+    // Step 5: Queue for background processing (fast database insert)
     await queueWebhook(payload);
     
     // Step 6: Return immediate acknowledgment
@@ -81,13 +80,6 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json({ 
     status: 'ok',
     webhook_endpoint: 'square',
-    timestamp: new Date().toISOString(),
-    fixes_applied: [
-      'resilient_database_connection',
-      'signature_validation_restored', 
-      'immediate_acknowledgment',
-      'background_processing_queue',
-      'prevent_square_retries'
-    ]
+    timestamp: new Date().toISOString()
   });
 }

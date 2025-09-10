@@ -31,7 +31,7 @@
   },
   "crons": [
     {
-      "path": "/api/cron/process-webhooks",
+      "path": "/api/cron/process-webhooks-fixed",
       "schedule": "* * * * *"
     }
   ],
