@@ -22,19 +22,14 @@ const nextConfig = {
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
   serverExternalPackages: ['@prisma/client', 'prisma'],
   
-  // Optimize compilation performance
-  swcMinify: true,
-  
   // Optimize output
   output: 'standalone',
   // Experimental features
   experimental: {
-    // Optimize bundle analysis
-    bundlePagesExternals: false,
+    // Optimize bundle analysis (updated for Next.js 15)
+    bundlePagesRouterDependencies: false,
     // Enable experimental features for better performance
     optimizePackageImports: ['lucide-react', '@supabase/ssr'],
-    // Enable serverComponentsExternalPackages for Prisma
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
   // Configure webpack for client-side to avoid Node.js modules
   webpack: (config, { isServer }) => {
