@@ -9,7 +9,16 @@ export async function GET() {
     const queryTime = Date.now() - startTime;
     
     // Get connection pool metrics (if available)
-    const metrics = await webhookPrisma.$metrics?.json();
+    let metrics = null;
+    try {
+      // Check if $metrics is available (requires metrics preview feature)
+      if ('$metrics' in webhookPrisma && typeof (webhookPrisma as any).$metrics?.json === 'function') {
+        metrics = await (webhookPrisma as any).$metrics.json();
+      }
+    } catch (error) {
+      // Metrics not available, continue without them
+      console.warn('Metrics not available:', error);
+    }
     
     return NextResponse.json({
       status: 'healthy',
