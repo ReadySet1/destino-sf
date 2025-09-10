@@ -38,12 +38,38 @@ export async function GET(request: NextRequest) {
 }
 
 async function getLegacyBoxedLunchItems() {
+  // First, let's check what catering categories actually exist
+  const cateringCategories = await withRetry(() => prisma.category.findMany({
+    where: {
+      name: {
+        contains: 'CATERING',
+        mode: 'insensitive'
+      }
+    },
+    select: {
+      name: true,
+      _count: {
+        select: { products: true }
+      }
+    }
+  }), 3, 'find-catering-categories');
+
+  logger.info(`📋 Available catering categories:`, cateringCategories.map(c => `${c.name} (${c._count.products} products)`));
+
+  // Try to find boxed lunch products in multiple possible categories
+  const possibleCategories = [
+    'CATERING- BOXED LUNCHES',
+    'CATERING- LUNCH, ENTREES', 
+    'CATERING- LUNCH',
+    'CATERING-TEST'  // fallback for testing
+  ];
+
   const products = await withRetry(() => prisma.product.findMany({
       where: {
         active: true,
         category: {
           name: {
-            in: ['CATERING- BOXED LUNCHES'],
+            in: possibleCategories,
             mode: 'insensitive'
           }
         }
@@ -64,7 +90,7 @@ async function getLegacyBoxedLunchItems() {
       ]
     }), 3, 'find-many');
 
-  logger.info(`✅ Found ${products.length} legacy boxed lunch products`);
+  logger.info(`✅ Found ${products.length} legacy boxed lunch products from categories: ${possibleCategories.join(', ')}`);
 
   // Transform to match the BoxedLunchItem interface
   const transformedItems = products.map(product => {
@@ -124,9 +150,16 @@ async function getLegacyBoxedLunchItems() {
     };
   });
 
+  // Check if we found any products and log helpful information
+  if (transformedItems.length === 0) {
+    logger.warn(`⚠️ No boxed lunch products found in any of the searched categories: ${possibleCategories.join(', ')}`);
+    logger.info(`💡 Consider creating products in one of these categories or adding test products to CATERING-TEST category`);
+  }
+
   return NextResponse.json({
     success: true,
-    items: transformedItems
+    items: transformedItems,
+    message: transformedItems.length === 0 ? 'No boxed lunch items found. Please check if products exist in the catering categories.' : undefined
   });
 }
 
@@ -147,14 +180,19 @@ async function getBuildYourOwnBoxData() {
       'boxed-lunch-tiers'
     ),
     
-    // Get entree products from the new category
+    // Get entree products from possible catering categories
     withRetry(() =>
       prisma.product.findMany({
         where: {
           active: true,
           category: {
             name: {
-              in: ['CATERING- BOXED LUNCH ENTREES'],
+              in: [
+                'CATERING- BOXED LUNCH ENTREES',
+                'CATERING- LUNCH, ENTREES',
+                'CATERING- LUNCH',
+                'CATERING-TEST'  // fallback for testing
+              ],
               mode: 'insensitive'
             }
           }
@@ -207,10 +245,21 @@ async function getBuildYourOwnBoxData() {
     availableEntrees: entrees // All entrees available for all tiers
   }));
 
+  // Log helpful information about what was found
+  if (tiers.length === 0) {
+    logger.warn(`⚠️ No boxed lunch tiers found in boxed_lunch_tiers table`);
+  }
+  
+  if (entreeProducts.length === 0) {
+    logger.warn(`⚠️ No entree products found in catering categories`);
+    logger.info(`💡 Consider adding entree products to CATERING- LUNCH, ENTREES or CATERING-TEST categories`);
+  }
+
   return NextResponse.json({
     success: true,
     tiers: tiersWithEntrees,
     entrees: entrees,
-    mode: 'build-your-own'
+    mode: 'build-your-own',
+    message: entreeProducts.length === 0 ? 'No entree products found for build-your-own boxes.' : undefined
   });
 }
