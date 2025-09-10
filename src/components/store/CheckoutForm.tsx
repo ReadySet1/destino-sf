@@ -28,15 +28,19 @@ import { useCartStore } from '@/store/cart';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckoutSummary } from '@/components/store/CheckoutSummary';
+import { CheckoutSummary } from '@/components/Store/CheckoutSummary';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 import {
   FulfillmentSelector,
   FulfillmentMethod as AppFulfillmentMethod,
-} from '@/components/store/FulfillmentSelector';
-import { AddressForm } from '@/components/store/AddressForm';
-import { createOrderAndGenerateCheckoutUrl, getShippingRates, createManualPaymentOrder } from '@/app/actions';
+} from '@/components/Store/FulfillmentSelector';
+import { AddressForm } from '@/components/Store/AddressForm';
+import {
+  createOrderAndGenerateCheckoutUrl,
+  getShippingRates,
+  createManualPaymentOrder,
+} from '@/app/actions';
 import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
 import type { ShippingRate } from '@/app/actions';
 import { checkForDuplicateOrders } from '@/app/actions/duplicate-prevention';
@@ -57,7 +61,7 @@ import {
   getDeliveryFeeMessage,
   DeliveryFeeResult,
 } from '@/lib/deliveryUtils';
-import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector';
+import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 import { saveCateringContactInfo } from '@/actions/catering';
 
@@ -124,13 +128,10 @@ const localDeliverySchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
   phone: phoneSchema,
-  deliveryAddress: addressSchema.refine(
-    (data) => data.state === 'CA',
-    {
-      message: 'Local delivery is only available in California (CA)',
-      path: ['state'],
-    }
-  ),
+  deliveryAddress: addressSchema.refine(data => data.state === 'CA', {
+    message: 'Local delivery is only available in California (CA)',
+    path: ['state'],
+  }),
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
@@ -199,7 +200,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const { items, totalPrice, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Get saved checkout data from localStorage
   const getSavedCheckoutData = () => {
     if (typeof window !== 'undefined') {
@@ -216,7 +217,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   };
 
   const savedCheckoutData = getSavedCheckoutData();
-  
+
   // User state is now derived from initialUserData prop
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(() => {
     return savedCheckoutData?.fulfillmentMethod || 'pickup';
@@ -291,8 +292,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       deliveryInstructions: savedCheckoutData?.deliveryInstructions || '',
       rateId: savedCheckoutData?.rateId || '',
       // Initialize address fields with saved data if available
-      ...(savedCheckoutData?.deliveryAddress && { deliveryAddress: savedCheckoutData.deliveryAddress }),
-      ...(savedCheckoutData?.shippingAddress && { shippingAddress: savedCheckoutData.shippingAddress }),
+      ...(savedCheckoutData?.deliveryAddress && {
+        deliveryAddress: savedCheckoutData.deliveryAddress,
+      }),
+      ...(savedCheckoutData?.shippingAddress && {
+        shippingAddress: savedCheckoutData.shippingAddress,
+      }),
       // Initialize other fields based on the default fulfillment method ('pickup')
       // We don't need to initialize all possible fields here, the reset effect handles it
     } as Partial<CheckoutFormData>,
@@ -355,7 +360,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         name: currentValues.name || savedCheckoutData?.name || initialUserData?.name || '', // Prioritize current, then saved, then initial
         email: currentValues.email || savedCheckoutData?.email || initialUserData?.email || '',
         phone: currentValues.phone || savedCheckoutData?.phone || initialUserData?.phone || '',
-        paymentMethod: currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
+        paymentMethod:
+          currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
       };
 
       let recipientName = commonData.name;
@@ -458,7 +464,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // Watch form values and save to localStorage
   useEffect(() => {
-    const subscription = form.watch((value) => {
+    const subscription = form.watch(value => {
       // Only save if component is mounted and form has values
       if (isMounted && value) {
         // Debounce the save operation
@@ -501,7 +507,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       !address.postalCode ||
       !address.country
     ) {
-      setShippingError('Please complete all shipping address fields, including recipient name, to fetch rates.');
+      setShippingError(
+        'Please complete all shipping address fields, including recipient name, to fetch rates.'
+      );
       setShippingRates([]);
       return;
     }
@@ -618,10 +626,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // Function to check for duplicate orders
   const checkForDuplicates = async (email: string) => {
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
-    
+
     try {
       const duplicateCheck = await checkForDuplicateOrders(items, email);
-      
+
       if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
         setPendingOrderCheck({
           isChecking: false,
@@ -631,7 +639,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         setShowDuplicateAlert(true);
         return true; // Has duplicate
       }
-      
+
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
@@ -661,7 +669,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       isChecking: false,
       hasPendingOrder: false,
     });
-    
+
     // Validate form and get current values
     const isValid = await form.trigger();
     if (isValid) {
@@ -1244,12 +1252,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                   render={({ field }) => (
                     <Popover>
                       <PopoverTrigger asChild>
-                                              <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full justify-start text-left font-normal border-destino-yellow/40 hover:bg-destino-cream/30 hover:border-destino-yellow/60 hover:text-destino-charcoal transition-all',
-                          !field.value && 'text-muted-foreground'
-                        )}
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full justify-start text-left font-normal border-destino-yellow/40 hover:bg-destino-cream/30 hover:border-destino-yellow/60 hover:text-destino-charcoal transition-all',
+                            !field.value && 'text-muted-foreground'
+                          )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? (
@@ -1327,7 +1335,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         {currentMethod === 'nationwide_shipping' && (
           <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold text-destino-charcoal">Shipping Details</h2>
-            <AddressForm form={typedForm} prefix="shippingAddress" title="Shipping Address" fulfillmentMethod={currentMethod} />
+            <AddressForm
+              form={typedForm}
+              prefix="shippingAddress"
+              title="Shipping Address"
+              fulfillmentMethod={currentMethod}
+            />
             {/* Shipping Rate Fetch Button */}
             <Button
               type="button"
@@ -1396,7 +1409,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         <Button
           type="submit"
           className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
-          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
+          disabled={
+            isSubmitting ||
+            pendingOrderCheck.isChecking ||
+            !isMounted ||
+            items.length === 0 ||
+            !isValid
+          }
         >
           {pendingOrderCheck.isChecking
             ? 'Checking for existing orders...'

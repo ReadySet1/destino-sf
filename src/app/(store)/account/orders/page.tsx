@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
-import { OrderHistory } from '@/components/store/OrderHistory';
+import { OrderHistory } from '@/components/Store/OrderHistory';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,7 +78,10 @@ export default async function OrdersPage() {
         <div className="mt-8 text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50">
           <p className="text-sm text-gray-600 mb-4">
             Need help with an order?{' '}
-            <Link href="/contact" className="text-destino-orange hover:text-destino-charcoal font-medium transition-colors hover:no-underline">
+            <Link
+              href="/contact"
+              className="text-destino-orange hover:text-destino-charcoal font-medium transition-colors hover:no-underline"
+            >
               Contact our support team
             </Link>
           </p>

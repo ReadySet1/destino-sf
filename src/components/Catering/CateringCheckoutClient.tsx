@@ -10,8 +10,8 @@ import { ShoppingCart, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { SafeImage } from '@/components/ui/safe-image';
 import Link from 'next/link';
 import { addDays, format } from 'date-fns';
-import { FulfillmentSelector } from '@/components/store/FulfillmentSelector';
-import type { FulfillmentMethod } from '@/components/store/FulfillmentSelector';
+import { FulfillmentSelector } from '@/components/Store/FulfillmentSelector';
+import type { FulfillmentMethod } from '@/components/Store/FulfillmentSelector';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,7 +25,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { cn, toTitleCase } from '@/lib/utils';
-import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector';
+import { PaymentMethodSelector } from '@/components/Store/PaymentMethodSelector';
 import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
@@ -73,7 +73,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }
       }
     }
-    
+
     // Fallback to default values
     return {
       name: userData?.name || '',
@@ -100,7 +100,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
     return 'pickup';
   });
-  
+
   const [pickupDate, setPickupDate] = useState<Date>(() => {
     // Try to load pickup date from localStorage
     if (typeof window !== 'undefined') {
@@ -116,7 +116,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
     return addDays(new Date(), 5);
   });
-  
+
   const [pickupTime, setPickupTime] = useState<string>(() => {
     // Try to load pickup time from localStorage
     if (typeof window !== 'undefined') {
@@ -151,7 +151,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }
       }
     }
-    
+
     // Fallback to default empty values
     return {
       street: '',
@@ -207,13 +207,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   }, []);
 
   // Custom function to update delivery address and save to localStorage
-  const updateDeliveryAddress = useCallback((newAddress: typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)) => {
-    setDeliveryAddress(prevAddress => {
-      const updatedAddress = typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
-      saveDeliveryAddressToLocalStorage(updatedAddress);
-      return updatedAddress;
-    });
-  }, [saveDeliveryAddressToLocalStorage]);
+  const updateDeliveryAddress = useCallback(
+    (
+      newAddress:
+        | typeof deliveryAddress
+        | ((prev: typeof deliveryAddress) => typeof deliveryAddress)
+    ) => {
+      setDeliveryAddress(prevAddress => {
+        const updatedAddress =
+          typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
+        saveDeliveryAddressToLocalStorage(updatedAddress);
+        return updatedAddress;
+      });
+    },
+    [saveDeliveryAddressToLocalStorage]
+  );
 
   // Auto-select CA for local delivery
   useEffect(() => {
@@ -238,8 +246,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
       try {
         // Calculate total amount
-        const totalAmount = cateringItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
+        const totalAmount = cateringItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+
         const validation = await validateCateringOrderWithDeliveryZone(
           `${deliveryAddress.city}, ${deliveryAddress.postalCode}`,
           totalAmount
@@ -274,10 +285,13 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const saveCustomerInfoToLocalStorage = (info: typeof customerInfo) => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cateringCustomerInfo', JSON.stringify({
-          ...info,
-          eventDate: info.eventDate.toISOString(),
-        }));
+        localStorage.setItem(
+          'cateringCustomerInfo',
+          JSON.stringify({
+            ...info,
+            eventDate: info.eventDate.toISOString(),
+          })
+        );
       } catch (error) {
         console.error('Error saving customer info to localStorage:', error);
       }
@@ -307,14 +321,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   };
 
   // Function to save fulfillment info to localStorage
-  const saveFulfillmentInfoToLocalStorage = (method: FulfillmentMethod, date: Date, time: string) => {
+  const saveFulfillmentInfoToLocalStorage = (
+    method: FulfillmentMethod,
+    date: Date,
+    time: string
+  ) => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cateringFulfillmentInfo', JSON.stringify({
-          method,
-          pickupDate: date.toISOString(),
-          pickupTime: time,
-        }));
+        localStorage.setItem(
+          'cateringFulfillmentInfo',
+          JSON.stringify({
+            method,
+            pickupDate: date.toISOString(),
+            pickupTime: time,
+          })
+        );
       } catch (error) {
         console.error('Error saving fulfillment info to localStorage:', error);
       }
@@ -367,7 +388,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       specialRequests: values.specialRequests || '',
       eventDate: values.eventDate,
     };
-    
+
     setCustomerInfo(newCustomerInfo);
     saveCustomerInfoToLocalStorage(newCustomerInfo);
     setCurrentStep('fulfillment');
@@ -399,11 +420,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
     // Set ref immediately to prevent race conditions
     isSubmittingRef.current = true;
-    
+
     // Track submission attempts
     setSubmissionAttempts(prev => prev + 1);
     console.log(`📤 Catering checkout submission attempt #${submissionAttempts + 1}`);
-    
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -436,15 +457,26 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           method: paymentMethod,
         },
         items: cateringItems.map(item => {
-                  // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
-        try {
-          metadata = JSON.parse(item.variantId || '{}');
-        } catch (error) {
-          console.warn('Failed to parse item metadata in order submission:', item.variantId, error);
-          // If variantId is not JSON, treat it as a simple name
-          metadata = { name: item.variantId, type: 'item' };
-        }
+          // Safely parse metadata with error handling
+          let metadata: {
+            type?: string;
+            itemId?: string;
+            name?: string;
+            selectedProtein?: string;
+            productName?: string;
+            variationName?: string;
+          } = {};
+          try {
+            metadata = JSON.parse(item.variantId || '{}');
+          } catch (error) {
+            console.warn(
+              'Failed to parse item metadata in order submission:',
+              item.variantId,
+              error
+            );
+            // If variantId is not JSON, treat it as a simple name
+            metadata = { name: item.variantId, type: 'item' };
+          }
           const pricePerUnit = item.price;
           const totalPrice = item.price * item.quantity;
 
@@ -485,7 +517,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; nameLabel?: string; notes?: string; productName?: string; variationName?: string } = {};
+        let metadata: {
+          type?: string;
+          itemId?: string;
+          name?: string;
+          selectedProtein?: string;
+          nameLabel?: string;
+          notes?: string;
+          productName?: string;
+          variationName?: string;
+        } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
@@ -517,7 +558,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         const customizations = {
           ...(item.customizations || {}),
           ...(metadata.nameLabel && { nameLabel: metadata.nameLabel }),
-          ...(metadata.notes && { notes: metadata.notes })
+          ...(metadata.notes && { notes: metadata.notes }),
         };
 
         // Create formatted notes that include all customizations
@@ -535,12 +576,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
         // Ensure we have a proper item name, with fallbacks for edge cases
         let itemName = item.name;
-        
+
         // If the name is just a size/variation (like "Large") and we have product name in metadata, combine them
-        if (metadata.productName && (itemName === metadata.variationName || itemName?.toLowerCase().match(/^(small|medium|large|regular)$/))) {
-          itemName = metadata.variationName ? `${metadata.productName} - ${metadata.variationName}` : metadata.productName;
+        if (
+          metadata.productName &&
+          (itemName === metadata.variationName ||
+            itemName?.toLowerCase().match(/^(small|medium|large|regular)$/))
+        ) {
+          itemName = metadata.variationName
+            ? `${metadata.productName} - ${metadata.variationName}`
+            : metadata.productName;
         }
-        
+
         // Additional fallback: if name is still just a variant name and we have more metadata
         if (!itemName || itemName.toLowerCase().match(/^(small|medium|large|regular)$/)) {
           itemName = metadata.name || metadata.productName || item.name || 'Unknown Item';
@@ -595,7 +642,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       if (result.success) {
         // Clear the cart
         clearCart();
-        
+
         // Clear all saved data from localStorage since order was successful
         clearCustomerInfoFromLocalStorage();
         clearDeliveryAddressFromLocalStorage();
@@ -617,7 +664,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         const errorMessage = result.error || 'Failed to create order';
         setSubmitError(errorMessage);
         toast.error(`Error creating order: ${errorMessage}`);
-        
+
         // Add a delay before allowing retry to prevent rapid submissions
         setTimeout(() => {
           isSubmittingRef.current = false;
@@ -629,7 +676,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       const errorMessage = 'Failed to process your order. Please try again.';
       setSubmitError(errorMessage);
       toast.error(errorMessage);
-      
+
       // Add a delay before allowing retry
       setTimeout(() => {
         isSubmittingRef.current = false;
@@ -767,7 +814,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           <Label htmlFor="state">State</Label>
                           <Select
                             value={deliveryAddress.state}
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               updateDeliveryAddress({ ...deliveryAddress, state: value })
                             }
                           >
@@ -775,7 +822,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                               <SelectValue placeholder="Select state" />
                             </SelectTrigger>
                             <SelectContent>
-                              {CA_ONLY_STATES.map((state) => (
+                              {CA_ONLY_STATES.map(state => (
                                 <SelectItem key={state.code} value={state.code}>
                                   {state.code} - {state.name}
                                 </SelectItem>
@@ -792,7 +839,10 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           placeholder="94110"
                           value={deliveryAddress.postalCode}
                           onChange={e =>
-                            updateDeliveryAddress({ ...deliveryAddress, postalCode: e.target.value })
+                            updateDeliveryAddress({
+                              ...deliveryAddress,
+                              postalCode: e.target.value,
+                            })
                           }
                           required
                         />
@@ -1077,9 +1127,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               )}
             </Button>
             {submitError && (
-              <div className="mt-2 text-sm text-red-600 text-center">
-                {submitError}
-              </div>
+              <div className="mt-2 text-sm text-red-600 text-center">{submitError}</div>
             )}
           </div>
         )}
@@ -1093,15 +1141,22 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
             <div className="space-y-4 mb-6">
               {cateringItems.map(item => {
-                        // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
-        try {
-          metadata = JSON.parse(item.variantId || '{}');
-        } catch (error) {
-          console.warn('Failed to parse item metadata:', item.variantId, error);
-          // If variantId is not JSON, treat it as a simple name
-          metadata = { name: item.variantId, type: 'item' };
-        }
+                // Safely parse metadata with error handling
+                let metadata: {
+                  type?: string;
+                  itemId?: string;
+                  name?: string;
+                  selectedProtein?: string;
+                  productName?: string;
+                  variationName?: string;
+                } = {};
+                try {
+                  metadata = JSON.parse(item.variantId || '{}');
+                } catch (error) {
+                  console.warn('Failed to parse item metadata:', item.variantId, error);
+                  // If variantId is not JSON, treat it as a simple name
+                  metadata = { name: item.variantId, type: 'item' };
+                }
                 const isPackage = metadata.type === 'package';
 
                 // Function to get the correct image URL with better fallbacks
@@ -1232,8 +1287,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm mx-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d3538] mx-auto" />
-            <p className="mt-4 text-lg font-medium text-center">Processing your catering order...</p>
-            <p className="mt-2 text-sm text-gray-500 text-center">Please do not close this window</p>
+            <p className="mt-4 text-lg font-medium text-center">
+              Processing your catering order...
+            </p>
+            <p className="mt-2 text-sm text-gray-500 text-center">
+              Please do not close this window
+            </p>
             {submissionAttempts > 1 && (
               <p className="mt-2 text-xs text-orange-600 text-center">
                 Attempt #{submissionAttempts}
