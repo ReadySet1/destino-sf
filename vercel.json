@@ -1,5 +1,4 @@
 {
-  "_comment": "Cache clear for deleted webhook-signature debug endpoint - 2025-09-09",
   "framework": "nextjs",
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
