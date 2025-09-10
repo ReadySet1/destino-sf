@@ -73,10 +73,15 @@ export async function validateWebhookSignature(
       return false;
     }
     
-    // Calculate expected signature
+    // Calculate expected signature according to Square's documentation
+    // Square requires: HMAC(secret, notification_url + body)
+    const notificationUrl = `https://${request.headers.get('host')}${request.headers.get('x-matched-path') || '/api/webhooks/square'}`;
+    const stringToSign = notificationUrl + body;
+    const algorithm = signatureV2 ? 'sha256' : 'sha1';
+    
     const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(body)
+      .createHmac(algorithm, webhookSecret)
+      .update(stringToSign)
       .digest('base64');
     
     const isValid = expectedSignature === signature;
@@ -113,9 +118,15 @@ export async function quickSignatureValidation(
     const webhookSecret = getWebhookSecret(request.headers);
     if (!webhookSecret) return false;
     
+    // Calculate according to Square's documentation: HMAC(secret, url + body)
+    const notificationUrl = `https://${request.headers.get('host')}${request.headers.get('x-matched-path') || '/api/webhooks/square'}`;
+    const stringToSign = notificationUrl + body;
+    const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
+    const algorithm = signatureV2 ? 'sha256' : 'sha1';
+    
     const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(body)
+      .createHmac(algorithm, webhookSecret)
+      .update(stringToSign)
       .digest('base64');
     
     return expectedSignature === signature;
@@ -179,10 +190,16 @@ export async function debugWebhookSignature(
     details.secretUsed = isSandbox ? 'sandbox' : 'production';
     details.secretPreview = webhookSecret.substring(0, 4) + '...';
     
-    // Calculate and compare signatures with detailed debugging
+    // Calculate signature according to Square's documentation
+    // Square requires: HMAC(secret, notification_url + body)
+    const notificationUrl = `https://${request.headers.get('host')}${request.headers.get('x-matched-path') || '/api/webhooks/square'}`;
+    const stringToSign = notificationUrl + body;
+    
+    // Use different algorithms based on header type
+    const algorithm = signatureV2 ? 'sha256' : 'sha1';
     const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(body)
+      .createHmac(algorithm, webhookSecret)
+      .update(stringToSign)
       .digest('base64');
     
     details.expectedSignature = expectedSignature;
@@ -192,15 +209,21 @@ export async function debugWebhookSignature(
     // Add detailed debugging for HMAC calculation
     details.bodyAsBuffer = Buffer.from(body, 'utf8').toString('hex').substring(0, 200) + '...';
     details.secretAsBuffer = Buffer.from(webhookSecret, 'utf8').toString('hex');
+    details.notificationUrl = notificationUrl;
+    details.stringToSign = stringToSign.substring(0, 200) + '...';
     details.hmacCalculation = {
-      algorithm: 'sha256',
+      algorithm: algorithm,
       secretLength: webhookSecret.length,
       bodyLength: body.length,
+      urlLength: notificationUrl.length,
+      totalLength: stringToSign.length,
       bodyPreview: body.substring(0, 100),
+      urlUsed: notificationUrl,
+      stringToSignPreview: stringToSign.substring(0, 150),
       expectedResult: expectedSignature,
       receivedSignature: signature,
       secretHex: Buffer.from(webhookSecret, 'utf8').toString('hex'),
-      bodyHex: Buffer.from(body, 'utf8').toString('hex').substring(0, 200) + '...'
+      stringToSignHex: Buffer.from(stringToSign, 'utf8').toString('hex').substring(0, 300) + '...'
     };
     
     // If sandbox and no match, try with production secret as fallback
