@@ -198,17 +198,26 @@ async function getPrismaClient(): Promise<PrismaClient> {
 // Export the client with lazy initialization
 export const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
-    if (prismaClient && typeof prismaClient[prop as keyof PrismaClient] === 'function') {
-      const method = prismaClient[prop as keyof PrismaClient] as Function;
-      return method.bind(prismaClient);
+    // If we have an active client, return the property directly
+    if (prismaClient) {
+      const value = prismaClient[prop as keyof PrismaClient];
+      if (typeof value === 'function') {
+        return value.bind(prismaClient);
+      }
+      return value;
     }
     
-    // For async operations, ensure client is ready
-    return async (...args: any[]) => {
-      const client = await getPrismaClient();
-      const method = client[prop as keyof PrismaClient] as Function;
-      return method.apply(client, args);
-    };
+    // For lazy initialization, create a proxy that initializes the client when needed
+    return new Proxy({}, {
+      get(modelTarget, modelProp) {
+        return async (...args: any[]) => {
+          const client = await getPrismaClient();
+          const model = client[prop as keyof PrismaClient] as any;
+          const method = model[modelProp as string] as Function;
+          return method.apply(model, args);
+        };
+      }
+    });
   }
 });
 
