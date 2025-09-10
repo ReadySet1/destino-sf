@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma, withRetry, withWebhookRetry, withTransaction, ensureConnection } from '@/lib/db-unified';
+import { webhookPrisma, ensureWebhookConnection, disconnectWebhook, webhookTransaction } from '@/lib/db/webhook-connection';
+import { withWebhookRetry as webhookRetryWrapper } from '@/lib/db/webhook-retry';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { SquareClient } from 'square';
@@ -199,10 +201,20 @@ async function quickValidation(bodyText: string, headers: Headers): Promise<bool
  */
 async function storeWebhookInQueue(payload: any): Promise<void> {
   try {
-    await webhookQueries.storeWebhookInQueue(
-      payload.event_id,
-      payload.type,
-      payload
+    await webhookRetryWrapper(
+      async () => {
+        return webhookPrisma.webhookQueue.create({
+          data: {
+            eventId: payload.event_id,
+            eventType: payload.type,
+            payload: payload,
+            status: 'PENDING',
+            attempts: 0,
+          },
+        });
+      },
+      'store-webhook-queue',
+      { maxAttempts: 3 }
     );
     
     // Trigger async processing (don't await)
@@ -258,8 +270,8 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
       
       // Enhanced query with additional metadata and connection management
       // FIXED: Use optimized webhook query for faster processing
-      cateringOrder = await withWebhookRetry(() =>
-        prisma.cateringOrder.findUnique({
+      cateringOrder = await webhookRetryWrapper(() =>
+        webhookPrisma.cateringOrder.findUnique({
           where: { squareOrderId: data.id },
           select: { 
             id: true, 
@@ -272,7 +284,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
           },
         }),
         'catering-order-lookup',
-        20000 // 20 second timeout for webhooks
+        { maxAttempts: 5, initialDelay: 200 }
       );
       
       console.log(`🔍 [WEBHOOK-QUEUE] Query result (attempt ${attempt}):`, cateringOrder ? {
@@ -1115,11 +1127,13 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
       console.log(`🔍 Checking for catering order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
       
       // Check if a catering order with this Square order ID exists using Prisma with connection management
-      const cateringOrder = await withRetry(() =>
-        prisma.cateringOrder.findUnique({
+      const cateringOrder = await webhookRetryWrapper(() =>
+        webhookPrisma.cateringOrder.findUnique({
           where: { squareOrderId },
           select: { id: true, paymentStatus: true, status: true },
-        })
+        }),
+        'catering-order-lookup',
+        { maxAttempts: 3, initialDelay: 100 }
       );
 
       if (cateringOrder) {
@@ -1182,11 +1196,13 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
 
         console.log(`💾 Updating catering order ${cateringOrder.id} with:`, cateringUpdateData);
 
-        await withRetry(() =>
-          prisma.cateringOrder.update({
+        await webhookRetryWrapper(() =>
+          webhookPrisma.cateringOrder.update({
             where: { id: cateringOrder.id },
             data: cateringUpdateData,
-          })
+          }),
+          'catering-order-update',
+          { maxAttempts: 3, initialDelay: 100 }
         );
 
         console.log(
@@ -1211,8 +1227,8 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     // If not a catering order, find our internal order using the Square Order ID
     console.log(`🔍 Checking for regular order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
     
-    const order = await withRetry(() =>
-      prisma.order.findUnique({
+    const order = await webhookRetryWrapper(() =>
+      webhookPrisma.order.findUnique({
         where: { squareOrderId: squareOrderId },
         select: {
           id: true,
@@ -1221,7 +1237,9 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
           fulfillmentType: true,
           shippingRateId: true, // Select the shipping rate ID
         },
-      })
+      }),
+      'regular-order-lookup',
+      { maxAttempts: 3, initialDelay: 100 }
     );
 
     if (!order) {
@@ -1309,8 +1327,8 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
     console.log(`💾 Updating order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`);
 
     try {
-      await withRetry(() =>
-        prisma.order.update({
+      await webhookRetryWrapper(() =>
+        webhookPrisma.order.update({
           where: { id: order.id },
           data: {
             paymentStatus: updatedPaymentStatus,
@@ -1318,7 +1336,9 @@ async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void
             rawData: data.object as unknown as Prisma.InputJsonValue, // Append or replace raw data
             updatedAt: new Date(),
           },
-        })
+        }),
+        'order-payment-update',
+        { maxAttempts: 3, initialDelay: 100 }
       );
       
       console.log(
@@ -1731,21 +1751,26 @@ async function getOrderTracking(orderId: string) {
  * @returns A NextResponse indicating successful receipt or an error.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  console.log('🔔 Received Square webhook request');
+  let connectionClosed = false;
   
   try {
-    // Step 1: Read body once at the start
+    console.log('🔔 Received Square webhook request');
+    
+    // Step 1: Ensure webhook database connection
+    await ensureWebhookConnection();
+    
+    // Step 2: Read body once at the start
     const bodyText = await request.text();
     console.log('📄 Successfully read body - length:', bodyText?.length || 0);
     
-    // Step 2: Quick validation (under 500ms)
+    // Step 3: Quick validation (under 500ms)
     const isValid = await quickValidation(bodyText, request.headers);
     if (!isValid) {
       console.warn('⚠️ Invalid webhook signature');
       return NextResponse.json({ error: 'Invalid' }, { status: 400 });
     }
     
-    // Step 3: Parse payload
+    // Step 4: Parse payload
     let payload;
     try {
       payload = JSON.parse(bodyText);
@@ -1754,16 +1779,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
     
-    // Step 4: Store in queue for processing (fast database insert)
+    // Step 5: Store in queue for processing (fast database insert)
     await storeWebhookInQueue(payload);
     
-    // Step 5: Return immediate acknowledgment (target: <1 second total)
+    // Step 6: Return immediate acknowledgment (target: <1 second total)
     console.log('✅ Webhook queued successfully:', payload.type, payload.event_id);
     return NextResponse.json({ received: true }, { status: 200 });
+    
   } catch (error) {
     console.error('❌ Webhook processing failed:', error);
+    
+    // Capture error for monitoring
+    await errorMonitor.captureWebhookError(
+      error,
+      'webhook-route-handler',
+      { path: request.url },
+      request.headers.get('x-square-event-id') || undefined
+    );
+    
     // Always return 200 to prevent Square retries
-    return NextResponse.json({ received: true }, { status: 200 });
+    return NextResponse.json({ received: true, error: true }, { status: 200 });
+    
+  } finally {
+    // Clean up connection if not already closed
+    if (!connectionClosed && webhookPrisma) {
+      try {
+        await disconnectWebhook();
+        connectionClosed = true;
+      } catch (disconnectError) {
+        console.error('Error disconnecting webhook database:', disconnectError);
+      }
+    }
   }
 }
 

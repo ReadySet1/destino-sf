@@ -4,9 +4,15 @@ import { z } from 'zod';
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
+    DIRECT_DATABASE_URL: z.string().url().optional(),
     SQUARE_ACCESS_TOKEN: z.string(),
     SQUARE_WEBHOOK_SIGNATURE_KEY: z.string(),
     SQUARE_WEBHOOK_SECRET: z.string(),
+    // Webhook-specific settings
+    WEBHOOK_MAX_CONNECTIONS: z.string().transform(Number).default('5'),
+    WEBHOOK_CONNECTION_TIMEOUT: z.string().transform(Number).default('10000'),
+    WEBHOOK_QUERY_TIMEOUT: z.string().transform(Number).default('5000'),
+    WEBHOOK_RETRY_ATTEMPTS: z.string().transform(Number).default('3'),
     // Resend Email Configuration
     RESEND_API_KEY: z.string(),
     FROM_EMAIL: z.string().email(),
@@ -50,9 +56,15 @@ export const env = createEnv({
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
     SQUARE_ACCESS_TOKEN: process.env.SQUARE_ACCESS_TOKEN,
     SQUARE_WEBHOOK_SIGNATURE_KEY: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
     SQUARE_WEBHOOK_SECRET: process.env.SQUARE_WEBHOOK_SECRET,
+    // Webhook-specific settings
+    WEBHOOK_MAX_CONNECTIONS: process.env.WEBHOOK_MAX_CONNECTIONS,
+    WEBHOOK_CONNECTION_TIMEOUT: process.env.WEBHOOK_CONNECTION_TIMEOUT,
+    WEBHOOK_QUERY_TIMEOUT: process.env.WEBHOOK_QUERY_TIMEOUT,
+    WEBHOOK_RETRY_ATTEMPTS: process.env.WEBHOOK_RETRY_ATTEMPTS,
     // Resend Email Configuration
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
