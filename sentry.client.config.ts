@@ -75,6 +75,10 @@ Sentry.init({
     // Abort controller errors (user navigation)
     'AbortError: The operation was aborted',
     'AbortError: signal is aborted without reason',
+    
+    // Timeout errors from database and API operations
+    /timeout after \d+ms$/i,
+    'TimeoutError',
 
     // Network errors that shouldn't be tracked
     'NetworkError when attempting to fetch resource',

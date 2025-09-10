@@ -32,7 +32,9 @@ class OptimizedPrismaClient {
     
     // Vercel-specific optimizations
     if (process.env.VERCEL) {
-      console.log('🚀 Configuring database for Vercel environment');
+      if (process.env.DB_DEBUG === 'true') {
+        console.log('🚀 Configuring database for Vercel environment');
+      }
       
       url.searchParams.set('pgbouncer', 'true');
       url.searchParams.set('prepared_statements', 'false');
@@ -44,13 +46,17 @@ class OptimizedPrismaClient {
         url.searchParams.delete('connection_limit');
         url.searchParams.set('pool_timeout', '60'); // 60 second timeout for webhook processing
         url.searchParams.set('statement_timeout', '30000'); // 30 second query timeout
-        console.log('🔧 Supabase pooler detected: Using pooler-optimized settings');
+        if (process.env.DB_DEBUG === 'true') {
+          console.log('🔧 Supabase pooler detected: Using pooler-optimized settings');
+        }
       } else {
         // For non-Supabase databases, use modest connection limits
         url.searchParams.set('connection_limit', '3'); // Allow a few concurrent connections
         url.searchParams.set('pool_timeout', '30'); // 30 second timeout
         url.searchParams.set('statement_timeout', '15000'); // 15 second query timeout
-        console.log('🔧 Non-Supabase database: Using connection-limited settings');
+        if (process.env.DB_DEBUG === 'true') {
+          console.log('🔧 Non-Supabase database: Using connection-limited settings');
+        }
       }
     }
     

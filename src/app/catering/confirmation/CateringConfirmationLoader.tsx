@@ -132,11 +132,18 @@ export default function CateringConfirmationLoader({
         logger.info(`[CATERING] Successfully loaded order with ${data.order.items.length} items`);
         
       } catch (fetchError) {
-        logger.error(`[CATERING] Error fetching catering order ${orderId}:`, fetchError);
-        
+        // Handle specific error types without excessive logging
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          if (process.env.NODE_ENV !== 'production') {
+            logger.debug(`[CATERING] Request timed out for order: ${orderId}`);
+          }
           setError('Request timed out. Please refresh the page to try again.');
         } else {
+          logger.error(`[CATERING] Error fetching catering order ${orderId}:`, {
+            message: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+            // Only include full error object in development
+            ...(process.env.NODE_ENV !== 'production' && { fullError: fetchError }),
+          });
           setError('Failed to load order data. Please try again.');
         }
         setActualStatus('error');

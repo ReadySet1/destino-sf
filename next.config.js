@@ -26,8 +26,6 @@ const nextConfig = {
   output: 'standalone',
   // Experimental features
   experimental: {
-    // Optimize bundle analysis (updated for Next.js 15)
-    bundlePagesRouterDependencies: false,
     // Enable experimental features for better performance
     optimizePackageImports: ['lucide-react', '@supabase/ssr'],
   },

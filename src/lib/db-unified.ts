@@ -26,8 +26,11 @@ function buildDatabaseUrl(): string {
     const isProduction = process.env.NODE_ENV === 'production';
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
     
-    console.log(`🔗 Building database URL for ${process.env.NODE_ENV} environment`);
-    console.log(`🔗 Supabase pooler: ${isSupabasePooler}`);
+    // Only log database URL building in verbose mode or if explicitly enabled
+    if (process.env.DB_DEBUG === 'true') {
+      console.log(`🔗 Building database URL for ${process.env.NODE_ENV} environment`);
+      console.log(`🔗 Supabase pooler: ${isSupabasePooler}`);
+    }
     
     if (isSupabasePooler) {
       // Supabase pooler-specific optimizations
@@ -43,7 +46,9 @@ function buildDatabaseUrl(): string {
         url.searchParams.set('idle_in_transaction_session_timeout', '45000');
         url.searchParams.set('socket_timeout', '90'); // 90 seconds socket timeout
         
-        console.log('🚀 Production Supabase pooler: 240s pool timeout, 45s statement timeout, 90s socket timeout');
+        if (process.env.DB_DEBUG === 'true') {
+          console.log('🚀 Production Supabase pooler: 240s pool timeout, 45s statement timeout, 90s socket timeout');
+        }
       } else {
         url.searchParams.set('pool_timeout', '120');
         url.searchParams.set('connection_timeout', '15');
@@ -51,7 +56,9 @@ function buildDatabaseUrl(): string {
         url.searchParams.set('idle_in_transaction_session_timeout', '60000');
         url.searchParams.set('socket_timeout', '60');
         
-        console.log('🔧 Development Supabase pooler: 120s pool timeout, 60s statement timeout');
+        if (process.env.DB_DEBUG === 'true') {
+          console.log('🔧 Development Supabase pooler: 120s pool timeout, 60s statement timeout');
+        }
       }
       
       // Remove connection_limit to let Supabase handle pooling
@@ -105,13 +112,19 @@ async function createPrismaClient(): Promise<PrismaClient> {
 
   // CRITICAL: Explicitly connect the client to start the engine
   try {
-    console.log('🔌 Connecting Prisma client...');
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('🔌 Connecting Prisma client...');
+    }
     await client.$connect();
-    console.log('✅ Prisma client connected successfully');
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('✅ Prisma client connected successfully');
+    }
     
     // Verify connection with a simple query
     await client.$queryRaw`SELECT 1 as connection_test`;
-    console.log('✅ Prisma connection verified');
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('✅ Prisma connection verified');
+    }
   } catch (error) {
     console.error('❌ Failed to connect Prisma client:', error);
     throw error;
@@ -141,7 +154,9 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   }
 
   if (prismaClient && !shouldRegenerateClient()) {
-    console.log('♻️ Reusing existing Prisma client');
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('♻️ Reusing existing Prisma client');
+    }
     return prismaClient;
   }
 
@@ -164,7 +179,9 @@ async function initializePrismaClient(): Promise<PrismaClient> {
       globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
       prismaClient = client;
       
-      console.log('✅ Unified Prisma client initialized successfully');
+      if (process.env.DB_DEBUG === 'true') {
+        console.log('✅ Unified Prisma client initialized successfully');
+      }
       return client;
     } finally {
       isInitializing = false;
@@ -181,7 +198,9 @@ if (shouldRegenerateClient()) {
   });
 } else if (globalForPrisma.prisma) {
   prismaClient = globalForPrisma.prisma;
-  console.log('♻️ Using existing global Prisma client');
+  if (process.env.DB_DEBUG === 'true') {
+    console.log('♻️ Using existing global Prisma client');
+  }
 }
 
 /**
@@ -327,7 +346,7 @@ export async function withRetry<T>(
       const result = await operation();
       
       // Log successful recoveries
-      if (attempt > 1) {
+      if (attempt > 1 && process.env.DB_DEBUG === 'true') {
         console.log(`✅ ${operationName} succeeded on attempt ${attempt}`);
       }
       
@@ -336,7 +355,9 @@ export async function withRetry<T>(
       lastError = error as Error;
       
       if (isConnectionError(lastError) && attempt < maxRetries) {
-        console.warn(`${operationName} failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
+        if (process.env.DB_DEBUG === 'true') {
+          console.warn(`${operationName} failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
+        }
         
         // For connection errors, force client reinitialization
         try {
@@ -344,7 +365,9 @@ export async function withRetry<T>(
           globalForPrisma.prisma = undefined;
           initPromise = null;
         } catch (cleanupError) {
-          console.warn('Error during client cleanup:', cleanupError);
+          if (process.env.DB_DEBUG === 'true') {
+            console.warn('Error during client cleanup:', cleanupError);
+          }
         }
         
         // Progressive backoff with jitter
@@ -394,9 +417,13 @@ export async function withWebhookRetry<T>(
 ): Promise<T> {
   return withRetry(
     async () => {
-      // Add timeout to the operation
+      // Add timeout to the operation with proper error handling
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error(`${operationName} timeout after ${timeoutMs}ms`)), timeoutMs);
+        setTimeout(() => {
+          const error = new Error(`${operationName} timeout after ${timeoutMs}ms`);
+          error.name = 'TimeoutError';
+          reject(error);
+        }, timeoutMs);
       });
       
       return await Promise.race([operation(), timeoutPromise]);
