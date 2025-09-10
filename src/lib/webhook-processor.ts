@@ -41,7 +41,13 @@ export class WebhookProcessor {
   
   private async getNextWebhook() {
     return withConnection(async (prisma) => {
-      return await webhookQueries.getNextWebhook();
+      return await prisma.webhookQueue.findFirst({
+        where: {
+          status: 'PENDING',
+          attempts: { lt: 5 },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
     });
   }
   
@@ -51,7 +57,14 @@ export class WebhookProcessor {
     try {
       // Mark as processing
       await withConnection(async (prisma) => {
-        return await webhookQueries.updateWebhookStatus(webhook.id, 'PROCESSING');
+        return await prisma.webhookQueue.update({
+          where: { id: webhook.id },
+          data: { 
+            status: 'PROCESSING',
+            lastAttemptAt: new Date(),
+            attempts: { increment: 1 }
+          }
+        });
       });
       
       // Process with timeout
@@ -59,7 +72,14 @@ export class WebhookProcessor {
       
       // Mark as completed
       await withConnection(async (prisma) => {
-        return await webhookQueries.updateWebhookStatus(webhook.id, 'COMPLETED');
+        return await prisma.webhookQueue.update({
+          where: { id: webhook.id },
+          data: { 
+            status: 'COMPLETED',
+            lastAttemptAt: new Date(),
+            processedAt: new Date()
+          }
+        });
       });
       
       console.log(`✅ Webhook processed successfully: ${webhook.eventType} (${webhook.eventId})`);
@@ -70,7 +90,15 @@ export class WebhookProcessor {
       // Mark as failed or pending for retry
       const status = webhook.attempts >= 4 ? 'FAILED' : 'PENDING';
       await withConnection(async (prisma) => {
-        return await webhookQueries.updateWebhookStatus(webhook.id, status, errorMessage);
+        return await prisma.webhookQueue.update({
+          where: { id: webhook.id },
+          data: { 
+            status,
+            lastAttemptAt: new Date(),
+            attempts: { increment: 1 },
+            errorMessage
+          }
+        });
       });
     } finally {
       this.activeProcessing--;

@@ -203,8 +203,13 @@ async function storeWebhookInQueue(payload: any): Promise<void> {
   try {
     await webhookRetryWrapper(
       async () => {
-        return webhookPrisma.webhookQueue.create({
-          data: {
+        return webhookPrisma.webhookQueue.upsert({
+          where: { eventId: payload.event_id },
+          update: {
+            payload: payload,
+            status: 'PENDING',
+          },
+          create: {
             eventId: payload.event_id,
             eventType: payload.type,
             payload: payload,

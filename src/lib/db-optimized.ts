@@ -74,7 +74,11 @@ class OptimizedPrismaClient {
 }
 
 export const prismaOptimized = OptimizedPrismaClient.getInstance();
-export const withConnection = OptimizedPrismaClient.withConnection;
+export const withConnection = async <T>(
+  operation: (prisma: PrismaClient) => Promise<T>
+): Promise<T> => {
+  return OptimizedPrismaClient.withConnection(operation);
+};
 
 /**
  * Optimized queries for webhook processing
@@ -125,13 +129,18 @@ export const webhookQueries = {
 
   // Webhook queue operations
   storeWebhookInQueue: (eventId: string, eventType: string, payload: any) =>
-    prismaOptimized.webhookQueue.create({
-      data: {
+    prismaOptimized.webhookQueue.upsert({
+      where: { eventId },
+      update: {
+        payload,
+        status: 'PENDING',
+      },
+      create: {
         eventId,
         eventType,
         payload,
         status: 'PENDING',
-        createdAt: new Date(),
+        attempts: 0,
       }
     }),
 
