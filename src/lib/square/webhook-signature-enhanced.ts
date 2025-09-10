@@ -118,9 +118,8 @@ export async function quickSignatureValidation(
     const webhookSecret = getWebhookSecret(request.headers);
     if (!webhookSecret) return false;
     
-    // Calculate according to Square's documentation: HMAC(secret, url + body)
-    const notificationUrl = `https://${request.headers.get('host')}${request.headers.get('x-matched-path') || '/api/webhooks/square'}`;
-    const stringToSign = notificationUrl + body;
+    // Calculate according to Square's documentation: HMAC(secret, body)
+    const stringToSign = body;
     const signatureV2 = request.headers.get('x-square-hmacsha256-signature');
     const algorithm = signatureV2 ? 'sha256' : 'sha1';
     
@@ -190,10 +189,9 @@ export async function debugWebhookSignature(
     details.secretUsed = isSandbox ? 'sandbox' : 'production';
     details.secretPreview = webhookSecret.substring(0, 4) + '...';
     
-    // Calculate signature according to Square's documentation
-    // Square requires: HMAC(secret, notification_url + body)
-    const notificationUrl = `https://${request.headers.get('host')}${request.headers.get('x-matched-path') || '/api/webhooks/square'}`;
-    const stringToSign = notificationUrl + body;
+    // Calculate signature according to Square's documentation  
+    // Square requires: HMAC(secret, body) - NOT url + body
+    const stringToSign = body;
     
     // Use different algorithms based on header type
     const algorithm = signatureV2 ? 'sha256' : 'sha1';
@@ -209,16 +207,13 @@ export async function debugWebhookSignature(
     // Add detailed debugging for HMAC calculation
     details.bodyAsBuffer = Buffer.from(body, 'utf8').toString('hex').substring(0, 200) + '...';
     details.secretAsBuffer = Buffer.from(webhookSecret, 'utf8').toString('hex');
-    details.notificationUrl = notificationUrl;
     details.stringToSign = stringToSign.substring(0, 200) + '...';
     details.hmacCalculation = {
       algorithm: algorithm,
       secretLength: webhookSecret.length,
       bodyLength: body.length,
-      urlLength: notificationUrl.length,
       totalLength: stringToSign.length,
       bodyPreview: body.substring(0, 100),
-      urlUsed: notificationUrl,
       stringToSignPreview: stringToSign.substring(0, 150),
       expectedResult: expectedSignature,
       receivedSignature: signature,
