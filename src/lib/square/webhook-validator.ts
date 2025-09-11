@@ -273,10 +273,21 @@ export async function validateWebhookSignature(
       notificationUrl,
       bodyLength: body.length,
       algorithm,
-      environment
+      environment,
+      secretLength: webhookSecret.length,
+      secretPrefix: webhookSecret.substring(0, 8) + '...'
     });
     
     const expectedSignature = calculateSignature(notificationUrl, body, webhookSecret, algorithm);
+    
+    console.log('🔍 Signature comparison debug:', {
+      receivedSignature: signature,
+      expectedSignature: expectedSignature,
+      combined: notificationUrl + body,
+      combinedLength: (notificationUrl + body).length,
+      bodyPreview: body.substring(0, 100) + '...',
+      notificationUrl: notificationUrl
+    });
     
     // 7. Use constant-time comparison to prevent timing attacks
     let isValid: boolean;
