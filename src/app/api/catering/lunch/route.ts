@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
-;
 import { logger } from '@/utils/logger';
 import { mapSquareCategoryToCateringCategory } from '@/utils/catering-optimized';
+import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
 export const dynamic = 'force-dynamic'; // Ensure admin ordering changes are reflected immediately
 
 export async function GET(request: NextRequest) {
-  const cacheKey = 'catering-lunch-products';
-  const startTime = Date.now();
-  
-  try {
-    logger.info('🥪 [CACHE-OPT] Fetching lunch products from database...');
-    logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
+  logger.info('🥪 [CACHE-OPT] Fetching lunch products from database...');
+  logger.info('🚀 [CACHE-OPT] Request for catering-lunch-products started');
 
-    // Optimized query: Get category IDs first to avoid JOIN in main query with connection management
-    const categoryIds = await withRetry(() => prisma.category.findMany({
+  return await safeCateringApiOperation(
+    () => getLunchProducts(),
+    [], // Fallback to empty array
+    'lunch-products'
+  );
+}
+
+async function getLunchProducts() {
+  const startTime = Date.now();
+  const cacheKey = 'catering-lunch-products';
+
+  // Optimized query: Get category IDs first to avoid JOIN in main query with connection management
+  const categoryIds = await withRetry(() => prisma.category.findMany({
       where: {
         name: {
           in: [
@@ -109,28 +116,5 @@ export async function GET(request: NextRequest) {
     const processingTime = Date.now() - startTime;
     logger.info(`⚡ [CACHE-OPT] ${cacheKey} processed in ${processingTime}ms`);
 
-    return NextResponse.json({
-      success: true,
-      items: transformedItems,
-      count: products.length
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'X-Cache-Source': 'catering-lunch-api',
-        'X-Data-Timestamp': new Date().toISOString(),
-      },
-    });
-
-  } catch (error) {
-    logger.error('❌ Error fetching lunch products:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch lunch products',
-        items: [],
-        count: 0
-      },
-      { status: 500 }
-    );
-  }
+  return transformedItems;
 }

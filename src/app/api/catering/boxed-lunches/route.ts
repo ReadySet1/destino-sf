@@ -3,36 +3,48 @@ import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 import { 
   BoxedLunchEntree, 
-  BoxedLunchTierModel, 
   BoxedLunchTierWithEntrees 
 } from '@/types/catering';
+import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 export const revalidate = 0; // Disable caching for real-time data
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const mode = searchParams.get('mode'); // 'legacy' for old items, 'build-your-own' for new feature
+  const { searchParams } = new URL(request.url);
+  const mode = searchParams.get('mode'); // 'legacy' for old items, 'build-your-own' for new feature
 
-    logger.info(`📦 Fetching boxed lunch data (mode: ${mode || 'legacy'})...`);
+  logger.info(`📦 Fetching boxed lunch data (mode: ${mode || 'legacy'})...`);
 
-    if (mode === 'build-your-own') {
-      // New Build Your Own Box functionality
-      return await getBuildYourOwnBoxData();
-    } else {
-      // Legacy boxed lunch items
-      return await getLegacyBoxedLunchItems();
-    }
-  } catch (error) {
-    logger.error('❌ Failed to fetch boxed lunch data:', error);
-    
-    return NextResponse.json(
-      {
+  if (mode === 'build-your-own') {
+    // Special handling for build-your-own mode to return expected format
+    const fallbackData = {
+      tiers: [],
+      entrees: [],
+      mode: 'build-your-own'
+    };
+
+    try {
+      const result = await getBuildYourOwnBoxData();
+      return NextResponse.json({
+        success: true,
+        ...result // This spreads tiers, entrees, and mode
+      });
+    } catch (error) {
+      logger.error('❌ Failed to fetch build-your-own box data:', error);
+      return NextResponse.json({
         success: false,
-        error: 'Failed to fetch boxed lunch data',
-        items: []
-      },
-      { status: 500 }
+        error: 'Failed to load build-your-own options',
+        ...fallbackData
+      }, { status: 500 });
+    }
+  } else {
+    // Fallback data for legacy boxed lunch items when database is unavailable
+    const legacyFallbackData: any[] = [];
+    
+    return await safeCateringApiOperation(
+      () => getLegacyBoxedLunchItems(),
+      legacyFallbackData,
+      'boxed-lunch-legacy'
     );
   }
 }
@@ -124,25 +136,22 @@ async function getLegacyBoxedLunchItems() {
     };
   });
 
-  return NextResponse.json({
-    success: true,
-    items: transformedItems
-  });
+  return transformedItems;
 }
 
 async function getBuildYourOwnBoxData() {
   // Fetch both tiers and entrees in parallel with connection management
   const [tiers, entreeProducts] = await Promise.all([
-    // Get tier configurations from the new table
+    // Get tier configurations using Prisma model instead of raw SQL
     withRetry(() =>
-      prisma.$queryRaw<BoxedLunchTierModel[]>`
-        SELECT id, tier_number as "tierNumber", name, price_cents as "priceCents", 
-               protein_amount as "proteinAmount", sides, active, created_at as "createdAt", 
-               updated_at as "updatedAt"
-        FROM boxed_lunch_tiers 
-        WHERE active = true 
-        ORDER BY tier_number
-      `,
+      prisma.boxedLunchTier.findMany({
+        where: {
+          active: true
+        },
+        orderBy: {
+          tierNumber: 'asc'
+        }
+      }),
       3,
       'boxed-lunch-tiers'
     ),
@@ -203,14 +212,13 @@ async function getBuildYourOwnBoxData() {
     name: tier.name,
     price: tier.priceCents / 100, // Convert cents to dollars
     proteinAmount: tier.proteinAmount || '',
-    sides: Array.isArray(tier.sides) ? tier.sides : [],
+    sides: Array.isArray(tier.sides) ? tier.sides as string[] : [],
     availableEntrees: entrees // All entrees available for all tiers
   }));
 
-  return NextResponse.json({
-    success: true,
+  return {
     tiers: tiersWithEntrees,
     entrees: entrees,
     mode: 'build-your-own'
-  });
+  };
 }

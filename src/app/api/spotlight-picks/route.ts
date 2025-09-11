@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 // GET: Fetch active spotlight picks for public display
 export async function GET(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getHealthStatus, prisma, withRetry } from '@/lib/db-unified';
 import type { ConnectionHealth } from '@/types/database';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 export async function GET(request: NextRequest) {
   try {

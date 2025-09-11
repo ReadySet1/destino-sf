@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma as db, withRetry, ensureConnection } from '@/lib/db-unified';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import {
   type CateringPackage,
   CateringPackageType,
@@ -32,35 +33,103 @@ import { isStoreOpen } from '@/lib/store-settings';
 import { env } from '@/env'; // Import the validated environment configuration
 
 /**
- * Fetches all active catering packages using Prisma
+ * Fetches all active catering packages using Prisma with build-time safety
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
-  return withRetry(async () => {
-    try {
-      console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
+  // Return empty array during build time
+  if (isBuildTime()) {
+    console.log('🔧 Build-time detected: Returning empty catering packages array');
+    return [];
+  }
 
-      const packages = await db.cateringPackage.findMany({
-        where: {
-          isActive: true,
-        },
-        orderBy: {
-          featuredOrder: 'asc',
-        },
-      });
+  return safeBuildTimeOperation(
+    async () => {
+      return withRetry(async () => {
+        console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
 
-      console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
+        const packages = await db.cateringPackage.findMany({
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            featuredOrder: 'asc',
+          },
+        });
 
-      return (
-        (packages?.map((pkg: any) => ({
-          ...pkg,
-          pricePerPerson: Number(pkg.pricePerPerson),
-        })) as CateringPackage[]) || []
-      );
-    } catch (error) {
-      console.error('❌ [CATERING] Error fetching catering packages:', error);
-      return [];
-    }
-  }, 3, 'getCateringPackages');
+        console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
+
+        return (
+          (packages?.map((pkg: any) => ({
+            ...pkg,
+            pricePerPerson: Number(pkg.pricePerPerson),
+          })) as CateringPackage[]) || []
+        );
+      }, 3, 'getCateringPackages');
+    },
+    [], // Fallback to empty array
+    'getCateringPackages'
+  );
+}
+
+/**
+ * Fetches all catering items for a-la-carte ordering with build-time safety
+ */
+export async function getCateringItems(): Promise<any[]> {
+  // Return empty array during build time
+  if (isBuildTime()) {
+    console.log('🔧 Build-time detected: Returning empty catering items array');
+    return [];
+  }
+
+  return safeBuildTimeOperation(
+    async () => {
+      return withRetry(async () => {
+        console.log('🔧 [CATERING] Fetching catering items via Prisma...');
+
+        const items = await db.product.findMany({
+          where: {
+            active: true,
+            category: {
+              name: {
+                contains: 'CATERING',
+                mode: 'insensitive'
+              }
+            }
+          },
+          include: {
+            category: true,
+            variants: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              }
+            }
+          },
+          orderBy: [
+            { ordinal: 'asc' },
+            { name: 'asc' }
+          ]
+        });
+
+        console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items`);
+
+        return items.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: Number(item.price),
+          category: item.category.name,
+          imageUrl: item.images?.[0] || null,
+          squareId: item.squareId,
+          variants: item.variants,
+          active: item.active,
+        }));
+      }, 3, 'getCateringItems');
+    },
+    [], // Fallback to empty array
+    'getCateringItems'
+  );
 }
 
 /**
@@ -1095,49 +1164,6 @@ export async function saveCateringContactInfo(data: {
   }
 }
 
-export async function getCateringItems() {
-  // Get catering items from products table instead of removed catering_items table
-  try {
-    const products = await db.product.findMany({
-      where: {
-        active: true,
-        category: {
-          name: {
-            contains: 'CATERING'
-          }
-        }
-      },
-      include: {
-        category: true
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
-
-    // Transform to CateringItem format for backward compatibility
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description || null,
-      price: parseFloat(product.price.toString()),
-      category: mapCategoryNameToCateringCategory(product.category.name),
-      isVegetarian: false, // Default values - these could be stored in product metadata
-      isVegan: false,
-      isGlutenFree: false,
-      servingSize: null,
-      imageUrl: product.images[0] || null,
-      isActive: product.active,
-      squareCategory: product.category.name,
-      squareProductId: product.squareId,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-    }));
-  } catch (error) {
-    console.error('Error getting catering items:', error);
-    return [];
-  }
-}
 
 function mapCategoryNameToCateringCategory(categoryName: string): CateringItemCategory {
   if (categoryName.includes('STARTER') || categoryName.includes('APPETIZER')) return CateringItemCategory.STARTER;

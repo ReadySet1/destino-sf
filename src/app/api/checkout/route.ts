@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { prisma, withRetry } from '@/lib/db-unified';
 ;
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {

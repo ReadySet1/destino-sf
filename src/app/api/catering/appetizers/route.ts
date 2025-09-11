@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
+import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
 export const dynamic = 'force-dynamic'; // Ensure admin ordering changes are reflected immediately
 
 export async function GET(request: NextRequest) {
-  const cacheKey = 'catering-appetizers-products';
+  logger.info('🍴 [CACHE-OPT] Fetching appetizer products, share platters and desserts from database...');
+  logger.info('🚀 [CACHE-OPT] Request for catering-appetizers-products started');
+
+  return await safeCateringApiOperation(
+    () => getAppetizerProducts(),
+    [], // Fallback to empty array
+    'appetizer-products'
+  );
+}
+
+async function getAppetizerProducts() {
   const startTime = Date.now();
+  const cacheKey = 'catering-appetizers-products';
   
-  try {
-    logger.info('🍴 [CACHE-OPT] Fetching appetizer products, share platters and desserts from database...');
-    logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
-    
-    // Fetch appetizer products, share platter products AND dessert products from the products table
-    const appetizers = await withRetry(async () => {
+  // Fetch appetizer products, share platter products AND dessert products from the products table
+  const appetizers = await withRetry(async () => {
       return await prisma.product.findMany({
         where: {
           active: true,
@@ -88,29 +96,5 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      items: transformedAppetizers,
-      count: transformedAppetizers.length,
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'X-Cache-Source': 'catering-appetizers-api',
-        'X-Data-Timestamp': new Date().toISOString(),
-      },
-    });
-
-  } catch (error) {
-    logger.error('❌ Failed to fetch appetizer products:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch appetizer products',
-        items: [],
-        count: 0
-      },
-      { status: 500 }
-    );
-  }
+  return transformedAppetizers;
 }

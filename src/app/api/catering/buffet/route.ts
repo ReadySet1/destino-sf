@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
+import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 export const revalidate = 3600; // Cache for 1 hour (Phase 4: Data Optimization)
 export const dynamic = 'force-dynamic'; // Ensure admin ordering changes are reflected immediately
 
 export async function GET(request: NextRequest) {
-  const cacheKey = 'catering-buffet-products';
+  logger.info('🍽️ [CACHE-OPT] Fetching buffet products from database...');
+  logger.info('🚀 [CACHE-OPT] Request for catering-buffet-products started');
+
+  return await safeCateringApiOperation(
+    () => getBuffetProducts(),
+    [], // Fallback to empty array
+    'buffet-products'
+  );
+}
+
+async function getBuffetProducts() {
   const startTime = Date.now();
+  const cacheKey = 'catering-buffet-products';
   
-  try {
-    logger.info('🍽️ [CACHE-OPT] Fetching buffet products from database...');
-    logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
-    
-    // Optimized query: Get category IDs first to avoid complex JOIN
-    const categoryIds = await withRetry(async () => {
+  // Optimized query: Get category IDs first to avoid complex JOIN
+  const categoryIds = await withRetry(async () => {
       return await prisma.category.findMany({
         where: {
           name: {
@@ -121,29 +129,5 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      items: transformedBuffetItems,
-      count: transformedBuffetItems.length,
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'X-Cache-Source': 'catering-buffet-api',
-        'X-Data-Timestamp': new Date().toISOString(),
-      },
-    });
-
-  } catch (error) {
-    logger.error('❌ Failed to fetch buffet products:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch buffet products',
-        items: [],
-        count: 0
-      },
-      { status: 500 }
-    );
-  }
+  return transformedBuffetItems;
 }

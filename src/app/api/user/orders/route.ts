@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import type { Prisma } from '@prisma/client';
 
 // Define the structure for regular orders
@@ -106,8 +107,15 @@ export async function GET(request: Request) {
 async function fetchUserOrders(userId: string) {
   console.log('API Route: Querying orders for User ID:', userId);
 
-  // Use a single optimized query with minimal data selection
-  const [regularOrders, cateringOrders] = await Promise.all([
+  // Handle build time or database unavailability
+  if (isBuildTime()) {
+    console.log('🔧 Build-time detected: Returning empty orders array');
+    return NextResponse.json([]);
+  }
+
+  try {
+    // Use a single optimized query with minimal data selection
+    const [regularOrders, cateringOrders] = await Promise.all([
     withRetry(() => 
       prisma.order.findMany({
         where: { userId },
@@ -208,7 +216,28 @@ async function fetchUserOrders(userId: string) {
     `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${userId}`
   );
 
-  return NextResponse.json(allOrders);
+    return NextResponse.json(allOrders);
+  } catch (error) {
+    console.error('❌ Failed to fetch user orders:', error);
+    
+    // Check if it's a connection error
+    const isConnectionError = 
+      error instanceof Error && (
+        error.message.includes("Can't reach database server") ||
+        error.message.includes('Connection terminated') ||
+        error.message.includes('timeout') ||
+        error.message.includes('ECONNRESET') ||
+        error.message.includes('ECONNREFUSED')
+      );
+
+    if (isConnectionError) {
+      console.log('🔄 Database connection failed for user orders, returning empty array');
+      return NextResponse.json([]);
+    }
+
+    // For non-connection errors, re-throw
+    throw error;
+  }
 }
 
 // Optional: Define explicit types for request and response if needed

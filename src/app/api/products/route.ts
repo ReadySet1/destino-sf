@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 type PrismaVariant = {
   id: string;
@@ -137,6 +138,16 @@ export async function GET(request: NextRequest) {
       : undefined;
 
     // Get products with optional variants with connection management
+      // Handle build time or database unavailability
+  if (isBuildTime()) {
+    console.log('🔧 Build-time detected: Using fallback data');
+    return NextResponse.json({ 
+      success: true, 
+      data: [], 
+      note: 'Fallback data used due to build-time constraints' 
+    });
+  }
+
     const products = await withRetry(() =>
       prisma.product.findMany({
         where: whereCondition,

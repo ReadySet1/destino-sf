@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,6 +51,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get orders with pagination
+      // Handle build time or database unavailability
+  if (isBuildTime()) {
+    console.log('🔧 Build-time detected: Using fallback data');
+    return NextResponse.json({ 
+      success: true, 
+      data: [], 
+      note: 'Fallback data used due to build-time constraints' 
+    });
+  }
+
     const orders = await prisma.order.findMany({
       where,
       include: {

@@ -12,6 +12,7 @@ import { Category, Product as GridProduct } from '@/types/product'; // Use a sha
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
+import { safeBuildTimeStaticParams } from '@/lib/build-time-utils';
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -344,40 +345,40 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 }
 
 /**
- * Generates static paths for category pages based on database entries.
- * Assumes the Category model has a unique 'slug' field.
+ * Generates static paths for category pages.
+ * Uses fallback data during build time when database is not accessible.
  */
 export async function generateStaticParams() {
-  try {
-    const categories = await prisma.category.findMany({
-      select: {
-        slug: true, // Select only the slug field
-      },
-      where: {
-        // Optional: Only generate pages for categories that have active products
-        // products: {
-        //   some: { active: true }
-        // }
-        slug: { not: null }, // Ensure slug is not null
-      },
-    });
+  const fallbackCategories = [
+    { slug: 'alfajores' },
+    { slug: 'empanadas' },
+    { slug: 'catering' },
+    { slug: 'beverages' },
+    { slug: 'desserts' },
+    { slug: 'appetizers' },
+  ];
 
-    // Filter out any null slugs just in case and map to the expected format
-    return categories
-      .filter(category => category.slug)
-      .map(category => ({
-        slug: category.slug!,
-      }));
-  } catch (error) {
-    console.error('Failed to generate static params for category pages:', error);
+  return await safeBuildTimeStaticParams(
+    async () => {
+      const categories = await prisma.category.findMany({
+        select: {
+          slug: true, // Select only the slug field
+        },
+        where: {
+          slug: { not: null }, // Ensure slug is not null
+        },
+      });
 
-    // Return fallback static params for essential categories
-    // This ensures build doesn't fail and core pages are generated
-    return [
-      { slug: 'alfajores' },
-      { slug: 'empanadas' },
-      { slug: 'catering' },
-      { slug: 'default' },
-    ];
-  }
+      // Filter out any null slugs and map to the expected format
+      const validCategories = categories
+        .filter(category => category.slug)
+        .map(category => ({
+          slug: category.slug!,
+        }));
+
+      return validCategories.length > 0 ? validCategories : fallbackCategories;
+    },
+    fallbackCategories,
+    'category generateStaticParams'
+  );
 }

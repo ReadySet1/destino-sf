@@ -168,6 +168,22 @@ export const BoxedLunchBuilder: React.FC<BoxedLunchBuilderProps> = ({ onClose })
 
   const { tiers, entrees } = data;
 
+  // Safety check for tiers and entrees
+  if (!Array.isArray(tiers) || !Array.isArray(entrees)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Invalid Data Format</h3>
+        <p className="text-gray-600 text-center mb-4">
+          Unable to load tiers or entrees data. Please try again.
+        </p>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

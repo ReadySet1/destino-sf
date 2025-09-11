@@ -1,5 +1,6 @@
 import { webhookPrisma } from '@/lib/db/webhook-connection';
 import { NextResponse } from 'next/server';
+import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 export async function GET() {
   try {
