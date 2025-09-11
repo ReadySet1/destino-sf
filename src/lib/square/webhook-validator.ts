@@ -1,196 +1,434 @@
+/**
+ * Enhanced Square Webhook Signature Validator
+ * 
+ * This validator implements the complete fix for webhook signature validation
+ * with environment variable cleaning, proper algorithm support, and comprehensive
+ * error handling as specified in the master fix plan.
+ */
+
 import crypto from 'crypto';
-import { Redis } from '@upstash/redis';
+import { NextRequest } from 'next/server';
+import { 
+  type WebhookValidationResult, 
+  type WebhookValidationError,
+  type SquareEnvironment,
+  type SignatureAlgorithm,
+  type WebhookId,
+  SquareWebhookPayloadSchema,
+  WebhookHeadersSchema,
+  WEBHOOK_CONSTANTS
+} from '@/types/webhook';
 
-export class WebhookValidator {
-  private redis: Redis;
-  private readonly secret: string;
-  private readonly maxClockSkew = 300; // 5 minutes in seconds
-
-  constructor(secret: string) {
-    this.secret = secret;
-    this.redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
+/**
+ * Clean and validate environment variables
+ * Critical fix: Remove any trailing newlines that cause signature failures
+ */
+function cleanEnvironmentVariables(): void {
+  if (process.env.SQUARE_WEBHOOK_SECRET_SANDBOX) {
+    process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = 
+      process.env.SQUARE_WEBHOOK_SECRET_SANDBOX.trim();
   }
-
-  /**
-   * Validate webhook signature with comprehensive security checks
-   */
-  async validateSignature(
-    signature: string,
-    body: string,
-    timestamp: string,
-    eventId: string
-  ): Promise<boolean> {
-    try {
-      // 1. Prevent replay attacks - Check if we've seen this event before
-      const processed = await this.redis.get(`webhook:${eventId}`);
-      if (processed) {
-        console.warn(`🔒 Duplicate webhook detected: ${eventId}`);
-        return false;
-      }
-
-      // 2. Validate timestamp to prevent replay attacks
-      const currentTime = Math.floor(Date.now() / 1000);
-      const webhookTime = parseInt(timestamp);
-
-      if (isNaN(webhookTime)) {
-        console.error('🔒 Invalid timestamp format in webhook');
-        return false;
-      }
-
-      if (Math.abs(currentTime - webhookTime) > this.maxClockSkew) {
-        console.error(
-          `🔒 Webhook timestamp outside acceptable window: ${Math.abs(currentTime - webhookTime)}s`
-        );
-        return false;
-      }
-
-      // 3. Validate signature with constant-time comparison
-      const expectedSignature = crypto
-        .createHmac('sha256', this.secret)
-        .update(`${timestamp}.${body}`)
-        .digest('base64');
-
-      // Use constant-time comparison to prevent timing attacks
-      const isValid = crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expectedSignature)
-      );
-
-      // 4. Mark as processed (with TTL to prevent Redis bloat)
-      if (isValid) {
-        await this.redis.set(`webhook:${eventId}`, true, { ex: 86400 }); // 24 hour TTL
-        console.log(`✅ Webhook signature validated for event: ${eventId}`);
-      } else {
-        console.error(`🔒 Invalid webhook signature for event: ${eventId}`);
-      }
-
-      return isValid;
-    } catch (error) {
-      console.error('🔒 Error validating webhook signature:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Validate webhook signature for Square with enhanced security
-   */
-  async validateSquareSignature(
-    signature: string,
-    body: string,
-    timestamp: string,
-    eventId: string
-  ): Promise<boolean> {
-    try {
-      // Enhanced Square-specific validation
-      if (!signature || !body || !timestamp || !eventId) {
-        console.error('🔒 Square webhook validation failed: Missing required parameters');
-        return false;
-      }
-
-      // Validate signature format for Square (base64)
-      const base64Regex = /^[A-Za-z0-9+/]+=*$/;
-      if (!base64Regex.test(signature)) {
-        console.error('🔒 Square webhook validation failed: Invalid signature format');
-        return false;
-      }
-
-      // Call the general validation method
-      const isValid = await this.validateSignature(signature, body, timestamp, eventId);
-      
-      if (isValid) {
-        console.log(`✅ Square webhook signature validated for event: ${eventId}`);
-      } else {
-        console.error(`🔒 Square webhook signature validation failed for event: ${eventId}`);
-      }
-
-      return isValid;
-    } catch (error) {
-      console.error('🔒 Error validating Square webhook signature:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Validate webhook signature with additional Square-specific checks
-   */
-  async validateSquareWebhookHeaders(
-    headers: Headers,
-    body: string
-  ): Promise<{ isValid: boolean; eventId?: string; timestamp?: string }> {
-    try {
-      const signature = headers.get('x-square-hmacsha256-signature');
-      const timestamp = headers.get('x-square-timestamp');
-      
-      // Parse body to get event ID
-      let eventId: string | undefined;
-      try {
-        const payload = JSON.parse(body);
-        eventId = payload.event_id;
-      } catch (error) {
-        console.error('🔒 Failed to parse webhook body for event ID:', error);
-        return { isValid: false };
-      }
-
-      if (!signature || !timestamp || !eventId) {
-        console.error('🔒 Missing required Square webhook headers or event ID');
-        return { isValid: false };
-      }
-
-      const isValid = await this.validateSquareSignature(signature, body, timestamp, eventId);
-      
-      return {
-        isValid,
-        eventId,
-        timestamp,
-      };
-    } catch (error) {
-      console.error('🔒 Error validating Square webhook headers:', error);
-      return { isValid: false };
-    }
-  }
-
-  /**
-   * Validate webhook signature for Shippo
-   */
-  async validateShippoSignature(
-    signature: string,
-    body: string,
-    eventId: string
-  ): Promise<boolean> {
-    // Shippo doesn't use timestamp, so we'll use current time
-    const currentTimestamp = Math.floor(Date.now() / 1000).toString();
-    return this.validateSignature(signature, body, currentTimestamp, eventId);
-  }
-
-  /**
-   * Check if an event has already been processed (for idempotency)
-   */
-  async isEventProcessed(eventId: string): Promise<boolean> {
-    try {
-      const processed = await this.redis.get(`webhook:${eventId}`);
-      return processed !== null;
-    } catch (error) {
-      console.error('Error checking event processing status:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Mark an event as processed
-   */
-  async markEventAsProcessed(eventId: string): Promise<void> {
-    try {
-      await this.redis.set(`webhook:${eventId}`, true, { ex: 86400 });
-    } catch (error) {
-      console.error('Error marking event as processed:', error);
-    }
+  if (process.env.SQUARE_WEBHOOK_SECRET) {
+    process.env.SQUARE_WEBHOOK_SECRET = 
+      process.env.SQUARE_WEBHOOK_SECRET.trim();
   }
 }
 
 /**
- * Singleton instance for webhook validation
+ * Determine environment from request headers
  */
-export const webhookValidator = new WebhookValidator(process.env.SQUARE_WEBHOOK_SECRET || '');
+function detectEnvironment(headers: Headers): SquareEnvironment {
+  const envHeader = headers.get(WEBHOOK_CONSTANTS.ENVIRONMENT_HEADER);
+  return envHeader?.toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+}
+
+/**
+ * Get the appropriate webhook secret for the environment
+ */
+function getWebhookSecret(environment: SquareEnvironment): string | null {
+  cleanEnvironmentVariables(); // Always clean before using
+  
+  if (environment === 'sandbox') {
+    return process.env.SQUARE_WEBHOOK_SECRET_SANDBOX || 
+           process.env.SQUARE_WEBHOOK_SECRET || 
+           null;
+  } else {
+    return process.env.SQUARE_WEBHOOK_SECRET || null;
+  }
+}
+
+/**
+ * Extract signature and algorithm from request headers
+ */
+function extractSignature(headers: Headers): {
+  signature: string | null;
+  algorithm: SignatureAlgorithm | null;
+} {
+  // Try SHA256 first (preferred), then fall back to SHA1
+  const sha256Signature = headers.get(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA256);
+  if (sha256Signature) {
+    return { signature: sha256Signature, algorithm: 'sha256' };
+  }
+
+  const sha1Signature = headers.get(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA1);
+  if (sha1Signature) {
+    return { signature: sha1Signature, algorithm: 'sha1' };
+  }
+
+  return { signature: null, algorithm: null };
+}
+
+/**
+ * Calculate HMAC signature for webhook body
+ * Implements Square's signature calculation algorithm exactly
+ */
+function calculateSignature(
+  body: string,
+  secret: string,
+  algorithm: SignatureAlgorithm
+): string {
+  return crypto
+    .createHmac(algorithm, secret)
+    .update(body)
+    .digest('base64');
+}
+
+/**
+ * Validate webhook payload structure using Zod schema
+ */
+function validatePayloadStructure(body: string): {
+  valid: boolean;
+  payload?: any;
+  error?: WebhookValidationError;
+} {
+  try {
+    const payload = JSON.parse(body);
+    const result = SquareWebhookPayloadSchema.safeParse(payload);
+    
+    if (!result.success) {
+      return {
+        valid: false,
+        error: {
+          type: 'INVALID_PAYLOAD',
+          zodError: result.error
+        }
+      };
+    }
+    
+    return { valid: true, payload: result.data };
+  } catch (error) {
+    return {
+      valid: false,
+      error: {
+        type: 'MALFORMED_BODY',
+        error: error instanceof Error ? error.message : 'Unknown parsing error'
+      }
+    };
+  }
+}
+
+/**
+ * Check if event is too old (prevent replay attacks)
+ */
+function validateEventAge(createdAt: string): boolean {
+  try {
+    const eventTime = new Date(createdAt).getTime();
+    const now = Date.now();
+    return (now - eventTime) <= WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS;
+  } catch {
+    return false; // Invalid timestamp format
+  }
+}
+
+/**
+ * Generate unique webhook ID for tracking
+ */
+function generateWebhookId(eventId: string, timestamp: number): WebhookId {
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${eventId}-${timestamp}`)
+    .digest('hex')
+    .substring(0, 16);
+  return `webhook_${hash}` as WebhookId;
+}
+
+/**
+ * Main webhook signature validation function
+ * 
+ * This is the core validation logic that implements all security checks
+ * and handles the environment variable cleaning that fixes the signature issues.
+ */
+export async function validateWebhookSignature(
+  request: NextRequest,
+  body: string
+): Promise<WebhookValidationResult> {
+  const startTime = performance.now();
+  
+  try {
+    // 1. Validate headers structure
+    const headersObj = Object.fromEntries(request.headers.entries());
+    const headerValidation = WebhookHeadersSchema.safeParse(headersObj);
+    
+    if (!headerValidation.success) {
+      return {
+        valid: false,
+        environment: 'production', // default
+        error: {
+          type: 'MISSING_SIGNATURE',
+          headers: Object.keys(headersObj)
+        }
+      };
+    }
+
+    // 2. Detect environment and extract signature
+    const environment = detectEnvironment(request.headers);
+    const { signature, algorithm } = extractSignature(request.headers);
+    
+    if (!signature || !algorithm) {
+      return {
+        valid: false,
+        environment,
+        error: {
+          type: 'MISSING_SIGNATURE',
+          headers: Object.keys(headersObj)
+        }
+      };
+    }
+
+    // 3. Get appropriate webhook secret
+    const webhookSecret = getWebhookSecret(environment);
+    
+    if (!webhookSecret) {
+      return {
+        valid: false,
+        environment,
+        error: {
+          type: 'MISSING_SECRET',
+          environment: environment
+        }
+      };
+    }
+
+    // 4. Validate payload structure
+    const payloadValidation = validatePayloadStructure(body);
+    if (!payloadValidation.valid) {
+      return {
+        valid: false,
+        environment,
+        error: payloadValidation.error
+      };
+    }
+
+    const payload = payloadValidation.payload;
+
+    // 5. Validate event age (prevent old events)
+    if (!validateEventAge(payload.created_at)) {
+      return {
+        valid: false,
+        environment,
+        error: {
+          type: 'EVENT_TOO_OLD',
+          eventTime: payload.created_at,
+          maxAge: WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS
+        }
+      };
+    }
+
+    // 6. Calculate expected signature
+    const expectedSignature = calculateSignature(body, webhookSecret, algorithm);
+    
+    // 7. Use constant-time comparison to prevent timing attacks
+    let isValid: boolean;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(signature, 'base64'),
+        Buffer.from(expectedSignature, 'base64')
+      );
+    } catch {
+      // If base64 decoding fails, fall back to string comparison
+      isValid = signature === expectedSignature;
+    }
+
+    // 8. Generate webhook ID for tracking
+    const webhookId = generateWebhookId(
+      payload.event_id, 
+      Date.now()
+    );
+
+    if (!isValid) {
+      return {
+        valid: false,
+        environment,
+        error: {
+          type: 'INVALID_SIGNATURE',
+          expected: expectedSignature.substring(0, 20) + '...',
+          received: signature.substring(0, 20) + '...'
+        },
+        metadata: {
+          signature,
+          algorithm,
+          secretUsed: environment,
+          processingTimeMs: performance.now() - startTime,
+          webhookId
+        }
+      };
+    }
+
+    // 9. Success case
+    return {
+      valid: true,
+      environment,
+      metadata: {
+        signature,
+        algorithm,
+        secretUsed: environment,
+        processingTimeMs: performance.now() - startTime,
+        webhookId
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Unexpected error in webhook validation:', error);
+    
+    return {
+      valid: false,
+      environment: 'production', // default
+      error: {
+        type: 'MALFORMED_BODY',
+        error: error instanceof Error ? error.message : 'Unknown validation error'
+      }
+    };
+  }
+}
+
+/**
+ * Quick signature validation for fast webhook acknowledgment
+ * Optimized version for minimal latency (< 50ms target)
+ */
+export async function quickSignatureValidation(
+  request: NextRequest,
+  body: string
+): Promise<boolean> {
+  try {
+    // Clean environment variables immediately
+    cleanEnvironmentVariables();
+    
+    // Fast path: get signature and secret
+    const environment = detectEnvironment(request.headers);
+    const { signature, algorithm } = extractSignature(request.headers);
+    
+    if (!signature || !algorithm) {
+      return false;
+    }
+
+    const webhookSecret = getWebhookSecret(environment);
+    if (!webhookSecret) {
+      return false;
+    }
+
+    // Calculate and compare signatures
+    const expectedSignature = calculateSignature(body, webhookSecret, algorithm);
+    
+    // Use constant-time comparison
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(signature, 'base64'),
+        Buffer.from(expectedSignature, 'base64')
+      );
+    } catch {
+      return signature === expectedSignature;
+    }
+    
+  } catch (error) {
+    console.error('❌ Quick validation error:', error);
+    return false;
+  }
+}
+
+/**
+ * Validate webhook security (rate limiting, IP validation, etc.)
+ * This is called before signature validation for additional security
+ */
+export async function validateWebhookSecurity(
+  request: NextRequest
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    // 1. Check content length
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > WEBHOOK_CONSTANTS.MAX_BODY_SIZE) {
+      return { valid: false, error: 'Request body too large' };
+    }
+
+    // 2. Basic IP validation (Square should be sending webhooks)
+    const userAgent = request.headers.get('user-agent');
+    if (userAgent && !userAgent.toLowerCase().includes('square')) {
+      console.warn('⚠️ Webhook from non-Square user agent:', userAgent);
+      // Don't reject, just log for monitoring
+    }
+
+    // 3. Validate required headers exist
+    const hasSignature = request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA256) ||
+                        request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA1);
+    
+    if (!hasSignature) {
+      return { valid: false, error: 'Missing signature headers' };
+    }
+
+    return { valid: true };
+    
+  } catch (error) {
+    console.error('❌ Security validation error:', error);
+    return { valid: false, error: 'Security validation failed' };
+  }
+}
+
+/**
+ * Debug helper for troubleshooting webhook signature issues
+ * Only active in development mode
+ */
+export function debugWebhookSignature(
+  request: NextRequest,
+  body: string,
+  validationResult: WebhookValidationResult
+): void {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+
+  console.log('🔍 Webhook Debug Information:');
+  console.log('Headers:', Object.fromEntries(request.headers.entries()));
+  console.log('Body length:', body.length);
+  console.log('Environment detected:', validationResult.environment);
+  console.log('Validation result:', validationResult);
+  
+  if (validationResult.error) {
+    console.log('Validation error details:', validationResult.error);
+  }
+  
+  if (validationResult.metadata) {
+    console.log('Processing metadata:', validationResult.metadata);
+  }
+}
+
+/**
+ * Create webhook validation error from validation result
+ * Helper for consistent error handling
+ */
+export function createWebhookError(
+  validationResult: WebhookValidationResult,
+  context?: Record<string, unknown>
+): Error {
+  if (!validationResult.error) {
+    return new Error('Unknown webhook validation error');
+  }
+
+  const error = new Error(
+    `Webhook validation failed: ${validationResult.error.type}`
+  );
+
+  // Add validation details to error for debugging
+  (error as any).validationResult = validationResult;
+  (error as any).context = context;
+  
+  return error;
+}

@@ -727,6 +727,49 @@ model WebhookQueue {
   @@map("webhook_queue")
 }
 
+model WebhookLog {
+  id                String    @id @default(uuid()) @db.Uuid
+  webhookId         String    @unique @map("webhook_id")
+  eventType         String    @map("event_type")
+  merchantId        String?   @map("merchant_id")
+  environment       String?   @map("environment")
+  signatureValid    Boolean   @map("signature_valid")
+  validationError   Json?     @map("validation_error")
+  payload           Json
+  headers           Json
+  processingTimeMs  Int?      @map("processing_time_ms")
+  processedAt       DateTime? @map("processed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([eventType], map: "idx_webhook_logs_event_type")
+  @@index([merchantId], map: "idx_webhook_logs_merchant_id")
+  @@index([createdAt], map: "idx_webhook_logs_created_at")
+  @@index([signatureValid], map: "idx_webhook_logs_signature_valid")
+  @@index([environment], map: "idx_webhook_logs_environment")
+  @@map("webhook_logs")
+}
+
+model PaymentSyncStatus {
+  id               String    @id @default(uuid()) @db.Uuid
+  syncId           String    @unique @map("sync_id")
+  syncType         String    @map("sync_type")
+  merchantId       String?   @map("merchant_id")
+  startTime        DateTime  @map("start_time")
+  endTime          DateTime? @map("end_time")
+  paymentsFound    Int       @default(0) @map("payments_found")
+  paymentsProcessed Int      @default(0) @map("payments_processed")
+  paymentsFailed   Int       @default(0) @map("payments_failed")
+  errorDetails     Json?     @map("error_details")
+  metadata         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([createdAt], map: "idx_payment_sync_status_created_at")
+  @@index([merchantId], map: "idx_payment_sync_status_merchant_id")
+  @@index([syncType], map: "idx_payment_sync_status_sync_type")
+  @@map("payment_sync_status")
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN
