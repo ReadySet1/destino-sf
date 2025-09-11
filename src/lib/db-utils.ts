@@ -1,12 +1,21 @@
 import { prisma, withRetry } from '@/lib/db-unified';
+import { isBuildTime } from '@/lib/build-time-utils';
+import { logger } from '@/utils/logger';
 
 /**
  * Execute database operation with automatic retry and connection management
  */
 export async function withDatabaseConnection<T>(
   operation: () => Promise<T>,
-  retries: number = 3
+  retries: number = 3,
+  fallbackValue?: T
 ): Promise<T> {
+  // During build time, skip database operations if fallback is provided
+  if (isBuildTime() && fallbackValue !== undefined) {
+    logger.info('🔧 Build-time detected: Using fallback value for database operation');
+    return fallbackValue;
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const result = await withRetry(operation, 3, 'db-utils operation');
@@ -22,13 +31,13 @@ export async function withDatabaseConnection<T>(
         error.message?.includes('Connection terminated unexpectedly');
 
       if (isConnectionError && attempt < retries) {
-        console.log(`🔄 Database connection attempt ${attempt} failed, retrying...`);
+        logger.warn(`🔄 Database connection attempt ${attempt} failed, retrying...`);
 
         // Disconnect and wait before retry
         try {
           await prisma.$disconnect();
         } catch (disconnectError) {
-          console.log('Disconnect error (non-fatal):', disconnectError);
+          logger.warn('Disconnect error (non-fatal):', disconnectError);
         }
 
         // Exponential backoff: 1s, 2s, 4s
@@ -38,13 +47,19 @@ export async function withDatabaseConnection<T>(
       }
 
       // Log detailed error information
-      console.error(`Database operation failed on attempt ${attempt}:`, {
+      logger.error(`❌ Database operation failed on attempt ${attempt}:`, {
         code: error.code,
         message: error.message,
         isConnectionError,
         attempt,
         maxRetries: retries,
       });
+
+      // If we have a fallback value and this is a connection error, use it
+      if (isConnectionError && fallbackValue !== undefined) {
+        logger.warn(`🔄 Using fallback value due to database connection error`);
+        return fallbackValue;
+      }
 
       throw error;
     }

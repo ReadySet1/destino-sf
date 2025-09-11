@@ -1,4 +1,6 @@
 import { prisma, withRetry } from '@/lib/db-unified';
+import { isBuildTime } from '@/lib/build-time-utils';
+import { logger } from '@/utils/logger';
 
 /**
  * Interface for cart items used in shipping calculations
@@ -183,6 +185,12 @@ export async function calculateShippingWeight(
  * Admin function to get all shipping weight configurations
  */
 export async function getAllShippingConfigurations(): Promise<ShippingWeightConfig[]> {
+  // During build time, return default configurations to prevent database connection failures
+  if (isBuildTime()) {
+    logger.info('🔧 Build-time detected: Using default shipping configurations');
+    return Object.values(DEFAULT_WEIGHT_CONFIGS);
+  }
+
   try {
     // Use centralized Prisma client with error handling
     const dbConfigs = await withRetry(
@@ -209,9 +217,10 @@ export async function getAllShippingConfigurations(): Promise<ShippingWeightConf
       }
     }
 
+    logger.info(`✅ Loaded ${configs.length} shipping configurations (${dbConfigs.length} from DB, ${configs.length - dbConfigs.length} defaults)`);
     return configs;
   } catch (error) {
-    console.error('Error fetching shipping configurations:', error);
+    logger.error('❌ Error fetching shipping configurations:', error);
     return Object.values(DEFAULT_WEIGHT_CONFIGS);
   }
 }

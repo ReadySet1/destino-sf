@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { PrismaClient } from '@prisma/client';
 import { withRetry } from '@/lib/db-unified';
+import { isBuildTime } from '@/lib/build-time-utils';
+import { logger } from '@/utils/logger';
 
 // Create isolated Prisma client for sitemap generation to avoid prepared statement conflicts
 const createSitemapPrismaClient = () => {
@@ -104,6 +106,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // During build time or if database is unavailable, return static pages only
+  if (isBuildTime()) {
+    logger.info('🔧 Build-time detected: Using static sitemap without dynamic product pages');
+    return staticPages;
+  }
+
   // Use isolated Prisma client to avoid prepared statement conflicts during build
   let prismaClient: PrismaClient | null = null;
   
@@ -132,9 +140,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
+    logger.info(`✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`);
     return [...staticPages, ...productPages];
   } catch (error) {
-    console.error('Error generating sitemap:', error);
+    logger.error('❌ Error generating sitemap:', error);
     // Return static pages if database query fails
     return staticPages;
   } finally {
@@ -142,8 +151,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (prismaClient) {
       try {
         await prismaClient.$disconnect();
+        logger.info('✅ Sitemap Prisma client disconnected gracefully');
       } catch (disconnectError) {
-        console.warn('Error disconnecting sitemap Prisma client:', disconnectError);
+        logger.warn('⚠️ Error disconnecting sitemap Prisma client:', disconnectError);
       }
     }
   }

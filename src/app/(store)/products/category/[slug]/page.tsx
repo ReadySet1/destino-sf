@@ -12,7 +12,7 @@ import { Category, Product as GridProduct } from '@/types/product'; // Use a sha
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
-import { safeBuildTimeStaticParams } from '@/lib/build-time-utils';
+import { safeBuildTimeStaticParams, isBuildTime } from '@/lib/build-time-utils';
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -69,17 +69,54 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const { slug } = await params;
 
   try {
-    // Fetch the category from the database
-    const category = await withRetry(async () => {
-      return await prisma.category.findUnique({
-        where: { slug: slug },
-      });
-    }, 3, 'generateMetadata-category-fetch');
+    // Fetch the category from the database with build-time detection
+    let category = null;
+    
+    if (!isBuildTime()) {
+      try {
+        category = await withRetry(async () => {
+          return await prisma.category.findUnique({
+            where: { slug: slug },
+          });
+        }, 3, 'generateMetadata-category-fetch');
+      } catch (error) {
+        console.error('Error fetching category for metadata:', error);
+        // Continue with null category to use fallback logic
+      }
+    }
 
     if (!category) {
+      // Use default metadata based on slug for known categories
+      const knownCategories = {
+        alfajores: {
+          name: 'Alfajores',
+          description: CATEGORY_DESCRIPTIONS.alfajores,
+        },
+        empanadas: {
+          name: 'Empanadas', 
+          description: CATEGORY_DESCRIPTIONS.empanadas,
+        },
+        catering: {
+          name: 'Catering',
+          description: 'Professional catering services for your special events.',
+        },
+      };
+
+      const fallbackCategory = knownCategories[slug as keyof typeof knownCategories];
+      
+      if (!fallbackCategory) {
+        return generateSEO({
+          title: 'Category Not Found | Destino SF',
+          description: 'The requested category could not be found.',
+          type: 'website',
+          url: `/products/category/${slug}`,
+        });
+      }
+
+      // Use fallback data for known categories
       return generateSEO({
-        title: 'Category Not Found | Destino SF',
-        description: 'The requested category could not be found.',
+        title: `${fallbackCategory.name} | Destino SF`,
+        description: fallbackCategory.description,
         type: 'website',
         url: `/products/category/${slug}`,
       });
