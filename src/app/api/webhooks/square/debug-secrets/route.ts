@@ -13,9 +13,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const prodSecret = process.env.SQUARE_WEBHOOK_SECRET;
     const sandboxSecret = process.env.SQUARE_WEBHOOK_SECRET_SANDBOX;
     
-    // Environment detection logic (same as in webhook-validator.ts)
+    // Environment detection logic (enhanced - same as in webhook-validator.ts)
     const envHeader = request.headers.get('x-square-env') || request.headers.get('square-environment');
-    const detectedEnv = envHeader?.toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host') || '';
+    const userAgent = request.headers.get('user-agent') || '';
+    
+    const isDevelopmentHost = host.includes('development') || 
+                             host.includes('staging') || 
+                             host.includes('test') || 
+                             host.includes('dev') ||
+                             host.includes('localhost');
+    const isSandboxUserAgent = userAgent.toLowerCase().includes('sandbox');
+    
+    const detectedEnv = envHeader?.toLowerCase() === 'sandbox' ? 'sandbox' :
+                       (isDevelopmentHost || isSandboxUserAgent) ? 'sandbox' : 'production';
     
     // Build safe debug info
     const debugInfo = {
@@ -24,6 +35,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       environment_detection: {
         header_value: envHeader,
         detected_environment: detectedEnv,
+        detection_factors: {
+          explicit_header: envHeader?.toLowerCase() === 'sandbox',
+          development_host: isDevelopmentHost,
+          sandbox_user_agent: isSandboxUserAgent,
+          host_value: host,
+          user_agent_value: userAgent
+        },
         headers_checked: ['x-square-env', 'square-environment']
       },
       

@@ -35,11 +35,35 @@ function cleanEnvironmentVariables(): void {
 }
 
 /**
- * Determine environment from request headers
+ * Determine environment from request headers and hostname
+ * Enhanced logic to detect sandbox webhooks even without explicit headers
  */
 function detectEnvironment(headers: Headers): SquareEnvironment {
+  // 1. Check explicit environment header first
   const envHeader = headers.get(WEBHOOK_CONSTANTS.ENVIRONMENT_HEADER);
-  return envHeader?.toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+  if (envHeader?.toLowerCase() === 'sandbox') {
+    return 'sandbox';
+  }
+  
+  // 2. Check hostname patterns - development/staging domains typically use sandbox
+  const host = headers.get('host') || headers.get('x-forwarded-host') || '';
+  const isDevelopmentHost = host.includes('development') || 
+                           host.includes('staging') || 
+                           host.includes('test') || 
+                           host.includes('dev') ||
+                           host.includes('localhost');
+  
+  // 3. Check user agent for sandbox indicators
+  const userAgent = headers.get('user-agent') || '';
+  const isSandboxUserAgent = userAgent.toLowerCase().includes('sandbox');
+  
+  // 4. For development/staging environments, default to sandbox
+  if (isDevelopmentHost || isSandboxUserAgent) {
+    return 'sandbox';
+  }
+  
+  // 5. Default to production for other cases
+  return 'production';
 }
 
 /**
