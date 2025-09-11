@@ -79,17 +79,21 @@ function extractSignature(headers: Headers): {
 }
 
 /**
- * Calculate HMAC signature for webhook body
- * Implements Square's signature calculation algorithm exactly
+ * Calculate HMAC signature for webhook using Square's exact algorithm
+ * Square requires: HMAC-SHA256(notificationUrl + body, secret)
+ * Reference: https://developer.squareup.com/docs/webhooks/step3validate
  */
 function calculateSignature(
+  notificationUrl: string,
   body: string,
   secret: string,
   algorithm: SignatureAlgorithm
 ): string {
+  // Square's algorithm: HMAC-SHA256(notificationUrl + body, secret)
+  const combined = notificationUrl + body;
   return crypto
     .createHmac(algorithm, secret)
-    .update(body)
+    .update(combined)
     .digest('base64');
 }
 
@@ -234,8 +238,21 @@ export async function validateWebhookSignature(
       };
     }
 
-    // 6. Calculate expected signature
-    const expectedSignature = calculateSignature(body, webhookSecret, algorithm);
+    // 6. Calculate expected signature using Square's algorithm
+    // CRITICAL: Square requires notification URL + body for signature calculation
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
+    const pathname = request.nextUrl.pathname;
+    const notificationUrl = `${protocol}://${host}${pathname}`;
+    
+    console.log('🔐 Square signature calculation:', {
+      notificationUrl,
+      bodyLength: body.length,
+      algorithm,
+      environment
+    });
+    
+    const expectedSignature = calculateSignature(notificationUrl, body, webhookSecret, algorithm);
     
     // 7. Use constant-time comparison to prevent timing attacks
     let isValid: boolean;
@@ -326,8 +343,13 @@ export async function quickSignatureValidation(
       return false;
     }
 
-    // Calculate and compare signatures
-    const expectedSignature = calculateSignature(body, webhookSecret, algorithm);
+    // Calculate and compare signatures using Square's algorithm
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
+    const pathname = request.nextUrl.pathname;
+    const notificationUrl = `${protocol}://${host}${pathname}`;
+    
+    const expectedSignature = calculateSignature(notificationUrl, body, webhookSecret, algorithm);
     
     // Use constant-time comparison
     try {
