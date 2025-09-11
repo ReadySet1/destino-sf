@@ -14,31 +14,33 @@ export async function GET(request: NextRequest) {
     logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
     
     // Fetch appetizer products, share platter products AND dessert products from the products table
-    const appetizers = await prisma.product.findMany({
-      where: {
-        active: true,
-        category: {
-          name: {
-            in: ['CATERING- APPETIZERS', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS'],
-            mode: 'insensitive'
+    const appetizers = await withRetry(async () => {
+      return await prisma.product.findMany({
+        where: {
+          active: true,
+          category: {
+            name: {
+              in: ['CATERING- APPETIZERS', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS'],
+              mode: 'insensitive'
+            }
           }
-        }
-      },
-      include: {
-        category: true,
-        variants: {
-          select: {
+        },
+        include: {
+          category: true,
+          variants: {
+            select: {
             id: true,
             name: true,
             price: true,
           }
         }
       },
-      orderBy: [
-        { ordinal: 'asc' },  // Admin-controlled order first
-        { name: 'asc' }      // Alphabetical fallback
-      ]
-    });
+        orderBy: [
+          { ordinal: 'asc' },  // Admin-controlled order first
+          { name: 'asc' }      // Alphabetical fallback
+        ]
+      });
+    }, 3, 'fetchAppetizerProducts');
 
     logger.info(`✅ [CACHE-OPT] Found ${appetizers.length} appetizer, share platter and dessert products`);
     

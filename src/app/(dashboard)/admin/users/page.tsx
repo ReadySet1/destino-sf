@@ -1,4 +1,4 @@
-import { prisma, withConnectionManagement } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { UserRole as PrismaUserRole } from '@prisma/client';
@@ -112,7 +112,7 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
     }
 
     // Optimized: Fetch users with order counts using robust connection management
-    const usersFromDb = await withConnectionManagement(
+    const usersFromDb = await withRetry(
       () => prisma.profile.findMany({
         where: userWhere,
         orderBy,
@@ -134,15 +134,15 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
           },
         },
       }),
-      'Fetch users with order counts',
-      10000 // Reduced timeout since less data
+      3, // maxRetries
+      'Fetch users with order counts'
     );
 
     // Get total count for pagination
-    const totalCount = await withConnectionManagement(
+    const totalCount = await withRetry(
       () => prisma.profile.count({ where: userWhere }),
-      'Count total users',
-      5000 // Reduced timeout for count queries
+      3, // maxRetries
+      'Count total users'
     );
 
     // Transform the users to match our expected type (optimized)

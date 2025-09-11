@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ProductGrid } from '@/components/Products/ProductGrid';
 import { CategoryHeader } from '@/components/Products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
-import { prisma, withPreparedStatementHandling } from '@/lib/db'; // Import Prisma client
+import { prisma, withRetry } from '@/lib/db-unified'; // Import unified Prisma client
 import { withDatabaseConnection } from '@/lib/db-utils';
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
@@ -69,11 +69,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
   try {
     // Fetch the category from the database
-    const category = await withPreparedStatementHandling(async () => {
+    const category = await withRetry(async () => {
       return await prisma.category.findUnique({
         where: { slug: slug },
       });
-    }, 'generateMetadata-category-fetch');
+    }, 3, 'generateMetadata-category-fetch');
 
     if (!category) {
       return generateSEO({

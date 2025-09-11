@@ -208,7 +208,6 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     // Fix for S3 image optimization timeouts
-    minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Configure for better handling of slow S3 images
@@ -216,6 +215,8 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     // Handle failed images gracefully - keep optimization enabled but with better error handling
     unoptimized: false,
+    // Add timeout and quality settings for better performance
+    minimumCacheTTL: 3600, // 1 hour
   },
 };
 

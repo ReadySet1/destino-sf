@@ -3,7 +3,7 @@ import { type NextApiRequest } from 'next';
 import { logger } from '@/utils/logger';
 import { syncSquareProducts } from './sync';
 import { env } from '@/env';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db-unified';
 import { squareClient } from './client';
 
 // Map Square order state to Prisma OrderStatus

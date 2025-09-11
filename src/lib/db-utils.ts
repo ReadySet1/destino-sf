@@ -1,4 +1,4 @@
-import { prisma, executeWithConnectionManagement } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 /**
  * Execute database operation with automatic retry and connection management
@@ -9,7 +9,7 @@ export async function withDatabaseConnection<T>(
 ): Promise<T> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const result = await executeWithConnectionManagement(operation);
+      const result = await withRetry(operation, 3, 'db-utils operation');
       return result;
     } catch (error: any) {
       const isConnectionError =

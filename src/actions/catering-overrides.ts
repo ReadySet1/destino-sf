@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import { prisma as db } from '@/lib/db-unified';
 import { revalidatePath } from 'next/cache';
 
 // Stub implementations for the new schema

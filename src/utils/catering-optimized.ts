@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { prisma as db } from '@/lib/db-unified';
 import { CateringItem } from '@/types/catering';
 
 interface CateringItemWithImage extends CateringItem {

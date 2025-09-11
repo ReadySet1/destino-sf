@@ -6,9 +6,9 @@ import {
   validateWebhookSecurity,
   debugWebhookSignature 
 } from '@/lib/square/webhook-validator';
-import { logWebhook, checkDuplicateWebhook } from '@/lib/db/queries/webhooks';
+import { logWebhook } from '@/lib/db/queries/webhooks';
 import { trackMetric, sendWebhookAlert, checkAlertThresholds } from '@/lib/monitoring/webhook-metrics';
-import { queueWebhook } from '@/lib/webhook-queue-fix';
+import { handleWebhookWithQueue } from '@/lib/webhook-queue';
 import { type SquareWebhookPayload, type WebhookId } from '@/types/webhook';
 
 /**
@@ -56,6 +56,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const bodyText = await request.text();
     console.log('📄 Body read successfully - length:', bodyText?.length || 0);
     
+    // CRITICAL: Check for empty body before processing
+    if (!bodyText || bodyText.trim().length === 0) {
+      console.warn('⚠️ Received webhook with empty body - this may be a health check or test request');
+      
+      // Return successful response for empty body (health checks, etc.)
+      return NextResponse.json({
+        received: true,
+        message: 'Empty body received - treating as health check',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     // Step 3: Comprehensive signature validation
     validationResult = await validateWebhookSignature(request, bodyText);
     webhookId = validationResult.metadata?.webhookId;
@@ -70,8 +82,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let payload: SquareWebhookPayload | null = null;
     try {
       payload = JSON.parse(bodyText);
+      console.log('✅ Webhook payload parsed successfully:', {
+        eventType: payload?.type,
+        eventId: payload?.event_id,
+        objectId: payload?.data?.id
+      });
     } catch (parseError) {
       console.error('❌ Failed to parse webhook payload:', parseError);
+      console.error('📋 Raw body content:', bodyText.slice(0, 500)); // Log first 500 chars for debugging
       
       // Still log the attempt for debugging
       if (webhookId) {
@@ -145,10 +163,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }, { status: 401 });
     }
     
-    // Step 8: Check for duplicate events
-    const duplicateCheck = payload ? await checkDuplicateWebhook(payload.event_id) : { isDuplicate: false };
+    // Step 8: Check for duplicate events in webhook queue (not logs)
+    // Fixed: Check webhook queue for actual processing status, not just logs
+    let duplicateCheck: { isDuplicate: boolean; existingId: string | undefined } = { isDuplicate: false, existingId: undefined };
+    if (payload) {
+      try {
+        const { prisma } = await import('@/lib/db-unified');
+        const existingQueueItem = await prisma.webhookQueue.findUnique({
+          where: { eventId: payload.event_id },
+          select: { id: true, status: true, createdAt: true }
+        });
+        
+        if (existingQueueItem) {
+          duplicateCheck = {
+            isDuplicate: true,
+            existingId: existingQueueItem.id
+          };
+        }
+      } catch (queueCheckError) {
+        console.warn('⚠️ Error checking webhook queue for duplicates:', queueCheckError);
+        // Continue processing if queue check fails
+      }
+    }
+    
     if (duplicateCheck.isDuplicate) {
-      console.warn(`⚠️ Duplicate webhook event detected: ${payload?.event_id || 'unknown'}`);
+      console.warn(`⚠️ Duplicate webhook event detected in queue: ${payload?.event_id || 'unknown'}`);
       return NextResponse.json({
         received: true,
         duplicate: true,
@@ -157,9 +196,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
     
-    // Step 9: Queue for background processing
+    // Step 9: Queue for background processing with proper processing queue
     try {
-      await queueWebhook(payload);
+      console.log('📥 Processing webhook with background queue:', payload?.type, payload?.event_id);
+      await handleWebhookWithQueue(payload, payload?.type || 'unknown');
       console.log('✅ Webhook queued for processing');
       
       await trackMetric({

@@ -24,10 +24,14 @@ export async function GET(
     }
 
     // 2. Check admin access
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true, name: true, email: true },
-    });
+    const profile = await withRetry(
+      () => prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true, name: true, email: true },
+      }),
+      3,
+      'check admin access'
+    );
 
     if (!profile || profile.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
@@ -44,26 +48,30 @@ export async function GET(
     }
 
     // 4. Get sync status from database
-    const syncLog = await prisma.userSyncLog.findUnique({
-      where: {
-        syncId,
-        userId: user.id, // Ensure user can only see their own syncs
-      },
-      select: {
-        id: true,
-        syncId: true,
-        status: true,
-        startTime: true,
-        endTime: true,
-        progress: true,
-        message: true,
-        currentStep: true,
-        results: true,
-        errors: true,
-        options: true,
-        startedBy: true,
-      },
-    });
+    const syncLog = await withRetry(
+      () => prisma.userSyncLog.findUnique({
+        where: {
+          syncId,
+          userId: user.id, // Ensure user can only see their own syncs
+        },
+        select: {
+          id: true,
+          syncId: true,
+          status: true,
+          startTime: true,
+          endTime: true,
+          progress: true,
+          message: true,
+          currentStep: true,
+          results: true,
+          errors: true,
+          options: true,
+          startedBy: true,
+        },
+      }),
+      3,
+      'get sync status'
+    );
 
     if (!syncLog) {
       return NextResponse.json(

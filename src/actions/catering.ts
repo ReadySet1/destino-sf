@@ -1,6 +1,6 @@
 'use server';
 
-import { db, withPreparedStatementHandling } from '@/lib/db';
+import { prisma as db, withRetry, ensureConnection } from '@/lib/db-unified';
 import {
   type CateringPackage,
   CateringPackageType,
@@ -35,7 +35,7 @@ import { env } from '@/env'; // Import the validated environment configuration
  * Fetches all active catering packages using Prisma
  */
 export async function getCateringPackages(): Promise<CateringPackage[]> {
-  return withPreparedStatementHandling(async () => {
+  return withRetry(async () => {
     try {
       console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
 
@@ -60,7 +60,7 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
       console.error('❌ [CATERING] Error fetching catering packages:', error);
       return [];
     }
-  }, 'getCateringPackages');
+  }, 3, 'getCateringPackages');
 }
 
 /**
@@ -290,7 +290,8 @@ export async function saveContactInfo(data: {
 
     // Check for duplicate orders using idempotency key or email+date combination
     if (data.idempotencyKey) {
-      const existingOrderByKey = await db.cateringOrder.findFirst({
+    const existingOrderByKey = await withRetry(async () => {
+      return await db.cateringOrder.findFirst({
         where: {
           OR: [
             { 
@@ -305,6 +306,7 @@ export async function saveContactInfo(data: {
         },
         select: { id: true, totalAmount: true, paymentStatus: true }
       });
+    }, 3, 'checkDuplicateByIdempotencyKey');
       
       if (existingOrderByKey) {
         console.log(`🔧 [CATERING] Duplicate order detected with idempotency key: ${data.idempotencyKey}`);
@@ -318,17 +320,19 @@ export async function saveContactInfo(data: {
 
     // Additional check for duplicate orders by email and event date (within 1 hour window)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const duplicateCheck = await db.cateringOrder.findFirst({
-      where: {
-        email: data.email,
-        eventDate: new Date(data.eventDate),
-        totalAmount: data.totalAmount,
-        createdAt: {
-          gte: oneHourAgo
-        }
-      },
-      select: { id: true, totalAmount: true }
-    });
+    const duplicateCheck = await withRetry(async () => {
+      return await db.cateringOrder.findFirst({
+        where: {
+          email: data.email,
+          eventDate: new Date(data.eventDate),
+          totalAmount: data.totalAmount,
+          createdAt: {
+            gte: oneHourAgo
+          }
+        },
+        select: { id: true, totalAmount: true }
+      });
+    }, 3, 'checkDuplicateByEmailAndDate');
     
     if (duplicateCheck) {
       console.log(`🔧 [CATERING] Potential duplicate order detected for ${data.email} on ${data.eventDate}`);
@@ -345,52 +349,54 @@ export async function saveContactInfo(data: {
       : null;
 
     // Create a new catering order with items
-    const newOrder = await db.cateringOrder.create({
-      data: {
-        // Use tempOrderId if provided (for Square orders), otherwise let DB generate
-        ...(data.tempOrderId && { id: data.tempOrderId }),
-        // Connect customer using the relation if customerId is provided
-        ...(data.customerId && { 
-          customer: { 
-            connect: { id: data.customerId } 
-          } 
-        }),
-        email: data.email,
-        name: data.name,
-        phone: data.phone,
-        eventDate: new Date(data.eventDate),
-        numberOfPeople: data.numberOfPeople,
-        totalAmount: data.totalAmount,
-        status: CateringStatus.PENDING,
-        notes: data.specialRequests,
-        deliveryAddress: deliveryAddressString, // Keep the string format for backward compatibility
-        deliveryAddressJson: data.deliveryAddress ? data.deliveryAddress as any : null, // Store structured JSON data
-        deliveryZone: data.deliveryZone,
-        deliveryFee: data.deliveryFee,
-        paymentMethod: data.paymentMethod,
-        paymentStatus: PaymentStatus.PENDING,
-        // Add Square integration fields
-        ...(data.squareCheckoutId && { squareCheckoutId: data.squareCheckoutId }),
-        ...(data.squareOrderId && { squareOrderId: data.squareOrderId }),
-        ...(data.idempotencyKey && { 
-          metadata: { idempotencyKey: data.idempotencyKey } as any 
-        }),
-        // Create associated catering order items if provided
-        ...(data.items && data.items.length > 0 && {
-          items: {
-            create: data.items.map(item => ({
-              itemType: item.itemType,
-              itemName: item.name,
-              quantity: item.quantity,
-              pricePerUnit: item.pricePerUnit,
-              totalPrice: item.totalPrice,
-              notes: item.notes,
-              ...(item.packageId && { packageId: item.packageId }),
-            })),
-          },
-        }),
-      },
-    });
+    const newOrder = await withRetry(async () => {
+      return await db.cateringOrder.create({
+        data: {
+          // Use tempOrderId if provided (for Square orders), otherwise let DB generate
+          ...(data.tempOrderId && { id: data.tempOrderId }),
+          // Connect customer using the relation if customerId is provided
+          ...(data.customerId && { 
+            customer: { 
+              connect: { id: data.customerId } 
+            } 
+          }),
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          eventDate: new Date(data.eventDate),
+          numberOfPeople: data.numberOfPeople,
+          totalAmount: data.totalAmount,
+          status: CateringStatus.PENDING,
+          notes: data.specialRequests,
+          deliveryAddress: deliveryAddressString, // Keep the string format for backward compatibility
+          deliveryAddressJson: data.deliveryAddress ? data.deliveryAddress as any : null, // Store structured JSON data
+          deliveryZone: data.deliveryZone,
+          deliveryFee: data.deliveryFee,
+          paymentMethod: data.paymentMethod,
+          paymentStatus: PaymentStatus.PENDING,
+          // Add Square integration fields
+          ...(data.squareCheckoutId && { squareCheckoutId: data.squareCheckoutId }),
+          ...(data.squareOrderId && { squareOrderId: data.squareOrderId }),
+          ...(data.idempotencyKey && { 
+            metadata: { idempotencyKey: data.idempotencyKey } as any 
+          }),
+          // Create associated catering order items if provided
+          ...(data.items && data.items.length > 0 && {
+            items: {
+              create: data.items.map(item => ({
+                itemType: item.itemType,
+                itemName: item.name,
+                quantity: item.quantity,
+                pricePerUnit: item.pricePerUnit,
+                totalPrice: item.totalPrice,
+                notes: item.notes,
+                ...(item.packageId && { packageId: item.packageId }),
+              })),
+            },
+          }),
+        },
+      });
+    }, 3, 'createCateringOrder');
 
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
@@ -690,21 +696,23 @@ async function checkForDuplicateOrder(
   try {
     // Step 1: Check for orders with same idempotency key first (most reliable)
     console.log(`🔍 [IDEMPOTENCY] Checking by idempotency key...`);
-    const existingByKey = await db.cateringOrder.findFirst({
-      where: {
-        metadata: {
-          path: ['idempotencyKey'],
-          equals: idempotencyKey,
+    const existingByKey = await withRetry(async () => {
+      return await db.cateringOrder.findFirst({
+        where: {
+          metadata: {
+            path: ['idempotencyKey'],
+            equals: idempotencyKey,
+          },
         },
-      },
-      select: { 
-        id: true, 
-        squareCheckoutId: true, 
-        createdAt: true,
-        email: true,
-        totalAmount: true,
-      },
-    });
+        select: { 
+          id: true, 
+          squareCheckoutId: true, 
+          createdAt: true,
+          email: true,
+          totalAmount: true,
+        },
+      });
+    }, 3, 'checkDuplicateOrderByIdempotencyKey');
 
     if (existingByKey) {
       const ageMinutes = Math.round((Date.now() - existingByKey.createdAt.getTime()) / 60000);
@@ -723,28 +731,30 @@ async function checkForDuplicateOrder(
     console.log(`🔍 [IDEMPOTENCY] Checking by email/date/amount pattern...`);
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     
-    const potentialDuplicate = await db.cateringOrder.findFirst({
-      where: {
-        email: data.email,
-        eventDate: new Date(data.eventDate),
-        totalAmount: data.totalAmount,
-        ...(data.customerId && { 
-          customer: { 
-            id: data.customerId 
-          } 
-        }),
-        createdAt: {
-          gte: fifteenMinutesAgo,
+    const potentialDuplicate = await withRetry(async () => {
+      return await db.cateringOrder.findFirst({
+        where: {
+          email: data.email,
+          eventDate: new Date(data.eventDate),
+          totalAmount: data.totalAmount,
+          ...(data.customerId && { 
+            customer: { 
+              id: data.customerId 
+            } 
+          }),
+          createdAt: {
+            gte: fifteenMinutesAgo,
+          },
         },
-      },
-      select: { 
-        id: true, 
-        squareCheckoutId: true, 
-        createdAt: true,
-        metadata: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        select: { 
+          id: true, 
+          squareCheckoutId: true, 
+          createdAt: true,
+          metadata: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }, 3, 'checkDuplicateOrderByPattern');
 
     if (potentialDuplicate) {
       const ageMinutes = Math.round((Date.now() - potentialDuplicate.createdAt.getTime()) / 60000);
@@ -922,43 +932,165 @@ export async function initializeBoxedLunchDataAction(): Promise<{
 // Missing functions needed by components (backward compatibility)
 const lastCallCache = new Map<string, number>();
 
+// Robust fallback function for saving contact submissions using unified connection management
+async function saveContactSubmissionWithFallback(data: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  type: string;
+  status: string;
+}): Promise<{ id: string }> {
+  console.log('💾 Attempting to save contact submission with unified retry system');
+  
+  try {
+    // Use the unified retry system with enhanced error handling
+    return await withRetry(async () => {
+      // Ensure connection before attempting operation
+      await ensureConnection();
+      
+      // Create the contact submission
+      const result = await db.contactSubmission.create({ data });
+      console.log('✅ Contact submission created successfully:', result.id);
+      return result;
+    }, 3, 'saveContactSubmissionWithFallback');
+  } catch (error) {
+    console.error('❌ Failed to save contact submission even with unified retry:', error);
+    
+    // Enhanced error logging for debugging
+    if (error instanceof Error) {
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines of stack
+      });
+    }
+    
+    // For critical contact submissions, try one more time with manual connection handling
+    try {
+      console.log('🆘 Last resort: Manual connection handling for contact submission');
+      
+      // Force a fresh connection
+      await ensureConnection(1);
+      
+      // Simple direct operation
+      return await db.contactSubmission.create({ data });
+    } catch (finalError) {
+      console.error('❌ Absolute final attempt failed:', finalError);
+      throw new Error(`Failed to save contact submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+}
+
 export async function saveCateringContactInfo(data: {
   name: string;
   email: string;
   phone: string;
 }): Promise<{ success: boolean; message: string; error?: string }> {
   try {
-    const cacheKey = `${data.name}-${data.email}-${data.phone}`;
+    // Enhanced data validation
+    if (!data || typeof data !== 'object') {
+      console.error('❌ Invalid data object passed to saveCateringContactInfo:', data);
+      return { 
+        success: false, 
+        message: 'Invalid data provided',
+        error: 'Data object is required'
+      };
+    }
+
+    // Validate required fields
+    const trimmedName = data.name?.trim() || '';
+    const trimmedEmail = data.email?.trim() || '';
+    const trimmedPhone = data.phone?.trim() || '';
+
+    if (!trimmedName || trimmedName.length < 2) {
+      console.error('❌ Invalid name provided:', trimmedName);
+      return { 
+        success: false, 
+        message: 'Valid name is required (at least 2 characters)',
+        error: 'Invalid name'
+      };
+    }
+
+    if (!trimmedEmail || !trimmedEmail.includes('@') || trimmedEmail.length < 5) {
+      console.error('❌ Invalid email provided:', trimmedEmail);
+      return { 
+        success: false, 
+        message: 'Valid email address is required',
+        error: 'Invalid email'
+      };
+    }
+
+    if (!trimmedPhone || trimmedPhone.length < 10) {
+      console.error('❌ Invalid phone provided:', trimmedPhone);
+      return { 
+        success: false, 
+        message: 'Valid phone number is required (at least 10 characters)',
+        error: 'Invalid phone'
+      };
+    }
+
+    const cacheKey = `${trimmedName}-${trimmedEmail}-${trimmedPhone}`;
     const now = Date.now();
     const lastCall = lastCallCache.get(cacheKey) || 0;
     
     // Only save if it's been more than 5 seconds since last call with same data
     if (now - lastCall > 5000) {
-      console.log('✅ Saving catering contact info:', data);
+      console.log('✅ Saving catering contact info:', { 
+        name: trimmedName.substring(0, 10) + '...', 
+        email: trimmedEmail,
+        phone: trimmedPhone.substring(0, 6) + '...' 
+      });
       lastCallCache.set(cacheKey, now);
       
       // Save to ContactSubmission table as a catering contact for future follow-up
-      await db.contactSubmission.create({
-        data: {
-          name: data.name.trim(),
-          email: data.email.trim(),
-          subject: 'Catering Contact Info - Auto-saved',
-          message: `Contact info auto-saved during catering checkout. Phone: ${data.phone}`,
-          type: 'catering_contact',
-          status: 'auto_saved',
-        },
+      // Use a more robust approach with direct connection management
+      const contactSubmission = await saveContactSubmissionWithFallback({
+        name: trimmedName,
+        email: trimmedEmail,
+        subject: 'Catering Contact Info - Auto-saved',
+        message: `Contact info auto-saved during catering checkout. Phone: ${trimmedPhone}`,
+        type: 'catering_contact',
+        status: 'auto_saved',
       });
       
+      console.log('✅ ContactSubmission created successfully with ID:', contactSubmission.id);
       return { success: true, message: 'Contact info saved successfully' };
     }
     
+    console.log('ℹ️ Contact info already saved recently, skipping database save');
     return { success: true, message: 'Contact info already saved recently' };
   } catch (error) {
     console.error('❌ Error saving catering contact info:', error);
+    
+    // Enhanced error logging
+    if (error instanceof Error) {
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+    }
+    
+    // Check for specific Prisma/Database errors
+    let errorMessage = 'Failed to save contact info';
+    let errorDetail = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('connection')) {
+        errorMessage = 'Database connection error';
+        errorDetail = 'Unable to connect to database';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Database timeout error';
+        errorDetail = 'Database operation timed out';
+      } else if (error.message.includes('constraint')) {
+        errorMessage = 'Data validation error';
+        errorDetail = 'Data does not meet database requirements';
+      }
+    }
+    
     return { 
       success: false, 
-      message: 'Failed to save contact info',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      message: errorMessage,
+      error: errorDetail
     };
   }
 }

@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { withConnectionManagement } from '@/lib/db';
+import { withRetry } from '@/lib/db-unified';
 
 /**
  * Webhook-optimized database client with aggressive connection pooling
@@ -111,7 +111,7 @@ class WebhookOptimizedDatabaseClient {
     operationName: string,
     timeoutMs: number = 20000
   ): Promise<T> {
-    return withConnectionManagement(
+    return withRetry(
       async () => {
         // Test connection first
         const isHealthy = await this.testConnection();
@@ -121,8 +121,8 @@ class WebhookOptimizedDatabaseClient {
 
         return await operation(this.prismaClient);
       },
-      `webhook-${operationName}`,
-      timeoutMs
+      3, // maxRetries
+      `webhook-${operationName}`
     );
   }
 

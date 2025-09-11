@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db-unified';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -149,14 +149,69 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
       notFound();
     }
 
-    // Fetch the catering order with all related data
-    const cateringOrder = await prisma.cateringOrder.findUnique({
-      where: { id: cateringId },
-      include: {
-        items: true,
-        customer: true,
-      },
-    });
+    // Validate UUID format before making database query
+    const isValidUUID = (uuid: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    };
+
+    if (!isValidUUID(cateringId)) {
+      console.error(`Invalid UUID format for cateringId: ${cateringId}`);
+      notFound();
+    }
+
+    // Log before database query
+    console.log('Fetching catering order with ID:', cateringId);
+
+    // Fetch the catering order with all related data with enhanced error handling
+    let cateringOrder = null;
+    
+    try {
+      cateringOrder = await prisma.cateringOrder.findUnique({
+        where: { id: cateringId },
+        include: {
+          items: true,
+          customer: true,
+        },
+      });
+    } catch (error) {
+      // Log error with context
+      console.error('Failed to fetch admin catering order:', {
+        cateringId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code
+      });
+      
+      // Check if it's a prepared statement error or connection issue
+      if (error instanceof Error && 
+          ((error as any).code === '42P05' || // prepared statement already exists
+           (error as any).code === '26000' || // prepared statement does not exist
+           error.message.includes('prepared statement') ||
+           error.message.includes('Response from the Engine was empty'))) {
+        console.log('Detected database connection error in admin catering order query, attempting retry...');
+        
+        // Attempt one retry with a fresh connection
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          cateringOrder = await prisma.cateringOrder.findUnique({
+            where: { id: cateringId },
+            include: {
+              items: true,
+              customer: true,
+            },
+          });
+          
+          console.log('✅ Admin catering order retry successful after database connection error');
+        } catch (retryError) {
+          console.error('❌ Admin catering order retry failed:', retryError);
+          throw retryError;
+        }
+      } else {
+        throw error;
+      }
+    }
 
     if (!cateringOrder) {
       console.error(`Catering order not found for ID: ${cateringId}`);
@@ -381,7 +436,61 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
       </div>
     );
   } catch (error) {
+    // Check if this is a Next.js redirect error (which is normal behavior)
+    const isRedirectError = error instanceof Error && 'digest' in error && 
+      typeof (error as any).digest === 'string' && 
+      (error as any).digest.startsWith('NEXT_REDIRECT');
+    
+    if (isRedirectError) {
+      // This is a normal redirect, don't log it as an error and re-throw to complete the redirect
+      throw error;
+    }
+
+    // Only log actual errors, not redirect behavior
     console.error('Error fetching catering order:', error);
-    throw error;
+
+    // Provide a fallback UI when there's an error
+    return (
+      <div className="space-y-6 md:space-y-8">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              
+              <h1 className="text-2xl font-bold text-red-900 mb-2">Error Loading Catering Order</h1>
+              <p className="text-red-700 mb-4">
+                There was a problem loading the catering order details.
+              </p>
+              
+              <div className="text-sm text-red-600 mb-6">
+                <p>Error details:</p>
+                <code className="bg-red-100 px-2 py-1 rounded font-mono text-sm block mt-2">
+                  {error instanceof Error ? error.message : 'Unknown error'}
+                </code>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/admin/orders"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  View All Orders
+                </Link>
+                <Link
+                  href="/admin"
+                  className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Admin Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 }

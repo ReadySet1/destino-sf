@@ -18,7 +18,7 @@ process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
 jest.unmock('@/app/actions/orders');
 
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db-unified';
 import { revalidatePath } from 'next/cache';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 import { AlertService } from '@/lib/alerts';

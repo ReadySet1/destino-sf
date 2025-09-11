@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
-import { prisma } from '@/lib/db';
-import { withConnectionManagement } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { env } from '@/env';
 import { sendEmailWithQueue } from '@/lib/webhook-queue';
 import { AlertType, AlertPriority, AlertStatus, OrderStatus } from '@prisma/client';
@@ -122,7 +121,7 @@ export class ResilientAlertService {
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
 
-          return await withConnectionManagement(
+          return await withRetry(
             () => prisma.order.count({
               where: {
                 createdAt: {
@@ -131,8 +130,8 @@ export class ResilientAlertService {
                 },
               },
             }),
-            'daily order count query',
-            10000 // 10 second timeout
+            3, // maxRetries
+            'daily order count query'
           );
         });
         
@@ -532,7 +531,7 @@ export class ResilientAlertService {
    * Create an alert record in the database with connection management
    */
   private async createAlertRecord(input: CreateAlertInput) {
-    return await withConnectionManagement(
+    return await withRetry(
       () => prisma.emailAlert.create({
         data: {
           type: input.type,
@@ -545,8 +544,8 @@ export class ResilientAlertService {
           status: AlertStatus.PENDING,
         },
       }),
-      'create alert record',
-      10000 // 10 second timeout
+      3, // maxRetries
+      'create alert record'
     );
   }
 
@@ -554,7 +553,7 @@ export class ResilientAlertService {
    * Mark an alert as successfully sent with connection management
    */
   private async markAlertAsSent(alertId: string, messageId?: string) {
-    await withConnectionManagement(
+    await withRetry(
       () => prisma.emailAlert.update({
         where: { id: alertId },
         data: {
@@ -565,8 +564,8 @@ export class ResilientAlertService {
           },
         },
       }),
-      'mark alert as sent',
-      5000 // 5 second timeout
+      3, // maxRetries
+      'mark alert as sent'
     );
   }
 
@@ -574,7 +573,7 @@ export class ResilientAlertService {
    * Mark an alert as failed with connection management
    */
   private async markAlertAsFailed(alertId: string, errorMessage: string) {
-    await withConnectionManagement(
+    await withRetry(
       () => prisma.emailAlert.update({
         where: { id: alertId },
         data: {
@@ -585,8 +584,8 @@ export class ResilientAlertService {
           },
         },
       }),
-      'mark alert as failed',
-      5000 // 5 second timeout
+      3, // maxRetries
+      'mark alert as failed'
     );
   }
 

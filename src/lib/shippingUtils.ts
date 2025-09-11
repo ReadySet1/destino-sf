@@ -1,4 +1,4 @@
-import { prisma, withPreparedStatementHandling } from '@/lib/db';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 /**
  * Interface for cart items used in shipping calculations
@@ -185,10 +185,11 @@ export async function calculateShippingWeight(
 export async function getAllShippingConfigurations(): Promise<ShippingWeightConfig[]> {
   try {
     // Use centralized Prisma client with error handling
-    const dbConfigs = await withPreparedStatementHandling(
+    const dbConfigs = await withRetry(
       () => prisma.shippingConfiguration.findMany({
         orderBy: { productName: 'asc' },
       }),
+      3,
       'shipping configurations query'
     );
 

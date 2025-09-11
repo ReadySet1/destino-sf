@@ -110,23 +110,47 @@ async function createPrismaClient(): Promise<PrismaClient> {
     });
   }
 
-  // CRITICAL: Explicitly connect the client to start the engine
+  // CRITICAL: Explicitly connect the client to start the engine with timeout
   try {
     if (process.env.DB_DEBUG === 'true') {
       console.log('🔌 Connecting Prisma client...');
     }
-    await client.$connect();
+    
+    // Add timeout to prevent hanging
+    const connectTimeout = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Prisma client connection timeout after 15 seconds'));
+      }, 15000);
+    });
+    
+    await Promise.race([client.$connect(), connectTimeout]);
+    
     if (process.env.DB_DEBUG === 'true') {
       console.log('✅ Prisma client connected successfully');
     }
     
-    // Verify connection with a simple query
-    await client.$queryRaw`SELECT 1 as connection_test`;
+    // Verify connection with a simple query (also with timeout)
+    const queryTimeout = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Prisma connection verification timeout after 10 seconds'));
+      }, 10000);
+    });
+    
+    await Promise.race([
+      client.$queryRaw`SELECT 1 as connection_test`,
+      queryTimeout
+    ]);
+    
     if (process.env.DB_DEBUG === 'true') {
       console.log('✅ Prisma connection verified');
     }
   } catch (error) {
     console.error('❌ Failed to connect Prisma client:', error);
+    try {
+      await client.$disconnect();
+    } catch (disconnectError) {
+      console.warn('Error disconnecting failed client:', disconnectError);
+    }
     throw error;
   }
 
@@ -214,46 +238,154 @@ async function getPrismaClient(): Promise<PrismaClient> {
   return await initializePrismaClient();
 }
 
-// Export the client with lazy initialization
+/**
+ * Create a basic Prisma client without complex async initialization
+ */
+function createBasicPrismaClient(): PrismaClient {
+  const databaseUrl = buildDatabaseUrl();
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  return new PrismaClient({
+    log: isProduction ? ['error'] : [
+      { emit: 'event', level: 'error' },
+      { emit: 'event', level: 'warn' }
+    ],
+    errorFormat: 'minimal',
+    datasources: {
+      db: { url: databaseUrl }
+    },
+  });
+}
+
+/**
+ * Get the current Prisma client, creating one if needed
+ */
+function getCurrentPrismaClient(): PrismaClient {
+  // Check if we have a valid global client
+  if (globalForPrisma.prisma && globalForPrisma.prismaVersion === CURRENT_PRISMA_VERSION) {
+    prismaClient = globalForPrisma.prisma;
+    return prismaClient;
+  }
+  
+  // Create a new client if needed
+  if (!prismaClient || shouldRegenerateClient()) {
+    prismaClient = createBasicPrismaClient();
+    
+    // Store in global for reuse
+    globalForPrisma.prisma = prismaClient;
+    globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
+    
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('✅ Created new Prisma client');
+    }
+  }
+  
+  return prismaClient;
+}
+
+// Initialize the client at module load time
+if (!prismaClient || shouldRegenerateClient()) {
+  prismaClient = getCurrentPrismaClient();
+}
+
+// Simple export that ensures connection when needed
 export const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
-    // If we have an active client, return the property directly
-    if (prismaClient) {
-      const value = prismaClient[prop as keyof PrismaClient];
-      if (typeof value === 'function') {
-        return value.bind(prismaClient);
-      }
-      return value;
+    const client = getCurrentPrismaClient();
+    const property = client[prop as keyof PrismaClient];
+    
+    // Debug logging for troubleshooting (temporarily always enabled for debugging)
+    if (process.env.DB_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+      console.log(`[DB-UNIFIED] Accessing property: ${String(prop)}, type: ${typeof property}`);
     }
     
-    // For lazy initialization, create a proxy that initializes the client when needed
-    return new Proxy({}, {
-      get(modelTarget, modelProp) {
-        return async (...args: any[]) => {
-          const client = await getPrismaClient();
-          const model = client[prop as keyof PrismaClient] as any;
-          const method = model[modelProp as string] as Function;
-          return method.apply(model, args);
-        };
-      }
-    });
+    // For model objects (like user, product, etc.), wrap with retry logic
+    if (typeof property === 'object' && property !== null && !Array.isArray(property)) {
+      return new Proxy(property, {
+        get(modelTarget, modelProp) {
+          const method = (modelTarget as any)[modelProp];
+          
+          // Debug logging (temporarily always enabled for debugging)
+          if (process.env.DB_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+            console.log(`[DB-UNIFIED] Accessing model method: ${String(prop)}.${String(modelProp)}, type: ${typeof method}`);
+          }
+          
+          // Validate that we have a proper method
+          if (typeof method === 'function') {
+            return (...args: any[]) => {
+              // Ensure connection before executing the operation
+              return withRetry(async () => {
+                // Try to ensure we have a connection
+                try {
+                  await client.$queryRaw`SELECT 1 as connection_test`;
+                } catch (connectionError) {
+                  if (isConnectionError(connectionError as Error)) {
+                    // Force reconnection
+                    try {
+                      await client.$disconnect();
+                      await client.$connect();
+                    } catch (reconnectError) {
+                      console.warn('Reconnection failed:', reconnectError);
+                    }
+                  }
+                }
+                
+                // Execute the actual operation with proper context
+                return method.apply(modelTarget, args);
+              }, 3, `${String(prop)}.${String(modelProp)}`);
+            };
+          }
+          
+          // For non-function properties, try fallback mechanism
+          if (method === undefined || method === null) {
+            console.error(`[DB-UNIFIED] Undefined method: ${String(prop)}.${String(modelProp)}`);
+            // Try fallback: access directly from client
+            try {
+              const fallbackMethod = (client[prop as keyof PrismaClient] as any)?.[modelProp];
+              if (typeof fallbackMethod === 'function') {
+                console.log(`[DB-UNIFIED] Using fallback method for ${String(prop)}.${String(modelProp)}`);
+                return fallbackMethod.bind(client[prop as keyof PrismaClient]);
+              }
+            } catch (fallbackError) {
+              console.error(`[DB-UNIFIED] Fallback failed for ${String(prop)}.${String(modelProp)}:`, fallbackError);
+            }
+          } else if (typeof method !== 'function' && typeof method !== 'object') {
+            console.error(`[DB-UNIFIED] Unexpected method type for ${String(prop)}.${String(modelProp)}:`, typeof method, method);
+            // If we get a corrupted value like 'c', try fallback
+            try {
+              const fallbackMethod = (client[prop as keyof PrismaClient] as any)?.[modelProp];
+              if (typeof fallbackMethod === 'function') {
+                console.log(`[DB-UNIFIED] Using fallback method for corrupted ${String(prop)}.${String(modelProp)}`);
+                return (...args: any[]) => {
+                  return withRetry(async () => {
+                    return fallbackMethod.apply(client[prop as keyof PrismaClient], args);
+                  }, 3, `${String(prop)}.${String(modelProp)} (fallback)`);
+                };
+              }
+            } catch (fallbackError) {
+              console.error(`[DB-UNIFIED] Fallback failed for corrupted ${String(prop)}.${String(modelProp)}:`, fallbackError);
+            }
+            // If fallback fails, return undefined to prevent crashes
+            return undefined;
+          }
+          
+          return method;
+        }
+      });
+    }
+    
+    // For other properties (like $connect, $disconnect, etc.), return as-is
+    return property;
   }
 });
-
-// Keep global reference in development (but don't override the managed instance)
-if (process.env.NODE_ENV !== 'production' && !globalForPrisma.prisma) {
-  // Only set if not already managed
-  if (prismaClient) {
-    globalForPrisma.prisma = prismaClient;
-  }
-}
 
 /**
  * Enhanced connection health check
  */
 export async function checkConnection(): Promise<boolean> {
   try {
-    await prisma.$queryRaw`SELECT 1 as health_check`;
+    const client = await getPrismaClient();
+    await client.$queryRaw`SELECT 1 as health_check`;
     return true;
   } catch (error) {
     console.warn('Database connection check failed:', (error as Error).message);
@@ -271,6 +403,8 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
     try {
       // Ensure we have a properly initialized client
       const client = await getPrismaClient();
+      
+      // Test the connection directly with the client (not through proxy)
       await client.$queryRaw`SELECT 1 as health_check`;
       return; // Success
     } catch (error) {
@@ -283,13 +417,15 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
         
         try {
           // Force client reinitialization on connection errors
-          const client = await getPrismaClient();
-          await client.$disconnect();
+          if (prismaClient) {
+            await prismaClient.$disconnect();
+          }
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
           
           // Reset client to force reinitialization
           prismaClient = null;
           globalForPrisma.prisma = undefined;
+          initPromise = null;
         } catch (reconnectError) {
           console.warn(`Reconnection attempt ${attempt} failed:`, (reconnectError as Error).message);
         }
@@ -336,11 +472,11 @@ export async function withRetry<T>(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Ensure we have a properly initialized client before each attempt
-      await getPrismaClient();
+      const client = await getPrismaClient();
       
-      // On retry attempts, verify connection
+      // On retry attempts, verify connection using the actual client
       if (attempt > 1) {
-        await ensureConnection(1);
+        await client.$queryRaw`SELECT 1 as retry_check`;
       }
       
       const result = await operation();
@@ -361,6 +497,9 @@ export async function withRetry<T>(
         
         // For connection errors, force client reinitialization
         try {
+          if (prismaClient) {
+            await prismaClient.$disconnect();
+          }
           prismaClient = null;
           globalForPrisma.prisma = undefined;
           initPromise = null;
@@ -445,7 +584,8 @@ export async function getHealthStatus(): Promise<{
   const start = Date.now();
   
   try {
-    await prisma.$queryRaw`SELECT version() as version`;
+    const client = await getPrismaClient();
+    await client.$queryRaw`SELECT version() as version`;
     return {
       connected: true,
       latency: Date.now() - start,
@@ -466,8 +606,10 @@ export async function getHealthStatus(): Promise<{
  */
 export async function shutdown(): Promise<void> {
   try {
-    await prisma.$disconnect();
-    console.log('✅ Database client disconnected gracefully');
+    if (prismaClient) {
+      await prismaClient.$disconnect();
+      console.log('✅ Database client disconnected gracefully');
+    }
   } catch (error) {
     console.error('Error during database shutdown:', error);
   }

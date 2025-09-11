@@ -14,24 +14,27 @@ export async function GET(request: NextRequest) {
     logger.info(`🚀 [CACHE-OPT] Request for ${cacheKey} started`);
     
     // Optimized query: Get category IDs first to avoid complex JOIN
-    const categoryIds = await prisma.category.findMany({
-      where: {
-        name: {
-          in: ['CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES'],
-          mode: 'insensitive'
+    const categoryIds = await withRetry(async () => {
+      return await prisma.category.findMany({
+        where: {
+          name: {
+            in: ['CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES'],
+            mode: 'insensitive'
+          }
+        },
+        select: {
+          id: true,
+          name: true
         }
-      },
-      select: {
-        id: true,
-        name: true
-      }
-    });
+      });
+    }, 3, 'fetchBuffetCategories');
 
     const categoryIdMap = new Map(categoryIds.map(cat => [cat.id, cat.name]));
     const categoryIdList = categoryIds.map(cat => cat.id);
 
     // Optimized main query using categoryId instead of JOIN
-    const buffetItems = await prisma.product.findMany({
+    const buffetItems = await withRetry(async () => {
+      return await prisma.product.findMany({
       where: {
         active: true,
         categoryId: {
@@ -59,11 +62,12 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: [
-        { ordinal: 'asc' },     // Admin-controlled order
-        { name: 'asc' }         // Alphabetical fallback
-      ]
-    });
+        orderBy: [
+          { ordinal: 'asc' },     // Admin-controlled order
+          { name: 'asc' }         // Alphabetical fallback
+        ]
+      });
+    }, 3, 'fetchBuffetProducts');
 
     logger.info(`✅ [CACHE-OPT] Found ${buffetItems.length} buffet products`);
     

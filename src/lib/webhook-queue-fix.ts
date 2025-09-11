@@ -1,4 +1,4 @@
-import { resilientPrisma } from './db-connection-fix';
+import { prisma, withRetry } from '@/lib/db-unified';
 
 /**
  * Simple, robust webhook queue implementation for fixing Vercel webhook issues
@@ -20,7 +20,7 @@ export async function queueWebhook(payload: any): Promise<void> {
   console.log('📥 Queuing webhook for background processing:', payload.type, payload.event_id);
   
   try {
-    await resilientPrisma.executeWithRetry(async (prisma) => {
+    await withRetry(async () => {
       // Use upsert to handle potential duplicate events
       await prisma.webhookQueue.upsert({
         where: {
@@ -63,7 +63,7 @@ export async function processWebhookQueue(options: {
   
   try {
     // Get pending webhooks with retry logic
-    const pendingWebhooks = await resilientPrisma.executeWithRetry(async (prisma) => {
+    const pendingWebhooks = await withRetry(async () => {
       return await prisma.webhookQueue.findMany({
         where: {
           status: 'PENDING',
@@ -74,7 +74,7 @@ export async function processWebhookQueue(options: {
         },
         take: maxItems
       });
-    });
+    }, 3, 'getPendingWebhooks');
     
     if (pendingWebhooks.length === 0) {
       console.log('📭 No pending webhooks to process');
@@ -127,7 +127,7 @@ async function processWebhookEntry(webhook: WebhookQueueEntry): Promise<void> {
   console.log('⚙️ Processing webhook:', webhook.eventType, webhook.eventId);
   
   // Mark as processing
-  await resilientPrisma.executeWithRetry(async (prisma) => {
+  await withRetry(async () => {
     await prisma.webhookQueue.update({
       where: { eventId: webhook.eventId },
       data: {
@@ -143,7 +143,7 @@ async function processWebhookEntry(webhook: WebhookQueueEntry): Promise<void> {
     await processWebhookByType(webhook.payload);
     
     // Mark as completed
-    await resilientPrisma.executeWithRetry(async (prisma) => {
+    await withRetry(async () => {
       await prisma.webhookQueue.update({
         where: { eventId: webhook.eventId },
         data: {
@@ -163,23 +163,38 @@ async function processWebhookEntry(webhook: WebhookQueueEntry): Promise<void> {
 }
 
 /**
- * Process webhook payload based on event type
+ * Process webhook payload based on event type using comprehensive handlers
  */
 async function processWebhookByType(payload: any): Promise<void> {
   const eventType = payload.type;
   const eventId = payload.event_id;
   
-  console.log(`🔧 Processing ${eventType} webhook (${eventId})`);
+  console.log(`🔧 Processing ${eventType} webhook (${eventId}) using comprehensive handlers`);
+  
+  // Import the comprehensive handlers
+  const { 
+    handleOrderCreated, 
+    handleOrderUpdated, 
+    handlePaymentCreated, 
+    handlePaymentUpdated 
+  } = await import('./webhook-handlers');
   
   switch (eventType) {
     case 'order.created':
+      await handleOrderCreated(payload);
+      break;
+      
     case 'order.updated':
-      await processOrderWebhook(payload);
+      // Use enhanced order processing with re-queuing for race conditions
+      await processOrderWebhookWithRetry(payload);
       break;
     
     case 'payment.created':
+      await handlePaymentCreated(payload);
+      break;
+      
     case 'payment.updated':
-      await processPaymentWebhook(payload);
+      await handlePaymentUpdated(payload);
       break;
     
     case 'refund.created':
@@ -194,105 +209,70 @@ async function processWebhookByType(payload: any): Promise<void> {
 }
 
 /**
- * Process order-related webhooks with race condition handling
+ * Process order-related webhooks with enhanced race condition handling and re-queuing
  */
-async function processOrderWebhook(payload: any): Promise<void> {
+async function processOrderWebhookWithRetry(payload: any): Promise<void> {
   const squareOrderId = payload.data.id;
-  const maxAttempts = 10;
+  const maxAttempts = 5;
   
   console.log(`🛒 Processing order webhook for order: ${squareOrderId}`);
   
-  // Handle race conditions - retry to find the order
+  // Handle race conditions - retry to find the order with exponential backoff
   let order = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    order = await resilientPrisma.executeWithRetry(async (prisma) => {
+    order = await withRetry(async () => {
       return await prisma.order.findUnique({
         where: { squareOrderId },
         include: { items: true }
       });
-    });
+    }, 2, `findOrder-attempt-${attempt + 1}`);
     
     if (order) break;
     
-    // Exponential backoff
-    const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
-    console.log(`⏳ Order not found (attempt ${attempt + 1}/${maxAttempts}), retrying in ${delay}ms...`);
+    // Exponential backoff with jitter
+    const baseDelay = Math.min(1000 * Math.pow(2, attempt), 30000);
+    const jitter = Math.random() * 500;
+    const delay = baseDelay + jitter;
+    
+    console.log(`⏳ Order ${squareOrderId} not found (attempt ${attempt + 1}/${maxAttempts}), retrying in ${delay}ms...`);
     await new Promise(r => setTimeout(r, delay));
   }
   
   if (!order) {
-    console.warn(`⚠️ Order ${squareOrderId} not found after ${maxAttempts} attempts, storing for later processing`);
+    // Instead of just warning, re-queue this webhook for later processing
+    console.log(`🔄 Order ${squareOrderId} not found after ${maxAttempts} attempts, re-queuing webhook for later processing`);
+    
+    // Re-queue the webhook with a delay to allow the order.created event to be processed first
+    await withRetry(async () => {
+      await prisma.webhookQueue.create({
+        data: {
+          eventId: `${payload.event_id}-retry-${Date.now()}`,
+          eventType: payload.type,
+          payload: payload,
+          status: 'PENDING',
+          attempts: 0,
+          // Schedule for 30 seconds later to give order.created time to process
+          createdAt: new Date(Date.now() + 30000)
+        }
+      });
+    }, 2, 'requeue-order-webhook');
+    
+    console.log(`✅ Order webhook ${payload.event_id} re-queued for later processing`);
     return;
   }
   
-  // Update order status based on Square data
-  const squareOrder = payload.data.object;
-  const newStatus = mapSquareStateToOrderStatus(squareOrder.state);
+  // Process the order update using comprehensive handlers
+  const { handleOrderUpdated } = await import('./webhook-handlers');
+  await handleOrderUpdated(payload);
   
-  await resilientPrisma.executeWithRetry(async (prisma) => {
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: newStatus,
-        rawData: squareOrder,
-        updatedAt: new Date(),
-      }
-    });
-  });
-  
-  console.log(`✅ Order ${squareOrderId} updated to status: ${newStatus}`);
+  console.log(`✅ Order ${squareOrderId} processed successfully`);
 }
 
 /**
- * Process payment-related webhooks
+ * NOTE: Payment webhooks are now handled by comprehensive handlers in webhook-handlers.ts
+ * The processPaymentWebhook function has been removed in favor of handlePaymentCreated and handlePaymentUpdated
+ * which provide better support for catering orders, duplicate detection, and comprehensive error handling.
  */
-async function processPaymentWebhook(payload: any): Promise<void> {
-  const squarePaymentId = payload.data.id;
-  const squarePayment = payload.data.object;
-  
-  console.log(`💳 Processing payment webhook for payment: ${squarePaymentId}`);
-  
-  await resilientPrisma.executeWithRetry(async (prisma) => {
-    // Find the order associated with this payment
-    const orderId = squarePayment.order_id;
-    const order = await prisma.order.findUnique({
-      where: { squareOrderId: orderId }
-    });
-    
-    if (!order) {
-      console.warn(`⚠️ Order ${orderId} not found for payment ${squarePaymentId}`);
-      return;
-    }
-    
-    // Update or create payment record
-    await prisma.payment.upsert({
-      where: { squarePaymentId },
-      update: {
-        status: mapSquarePaymentStatus(squarePayment.status),
-        rawData: squarePayment,
-        updatedAt: new Date(),
-      },
-      create: {
-        squarePaymentId,
-        orderId: order.id,
-        amount: parseFloat(squarePayment.amount_money?.amount || '0') / 100,
-        status: mapSquarePaymentStatus(squarePayment.status),
-        rawData: squarePayment,
-      }
-    });
-    
-    // Update order payment status
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        paymentStatus: mapSquarePaymentStatus(squarePayment.status),
-        updatedAt: new Date(),
-      }
-    });
-  });
-  
-  console.log(`✅ Payment ${squarePaymentId} processed successfully`);
-}
 
 /**
  * Process refund-related webhooks
@@ -303,7 +283,7 @@ async function processRefundWebhook(payload: any): Promise<void> {
   
   console.log(`🔄 Processing refund webhook for refund: ${squareRefundId}`);
   
-  await resilientPrisma.executeWithRetry(async (prisma) => {
+  await withRetry(async () => {
     const payment = await prisma.payment.findUnique({
       where: { squarePaymentId: squareRefund.payment_id }
     });
@@ -339,7 +319,7 @@ async function processRefundWebhook(payload: any): Promise<void> {
  */
 async function markWebhookFailed(eventId: string, error: any): Promise<void> {
   try {
-    await resilientPrisma.executeWithRetry(async (prisma) => {
+    await withRetry(async () => {
       await prisma.webhookQueue.update({
         where: { eventId },
         data: {
@@ -355,32 +335,6 @@ async function markWebhookFailed(eventId: string, error: any): Promise<void> {
 }
 
 /**
- * Map Square order state to our OrderStatus enum
+ * NOTE: Mapping functions are now handled by comprehensive handlers in webhook-handlers.ts
+ * mapSquareStateToOrderStatus and mapSquarePaymentStatus functions moved there for consistency.
  */
-function mapSquareStateToOrderStatus(squareState: string | undefined) {
-  switch (squareState?.toUpperCase()) {
-    case 'OPEN':
-      return 'PENDING' as const;
-    case 'COMPLETED':
-      return 'COMPLETED' as const;
-    case 'CANCELED':
-      return 'CANCELLED' as const;
-    default:
-      return 'PROCESSING' as const;
-  }
-}
-
-/**
- * Map Square payment status to our PaymentStatus enum
- */
-function mapSquarePaymentStatus(squareStatus: string | undefined) {
-  switch (squareStatus?.toUpperCase()) {
-    case 'COMPLETED':
-      return 'PAID' as const;
-    case 'CANCELED':
-    case 'FAILED':
-      return 'FAILED' as const;
-    default:
-      return 'PENDING' as const;
-  }
-}

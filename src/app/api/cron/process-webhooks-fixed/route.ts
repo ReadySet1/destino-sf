@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processWebhookQueue } from '@/lib/webhook-queue-fix';
+import { ensureConnection, shutdown } from '@/lib/db-unified';
 
 // Vercel cron job configuration
 export const runtime = 'nodejs';
@@ -29,6 +30,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🚀 Starting webhook queue processing...');
     
+    // CRITICAL: Ensure database connection before processing
+    console.log('🔌 Ensuring database connection...');
+    await ensureConnection();
+    console.log('✅ Database connection established');
+    
     // Process queue with timeout protection
     stats = await processWebhookQueue({
       maxItems: 50,        // Process up to 50 webhooks per run
@@ -57,6 +63,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       stats,
       timestamp: new Date().toISOString()
     }, { status: 500 });
+  } finally {
+    // CRITICAL: Clean up database connections to prevent leaks
+    console.log('🧹 Cleaning up database connections...');
+    try {
+      await shutdown();
+      console.log('✅ Database connections cleaned up');
+    } catch (cleanupError) {
+      console.warn('⚠️ Error during database cleanup:', cleanupError);
+    }
   }
 }
 

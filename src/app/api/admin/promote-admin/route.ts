@@ -37,16 +37,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if profile already exists
-    const existingProfile = await prisma.profile.findUnique({
-      where: { id: targetUserId },
-    });
+    const existingProfile = await withRetry(
+      () => prisma.profile.findUnique({
+        where: { id: targetUserId },
+      }),
+      3,
+      'find existing profile'
+    );
 
     if (existingProfile) {
       // Update existing profile to ADMIN role
-      const updatedProfile = await prisma.profile.update({
-        where: { id: targetUserId },
-        data: { role: 'ADMIN' },
-      });
+      const updatedProfile = await withRetry(
+        () => prisma.profile.update({
+          where: { id: targetUserId },
+          data: { role: 'ADMIN' },
+        }),
+        3,
+        'update profile to admin'
+      );
 
       return NextResponse.json({
         message: 'User promoted to admin',
@@ -54,14 +62,18 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Create new profile with ADMIN role
-      const newProfile = await prisma.profile.create({
-        data: {
-          id: targetUserId,
-          email: targetEmail,
-          role: 'ADMIN',
-          // We'll let the user update name/phone later
-        },
-      });
+      const newProfile = await withRetry(
+        () => prisma.profile.create({
+          data: {
+            id: targetUserId,
+            email: targetEmail,
+            role: 'ADMIN',
+            // We'll let the user update name/phone later
+          },
+        }),
+        3,
+        'create new admin profile'
+      );
 
       return NextResponse.json({
         message: 'User profile created with admin role',

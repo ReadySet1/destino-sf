@@ -58,10 +58,14 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     return false;
   }
 
-  const adminProfile = await prisma.profile.findUnique({
-    where: { id: user.id },
-    select: { role: true },
-  });
+  const adminProfile = await withRetry(
+    () => prisma.profile.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    }),
+    3,
+    'check admin profile'
+  );
 
   return adminProfile?.role === 'ADMIN';
 }

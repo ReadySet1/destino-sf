@@ -227,12 +227,14 @@ export async function GET(request: NextRequest) {
           regularOrdersQuery.take = Math.min(25, itemsPerPage * 2);
         }
 
-        // Execute query with timeout
-        const regularOrdersPromise = prisma.order.findMany(regularOrdersQuery);
-        const regularOrders = await Promise.race([
-          regularOrdersPromise,
-          createTimeoutPromise(8000)
-        ]) as OrderWithCount[];
+        // Execute query with timeout and retry logic
+        const regularOrders = await withRetry(async () => {
+          const regularOrdersPromise = prisma.order.findMany(regularOrdersQuery);
+          return await Promise.race([
+            regularOrdersPromise,
+            createTimeoutPromise(8000)
+          ]) as OrderWithCount[];
+        }, 3, 'fetchRegularOrders');
 
         logger.info(`[ORDERS-API] Found ${regularOrders?.length || 0} regular orders`);
 
@@ -263,11 +265,13 @@ export async function GET(request: NextRequest) {
 
         // Get count for regular orders if filtering by regular only
         if (typeFilter === 'regular') {
-          const countPromise = prisma.order.count({ where: regularOrdersWhere });
-          totalCount = await Promise.race([
-            countPromise,
-            createTimeoutPromise(3000)
-          ]) as number;
+          totalCount = await withRetry(async () => {
+            const countPromise = prisma.order.count({ where: regularOrdersWhere });
+            return await Promise.race([
+              countPromise,
+              createTimeoutPromise(3000)
+            ]) as number;
+          }, 3, 'countRegularOrders');
         }
       } catch (error) {
         logger.error('[ORDERS-API] Error fetching regular orders:', error);
@@ -315,12 +319,14 @@ export async function GET(request: NextRequest) {
           cateringOrdersQuery.take = Math.min(25, itemsPerPage * 2);
         }
 
-        // Execute query with timeout
-        const cateringOrdersPromise = prisma.cateringOrder.findMany(cateringOrdersQuery);
-        const cateringOrders = await Promise.race([
-          cateringOrdersPromise,
-          createTimeoutPromise(8000)
-        ]) as CateringOrderWithCount[];
+        // Execute query with timeout and retry logic
+        const cateringOrders = await withRetry(async () => {
+          const cateringOrdersPromise = prisma.cateringOrder.findMany(cateringOrdersQuery);
+          return await Promise.race([
+            cateringOrdersPromise,
+            createTimeoutPromise(8000)
+          ]) as CateringOrderWithCount[];
+        }, 3, 'fetchCateringOrders');
 
         logger.info(`[ORDERS-API] Found ${cateringOrders?.length || 0} catering orders`);
 
@@ -351,11 +357,13 @@ export async function GET(request: NextRequest) {
 
         // Get count for catering orders if filtering by catering only
         if (typeFilter === 'catering') {
-          const countPromise = prisma.cateringOrder.count({ where: cateringOrdersWhere });
-          totalCount = await Promise.race([
-            countPromise,
-            createTimeoutPromise(3000)
-          ]) as number;
+          totalCount = await withRetry(async () => {
+            const countPromise = prisma.cateringOrder.count({ where: cateringOrdersWhere });
+            return await Promise.race([
+              countPromise,
+              createTimeoutPromise(3000)
+            ]) as number;
+          }, 3, 'countCateringOrders');
         }
       } catch (error) {
         logger.error('[ORDERS-API] Error fetching catering orders:', error);
@@ -416,14 +424,18 @@ export async function GET(request: NextRequest) {
       // Get total count with timeout
       try {
         const [regularCount, cateringCount] = await Promise.all([
-          Promise.race([
-            prisma.order.count({ where: regularOrdersWhere }),
-            createTimeoutPromise(3000)
-          ]),
-          Promise.race([
-            prisma.cateringOrder.count({ where: cateringOrdersWhere }),
-            createTimeoutPromise(3000)
-          ])
+          withRetry(async () => {
+            return await Promise.race([
+              prisma.order.count({ where: regularOrdersWhere }),
+              createTimeoutPromise(3000)
+            ]);
+          }, 3, 'countRegularOrdersAll'),
+          withRetry(async () => {
+            return await Promise.race([
+              prisma.cateringOrder.count({ where: cateringOrdersWhere }),
+              createTimeoutPromise(3000)
+            ]);
+          }, 3, 'countCateringOrdersAll')
         ]);
         
         totalCount = (regularCount as number) + (cateringCount as number);
