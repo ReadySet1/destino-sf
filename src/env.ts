@@ -6,8 +6,8 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     DIRECT_DATABASE_URL: z.string().url().optional(),
     SQUARE_ACCESS_TOKEN: z.string(),
-    SQUARE_WEBHOOK_SIGNATURE_KEY: z.string(),
     SQUARE_WEBHOOK_SECRET: z.string(),
+    SQUARE_WEBHOOK_SECRET_SANDBOX: z.string().optional(),
     // Webhook-specific settings
     WEBHOOK_MAX_CONNECTIONS: z.string().transform(Number).default('5'),
     WEBHOOK_CONNECTION_TIMEOUT: z.string().transform(Number).default('10000'),
@@ -58,8 +58,8 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
     SQUARE_ACCESS_TOKEN: process.env.SQUARE_ACCESS_TOKEN,
-    SQUARE_WEBHOOK_SIGNATURE_KEY: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
     SQUARE_WEBHOOK_SECRET: process.env.SQUARE_WEBHOOK_SECRET,
+    SQUARE_WEBHOOK_SECRET_SANDBOX: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
     // Webhook-specific settings
     WEBHOOK_MAX_CONNECTIONS: process.env.WEBHOOK_MAX_CONNECTIONS,
     WEBHOOK_CONNECTION_TIMEOUT: process.env.WEBHOOK_CONNECTION_TIMEOUT,

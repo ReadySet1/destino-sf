@@ -168,11 +168,11 @@ vercel env add SHIPPING_ORIGIN_PHONE "555-123-4567" $ENV_NAME
 # WEBHOOK CONFIGURATION
 # ================================================================
 echo "🔗 Configuring Webhooks..."
-read -p "Square Webhook Signature Key: " SQUARE_WEBHOOK_SIGNATURE_KEY
-read -p "Square Webhook Secret: " SQUARE_WEBHOOK_SECRET
+read -p "Square Webhook Secret (Production): " SQUARE_WEBHOOK_SECRET
+read -p "Square Webhook Secret (Sandbox): " SQUARE_WEBHOOK_SECRET_SANDBOX
 
-vercel env add SQUARE_WEBHOOK_SIGNATURE_KEY "$SQUARE_WEBHOOK_SIGNATURE_KEY" $ENV_NAME
 vercel env add SQUARE_WEBHOOK_SECRET "$SQUARE_WEBHOOK_SECRET" $ENV_NAME
+vercel env add SQUARE_WEBHOOK_SECRET_SANDBOX "$SQUARE_WEBHOOK_SECRET_SANDBOX" $ENV_NAME
 
 # ================================================================
 # OPTIONAL CONFIGURATION

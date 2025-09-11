@@ -59,7 +59,8 @@ SQUARE_SANDBOX_APPLICATION_ID=sandbox-sq0idb-...
 SQUARE_LOCATION_ID=L...       # Your sandbox location ID
 
 # Webhook Configuration
-SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_signature_key
+SQUARE_WEBHOOK_SECRET=your_webhook_secret
+SQUARE_WEBHOOK_SECRET_SANDBOX=your_webhook_secret_sandbox
 SQUARE_WEBHOOK_SECRET=your_webhook_secret
 ```
 

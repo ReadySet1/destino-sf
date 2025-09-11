@@ -5,7 +5,9 @@ import {
   handlePaymentWebhook,
 } from '@/lib/square/payments-api';
 import { createOrder, createPayment as createOrderPayment } from '@/lib/square/orders';
-import { handleSquareWebhook } from '@/lib/square/webhooks';
+// ❌ OLD: import { handleSquareWebhook } from '@/lib/square/webhooks';
+// ✅ NEW: Use the webhook endpoint at /api/webhooks/square instead
+// import { POST as handleSquareWebhook } from '@/app/api/webhooks/square/route';
 import { syncSquareProducts } from '@/lib/square/sync';
 import { ProductionSyncManager } from '@/lib/square/production-sync';
 import { SquareService, getSquareService } from '@/lib/square/service';

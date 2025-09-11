@@ -60,7 +60,8 @@ vercel env add SQUARE_SANDBOX_APPLICATION_ID sandbox-sq0idb-kSJsJFl3McesRc_oqx-p
 
 # Legacy support
 vercel env add SQUARE_ACCESS_TOKEN EAAAl1cr9vZhERNNLJXpZ1iNxBRnW-sL9vtvkBShEoolqsZG69tnmnlptGhl4BXj production
-vercel env add SQUARE_WEBHOOK_SIGNATURE_KEY xysLcWwihbVWY2OWBv-EXQ production
+vercel env add SQUARE_WEBHOOK_SECRET xysLcWwihbVWY2OWBv-EXQ production
+vercel env add SQUARE_WEBHOOK_SECRET_SANDBOX xysLcWwihbVWY2OWBv-EXQ production
 
 # ================================================================
 # SHIPPING CONFIGURATION (Shippo)

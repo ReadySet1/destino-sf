@@ -327,7 +327,7 @@ describe('Third-Party Integration Tests - Phase 4', () => {
           },
         };
 
-        const { validateWebhookSignature } = await import('@/lib/square/webhooks');
+        const { validateWebhookSignature } = await import('@/lib/square/webhook-validator');
         const signature = 'valid-signature';
         const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET!;
 
@@ -352,7 +352,7 @@ describe('Third-Party Integration Tests - Phase 4', () => {
           },
         };
 
-        const { validateWebhookSignature } = await import('@/lib/square/webhooks');
+        const { validateWebhookSignature } = await import('@/lib/square/webhook-validator');
         const invalidSignature = 'invalid-signature';
         const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET!;
 

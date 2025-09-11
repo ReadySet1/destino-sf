@@ -21,8 +21,8 @@ const requiredEnvVars = {
   SQUARE_PRODUCTION_TOKEN: 'test-production-token',
   SQUARE_LOCATION_ID: 'test-location-id',
   SQUARE_ENVIRONMENT: 'sandbox',
-  SQUARE_WEBHOOK_SIGNATURE_KEY: 'test-signature',
   SQUARE_WEBHOOK_SECRET: 'test-webhook-secret',
+  SQUARE_WEBHOOK_SECRET_SANDBOX: 'test-webhook-secret-sandbox',
   
   // Email
   RESEND_API_KEY: 'test-resend-key',
@@ -80,8 +80,8 @@ jest.mock('@/env', () => ({
     SQUARE_PRODUCTION_TOKEN: 'test-production-token',
     SQUARE_LOCATION_ID: 'test-location-id',
     SQUARE_ENVIRONMENT: 'sandbox',
-    SQUARE_WEBHOOK_SIGNATURE_KEY: 'test-signature',
     SQUARE_WEBHOOK_SECRET: 'test-webhook-secret',
+    SQUARE_WEBHOOK_SECRET_SANDBOX: 'test-webhook-secret-sandbox',
     RESEND_API_KEY: 'test-resend-key',
     FROM_EMAIL: 'test@example.com',
     ADMIN_EMAIL: 'admin@example.com',

@@ -161,7 +161,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
     // Set up environment variables
     process.env.SQUARE_ACCESS_TOKEN = 'test-square-token';
     process.env.SQUARE_ENVIRONMENT = 'sandbox';
-    process.env.SQUARE_WEBHOOK_SIGNATURE_KEY = 'test-webhook-key';
+    process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = 'test-webhook-key';
     process.env.RESEND_API_KEY = 'test-resend-key';
     process.env.NEXT_PUBLIC_SENTRY_DSN = 'https://test@sentry.io/123';
     process.env.UPSTASH_REDIS_REST_URL = 'https://test-redis.upstash.io';
@@ -395,7 +395,7 @@ describe('Third-Party Services Integration Tests - Phase 4', () => {
         expect(mockSquareClient.webhookSignatureVerifier.isValidSignature).toHaveBeenCalledWith(
           webhookBody,
           signature,
-          process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
+          process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
           timestamp
         );
       });

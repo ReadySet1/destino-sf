@@ -29,7 +29,8 @@ const envSchema = z.object({
   }),
   SQUARE_LOCATION_ID: z.string().min(1, 'SQUARE_LOCATION_ID is required'),
   SQUARE_ACCESS_TOKEN: z.string().min(1, 'SQUARE_ACCESS_TOKEN is required'),
-  SQUARE_WEBHOOK_SIGNATURE_KEY: z.string().min(1, 'SQUARE_WEBHOOK_SIGNATURE_KEY is required'),
+  SQUARE_WEBHOOK_SECRET: z.string().min(1, 'SQUARE_WEBHOOK_SECRET is required'),
+  SQUARE_WEBHOOK_SECRET_SANDBOX: z.string().optional(),
   
   // Optional Square fields
   SQUARE_PRODUCTION_TOKEN: z.string().optional(),
@@ -105,6 +106,7 @@ export const getSquareConfig = () => ({
   environment: env.SQUARE_ENVIRONMENT,
   locationId: env.SQUARE_LOCATION_ID,
   accessToken: env.SQUARE_ACCESS_TOKEN,
-  webhookSignatureKey: env.SQUARE_WEBHOOK_SIGNATURE_KEY,
+  webhookSecret: env.SQUARE_WEBHOOK_SECRET,
+  webhookSecretSandbox: env.SQUARE_WEBHOOK_SECRET_SANDBOX,
   useSandbox: env.USE_SQUARE_SANDBOX === 'true' || env.SQUARE_ENVIRONMENT === 'sandbox'
 })

@@ -37,7 +37,8 @@ SQUARE_ACCESS_TOKEN="your-square-access-token"
 SQUARE_ENVIRONMENT="sandbox"  # or "production"
 
 # Square webhook signature key (for webhook verification)
-SQUARE_WEBHOOK_SIGNATURE_KEY="your-webhook-signature-key"
+SQUARE_WEBHOOK_SECRET="your-webhook-secret"
+SQUARE_WEBHOOK_SECRET_SANDBOX="your-webhook-secret-sandbox"
 
 # Public keys for frontend
 NEXT_PUBLIC_SQUARE_APPLICATION_ID="your-square-application-id"

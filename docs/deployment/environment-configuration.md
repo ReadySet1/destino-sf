@@ -59,7 +59,8 @@
 | `SQUARE_SANDBOX_TOKEN`            | `EAAAl-uQi9jcs2DbsPElJqTceFFKlfoyvZWsQbyMMHqhlnmX7dJzk9_UfMAs8rZW` | Production  |
 | `SQUARE_SANDBOX_APPLICATION_ID`   | `sandbox-sq0idb-kSJsJFl3McesRc_oqx-pHQ`                            | Production  |
 | `SQUARE_ACCESS_TOKEN`             | `EAAAl1cr9vZhERNNLJXpZ1iNxBRnW-sL9vtvkBShEoolqsZG69tnmnlptGhl4BXj` | Production  |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY`    | `xysLcWwihbVWY2OWBv-EXQ`                                           | Production  |
+| `SQUARE_WEBHOOK_SECRET`           | `xysLcWwihbVWY2OWBv-EXQ`                                           | Production  |
+| `SQUARE_WEBHOOK_SECRET_SANDBOX`   | `xysLcWwihbVWY2OWBv-EXQ`                                           | Production  |
 
 ---
 

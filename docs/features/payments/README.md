@@ -27,7 +27,8 @@ SQUARE_SANDBOX_APPLICATION_ID=your_sandbox_app_id
 SQUARE_ACCESS_TOKEN=your_production_token_here
 
 # === WEBHOOK CONFIGURATION ===
-SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_signature_key
+SQUARE_WEBHOOK_SECRET=your_webhook_secret
+SQUARE_WEBHOOK_SECRET_SANDBOX=your_webhook_secret_sandbox
 
 # === ENVIRONMENT CONTROL ===
 # Overall environment flag (can be overridden by specific flags above)
@@ -170,7 +171,8 @@ SQUARE_SANDBOX_TOKEN=EAAAl...     # Your sandbox access token
 SQUARE_SANDBOX_APPLICATION_ID=sandbox-sq0idb...
 
 # === WEBHOOK & OTHER CONFIG ===
-SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_key
+SQUARE_WEBHOOK_SECRET=your_webhook_secret
+SQUARE_WEBHOOK_SECRET_SANDBOX=your_webhook_secret_sandbox
 USE_SQUARE_SANDBOX=false
 ```
 

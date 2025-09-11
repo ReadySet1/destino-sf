@@ -59,7 +59,10 @@ class SquareTokenSetup {
 
       // Other configs
       SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID ? '✅ Configured' : '❌ Missing',
-      SQUARE_WEBHOOK_SIGNATURE_KEY: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY
+      SQUARE_WEBHOOK_SECRET: process.env.SQUARE_WEBHOOK_SECRET
+        ? '✅ Configured'
+        : '❌ Missing',
+      SQUARE_WEBHOOK_SECRET_SANDBOX: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX
         ? '✅ Configured'
         : '❌ Missing',
     };
@@ -206,7 +209,8 @@ SQUARE_SANDBOX_TOKEN=your_sandbox_token_here
 SQUARE_SANDBOX_APPLICATION_ID=your_sandbox_app_id_here
 
 # === WEBHOOK CONFIGURATION ===
-SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_signature_key
+SQUARE_WEBHOOK_SECRET=your_webhook_secret_production
+SQUARE_WEBHOOK_SECRET_SANDBOX=your_webhook_secret_sandbox
 
 # === LEGACY SUPPORT ===
 SQUARE_ACCESS_TOKEN=your_production_token_here

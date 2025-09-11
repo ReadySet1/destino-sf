@@ -13,9 +13,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       SQUARE_WEBHOOK_SECRET_EXISTS: !!process.env.SQUARE_WEBHOOK_SECRET,
       SQUARE_WEBHOOK_SECRET_LENGTH: process.env.SQUARE_WEBHOOK_SECRET?.length || 0,
       SQUARE_WEBHOOK_SECRET_PREFIX: process.env.SQUARE_WEBHOOK_SECRET?.substring(0, 8) || 'NOT_SET',
-      SQUARE_WEBHOOK_SIGNATURE_KEY_EXISTS: !!process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
-      SQUARE_WEBHOOK_SIGNATURE_KEY_LENGTH: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY?.length || 0,
-      SQUARE_WEBHOOK_SIGNATURE_KEY_PREFIX: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY?.substring(0, 8) || 'NOT_SET',
+      SQUARE_WEBHOOK_SECRET_SANDBOX_EXISTS: !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
+      SQUARE_WEBHOOK_SECRET_SANDBOX_LENGTH: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX?.length || 0,
+      SQUARE_WEBHOOK_SECRET_SANDBOX_PREFIX: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX?.substring(0, 8) || 'NOT_SET',
     },
     headers: {
       'content-type': request.headers.get('content-type'),
@@ -47,6 +47,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       SQUARE_WEBHOOK_SECRET_EXISTS: !!process.env.SQUARE_WEBHOOK_SECRET,
       SQUARE_WEBHOOK_SECRET_LENGTH: process.env.SQUARE_WEBHOOK_SECRET?.length || 0,
       SQUARE_WEBHOOK_SECRET_PREFIX: process.env.SQUARE_WEBHOOK_SECRET?.substring(0, 8) || 'NOT_SET',
+      SQUARE_WEBHOOK_SECRET_SANDBOX_EXISTS: !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
+      SQUARE_WEBHOOK_SECRET_SANDBOX_LENGTH: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX?.length || 0,
+      SQUARE_WEBHOOK_SECRET_SANDBOX_PREFIX: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX?.substring(0, 8) || 'NOT_SET',
     },
     headers: {
       'content-type': request.headers.get('content-type'),

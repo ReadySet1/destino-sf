@@ -5,7 +5,7 @@
 // Set required environment variables for t3-env validation before any imports
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.SQUARE_ACCESS_TOKEN = 'test-access-token';
-process.env.SQUARE_WEBHOOK_SIGNATURE_KEY = 'test-signature-key';
+process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = 'test-signature-key';
 process.env.SQUARE_WEBHOOK_SECRET = 'test-webhook-secret';
 process.env.RESEND_API_KEY = 'test-resend-key';
 process.env.FROM_EMAIL = 'test@example.com';

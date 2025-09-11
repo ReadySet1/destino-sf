@@ -43,8 +43,8 @@ const SandboxEnvSchema = z.object({
   
   // Optional
   SHIPPO_API_KEY: z.string().optional(),
-  SQUARE_WEBHOOK_SIGNATURE_KEY: z.string().optional(),
   SQUARE_WEBHOOK_SECRET: z.string().optional(),
+  SQUARE_WEBHOOK_SECRET_SANDBOX: z.string().optional(),
 });
 
 type SandboxEnv = z.infer<typeof SandboxEnvSchema>;
@@ -123,9 +123,9 @@ async function validateSandboxEnvironment(): Promise<ValidationResult> {
       console.log('⚠️  Warning: Shippo API key not configured');
     }
 
-    if (!env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
-      result.warnings.push('SQUARE_WEBHOOK_SIGNATURE_KEY not set - webhooks may not work');
-      console.log('⚠️  Warning: Square webhook signature key not configured');
+    if (!env.SQUARE_WEBHOOK_SECRET_SANDBOX) {
+      result.warnings.push('SQUARE_WEBHOOK_SECRET_SANDBOX not set - sandbox webhooks may not work');
+      console.log('⚠️  Warning: Square webhook secret sandbox not configured');
     }
 
   } catch (error) {

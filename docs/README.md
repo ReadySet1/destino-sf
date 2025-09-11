@@ -120,7 +120,8 @@ NEXT_PUBLIC_APP_URL="https://destinosf.com"
 # Square integration (production-ready)
 SQUARE_ACCESS_TOKEN="..."
 SQUARE_LOCATION_ID="..."
-SQUARE_WEBHOOK_SIGNATURE_KEY="..."
+SQUARE_WEBHOOK_SECRET="..."
+SQUARE_WEBHOOK_SECRET_SANDBOX="..."
 
 # Email service
 RESEND_API_KEY="..."

@@ -23,7 +23,8 @@ SQUARE_SANDBOX_APPLICATION_ID=your_sandbox_app_id_here
 SQUARE_SANDBOX_LOCATION_ID=your_sandbox_location_id_here_starts_with_F
 
 # === WEBHOOK CONFIGURATION ===
-SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_signature_key
+SQUARE_WEBHOOK_SECRET=your_webhook_secret
+SQUARE_WEBHOOK_SECRET_SANDBOX=your_webhook_secret_sandbox
 
 # === LEGACY SUPPORT (fallback if SQUARE_PRODUCTION_TOKEN not set) ===
 SQUARE_ACCESS_TOKEN=your_production_token_here_starts_with_EAAA

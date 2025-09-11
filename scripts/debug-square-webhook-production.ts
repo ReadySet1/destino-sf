@@ -13,9 +13,9 @@ interface WebhookDebugInfo {
     NODE_ENV: string | undefined;
     VERCEL_ENV: string | undefined;
     hasWebhookSecret: boolean;
-    hasSignatureKey: boolean;
+    hasWebhookSecretSandbox: boolean;
     secretLength: number;
-    signatureKeyLength: number;
+    secretSandboxLength: number;
   };
   recommendations: string[];
   nextSteps: string[];
@@ -23,16 +23,16 @@ interface WebhookDebugInfo {
 
 function debugSquareWebhookConfiguration(): WebhookDebugInfo {
   const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
-  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const webhookSecretSandbox = process.env.SQUARE_WEBHOOK_SECRET_SANDBOX;
   
   const debugInfo: WebhookDebugInfo = {
     environment: {
       NODE_ENV: process.env.NODE_ENV,
       VERCEL_ENV: process.env.VERCEL_ENV,
       hasWebhookSecret: !!webhookSecret,
-      hasSignatureKey: !!signatureKey,
+      hasWebhookSecretSandbox: !!webhookSecretSandbox,
       secretLength: webhookSecret?.length || 0,
-      signatureKeyLength: signatureKey?.length || 0,
+      secretSandboxLength: webhookSecretSandbox?.length || 0,
     },
     recommendations: [],
     nextSteps: []
@@ -46,18 +46,18 @@ function debugSquareWebhookConfiguration(): WebhookDebugInfo {
     debugInfo.recommendations.push('✅ SQUARE_WEBHOOK_SECRET is properly configured');
   }
 
-  if (!signatureKey) {
-    debugInfo.recommendations.push('❌ SQUARE_WEBHOOK_SIGNATURE_KEY is missing from environment variables');
-    debugInfo.nextSteps.push('Add SQUARE_WEBHOOK_SIGNATURE_KEY to your production environment');
+  if (!webhookSecretSandbox) {
+    debugInfo.recommendations.push('⚠️ SQUARE_WEBHOOK_SECRET_SANDBOX is missing from environment variables');
+    debugInfo.nextSteps.push('Add SQUARE_WEBHOOK_SECRET_SANDBOX to your sandbox environment for testing');
   } else {
-    debugInfo.recommendations.push('✅ SQUARE_WEBHOOK_SIGNATURE_KEY is properly configured');
+    debugInfo.recommendations.push('✅ SQUARE_WEBHOOK_SECRET_SANDBOX is properly configured');
   }
 
   // Environment-specific recommendations
   if (debugInfo.environment.NODE_ENV === 'production') {
     debugInfo.recommendations.push('🔍 Running in PRODUCTION environment');
-    if (!webhookSecret || !signatureKey) {
-      debugInfo.nextSteps.push('CRITICAL: Production requires both webhook secret and signature key');
+    if (!webhookSecret) {
+      debugInfo.nextSteps.push('CRITICAL: Production requires SQUARE_WEBHOOK_SECRET');
     }
   }
 
