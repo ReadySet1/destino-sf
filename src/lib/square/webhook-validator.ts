@@ -39,8 +39,8 @@ function cleanEnvironmentVariables(): void {
  * Enhanced logic to detect sandbox webhooks even without explicit headers
  */
 function detectEnvironment(headers: Headers): SquareEnvironment {
-  // 1. Check explicit environment header first
-  const envHeader = headers.get(WEBHOOK_CONSTANTS.ENVIRONMENT_HEADER);
+  // 1. Check explicit environment header first (Square sends 'square-environment': 'Sandbox')
+  const envHeader = headers.get('square-environment') || headers.get(WEBHOOK_CONSTANTS.ENVIRONMENT_HEADER);
   if (envHeader?.toLowerCase() === 'sandbox') {
     return 'sandbox';
   }
@@ -157,9 +157,16 @@ function validatePayloadStructure(body: string): {
 
 /**
  * Check if event is too old (prevent replay attacks)
+ * Disabled for sandbox since Square uses very old test data (2020)
  */
-function validateEventAge(createdAt: string): boolean {
+function validateEventAge(createdAt: string, environment: SquareEnvironment = 'production'): boolean {
   try {
+    // For sandbox: Disable age validation entirely - Square uses test data from 2020!
+    if (environment === 'sandbox') {
+      return true; // Always allow sandbox events regardless of age
+    }
+    
+    // For production: Maintain strict 5-minute limit for security
     const eventTime = new Date(createdAt).getTime();
     const now = Date.now();
     return (now - eventTime) <= WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS;
@@ -197,7 +204,10 @@ export async function validateWebhookSignature(
     const headersObj = Object.fromEntries(request.headers.entries());
     const headerValidation = WebhookHeadersSchema.safeParse(headersObj);
     
+    // Header validation passed ✅
+    
     if (!headerValidation.success) {
+      console.error('❌ Header validation failed:', headerValidation.error);
       return {
         valid: false,
         environment: 'production', // default
@@ -212,7 +222,10 @@ export async function validateWebhookSignature(
     const environment = detectEnvironment(request.headers);
     const { signature, algorithm } = extractSignature(request.headers);
     
+    // Signature extraction successful ✅
+    
     if (!signature || !algorithm) {
+      console.error('❌ Signature extraction failed - no signature found');
       return {
         valid: false,
         environment,
@@ -250,7 +263,16 @@ export async function validateWebhookSignature(
     const payload = payloadValidation.payload;
 
     // 5. Validate event age (prevent old events)
-    if (!validateEventAge(payload.created_at)) {
+    const eventTime = new Date(payload.created_at).getTime();
+    const now = Date.now();
+    const eventAge = now - eventTime;
+    
+    if (!validateEventAge(payload.created_at, environment)) {
+      console.error('❌ Event rejected as too old (production only):', {
+        eventTime: payload.created_at,
+        ageInDays: eventAge / (24 * 60 * 60 * 1000),
+        environment
+      });
       return {
         valid: false,
         environment,
@@ -261,6 +283,8 @@ export async function validateWebhookSignature(
         }
       };
     }
+    
+    // Event age validation passed ✅
 
     // 6. Calculate expected signature using Square's algorithm
     // CRITICAL: Square requires notification URL + body for signature calculation
@@ -269,25 +293,11 @@ export async function validateWebhookSignature(
     const pathname = request.nextUrl.pathname;
     const notificationUrl = `${protocol}://${host}${pathname}`;
     
-    console.log('🔐 Square signature calculation:', {
-      notificationUrl,
-      bodyLength: body.length,
-      algorithm,
-      environment,
-      secretLength: webhookSecret.length,
-      secretPrefix: webhookSecret.substring(0, 8) + '...'
-    });
+    // Calculate expected signature using Square's algorithm ✅
     
     const expectedSignature = calculateSignature(notificationUrl, body, webhookSecret, algorithm);
     
-    console.log('🔍 Signature comparison debug:', {
-      receivedSignature: signature,
-      expectedSignature: expectedSignature,
-      combined: notificationUrl + body,
-      combinedLength: (notificationUrl + body).length,
-      bodyPreview: body.substring(0, 100) + '...',
-      notificationUrl: notificationUrl
-    });
+    // Signature validation successful! ✅
     
     // 7. Use constant-time comparison to prevent timing attacks
     let isValid: boolean;
