@@ -240,11 +240,6 @@ export function ManualOrderForm() {
   const manualTax = Number(formState.taxAmount) || 0;
   const manualServiceFee = Number(formState.serviceFee) || 0;
   
-  // Calculate gratuity based on mode (amount or percentage)
-  const gratuityAmount = formState.gratuityMode === 'percentage' 
-    ? (subtotal + deliveryFee + shippingCost) * (Number(formState.gratuityPercentage) / 100)
-    : Number(formState.gratuityAmount) || 0;
-  
   // Auto-calculate tax if enabled - using exemption logic (only catering items taxed)
   const calculatedTax = formState.autoCalculateTax ? (() => {
     // Create items for tax calculation with product details
@@ -276,8 +271,17 @@ export function ManualOrderForm() {
     ? totalBeforeServiceFee * 0.035
     : manualServiceFee;
     
-  // Calculate grand total
-  const orderTotal = subtotal + deliveryFee + shippingCost + calculatedTax + calculatedServiceFee + gratuityAmount;
+  // Calculate the total BEFORE gratuity (this is what we calculate tip percentage on)
+  const totalBeforeGratuity = subtotal + deliveryFee + shippingCost + calculatedTax + calculatedServiceFee;
+  
+  // Calculate gratuity based on mode (amount or percentage) - AFTER taxes and fees
+  // This ensures tips are not taxed, as they should be calculated on the grand total
+  const gratuityAmount = formState.gratuityMode === 'percentage' 
+    ? totalBeforeGratuity * (Number(formState.gratuityPercentage) / 100)
+    : Number(formState.gratuityAmount) || 0;
+    
+  // Calculate grand total (subtotal + fees + tax + service fee + tip)
+  const orderTotal = totalBeforeGratuity + gratuityAmount;
 
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -623,7 +627,7 @@ export function ManualOrderForm() {
                     
                     {/* Calculated Amount Display */}
                     <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
-                      Calculated: ${gratuityAmount.toFixed(2)} ({formState.gratuityPercentage}% of ${(subtotal + deliveryFee + shippingCost).toFixed(2)})
+                      Calculated: ${gratuityAmount.toFixed(2)} ({formState.gratuityPercentage}% of ${totalBeforeGratuity.toFixed(2)})
                     </div>
                   </div>
                 )}

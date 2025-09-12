@@ -6,6 +6,20 @@ import { createManualOrder } from '@/app/(dashboard)/admin/orders/manual/actions
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { FormattedNotes } from '@/components/Order/FormattedNotes';
+import { FormContainer } from '@/components/ui/form/FormContainer';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormSection } from '@/components/ui/form/FormSection';
+import { FormField } from '@/components/ui/form/FormField';
+import { FormInput } from '@/components/ui/form/FormInput';
+import { FormTextarea } from '@/components/ui/form/FormTextarea';
+import { FormSelect } from '@/components/ui/form/FormSelect';
+import { FormCheckbox } from '@/components/ui/form/FormCheckbox';
+import { FormGrid } from '@/components/ui/form/FormGrid';
+import { FormStack } from '@/components/ui/form/FormStack';
+import { FormActions } from '@/components/ui/form/FormActions';
+import { FormButton } from '@/components/ui/form/FormButton';
+import { FormIcons } from '@/components/ui/form/FormIcons';
+import { calculateTaxForItems } from '@/utils/tax-exemption';
 
 // Helper function to safely format price
 const convertDecimalToNumber = (decimal: unknown): number => {
@@ -80,6 +94,10 @@ type ProductWithVariants = {
   id: string;
   name: string;
   price: number;
+  category?: {
+    id: string;
+    name: string;
+  } | null;
   variants: {
     id: string;
     name: string;
@@ -109,6 +127,18 @@ type FormState = {
   status: OrderStatus;
   items: OrderItem[];
   existingOrderId: string;
+  // Detailed breakdown fields
+  taxAmount: number;
+  deliveryFee: number;
+  serviceFee: number;
+  gratuityAmount: number;
+  gratuityPercentage: number;
+  gratuityMode: 'amount' | 'percentage';
+  shippingCostCents: number;
+  shippingCarrier: string;
+  // Auto-calculate flags
+  autoCalculateTax: boolean;
+  autoCalculateServiceFee: boolean;
 };
 
 type Order = {
@@ -124,6 +154,13 @@ type Order = {
   status: OrderStatus;
   total: string | number;
   items: OrderItem[];
+  // Fee breakdown fields (may be null in existing orders)
+  taxAmount?: number | string | null;
+  deliveryFee?: number | string | null;
+  serviceFee?: number | string | null;
+  gratuityAmount?: number | string | null;
+  shippingCostCents?: number | string | null;
+  shippingCarrier?: string | null;
   [key: string]: any;
 };
 
@@ -155,6 +192,18 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       variantName: item.variantName,
     })),
     existingOrderId: initialOrder.id,
+    // Initialize fee breakdown fields from existing order or defaults
+    taxAmount: convertDecimalToNumber(initialOrder.taxAmount) || 0,
+    deliveryFee: convertDecimalToNumber(initialOrder.deliveryFee) || 0,
+    serviceFee: convertDecimalToNumber(initialOrder.serviceFee) || 0,
+    gratuityAmount: convertDecimalToNumber(initialOrder.gratuityAmount) || 0,
+    gratuityPercentage: 0,
+    gratuityMode: 'amount',
+    shippingCostCents: convertDecimalToNumber(initialOrder.shippingCostCents) || 0,
+    shippingCarrier: initialOrder.shippingCarrier || '',
+    // Auto-calculate flags - default to false for existing orders to preserve manual values
+    autoCalculateTax: false,
+    autoCalculateServiceFee: false,
   });
 
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
@@ -193,9 +242,14 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Convert numeric fields to numbers
+    const numericFields = ['deliveryFee', 'taxAmount', 'serviceFee', 'gratuityAmount', 'gratuityPercentage', 'shippingCostCents'];
+    const convertedValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+    
     setFormState(prev => ({
       ...prev,
-      [name]: value,
+      [name]: convertedValue,
     }));
   };
 
@@ -281,23 +335,55 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     }));
   };
 
-  // Calculate order total
-  const orderTotal = formState.items.reduce((total, item) => {
-    // Ensure both price and quantity are treated as numbers
-    const itemPrice =
-      typeof item.price === 'number'
-        ? item.price
-        : typeof item.price === 'string'
-          ? parseFloat(item.price) || 0
-          : 0;
-    const itemQuantity =
-      typeof item.quantity === 'number'
-        ? item.quantity
-        : typeof item.quantity === 'string'
-          ? parseInt(item.quantity) || 0
-          : 0;
-    return total + itemPrice * itemQuantity;
-  }, 0);
+  // Calculate detailed totals - ensure all values are numbers
+  const subtotal = formState.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const deliveryFee = Number(formState.deliveryFee) || 0;
+  const shippingCost = Number(formState.shippingCostCents) / 100 || 0;
+  const manualTax = Number(formState.taxAmount) || 0;
+  const manualServiceFee = Number(formState.serviceFee) || 0;
+  
+  // Auto-calculate tax if enabled - using exemption logic (only catering items taxed)
+  const calculatedTax = formState.autoCalculateTax ? (() => {
+    // Create items for tax calculation with product details
+    const itemsForTaxCalculation = formState.items.map(item => {
+      const product = products.find(p => p.id === item.productId);
+      return {
+        product: product ? {
+          category: product.category,
+          name: product.name,
+        } : undefined,
+        price: item.price,
+        quantity: item.quantity,
+      };
+    });
+    
+    // Calculate tax on items using exemption logic
+    const itemTaxResult = calculateTaxForItems(itemsForTaxCalculation, 0.0825);
+    
+    // Add delivery fee and shipping cost to taxable amount if they exist (these are always taxable)
+    const additionalTaxableAmount = deliveryFee + shippingCost;
+    const additionalTax = additionalTaxableAmount * 0.0825;
+    
+    return itemTaxResult.taxAmount + additionalTax;
+  })() : manualTax;
+    
+  // Auto-calculate service fee if enabled (3.5% on subtotal + delivery fee + shipping + tax)
+  const totalBeforeServiceFee = subtotal + deliveryFee + shippingCost + calculatedTax;
+  const calculatedServiceFee = formState.autoCalculateServiceFee 
+    ? totalBeforeServiceFee * 0.035
+    : manualServiceFee;
+    
+  // Calculate the total BEFORE gratuity (this is what we calculate tip percentage on)
+  const totalBeforeGratuity = subtotal + deliveryFee + shippingCost + calculatedTax + calculatedServiceFee;
+  
+  // Calculate gratuity based on mode (amount or percentage) - AFTER taxes and fees
+  // This ensures tips are not taxed, as they should be calculated on the grand total
+  const gratuityAmount = formState.gratuityMode === 'percentage' 
+    ? totalBeforeGratuity * (Number(formState.gratuityPercentage) / 100)
+    : Number(formState.gratuityAmount) || 0;
+    
+  // Calculate grand total (subtotal + fees + tax + service fee + tip)
+  const orderTotal = totalBeforeGratuity + gratuityAmount;
 
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -316,15 +402,14 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
         throw new Error('Please fill in all required customer information');
       }
 
-      // Submit the order update
+      // Submit the order update with calculated values
       const result = await createManualOrder({
         ...formState,
         total: orderTotal,
-        // Add required breakdown fields with default values for edit functionality
-        taxAmount: 0,
-        serviceFee: 0,
-        gratuityAmount: 0,
-        deliveryFee: 0,
+        taxAmount: calculatedTax,
+        deliveryFee: deliveryFee,
+        serviceFee: calculatedServiceFee,
+        gratuityAmount: gratuityAmount,
       });
 
       if (result.error) {
@@ -352,199 +437,357 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
+      <FormContainer>
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </FormContainer>
     );
   }
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <FormContainer>
+      <FormHeader
+        title="Edit Order"
+        description={`Update order #${initialOrder.id.substring(0, 8)}`}
+        backUrl="/admin/orders"
+        backLabel="Back to Orders"
+      />
+
+      <form onSubmit={handleSubmit}>
+        <FormStack spacing={10}>
         {/* Customer Information */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="customerName"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Customer Name *
-              </label>
-              <input
-                type="text"
-                id="customerName"
+        <FormSection
+          title="Customer Information"
+          description="Required customer details for the order"
+          icon={FormIcons.user}
+        >
+          <FormGrid cols={2}>
+            <FormField label="Customer Name" required>
+              <FormInput
                 name="customerName"
+                placeholder="Enter customer name"
                 value={formState.customerName}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
-              </label>
-              <input
+            </FormField>
+            <FormField label="Email" required>
+              <FormInput
                 type="email"
-                id="email"
                 name="email"
+                placeholder="customer@example.com"
                 value={formState.email}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone *
-              </label>
-              <input
+            </FormField>
+            <FormField label="Phone" required>
+              <FormInput
                 type="tel"
-                id="phone"
                 name="phone"
+                placeholder="(555) 123-4567"
                 value={formState.phone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
                 required
               />
-            </div>
-          </div>
-        </div>
+            </FormField>
+          </FormGrid>
+        </FormSection>
 
         {/* Order Details */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="fulfillmentType"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Fulfillment Type
-              </label>
-              <select
-                id="fulfillmentType"
+        <FormSection
+          title="Order Details"
+          description="Fulfillment and order configuration"
+          icon={FormIcons.truck}
+          variant="blue"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Fulfillment Type">
+              <FormSelect
                 name="fulfillmentType"
                 value={formState.fulfillmentType}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value="pickup">Pickup</option>
                 <option value="local_delivery">Local Delivery</option>
                 <option value="nationwide_shipping">Nationwide Shipping</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="pickupTime" className="block text-sm font-medium text-gray-700 mb-1">
-                Pickup/Delivery Time
-              </label>
-              <input
+              </FormSelect>
+            </FormField>
+            <FormField label="Pickup/Delivery Time">
+              <FormInput
                 type="datetime-local"
-                id="pickupTime"
                 name="pickupTime"
                 value={formState.pickupTime}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               />
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Order Status
-              </label>
-              <select
-                id="status"
+            </FormField>
+            <FormField label="Order Status">
+              <FormSelect
                 name="status"
                 value={formState.status}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 {Object.values(OrderStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Order Notes
-              </label>
-
-              {/* Show formatted notes if they exist */}
-              {formState.notes && (
-                <div className="mb-3">
-                  <FormattedNotes notes={formState.notes} />
-                </div>
-              )}
-
-              <textarea
-                id="notes"
-                name="notes"
-                value={formState.notes}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                rows={4}
-                placeholder="Enter order notes, special requests, or shipping information..."
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                For shipping orders, the system will automatically format addresses. You can edit
-                the raw JSON if needed.
-              </p>
-            </div>
-          </div>
-        </div>
+              </FormSelect>
+            </FormField>
+            <FormField label="Order Notes">
+              <div className="space-y-2">
+                {/* Show formatted notes if they exist */}
+                {formState.notes && (
+                  <div className="mb-3">
+                    <FormattedNotes notes={formState.notes} />
+                  </div>
+                )}
+                <FormTextarea
+                  name="notes"
+                  placeholder="Special instructions or notes..."
+                  value={formState.notes}
+                  onChange={handleChange}
+                  rows={2}
+                />
+                <p className="text-xs text-gray-500">
+                  For shipping orders, the system will automatically format addresses. You can edit the raw JSON if needed.
+                </p>
+              </div>
+            </FormField>
+          </FormGrid>
+        </FormSection>
 
         {/* Payment Information */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="paymentMethod"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Payment Method
-              </label>
-              <select
-                id="paymentMethod"
+        <FormSection
+          title="Payment Information"
+          description="Payment method and status"
+          icon={FormIcons.creditCard}
+          variant="green"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Payment Method">
+              <FormSelect
                 name="paymentMethod"
                 value={formState.paymentMethod}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 <option value={PaymentMethod.CASH}>Cash</option>
                 <option value={PaymentMethod.SQUARE}>Square</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="paymentStatus"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Payment Status
-              </label>
-              <select
-                id="paymentStatus"
+              </FormSelect>
+            </FormField>
+            <FormField label="Payment Status">
+              <FormSelect
                 name="paymentStatus"
                 value={formState.paymentStatus}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
               >
                 {Object.values(PaymentStatus).map(status => (
                   <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
-              </select>
-            </div>
-          </div>
-        </div>
+              </FormSelect>
+            </FormField>
+          </FormGrid>
+        </FormSection>
+
+        {/* Fee Breakdown */}
+        <FormSection
+          title="Fee Breakdown"
+          description="Configure taxes, fees, and shipping costs"
+          icon={FormIcons.creditCard}
+          variant="purple"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Tax Amount">
+              <div className="space-y-2">
+                <FormCheckbox
+                  name="autoCalculateTax"
+                  label="Auto-calculate tax (8.25% on catering items only)"
+                  checked={formState.autoCalculateTax}
+                  onChange={(e) => setFormState(prev => ({ ...prev, autoCalculateTax: e.target.checked }))}
+                />
+                {!formState.autoCalculateTax && (
+                  <FormInput
+                    type="number"
+                    name="taxAmount"
+                    placeholder="0.00"
+                    value={formState.taxAmount.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+                {formState.autoCalculateTax && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                    Calculated: ${calculatedTax.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            <FormField label="Delivery Fee">
+              <FormInput
+                type="number"
+                name="deliveryFee"
+                placeholder="0.00"
+                value={formState.deliveryFee.toString()}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+              />
+            </FormField>
+            
+            <FormField label="Service Fee">
+              <div className="space-y-2">
+                <FormCheckbox
+                  name="autoCalculateServiceFee"
+                  label="Auto-calculate service fee (3.5%)"
+                  checked={formState.autoCalculateServiceFee}
+                  onChange={(e) => setFormState(prev => ({ ...prev, autoCalculateServiceFee: e.target.checked }))}
+                />
+                {!formState.autoCalculateServiceFee && (
+                  <FormInput
+                    type="number"
+                    name="serviceFee"
+                    placeholder="0.00"
+                    value={formState.serviceFee.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+                {formState.autoCalculateServiceFee && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                    Calculated: ${calculatedServiceFee.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            <FormField label="Gratuity/Tip">
+              <div className="space-y-3">
+                {/* Mode Toggle */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormState(prev => ({ ...prev, gratuityMode: 'amount' }))}
+                    className={`px-3 py-1 text-sm rounded ${
+                      formState.gratuityMode === 'amount'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Amount ($)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormState(prev => ({ ...prev, gratuityMode: 'percentage' }))}
+                    className={`px-3 py-1 text-sm rounded ${
+                      formState.gratuityMode === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Percentage (%)
+                  </button>
+                </div>
+
+                {/* Amount Input */}
+                {formState.gratuityMode === 'amount' && (
+                  <FormInput
+                    type="number"
+                    name="gratuityAmount"
+                    placeholder="0.00"
+                    value={formState.gratuityAmount.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+
+                {/* Percentage Input with Presets */}
+                {formState.gratuityMode === 'percentage' && (
+                  <div className="space-y-2">
+                    {/* Preset Buttons */}
+                    <div className="flex gap-2">
+                      {[10, 15, 20].map(percent => (
+                        <button
+                          key={percent}
+                          type="button"
+                          onClick={() => setFormState(prev => ({ ...prev, gratuityPercentage: percent }))}
+                          className={`px-3 py-2 text-sm rounded border ${
+                            formState.gratuityPercentage === percent
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Custom Percentage Input */}
+                    <FormInput
+                      type="number"
+                      name="gratuityPercentage"
+                      placeholder="0"
+                      value={formState.gratuityPercentage.toString()}
+                      onChange={handleChange}
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                    
+                    {/* Calculated Amount Display */}
+                    <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                      Calculated: ${gratuityAmount.toFixed(2)} ({formState.gratuityPercentage}% of ${totalBeforeGratuity.toFixed(2)})
+                    </div>
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            {formState.fulfillmentType === 'nationwide_shipping' && (
+              <FormField label="Shipping Cost (cents)">
+                <FormInput
+                  type="number"
+                  name="shippingCostCents"
+                  placeholder="0"
+                  value={formState.shippingCostCents.toString()}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </FormField>
+            )}
+          </FormGrid>
+          
+          {formState.fulfillmentType === 'nationwide_shipping' && (
+            <FormField label="Shipping Carrier">
+              <FormSelect
+                name="shippingCarrier"
+                value={formState.shippingCarrier}
+                onChange={handleChange}
+              >
+                <option value="">Select carrier</option>
+                <option value="USPS">USPS</option>
+                <option value="UPS">UPS</option>
+                <option value="FedEx">FedEx</option>
+                <option value="DHL">DHL</option>
+                <option value="Other">Other</option>
+              </FormSelect>
+            </FormField>
+          )}
+        </FormSection>
 
         {/* Order Items */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+        <FormSection
+          title="Order Items"
+          description="Add products to the order"
+          icon={FormIcons.package}
+          variant="amber"
+        >
 
           {/* Add new item */}
           <div className="bg-gray-50 p-4 rounded-md mb-4">
@@ -689,11 +932,78 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-gray-50 font-semibold">
-                    <td colSpan={4} className="px-4 py-3 text-sm text-right">
-                      Order Total:
+                  {/* Detailed breakdown */}
+                  <tr className="border-t border-gray-300">
+                    <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                      Subtotal:
                     </td>
-                    <td className="px-4 py-3 text-sm text-right">${formatPrice(orderTotal)}</td>
+                    <td className="px-4 py-2 text-sm text-right">${subtotal.toFixed(2)}</td>
+                    <td></td>
+                  </tr>
+                  
+                  {deliveryFee > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Delivery Fee:
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${deliveryFee.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {shippingCost > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Shipping ({formState.shippingCarrier || 'N/A'}):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${shippingCost.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {calculatedTax > 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Tax (8.25% on catering items + fees):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${calculatedTax.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Tax (No tax on non-catering items):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">$0.00</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {calculatedServiceFee > 0.01 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Service Fee (3.5%):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${calculatedServiceFee.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {gratuityAmount > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Gratuity/Tip{formState.gratuityMode === 'percentage' ? ` (${formState.gratuityPercentage}%)` : ''}:
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${gratuityAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  <tr className="bg-gray-50 font-bold border-t-2 border-gray-400">
+                    <td colSpan={4} className="px-4 py-3 text-sm text-right">
+                      Grand Total:
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right">${orderTotal.toFixed(2)}</td>
                     <td></td>
                   </tr>
                 </tbody>
@@ -704,26 +1014,25 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               No items added yet. Please add at least one item.
             </div>
           )}
-        </div>
+        </FormSection>
 
         {/* Error and Success Messages */}
         {error && <div className="bg-red-50 text-red-700 p-3 rounded-md">{error}</div>}
 
         {success && <div className="bg-green-50 text-green-700 p-3 rounded-md">{success}</div>}
 
-        {/* Buttons */}
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
+        {/* Submit Button */}
+        <FormActions>
+          <FormButton
+            variant="secondary"
             onClick={handleCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
           >
             Cancel
-          </button>
-          <button
+          </FormButton>
+          <FormButton
             type="submit"
             disabled={isSubmitting || formState.items.length === 0}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex items-center"
+            leftIcon={isSubmitting ? undefined : FormIcons.save}
           >
             {isSubmitting ? (
               <>
@@ -732,9 +1041,10 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
             ) : (
               'Update Order'
             )}
-          </button>
-        </div>
+          </FormButton>
+        </FormActions>
+        </FormStack>
       </form>
-    </div>
+    </FormContainer>
   );
 }
