@@ -79,7 +79,9 @@ export async function middleware(request: NextRequest) {
   const needsAuth = pathname.startsWith('/admin') || 
                    pathname.startsWith('/protected') || 
                    pathname.startsWith('/account/') || 
-                   pathname.startsWith('/user/');
+                   pathname.startsWith('/user/') ||
+                   pathname.startsWith('/api/availability') || // Add availability API routes
+                   pathname.startsWith('/api/admin/'); // Add other admin API routes
   
   if (needsAuth) {
     try {

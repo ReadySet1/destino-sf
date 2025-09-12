@@ -7,7 +7,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Profile {
@@ -26,6 +26,8 @@ model Profile {
   orders                   Order[]
   userSyncLogs             UserSyncLog[]
   resolvedMappingAudits    ProductMappingAudit[]      @relation("ResolvedMappingAudits")
+  createdAvailabilityRules AvailabilityRule[]         @relation("CreatedRules")
+  updatedAvailabilityRules AvailabilityRule[]         @relation("UpdatedRules")
 
   @@map("profiles")
 }
@@ -80,6 +82,7 @@ model Product {
   spotlightPicks     SpotlightPick[]
   variants           Variant[]
   mappingAudits      ProductMappingAudit[]
+  availabilityRules  AvailabilityRule[]
 
   @@index([categoryId])
   @@index([ordinal])
@@ -875,4 +878,64 @@ enum SyncStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+model AvailabilityRule {
+  id                String      @id @default(uuid()) @db.Uuid
+  productId         String      @db.Uuid
+  name              String
+  enabled           Boolean     @default(true)
+  priority          Int         @default(0)
+  ruleType          String      @db.VarChar(50) // 'date_range', 'seasonal', 'inventory', 'custom', 'time_based'
+  state             String      @db.VarChar(50) // 'available', 'pre_order', 'view_only', 'hidden', etc.
+  
+  // Date controls
+  startDate         DateTime?   @map("start_date")
+  endDate           DateTime?   @map("end_date")
+  
+  // Seasonal config (JSONB)
+  seasonalConfig    Json?       @map("seasonal_config")
+  
+  // Time restrictions (JSONB)
+  timeRestrictions  Json?       @map("time_restrictions")
+  
+  // Settings based on state (JSONB)
+  preOrderSettings  Json?       @map("pre_order_settings")
+  viewOnlySettings  Json?       @map("view_only_settings")
+  
+  // Override flag
+  overrideSquare    Boolean     @default(true) @map("override_square")
+  
+  // Metadata
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  createdBy         String      @db.Uuid @map("created_by")
+  updatedBy         String      @db.Uuid @map("updated_by")
+  deletedAt         DateTime?   @map("deleted_at")
+  
+  // Relations
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdByProfile  Profile     @relation("CreatedRules", fields: [createdBy], references: [id])
+  updatedByProfile  Profile     @relation("UpdatedRules", fields: [updatedBy], references: [id])
+  schedules         AvailabilitySchedule[]
+  
+  @@index([productId, enabled])
+  @@index([startDate, endDate])
+  @@index([productId, priority])
+  @@map("availability_rules")
+}
+
+model AvailabilitySchedule {
+  id              String      @id @default(uuid()) @db.Uuid
+  ruleId          String      @db.Uuid
+  scheduledAt     DateTime    @map("scheduled_at")
+  stateChange     String      @db.VarChar(50) @map("state_change")
+  processed       Boolean     @default(false)
+  processedAt     DateTime?   @map("processed_at")
+  errorMessage    String?     @map("error_message")
+  
+  rule            AvailabilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  
+  @@index([scheduledAt, processed])
+  @@map("availability_schedule")
 }

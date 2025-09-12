@@ -243,7 +243,7 @@ export function CateringContactForm({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value}
+                        selected={field.value || undefined}
                         onSelect={field.onChange}
                         disabled={date =>
                           // Disable dates in the past and dates less than 2 days from now

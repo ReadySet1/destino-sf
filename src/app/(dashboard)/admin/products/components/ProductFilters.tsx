@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ClientOnly } from '@/components/ui/client-only';
 import { Search, X } from 'lucide-react';
 
 type Category = {
@@ -115,74 +116,98 @@ export default function ProductFilters({
 
           {/* Category Filter */}
           <div className="w-full md:w-1/4">
-            <Select
-              value={category}
-              onValueChange={value => {
-                setCategory(value);
-                applyFilters({ category: value });
-              }}
+            <ClientOnly
+              fallback={
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <span className="text-muted-foreground">Loading...</span>
+                </div>
+              }
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Categories</SelectLabel>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              <Select
+                value={category}
+                onValueChange={value => {
+                  setCategory(value);
+                  applyFilters({ category: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Categories</SelectLabel>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </ClientOnly>
           </div>
 
           {/* Status Filter */}
           <div className="w-full md:w-1/6">
-            <Select
-              value={status}
-              onValueChange={value => {
-                setStatus(value);
-                applyFilters({ status: value });
-              }}
+            <ClientOnly
+              fallback={
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <span className="text-muted-foreground">Loading...</span>
+                </div>
+              }
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Status</SelectLabel>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              <Select
+                value={status}
+                onValueChange={value => {
+                  setStatus(value);
+                  applyFilters({ status: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Status</SelectLabel>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </ClientOnly>
           </div>
 
           {/* Featured Filter */}
           <div className="w-full md:w-1/6">
-            <Select
-              value={featured}
-              onValueChange={value => {
-                setFeatured(value);
-                applyFilters({ featured: value });
-              }}
+            <ClientOnly
+              fallback={
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <span className="text-muted-foreground">Loading...</span>
+                </div>
+              }
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Featured" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Featured</SelectLabel>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="featured">Featured</SelectItem>
-                  <SelectItem value="notFeatured">Not Featured</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              <Select
+                value={featured}
+                onValueChange={value => {
+                  setFeatured(value);
+                  applyFilters({ featured: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Featured" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Featured</SelectLabel>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="notFeatured">Not Featured</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </ClientOnly>
           </div>
         </div>
 
