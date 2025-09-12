@@ -355,6 +355,11 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         status: regularOrder!.status,
         paymentStatus: regularOrder!.paymentStatus,
         total: regularOrder!.total?.toNumber() ?? 0,
+        taxAmount: regularOrder!.taxAmount?.toNumber() ?? 0,
+        deliveryFee: regularOrder!.deliveryFee?.toNumber() ?? 0,
+        serviceFee: regularOrder!.serviceFee?.toNumber() ?? 0,
+        gratuityAmount: regularOrder!.gratuityAmount?.toNumber() ?? 0,
+        shippingCost: regularOrder!.shippingCostCents ? (regularOrder!.shippingCostCents / 100) : 0,
         createdAt: regularOrder!.createdAt,
         customerName: regularOrder!.customerName,
         email: regularOrder!.email,
@@ -381,6 +386,11 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         status: cateringOrder!.status,
         paymentStatus: cateringOrder!.paymentStatus,
         total: cateringOrder!.totalAmount?.toNumber() ?? 0,
+        taxAmount: 0, // Catering orders don't store tax breakdown separately
+        deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
+        serviceFee: 0, // Catering orders don't have service fees
+        gratuityAmount: 0, // Catering orders don't store gratuity separately
+        shippingCost: 0, // Catering orders don't have shipping
         createdAt: cateringOrder!.createdAt,
         customerName: cateringOrder!.name,
         email: cateringOrder!.email,
@@ -389,7 +399,6 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         numberOfPeople: cateringOrder!.numberOfPeople,
         specialRequests: cateringOrder!.specialRequests,
         deliveryAddress: cateringOrder!.deliveryAddress,
-        deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
         items: cateringOrder!.items.map(item => ({
           id: item.id,
           quantity: item.quantity,
@@ -402,6 +411,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
       };
 
   const totalQuantity = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Calculate subtotal (total minus all fees and taxes)
+  const subtotal = orderData.total - orderData.taxAmount - orderData.deliveryFee - orderData.serviceFee - orderData.gratuityAmount - orderData.shippingCost;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
@@ -697,13 +709,76 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 );
               })}
 
-              {/* Order Total */}
-              <div className="border-t border-gray-200 pt-4 mt-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900">Total:</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    {formatCurrency(orderData.total)}
+              {/* Order Breakdown */}
+              <div className="border-t border-gray-200 pt-4 mt-6 space-y-2">
+                {/* Subtotal */}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-900 font-medium">
+                    {formatCurrency(subtotal)}
                   </span>
+                </div>
+
+                {/* Tax */}
+                {orderData.taxAmount > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Tax:</span>
+                    <span className="text-gray-900 font-medium">
+                      {formatCurrency(orderData.taxAmount)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Delivery Fee */}
+                {orderData.deliveryFee > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Delivery Fee:</span>
+                    <span className="text-gray-900 font-medium">
+                      {formatCurrency(orderData.deliveryFee)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Shipping Cost */}
+                {orderData.shippingCost > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">
+                      Shipping{orderData.shippingCarrier ? ` (${orderData.shippingCarrier})` : ''}:
+                    </span>
+                    <span className="text-gray-900 font-medium">
+                      {formatCurrency(orderData.shippingCost)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Service Fee */}
+                {orderData.serviceFee > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Service Fee:</span>
+                    <span className="text-gray-900 font-medium">
+                      {formatCurrency(orderData.serviceFee)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Gratuity */}
+                {orderData.gratuityAmount > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Gratuity/Tip:</span>
+                    <span className="text-gray-900 font-medium">
+                      {formatCurrency(orderData.gratuityAmount)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Total */}
+                <div className="border-t border-gray-200 pt-2 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-gray-900">Total:</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatCurrency(orderData.total)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

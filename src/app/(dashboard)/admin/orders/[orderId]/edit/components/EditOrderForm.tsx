@@ -320,6 +320,11 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
       const result = await createManualOrder({
         ...formState,
         total: orderTotal,
+        // Add required breakdown fields with default values for edit functionality
+        taxAmount: 0,
+        serviceFee: 0,
+        gratuityAmount: 0,
+        deliveryFee: 0,
       });
 
       if (result.error) {

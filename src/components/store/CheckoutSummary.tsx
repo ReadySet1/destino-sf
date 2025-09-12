@@ -1,9 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, Package, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { calculateTaxForItems } from '@/utils/tax-exemption';
 
 interface CheckoutSummaryProps {
-  items: Array<{ id: string; name: string; price: number; quantity: number }>;
+  items: Array<{ 
+    id: string; 
+    name: string; 
+    price: number; 
+    quantity: number;
+    category?: { name?: string } | null;
+  }>;
   includeServiceFee?: boolean;
   deliveryFee?: {
     fee: number;
@@ -13,6 +20,7 @@ interface CheckoutSummaryProps {
   } | null;
   shippingRate?: { amount: number; carrier: string; name: string; estimatedDays?: number } | null;
   fulfillmentMethod?: 'pickup' | 'local_delivery' | 'nationwide_shipping';
+  taxRate?: number; // Allow custom tax rate, default to 8.25%
 }
 
 // Define the service fee rate
@@ -24,9 +32,22 @@ export function CheckoutSummary({
   deliveryFee,
   shippingRate,
   fulfillmentMethod,
+  taxRate = 0.0825, // Default to 8.25% tax
 }: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.0825; // 8.25% tax
+  
+  // Calculate tax with exemptions - only catering items are taxable
+  const itemsForTaxCalculation = items.map(item => ({
+    product: {
+      category: item.category,
+      name: item.name,
+    },
+    price: item.price,
+    quantity: item.quantity,
+  }));
+  
+  const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRate);
+  const tax = taxCalculation.taxAmount;
 
   // Calculate the delivery fee amount
   const deliveryFeeAmount = deliveryFee ? deliveryFee.fee : 0;
@@ -116,10 +137,17 @@ export function CheckoutSummary({
             </Alert>
           )}
 
-          <div className="flex justify-between text-sm text-destino-charcoal/80">
-            <span>Tax (8.25%)</span>
-            <span className="font-semibold">${tax.toFixed(2)}</span>
-          </div>
+          {tax > 0 ? (
+            <div className="flex justify-between text-sm text-destino-charcoal/80">
+              <span>Tax ({(taxRate * 100).toFixed(2)}% on catering items)</span>
+              <span className="font-semibold">${tax.toFixed(2)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between text-sm text-destino-charcoal/80">
+              <span>Tax (No tax on selected items)</span>
+              <span className="font-semibold">$0.00</span>
+            </div>
+          )}
 
           {/* Conditionally display the service fee */}
           {includeServiceFee && serviceFee > 0 && (

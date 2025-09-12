@@ -18,6 +18,7 @@ import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { env } from '@/env'; // Import the validated environment configuration
 import { getTaxRate, isStoreOpen } from '@/lib/store-settings'; // Import store settings service
+import { calculateTaxForItems } from '@/utils/tax-exemption'; // Import tax exemption utilities
 
 // Re-add BigInt patch if needed directly in actions, or ensure it runs globally
 (BigInt.prototype as any).toJSON = function () {
@@ -568,8 +569,19 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   // Check if this is a catering order
   const hasCateringItems = await hasCateringProducts(items.map(item => item.id));
 
-  // --- Calculate Totals using Decimal.js ---
+  // --- Calculate Totals using Decimal.js with Tax Exemptions ---
   let subtotal = new Decimal(0);
+  
+  // Fetch product details with categories for tax calculation
+  const productIds = items.map(item => item.id);
+  const productsWithCategories = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    include: { category: true },
+  });
+
+  // Create a map for quick lookup
+  const productMap = new Map(productsWithCategories.map(p => [p.id, p]));
+
   const orderItemsData = items.map(item => {
     const itemPrice = new Decimal(item.price);
     const itemTotal = itemPrice.times(item.quantity);
@@ -584,7 +596,22 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   // Get tax rate from store settings
   const taxRateDecimal = await getTaxRate();
-  const taxAmount = subtotal.times(new Decimal(taxRateDecimal)).toDecimalPlaces(2);
+  
+  // Calculate tax using exemption logic - only catering items are taxable
+  const itemsForTaxCalculation = items.map(item => {
+    const product = productMap.get(item.id);
+    return {
+      product: product ? {
+        category: product.category,
+        name: product.name,
+      } : undefined,
+      price: item.price,
+      quantity: item.quantity,
+    };
+  });
+
+  const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
+  const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
 
   // Get shipping cost directly from the validated fulfillment data
   const shippingCostCents =
@@ -1133,8 +1160,19 @@ export async function createManualPaymentOrder(formData: {
     };
   }
 
-  // --- Calculate Totals using Decimal.js ---
+  // --- Calculate Totals using Decimal.js with Tax Exemptions ---
   let subtotal = new Decimal(0);
+  
+  // Fetch product details with categories for tax calculation
+  const productIds = items.map(item => item.id);
+  const productsWithCategories = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    include: { category: true },
+  });
+
+  // Create a map for quick lookup
+  const productMap = new Map(productsWithCategories.map(p => [p.id, p]));
+
   const orderItemsData = items.map(item => {
     const itemPrice = new Decimal(item.price);
     const itemTotal = itemPrice.times(item.quantity);
@@ -1149,7 +1187,22 @@ export async function createManualPaymentOrder(formData: {
 
   // Get tax rate from store settings
   const taxRateDecimal = await getTaxRate();
-  const taxAmount = subtotal.times(new Decimal(taxRateDecimal)).toDecimalPlaces(2);
+  
+  // Calculate tax using exemption logic - only catering items are taxable
+  const itemsForTaxCalculation = items.map(item => {
+    const product = productMap.get(item.id);
+    return {
+      product: product ? {
+        category: product.category,
+        name: product.name,
+      } : undefined,
+      price: item.price,
+      quantity: item.quantity,
+    };
+  });
+
+  const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
+  const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
   const shippingCostCents =
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);

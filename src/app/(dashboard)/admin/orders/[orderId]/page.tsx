@@ -44,6 +44,9 @@ interface SerializedOrder {
   paymentMethod: string | null;
   total: number;
   taxAmount: number;
+  deliveryFee: number;
+  serviceFee: number;
+  gratuityAmount: number;
   shippingCostCents: number | null;
   customerName: string;
   email: string;
@@ -145,6 +148,9 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     paymentMethod: order.paymentMethod,
     total: decimalToNumber(order.total),
     taxAmount: decimalToNumber(order.taxAmount),
+    deliveryFee: decimalToNumber(order.deliveryFee),
+    serviceFee: decimalToNumber(order.serviceFee),
+    gratuityAmount: decimalToNumber(order.gratuityAmount),
     shippingCostCents: order.shippingCostCents,
     customerName: order.customerName || '',
     email: order.email || '',
@@ -675,21 +681,37 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                     0
                   );
 
-                  // Get individual components
+                  // Get individual components from database
                   const taxAmount = serializedOrder?.taxAmount || 0;
+                  const deliveryFee = serializedOrder?.deliveryFee || 0;
+                  const serviceFee = serializedOrder?.serviceFee || 0;
+                  const gratuityAmount = serializedOrder?.gratuityAmount || 0;
                   const shippingCostDollars = serializedOrder?.shippingCostCents 
                     ? (serializedOrder.shippingCostCents / 100) 
                     : 0;
-                  
-                  // Calculate service fee (3.5% of subtotal + tax + shipping)
-                  const totalBeforeFee = subtotalFromItems + taxAmount + shippingCostDollars;
-                  const serviceFee = totalBeforeFee * 0.035; // 3.5% service fee
-                  
-                  // Delivery fee (if applicable)
-                  const deliveryFee = 0; // Not currently stored separately in regular orders
+
+                  // Debug: Calculate what the breakdown should add up to
+                  const totalBreakdown = taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCostDollars;
+                  const calculatedTotal = subtotalFromItems + totalBreakdown;
+                  const discrepancy = orderTotal - calculatedTotal;
 
                   return (
                     <>
+                      {/* Debug Information - Only show if there's a discrepancy */}
+                      {discrepancy !== 0 && (
+                        <tr className="bg-red-50 border-l-4 border-red-400">
+                          <td colSpan={5} className="px-4 py-2 text-sm">
+                            <div className="text-red-800 font-medium">⚠️ Debug: Breakdown Discrepancy</div>
+                            <div className="text-red-700 text-xs mt-1">
+                              Raw values: Tax={taxAmount}, Delivery={deliveryFee}, Service={serviceFee}, 
+                              Gratuity={gratuityAmount}, Shipping={shippingCostDollars} | 
+                              Subtotal={subtotalFromItems} + Breakdown={totalBreakdown} = {calculatedTotal} 
+                              vs Grand Total={orderTotal} | Discrepancy: {formatCurrency(discrepancy)}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+
                       {/* Subtotal */}
                       <tr className="border-t border-gray-200">
                         <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
@@ -740,10 +762,34 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                       {serviceFee > 0.01 && (
                         <tr>
                           <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Service Fee (3.5%):
+                            Service Fee:
                           </td>
                           <td className="px-4 py-2 text-right text-sm">
                             {formatCurrency(serviceFee)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Gratuity */}
+                      {gratuityAmount > 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Gratuity/Tip:
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(gratuityAmount)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Show missing breakdown amount if there's a discrepancy */}
+                      {discrepancy !== 0 && totalBreakdown === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Tax, Fees & Other Charges:
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(Math.abs(discrepancy))}
                           </td>
                         </tr>
                       )}

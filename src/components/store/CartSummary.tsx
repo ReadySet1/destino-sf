@@ -7,9 +7,9 @@ export interface CartSummaryProps {
 }
 
 export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: CartSummaryProps) {
-  // Consider different tax rates or service fees based on cart type
+  // Apply tax only to catering items - empanadas, alfajores, sauces are NON-taxable
   const taxRate = 0.0825; // 8.25%
-  const tax = subtotal * taxRate;
+  const tax = cartType === 'catering' ? subtotal * taxRate : 0;
   const total = subtotal + tax;
 
   return (
@@ -34,7 +34,9 @@ export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: Cart
           <span className="font-semibold text-sm sm:text-base">{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between text-destino-charcoal/80" data-testid="order-tax">
-          <span className="text-sm sm:text-base">Tax</span>
+          <span className="text-sm sm:text-base">
+            {cartType === 'catering' ? `Tax (${(taxRate * 100).toFixed(2)}%)` : 'Tax (No tax on regular items)'}
+          </span>
           <span className="font-semibold text-sm sm:text-base">{formatCurrency(tax)}</span>
         </div>
         <div

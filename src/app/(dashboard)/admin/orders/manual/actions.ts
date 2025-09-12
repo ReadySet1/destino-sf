@@ -30,6 +30,13 @@ interface ManualOrderInput {
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   items: OrderItemInput[];
+  // New detailed breakdown fields
+  taxAmount: number;
+  deliveryFee?: number;
+  serviceFee: number;
+  gratuityAmount: number;
+  shippingCostCents?: number;
+  shippingCarrier?: string;
   existingOrderId?: string;
 }
 
@@ -73,6 +80,13 @@ export async function createManualOrder(data: ManualOrderInput) {
           paymentMethod: data.paymentMethod,
           paymentStatus: data.paymentStatus,
           status: data.status,
+          // New detailed breakdown fields
+          taxAmount: data.taxAmount,
+          deliveryFee: data.deliveryFee || 0,
+          serviceFee: data.serviceFee,
+          gratuityAmount: data.gratuityAmount,
+          shippingCostCents: data.shippingCostCents || null,
+          shippingCarrier: data.shippingCarrier || null,
           // We'll handle items separately
         },
       });
@@ -116,6 +130,13 @@ export async function createManualOrder(data: ManualOrderInput) {
         paymentMethod: data.paymentMethod,
         paymentStatus: data.paymentStatus,
         status: data.status,
+        // New detailed breakdown fields
+        taxAmount: data.taxAmount,
+        deliveryFee: data.deliveryFee || 0,
+        serviceFee: data.serviceFee,
+        gratuityAmount: data.gratuityAmount,
+        shippingCostCents: data.shippingCostCents || null,
+        shippingCarrier: data.shippingCarrier || null,
         // Create items as nested operation
         items: {
           create: data.items.map(item => ({

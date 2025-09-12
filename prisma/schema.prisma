@@ -156,6 +156,9 @@ model Order {
   createdAt                 DateTime      @default(now())
   updatedAt                 DateTime      @updatedAt
   taxAmount                 Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  deliveryFee               Decimal       @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  serviceFee                Decimal       @default(0) @map("service_fee") @db.Decimal(10, 2)
+  gratuityAmount            Decimal       @default(0) @map("gratuity_amount") @db.Decimal(10, 2)
   isCateringOrder           Boolean       @default(false)
   paymentMethod             PaymentMethod @default(SQUARE)
   archiveReason             String?       @map("archive_reason")

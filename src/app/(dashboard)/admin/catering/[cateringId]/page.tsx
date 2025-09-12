@@ -3,10 +3,6 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db-unified';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Users, MapPin, ArrowLeft, Package, User, Phone, Mail } from 'lucide-react';
-import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
 
 // Types
 interface PageProps {
@@ -219,277 +215,336 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
     }
 
     const totalQuantity = cateringOrder.items.reduce((sum, item) => sum + item.quantity, 0);
+    const orderTotal = cateringOrder.totalAmount?.toNumber() || 0;
 
     return (
-      <div className="space-y-6 md:space-y-8">
-        <ResponsivePageHeader
-          title="Catering Order Details"
-          subtitle={`Order #${cateringOrder.id.slice(-8)} • ${cateringOrder.name}`}
-          breadcrumbs={
-            <>
-              <BreadcrumbItem href="/admin">Dashboard</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem href="/admin/orders">Orders</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem isCurrent>Catering Order</BreadcrumbItem>
-            </>
-          }
-          actions={
-            <>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <Link href="/admin/orders">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Orders
-                </Link>
-              </Button>
-            </>
-          }
-        />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Catering Order Details</h1>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/orders"
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 mr-2"
+            >
+              Back to Orders
+            </Link>
+            <Link
+              href={`/admin/catering/${cateringId}/edit`}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+            >
+              Edit Order
+            </Link>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Order Summary */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-gray-600" />
-                  Order Summary
-                </CardTitle>
-                <CardDescription>Order #{cateringOrder.id.slice(-8)}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Status</p>
-                    <Badge variant={getStatusVariant(cateringOrder.status)} className="mt-1">
-                      {cateringOrder.status === 'PREPARING' ? 'PREPARING' : cateringOrder.status}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Payment Status</p>
-                    <Badge
-                      variant={getPaymentStatusVariant(cateringOrder.paymentStatus)}
-                      className="mt-1"
-                    >
-                      {cateringOrder.paymentStatus}
-                    </Badge>
-                  </div>
-                </div>
+          <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>Order ID:</strong> {cateringOrder?.id || 'N/A'}
+              </p>
+              <p>
+                <strong>Square Order ID:</strong> {cateringOrder?.squareOrderId || 'N/A'}
+              </p>
+              <div>
+                <strong>Status:</strong>{' '}
+                <Badge className={`text-xs ${
+                  cateringOrder?.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                  cateringOrder?.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                  cateringOrder?.status === 'PREPARING' ? 'bg-blue-100 text-blue-800' :
+                  cateringOrder?.status === 'COMPLETED' ? 'bg-gray-100 text-gray-800' :
+                  cateringOrder?.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {cateringOrder?.status || 'UNKNOWN'}
+                </Badge>
+              </div>
+              <div>
+                <strong>Payment Status:</strong>{' '}
+                <Badge className={`text-xs ${
+                  cateringOrder?.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
+                  cateringOrder?.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                  cateringOrder?.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
+                  cateringOrder?.paymentStatus === 'REFUNDED' ? 'bg-orange-100 text-orange-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {cateringOrder?.paymentStatus || 'PENDING'}
+                </Badge>
+              </div>
+              <p>
+                <strong>Total Amount:</strong> {formatCurrency(orderTotal)}
+              </p>
+              <p>
+                <strong>Total Items:</strong> {totalQuantity}
+              </p>
+              <p>
+                <strong>Event Date:</strong> {formatDateTime(cateringOrder?.eventDate)}
+              </p>
+              <p>
+                <strong>Number of People:</strong> {cateringOrder?.numberOfPeople}
+              </p>
+              <p>
+                <strong>Order Placed:</strong> {formatDateTime(cateringOrder?.createdAt)}
+                {cateringOrder?.createdAt
+                  ? ` (${formatDistance(new Date(cateringOrder.createdAt), new Date(), { addSuffix: true })})`
+                  : ''}
+              </p>
+              <p>
+                <strong>Last Updated:</strong> {formatDateTime(cateringOrder?.updatedAt)}
+              </p>
 
-                <div className="pt-4 border-t border-gray-200">
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">Payment Method</p>
-                    <Badge variant="outline" className="mt-1">
-                      {cateringOrder.paymentMethod || 'SQUARE'}
-                    </Badge>
-                  </div>
-                </div>
+              {cateringOrder?.deliveryAddress && (
+                <p>
+                  <strong>Delivery Address:</strong> {parseDeliveryInfo(cateringOrder.deliveryAddress).address}
+                </p>
+              )}
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Amount</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {formatCurrency(cateringOrder.totalAmount?.toNumber())}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Total Items</p>
-                    <p className="text-lg font-semibold text-gray-900">{totalQuantity}</p>
-                  </div>
-                </div>
+              <p>
+                <strong>Fulfillment Type:</strong> CATERING
+              </p>
+            </div>
 
-                {/* Catering order specific fields */}
-                <div className="pt-4 border-t border-gray-200 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-600" />
-                    <div>
-                      <p className="text-sm text-gray-600">Event Date</p>
-                      <p className="text-gray-900">{formatDateTime(cateringOrder.eventDate)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-600" />
-                    <div>
-                      <p className="text-sm text-gray-600">Number of People</p>
-                      <p className="text-gray-900">{cateringOrder.numberOfPeople}</p>
-                    </div>
-                  </div>
-                  {cateringOrder.deliveryAddress && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-gray-600 mt-1" />
-                      <div>
-                        <p className="text-sm text-gray-600">Delivery Address</p>
-                        <p className="text-gray-900">{parseDeliveryInfo(cateringOrder.deliveryAddress).address}</p>
-                      </div>
-                    </div>
-                  )}
-                  {cateringOrder.deliveryFee && cateringOrder.deliveryFee.toNumber() > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-600">Delivery Fee</p>
-                      <p className="text-gray-900">{formatCurrency(cateringOrder.deliveryFee?.toNumber())}</p>
-                    </div>
-                  )}
-                  {cateringOrder.specialRequests && (
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-purple-900 mb-1">Special Requests</h4>
-                      <p className="text-purple-800 text-sm">{cateringOrder.specialRequests}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-gray-200 text-sm text-gray-600">
-                  <strong>Order Placed:</strong> {formatDateTime(cateringOrder.createdAt)}
-                </div>
-              </CardContent>
-            </Card>
+            {cateringOrder?.specialRequests && (
+              <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h4 className="font-semibold text-purple-900 mb-1">Special Requests</h4>
+                <p className="text-purple-800 text-sm">{cateringOrder.specialRequests}</p>
+              </div>
+            )}
           </div>
 
           {/* Customer Information */}
-          <div>
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-600" />
-                  Customer Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="text-gray-900">{cateringOrder.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="text-gray-900">{cateringOrder.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="text-gray-900">{cateringOrder.phone}</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>Name:</strong> {cateringOrder?.name || 'N/A'}
+              </p>
+              <p>
+                <strong>Email:</strong> {cateringOrder?.email || 'N/A'}
+              </p>
+              <p>
+                <strong>Phone:</strong> {cateringOrder?.phone || 'N/A'}
+              </p>
+              {/* Add user link if available */}
+              {cateringOrder?.customerId && (
+                <p>
+                  <strong>User Account:</strong>{' '}
+                  <Link
+                    href={`/admin/users/${cateringOrder.customerId}`}
+                    className="text-indigo-600 hover:underline"
+                  >
+                    View User
+                  </Link>
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Order Items */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Items Ordered ({cateringOrder.items.length})</CardTitle>
-            <CardDescription>
-              {totalQuantity} total items • {formatCurrency(cateringOrder.totalAmount?.toNumber())}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {cateringOrder.items.map(item => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
-                >
-                  {/* Item Details */}
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{item.itemName}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {(item.itemType || 'item').toUpperCase()}
-                      </Badge>
-                      <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
-                    </div>
-                    {/* Build Your Own Box Customizations */}
-                    {item.notes && (
-                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                        <div className="text-xs font-medium text-blue-800 mb-1">Customizations:</div>
-                        <div className="text-xs text-blue-700">{item.notes}</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">
-                      {formatCurrency(item.pricePerUnit?.toNumber())} each
-                    </div>
-                    <div className="font-medium text-gray-900">
-                      {formatCurrency(item.totalPrice?.toNumber())}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Order Total Breakdown */}
-              <div className="border-t border-gray-200 pt-4 mt-6">
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Items Ordered ({cateringOrder?.items?.length || 0})
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                    Quantity
+                  </th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                    Price/Item
+                  </th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {cateringOrder?.items && cateringOrder.items.length > 0 ? (
+                  cateringOrder.items.map((item: any) => {
+                    const itemPrice = item.pricePerUnit?.toNumber() || 0;
+                    const quantity = item.quantity || 0;
+                    const totalPrice = item.totalPrice?.toNumber() || 0;
+                    return (
+                      <tr key={item.id || 'unknown'}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div>
+                            <div className="font-medium">{item.itemName || 'N/A'}</div>
+                            {item.notes && (
+                              <div className="mt-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border">
+                                <strong>Customizations:</strong> {item.notes}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge variant="outline" className="text-xs">
+                            {(item.itemType || 'item').toUpperCase()}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">{quantity}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          {formatCurrency(itemPrice)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          {formatCurrency(totalPrice)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-3 text-center">
+                      No items found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                {/* Calculate detailed breakdown */}
                 {(() => {
                   // Calculate subtotal from items
-                  const subtotal = cateringOrder.items.reduce(
-                    (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+                  const subtotalFromItems = (cateringOrder?.items || []).reduce(
+                    (sum: number, item: any) => sum + (item.totalPrice?.toNumber() || 0),
                     0
                   );
 
-                  // Get delivery fee
-                  const deliveryFee = cateringOrder.deliveryFee?.toNumber() || 0;
-
+                  // Get individual components
+                  const deliveryFee = cateringOrder?.deliveryFee?.toNumber() || 0;
+                  
                   // Calculate tax (8.25% on subtotal + delivery fee)
-                  const taxableAmount = subtotal + deliveryFee;
+                  const taxableAmount = subtotalFromItems + deliveryFee;
                   const taxAmount = taxableAmount * 0.0825;
-
-                  // Calculate service fee (3.5% on subtotal + delivery fee + tax)
-                  const totalBeforeFee = subtotal + deliveryFee + taxAmount;
+                  
+                  // Calculate service fee (3.5% of subtotal + delivery fee + tax)
+                  const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
                   const serviceFee = totalBeforeFee * 0.035;
 
-                  // Final total
-                  const grandTotal = cateringOrder.totalAmount?.toNumber() || 0;
-
                   return (
-                    <div className="space-y-2">
+                    <>
                       {/* Subtotal */}
-                      <div className="flex justify-between items-center text-sm text-gray-600">
-                        <span>Subtotal:</span>
-                        <span>{formatCurrency(subtotal)}</span>
-                      </div>
+                      <tr className="border-t border-gray-200">
+                        <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                          Subtotal:
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm">
+                          {formatCurrency(subtotalFromItems)}
+                        </td>
+                      </tr>
 
                       {/* Delivery Fee */}
                       {deliveryFee > 0 && (
-                        <div className="flex justify-between items-center text-sm text-gray-600">
-                          <span>Delivery Fee:</span>
-                          <span>{formatCurrency(deliveryFee)}</span>
-                        </div>
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Delivery Fee:
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(deliveryFee)}
+                          </td>
+                        </tr>
                       )}
 
                       {/* Tax */}
                       {taxAmount > 0 && (
-                        <div className="flex justify-between items-center text-sm text-gray-600">
-                          <span>Tax (8.25%):</span>
-                          <span>{formatCurrency(taxAmount)}</span>
-                        </div>
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Tax (8.25%):
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(taxAmount)}
+                          </td>
+                        </tr>
                       )}
 
                       {/* Service Fee */}
                       {serviceFee > 0.01 && (
-                        <div className="flex justify-between items-center text-sm text-gray-600">
-                          <span>Service Fee (3.5%):</span>
-                          <span>{formatCurrency(serviceFee)}</span>
-                        </div>
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Service Fee (3.5%):
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(serviceFee)}
+                          </td>
+                        </tr>
                       )}
 
                       {/* Grand Total */}
-                      <div className="flex justify-between items-center pt-2 border-t border-gray-300">
-                        <span className="text-lg font-bold text-gray-900">Grand Total:</span>
-                        <span className="text-lg font-bold text-gray-900">
-                          {formatCurrency(grandTotal)}
-                        </span>
-                      </div>
-                    </div>
+                      <tr className="border-t-2 border-gray-300 font-bold text-base">
+                        <td colSpan={4} className="px-4 py-3 text-right">
+                          Grand Total:
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {formatCurrency(orderTotal)}
+                        </td>
+                      </tr>
+                    </>
                   );
                 })()}
-              </div>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        {/* Payment Information */}
+        {cateringOrder?.squareOrderId && (
+          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Square Payment ID
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                      Created At
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {cateringOrder.squareOrderId || 'N/A'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Badge className={`text-xs ${
+                        cateringOrder?.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
+                        cateringOrder?.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                        cateringOrder?.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
+                        cateringOrder?.paymentStatus === 'REFUNDED' ? 'bg-orange-100 text-orange-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {cateringOrder?.paymentStatus || 'UNKNOWN'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                      {formatCurrency(orderTotal)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {formatDateTime(cateringOrder?.createdAt)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
     );
   } catch (error) {

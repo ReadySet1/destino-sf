@@ -21,6 +21,7 @@ import { FormStack } from '@/components/ui/form/FormStack';
 import { FormActions } from '@/components/ui/form/FormActions';
 import { FormButton } from '@/components/ui/form/FormButton';
 import { FormIcons } from '@/components/ui/form/FormIcons';
+import { calculateTaxForItems } from '@/utils/tax-exemption';
 
 // Define our own PaymentMethod enum to match the Prisma schema
 enum PaymentMethod {
@@ -33,6 +34,10 @@ type ProductWithVariants = {
   id: string;
   name: string;
   price: number;
+  category?: {
+    id: string;
+    name: string;
+  } | null;
   variants: {
     id: string;
     name: string;
@@ -60,6 +65,18 @@ type FormState = {
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   items: OrderItem[];
+  // Detailed breakdown fields
+  taxAmount: number;
+  deliveryFee: number;
+  serviceFee: number;
+  gratuityAmount: number;
+  gratuityPercentage: number;
+  gratuityMode: 'amount' | 'percentage';
+  shippingCostCents: number;
+  shippingCarrier: string;
+  // Auto-calculate flags
+  autoCalculateTax: boolean;
+  autoCalculateServiceFee: boolean;
   existingOrderId?: string;
 };
 
@@ -74,6 +91,18 @@ const initialState: FormState = {
   paymentStatus: PaymentStatus.PENDING,
   status: OrderStatus.PENDING,
   items: [],
+  // Detailed breakdown fields
+  taxAmount: 0,
+  deliveryFee: 0,
+  serviceFee: 0,
+  gratuityAmount: 0,
+  gratuityPercentage: 0,
+  gratuityMode: 'amount',
+  shippingCostCents: 0,
+  shippingCarrier: '',
+  // Auto-calculate flags
+  autoCalculateTax: false, // Changed to false by default
+  autoCalculateServiceFee: true,
 };
 
 export function ManualOrderForm() {
@@ -115,9 +144,14 @@ export function ManualOrderForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Convert numeric fields to numbers
+    const numericFields = ['deliveryFee', 'taxAmount', 'serviceFee', 'gratuityAmount', 'gratuityPercentage', 'shippingCostCents'];
+    const convertedValue = numericFields.includes(name) ? parseFloat(value) || 0 : value;
+    
     setFormState(prev => ({
       ...prev,
-      [name]: value,
+      [name]: convertedValue,
     }));
   };
 
@@ -199,8 +233,51 @@ export function ManualOrderForm() {
     }));
   };
 
-  // Calculate order total
-  const orderTotal = formState.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Calculate detailed totals - ensure all values are numbers
+  const subtotal = formState.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const deliveryFee = Number(formState.deliveryFee) || 0;
+  const shippingCost = Number(formState.shippingCostCents) / 100 || 0;
+  const manualTax = Number(formState.taxAmount) || 0;
+  const manualServiceFee = Number(formState.serviceFee) || 0;
+  
+  // Calculate gratuity based on mode (amount or percentage)
+  const gratuityAmount = formState.gratuityMode === 'percentage' 
+    ? (subtotal + deliveryFee + shippingCost) * (Number(formState.gratuityPercentage) / 100)
+    : Number(formState.gratuityAmount) || 0;
+  
+  // Auto-calculate tax if enabled - using exemption logic (only catering items taxed)
+  const calculatedTax = formState.autoCalculateTax ? (() => {
+    // Create items for tax calculation with product details
+    const itemsForTaxCalculation = formState.items.map(item => {
+      const product = products.find(p => p.id === item.productId);
+      return {
+        product: product ? {
+          category: product.category,
+          name: product.name,
+        } : undefined,
+        price: item.price,
+        quantity: item.quantity,
+      };
+    });
+    
+    // Calculate tax on items using exemption logic
+    const itemTaxResult = calculateTaxForItems(itemsForTaxCalculation, 0.0825);
+    
+    // Add delivery fee and shipping cost to taxable amount if they exist (these are always taxable)
+    const additionalTaxableAmount = deliveryFee + shippingCost;
+    const additionalTax = additionalTaxableAmount * 0.0825;
+    
+    return itemTaxResult.taxAmount + additionalTax;
+  })() : manualTax;
+    
+  // Auto-calculate service fee if enabled (3.5% on subtotal + delivery fee + shipping + tax)
+  const totalBeforeServiceFee = subtotal + deliveryFee + shippingCost + calculatedTax;
+  const calculatedServiceFee = formState.autoCalculateServiceFee 
+    ? totalBeforeServiceFee * 0.035
+    : manualServiceFee;
+    
+  // Calculate grand total
+  const orderTotal = subtotal + deliveryFee + shippingCost + calculatedTax + calculatedServiceFee + gratuityAmount;
 
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,10 +296,14 @@ export function ManualOrderForm() {
         throw new Error('Please fill in all required customer information');
       }
 
-      // Submit the order
+      // Submit the order with calculated values
       const result = await createManualOrder({
         ...formState,
         total: orderTotal,
+        taxAmount: calculatedTax,
+        deliveryFee: deliveryFee,
+        serviceFee: calculatedServiceFee,
+        gratuityAmount: gratuityAmount,
       });
 
       if (result.error) {
@@ -392,6 +473,195 @@ export function ManualOrderForm() {
           </FormGrid>
         </FormSection>
 
+        {/* Fee Breakdown */}
+        <FormSection
+          title="Fee Breakdown"
+          description="Configure taxes, fees, and shipping costs"
+          icon={FormIcons.creditCard}
+          variant="purple"
+        >
+          <FormGrid cols={2}>
+            <FormField label="Tax Amount">
+              <div className="space-y-2">
+                <FormCheckbox
+                  name="autoCalculateTax"
+                  label="Auto-calculate tax (8.25% on catering items only)"
+                  checked={formState.autoCalculateTax}
+                  onChange={(e) => setFormState(prev => ({ ...prev, autoCalculateTax: e.target.checked }))}
+                />
+                {!formState.autoCalculateTax && (
+                  <FormInput
+                    type="number"
+                    name="taxAmount"
+                    placeholder="0.00"
+                    value={formState.taxAmount.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+                {formState.autoCalculateTax && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                    Calculated: ${calculatedTax.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            <FormField label="Delivery Fee">
+              <FormInput
+                type="number"
+                name="deliveryFee"
+                placeholder="0.00"
+                value={formState.deliveryFee.toString()}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+              />
+            </FormField>
+            
+            <FormField label="Service Fee">
+              <div className="space-y-2">
+                <FormCheckbox
+                  name="autoCalculateServiceFee"
+                  label="Auto-calculate service fee (3.5%)"
+                  checked={formState.autoCalculateServiceFee}
+                  onChange={(e) => setFormState(prev => ({ ...prev, autoCalculateServiceFee: e.target.checked }))}
+                />
+                {!formState.autoCalculateServiceFee && (
+                  <FormInput
+                    type="number"
+                    name="serviceFee"
+                    placeholder="0.00"
+                    value={formState.serviceFee.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+                {formState.autoCalculateServiceFee && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                    Calculated: ${calculatedServiceFee.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            <FormField label="Gratuity/Tip">
+              <div className="space-y-3">
+                {/* Mode Toggle */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormState(prev => ({ ...prev, gratuityMode: 'amount' }))}
+                    className={`px-3 py-1 text-sm rounded ${
+                      formState.gratuityMode === 'amount'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Amount ($)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormState(prev => ({ ...prev, gratuityMode: 'percentage' }))}
+                    className={`px-3 py-1 text-sm rounded ${
+                      formState.gratuityMode === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Percentage (%)
+                  </button>
+                </div>
+
+                {/* Amount Input */}
+                {formState.gratuityMode === 'amount' && (
+                  <FormInput
+                    type="number"
+                    name="gratuityAmount"
+                    placeholder="0.00"
+                    value={formState.gratuityAmount.toString()}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+
+                {/* Percentage Input with Presets */}
+                {formState.gratuityMode === 'percentage' && (
+                  <div className="space-y-2">
+                    {/* Preset Buttons */}
+                    <div className="flex gap-2">
+                      {[10, 15, 20].map(percent => (
+                        <button
+                          key={percent}
+                          type="button"
+                          onClick={() => setFormState(prev => ({ ...prev, gratuityPercentage: percent }))}
+                          className={`px-3 py-2 text-sm rounded border ${
+                            formState.gratuityPercentage === percent
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Custom Percentage Input */}
+                    <FormInput
+                      type="number"
+                      name="gratuityPercentage"
+                      placeholder="0"
+                      value={formState.gratuityPercentage.toString()}
+                      onChange={handleChange}
+                      step="0.1"
+                      min="0"
+                      max="100"
+                    />
+                    
+                    {/* Calculated Amount Display */}
+                    <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                      Calculated: ${gratuityAmount.toFixed(2)} ({formState.gratuityPercentage}% of ${(subtotal + deliveryFee + shippingCost).toFixed(2)})
+                    </div>
+                  </div>
+                )}
+              </div>
+            </FormField>
+            
+            {formState.fulfillmentType === 'nationwide_shipping' && (
+              <FormField label="Shipping Cost (cents)">
+                <FormInput
+                  type="number"
+                  name="shippingCostCents"
+                  placeholder="0"
+                  value={formState.shippingCostCents.toString()}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </FormField>
+            )}
+          </FormGrid>
+          
+          {formState.fulfillmentType === 'nationwide_shipping' && (
+            <FormField label="Shipping Carrier">
+              <FormSelect
+                name="shippingCarrier"
+                value={formState.shippingCarrier}
+                onChange={handleChange}
+              >
+                <option value="">Select carrier</option>
+                <option value="USPS">USPS</option>
+                <option value="UPS">UPS</option>
+                <option value="FedEx">FedEx</option>
+                <option value="DHL">DHL</option>
+                <option value="Other">Other</option>
+              </FormSelect>
+            </FormField>
+          )}
+        </FormSection>
+
         {/* Order Items */}
         <FormSection
           title="Order Items"
@@ -543,9 +813,76 @@ export function ManualOrderForm() {
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-gray-50 font-semibold">
+                  {/* Detailed breakdown */}
+                  <tr className="border-t border-gray-300">
+                    <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                      Subtotal:
+                    </td>
+                    <td className="px-4 py-2 text-sm text-right">${subtotal.toFixed(2)}</td>
+                    <td></td>
+                  </tr>
+                  
+                  {deliveryFee > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Delivery Fee:
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${deliveryFee.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {shippingCost > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Shipping ({formState.shippingCarrier || 'N/A'}):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${shippingCost.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {calculatedTax > 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Tax (8.25% on catering items + fees):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${calculatedTax.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Tax (No tax on non-catering items):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">$0.00</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {calculatedServiceFee > 0.01 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Service Fee (3.5%):
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${calculatedServiceFee.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  {gratuityAmount > 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
+                        Gratuity/Tip{formState.gratuityMode === 'percentage' ? ` (${formState.gratuityPercentage}%)` : ''}:
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right">${gratuityAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  
+                  <tr className="bg-gray-50 font-bold border-t-2 border-gray-400">
                     <td colSpan={4} className="px-4 py-3 text-sm text-right">
-                      Order Total:
+                      Grand Total:
                     </td>
                     <td className="px-4 py-3 text-sm text-right">${orderTotal.toFixed(2)}</td>
                     <td></td>
