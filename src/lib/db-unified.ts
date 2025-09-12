@@ -15,20 +15,40 @@ const globalForPrisma = globalThis as unknown as {
 const CURRENT_PRISMA_VERSION = '2025-09-09-unified-connection-fix';
 
 /**
- * Build optimized database URL with proper connection parameters
+ * Get the best database URL with fallback strategy
  */
-function buildDatabaseUrl(): string {
-  const baseUrl = process.env.DATABASE_URL;
-  if (!baseUrl) throw new Error('DATABASE_URL environment variable is required');
+function getBestDatabaseUrl(): string {
+  const directUrl = process.env.DIRECT_DATABASE_URL;
+  const poolerUrl = process.env.DATABASE_URL;
   
+  if (!poolerUrl) throw new Error('DATABASE_URL environment variable is required');
+  
+  // For local development, prefer direct connection if available
+  const isLocal = process.env.NODE_ENV !== 'production' && !process.env.VERCEL;
+  
+  if (isLocal && directUrl) {
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('🔗 Using direct database connection for local development');
+    }
+    return directUrl;
+  }
+  
+  // For production/Vercel, use optimized pooler connection
+  return buildOptimizedPoolerUrl(poolerUrl);
+}
+
+/**
+ * Build optimized pooler URL with proper connection parameters
+ */
+function buildOptimizedPoolerUrl(baseUrl: string): string {
   try {
     const url = new URL(baseUrl);
     const isProduction = process.env.NODE_ENV === 'production';
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
     
-    // Only log database URL building in verbose mode or if explicitly enabled
+    // Debug logging only when explicitly enabled
     if (process.env.DB_DEBUG === 'true') {
-      console.log(`🔗 Building database URL for ${process.env.NODE_ENV} environment`);
+      console.log(`🔗 Building optimized pooler URL for ${process.env.NODE_ENV} environment`);
       console.log(`🔗 Supabase pooler: ${isSupabasePooler}`);
     }
     
@@ -38,16 +58,16 @@ function buildDatabaseUrl(): string {
       url.searchParams.set('prepared_statements', 'false');
       url.searchParams.set('statement_cache_size', '0');
       
-      // Optimized timeouts for webhook processing
+      // Optimized timeouts for webhook processing and Vercel cold starts
       if (isProduction) {
-        url.searchParams.set('pool_timeout', '240'); // 4 minutes for high load
-        url.searchParams.set('connection_timeout', '20'); // 20 seconds to connect
-        url.searchParams.set('statement_timeout', '45000'); // 45 seconds for queries
-        url.searchParams.set('idle_in_transaction_session_timeout', '45000');
-        url.searchParams.set('socket_timeout', '90'); // 90 seconds socket timeout
+        url.searchParams.set('pool_timeout', '300'); // 5 minutes for high load
+        url.searchParams.set('connection_timeout', '30'); // 30 seconds to connect (increased for cold starts)
+        url.searchParams.set('statement_timeout', '60000'); // 60 seconds for queries
+        url.searchParams.set('idle_in_transaction_session_timeout', '60000');
+        url.searchParams.set('socket_timeout', '120'); // 2 minutes socket timeout
         
         if (process.env.DB_DEBUG === 'true') {
-          console.log('🚀 Production Supabase pooler: 240s pool timeout, 45s statement timeout, 90s socket timeout');
+          console.log('🚀 Production Supabase pooler: 300s pool timeout, 60s statement timeout, 120s socket timeout');
         }
       } else {
         url.searchParams.set('pool_timeout', '120');
@@ -80,17 +100,17 @@ function buildDatabaseUrl(): string {
     
     return url.toString();
   } catch (error) {
-    console.error('Error building database URL:', error);
+    console.error('Error building pooler URL:', error);
     return baseUrl; // Fallback to original URL
   }
 }
 
 /**
- * Create optimized Prisma client with explicit connection
+ * Create optimized Prisma client with explicit connection and enhanced retry logic
  */
-async function createPrismaClient(): Promise<PrismaClient> {
+async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClient> {
   const isProduction = process.env.NODE_ENV === 'production';
-  const databaseUrl = buildDatabaseUrl();
+  const databaseUrl = getBestDatabaseUrl();
   
   const client = new PrismaClient({
     log: isProduction ? ['error'] : [
@@ -110,17 +130,21 @@ async function createPrismaClient(): Promise<PrismaClient> {
     });
   }
 
-  // CRITICAL: Explicitly connect the client to start the engine with timeout
+  // CRITICAL: Explicitly connect the client to start the engine with enhanced timeout handling
   try {
     if (process.env.DB_DEBUG === 'true') {
-      console.log('🔌 Connecting Prisma client...');
+      console.log(`🔌 Connecting Prisma client... (attempt ${retryAttempt + 1})`);
     }
     
-    // Add timeout to prevent hanging
+    // Progressive timeout: Start with 30s, increase for retries, max 60s
+    const baseTimeout = 30000;
+    const maxTimeout = 60000;
+    const timeoutMs = Math.min(baseTimeout + (retryAttempt * 10000), maxTimeout);
+    
     const connectTimeout = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Prisma client connection timeout after 15 seconds'));
-      }, 15000);
+        reject(new Error(`Prisma client connection timeout after ${timeoutMs / 1000} seconds`));
+      }, timeoutMs);
     });
     
     await Promise.race([client.$connect(), connectTimeout]);
@@ -129,11 +153,12 @@ async function createPrismaClient(): Promise<PrismaClient> {
       console.log('✅ Prisma client connected successfully');
     }
     
-    // Verify connection with a simple query (also with timeout)
+    // Verify connection with a simple query (also with progressive timeout)
+    const queryTimeoutMs = Math.min(20000 + (retryAttempt * 5000), 30000);
     const queryTimeout = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Prisma connection verification timeout after 10 seconds'));
-      }, 10000);
+        reject(new Error(`Prisma connection verification timeout after ${queryTimeoutMs / 1000} seconds`));
+      }, queryTimeoutMs);
     });
     
     await Promise.race([
@@ -145,12 +170,29 @@ async function createPrismaClient(): Promise<PrismaClient> {
       console.log('✅ Prisma connection verified');
     }
   } catch (error) {
-    console.error('❌ Failed to connect Prisma client:', error);
+    const errorMessage = (error as Error).message;
+    console.error(`❌ Failed to connect Prisma client (attempt ${retryAttempt + 1}):`, errorMessage);
+    
     try {
       await client.$disconnect();
     } catch (disconnectError) {
       console.warn('Error disconnecting failed client:', disconnectError);
     }
+    
+    // Enhanced retry logic for Vercel deployments
+    const isRetryableError = isConnectionError(error as Error) || 
+                           errorMessage.includes('timeout') ||
+                           errorMessage.includes('ECONNRESET') ||
+                           errorMessage.includes('ENOTFOUND');
+                           
+    if (isRetryableError && retryAttempt < 2) {
+      const delayMs = Math.pow(2, retryAttempt) * 2000; // 2s, 4s exponential backoff
+      console.log(`⏳ Retrying connection in ${delayMs / 1000}s...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      return createPrismaClient(retryAttempt + 1);
+    }
+    
     throw error;
   }
 
@@ -242,7 +284,7 @@ async function getPrismaClient(): Promise<PrismaClient> {
  * Create a basic Prisma client without complex async initialization
  */
 function createBasicPrismaClient(): PrismaClient {
-  const databaseUrl = buildDatabaseUrl();
+  const databaseUrl = getBestDatabaseUrl();
   const isProduction = process.env.NODE_ENV === 'production';
   
   return new PrismaClient({
@@ -288,94 +330,63 @@ if (!prismaClient || shouldRegenerateClient()) {
   prismaClient = getCurrentPrismaClient();
 }
 
-// Simple export that ensures connection when needed
+// Enhanced proxy with better error handling and proper method binding
 export const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
-    const client = getCurrentPrismaClient();
-    const property = client[prop as keyof PrismaClient];
-    
-    // Debug logging for troubleshooting (temporarily always enabled for debugging)
-    if (process.env.DB_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
-      console.log(`[DB-UNIFIED] Accessing property: ${String(prop)}, type: ${typeof property}`);
-    }
-    
-    // For model objects (like user, product, etc.), wrap with retry logic
-    if (typeof property === 'object' && property !== null && !Array.isArray(property)) {
-      return new Proxy(property, {
-        get(modelTarget, modelProp) {
-          const method = (modelTarget as any)[modelProp];
-          
-          // Debug logging (temporarily always enabled for debugging)
-          if (process.env.DB_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
-            console.log(`[DB-UNIFIED] Accessing model method: ${String(prop)}.${String(modelProp)}, type: ${typeof method}`);
-          }
-          
-          // Validate that we have a proper method
-          if (typeof method === 'function') {
-            return (...args: any[]) => {
-              // Ensure connection before executing the operation
-              return withRetry(async () => {
-                // Try to ensure we have a connection
-                try {
-                  await client.$queryRaw`SELECT 1 as connection_test`;
-                } catch (connectionError) {
-                  if (isConnectionError(connectionError as Error)) {
-                    // Force reconnection
-                    try {
-                      await client.$disconnect();
-                      await client.$connect();
-                    } catch (reconnectError) {
-                      console.warn('Reconnection failed:', reconnectError);
-                    }
+    try {
+      const client = getCurrentPrismaClient();
+      const property = client[prop as keyof PrismaClient];
+      
+      // For direct client methods (like $queryRaw, $connect, etc.), wrap with retry
+      if (typeof property === 'function') {
+        return (...args: any[]) => {
+          return withRetry(async () => {
+            const freshClient = getCurrentPrismaClient();
+            const freshMethod = freshClient[prop as keyof PrismaClient] as any;
+            
+            if (typeof freshMethod !== 'function') {
+              throw new Error(`Direct method ${String(prop)} is not a function`);
+            }
+            
+            return freshMethod.apply(freshClient, args);
+          }, 3, String(prop));
+        };
+      }
+      
+      // For model objects, add retry wrapper only to methods
+      if (typeof property === 'object' && property !== null && !Array.isArray(property)) {
+        return new Proxy(property, {
+          get(modelTarget, modelProp) {
+            const method = (modelTarget as any)[modelProp];
+            
+            if (typeof method === 'function') {
+              return (...args: any[]) => {
+                return withRetry(async () => {
+                  // Always get fresh client to avoid stale references
+                  const freshClient = getCurrentPrismaClient();
+                  const freshModel = freshClient[prop as keyof PrismaClient] as any;
+                  const freshMethod = freshModel[modelProp];
+                  
+                  if (typeof freshMethod !== 'function') {
+                    throw new Error(`Method ${String(prop)}.${String(modelProp)} is not a function`);
                   }
-                }
-                
-                // Execute the actual operation with proper context
-                return method.apply(modelTarget, args);
-              }, 3, `${String(prop)}.${String(modelProp)}`);
-            };
-          }
-          
-          // For non-function properties, try fallback mechanism
-          if (method === undefined || method === null) {
-            console.error(`[DB-UNIFIED] Undefined method: ${String(prop)}.${String(modelProp)}`);
-            // Try fallback: access directly from client
-            try {
-              const fallbackMethod = (client[prop as keyof PrismaClient] as any)?.[modelProp];
-              if (typeof fallbackMethod === 'function') {
-                console.log(`[DB-UNIFIED] Using fallback method for ${String(prop)}.${String(modelProp)}`);
-                return fallbackMethod.bind(client[prop as keyof PrismaClient]);
-              }
-            } catch (fallbackError) {
-              console.error(`[DB-UNIFIED] Fallback failed for ${String(prop)}.${String(modelProp)}:`, fallbackError);
+                  
+                  return freshMethod.apply(freshModel, args);
+                }, 3, `${String(prop)}.${String(modelProp)}`);
+              };
             }
-          } else if (typeof method !== 'function' && typeof method !== 'object') {
-            console.error(`[DB-UNIFIED] Unexpected method type for ${String(prop)}.${String(modelProp)}:`, typeof method, method);
-            // If we get a corrupted value like 'c', try fallback
-            try {
-              const fallbackMethod = (client[prop as keyof PrismaClient] as any)?.[modelProp];
-              if (typeof fallbackMethod === 'function') {
-                console.log(`[DB-UNIFIED] Using fallback method for corrupted ${String(prop)}.${String(modelProp)}`);
-                return (...args: any[]) => {
-                  return withRetry(async () => {
-                    return fallbackMethod.apply(client[prop as keyof PrismaClient], args);
-                  }, 3, `${String(prop)}.${String(modelProp)} (fallback)`);
-                };
-              }
-            } catch (fallbackError) {
-              console.error(`[DB-UNIFIED] Fallback failed for corrupted ${String(prop)}.${String(modelProp)}:`, fallbackError);
-            }
-            // If fallback fails, return undefined to prevent crashes
-            return undefined;
+            
+            return method;
           }
-          
-          return method;
-        }
-      });
+        });
+      }
+      
+      // Return other properties as-is
+      return property;
+    } catch (error) {
+      console.error(`[DB-UNIFIED] Error accessing ${String(prop)}:`, error);
+      throw error;
     }
-    
-    // For other properties (like $connect, $disconnect, etc.), return as-is
-    return property;
   }
 });
 

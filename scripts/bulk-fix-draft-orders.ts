@@ -335,6 +335,7 @@ async function main() {
 export { bulkFixDraftOrders, findDraftOrders, processOrder };
 
 // Run if executed directly
-if (require.main === module) {
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
   main().catch(console.error);
 }

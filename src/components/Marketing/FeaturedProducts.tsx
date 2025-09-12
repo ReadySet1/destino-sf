@@ -32,9 +32,9 @@ export function FeaturedProducts() {
 
         if (response.ok) {
           const result = await response.json();
-          if (result.success && result.data && result.data.length > 0) {
+          if (result.success && result.items && result.items.length > 0) {
             // Filter only active picks and sort by position
-            const activePicks = result.data
+            const activePicks = result.items
               .filter((pick: SpotlightPick) => pick.isActive)
               .sort((a: SpotlightPick, b: SpotlightPick) => a.position - b.position);
             setSpotlightPicks(activePicks);

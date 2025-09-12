@@ -30,7 +30,8 @@ describe('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        data: mockActiveSpotlightPicks,
+        items: mockActiveSpotlightPicks,
+        count: mockActiveSpotlightPicks.length,
       }),
     } as Response);
 
@@ -52,7 +53,8 @@ describe('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        data: [],
+        items: [],
+        count: 0,
       }),
     } as Response);
 

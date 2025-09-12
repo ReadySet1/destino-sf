@@ -16,7 +16,7 @@ import { CateringDuplicateDetector } from '@/lib/catering-duplicate-detector';
 import { VariationGrouper } from '@/lib/square/variation-grouper';
 import { searchCatalogObjects } from '@/lib/square/catalog-api';
 import { cachedSearchCatalogObjects } from '@/lib/square/api-cache';
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma, withRetry, withTransaction } from '@/lib/db-unified';
 import { archiveRemovedSquareProducts } from '@/lib/square/archive-handler';
 import type { SyncVerificationResult } from '@/types/square-sync';
 import pLimit from 'p-limit';
@@ -915,8 +915,8 @@ async function batchSyncToProducts(
           logger.info(`🔄 Bulk updating ${itemsToUpdate.length} existing products...`);
           
           // Process updates in a transaction for atomicity
-          await prisma.$transaction(
-            itemsToUpdate.map(item => {
+          await withTransaction(async (tx) => {
+            for (const item of itemsToUpdate) {
               const existingProduct = existingMap.get(item.id)!;
               const uniqueSlug = existingProduct.slug || item.name.toLowerCase()
                 .replace(/[^a-z0-9\s-]/g, '')
@@ -924,7 +924,7 @@ async function batchSyncToProducts(
                 .replace(/-+/g, '-')
                 .trim();
               
-              return prisma.product.update({
+              await tx.product.update({
                 where: { id: existingProduct.id },
                 data: {
                   name: item.name,
@@ -937,8 +937,8 @@ async function batchSyncToProducts(
                   updatedAt: new Date()
                 }
               });
-            })
-          );
+            }
+          });
           
           // Log success for each updated item
           for (const item of itemsToUpdate) {
