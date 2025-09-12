@@ -421,14 +421,71 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                 </div>
               ))}
 
-              {/* Order Total */}
+              {/* Order Total Breakdown */}
               <div className="border-t border-gray-200 pt-4 mt-6">
-                <div className="flex justify-between items-center">
-                                  <span className="text-lg font-bold text-gray-900">Total:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {formatCurrency(cateringOrder.totalAmount?.toNumber())}
-                </span>
-                </div>
+                {(() => {
+                  // Calculate subtotal from items
+                  const subtotal = cateringOrder.items.reduce(
+                    (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+                    0
+                  );
+
+                  // Get delivery fee
+                  const deliveryFee = cateringOrder.deliveryFee?.toNumber() || 0;
+
+                  // Calculate tax (8.25% on subtotal + delivery fee)
+                  const taxableAmount = subtotal + deliveryFee;
+                  const taxAmount = taxableAmount * 0.0825;
+
+                  // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+                  const totalBeforeFee = subtotal + deliveryFee + taxAmount;
+                  const serviceFee = totalBeforeFee * 0.035;
+
+                  // Final total
+                  const grandTotal = cateringOrder.totalAmount?.toNumber() || 0;
+
+                  return (
+                    <div className="space-y-2">
+                      {/* Subtotal */}
+                      <div className="flex justify-between items-center text-sm text-gray-600">
+                        <span>Subtotal:</span>
+                        <span>{formatCurrency(subtotal)}</span>
+                      </div>
+
+                      {/* Delivery Fee */}
+                      {deliveryFee > 0 && (
+                        <div className="flex justify-between items-center text-sm text-gray-600">
+                          <span>Delivery Fee:</span>
+                          <span>{formatCurrency(deliveryFee)}</span>
+                        </div>
+                      )}
+
+                      {/* Tax */}
+                      {taxAmount > 0 && (
+                        <div className="flex justify-between items-center text-sm text-gray-600">
+                          <span>Tax (8.25%):</span>
+                          <span>{formatCurrency(taxAmount)}</span>
+                        </div>
+                      )}
+
+                      {/* Service Fee */}
+                      {serviceFee > 0.01 && (
+                        <div className="flex justify-between items-center text-sm text-gray-600">
+                          <span>Service Fee (3.5%):</span>
+                          <span>{formatCurrency(serviceFee)}</span>
+                        </div>
+                      )}
+
+                      {/* Grand Total */}
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+                        <span className="text-lg font-bold text-gray-900">Grand Total:</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          {formatCurrency(grandTotal)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </CardContent>

@@ -43,6 +43,8 @@ interface SerializedOrder {
   paymentStatus: PaymentStatus;
   paymentMethod: string | null;
   total: number;
+  taxAmount: number;
+  shippingCostCents: number | null;
   customerName: string;
   email: string;
   phone: string;
@@ -142,6 +144,8 @@ function manuallySerializeOrder(order: any): SerializedOrder {
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     total: decimalToNumber(order.total),
+    taxAmount: decimalToNumber(order.taxAmount),
+    shippingCostCents: order.shippingCostCents,
     customerName: order.customerName || '',
     email: order.email || '',
     phone: order.phone || '',
@@ -659,19 +663,103 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 )}
               </tbody>
               <tfoot>
-                <tr className="font-semibold">
-                  <td colSpan={4} className="px-4 py-3 text-right">
-                    Subtotal:
-                  </td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
-                </tr>
-                {/* Add rows for Tax, Tips, Discounts if applicable */}
-                <tr className="font-bold text-base">
-                  <td colSpan={4} className="px-4 py-3 text-right">
-                    Grand Total:
-                  </td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
-                </tr>
+                {/* Calculate detailed breakdown */}
+                {(() => {
+                  // Calculate subtotal from items
+                  const subtotalFromItems = (serializedOrder?.items || []).reduce(
+                    (sum: number, item: SerializedOrderItem) => {
+                      const itemPrice = item.price || 0;
+                      const quantity = item.quantity || 0;
+                      return sum + (itemPrice * quantity);
+                    },
+                    0
+                  );
+
+                  // Get individual components
+                  const taxAmount = serializedOrder?.taxAmount || 0;
+                  const shippingCostDollars = serializedOrder?.shippingCostCents 
+                    ? (serializedOrder.shippingCostCents / 100) 
+                    : 0;
+                  
+                  // Calculate service fee (3.5% of subtotal + tax + shipping)
+                  const totalBeforeFee = subtotalFromItems + taxAmount + shippingCostDollars;
+                  const serviceFee = totalBeforeFee * 0.035; // 3.5% service fee
+                  
+                  // Delivery fee (if applicable)
+                  const deliveryFee = 0; // Not currently stored separately in regular orders
+
+                  return (
+                    <>
+                      {/* Subtotal */}
+                      <tr className="border-t border-gray-200">
+                        <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                          Subtotal:
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm">
+                          {formatCurrency(subtotalFromItems)}
+                        </td>
+                      </tr>
+
+                      {/* Tax */}
+                      {taxAmount > 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Tax (8.25%):
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(taxAmount)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Shipping */}
+                      {shippingCostDollars > 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Shipping ({serializedOrder?.shippingCarrier || 'N/A'}):
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(shippingCostDollars)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Delivery Fee */}
+                      {deliveryFee > 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Delivery Fee:
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(deliveryFee)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Service Fee */}
+                      {serviceFee > 0.01 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                            Service Fee (3.5%):
+                          </td>
+                          <td className="px-4 py-2 text-right text-sm">
+                            {formatCurrency(serviceFee)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Grand Total */}
+                      <tr className="border-t-2 border-gray-300 font-bold text-base">
+                        <td colSpan={4} className="px-4 py-3 text-right">
+                          Grand Total:
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {formatCurrency(orderTotal)}
+                        </td>
+                      </tr>
+                    </>
+                  );
+                })()}
               </tfoot>
             </table>
           </div>
