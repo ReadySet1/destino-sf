@@ -48,6 +48,38 @@ export function formatCurrency(amount: number | string | null | undefined): stri
 }
 
 /**
+ * Formats a number with thousands separators
+ */
+export function formatNumber(num: number | string | null | undefined): string {
+  if (num === null || num === undefined) return '0';
+
+  // Convert string to number if needed
+  const numValue = typeof num === 'string' ? parseFloat(num) : num;
+
+  // Check if it's a valid number
+  if (isNaN(numValue)) return '0';
+
+  // Format with thousands separators
+  return new Intl.NumberFormat('en-US').format(numValue);
+}
+
+/**
+ * Formats a decimal number as a percentage
+ */
+export function formatPercentage(value: number | string | null | undefined, decimalPlaces: number = 1): string {
+  if (value === null || value === undefined) return '0%';
+
+  // Convert string to number if needed
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+  // Check if it's a valid number
+  if (isNaN(numValue)) return '0%';
+
+  // Convert to percentage and format
+  return `${(numValue * 100).toFixed(decimalPlaces)}%`;
+}
+
+/**
  * Proxies an external image URL through our internal proxy to avoid CORS issues
  * @param url The original image URL
  * @returns A proxied URL that will work with Next.js Image component
