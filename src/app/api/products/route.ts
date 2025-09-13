@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
+import { AvailabilityQueries } from '@/lib/db/availability-queries';
+import { AvailabilityEngine } from '@/lib/availability/engine';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 type PrismaVariant = {
@@ -37,6 +39,7 @@ export async function GET(request: NextRequest) {
     const exclude = searchParams.get('exclude') || undefined; // Product ID to exclude
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
     const excludeCatering = searchParams.get('excludeCatering') !== 'false'; // Default to true
+    const includeAvailabilityEvaluation = searchParams.get('includeAvailabilityEvaluation') === 'true';
 
     // New parameters for pagination and search
     const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
@@ -188,17 +191,42 @@ export async function GET(request: NextRequest) {
       'products-fetch'
     );
 
+    // Fetch availability rules and evaluate them if requested
+    let availabilityEvaluations = new Map();
+    if (includeAvailabilityEvaluation && products.length > 0) {
+      try {
+        const productIds = products.map(p => p.id);
+        const availabilityRules = await AvailabilityQueries.getMultipleProductRules(productIds);
+        availabilityEvaluations = await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
+      } catch (error) {
+        logger.error('Error evaluating availability:', error);
+        // Continue without availability evaluation if there's an error
+      }
+    }
+
     // Convert BigInt price to regular number for JSON serialization
-    const serializedProducts = products.map(product => ({
-      ...product,
-      price: product.price ? parseFloat(product.price.toString()) : 0,
-      variants: includeVariants
-        ? product.variants.map(variant => ({
-            ...variant,
-            price: variant.price ? parseFloat(variant.price.toString()) : null,
-          }))
-        : [],
-    }));
+    const serializedProducts = products.map(product => {
+      const evaluation = availabilityEvaluations.get(product.id);
+      
+      return {
+        ...product,
+        price: product.price ? parseFloat(product.price.toString()) : 0,
+        variants: includeVariants
+          ? product.variants.map(variant => ({
+              ...variant,
+              price: variant.price ? parseFloat(variant.price.toString()) : null,
+            }))
+          : [],
+        // Add availability evaluation if requested and available
+        ...(includeAvailabilityEvaluation && evaluation && {
+          evaluatedAvailability: {
+            currentState: evaluation.currentState,
+            appliedRulesCount: evaluation.appliedRules.length,
+            nextStateChange: evaluation.nextStateChange,
+          }
+        }),
+      };
+    });
 
     // Return with pagination metadata if requested
     if (includePagination && totalCount !== undefined && itemsPerPage) {

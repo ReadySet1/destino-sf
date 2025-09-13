@@ -66,4 +66,14 @@
   );
   background-size: 400% 400%;
   animation: skeletonPulse 2s ease-in-out infinite;
+}
+
+/* Popover and Calendar z-index fixes */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+[data-radix-popover-content] {
+  z-index: 9999 !important;
+  position: fixed !important;
 } 

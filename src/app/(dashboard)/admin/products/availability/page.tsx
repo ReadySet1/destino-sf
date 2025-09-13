@@ -58,14 +58,21 @@ export default function AvailabilityManagementPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Load initial data
   useEffect(() => {
+    console.log('🎬 Component useEffect triggered - loading initial data');
     Promise.all([
       loadStats(),
       loadProducts(),
       loadCategories()
-    ]);
+    ]).then(() => {
+      console.log('✨ All initial data loading completed');
+    }).catch((error) => {
+      console.error('💥 Error in initial data loading:', error);
+    });
   }, []);
 
   const loadStats = async () => {
@@ -87,21 +94,34 @@ export default function AvailabilityManagementPage() {
 
   const loadProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products?includeAvailabilityEvaluation=true&onlyActive=false&excludeCatering=true');
       if (response.ok) {
         const data = await response.json();
         const productsData = Array.isArray(data) ? data : data.data || [];
         
-        // Transform products to include availability state
-        const transformedProducts: Product[] = productsData.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          price: product.price || 0,
-          category: product.category,
-          categoryId: product.categoryId,
-          currentAvailabilityState: AvailabilityState.AVAILABLE, // TODO: Get from availability rules
-          activeRulesCount: 0, // TODO: Get from availability rules
-        }));
+        // Transform products to include availability state from evaluation
+        // Also filter out any remaining catering products on the frontend as a safety measure
+        console.log('🔍 Raw products received:', productsData.length);
+        console.log('🔍 Sample product categories:', productsData.slice(0, 3).map(p => p.category?.name));
+        
+        const transformedProducts: Product[] = productsData
+          .filter((product: any) => {
+            const categoryName = product.category?.name || '';
+            const shouldKeep = !categoryName.toUpperCase().startsWith('CATERING');
+            if (!shouldKeep) {
+              console.log('🚫 Filtering out product:', product.name, 'from category:', categoryName);
+            }
+            return shouldKeep;
+          })
+          .map((product: any) => ({
+            id: product.id,
+            name: product.name,
+            price: product.price || 0,
+            category: product.category,
+            categoryId: product.categoryId,
+            currentAvailabilityState: product.evaluatedAvailability?.currentState || AvailabilityState.AVAILABLE,
+            activeRulesCount: product.evaluatedAvailability?.appliedRulesCount || 0,
+          }));
         
         setProducts(transformedProducts);
       } else {
@@ -114,19 +134,39 @@ export default function AvailabilityManagementPage() {
   };
 
   const loadCategories = async () => {
+    console.log('🚀 loadCategories function called!');
     try {
       const response = await fetch('/api/categories');
+      console.log('📡 Categories API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
         const categoriesData = Array.isArray(data) ? data : data.data || [];
-        setCategories(categoriesData);
+        console.log('📦 Raw data from API:', data);
+        console.log('📋 CategoriesData length:', categoriesData.length);
+        
+        // Filter out catering categories from the dropdown
+        console.log('🔍 Raw categories received:', categoriesData.map(c => c.name));
+        const nonCateringCategories = categoriesData.filter((category: Category) => {
+          const categoryName = category.name || '';
+          const shouldKeep = !categoryName.toUpperCase().startsWith('CATERING');
+          if (!shouldKeep) {
+            console.log('🚫 Filtering out:', categoryName);
+          }
+          return shouldKeep;
+        });
+        
+        console.log('✅ Final categories after filter:', nonCateringCategories.map(c => c.name));
+        console.log('📝 Setting categories state with', nonCateringCategories.length, 'items');
+        setCategories(nonCateringCategories);
       } else {
+        console.error('❌ Categories API failed with status:', response.status);
         toast.error('Failed to load categories');
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('💥 Error loading categories:', error);
       toast.error('Error loading categories');
     } finally {
+      console.log('🏁 Categories loading finished, setting isLoadingData to false');
       setIsLoadingData(false);
     }
   };
@@ -153,11 +193,25 @@ export default function AvailabilityManagementPage() {
     toast.success('Availability rule created successfully');
   };
 
+  // Filter products
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || product.categoryId === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  // Paginate filtered products
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = (newSearchTerm: string, newCategoryFilter: string) => {
+    setSearchTerm(newSearchTerm);
+    setCategoryFilter(newCategoryFilter);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -320,13 +374,13 @@ export default function AvailabilityManagementPage() {
                     id="search"
                     placeholder="Search products..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleFilterChange(e.target.value, categoryFilter)}
                     className="w-[200px]"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="category">Category:</Label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <Select value={categoryFilter} onValueChange={(value) => handleFilterChange(searchTerm, value)}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -352,14 +406,28 @@ export default function AvailabilityManagementPage() {
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
                     {searchTerm || categoryFilter !== 'all' 
-                      ? 'No products match your filters' 
+                      ? `No products match your filters (${searchTerm ? `search: "${searchTerm}"` : ''}${searchTerm && categoryFilter !== 'all' ? ', ' : ''}${categoryFilter !== 'all' ? `category: "${categories.find(c => c.id === categoryFilter)?.name || categoryFilter}"` : ''})` 
                       : 'No products found'
                     }
                   </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Total products loaded: {products.length}
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {filteredProducts.map(product => (
+                <div className="space-y-4">
+                  {/* Results summary */}
+                  <div className="flex items-center justify-between text-sm text-muted-foreground border-b pb-2">
+                    <span>
+                      Showing {startIndex + 1} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+                      {filteredProducts.length !== products.length && ` (filtered from ${products.length} total)`}
+                    </span>
+                    <span>Page {currentPage} of {totalPages}</span>
+                  </div>
+
+                  {/* Products list */}
+                  <div className="space-y-2">
+                    {paginatedProducts.map(product => (
                     <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <h4 className="font-medium">{product.name}</h4>
@@ -391,7 +459,79 @@ export default function AvailabilityManagementPage() {
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(1)}
+                          disabled={currentPage === 1}
+                        >
+                          First
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => prev - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          Previous
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        {/* Show page numbers */}
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => prev + 1)}
+                          disabled={currentPage === totalPages}
+                        >
+                          Next
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(totalPages)}
+                          disabled={currentPage === totalPages}
+                        >
+                          Last
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

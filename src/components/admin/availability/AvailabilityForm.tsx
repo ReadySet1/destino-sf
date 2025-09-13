@@ -27,6 +27,7 @@ import {
   X 
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { enUS } from 'date-fns/locale/en-US';
 import { toast } from 'sonner';
 import { 
   AvailabilityRuleSchema,
@@ -155,7 +156,7 @@ export function AvailabilityForm({
   }, [selectedState, setValue, watch]);
 
   return (
-    <Card className={cn("w-full max-w-4xl", className)}>
+    <Card className={cn("w-full max-w-4xl relative", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
@@ -313,10 +314,10 @@ export function AvailabilityForm({
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, 'PPP') : 'Select start date'}
+                              {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select start date'}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={8}>
                             <Calendar
                               mode="single"
                               selected={field.value || undefined}
@@ -345,10 +346,10 @@ export function AvailabilityForm({
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, 'PPP') : 'Select end date'}
+                              {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select end date'}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={8}>
                             <Calendar
                               mode="single"
                               selected={field.value || undefined}
@@ -578,10 +579,10 @@ export function AvailabilityForm({
                                 )}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'PPP') : 'Select expected delivery date'}
+                                {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select expected delivery date'}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={8}>
                               <Calendar
                                 mode="single"
                                 selected={field.value || undefined}
@@ -823,8 +824,8 @@ export function AvailabilityForm({
                 <p><strong>Type:</strong> {watch('ruleType')}</p>
                 <p><strong>State:</strong> {watch('state')}</p>
                 <p><strong>Priority:</strong> {watch('priority')}</p>
-                {startDate && <p><strong>Start:</strong> {format(startDate, 'PPP')}</p>}
-                {endDate && <p><strong>End:</strong> {format(endDate, 'PPP')}</p>}
+                {startDate && <p><strong>Start:</strong> {format(startDate, 'PPP', { locale: enUS })}</p>}
+                {endDate && <p><strong>End:</strong> {format(endDate, 'PPP', { locale: enUS })}</p>}
                 <p><strong>Enabled:</strong> {watch('enabled') ? 'Yes' : 'No'}</p>
               </div>
             </div>
