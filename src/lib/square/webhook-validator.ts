@@ -175,7 +175,7 @@ function validateEventAge(createdAt: string, environment: SquareEnvironment = 'p
     // Square sometimes sends test webhooks with old timestamps even in production
     const isVeryOldEvent = eventAge > (365 * 24 * 60 * 60 * 1000); // Older than 1 year
     const isPotentialTestEvent = isVeryOldEvent && (
-      createdAt.includes('2020') || // Typical Square test data year
+      createdAt.includes('2020') || createdAt.includes('2019') || // Typical Square test data years
       eventId?.includes('2948-439f') || // Common test event ID patterns
       objectId?.startsWith('eA3') // Common test object ID patterns
     );
