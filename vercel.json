@@ -32,7 +32,7 @@
   "crons": [
     {
       "path": "/api/cron/process-webhooks-fixed",
-      "schedule": "* * * * *"
+      "schedule": "*/30 * * * *"
     }
   ],
   "rewrites": [

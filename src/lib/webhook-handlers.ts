@@ -176,17 +176,24 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
   }
 
   try {
-    // Get the previous status before updating if we're making a status change
-    let previousStatus = undefined;
-    if (updateData.status) {
-      const currentOrder = await withRetry(async () => {
-        return await prisma.order.findUnique({
-          where: { squareOrderId: data.id },
-          select: { status: true },
-        });
-      }, 3, 'findOrderForStatus');
-      previousStatus = currentOrder?.status;
+    // First, check if the order exists to prevent race conditions
+    const currentOrder = await withRetry(async () => {
+      return await prisma.order.findUnique({
+        where: { squareOrderId: data.id },
+        select: { status: true },
+      });
+    }, 3, 'findOrderForExistence');
+
+    // If order doesn't exist, skip processing and wait for order.created webhook
+    if (!currentOrder) {
+      console.warn(
+        `⚠️ Order with squareOrderId ${data.id} not found for order update. Skipping processing until order.created webhook arrives.`
+      );
+      return;
     }
+
+    // Get the previous status for status change alerts
+    const previousStatus = currentOrder.status;
 
     await withRetry(async () => {
       return await prisma.order.update({
@@ -196,7 +203,7 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
     }, 3, 'updateOrderData');
 
     // Send status change alert for terminal states (COMPLETED, CANCELLED)
-    if (updateData.status && previousStatus && previousStatus !== updateData.status) {
+    if (updateData.status && previousStatus !== updateData.status) {
       try {
         // Fetch the complete order with items for the alert
         const orderWithItems = await prisma.order.findUnique({
@@ -224,16 +231,8 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
       }
     }
   } catch (error: any) {
-    if (error.code === 'P2025') {
-      console.warn(
-        `⚠️ Order with squareOrderId ${data.id} not found for order update. Skipping processing until order.created webhook arrives.`
-      );
-      // Don't create stub orders - wait for proper order data
-      return;
-    } else {
-      console.error(`Error updating order ${data.id}:`, error);
-      throw error;
-    }
+    console.error(`Error updating order ${data.id}:`, error);
+    throw error;
   }
 }
 
