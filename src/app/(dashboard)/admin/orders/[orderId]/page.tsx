@@ -696,7 +696,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   const actualTotal = orderTotal;
                   const discrepancy = actualTotal - calculatedTotal;
                   const allFeesAreZero = taxAmount === 0 && deliveryFee === 0 && serviceFee === 0 && gratuityAmount === 0 && shippingCostDollars === 0;
-                  const hasSignificantDiscrepancy = Math.abs(discrepancy) > 0.01;
+                  const hasSignificantDiscrepancy = Math.abs(discrepancy) > 0.05;
                   const shouldShowConsolidatedFees = allFeesAreZero && hasSignificantDiscrepancy && discrepancy > 0;
 
 
