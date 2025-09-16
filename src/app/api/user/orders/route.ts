@@ -105,7 +105,10 @@ export async function GET(request: Request) {
 }
 
 async function fetchUserOrders(userId: string) {
-  console.log('API Route: Querying orders for User ID:', userId);
+  // Only log in debug mode to reduce console noise
+  if (process.env.NODE_ENV === 'development' && process.env.API_DEBUG === 'true') {
+    console.log('API Route: Querying orders for User ID:', userId);
+  }
 
   // Handle build time or database unavailability
   if (isBuildTime()) {
@@ -212,9 +215,12 @@ async function fetchUserOrders(userId: string) {
     }))
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  console.log(
-    `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${userId}`
-  );
+  // Only log in debug mode to reduce console noise
+  if (process.env.NODE_ENV === 'development' && process.env.API_DEBUG === 'true') {
+    console.log(
+      `API Route: Found ${regularOrders.length} regular orders and ${cateringOrders.length} catering orders for User ID: ${userId}`
+    );
+  }
 
     return NextResponse.json(allOrders);
   } catch (error) {

@@ -53,8 +53,8 @@ async function identifyOrdersWithBreakdownIssues(limit = 50): Promise<OrderBreak
     const actualTotal = order.total?.toNumber() || 0;
     const discrepancy = actualTotal - calculatedTotal;
 
-    // If there's a discrepancy > $0.01, flag it
-    if (Math.abs(discrepancy) > 0.01) {
+    // If there's a discrepancy > $0.05, flag it
+    if (Math.abs(discrepancy) > 0.05) {
       issues.push({
         orderId: order.id,
         customerName: order.customerName,

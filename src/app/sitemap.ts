@@ -108,7 +108,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // During build time or if database is unavailable, return static pages only
   if (isBuildTime()) {
-    logger.info('🔧 Build-time detected: Using static sitemap without dynamic product pages');
+    // Only log in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      logger.info('🔧 Build-time detected: Using static sitemap without dynamic product pages');
+    }
     return staticPages;
   }
 
@@ -140,7 +143,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-    logger.info(`✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`);
+    // Only log success in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      logger.info(`✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`);
+    }
     return [...staticPages, ...productPages];
   } catch (error) {
     logger.error('❌ Error generating sitemap:', error);
@@ -151,7 +157,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (prismaClient) {
       try {
         await prismaClient.$disconnect();
-        logger.info('✅ Sitemap Prisma client disconnected gracefully');
+        // Only log disconnect in debug mode
+        if (process.env.BUILD_DEBUG === 'true') {
+          logger.info('✅ Sitemap Prisma client disconnected gracefully');
+        }
       } catch (disconnectError) {
         logger.warn('⚠️ Error disconnecting sitemap Prisma client:', disconnectError);
       }

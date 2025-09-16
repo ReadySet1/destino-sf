@@ -23,17 +23,6 @@ export async function getAdminUserData() {
   let isUserAdmin = false;
 
   try {
-    logger.debug('Looking up profile for user ID:', user.id);
-
-    // Verify database connection
-    try {
-      await prisma.$connect();
-      logger.debug('Database connection verified');
-    } catch (connErr) {
-      logger.error('Database connection failed:', connErr);
-      redirect('/');
-    }
-
     // Use the new profile sync middleware to ensure profile exists
     const profileSyncResult = await ensureUserProfile(user.id, user.email);
     
@@ -43,7 +32,6 @@ export async function getAdminUserData() {
     }
 
     const profile = profileSyncResult.profile;
-    logger.debug('Profile data:', profile);
 
     if (!profile) {
       logger.warn('No profile found for user ID:', user.id);
@@ -52,14 +40,11 @@ export async function getAdminUserData() {
 
     // Stringified role comparison - works with any type of enum
     profileRole = String(profile.role || '');
-    logger.debug('Raw role value:', profileRole, 'Type:', typeof profile.role);
 
     // Check for ADMIN in any form, case-insensitive
     isUserAdmin = profileRole.toUpperCase().includes('ADMIN');
-    logger.debug('Is admin check result:', isUserAdmin);
 
     if (!isUserAdmin) {
-      logger.warn("User doesn't have admin role");
       redirect('/');
     }
   } catch (error) {

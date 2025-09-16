@@ -27,4 +27,7 @@ export const supabaseAdmin: SupabaseClient = createClient(supabaseUrl, supabaseS
   },
 });
 
-console.log('Supabase Admin Client initialized.'); // Optional: Log initialization
+// Only log initialization in debug mode
+if (process.env.BUILD_DEBUG === 'true') {
+  console.log('Supabase Admin Client initialized.');
+}

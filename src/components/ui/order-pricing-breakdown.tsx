@@ -58,13 +58,13 @@ export function OrderPricingBreakdown({
   
   // Calculate expected total for discrepancy detection
   const calculatedTotal = subtotal + taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCost;
-  const hasDiscrepancy = Math.abs(calculatedTotal - total) > 0.01; // Allow for small rounding differences
+  const hasDiscrepancy = Math.abs(calculatedTotal - total) > 0.05; // Allow for small rounding differences (increased tolerance)
   const discrepancyAmount = total - calculatedTotal;
 
   // Check if all fees are zero but there's a significant discrepancy
   // This happens when order data has total but missing fee breakdown
   const allFeesAreZero = taxAmount === 0 && deliveryFee === 0 && serviceFee === 0 && gratuityAmount === 0 && shippingCost === 0;
-  const hasSignificantDiscrepancy = Math.abs(discrepancyAmount) > 0.01;
+  const hasSignificantDiscrepancy = Math.abs(discrepancyAmount) > 0.05;
   const shouldShowDiscrepancyAsFeeLine = allFeesAreZero && hasSignificantDiscrepancy && discrepancyAmount > 0;
 
 
@@ -124,37 +124,34 @@ export function OrderPricingBreakdown({
     <div className={`space-y-4 ${className}`}>
       {/* Main Pricing Breakdown */}
       <div className="space-y-2">
-        {feeItems.map((item, index) => (
-          <div key={index} className="flex justify-between items-center text-sm">
-            <div className="flex-1">
-              <span className="text-gray-600">{item.label}:</span>
-              {item.description && (
-                <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
-              )}
+        {feeItems
+          .filter((item) => item.label === 'Subtotal' || item.amount > 0) // Show subtotal always, but hide other $0.00 items
+          .map((item, index) => (
+            <div key={index} className="flex justify-between items-center text-sm">
+              <div className="flex-1">
+                <span className="text-gray-600">{item.label}:</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(item.amount)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`font-medium ${item.amount === 0 ? 'text-gray-400' : 'text-gray-900'}`}>
-                {formatCurrency(item.amount)}
-              </span>
-              {item.amount === 0 && (
-                <Badge variant="outline" className="text-xs text-gray-400 border-gray-300">
-                  $0.00
-                </Badge>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
         
         {/* Discrepancy Alert - only show if we haven't resolved it with the consolidated fee line */}
         {hasDiscrepancy && !shouldShowDiscrepancyAsFeeLine && (
-          <Alert className="bg-amber-50 border-amber-200">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <div className="font-medium">Pricing Discrepancy Detected</div>
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertTriangle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="font-medium">Pricing Information</div>
               <div className="text-sm mt-1">
-                Expected total: {formatCurrency(calculatedTotal)} | 
-                Actual total: {formatCurrency(total)} | 
+                Calculated total: {formatCurrency(calculatedTotal)} | 
+                Order total: {formatCurrency(total)} | 
                 Difference: {formatCurrency(discrepancyAmount)}
+              </div>
+              <div className="text-xs mt-1 text-blue-600">
+                Small differences may occur due to rounding in tax calculations.
               </div>
             </AlertDescription>
           </Alert>

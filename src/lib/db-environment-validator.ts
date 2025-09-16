@@ -97,8 +97,11 @@ export function validateDatabaseEnvironment(): ValidationResult {
   if (!databaseConfig) {
     // For pooler URLs, this might be expected - add as warning instead of error
     if (host.includes('pooler.supabase.com')) {
-      result.warnings.push(`Using Supabase pooler connection: ${host}`);
-      result.warnings.push('Unable to determine specific database from pooler URL - this is normal for production deployments');
+      // Only log pooler connection info in debug mode
+      if (process.env.DB_DEBUG === 'true') {
+        result.warnings.push(`Using Supabase pooler connection: ${host}`);
+        result.warnings.push('Unable to determine specific database from pooler URL - this is normal for production deployments');
+      }
       return result;
     } else {
       result.warnings.push(`Unknown database host: ${host}`);
@@ -142,10 +145,12 @@ export function validateDatabaseEnvironment(): ValidationResult {
 export function enforceEnvironmentValidation(): void {
   const validation = validateDatabaseEnvironment();
   
-  // Log warnings
-  validation.warnings.forEach(warning => {
-    console.warn(warning);
-  });
+  // Log warnings only in debug mode or for critical issues
+  if (process.env.DB_DEBUG === 'true') {
+    validation.warnings.forEach(warning => {
+      console.warn(warning);
+    });
+  }
 
   // Throw error for critical issues
   if (!validation.isValid) {

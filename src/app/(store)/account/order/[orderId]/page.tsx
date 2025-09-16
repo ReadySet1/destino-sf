@@ -387,9 +387,29 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         status: cateringOrder!.status,
         paymentStatus: cateringOrder!.paymentStatus,
         total: cateringOrder!.totalAmount?.toNumber() ?? 0,
-        taxAmount: 0, // Catering orders don't store tax breakdown separately
+        taxAmount: (() => {
+          // Calculate tax dynamically like admin view (8.25% on subtotal + delivery fee)
+          const subtotalFromItems = cateringOrder!.items.reduce(
+            (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+            0
+          );
+          const deliveryFee = cateringOrder!.deliveryFee?.toNumber() || 0;
+          const taxableAmount = subtotalFromItems + deliveryFee;
+          return Math.round(taxableAmount * 0.0825 * 100) / 100; // 8.25% tax, rounded to 2 decimals
+        })(),
         deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
-        serviceFee: 0, // Catering orders don't have service fees
+        serviceFee: (() => {
+          // Calculate service fee dynamically like admin view (3.5% on subtotal + delivery + tax)
+          const subtotalFromItems = cateringOrder!.items.reduce(
+            (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+            0
+          );
+          const deliveryFee = cateringOrder!.deliveryFee?.toNumber() || 0;
+          const taxableAmount = subtotalFromItems + deliveryFee;
+          const taxAmount = taxableAmount * 0.0825;
+          const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
+          return Math.round(totalBeforeFee * 0.035 * 100) / 100; // 3.5% service fee, rounded to 2 decimals
+        })(),
         gratuityAmount: 0, // Catering orders don't store gratuity separately
         shippingCost: 0, // Catering orders don't have shipping
         createdAt: cateringOrder!.createdAt,

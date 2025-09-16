@@ -75,6 +75,8 @@ export interface LocalDeliveryFulfillment extends BaseFulfillment {
     postalCode: string;
   };
   deliveryInstructions?: string;
+  deliveryFee?: number;
+  deliveryZone?: string | null;
 }
 
 export interface NationwideShippingFulfillment extends BaseFulfillment {

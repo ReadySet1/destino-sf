@@ -38,6 +38,10 @@ enum PaymentMethod {
   CASH = 'CASH',
 }
 
+// Tax and fee constants to match server-side calculations
+const TAX_RATE = 0.0825; // 8.25% SF sales tax
+const SERVICE_FEE_RATE = 0.035; // 3.5% service fee
+
 interface CateringCheckoutClientProps {
   userData: { id?: string; name?: string; email?: string; phone?: string } | null;
   isLoggedIn: boolean;
@@ -348,14 +352,38 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     saveFulfillmentInfoToLocalStorage(fulfillmentMethod, pickupDate, time);
   };
 
-  // Calculate total with delivery fee
-  const calculateTotal = () => {
+  // Calculate pricing breakdown with detailed fees
+  const calculatePricingBreakdown = () => {
     const subtotal = cateringItems.reduce((sum, item) => {
       return sum + item.price * item.quantity;
     }, 0);
 
     const deliveryFee = deliveryValidation?.deliveryFee || 0;
-    return subtotal + (fulfillmentMethod === 'local_delivery' ? deliveryFee : 0);
+    const actualDeliveryFee = fulfillmentMethod === 'local_delivery' ? deliveryFee : 0;
+    
+    // Calculate tax on subtotal + delivery fee (catering items are taxable)
+    const taxableAmount = subtotal + actualDeliveryFee;
+    const taxAmount = taxableAmount * TAX_RATE;
+    
+    // Calculate service fee on subtotal + delivery fee + tax
+    const totalBeforeServiceFee = subtotal + actualDeliveryFee + taxAmount;
+    const serviceFee = totalBeforeServiceFee * SERVICE_FEE_RATE;
+    
+    // Final total
+    const total = totalBeforeServiceFee + serviceFee;
+    
+    return {
+      subtotal: Math.round(subtotal * 100) / 100,
+      deliveryFee: Math.round(actualDeliveryFee * 100) / 100,
+      taxAmount: Math.round(taxAmount * 100) / 100,
+      serviceFee: Math.round(serviceFee * 100) / 100,
+      total: Math.round(total * 100) / 100,
+    };
+  };
+
+  // Calculate total (for backward compatibility)
+  const calculateTotal = () => {
+    return calculatePricingBreakdown().total;
   };
 
   // Handle customer info form submission
@@ -1197,31 +1225,39 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             </div>
 
             <div className="border-t border-gray-200 pt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>
-                  $
-                  {cateringItems
-                    .reduce((sum, item) => {
-                      return sum + item.price * item.quantity;
-                    }, 0)
-                    .toFixed(2)}
-                </span>
-              </div>
+              {(() => {
+                const pricing = calculatePricingBreakdown();
+                return (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal</span>
+                      <span>${pricing.subtotal.toFixed(2)}</span>
+                    </div>
 
-              {fulfillmentMethod === 'local_delivery' &&
-                deliveryValidation?.deliveryFee &&
-                deliveryValidation.deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Delivery Fee</span>
-                    <span>${deliveryValidation.deliveryFee.toFixed(2)}</span>
-                  </div>
-                )}
+                    {pricing.deliveryFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Delivery Fee</span>
+                        <span>${pricing.deliveryFee.toFixed(2)}</span>
+                      </div>
+                    )}
 
-              <div className="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
-                <span>Total</span>
-                <span>${calculateTotal().toFixed(2)}</span>
-              </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+                      <span>${pricing.taxAmount.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                      <span>Service Fee ({(SERVICE_FEE_RATE * 100).toFixed(1)}%)</span>
+                      <span>${pricing.serviceFee.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
+                      <span>Total</span>
+                      <span>${pricing.total.toFixed(2)}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>

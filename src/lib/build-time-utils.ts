@@ -28,8 +28,8 @@ export async function safeBuildTimeOperation<T>(
 ): Promise<T> {
   const isActualBuildTime = isBuildTime();
   
-  // Debug logging for production troubleshooting
-  if (process.env.NODE_ENV === 'production' || process.env.DB_DEBUG === 'true') {
+  // Debug logging for production troubleshooting - only when build debug is enabled
+  if (process.env.BUILD_DEBUG === 'true') {
     console.log(`[BUILD-TIME-CHECK] ${operationName}:`, {
       isBuildTime: isActualBuildTime,
       NEXT_PHASE: process.env.NEXT_PHASE,
@@ -41,7 +41,10 @@ export async function safeBuildTimeOperation<T>(
   }
   
   if (isActualBuildTime) {
-    console.log(`🔧 Build-time detected: Using fallback for ${operationName}`);
+    // Only log fallback usage in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      console.log(`🔧 Build-time detected: Using fallback for ${operationName}`);
+    }
     return fallback;
   }
 
@@ -56,11 +59,18 @@ export async function safeBuildTimeOperation<T>(
     });
 
     const result = await Promise.race([operationPromise, timeoutPromise]);
-    console.log(`✅ ${operationName} completed successfully`);
+    // Only log success in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      console.log(`✅ ${operationName} completed successfully`);
+    }
     return result;
   } catch (error) {
+    // Always log errors
     console.error(`Failed ${operationName}:`, error);
-    console.log(`🔄 Using fallback for ${operationName}`);
+    // Only log fallback usage in debug mode
+    if (process.env.BUILD_DEBUG === 'true') {
+      console.log(`🔄 Using fallback for ${operationName}`);
+    }
     return fallback;
   }
 }

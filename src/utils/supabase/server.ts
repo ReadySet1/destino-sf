@@ -29,7 +29,8 @@ export async function createClient() {
             // The `set` method was called from a Server Component.
             // This can be ignored since middleware handles session refreshing.
             // Silently ignore the error to prevent application crashes.
-            if (process.env.NODE_ENV === 'development') {
+            // Only log if explicitly debugging auth issues
+            if (process.env.NODE_ENV === 'development' && process.env.AUTH_DEBUG === 'true') {
               console.warn('Failed to set cookie in Server Component:', name, 'This is expected and handled by middleware');
             }
           }
@@ -47,7 +48,8 @@ export async function createClient() {
             // The `delete` method was called from a Server Component.
             // This can be ignored since middleware handles session refreshing.
             // Silently ignore the error to prevent application crashes.
-            if (process.env.NODE_ENV === 'development') {
+            // Only log if explicitly debugging auth issues
+            if (process.env.NODE_ENV === 'development' && process.env.AUTH_DEBUG === 'true') {
               console.warn('Failed to remove cookie in Server Component:', name, 'This is expected and handled by middleware');
             }
           }
