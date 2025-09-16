@@ -75,6 +75,8 @@ const LocalDeliverySchema = FulfillmentBaseSchema.extend({
   deliveryTime: z.string(),
   deliveryAddress: addressSchema,
   deliveryInstructions: z.string().optional(),
+  deliveryFee: z.number().optional(),
+  deliveryZone: z.string().nullable().optional(),
 });
 
 const NationwideShippingSchema = FulfillmentBaseSchema.extend({
@@ -618,7 +620,12 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
 
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal);
+  // Get delivery fee for local delivery orders
+  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+    ? new Decimal(fulfillment.deliveryFee)
+    : new Decimal(0);
+
+  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
   const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
@@ -627,6 +634,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   console.log(
     `Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
+  console.log(`Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
   console.log(`Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
   console.log(`Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
@@ -689,6 +697,11 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   // --- Database Order Creation ---
   let dbOrder: { id: string } | null = null;
   try {
+    // Calculate delivery fee for database storage
+    const deliveryFeeForDb = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+      ? new Decimal(fulfillment.deliveryFee) 
+      : new Decimal(0);
+
     const orderInputData: Prisma.OrderCreateInput = {
       // Connect profile using userId if ID exists
       ...(supabaseUserId && { profile: { connect: { id: supabaseUserId } } }),
@@ -697,6 +710,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       paymentMethod: paymentMethod,
       total: finalTotal, // Prisma handles Decimal
       taxAmount: taxAmount,
+      deliveryFee: deliveryFeeForDb, // Add delivery fee
+      serviceFee: serviceFeeAmount, // Add service fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -825,6 +840,15 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         name: dbFulfillmentData.shippingMethodName || `Shipping (${fulfillment.shippingCarrier})`, // Use DB field or fallback
         quantity: '1',
         base_price_money: { amount: fulfillment.shippingCost, currency: 'USD' }, // Use cost in cents
+      });
+    }
+
+    // Add delivery fee as a line item if applicable
+    if (fulfillment.method === 'local_delivery' && fulfillment.deliveryFee && fulfillment.deliveryFee > 0) {
+      squareLineItems.push({
+        name: `Delivery Fee (${fulfillment.deliveryZone || 'Local'})`,
+        quantity: '1',
+        base_price_money: { amount: Math.round(fulfillment.deliveryFee * 100), currency: 'USD' }, // Convert to cents
       });
     }
 
@@ -1206,7 +1230,13 @@ export async function createManualPaymentOrder(formData: {
   const shippingCostCents =
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal);
+  
+  // Get delivery fee for local delivery orders (manual payment)
+  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+    ? new Decimal(fulfillment.deliveryFee)
+    : new Decimal(0);
+
+  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
   const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
@@ -1215,6 +1245,7 @@ export async function createManualPaymentOrder(formData: {
   console.log(
     `Manual Payment - Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
+  console.log(`Manual Payment - Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
   console.log(`Manual Payment - Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
   console.log(`Manual Payment - Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
@@ -1317,6 +1348,8 @@ export async function createManualPaymentOrder(formData: {
       paymentMethod: paymentMethod,
       total: finalTotal,
       taxAmount: taxAmount,
+      deliveryFee: deliveryFeeDecimal, // Add delivery fee
+      serviceFee: serviceFeeAmount, // Add service fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,

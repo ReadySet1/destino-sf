@@ -31,6 +31,12 @@ import {
 import { sendCateringOrderNotification } from '@/lib/email';
 import { isStoreOpen } from '@/lib/store-settings';
 import { env } from '@/env'; // Import the validated environment configuration
+import { calculateTaxForItems } from '@/utils/tax-exemption';
+import { getTaxRate } from '@/lib/store-settings';
+import Decimal from 'decimal.js';
+
+// Service fee rate for catering orders (same as regular orders)
+const SERVICE_FEE_RATE = 0.035; // 3.5%
 
 /**
  * Fetches all active catering packages using Prisma with build-time safety
@@ -346,6 +352,7 @@ export async function saveContactInfo(data: {
   squareOrderId?: string;
   idempotencyKey?: string;
   tempOrderId?: string;
+  metadata?: any;
 }): Promise<{ success: boolean; error?: string; orderId?: string }> {
   try {
     // Check if store is open
@@ -446,9 +453,11 @@ export async function saveContactInfo(data: {
           // Add Square integration fields
           ...(data.squareCheckoutId && { squareCheckoutId: data.squareCheckoutId }),
           ...(data.squareOrderId && { squareOrderId: data.squareOrderId }),
-          ...(data.idempotencyKey && { 
-            metadata: { idempotencyKey: data.idempotencyKey } as any 
-          }),
+          // Merge metadata with idempotencyKey and any additional metadata
+          metadata: {
+            ...(data.idempotencyKey && { idempotencyKey: data.idempotencyKey }),
+            ...(data.metadata || {}),
+          } as any,
           // Create associated catering order items if provided
           ...(data.items && data.items.length > 0 && {
             items: {
@@ -566,6 +575,57 @@ export async function createCateringOrderAndProcessPayment(data: {
           data.deliveryFee || 0
         );
 
+        // --- Calculate taxes and service fees for Square ---
+        // Calculate subtotal from items
+        const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
+        const deliveryFee = data.deliveryFee || 0;
+        
+        // Get tax rate from store settings
+        const taxRateDecimal = await getTaxRate();
+        
+        // Calculate tax for catering items (catering items are always taxable)
+        const itemsForTaxCalculation = (data.items || []).map(item => ({
+          product: {
+            category: { name: 'Catering' }, // Catering items are taxable
+            name: item.name,
+          },
+          price: item.pricePerUnit,
+          quantity: item.quantity,
+        }));
+        
+        const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
+        const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
+        
+        // Add delivery fee to taxable amount if present (delivery fees are taxable)
+        const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+        const totalTaxAmount = taxAmount.plus(deliveryTax);
+        
+        // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+        const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
+        const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+
+        console.log(`[CATERING] Calculated Subtotal: ${subtotal}`);
+        console.log(`[CATERING] Calculated Delivery Fee: ${deliveryFee}`);
+        console.log(`[CATERING] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
+        console.log(`[CATERING] Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+
+        // Prepare Square taxes and service charges
+        const squareTaxes = totalTaxAmount.greaterThan(0) ? [{
+          name: 'Sales Tax',
+          percentage: new Decimal(taxRateDecimal).times(100).toFixed(2), // Convert to percentage
+          scope: 'ORDER', // Apply to order subtotal (including delivery fee)
+        }] : [];
+
+        const squareServiceCharges = serviceFeeAmount.greaterThan(0) ? [{
+          name: 'Service Fee',
+          amount_money: { 
+            amount: Math.round(serviceFeeAmount.toNumber() * 100), 
+            currency: 'USD' 
+          },
+          calculation_phase: 'TOTAL_PHASE', // Applied after tax
+          taxable: false,
+        }] : [];
+
         // Clean app URL to prevent double slashes
         const cleanAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
         
@@ -585,6 +645,8 @@ export async function createCateringOrderAndProcessPayment(data: {
           orderId: tempOrderId,
           locationId: locationId!,
           lineItems: lineItemsWithDelivery,
+          taxes: squareTaxes,
+          serviceCharges: squareServiceCharges,
           redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${tempOrderId}`,
           customerEmail: data.email,
           customerName: data.name,
@@ -597,11 +659,21 @@ export async function createCateringOrderAndProcessPayment(data: {
         console.log(`💳 [SQUARE] Square Order ID: ${squareOrderId}`);
         console.log(`💳 [SQUARE] Checkout URL: ${checkoutUrl ? 'Generated' : 'Missing'}`);
 
+        // Calculate the total including tax and service fees
+        const finalTotalAmount = new Decimal(subtotal)
+          .plus(deliveryFee)
+          .plus(totalTaxAmount)
+          .plus(serviceFeeAmount)
+          .toDecimalPlaces(2);
+
+        console.log(`💾 [DATABASE] Final total with fees: ${finalTotalAmount.toFixed(2)}`);
+        console.log(`💾 [DATABASE] Original client total: ${data.totalAmount}`);
+
         // Now create the catering order with Square IDs (atomic operation)
         console.log(`💾 [DATABASE] Creating catering order record...`);
         const orderResult = await saveContactInfo({
           ...data,
-          totalAmount: data.totalAmount,
+          totalAmount: finalTotalAmount.toNumber(), // Use calculated total with fees
           paymentMethod: data.paymentMethod,
           customerId: data.customerId,
           items: data.items,
@@ -609,6 +681,15 @@ export async function createCateringOrderAndProcessPayment(data: {
           squareOrderId: squareOrderId,
           idempotencyKey,
           tempOrderId, // Pass temp order ID to use as the actual order ID
+          // Include calculated fees in metadata
+          metadata: {
+            originalClientTotal: data.totalAmount, // Store original for reference
+            taxAmount: totalTaxAmount.toNumber(),
+            serviceFee: serviceFeeAmount.toNumber(),
+            calculatedAt: new Date().toISOString(),
+            feesIncludedInSquare: true,
+            feesIncludedInTotal: true,
+          },
         });
 
         if (!orderResult.success || !orderResult.orderId) {
@@ -651,14 +732,64 @@ export async function createCateringOrderAndProcessPayment(data: {
         };
       }
     } else if (data.paymentMethod === PaymentMethod.CASH) {
-      // For cash orders, create order directly
+      // For cash orders, calculate fees and create order directly
+      // --- Calculate taxes and service fees for Cash orders (same as Square) ---
+      const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
+      const deliveryFee = data.deliveryFee || 0;
+      
+      // Get tax rate from store settings
+      const taxRateDecimal = await getTaxRate();
+      
+      // Calculate tax for catering items (catering items are always taxable)
+      const itemsForTaxCalculation = (data.items || []).map(item => ({
+        product: {
+          category: { name: 'Catering' }, // Catering items are taxable
+          name: item.name,
+        },
+        price: item.pricePerUnit,
+        quantity: item.quantity,
+      }));
+      
+      const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
+      const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
+      
+      // Add delivery fee to taxable amount if present (delivery fees are taxable)
+      const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+      const totalTaxAmount = taxAmount.plus(deliveryTax);
+      
+      // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+      const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
+      const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+
+      // Calculate final total including all fees
+      const finalTotalAmount = new Decimal(subtotal)
+        .plus(deliveryFee)
+        .plus(totalTaxAmount)
+        .plus(serviceFeeAmount)
+        .toDecimalPlaces(2);
+
+      console.log(`[CATERING CASH] Calculated Subtotal: ${subtotal}`);
+      console.log(`[CATERING CASH] Calculated Delivery Fee: ${deliveryFee}`);
+      console.log(`[CATERING CASH] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
+      console.log(`[CATERING CASH] Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+      console.log(`[CATERING CASH] Final total with fees: ${finalTotalAmount.toFixed(2)}`);
+
       const orderResult = await saveContactInfo({
         ...data,
-        totalAmount: data.totalAmount,
+        totalAmount: finalTotalAmount.toNumber(), // Use calculated total with fees
         paymentMethod: data.paymentMethod,
         customerId: data.customerId,
         items: data.items,
         idempotencyKey,
+        // Include calculated fees in metadata
+        metadata: {
+          originalClientTotal: data.totalAmount, // Store original for reference
+          taxAmount: totalTaxAmount.toNumber(),
+          serviceFee: serviceFeeAmount.toNumber(),
+          calculatedAt: new Date().toISOString(),
+          feesIncludedInSquare: false, // Cash payment, no Square
+          feesIncludedInTotal: true,
+        },
       });
 
       if (!orderResult.success || !orderResult.orderId) {
@@ -675,13 +806,59 @@ export async function createCateringOrderAndProcessPayment(data: {
     }
 
     // Default return for other payment methods
+    // Calculate fees for other payment methods too
+    const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
+    const deliveryFee = data.deliveryFee || 0;
+    
+    // Get tax rate from store settings
+    const taxRateDecimal = await getTaxRate();
+    
+    // Calculate tax for catering items (catering items are always taxable)
+    const itemsForTaxCalculation = (data.items || []).map(item => ({
+      product: {
+        category: { name: 'Catering' }, // Catering items are taxable
+        name: item.name,
+      },
+      price: item.pricePerUnit,
+      quantity: item.quantity,
+    }));
+    
+    const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
+    const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
+    
+    // Add delivery fee to taxable amount if present (delivery fees are taxable)
+    const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+    const totalTaxAmount = taxAmount.plus(deliveryTax);
+    
+    // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+    const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
+    const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+
+    // Calculate final total including all fees
+    const finalTotalAmount = new Decimal(subtotal)
+      .plus(deliveryFee)
+      .plus(totalTaxAmount)
+      .plus(serviceFeeAmount)
+      .toDecimalPlaces(2);
+
+    console.log(`[CATERING DEFAULT] Calculated fees - Tax: ${totalTaxAmount.toFixed(2)}, Service: ${serviceFeeAmount.toFixed(2)}, Total: ${finalTotalAmount.toFixed(2)}`);
+
     const orderResult = await saveContactInfo({
       ...data,
-      totalAmount: data.totalAmount,
+      totalAmount: finalTotalAmount.toNumber(), // Use calculated total with fees
       paymentMethod: data.paymentMethod,
       customerId: data.customerId,
       items: data.items,
       idempotencyKey,
+      // Include calculated fees in metadata
+      metadata: {
+        originalClientTotal: data.totalAmount, // Store original for reference
+        taxAmount: totalTaxAmount.toNumber(),
+        serviceFee: serviceFeeAmount.toNumber(),
+        calculatedAt: new Date().toISOString(),
+        feesIncludedInSquare: false, // Not Square payment
+        feesIncludedInTotal: true,
+      },
     });
 
     if (!orderResult.success || !orderResult.orderId) {

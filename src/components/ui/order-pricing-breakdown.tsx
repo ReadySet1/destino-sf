@@ -124,26 +124,20 @@ export function OrderPricingBreakdown({
     <div className={`space-y-4 ${className}`}>
       {/* Main Pricing Breakdown */}
       <div className="space-y-2">
-        {feeItems.map((item, index) => (
-          <div key={index} className="flex justify-between items-center text-sm">
-            <div className="flex-1">
-              <span className="text-gray-600">{item.label}:</span>
-              {item.description && (
-                <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
-              )}
+        {feeItems
+          .filter((item) => item.label === 'Subtotal' || item.amount > 0) // Show subtotal always, but hide other $0.00 items
+          .map((item, index) => (
+            <div key={index} className="flex justify-between items-center text-sm">
+              <div className="flex-1">
+                <span className="text-gray-600">{item.label}:</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(item.amount)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`font-medium ${item.amount === 0 ? 'text-gray-400' : 'text-gray-900'}`}>
-                {formatCurrency(item.amount)}
-              </span>
-              {item.amount === 0 && (
-                <Badge variant="outline" className="text-xs text-gray-400 border-gray-300">
-                  $0.00
-                </Badge>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
         
         {/* Discrepancy Alert - only show if we haven't resolved it with the consolidated fee line */}
         {hasDiscrepancy && !shouldShowDiscrepancyAsFeeLine && (
