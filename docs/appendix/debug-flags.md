@@ -55,6 +55,23 @@ AUTH_DEBUG=true
 **When disabled (default):**
 - Authentication operations run silently unless errors occur
 
+### `BUILD_DEBUG`
+Controls build-time and deployment logging.
+
+```bash
+BUILD_DEBUG=true
+```
+
+**When enabled:**
+- Shows build-time detection messages
+- Displays fallback data usage logs
+- Logs server environment checks
+- Shows Supabase admin client initialization
+- Displays sitemap generation details
+
+**When disabled (default):**
+- Build and deployment operations run silently with clean output
+
 ## Usage
 
 1. Create or edit your `.env.local` file in the project root
@@ -67,6 +84,7 @@ Example `.env.local`:
 DB_DEBUG=false
 API_DEBUG=false
 AUTH_DEBUG=false
+BUILD_DEBUG=false
 
 # Your other environment variables...
 DATABASE_URL=your-database-url
@@ -88,6 +106,7 @@ By default, all debug flags are `false`, resulting in a much cleaner development
 - **Debugging database issues:** Enable `DB_DEBUG=true`
 - **Debugging API problems:** Enable `API_DEBUG=true`
 - **Debugging authentication:** Enable `AUTH_DEBUG=true`
+- **Debugging build/deployment:** Enable `BUILD_DEBUG=true`
 - **Comprehensive debugging:** Enable all flags temporarily
 
 Remember to disable debug flags when not actively debugging to maintain a clean development experience.

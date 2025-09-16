@@ -10,14 +10,16 @@ import {
   type ShippingRate as LibShippingRate,
 } from '@/lib/shipping';
 
-// Debug environment variables in server action
-console.log('Server action environment check:', {
-  hasShippoKey: !!process.env.SHIPPO_API_KEY,
-  nodeEnv: process.env.NODE_ENV,
-  shippoKeyPrefix: process.env.SHIPPO_API_KEY
-    ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...'
-    : 'MISSING',
-});
+// Debug environment variables in server action - only in debug mode
+if (process.env.BUILD_DEBUG === 'true') {
+  console.log('Server action environment check:', {
+    hasShippoKey: !!process.env.SHIPPO_API_KEY,
+    nodeEnv: process.env.NODE_ENV,
+    shippoKeyPrefix: process.env.SHIPPO_API_KEY
+      ? process.env.SHIPPO_API_KEY.substring(0, 15) + '...'
+      : 'MISSING',
+  });
+}
 
 // --- Enhanced Schemas for Shippo Integration ---
 const addressSchema = z.object({

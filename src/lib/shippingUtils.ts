@@ -187,7 +187,10 @@ export async function calculateShippingWeight(
 export async function getAllShippingConfigurations(): Promise<ShippingWeightConfig[]> {
   // During build time, return default configurations to prevent database connection failures
   if (isBuildTime()) {
-    logger.info('🔧 Build-time detected: Using default shipping configurations');
+    // Only log in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      logger.info('🔧 Build-time detected: Using default shipping configurations');
+    }
     return Object.values(DEFAULT_WEIGHT_CONFIGS);
   }
 
