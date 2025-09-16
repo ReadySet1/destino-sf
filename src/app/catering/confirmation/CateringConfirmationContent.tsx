@@ -126,9 +126,8 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             </p>
           </div>
           <div className="flex justify-center space-x-4">
-            {/* Show retry payment button for Square payments if order data is available */}
+            {/* Show retry payment button for Square payments with pending/failed payments */}
             {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
-             orderData.status === 'PENDING' && // Only show for PENDING status (catering orders don't have PAYMENT_FAILED)
              (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
               <RetryPaymentButton
                 orderId={orderData.id}
@@ -160,9 +159,8 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             </p>
           </div>
           <div className="flex justify-center space-x-4">
-            {/* Show retry payment button for Square payments if order data is available */}
+            {/* Show retry payment button for Square payments with pending/failed payments */}
             {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
-             orderData.status === 'PENDING' && // Only show for PENDING status (catering orders don't have PAYMENT_FAILED)
              (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
               <RetryPaymentButton
                 orderId={orderData.id}

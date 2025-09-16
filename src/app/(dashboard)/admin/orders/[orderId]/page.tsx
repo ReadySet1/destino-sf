@@ -690,6 +690,15 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                     ? (serializedOrder.shippingCostCents / 100) 
                     : 0;
 
+                  // Check if we have a fee breakdown discrepancy
+                  const totalFees = taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCostDollars;
+                  const calculatedTotal = subtotalFromItems + totalFees;
+                  const actualTotal = orderTotal;
+                  const discrepancy = actualTotal - calculatedTotal;
+                  const allFeesAreZero = taxAmount === 0 && deliveryFee === 0 && serviceFee === 0 && gratuityAmount === 0 && shippingCostDollars === 0;
+                  const hasSignificantDiscrepancy = Math.abs(discrepancy) > 0.01;
+                  const shouldShowConsolidatedFees = allFeesAreZero && hasSignificantDiscrepancy && discrepancy > 0;
+
 
                   return (
                     <>
@@ -704,64 +713,78 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         </td>
                       </tr>
 
-                      {/* Tax */}
-                      {taxAmount > 0 && (
+                      {/* Show consolidated fees or individual fees */}
+                      {shouldShowConsolidatedFees ? (
                         <tr>
                           <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Tax (8.25%):
+                            Tax, Fees & Other Charges:
                           </td>
                           <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(taxAmount)}
+                            {formatCurrency(discrepancy)}
                           </td>
                         </tr>
-                      )}
+                      ) : (
+                        <>
+                          {/* Tax */}
+                          {taxAmount > 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                                Tax (8.25%):
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm">
+                                {formatCurrency(taxAmount)}
+                              </td>
+                            </tr>
+                          )}
 
-                      {/* Shipping */}
-                      {shippingCostDollars > 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Shipping ({serializedOrder?.shippingCarrier || 'N/A'}):
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(shippingCostDollars)}
-                          </td>
-                        </tr>
-                      )}
+                          {/* Shipping */}
+                          {shippingCostDollars > 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                                Shipping ({serializedOrder?.shippingCarrier || 'N/A'}):
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm">
+                                {formatCurrency(shippingCostDollars)}
+                              </td>
+                            </tr>
+                          )}
 
-                      {/* Delivery Fee */}
-                      {deliveryFee > 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Delivery Fee:
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(deliveryFee)}
-                          </td>
-                        </tr>
-                      )}
+                          {/* Delivery Fee */}
+                          {deliveryFee > 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                                Delivery Fee:
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm">
+                                {formatCurrency(deliveryFee)}
+                              </td>
+                            </tr>
+                          )}
 
-                      {/* Service Fee */}
-                      {serviceFee > 0.01 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Service Fee:
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(serviceFee)}
-                          </td>
-                        </tr>
-                      )}
+                          {/* Service Fee */}
+                          {serviceFee > 0.01 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                                Service Fee:
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm">
+                                {formatCurrency(serviceFee)}
+                              </td>
+                            </tr>
+                          )}
 
-                      {/* Gratuity */}
-                      {gratuityAmount > 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Gratuity/Tip:
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(gratuityAmount)}
-                          </td>
-                        </tr>
+                          {/* Gratuity */}
+                          {gratuityAmount > 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                                Gratuity/Tip:
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm">
+                                {formatCurrency(gratuityAmount)}
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       )}
 
 

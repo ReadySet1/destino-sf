@@ -37,8 +37,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       where: {
         id: orderId,
         userId: user.id, // Ensure user owns the order
-        status: { in: ['PENDING', 'PAYMENT_FAILED'] },
         paymentMethod: 'SQUARE', // Only allow retries for Square payments
+        paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status only
       },
       include: {
         items: {
@@ -57,9 +57,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
         where: {
           id: orderId,
           customerId: user.id, // Ensure user owns the catering order
-          status: { in: ['PENDING'] }, // CateringStatus doesn't have PAYMENT_FAILED
           paymentMethod: 'SQUARE', // Only allow retries for Square payments
-          paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status instead
+          paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status only
         },
         include: {
           items: true,
