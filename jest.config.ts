@@ -13,7 +13,12 @@ const config: Config = {
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
       },
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
+      setupFilesAfterEnv: [
+        '<rootDir>/jest.setup.enhanced.js',
+        '<rootDir>/src/__tests__/setup/test-db-setup.ts'
+      ],
+      globalSetup: '<rootDir>/src/__tests__/setup/global-setup.ts',
+      globalTeardown: '<rootDir>/src/__tests__/setup/global-teardown.ts',
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
           tsconfig: {
@@ -36,7 +41,10 @@ const config: Config = {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
       },
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
+      setupFilesAfterEnv: [
+        '<rootDir>/jest.setup.enhanced.js',
+        '<rootDir>/src/__tests__/setup/jsdom-setup.ts'
+      ],
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
           tsconfig: {
@@ -54,6 +62,7 @@ const config: Config = {
     '!src/**/__mocks__/**',
     '!src/**/__tests__/**',
     '!src/**/*.stories.tsx',
+    '!src/scripts/**',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
@@ -67,8 +76,8 @@ const config: Config = {
   },
   passWithNoTests: true,
   verbose: true,
-  maxWorkers: '50%',  // Use half of available CPU cores
-  testTimeout: 10000,  // 10 seconds per test
+  maxWorkers: 1, // Run tests serially to avoid DB conflicts
+  testTimeout: 30000, // 30 seconds timeout for all tests
   bail: false,  // Don't stop on first failure
 };
 
