@@ -690,27 +690,9 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                     ? (serializedOrder.shippingCostCents / 100) 
                     : 0;
 
-                  // Debug: Calculate what the breakdown should add up to
-                  const totalBreakdown = taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCostDollars;
-                  const calculatedTotal = subtotalFromItems + totalBreakdown;
-                  const discrepancy = orderTotal - calculatedTotal;
 
                   return (
                     <>
-                      {/* Debug Information - Only show if there's a discrepancy */}
-                      {discrepancy !== 0 && (
-                        <tr className="bg-red-50 border-l-4 border-red-400">
-                          <td colSpan={5} className="px-4 py-2 text-sm">
-                            <div className="text-red-800 font-medium">⚠️ Debug: Breakdown Discrepancy</div>
-                            <div className="text-red-700 text-xs mt-1">
-                              Raw values: Tax={taxAmount}, Delivery={deliveryFee}, Service={serviceFee}, 
-                              Gratuity={gratuityAmount}, Shipping={shippingCostDollars} | 
-                              Subtotal={subtotalFromItems} + Breakdown={totalBreakdown} = {calculatedTotal} 
-                              vs Grand Total={orderTotal} | Discrepancy: {formatCurrency(discrepancy)}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
 
                       {/* Subtotal */}
                       <tr className="border-t border-gray-200">
