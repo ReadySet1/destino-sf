@@ -764,17 +764,6 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         </tr>
                       )}
 
-                      {/* Show missing breakdown amount if there's a discrepancy */}
-                      {discrepancy !== 0 && totalBreakdown === 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                            Tax, Fees & Other Charges:
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm">
-                            {formatCurrency(Math.abs(discrepancy))}
-                          </td>
-                        </tr>
-                      )}
 
                       {/* Grand Total */}
                       <tr className="border-t-2 border-gray-300 font-bold text-base">
