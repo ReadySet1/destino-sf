@@ -3,6 +3,7 @@
  * Configures the DOM environment for React component testing
  */
 
+import React from 'react';
 import '@testing-library/jest-dom';
 
 // Mock Next.js router
@@ -39,7 +40,8 @@ jest.mock('next/navigation', () => ({
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: any) => {
-    return <img {...props} />;
+    // eslint-disable-next-line @next/next/no-img-element
+    return React.createElement('img', props);
   },
 }));
 
