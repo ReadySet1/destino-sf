@@ -27,7 +27,7 @@ const WEBHOOK_SECRET = __ENV.WEBHOOK_SECRET || 'test-webhook-secret-key';
 // Generate unique event IDs to avoid replay attack detection
 let eventIdCounter = 0;
 
-export default function () {
+export default function webhookProcessingTest() {
   // Generate webhook payload
   const eventId = `load-test-${Date.now()}-${eventIdCounter++}`;
   const timestamp = Math.floor(Date.now() / 1000);
