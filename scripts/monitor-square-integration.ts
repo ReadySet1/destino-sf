@@ -1,5 +1,3 @@
-#!/usr/bin/env tsx
-
 /**
  * Scheduled Square Integration Monitor
  * 
@@ -10,8 +8,8 @@
  *   pnpm tsx scripts/monitor-square-integration.ts [--silent] [--alerts-off]
  * 
  * Recommended Cron Schedule:
- *   */15 * * * * - Every 15 minutes for critical monitoring
- *   0 */2 * * * - Every 2 hours for less critical checks
+ *   0 0/15 * * * * - Every 15 minutes for critical monitoring
+ *   0 0 0/2 * * * - Every 2 hours for less critical checks
  * 
  * Environment Variables:
  *   MONITORING_ENABLED=true          # Enable/disable monitoring
