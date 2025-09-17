@@ -8,21 +8,27 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image?: string;
+  variantId?: string;
 }
 
 export interface CartStore {
   items: CartItem[];
-  total: number;
+  totalPrice: number;
+  totalItems: number;
   addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
+  removeItem: (id: string, variantId?: string) => void;
+  updateQuantity: (id: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
 }
 
 // Mock store for testing
-export const useCartStore = () => ({
+export const useCartStore = (): CartStore => ({
   items: [] as CartItem[],
-  total: 0,
+  totalPrice: 0,
+  totalItems: 0,
   addItem: (item: CartItem) => {},
-  removeItem: (id: string) => {},
+  removeItem: (id: string, variantId?: string) => {},
+  updateQuantity: (id: string, quantity: number, variantId?: string) => {},
   clearCart: () => {},
 });
