@@ -8,7 +8,6 @@ import { CartAlert } from '@/components/ui/cart-alert';
 import { Toaster } from 'sonner';
 import { AuthHandler } from '@/components/auth-handler';
 import { useUmamiPageTracking } from '@/lib/analytics';
-import './styles/globals.css';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 

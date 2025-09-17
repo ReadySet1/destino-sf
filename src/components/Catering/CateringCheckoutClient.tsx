@@ -31,12 +31,7 @@ import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
 import { getActiveDeliveryZones, type DeliveryAddress } from '@/types/catering';
 import { US_STATES, CA_ONLY_STATES } from '@/lib/constants/us-states';
-
-// Define the PaymentMethod enum to match the Prisma schema
-enum PaymentMethod {
-  SQUARE = 'SQUARE',
-  CASH = 'CASH',
-}
+import { PaymentMethod } from '@prisma/client';
 
 // Tax and fee constants to match server-side calculations
 const TAX_RATE = 0.0825; // 8.25% SF sales tax
@@ -192,12 +187,15 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
   }, [idempotencyKey]);
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (but not during checkout submission or Square redirect)
   useEffect(() => {
-    if (cateringItems.length === 0) {
+    console.log('🔍 [CATERING] Empty cart check - items:', cateringItems.length, 'isSubmitting:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current, 'isRedirectingToSquare:', isRedirectingToSquareRef.current);
+    
+    if (cateringItems.length === 0 && !isSubmitting && !isSubmittingRef.current && !isRedirectingToSquareRef.current) {
+      console.log('🔄 [CATERING] Cart is empty and not submitting/redirecting, redirecting to catering page');
       router.push('/catering');
     }
-  }, [cateringItems.length, router]);
+  }, [cateringItems.length, router, isSubmitting]);
 
   // Function to save delivery address to localStorage
   const saveDeliveryAddressToLocalStorage = useCallback((address: typeof deliveryAddress) => {
@@ -278,10 +276,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const saveCustomerInfoToLocalStorage = (info: typeof customerInfo) => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cateringCustomerInfo', JSON.stringify({
+        const dataToSave = {
           ...info,
           eventDate: info.eventDate.toISOString(),
-        }));
+        };
+        console.log('🔍 [CATERING-DEBUG] Saving to localStorage:', dataToSave);
+        localStorage.setItem('cateringCustomerInfo', JSON.stringify(dataToSave));
       } catch (error) {
         console.error('Error saving customer info to localStorage:', error);
       }
@@ -388,6 +388,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
   // Handle customer info form submission
   const handleCustomerInfoSubmit = (values: any) => {
+    console.log('🔍 [CATERING-DEBUG] Form submitted with values:', values);
+    console.log('🔍 [CATERING-DEBUG] Phone number from form:', values.phone);
+    
     const newCustomerInfo = {
       name: values.name,
       email: values.email,
@@ -396,6 +399,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       eventDate: values.eventDate,
     };
     
+    console.log('🔍 [CATERING-DEBUG] Setting customer info to:', newCustomerInfo);
     setCustomerInfo(newCustomerInfo);
     saveCustomerInfoToLocalStorage(newCustomerInfo);
     setCurrentStep('fulfillment');
@@ -416,14 +420,25 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Enhanced submission state management
   const [submissionAttempts, setSubmissionAttempts] = useState(0);
   const isSubmittingRef = useRef(false);
+  const isRedirectingToSquareRef = useRef(false);
 
   // Handle final order submission
-  const handleCompleteOrder = async () => {
+  const handleCompleteOrder = async (event?: React.MouseEvent) => {
+    // Prevent any default behavior and event bubbling
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     // Prevent any submission if already in progress
     if (isSubmittingRef.current || isSubmitting) {
       console.log('⚠️ Submission already in progress, ignoring click');
       return;
     }
+    
+    console.log('🚀 [CATERING] Starting order submission...');
+    console.log('🛒 [CATERING] Cart items count before submission:', cateringItems.length);
+    console.log('🛒 [CATERING] Cart items:', cateringItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })));
 
     // Set ref immediately to prevent race conditions
     isSubmittingRef.current = true;
@@ -592,78 +607,188 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Format event date as string in full ISO format
       const formattedEventDate = customerInfo.eventDate.toISOString();
 
-      const result = await createCateringOrderAndProcessPayment({
-        name: customerInfo.name,
-        email: customerInfo.email,
-        phone: customerInfo.phone,
-        eventDate: formattedEventDate,
-        numberOfPeople: 1, // Default value since we removed people count
-        packageType: 'A_LA_CARTE', // Default package type for a-la-carte orders
-        specialRequests: customerInfo.specialRequests,
-        ...(fulfillmentMethod === 'local_delivery' && {
-          deliveryAddress: {
-            street: deliveryAddress.street,
-            street2: deliveryAddress.street2,
-            city: deliveryAddress.city,
-            state: deliveryAddress.state,
-            postalCode: deliveryAddress.postalCode,
-            deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
-            deliveryTime: pickupTime,
-          },
-          deliveryZone: deliveryValidation?.deliveryZone || 'UNKNOWN',
-          deliveryFee: deliveryValidation?.deliveryFee || 0,
-        }),
-        totalAmount: calculateTotal(),
-        paymentMethod: paymentMethod,
-        customerId: customerId, // Pass the user ID to associate the order with the logged-in user
-        items: formattedItems, // Pass the catering order items
-        idempotencyKey: idempotencyKey, // Add idempotency protection
+      console.log('🚀 [CATERING-CHECKOUT] About to submit order with payment method:', paymentMethod);
+      console.log('🔍 [CATERING-DEBUG] Customer info before order submission:', customerInfo);
+      console.log('🔍 [CATERING-DEBUG] Phone number being sent to order:', customerInfo.phone);
+      
+      console.log('📤 [DEBUG] Calling createCateringOrderAndProcessPayment...');
+      let result;
+      try {
+        result = await createCateringOrderAndProcessPayment({
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          eventDate: formattedEventDate,
+          numberOfPeople: 1, // Default value since we removed people count
+          packageType: 'A_LA_CARTE', // Default package type for a-la-carte orders
+          specialRequests: customerInfo.specialRequests,
+          ...(fulfillmentMethod === 'local_delivery' && {
+            deliveryAddress: {
+              street: deliveryAddress.street,
+              street2: deliveryAddress.street2,
+              city: deliveryAddress.city,
+              state: deliveryAddress.state,
+              postalCode: deliveryAddress.postalCode,
+              deliveryDate: format(pickupDate, 'yyyy-MM-dd'),
+              deliveryTime: pickupTime,
+            },
+            deliveryZone: deliveryValidation?.deliveryZone || 'UNKNOWN',
+            deliveryFee: deliveryValidation?.deliveryFee || 0,
+          }),
+          totalAmount: calculateTotal(),
+          paymentMethod: paymentMethod,
+          customerId: customerId, // Pass the user ID to associate the order with the logged-in user
+          items: formattedItems, // Pass the catering order items
+          idempotencyKey: idempotencyKey, // Add idempotency protection
+        });
+        console.log('✅ [DEBUG] createCateringOrderAndProcessPayment completed successfully');
+      } catch (serverActionError) {
+        console.error('❌ [DEBUG] Server action threw an error:', serverActionError);
+        throw serverActionError; // Re-throw to be caught by outer catch
+      }
+
+      console.log('🎯 [CATERING-CHECKOUT] Server action result:', {
+        success: result.success,
+        hasCheckoutUrl: !!result.checkoutUrl,
+        checkoutUrlType: typeof result.checkoutUrl,
+        checkoutUrlLength: result.checkoutUrl ? result.checkoutUrl.length : 0,
+        checkoutUrlValue: result.checkoutUrl,
+        orderId: result.orderId,
+        error: result.error,
+        fullResult: result
       });
+      
+      // Additional debugging for server action response
+      console.log('🔍 [DEBUG] Raw server action result keys:', Object.keys(result));
+      console.log('🔍 [DEBUG] result.checkoutUrl exists:', 'checkoutUrl' in result);
+      console.log('🔍 [DEBUG] result.checkoutUrl value:', result.checkoutUrl);
+      console.log('🔍 [DEBUG] JSON.stringify result:', JSON.stringify(result));
 
       if (result.success) {
-        // Clear the cart
-        clearCart();
+        // If there's a checkout URL (Square payment), redirect to it immediately
+        console.log('🔍 [DEBUG] Checking redirect condition...');
+        console.log('🔍 [DEBUG] result.checkoutUrl truthy:', !!result.checkoutUrl);
+        console.log('🔍 [DEBUG] typeof result.checkoutUrl:', typeof result.checkoutUrl);
+        console.log('🔍 [DEBUG] result.checkoutUrl.length:', result.checkoutUrl ? result.checkoutUrl.length : 'N/A');
         
-        // Clear all saved data from localStorage since order was successful
-        clearCustomerInfoFromLocalStorage();
-        clearDeliveryAddressFromLocalStorage();
-        clearFulfillmentInfoFromLocalStorage();
-
-        // Reset submission state immediately on success
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
-
-        // If there's a checkout URL (Square payment), redirect to it
-        if (result.checkoutUrl) {
-          window.location.href = result.checkoutUrl;
+        if (result.checkoutUrl && typeof result.checkoutUrl === 'string' && result.checkoutUrl.length > 0) {
+          console.log('🎯 [DEBUG] Redirect condition MET - proceeding with redirect logic');
+          
+          // Validate that it's a proper Square checkout URL
+          const isValidSquareUrl = result.checkoutUrl.includes('square.link') || result.checkoutUrl.includes('squareup.com');
+          console.log('🔍 [DEBUG] URL validation - isValidSquareUrl:', isValidSquareUrl);
+          
+          if (!isValidSquareUrl) {
+            console.error('⚠️ [CATERING-CHECKOUT] Invalid checkout URL format:', result.checkoutUrl);
+            setSubmitError('Invalid checkout URL received. Please try again.');
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+            return;
+          }
+          
+          console.log('✅ [CATERING-CHECKOUT] About to redirect to Square checkout:', result.checkoutUrl);
+          console.log('🛒 [CATERING-CHECKOUT] Cart items before redirect:', cateringItems.length);
+          console.log('🔧 [CATERING-CHECKOUT] isSubmitting state:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current);
+          
+          // Set flag to prevent any other navigation during redirect
+          isRedirectingToSquareRef.current = true;
+          
+          // CRITICAL FIX: Use window.location.replace for immediate redirect
+          // This prevents the "Load failed" error by avoiding intermediate navigation
+          try {
+            console.log('🔄 [CATERING-CHECKOUT] Executing window.location.replace...');
+            window.location.replace(result.checkoutUrl);
+            console.log('✅ [CATERING-CHECKOUT] Redirect initiated successfully');
+          } catch (redirectError) {
+            console.error('❌ [CATERING-CHECKOUT] Redirect error, falling back to href:', redirectError);
+            window.location.href = result.checkoutUrl;
+          }
+          
+          // Prevent any further code execution - this should NEVER be reached
+          console.log('🚨 [CATERING-CHECKOUT] CRITICAL: Code after redirect - this should never happen!');
+          
+          // Force immediate function exit without throwing error
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          isRedirectingToSquareRef.current = false; // Reset in case somehow reached
+          return;
         } else {
+          console.log('❌ [DEBUG] Redirect condition NOT MET');
+          console.log('⚠️ [CATERING-CHECKOUT] No checkout URL received');
+          console.log('⚠️ [CATERING-CHECKOUT] Payment method was:', paymentMethod);
+          console.log('⚠️ [CATERING-CHECKOUT] checkoutUrl value:', result.checkoutUrl);
+          
+          // If this was supposed to be a Square payment but no URL was received
+          if (paymentMethod === PaymentMethod.SQUARE) {
+            // Check if this might be a duplicate order (has orderId but no checkoutUrl)
+            if (result.orderId) {
+              console.log('🔄 [CATERING-CHECKOUT] Square payment with orderId but no checkoutUrl - likely duplicate order');
+              console.log('🔄 [CATERING-CHECKOUT] Redirecting to confirmation for existing order:', result.orderId);
+              
+              // Clear cart and redirect to confirmation for duplicate order
+              clearCart();
+              clearCustomerInfoFromLocalStorage();
+              clearDeliveryAddressFromLocalStorage();
+              clearFulfillmentInfoFromLocalStorage();
+              
+              isSubmittingRef.current = false;
+              setIsSubmitting(false);
+              isRedirectingToSquareRef.current = false;
+              router.push(`/catering/confirmation?orderId=${result.orderId}`);
+              return;
+            } else {
+              console.error('❌ [CATERING-CHECKOUT] Square payment selected but no checkout URL received');
+              setSubmitError('Payment processing error. Please try again or contact support.');
+              isSubmittingRef.current = false;
+              setIsSubmitting(false);
+              isRedirectingToSquareRef.current = false; // Reset redirect flag
+              return;
+            }
+          }
+          
+          // For other payment methods, proceed to confirmation page
+          console.log('🔄 [DEBUG] Proceeding to confirmation page for non-Square payment');
+          console.log('🛒 [DEBUG] Clearing cart for non-Square payment - items before clear:', cateringItems.length);
+          clearCart();
+          clearCustomerInfoFromLocalStorage();
+          clearDeliveryAddressFromLocalStorage();
+          clearFulfillmentInfoFromLocalStorage();
+          
+          // Reset submission state only for non-redirect paths
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          isRedirectingToSquareRef.current = false; // Reset redirect flag
           // Otherwise go to the confirmation page
           router.push(`/catering/confirmation?orderId=${result.orderId}`);
         }
       } else {
+        console.log('❌ [DEBUG] Server action was not successful');
+        console.log('❌ [DEBUG] Error:', result.error);
+        
         // Handle error - store the error and provide better user feedback
         const errorMessage = result.error || 'Failed to create order';
         setSubmitError(errorMessage);
         toast.error(`Error creating order: ${errorMessage}`);
         
-        // Add a delay before allowing retry to prevent rapid submissions
-        setTimeout(() => {
-          isSubmittingRef.current = false;
-          setIsSubmitting(false);
-        }, 3000);
+        // Reset submission state immediately for errors
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+        isRedirectingToSquareRef.current = false; // Reset redirect flag
       }
     } catch (error) {
+      console.error('❌ [DEBUG] Exception caught in handleCompleteOrder:', error);
       console.error('Error submitting order:', error);
       const errorMessage = 'Failed to process your order. Please try again.';
       setSubmitError(errorMessage);
       toast.error(errorMessage);
       
-      // Add a delay before allowing retry
-      setTimeout(() => {
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
-      }, 3000);
+      // Reset submission state immediately for exceptions
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      isRedirectingToSquareRef.current = false; // Reset redirect flag
     }
+    
+    console.log('🏁 [DEBUG] handleCompleteOrder function completed - this indicates no redirect occurred');
   };
 
   if (cateringItems.length === 0) {
@@ -699,6 +824,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             }}
             onSubmit={handleCustomerInfoSubmit}
             isSubmitting={false}
+            buttonText="Continue to Fulfillment"
           />
         )}
 
@@ -1088,6 +1214,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             </Card>
 
             <Button
+              type="button"
               onClick={handleCompleteOrder}
               className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
               disabled={isSubmitting || isSubmittingRef.current || !idempotencyKey}

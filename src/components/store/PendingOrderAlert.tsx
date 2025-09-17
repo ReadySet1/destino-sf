@@ -50,7 +50,11 @@ export default function PendingOrderAlert({
 
       if (result.success && result.checkoutUrl) {
         toast.success('Redirecting to payment...');
-        window.location.href = result.checkoutUrl;
+        
+        // Use setTimeout to ensure the redirect happens reliably
+        setTimeout(() => {
+          window.location.href = result.checkoutUrl;
+        }, 100);
       } else {
         throw new Error('Invalid response from server');
       }

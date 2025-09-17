@@ -518,6 +518,13 @@ export async function createCateringOrderAndProcessPayment(data: {
   idempotencyKey?: string; // Add idempotency protection
 }): Promise<{ success: boolean; error?: string; orderId?: string; checkoutUrl?: string }> {
   try {
+    console.log('🔍 [CATERING-ACTION-DEBUG] Received order data:', {
+      name: data.name,
+      email: data.email, 
+      phone: data.phone,
+      paymentMethod: data.paymentMethod
+    });
+    
     // Check if store is open
     const storeOpen = await isStoreOpen();
     if (!storeOpen) {
@@ -545,12 +552,13 @@ export async function createCateringOrderAndProcessPayment(data: {
       // Log duplicate attempt for monitoring
       console.warn(`📊 [METRICS] Duplicate catering order prevented: ${existingOrder.source} detection`);
       
+      // For duplicate orders, don't return a checkoutUrl - just redirect to confirmation
+      // The client will handle redirecting to the confirmation page directly
       return {
         success: true,
         orderId: existingOrder.id,
-        checkoutUrl: existingOrder.squareCheckoutId ? 
-          `${process.env.NEXT_PUBLIC_APP_URL}/catering/confirmation?orderId=${existingOrder.id}` : 
-          undefined,
+        // Don't return checkoutUrl for duplicates - let client handle confirmation redirect
+        checkoutUrl: undefined,
       };
     }
     
@@ -641,6 +649,16 @@ export async function createCateringOrderAndProcessPayment(data: {
           ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
           : process.env.SQUARE_LOCATION_ID;         // Use production location ID
 
+        console.log(`💳 [SQUARE] About to create checkout link with params:`, {
+          orderId: tempOrderId,
+          locationId: locationId,
+          lineItemsCount: lineItemsWithDelivery.length,
+          redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${tempOrderId}`,
+          customerEmail: data.email,
+          customerName: data.name,
+          eventDate: data.eventDate
+        });
+
         const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
           orderId: tempOrderId,
           locationId: locationId!,
@@ -657,7 +675,8 @@ export async function createCateringOrderAndProcessPayment(data: {
         console.log(`💳 [SQUARE] Square checkout created successfully`);
         console.log(`💳 [SQUARE] Checkout ID: ${checkoutId}`);
         console.log(`💳 [SQUARE] Square Order ID: ${squareOrderId}`);
-        console.log(`💳 [SQUARE] Checkout URL: ${checkoutUrl ? 'Generated' : 'Missing'}`);
+        console.log(`💳 [SQUARE] Checkout URL: ${checkoutUrl}`);
+        console.log(`💳 [SQUARE] Will return checkoutUrl: ${!!checkoutUrl}`);
 
         // Calculate the total including tax and service fees
         const finalTotalAmount = new Decimal(subtotal)
@@ -718,11 +737,22 @@ export async function createCateringOrderAndProcessPayment(data: {
         console.log(`🎉 [SUCCESS] Square catering order process completed successfully`);
         console.log(`🎉 [SUCCESS] Order ID: ${orderResult.orderId}, Checkout: ${!!checkoutUrl}`);
 
-        return {
+        const returnValue = {
           success: true,
           orderId: orderResult.orderId,
           checkoutUrl,
         };
+        
+        console.log(`🔍 [SERVER-ACTION-DEBUG] About to return from server action:`, {
+          success: returnValue.success,
+          orderId: returnValue.orderId,
+          checkoutUrl: returnValue.checkoutUrl,
+          checkoutUrlType: typeof returnValue.checkoutUrl,
+          checkoutUrlLength: returnValue.checkoutUrl ? returnValue.checkoutUrl.length : 0,
+          serialized: JSON.stringify(returnValue)
+        });
+
+        return returnValue;
       } catch (squareError) {
         console.error('Error creating Square checkout link:', squareError);
         

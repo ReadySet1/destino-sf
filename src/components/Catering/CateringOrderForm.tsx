@@ -66,12 +66,14 @@ interface CateringOrderFormProps {
   defaultValues?: Partial<FormValues>;
   onSubmit: (values: FormValues) => void;
   isSubmitting: boolean;
+  buttonText?: string;
 }
 
 export function CateringOrderForm({
   defaultValues,
   onSubmit,
   isSubmitting,
+  buttonText = "Complete Order",
 }: CateringOrderFormProps) {
   // Get current date for minimum date selection (5 days advance)
   const today = new Date();
@@ -211,7 +213,11 @@ export function CateringOrderForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit((values) => {
+        console.log('🔍 [CATERING-FORM-DEBUG] Form handleSubmit called with values:', values);
+        console.log('🔍 [CATERING-FORM-DEBUG] Phone value:', values.phone);
+        onSubmit(values);
+      })} className="space-y-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">
@@ -339,7 +345,7 @@ export function CateringOrderForm({
           className="w-full bg-[#2d3538] hover:bg-[#2d3538]/90 py-6 text-lg"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Processing...' : 'Complete Order'}
+          {isSubmitting ? 'Processing...' : buttonText}
         </Button>
       </form>
     </Form>
