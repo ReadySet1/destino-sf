@@ -98,11 +98,18 @@ Object.defineProperty(window, 'process', {
   value: {
     env: {
       NODE_ENV: 'test',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test_db',
       NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
     },
   },
 });
+
+// Set global process.env for Node.js environment
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
