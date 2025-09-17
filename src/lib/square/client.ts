@@ -199,12 +199,21 @@ class SquareClientSingleton {
 
 
 
-      // Check for locations API
-      if (client.locations) {
-        (client as any).locationsApi = client.locations;
+      // Check for locations API - fix for Square SDK v42.0.1
+      if (client.locationsApi && typeof client.locationsApi.listLocations === 'function') {
         logger.info('Square locations API initialized');
+      } else if (client.locations && typeof client.locations.listLocations === 'function') {
+        (client as any).locationsApi = client.locations;
+        logger.info('Square locations API initialized from locations property');
       } else {
-        logger.debug('Square locations API not available');
+        logger.warn('Square locations API not available - using fallback implementation');
+        // Provide a minimal fallback for monitoring
+        (client as any).locationsApi = {
+          listLocations: async () => {
+            logger.warn('Using fallback locations API - returning empty result');
+            return { result: { locations: [] } };
+          }
+        };
       }
 
       logger.info(`Square ${clientType} client initialized successfully`);
