@@ -152,7 +152,7 @@ export function CheckoutSummary({
           {/* Conditionally display the service fee */}
           {includeServiceFee && serviceFee > 0 && (
             <div className="flex justify-between text-sm text-destino-charcoal/70">
-              <span>Service Fee (3.5%)</span>
+              <span>Convenience Fee (3.5%)</span>
               <span className="font-semibold">${serviceFee.toFixed(2)}</span>
             </div>
           )}

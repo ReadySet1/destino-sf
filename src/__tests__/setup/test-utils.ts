@@ -10,7 +10,6 @@ export const TestData = {
   PaymentMethods: {
     SQUARE: PaymentMethod.SQUARE,
     CASH: PaymentMethod.CASH,
-    VENMO: PaymentMethod.VENMO,
   },
 
   // Common cart items

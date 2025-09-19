@@ -761,11 +761,11 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                             </tr>
                           )}
 
-                          {/* Service Fee */}
+                          {/* Convenience Fee */}
                           {serviceFee > 0.01 && (
                             <tr>
                               <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                                Service Fee:
+                              Convenience Fee:
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
                                 {formatCurrency(serviceFee)}

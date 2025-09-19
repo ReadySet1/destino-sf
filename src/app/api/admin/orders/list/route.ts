@@ -15,6 +15,7 @@ type OrderWithCount = {
   phone: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod: string;
   total: Decimal;
   createdAt: Date;
   pickupTime: Date | null;
@@ -203,6 +204,7 @@ export async function GET(request: NextRequest) {
             phone: true,
             status: true,
             paymentStatus: true,
+            paymentMethod: true,
             total: true,
             createdAt: true,
             pickupTime: true,
@@ -257,7 +259,7 @@ export async function GET(request: NextRequest) {
           fulfillmentType: order.fulfillmentType,
           isArchived: order.isArchived,
           itemCount: order._count.items,
-          paymentMethod: null,
+          paymentMethod: order.paymentMethod,
           shippingCarrier: null,
         })) || [];
 

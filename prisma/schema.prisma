@@ -801,7 +801,6 @@ enum PaymentStatus {
 enum PaymentMethod {
   SQUARE
   CASH
-  VENMO
 }
 
 enum DiscountType {

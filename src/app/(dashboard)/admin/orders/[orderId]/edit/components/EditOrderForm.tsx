@@ -639,7 +639,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               />
             </FormField>
             
-            <FormField label="Service Fee">
+            <FormField label="Convenience Fee">
               <div className="space-y-2">
                 <FormCheckbox
                   name="autoCalculateServiceFee"
@@ -982,7 +982,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   {calculatedServiceFee > 0.01 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
-                        Service Fee (3.5%):
+                      Convenience Fee (3.5%):
                       </td>
                       <td className="px-4 py-2 text-sm text-right">${calculatedServiceFee.toFixed(2)}</td>
                       <td></td>

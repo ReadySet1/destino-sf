@@ -106,9 +106,9 @@ export function OrderPricingBreakdown({
         isVisible: true,
       },
       {
-        label: 'Service Fee',
+        label: 'Convenience Fee',
         amount: serviceFee,
-        description: serviceFee > 0 ? 'Processing fee (3.5%)' : 'No service fee applied',
+        description: serviceFee > 0 ? 'Convenience fee (3.5%)' : 'No service fee applied',
         isVisible: true,
       },
       {
