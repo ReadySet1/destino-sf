@@ -635,7 +635,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     `Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
   console.log(`Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
-  console.log(`Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+  console.log(`Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
   console.log(`Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
   // --- Prepare Fulfillment DB Data ---
@@ -711,7 +711,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       total: finalTotal, // Prisma handles Decimal
       taxAmount: taxAmount,
       deliveryFee: deliveryFeeForDb, // Add delivery fee
-      serviceFee: serviceFeeAmount, // Add service fee
+      serviceFee: serviceFeeAmount, // Add convenience fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -856,7 +856,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     const squareServiceCharges: any[] = [];
     if (serviceFeeAmount.greaterThan(0)) {
       squareServiceCharges.push({
-        name: 'Service Fee',
+        name: 'Convenience Fee',
         amount_money: { amount: Math.round(serviceFeeAmount.toNumber() * 100), currency: 'USD' },
         calculation_phase: 'TOTAL_PHASE', // Applied after tax and shipping
         taxable: false,
@@ -870,7 +870,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         // uid: randomUUID().substring(0, 6), // Optional: helps Square UI
         name: 'Sales Tax',
         percentage: new Decimal(taxRateDecimal).times(100).toFixed(2), // e.g., "8.25"
-        scope: 'ORDER', // Apply to order subtotal (before service fees)
+        scope: 'ORDER', // Apply to order subtotal (before convenience fees)
       });
     }
 
@@ -1246,7 +1246,7 @@ export async function createManualPaymentOrder(formData: {
     `Manual Payment - Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
   console.log(`Manual Payment - Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
-  console.log(`Manual Payment - Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+  console.log(`Manual Payment - Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
   console.log(`Manual Payment - Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
   // --- Prepare Fulfillment DB Data ---
@@ -1349,7 +1349,7 @@ export async function createManualPaymentOrder(formData: {
       total: finalTotal,
       taxAmount: taxAmount,
       deliveryFee: deliveryFeeDecimal, // Add delivery fee
-      serviceFee: serviceFeeAmount, // Add service fee
+      serviceFee: serviceFeeAmount, // Add convenience fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,

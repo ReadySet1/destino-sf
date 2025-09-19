@@ -367,7 +367,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     return itemTaxResult.taxAmount + additionalTax;
   })() : manualTax;
     
-  // Auto-calculate service fee if enabled (3.5% on subtotal + delivery fee + shipping + tax)
+  // Auto-calculate convenience fee if enabled (3.5% on subtotal + delivery fee + shipping + tax)
   const totalBeforeServiceFee = subtotal + deliveryFee + shippingCost + calculatedTax;
   const calculatedServiceFee = formState.autoCalculateServiceFee 
     ? totalBeforeServiceFee * 0.035
@@ -382,7 +382,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
     ? totalBeforeGratuity * (Number(formState.gratuityPercentage) / 100)
     : Number(formState.gratuityAmount) || 0;
     
-  // Calculate grand total (subtotal + fees + tax + service fee + tip)
+  // Calculate grand total (subtotal + fees + tax + convenience fee + tip)
   const orderTotal = totalBeforeGratuity + gratuityAmount;
 
   // Submit the form
@@ -639,11 +639,11 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
               />
             </FormField>
             
-            <FormField label="Service Fee">
+            <FormField label="Convenience Fee">
               <div className="space-y-2">
                 <FormCheckbox
                   name="autoCalculateServiceFee"
-                  label="Auto-calculate service fee (3.5%)"
+                  label="Auto-calculate convenience fee (3.5%)"
                   checked={formState.autoCalculateServiceFee}
                   onChange={(e) => setFormState(prev => ({ ...prev, autoCalculateServiceFee: e.target.checked }))}
                 />
@@ -982,7 +982,7 @@ export function EditOrderForm({ initialOrder }: EditOrderFormProps) {
                   {calculatedServiceFee > 0.01 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 text-right">
-                        Service Fee (3.5%):
+                        Convenience Fee (3.5%):
                       </td>
                       <td className="px-4 py-2 text-sm text-right">${calculatedServiceFee.toFixed(2)}</td>
                       <td></td>

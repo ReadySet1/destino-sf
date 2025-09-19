@@ -35,7 +35,7 @@ import { calculateTaxForItems } from '@/utils/tax-exemption';
 import { getTaxRate } from '@/lib/store-settings';
 import Decimal from 'decimal.js';
 
-// Service fee rate for catering orders (same as regular orders)
+// Convenience fee rate for catering orders (same as regular orders)
 const SERVICE_FEE_RATE = 0.035; // 3.5%
 
 /**
@@ -583,7 +583,7 @@ export async function createCateringOrderAndProcessPayment(data: {
           data.deliveryFee || 0
         );
 
-        // --- Calculate taxes and service fees for Square ---
+        // --- Calculate taxes and convenience fees for Square ---
         // Calculate subtotal from items
         const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
         const deliveryFee = data.deliveryFee || 0;
@@ -608,14 +608,14 @@ export async function createCateringOrderAndProcessPayment(data: {
         const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
         const totalTaxAmount = taxAmount.plus(deliveryTax);
         
-        // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+        // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
         const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
         const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
 
         console.log(`[CATERING] Calculated Subtotal: ${subtotal}`);
         console.log(`[CATERING] Calculated Delivery Fee: ${deliveryFee}`);
         console.log(`[CATERING] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
-        console.log(`[CATERING] Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+        console.log(`[CATERING] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
 
         // Prepare Square taxes and service charges
         const squareTaxes = totalTaxAmount.greaterThan(0) ? [{
@@ -625,7 +625,7 @@ export async function createCateringOrderAndProcessPayment(data: {
         }] : [];
 
         const squareServiceCharges = serviceFeeAmount.greaterThan(0) ? [{
-          name: 'Service Fee',
+          name: 'Convenience Fee',
           amount_money: { 
             amount: Math.round(serviceFeeAmount.toNumber() * 100), 
             currency: 'USD' 
@@ -678,7 +678,7 @@ export async function createCateringOrderAndProcessPayment(data: {
         console.log(`💳 [SQUARE] Checkout URL: ${checkoutUrl}`);
         console.log(`💳 [SQUARE] Will return checkoutUrl: ${!!checkoutUrl}`);
 
-        // Calculate the total including tax and service fees
+        // Calculate the total including tax and convenience fees
         const finalTotalAmount = new Decimal(subtotal)
           .plus(deliveryFee)
           .plus(totalTaxAmount)
@@ -763,7 +763,7 @@ export async function createCateringOrderAndProcessPayment(data: {
       }
     } else if (data.paymentMethod === PaymentMethod.CASH) {
       // For cash orders, calculate fees and create order directly
-      // --- Calculate taxes and service fees for Cash orders (same as Square) ---
+      // --- Calculate taxes and convenience fees for Cash orders (same as Square) ---
       const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
       const deliveryFee = data.deliveryFee || 0;
       
@@ -787,7 +787,7 @@ export async function createCateringOrderAndProcessPayment(data: {
       const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
       const totalTaxAmount = taxAmount.plus(deliveryTax);
       
-      // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+      // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
       const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
       const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
 
@@ -801,7 +801,7 @@ export async function createCateringOrderAndProcessPayment(data: {
       console.log(`[CATERING CASH] Calculated Subtotal: ${subtotal}`);
       console.log(`[CATERING CASH] Calculated Delivery Fee: ${deliveryFee}`);
       console.log(`[CATERING CASH] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
-      console.log(`[CATERING CASH] Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+      console.log(`[CATERING CASH] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
       console.log(`[CATERING CASH] Final total with fees: ${finalTotalAmount.toFixed(2)}`);
 
       const orderResult = await saveContactInfo({
@@ -860,7 +860,7 @@ export async function createCateringOrderAndProcessPayment(data: {
     const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
     const totalTaxAmount = taxAmount.plus(deliveryTax);
     
-    // Calculate service fee (3.5% on subtotal + delivery fee + tax)
+    // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
     const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
     const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
 

@@ -399,7 +399,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         })(),
         deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
         serviceFee: (() => {
-          // Calculate service fee dynamically like admin view (3.5% on subtotal + delivery + tax)
+          // Calculate convenience fee dynamically like admin view (3.5% on subtotal + delivery + tax)
           const subtotalFromItems = cateringOrder!.items.reduce(
             (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
             0
@@ -408,7 +408,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           const taxableAmount = subtotalFromItems + deliveryFee;
           const taxAmount = taxableAmount * 0.0825;
           const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
-          return Math.round(totalBeforeFee * 0.035 * 100) / 100; // 3.5% service fee, rounded to 2 decimals
+          return Math.round(totalBeforeFee * 0.035 * 100) / 100; // 3.5% convenience fee, rounded to 2 decimals
         })(),
         gratuityAmount: 0, // Catering orders don't store gratuity separately
         shippingCost: 0, // Catering orders don't have shipping
