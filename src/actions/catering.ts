@@ -762,8 +762,8 @@ export async function createCateringOrderAndProcessPayment(data: {
         };
       }
     } else if (data.paymentMethod === PaymentMethod.CASH) {
-      // For cash orders, calculate fees and create order directly
-      // --- Calculate taxes and convenience fees for Cash orders (same as Square) ---
+      // For cash orders, calculate taxes only (no convenience fees) and create order directly
+      // --- Calculate taxes for Cash orders (convenience fees only apply to Square) ---
       const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
       const deliveryFee = data.deliveryFee || 0;
       
@@ -787,9 +787,9 @@ export async function createCateringOrderAndProcessPayment(data: {
       const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
       const totalTaxAmount = taxAmount.plus(deliveryTax);
       
-      // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
+      // Cash orders do not have convenience fees (only credit card orders do)
       const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
-      const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+      const serviceFeeAmount = new Decimal(0); // No convenience fee for cash orders
 
       // Calculate final total including all fees
       const finalTotalAmount = new Decimal(subtotal)
@@ -801,7 +801,7 @@ export async function createCateringOrderAndProcessPayment(data: {
       console.log(`[CATERING CASH] Calculated Subtotal: ${subtotal}`);
       console.log(`[CATERING CASH] Calculated Delivery Fee: ${deliveryFee}`);
       console.log(`[CATERING CASH] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
-      console.log(`[CATERING CASH] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
+      console.log(`[CATERING CASH] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)} (Cash orders have no convenience fee)`);
       console.log(`[CATERING CASH] Final total with fees: ${finalTotalAmount.toFixed(2)}`);
 
       const orderResult = await saveContactInfo({

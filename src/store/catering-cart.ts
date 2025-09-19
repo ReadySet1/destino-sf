@@ -1,7 +1,9 @@
 /**
- * Catering cart store for state management
- * Placeholder implementation for test compatibility
+ * Catering cart store for state management using Zustand
  */
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface CateringCartItem {
   id: string;
@@ -25,13 +27,85 @@ export interface CateringCartStore {
   clearCart: () => void;
 }
 
-// Mock store for testing
-export const useCateringCartStore = (): CateringCartStore => ({
-  items: [] as CateringCartItem[],
-  totalPrice: 0,
-  totalItems: 0,
-  addItem: (item: CateringCartItem) => {},
-  removeItem: (id: string, variantId?: string) => {},
-  updateQuantity: (id: string, quantity: number, variantId?: string) => {},
-  clearCart: () => {},
-});
+const calculateTotals = (items: CateringCartItem[]) => {
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  return { totalItems, totalPrice };
+};
+
+export const useCateringCartStore = create<CateringCartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      totalPrice: 0,
+      totalItems: 0,
+
+      addItem: (newItem: CateringCartItem) => {
+        set((state) => {
+          const existingItem = state.items.find(
+            (item) => item.id === newItem.id && item.variantId === newItem.variantId
+          );
+
+          let updatedItems;
+          if (existingItem) {
+            // Update quantity of existing item
+            updatedItems = state.items.map((item) =>
+              item.id === newItem.id && item.variantId === newItem.variantId
+                ? { ...item, quantity: item.quantity + newItem.quantity }
+                : item
+            );
+          } else {
+            // Add new item
+            updatedItems = [...state.items, newItem];
+          }
+
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
+          return {
+            items: updatedItems,
+            totalItems,
+            totalPrice,
+          };
+        });
+      },
+
+      removeItem: (id: string, variantId?: string) => {
+        set((state) => {
+          const updatedItems = state.items.filter(
+            (item) => !(item.id === id && item.variantId === variantId)
+          );
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
+          return {
+            items: updatedItems,
+            totalItems,
+            totalPrice,
+          };
+        });
+      },
+
+      updateQuantity: (id: string, quantity: number, variantId?: string) => {
+        set((state) => {
+          const updatedItems = state.items.map((item) =>
+            item.id === id && item.variantId === variantId
+              ? { ...item, quantity: Math.max(0, quantity) }
+              : item
+          ).filter((item) => item.quantity > 0);
+
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
+          return {
+            items: updatedItems,
+            totalItems,
+            totalPrice,
+          };
+        });
+      },
+
+      clearCart: () => {
+        set({ items: [], totalItems: 0, totalPrice: 0 });
+      },
+    }),
+    {
+      name: 'destino-catering-cart-storage',
+      version: 1,
+    }
+  )
+);
