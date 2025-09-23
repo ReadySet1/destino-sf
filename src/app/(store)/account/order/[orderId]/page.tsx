@@ -10,6 +10,7 @@ import { Calendar, Users, MapPin, ArrowLeft, Package, User } from 'lucide-react'
 import { getBoxedLunchImage } from '@/lib/utils';
 import { OrderItemImage } from '@/components/ui/order-item-image';
 import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
+import { OrderPricingBreakdown } from '@/components/ui/order-pricing-breakdown';
 
 // Types
 interface PageProps {
@@ -386,9 +387,29 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         status: cateringOrder!.status,
         paymentStatus: cateringOrder!.paymentStatus,
         total: cateringOrder!.totalAmount?.toNumber() ?? 0,
-        taxAmount: 0, // Catering orders don't store tax breakdown separately
+        taxAmount: (() => {
+          // Calculate tax dynamically like admin view (8.25% on subtotal + delivery fee)
+          const subtotalFromItems = cateringOrder!.items.reduce(
+            (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+            0
+          );
+          const deliveryFee = cateringOrder!.deliveryFee?.toNumber() || 0;
+          const taxableAmount = subtotalFromItems + deliveryFee;
+          return Math.round(taxableAmount * 0.0825 * 100) / 100; // 8.25% tax, rounded to 2 decimals
+        })(),
         deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
-        serviceFee: 0, // Catering orders don't have service fees
+        serviceFee: (() => {
+          // Calculate service fee dynamically like admin view (3.5% on subtotal + delivery + tax)
+          const subtotalFromItems = cateringOrder!.items.reduce(
+            (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
+            0
+          );
+          const deliveryFee = cateringOrder!.deliveryFee?.toNumber() || 0;
+          const taxableAmount = subtotalFromItems + deliveryFee;
+          const taxAmount = taxableAmount * 0.0825;
+          const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
+          return Math.round(totalBeforeFee * 0.035 * 100) / 100; // 3.5% service fee, rounded to 2 decimals
+        })(),
         gratuityAmount: 0, // Catering orders don't store gratuity separately
         shippingCost: 0, // Catering orders don't have shipping
         createdAt: cateringOrder!.createdAt,
@@ -399,6 +420,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         numberOfPeople: cateringOrder!.numberOfPeople,
         specialRequests: cateringOrder!.specialRequests,
         deliveryAddress: cateringOrder!.deliveryAddress,
+        shippingCarrier: null, // Catering orders don't have shipping
         items: cateringOrder!.items.map(item => ({
           id: item.id,
           quantity: item.quantity,
@@ -412,8 +434,13 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
   const totalQuantity = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Calculate subtotal (total minus all fees and taxes)
-  const subtotal = orderData.total - orderData.taxAmount - orderData.deliveryFee - orderData.serviceFee - orderData.gratuityAmount - orderData.shippingCost;
+  // Calculate actual subtotal from items (not from total minus fees, which can be wrong when fees are 0)
+  const subtotal = orderData.items.reduce((sum, item) => {
+    const itemTotal = isRegularOrder
+      ? item.price * item.quantity
+      : (item as any).totalPrice;
+    return sum + itemTotal;
+  }, 0);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
@@ -476,13 +503,11 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     >
                       {orderData.paymentStatus}
                     </Badge>
-                    {/* Show retry payment button for eligible orders */}
+                    {/* Show retry payment button for all orders with pending/failed payments */}
                     {((isRegularOrder &&
-                      (orderData.status === 'PENDING' || orderData.status === 'PAYMENT_FAILED') &&
                       (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
                       regularOrder?.paymentMethod === 'SQUARE') ||
                       (isCateringOrder &&
-                      orderData.status === 'PENDING' && // CateringStatus only has PENDING (no PAYMENT_FAILED)
                       (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
                       cateringOrder?.paymentMethod === 'SQUARE')) && (
                       <div className="mt-2">
@@ -709,77 +734,20 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 );
               })}
 
-              {/* Order Breakdown */}
-              <div className="border-t border-gray-200 pt-4 mt-6 space-y-2">
-                {/* Subtotal */}
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="text-gray-900 font-medium">
-                    {formatCurrency(subtotal)}
-                  </span>
-                </div>
-
-                {/* Tax */}
-                {orderData.taxAmount > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Tax:</span>
-                    <span className="text-gray-900 font-medium">
-                      {formatCurrency(orderData.taxAmount)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Delivery Fee */}
-                {orderData.deliveryFee > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Delivery Fee:</span>
-                    <span className="text-gray-900 font-medium">
-                      {formatCurrency(orderData.deliveryFee)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Shipping Cost */}
-                {orderData.shippingCost > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">
-                      Shipping{orderData.shippingCarrier ? ` (${orderData.shippingCarrier})` : ''}:
-                    </span>
-                    <span className="text-gray-900 font-medium">
-                      {formatCurrency(orderData.shippingCost)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Service Fee */}
-                {orderData.serviceFee > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Service Fee:</span>
-                    <span className="text-gray-900 font-medium">
-                      {formatCurrency(orderData.serviceFee)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Gratuity */}
-                {orderData.gratuityAmount > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Gratuity/Tip:</span>
-                    <span className="text-gray-900 font-medium">
-                      {formatCurrency(orderData.gratuityAmount)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Total */}
-                <div className="border-t border-gray-200 pt-2 mt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-gray-900">Total:</span>
-                    <span className="text-lg font-bold text-gray-900">
-                      {formatCurrency(orderData.total)}
-                    </span>
-                  </div>
-                </div>
+              {/* Comprehensive Pricing Breakdown */}
+              <div className="border-t border-gray-200 pt-4 mt-6">
+                <OrderPricingBreakdown
+                  subtotal={subtotal}
+                  taxAmount={orderData.taxAmount}
+                  deliveryFee={orderData.deliveryFee}
+                  serviceFee={orderData.serviceFee}
+                  gratuityAmount={orderData.gratuityAmount}
+                  shippingCost={orderData.shippingCost}
+                  total={orderData.total}
+                  orderType={orderData.type}
+                  shippingCarrier={orderData.shippingCarrier}
+                  showDebugInfo={false}
+                />
               </div>
             </div>
           </CardContent>

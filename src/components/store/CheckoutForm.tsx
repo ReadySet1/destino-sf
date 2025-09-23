@@ -60,14 +60,10 @@ import {
 import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector';
 import { validateOrderMinimums } from '@/lib/cart-helpers';
 import { saveCateringContactInfo } from '@/actions/catering';
+import { PaymentMethod } from '@prisma/client';
 
 // --- Simplify Fulfillment Method Type ---
 type FulfillmentMethod = 'pickup' | 'local_delivery' | 'nationwide_shipping';
-// --- Define PaymentMethod enum to match Prisma schema ---
-enum PaymentMethod {
-  SQUARE = 'SQUARE',
-  CASH = 'CASH',
-}
 
 // --- Weight calculation is now handled dynamically in shipping utils ---
 
@@ -806,9 +802,22 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           router.push(`/orders/${result.orderId}`);
         } else if (result.checkoutUrl) {
           toast.success('Redirecting to payment...');
-          clearCart();
-          localStorage.removeItem('regularCheckoutData');
-          window.location.href = result.checkoutUrl;
+          
+          console.log('✅ [DUPLICATE-CHECK] About to redirect to Square Checkout:', result.checkoutUrl);
+          
+          // CRITICAL FIX: Use window.location.replace for immediate redirect
+          // Don't clear cart/localStorage before redirect to prevent navigation interference
+          try {
+            console.log('🔄 [DUPLICATE-CHECK] Executing window.location.replace...');
+            window.location.replace(result.checkoutUrl);
+            console.log('✅ [DUPLICATE-CHECK] Redirect initiated successfully');
+          } catch (redirectError) {
+            console.error('❌ [DUPLICATE-CHECK] Redirect error, falling back to href:', redirectError);
+            window.location.href = result.checkoutUrl;
+          }
+          
+          // Exit immediately after redirect
+          return;
         }
       } else {
         throw new Error(result.error || 'Failed to create order');
@@ -827,7 +836,14 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   };
 
   // --- Keep onSubmit function ---
-  const onSubmit = async (formData: CheckoutFormData) => {
+  const onSubmit = async (formData: CheckoutFormData, event?: React.BaseSyntheticEvent) => {
+    // Prevent any default form submission behavior
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    console.log('🚀 [CHECKOUT] Starting form submission...');
     setIsSubmitting(true);
     setError('');
 
@@ -933,6 +949,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           })),
           customerInfo: customerInfo,
           fulfillment: fulfillmentData,
+          paymentMethod: formData.paymentMethod,
         };
         console.log('Server Action Payload:', JSON.stringify(actionPayload, null, 2));
 
@@ -946,10 +963,22 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           setIsSubmitting(false);
           return;
         }
-        clearCart();
-        clearCheckoutDataFromLocalStorage(); // Clear saved checkout data on successful order
-        console.log('Redirecting to Square Checkout:', result.checkoutUrl);
-        window.location.href = result.checkoutUrl;
+        
+        console.log('✅ [CHECKOUT] About to redirect to Square Checkout:', result.checkoutUrl);
+        
+        // CRITICAL FIX: Use window.location.replace for immediate redirect
+        // This prevents the "Load failed" error by avoiding intermediate navigation
+        try {
+          console.log('🔄 [CHECKOUT] Executing window.location.replace...');
+          window.location.replace(result.checkoutUrl);
+          console.log('✅ [CHECKOUT] Redirect initiated successfully');
+        } catch (redirectError) {
+          console.error('❌ [CHECKOUT] Redirect error, falling back to href:', redirectError);
+          window.location.href = result.checkoutUrl;
+        }
+        
+        // Exit immediately after redirect
+        return;
       } else {
         // Handle manual payment methods (Cash only)
         console.log(`Using manual checkout: ${formData.paymentMethod}`);
@@ -991,10 +1020,14 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           return;
         }
 
+        // Clear cart and data before redirecting
         clearCart();
-        clearCheckoutDataFromLocalStorage(); // Clear saved checkout data on successful order
-        // Redirect to manual checkout success page
-        window.location.href = `/checkout/success/manual?orderId=${result.orderId}&paymentMethod=${formData.paymentMethod}`;
+        clearCheckoutDataFromLocalStorage();
+        
+        // Use setTimeout to ensure the redirect happens after any state updates
+        setTimeout(() => {
+          window.location.href = `/checkout/success/manual?orderId=${result.orderId}&paymentMethod=${formData.paymentMethod}`;
+        }, 100);
       }
     } catch (err: any) {
       console.error('Error during checkout process:', err);
@@ -1376,7 +1409,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             selectedMethod={currentPaymentMethod}
             onSelectMethod={method => {
               handlePaymentMethodChange(method as PaymentMethod);
-              setValue('paymentMethod', method as PaymentMethod.SQUARE | PaymentMethod.CASH);
+              setValue('paymentMethod', method as PaymentMethod);
             }}
             showCash={currentMethod === 'pickup'}
           />

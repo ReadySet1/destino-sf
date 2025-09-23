@@ -22,7 +22,7 @@ export let options = {
 // Test configuration
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 
-export default function () {
+export default function healthCheckTest() {
   // Test basic health check
   const healthResponse = http.get(`${BASE_URL}/api/health`);
 

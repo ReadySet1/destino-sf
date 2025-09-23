@@ -1,3 +1,7 @@
+/**
+ * Catering cart store for state management using Zustand
+ */
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -7,100 +11,101 @@ export interface CateringCartItem {
   price: number;
   quantity: number;
   image?: string;
+  type?: string;
   variantId?: string;
   category?: string;
-  customizations?: {
-    notes?: string;
-    nameLabel?: string;
-  };
+  customizations?: any;
 }
 
-interface CateringCartStore {
+export interface CateringCartStore {
   items: CateringCartItem[];
-  addItem: (item: CateringCartItem) => void;
-  removeItem: (itemId: string, variantId?: string) => void;
-  updateQuantity: (itemId: string, quantity: number, variantId?: string) => void;
-  clearCart: () => void;
   totalPrice: number;
   totalItems: number;
+  addItem: (item: CateringCartItem) => void;
+  removeItem: (id: string, variantId?: string) => void;
+  updateQuantity: (id: string, quantity: number, variantId?: string) => void;
+  clearCart: () => void;
 }
+
+const calculateTotals = (items: CateringCartItem[]) => {
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  return { totalItems, totalPrice };
+};
 
 export const useCateringCartStore = create<CateringCartStore>()(
   persist(
-    set => ({
+    (set, get) => ({
       items: [],
-      addItem: item =>
-        set(state => {
+      totalPrice: 0,
+      totalItems: 0,
+
+      addItem: (newItem: CateringCartItem) => {
+        set((state) => {
           const existingItem = state.items.find(
-            i => i.id === item.id && i.variantId === item.variantId
+            (item) => item.id === newItem.id && item.variantId === newItem.variantId
           );
 
           let updatedItems;
           if (existingItem) {
-            updatedItems = state.items.map(i =>
-              i.id === item.id && i.variantId === item.variantId
-                ? { ...i, quantity: i.quantity + item.quantity }
-                : i
+            // Update quantity of existing item
+            updatedItems = state.items.map((item) =>
+              item.id === newItem.id && item.variantId === newItem.variantId
+                ? { ...item, quantity: item.quantity + newItem.quantity }
+                : item
             );
           } else {
-            updatedItems = [...state.items, item];
+            // Add new item
+            updatedItems = [...state.items, newItem];
           }
 
-          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
-          const totalPrice = updatedItems.reduce(
-            (total, item) => total + item.price * item.quantity,
-            0
-          );
-
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
           return {
             items: updatedItems,
             totalItems,
             totalPrice,
           };
-        }),
-      removeItem: (itemId, variantId) =>
-        set(state => {
+        });
+      },
+
+      removeItem: (id: string, variantId?: string) => {
+        set((state) => {
           const updatedItems = state.items.filter(
-            item => !(item.id === itemId && item.variantId === variantId)
+            (item) => !(item.id === id && item.variantId === variantId)
           );
-          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
-          const totalPrice = updatedItems.reduce(
-            (total, item) => total + item.price * item.quantity,
-            0
-          );
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
           return {
             items: updatedItems,
             totalItems,
             totalPrice,
           };
-        }),
-      updateQuantity: (itemId, quantity, variantId) =>
-        set(state => {
-          const updatedItems = state.items
-            .map(item =>
-              item.id === itemId && item.variantId === variantId
-                ? { ...item, quantity: Math.max(0, quantity) }
-                : item
-            )
-            .filter(item => item.quantity > 0);
+        });
+      },
 
-          const totalItems = updatedItems.reduce((total, item) => total + item.quantity, 0);
-          const totalPrice = updatedItems.reduce(
-            (total, item) => total + item.price * item.quantity,
-            0
-          );
+      updateQuantity: (id: string, quantity: number, variantId?: string) => {
+        set((state) => {
+          const updatedItems = state.items.map((item) =>
+            item.id === id && item.variantId === variantId
+              ? { ...item, quantity: Math.max(0, quantity) }
+              : item
+          ).filter((item) => item.quantity > 0);
+
+          const { totalItems, totalPrice } = calculateTotals(updatedItems);
           return {
             items: updatedItems,
             totalItems,
             totalPrice,
           };
-        }),
-      clearCart: () => set({ items: [], totalItems: 0, totalPrice: 0 }),
-      totalPrice: 0,
-      totalItems: 0,
+        });
+      },
+
+      clearCart: () => {
+        set({ items: [], totalItems: 0, totalPrice: 0 });
+      },
     }),
     {
-      name: 'catering-cart-storage',
+      name: 'destino-catering-cart-storage',
+      version: 1,
     }
   )
 );

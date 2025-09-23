@@ -19,7 +19,10 @@ export async function ensureUserProfile(userId: string, email?: string): Promise
     });
 
     if (existingProfile) {
-      logger.debug(`Profile already exists for user ${userId}`);
+      // Only log in debug mode to reduce noise
+      if (process.env.AUTH_DEBUG === 'true') {
+        logger.debug(`Profile already exists for user ${userId}`);
+      }
       return {
         success: true,
         profile: existingProfile
@@ -27,7 +30,9 @@ export async function ensureUserProfile(userId: string, email?: string): Promise
     }
 
     // If profile doesn't exist, create it using the database function
-    logger.info(`Profile not found for user ${userId}, creating...`);
+    if (process.env.AUTH_DEBUG === 'true') {
+      logger.info(`Profile not found for user ${userId}, creating...`);
+    }
     
     const profileResult = await prisma.$queryRaw`
       SELECT public.ensure_user_profile(
@@ -54,7 +59,9 @@ export async function ensureUserProfile(userId: string, email?: string): Promise
         select: { id: true, email: true, role: true, name: true }
       });
       
-      logger.info(`Profile created successfully for user ${userId}`);
+      if (process.env.AUTH_DEBUG === 'true') {
+        logger.info(`Profile created successfully for user ${userId}`);
+      }
       return {
         success: true,
         profile: newProfile
@@ -75,7 +82,9 @@ export async function ensureUserProfile(userId: string, email?: string): Promise
       select: { id: true, email: true, role: true, name: true }
     });
     
-    logger.info(`Profile created using fallback method for user ${userId}`);
+    if (process.env.AUTH_DEBUG === 'true') {
+      logger.info(`Profile created using fallback method for user ${userId}`);
+    }
     return {
       success: true,
       profile: fallbackProfile
@@ -114,7 +123,9 @@ export async function queueUserForSync(
     const syncResult = (result as any)[0]?.result;
     
     if (syncResult?.success) {
-      logger.info(`User ${userId} queued for sync successfully`);
+      if (process.env.AUTH_DEBUG === 'true') {
+        logger.info(`User ${userId} queued for sync successfully`);
+      }
       return { success: true };
     } else {
       logger.error(`Failed to queue user ${userId} for sync:`, syncResult?.error);

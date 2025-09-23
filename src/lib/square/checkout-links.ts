@@ -21,6 +21,21 @@ export interface SquareCheckoutLinkParams {
   customerPhone?: string;   // ADD
   merchantSupportEmail?: string;
   eventDate?: string;       // ADD: For scheduled pickup time
+  // Add support for taxes and service charges
+  taxes?: Array<{
+    name: string;
+    percentage: string;
+    scope: string;
+  }>;
+  serviceCharges?: Array<{
+    name: string;
+    amount_money: {
+      amount: number;
+      currency: string;
+    };
+    calculation_phase: string;
+    taxable?: boolean;
+  }>;
 }
 
 export interface SquareCheckoutResponse {
@@ -89,6 +104,14 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
           },
           name: item.name,
         })),
+        // Add taxes if provided
+        ...(params.taxes && params.taxes.length > 0 && {
+          taxes: params.taxes
+        }),
+        // Add service charges if provided
+        ...(params.serviceCharges && params.serviceCharges.length > 0 && {
+          service_charges: params.serviceCharges
+        }),
         // Add fulfillment to mark this as a FOOD order (pickup type)
         fulfillments: [{
           type: 'PICKUP',

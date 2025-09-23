@@ -57,7 +57,7 @@ describe('Square Phone Number Formatting', () => {
     it('should reject special service area codes', () => {
       const serviceAreaCodes = [
         '911',
-        '555',
+        // '555' removed - now considered valid for testing purposes
         '800',
         '888',
         '877',
@@ -72,6 +72,11 @@ describe('Square Phone Number Formatting', () => {
         const result = formatPhoneForSquarePaymentLink(`${areaCode}1234567`);
         expect(result).toBeNull();
       });
+    });
+
+    it('should accept 555 area codes for testing purposes', () => {
+      const result = formatPhoneForSquarePaymentLink('5551234567');
+      expect(result).toBe('+15551234567');
     });
 
     it('should handle phones with formatting characters', () => {
@@ -212,18 +217,23 @@ describe('Square Phone Number Formatting', () => {
       const validPhone = formatPhoneForSquarePaymentLink('415-123-2323');
       expect(validPhone).toBe('+14151232323');
 
-      // Test that invalid phones are rejected
-      const invalidPhone = formatPhoneForSquarePaymentLink('555-123-4567');
+      // Test that 555 area codes are now accepted (changed behavior)
+      const acceptedPhone = formatPhoneForSquarePaymentLink('555-123-4567');
+      expect(acceptedPhone).toBe('+15551234567');
+      
+      // Test that truly invalid phones are still rejected
+      const invalidPhone = formatPhoneForSquarePaymentLink('911-123-4567');
       expect(invalidPhone).toBeNull();
     });
 
     it('should log warnings for rejected phone numbers', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-      formatPhoneForSquarePaymentLink('555-123-4567');
+      // Test with an area code that should still be rejected (911)
+      formatPhoneForSquarePaymentLink('911-123-4567');
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('has potentially invalid area code 555 for Square payment links')
+        expect.stringContaining('has potentially invalid area code 911 for Square payment links')
       );
 
       consoleSpy.mockRestore();

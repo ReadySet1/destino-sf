@@ -35,7 +35,10 @@ export async function safeCateringApiOperation<T>(
     });
 
     const result = await Promise.race([operationPromise, timeoutPromise]);
-    logger.info(`✅ ${operationName} completed successfully`);
+    // Only log success in debug mode to reduce console noise
+    if (process.env.API_DEBUG === 'true') {
+      logger.info(`✅ ${operationName} completed successfully`);
+    }
     
     return NextResponse.json({
       success: true,

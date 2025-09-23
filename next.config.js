@@ -69,59 +69,76 @@ const nextConfig = {
   },
   // Security headers configuration
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+    
     return [
       {
         source: '/:path*',
         headers: [
-          // Prevent clickjacking attacks
+          // Prevent clickjacking attacks (relaxed for dev)
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: isDev ? 'SAMEORIGIN' : 'DENY',
           },
           // Prevent MIME type sniffing
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
-          // Enable XSS protection
-          {
+          // Enable XSS protection (disabled in dev for Safari)
+          ...(isDev ? [] : [{
             key: 'X-XSS-Protection',
             value: '1; mode=block',
-          },
+          }]),
           // Control referrer information
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
+            value: 'no-referrer-when-downgrade',
           },
-          // Control browser features
+          // Control browser features (relaxed for dev)
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
+            value: isDev ? 'camera=*, microphone=*, geolocation=*' : 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
-          // Enforce HTTPS in production
-          {
+          // Skip HTTPS enforcement in development
+          ...(isDev ? [] : [{
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
-          },
-          // Content Security Policy
-          {
+          }]),
+          // Content Security Policy - Safari-friendly version, relaxed for development
+          ...(isDev ? [] : [{
             key: 'Content-Security-Policy',
             value: [
-              "default-src 'self'",
+              "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com data: blob:",
+              "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https://*.s3.us-west-2.amazonaws.com https://*.s3.amazonaws.com https://*.squarecdn.com https://*.supabase.co https://destino-sf.square.site https://maps.googleapis.com https://maps.gstatic.com",
-              "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com",
+              "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com ws: wss:",
               "frame-src 'self' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com",
               "media-src 'self' data: blob:",
-              "object-src 'none'",
+              "object-src 'self' data:",
               "base-uri 'self'",
               "form-action 'self'",
-              "frame-ancestors 'none'",
-              'upgrade-insecure-requests',
+              "frame-ancestors 'self'",
+              "worker-src 'self' blob:",
             ].join('; '),
-          },
+          }]),
+          // Add Safari development compatibility headers
+          ...(isDev ? [
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'unsafe-none',
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy',
+              value: 'unsafe-none',
+            },
+          ] : []),
         ],
       },
       // API routes specific headers
@@ -139,6 +156,34 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      // CSS files specific headers for Safari compatibility
+      {
+        source: '/:path*.css',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Next.js CSS files specific headers  
+      {
+        source: '/_next/static/css/:path*.css',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -217,6 +262,8 @@ const nextConfig = {
     unoptimized: false,
     // Add timeout and quality settings for better performance
     minimumCacheTTL: 3600, // 1 hour
+    // Configure image qualities (required for Next.js 16+)
+    qualities: [50, 75, 85, 90, 95, 100],
   },
 };
 

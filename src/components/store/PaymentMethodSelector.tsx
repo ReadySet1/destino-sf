@@ -1,11 +1,6 @@
 import React from 'react';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
-
-// Define the PaymentMethod enum to match the one in Prisma schema
-enum PaymentMethod {
-  SQUARE = 'SQUARE',
-  CASH = 'CASH',
-}
+import { PaymentMethod } from '@prisma/client';
 
 interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethod;

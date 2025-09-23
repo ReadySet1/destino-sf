@@ -128,13 +128,17 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+              if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+                navigator.serviceWorker.register('/service-worker.js', { 
+                  scope: '/',
+                  updateViaCache: 'none'
+                })
                   .then(() => console.log('Service Worker registered'))
-                  .catch(() => console.log('Service Worker registration failed'));
+                  .catch((error) => console.log('Service Worker registration failed:', error));
               }
             `,
           }}

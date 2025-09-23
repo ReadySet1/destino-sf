@@ -34,10 +34,21 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
   const router = useRouter();
   const { clearCart } = useCartStore();
 
-  // Clear cart on successful payment
+  // Clear cart and localStorage on successful payment
   useEffect(() => {
     if (status === 'success') {
+      // Clear cart state
       clearCart();
+      
+      // Clear regular checkout localStorage data
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('regularCheckoutData');
+          console.log('✅ [CHECKOUT] Cleared cart and localStorage after successful confirmation');
+        } catch (error) {
+          console.warn('🔧 [CHECKOUT] Failed to clear localStorage:', error);
+        }
+      }
     }
   }, [status, clearCart]);
 

@@ -134,6 +134,7 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
       const areaCode = digitsOnly.substring(1, 4);
 
       // Check for invalid area codes that Square might reject
+      // Note: Removed '555' as it's used for testing and some legitimate purposes
       const invalidAreaCodes = [
         '000',
         '001',
@@ -146,7 +147,7 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
         '008',
         '009',
         '911',
-        '555',
+        // '555' removed - it's valid for testing and some legitimate uses
         '800',
         '888',
         '877',
@@ -168,6 +169,7 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
       const areaCode = digitsOnly.substring(0, 3);
 
       // Check for invalid area codes
+      // Note: Removed '555' as it's used for testing and some legitimate purposes
       const invalidAreaCodes = [
         '000',
         '001',
@@ -180,7 +182,7 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
         '008',
         '009',
         '911',
-        '555',
+        // '555' removed - it's valid for testing and some legitimate uses
         '800',
         '888',
         '877',
@@ -201,7 +203,7 @@ export function formatPhoneForSquarePaymentLink(phone: string): string | null {
 
     return formattedPhone;
   } catch (error) {
-    console.warn('Failed to format phone number for Square payment link:', error);
+    console.warn(`Failed to format phone number "${phone}" for Square payment link:`, error);
     return null;
   }
 }

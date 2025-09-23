@@ -8,7 +8,10 @@ export async function GET() {
     // Get all categories
       // Handle build time or database unavailability
   if (isBuildTime()) {
-    console.log('🔧 Build-time detected: Using fallback data');
+    // Only log in debug mode to reduce build noise
+    if (process.env.BUILD_DEBUG === 'true') {
+      console.log('🔧 Build-time detected: Using fallback data');
+    }
     return NextResponse.json({ 
       success: true, 
       data: [], 

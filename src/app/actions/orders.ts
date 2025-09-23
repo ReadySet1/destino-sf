@@ -75,6 +75,8 @@ const LocalDeliverySchema = FulfillmentBaseSchema.extend({
   deliveryTime: z.string(),
   deliveryAddress: addressSchema,
   deliveryInstructions: z.string().optional(),
+  deliveryFee: z.number().optional(),
+  deliveryZone: z.string().nullable().optional(),
 });
 
 const NationwideShippingSchema = FulfillmentBaseSchema.extend({
@@ -618,8 +620,16 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
 
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal);
-  const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+  // Get delivery fee for local delivery orders
+  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+    ? new Decimal(fulfillment.deliveryFee)
+    : new Decimal(0);
+
+  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
+  // Skip service fee for CASH payments
+  const serviceFeeAmount = paymentMethod === 'CASH' 
+    ? new Decimal(0) 
+    : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
   console.log(`Calculated Subtotal: ${subtotal.toFixed(2)}`);
@@ -627,7 +637,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   console.log(
     `Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
-  console.log(`Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+  console.log(`Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
+  console.log(`Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}${paymentMethod === 'CASH' ? ' (waived for cash)' : ''}`);
   console.log(`Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
   // --- Prepare Fulfillment DB Data ---
@@ -689,6 +700,11 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   // --- Database Order Creation ---
   let dbOrder: { id: string } | null = null;
   try {
+    // Calculate delivery fee for database storage
+    const deliveryFeeForDb = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+      ? new Decimal(fulfillment.deliveryFee) 
+      : new Decimal(0);
+
     const orderInputData: Prisma.OrderCreateInput = {
       // Connect profile using userId if ID exists
       ...(supabaseUserId && { profile: { connect: { id: supabaseUserId } } }),
@@ -697,6 +713,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       paymentMethod: paymentMethod,
       total: finalTotal, // Prisma handles Decimal
       taxAmount: taxAmount,
+      deliveryFee: deliveryFeeForDb, // Add delivery fee
+      serviceFee: serviceFeeAmount, // Add service fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -828,11 +846,20 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       });
     }
 
+    // Add delivery fee as a line item if applicable
+    if (fulfillment.method === 'local_delivery' && fulfillment.deliveryFee && fulfillment.deliveryFee > 0) {
+      squareLineItems.push({
+        name: `Delivery Fee (${fulfillment.deliveryZone || 'Local'})`,
+        quantity: '1',
+        base_price_money: { amount: Math.round(fulfillment.deliveryFee * 100), currency: 'USD' }, // Convert to cents
+      });
+    }
+
     // --- Prepare Square Service Charges ---
     const squareServiceCharges: any[] = [];
     if (serviceFeeAmount.greaterThan(0)) {
       squareServiceCharges.push({
-        name: 'Service Fee',
+        name: 'Convenience Fee',
         amount_money: { amount: Math.round(serviceFeeAmount.toNumber() * 100), currency: 'USD' },
         calculation_phase: 'TOTAL_PHASE', // Applied after tax and shipping
         taxable: false,
@@ -1206,8 +1233,17 @@ export async function createManualPaymentOrder(formData: {
   const shippingCostCents =
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal);
-  const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+  
+  // Get delivery fee for local delivery orders (manual payment)
+  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
+    ? new Decimal(fulfillment.deliveryFee)
+    : new Decimal(0);
+
+  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
+  // Manual payments are typically CASH, so no service fee
+  const serviceFeeAmount = formData.paymentMethod === 'CASH' 
+    ? new Decimal(0) 
+    : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
   console.log(`Manual Payment - Calculated Subtotal: ${subtotal.toFixed(2)}`);
@@ -1215,7 +1251,8 @@ export async function createManualPaymentOrder(formData: {
   console.log(
     `Manual Payment - Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
-  console.log(`Manual Payment - Calculated Service Fee: ${serviceFeeAmount.toFixed(2)}`);
+  console.log(`Manual Payment - Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
+  console.log(`Manual Payment - Convenience Fee: ${serviceFeeAmount.toFixed(2)}${formData.paymentMethod === 'CASH' ? ' (waived for cash)' : ''}`);
   console.log(`Manual Payment - Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
   // --- Prepare Fulfillment DB Data ---
@@ -1317,6 +1354,8 @@ export async function createManualPaymentOrder(formData: {
       paymentMethod: paymentMethod,
       total: finalTotal,
       taxAmount: taxAmount,
+      deliveryFee: deliveryFeeDecimal, // Add delivery fee
+      serviceFee: serviceFeeAmount, // Add service fee
       customerName: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,

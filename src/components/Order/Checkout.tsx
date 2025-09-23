@@ -3,12 +3,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { createOrderAndGenerateCheckoutUrl } from '@/app/actions'; // Import the server action
 import type { FulfillmentData } from '@/app/actions';
-
-// Define the PaymentMethod enum to match the Prisma schema
-enum PaymentMethod {
-  SQUARE = 'SQUARE',
-  CASH = 'CASH',
-}
+import { PaymentMethod } from '@prisma/client';
 
 // Define types more precisely if possible, aligning with server action schemas
 interface CartItem {
@@ -214,7 +209,13 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, f
 
       // Redirect to the Square-hosted checkout page
       console.log('Redirecting to Square Checkout:', result.checkoutUrl);
-      window.location.href = result.checkoutUrl;
+      
+      // Use setTimeout to ensure the redirect happens reliably
+      setTimeout(() => {
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+        }
+      }, 100);
     } catch (error) {
       console.error('Checkout error in Checkout component:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to initiate checkout');
