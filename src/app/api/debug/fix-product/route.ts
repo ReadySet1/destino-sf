@@ -3,6 +3,20 @@ import { prisma, withRetry } from '@/lib/db-unified';
 import { squareClient } from '@/lib/square/client';
 import { logger } from '@/utils/logger';
 
+// Define Square catalog object interface to handle image_data
+interface SquareCatalogObject {
+  id: string;
+  type: string;
+  item_data?: {
+    [key: string]: any;
+  };
+  image_data?: {
+    url?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 export async function GET(request: NextRequest) {
   // Get product ID from query param
   const searchParams = request.nextUrl.searchParams;
@@ -70,7 +84,7 @@ export async function GET(request: NextRequest) {
         }
 
         const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
-        const imageObject = imageResponse.result?.object;
+        const imageObject = imageResponse.result?.object as SquareCatalogObject;
 
         if (imageObject && imageObject.image_data && imageObject.image_data.url) {
           const imageUrl = imageObject.image_data.url;
