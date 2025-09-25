@@ -142,6 +142,37 @@ export class AvailabilityQueries {
   }
 
   /**
+   * Get a single availability rule by ID
+   */
+  static async getRuleById(ruleId: string): Promise<AvailabilityRule | null> {
+    try {
+      const rule = await prisma.availabilityRule.findUnique({
+        where: { id: ruleId },
+        include: {
+          createdByProfile: {
+            select: { id: true, name: true, email: true }
+          },
+          updatedByProfile: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      if (rule) {
+        logger.info('Retrieved availability rule by ID', { ruleId });
+      }
+
+      return rule as AvailabilityRule | null;
+    } catch (error) {
+      logger.error('Error retrieving availability rule by ID', {
+        ruleId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Update an existing availability rule
    */
   static async updateRule(
@@ -191,13 +222,13 @@ export class AvailabilityQueries {
   /**
    * Soft delete a rule
    */
-  static async deleteRule(ruleId: string, userId: string): Promise<void> {
+  static async deleteRule(ruleId: string, userId?: string): Promise<boolean> {
     try {
       await prisma.availabilityRule.update({
         where: { id: ruleId },
         data: {
           deletedAt: new Date(),
-          updatedBy: userId
+          ...(userId && { updatedBy: userId })
         }
       });
 
@@ -207,9 +238,46 @@ export class AvailabilityQueries {
       });
 
       logger.info('Deleted availability rule', { ruleId });
+      return true;
     } catch (error) {
       logger.error('Error deleting availability rule', {
         ruleId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get all availability rules (for admin management)
+   */
+  static async getAllRules(): Promise<AvailabilityRule[]> {
+    try {
+      const rules = await prisma.availabilityRule.findMany({
+        where: {
+          deletedAt: null
+        },
+        include: {
+          createdByProfile: {
+            select: { id: true, name: true, email: true }
+          },
+          updatedByProfile: {
+            select: { id: true, name: true, email: true }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      logger.info('Retrieved all availability rules', { 
+        rulesCount: rules.length 
+      });
+
+      return rules as AvailabilityRule[];
+    } catch (error) {
+      logger.error('Error retrieving all availability rules', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;

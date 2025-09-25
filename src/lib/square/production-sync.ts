@@ -305,10 +305,25 @@ export class ProductionSyncManager {
 
     logger.debug(`🔍 Processing product: ${productName} (${squareId})`);
 
-    // Check if product exists
+    // Check if product exists and get visibility override status
     const existingProduct = await prisma.product.findUnique({
       where: { squareId },
-      select: { id: true, images: true, name: true, updatedAt: true },
+      select: { 
+        id: true, 
+        images: true, 
+        name: true, 
+        updatedAt: true,
+        // Visibility fields to check for manual overrides
+        visibility: true,
+        isAvailable: true,
+        isPreorder: true,
+        itemState: true,
+        // Check if product has availability rules (indicates manual management)
+        availabilityRules: {
+          select: { id: true },
+          where: { deletedAt: null }
+        }
+      },
     });
 
     // Process images
@@ -329,15 +344,25 @@ export class ProductionSyncManager {
     // Generate unique slug
     const slug = await this.generateUniqueSlug(productName, existingProduct?.id);
 
-    // Extract availability metadata
+    // Extract availability metadata from Square
     const availabilityMeta = this.extractAvailabilityMetadata(squareProduct);
-    const availability = this.determineAvailability(availabilityMeta, productName);
+    
+    // Check for manual visibility overrides
+    const hasManualOverrides = this.hasManualVisibilityOverrides(existingProduct);
+    
+    // Determine availability, preserving manual overrides
+    const availability = hasManualOverrides 
+      ? this.preserveManualOverrides(existingProduct, availabilityMeta, productName)
+      : this.determineAvailability(availabilityMeta, productName);
 
     // Track availability statistics
     this.stats.availabilityUpdates++;
     if (availability.isPreorder) this.stats.preorderItems++;
     if (availability.visibility === 'PRIVATE') this.stats.hiddenItems++;
     if (availability.seasonalDates) this.stats.seasonalItems++;
+    
+    // Log visibility changes for audit trail
+    this.logVisibilityChanges(existingProduct, availability, hasManualOverrides, productName);
 
     // Upsert product with transaction safety
     const productData = {
@@ -1037,6 +1062,189 @@ export class ProductionSyncManager {
       seasonalDates: seasonalDates || undefined,
       availabilityReason: isPreorderItem ? 'Available for pre-order' : 'Available',
     };
+  }
+
+  /**
+   * Check if a product has manual visibility overrides that should be preserved
+   */
+  private hasManualVisibilityOverrides(existingProduct: any): boolean {
+    if (!existingProduct) return false;
+    
+    // Check if product has availability rules (indicates manual management)
+    const hasAvailabilityRules = existingProduct.availabilityRules?.length > 0;
+    
+    // Check if visibility was manually set to PRIVATE (likely manual override)
+    const hasManualPrivateVisibility = existingProduct.visibility === 'PRIVATE';
+    
+    // Check if item state is manually set to non-ACTIVE
+    const hasManualItemState = existingProduct.itemState && existingProduct.itemState !== 'ACTIVE';
+    
+    // Check if pre-order state seems manually configured
+    const hasManualPreorder = existingProduct.isPreorder === true;
+    
+    return hasAvailabilityRules || hasManualPrivateVisibility || hasManualItemState || hasManualPreorder;
+  }
+
+  /**
+   * Preserve manual overrides while allowing Square data to influence other fields
+   */
+  private preserveManualOverrides(
+    existingProduct: any,
+    squareMetadata: SquareItemAvailability,
+    productName: string
+  ): ProductAvailability {
+    // Start with the existing manual settings
+    const preserved: ProductAvailability = {
+      visibility: existingProduct.visibility || 'PUBLIC',
+      isAvailable: existingProduct.isAvailable ?? true,
+      isPreorder: existingProduct.isPreorder ?? false,
+      state: existingProduct.itemState || 'ACTIVE',
+      availabilityReason: 'Manual override preserved during sync'
+    };
+    
+    // Only override if Square indicates the item is definitively unavailable/archived
+    if (squareMetadata.state === 'ARCHIVED') {
+      preserved.isAvailable = false;
+      preserved.state = 'ARCHIVED';
+      preserved.availabilityReason = 'Item archived in Square (overriding manual settings)';
+    } else if (squareMetadata.availableOnline === false) {
+      // If Square explicitly says not available online, respect that
+      preserved.isAvailable = false;
+      preserved.availabilityReason = 'Not available online per Square (preserving other manual settings)';
+    }
+    
+    // Enhanced pre-order detection with manual preference
+    if (!preserved.isPreorder) {
+      const squareIndicatesPreorder = this.detectPreorderFromSquare(squareMetadata, productName);
+      if (squareIndicatesPreorder) {
+        preserved.isPreorder = true;
+        preserved.availabilityReason = 'Pre-order detected from Square (enhanced detection)';
+      }
+    }
+    
+    // Enhanced seasonal detection
+    const seasonalInfo = this.detectSeasonalFromSquare(squareMetadata, productName);
+    if (seasonalInfo.isSeasonal) {
+      preserved.seasonalDates = seasonalInfo.dates;
+    }
+    
+    return preserved;
+  }
+
+  /**
+   * Enhanced pre-order detection from Square data and product names
+   */
+  private detectPreorderFromSquare(metadata: SquareItemAvailability, productName: string): boolean {
+    // Enhanced keyword detection for pre-orders
+    const preorderKeywords = [
+      'pre-order', 'preorder', 'pre order',
+      'coming soon', 'available soon',
+      'advance order', 'early access',
+      'reservation', 'waitlist',
+      'gingerbread', // Known seasonal pre-order item
+      'holiday special', 'limited edition'
+    ];
+    
+    const nameHasPreorderKeyword = preorderKeywords.some(keyword => 
+      productName.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    // Check custom attributes for pre-order indicators
+    const attributesIndicatePreorder = 
+      metadata.customAttributes?.preorder_enabled === 'true' ||
+      metadata.customAttributes?.has_preorder_modifier === true ||
+      metadata.customAttributes?.availability_type === 'preorder';
+    
+    return nameHasPreorderKeyword || attributesIndicatePreorder;
+  }
+
+  /**
+   * Enhanced seasonal detection from Square data and product names
+   */
+  private detectSeasonalFromSquare(metadata: SquareItemAvailability, productName: string): {
+    isSeasonal: boolean;
+    dates?: { start: Date; end: Date };
+  } {
+    // Enhanced keyword detection for seasonal items
+    const seasonalKeywords = [
+      'pride', 'seasonal', 'holiday', 'halloween', 'christmas', 'valentine',
+      'easter', 'thanksgiving', 'new year', 'spring special', 'summer special',
+      'fall special', 'winter special', 'limited time', 'special edition'
+    ];
+    
+    const nameHasSeasonalKeyword = seasonalKeywords.some(keyword => 
+      productName.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    const attributesIndicateSeasonal = 
+      metadata.customAttributes?.seasonal_item === 'true' ||
+      metadata.customAttributes?.availability_type === 'seasonal';
+    
+    // Extract dates from custom attributes if available
+    let dates = undefined;
+    if (metadata.customAttributes?.seasonal_start_date || metadata.customAttributes?.seasonal_end_date) {
+      dates = {
+        start: metadata.customAttributes.seasonal_start_date ? 
+          new Date(metadata.customAttributes.seasonal_start_date) : new Date(),
+        end: metadata.customAttributes.seasonal_end_date ? 
+          new Date(metadata.customAttributes.seasonal_end_date) : 
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // Default 90 days
+      };
+    }
+    
+    return {
+      isSeasonal: nameHasSeasonalKeyword || attributesIndicateSeasonal,
+      dates
+    };
+  }
+
+  /**
+   * Log visibility changes for audit trail
+   */
+  private logVisibilityChanges(
+    existingProduct: any,
+    newAvailability: ProductAvailability,
+    hasManualOverrides: boolean,
+    productName: string
+  ): void {
+    if (!existingProduct) {
+      logger.info(`🆕 New product visibility set`, {
+        product: productName,
+        visibility: newAvailability.visibility,
+        isAvailable: newAvailability.isAvailable,
+        isPreorder: newAvailability.isPreorder,
+        reason: newAvailability.availabilityReason
+      });
+      return;
+    }
+    
+    const changes: string[] = [];
+    
+    if (existingProduct.visibility !== newAvailability.visibility) {
+      changes.push(`visibility: ${existingProduct.visibility} → ${newAvailability.visibility}`);
+    }
+    
+    if (existingProduct.isAvailable !== newAvailability.isAvailable) {
+      changes.push(`available: ${existingProduct.isAvailable} → ${newAvailability.isAvailable}`);
+    }
+    
+    if (existingProduct.isPreorder !== newAvailability.isPreorder) {
+      changes.push(`preorder: ${existingProduct.isPreorder} → ${newAvailability.isPreorder}`);
+    }
+    
+    if (existingProduct.itemState !== newAvailability.state) {
+      changes.push(`state: ${existingProduct.itemState} → ${newAvailability.state}`);
+    }
+    
+    if (changes.length > 0) {
+      logger.info(`🔄 Product visibility changes detected`, {
+        product: productName,
+        hasManualOverrides,
+        changes,
+        reason: newAvailability.availabilityReason,
+        preservedManualSettings: hasManualOverrides
+      });
+    }
   }
 
   /**

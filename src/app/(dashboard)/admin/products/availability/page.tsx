@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AvailabilityForm } from '@/components/admin/availability/AvailabilityForm';
 import { AvailabilityTimeline } from '@/components/admin/availability/AvailabilityTimeline';
 import { AvailabilityBulkEditor } from '@/components/admin/availability/AvailabilityBulkEditor';
+import { AvailabilityRulesList } from '@/components/admin/availability/AvailabilityRulesList';
 import { useAvailability } from '@/hooks/useAvailability';
 import { 
   getAvailabilityStatistics,
@@ -51,6 +52,7 @@ export default function AvailabilityManagementPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [editingRule, setEditingRule] = useState<any>(null);
   const [stats, setStats] = useState<AvailabilityStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +104,7 @@ export default function AvailabilityManagementPage() {
         // Transform products to include availability state from evaluation
         // Also filter out any remaining catering products on the frontend as a safety measure
         console.log('🔍 Raw products received:', productsData.length);
-        console.log('🔍 Sample product categories:', productsData.slice(0, 3).map(p => p.category?.name));
+        console.log('🔍 Sample product categories:', productsData.slice(0, 3).map((p: any) => p.category?.name));
         
         const transformedProducts: Product[] = productsData
           .filter((product: any) => {
@@ -145,7 +147,7 @@ export default function AvailabilityManagementPage() {
         console.log('📋 CategoriesData length:', categoriesData.length);
         
         // Filter out catering categories from the dropdown
-        console.log('🔍 Raw categories received:', categoriesData.map(c => c.name));
+        console.log('🔍 Raw categories received:', categoriesData.map((c: any) => c.name));
         const nonCateringCategories = categoriesData.filter((category: Category) => {
           const categoryName = category.name || '';
           const shouldKeep = !categoryName.toUpperCase().startsWith('CATERING');
@@ -155,7 +157,7 @@ export default function AvailabilityManagementPage() {
           return shouldKeep;
         });
         
-        console.log('✅ Final categories after filter:', nonCateringCategories.map(c => c.name));
+        console.log('✅ Final categories after filter:', nonCateringCategories.map((c: any) => c.name));
         console.log('📝 Setting categories state with', nonCateringCategories.length, 'items');
         setCategories(nonCateringCategories);
       } else {
@@ -188,9 +190,24 @@ export default function AvailabilityManagementPage() {
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
+    setEditingRule(null);
     setSelectedProductId('');
     loadStats(); // Refresh stats
-    toast.success('Availability rule created successfully');
+    loadProducts(); // Refresh products
+    toast.success(editingRule ? 'Rule updated successfully' : 'Rule created successfully');
+  };
+
+  const handleEditRule = (rule: any) => {
+    setEditingRule(rule);
+    setSelectedProductId(rule.productId);
+    setShowCreateForm(true);
+    setActiveTab('rules');
+  };
+
+  const handleCancelEdit = () => {
+    setShowCreateForm(false);
+    setEditingRule(null);
+    setSelectedProductId('');
   };
 
   // Filter products
@@ -543,32 +560,15 @@ export default function AvailabilityManagementPage() {
           {showCreateForm ? (
             <AvailabilityForm
               productId={selectedProductId || '1'}
+              rule={editingRule}
               onSuccess={handleCreateSuccess}
-              onCancel={() => {
-                setShowCreateForm(false);
-                setSelectedProductId('');
-              }}
+              onCancel={handleCancelEdit}
             />
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Availability Rules</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Create and manage individual availability rules for products
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    Select a product from the overview or click Create Rule to get started
-                  </p>
-                  <Button onClick={() => setShowCreateForm(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Rule
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AvailabilityRulesList
+              onEditRule={handleEditRule}
+              onCreateNew={() => setShowCreateForm(true)}
+            />
           )}
         </TabsContent>
 

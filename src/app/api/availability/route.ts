@@ -38,8 +38,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
       const ruleMap = await AvailabilityQueries.getMultipleProductRules(productIds);
       rules = Array.from(ruleMap.values()).flat();
     } else {
-      // Get all active rules if no specific products requested
-      rules = await AvailabilityQueries.getActiveRules();
+      // Get all rules (for admin management) if no specific products requested
+      rules = await AvailabilityQueries.getAllRules();
     }
 
     logger.info('Retrieved availability rules via API', {

@@ -10,6 +10,7 @@ import { prisma, withRetry } from '@/lib/db-unified'; // Import unified Prisma c
 import { withDatabaseConnection } from '@/lib/db-utils';
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
+import { ProductVisibilityService } from '@/lib/services/product-visibility-service';
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { safeBuildTimeStaticParams, isBuildTime } from '@/lib/build-time-utils';
@@ -185,86 +186,21 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     notFound();
   }
 
-  // Fetch products associated with this category from the database
+  // Fetch products associated with this category using ProductVisibilityService
   let products: GridProduct[] = [];
   try {
-    const dbProducts = await withDatabaseConnection(async () => {
-      return await prisma.product.findMany({
-        where: {
-          categoryId: category.id,
-          active: true, // Only fetch active products
-          // Properly filter by visibility fields
-          OR: [
-            { visibility: 'PUBLIC' },
-            { visibility: null }, // Default to PUBLIC if null
-          ],
-          isAvailable: true, // Only show available items
-          NOT: {
-            OR: [
-              { itemState: 'INACTIVE' },
-              { itemState: 'ARCHIVED' },
-              // Exclude catering products from category pages
-              {
-                category: {
-                  name: {
-                    startsWith: 'CATERING',
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            ],
-          },
-        },
-        select: {
-          id: true,
-          squareId: true,
-          name: true,
-          description: true,
-          price: true,
-          images: true,
-          categoryId: true,
-          slug: true,
-          featured: true,
-          active: true,
-          createdAt: true,
-          updatedAt: true,
-          ordinal: true, // Include ordinal for proper ordering
-          
-          // Add availability fields for filtering
-          isAvailable: true,
-          isPreorder: true,
-          visibility: true,
-          itemState: true,
-          preorderStartDate: true,
-          preorderEndDate: true,
-          availabilityStart: true,
-          availabilityEnd: true,
-          variants: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              squareVariantId: true,
-              productId: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          },
-        },
-        orderBy: [
-          // Order by ordinal first (admin-controlled order), then by name as fallback
-          { ordinal: 'asc' },
-          { name: 'asc' },
-        ],
-      });
-    }, 3); // 3 retries
+    const result = await ProductVisibilityService.getProductsByCategory(category.id, {
+      onlyActive: true, // Only fetch active products for customer-facing view
+      excludeCatering: true, // Exclude catering from category pages
+      includeAvailabilityEvaluation: true, // Include availability evaluation
+      includeVariants: true, // Include variants for product display
+      orderBy: 'ordinal', // Order by admin-controlled ordinal
+      orderDirection: 'asc'
+    });
 
-    // Process database products before mapping to GridProduct
-    const serializedProducts = await preparePrismaData(dbProducts);
-
-    // Map serialized database products to the GridProduct interface
+    // Map ProductVisibilityService results to GridProduct interface
     products = await Promise.all(
-      serializedProducts.map(async (p): Promise<GridProduct> => {
+      result.products.map(async (p): Promise<GridProduct> => {
         // Parse the images JSON string or handle array
         const imageArray = normalizeImages(p.images);
 
@@ -273,40 +209,40 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           squareId: p.squareId || '',
           name: p.name,
           description: p.description,
-          price: p.price || 0, // Already converted to number by preparePrismaData
+          price: p.price || 0,
           images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
           categoryId: p.categoryId || '',
-          category: await preparePrismaData(category), // Serialize the category object too
+          category: await preparePrismaData(category), // Serialize the category object
           slug: p.slug || p.id, // Use product slug or ID if slug is missing
           featured: p.featured || false,
           active: p.active,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-          variants: p.variants.map(v => ({
+          createdAt: new Date(), // Will be set by the service
+          updatedAt: new Date(), // Will be set by the service
+          variants: p.variants?.map(v => ({
             id: v.id,
             name: v.name,
-            price: v.price || null, // Already converted by preparePrismaData
+            price: v.price || null,
             squareVariantId: v.squareVariantId,
             productId: p.id,
-            createdAt: v.createdAt,
-            updatedAt: v.updatedAt,
-          })),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })) || [],
           
-          // Add availability fields for proper filtering
+          // Add availability fields from the service
           isAvailable: p.isAvailable,
           isPreorder: p.isPreorder,
           visibility: p.visibility,
           itemState: p.itemState,
-          preorderStartDate: p.preorderStartDate,
-          preorderEndDate: p.preorderEndDate,
-          availabilityStart: p.availabilityStart,
-          availabilityEnd: p.availabilityEnd,
+          // Add evaluated availability if present
+          ...(p.evaluatedAvailability && {
+            evaluatedAvailability: p.evaluatedAvailability
+          })
         };
       })
     );
   } catch (error) {
     console.error(
-      `Failed to fetch products for category ${category.name} (ID: ${category.id}):`,
+      `Failed to fetch products for category ${category.name} (ID: ${category.id}) via ProductVisibilityService:`,
       error
     );
     // Optionally display an error message on the page or return 500
