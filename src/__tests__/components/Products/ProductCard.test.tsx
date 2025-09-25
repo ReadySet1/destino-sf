@@ -5,7 +5,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ProductCard from '@/components/Products/ProductCard';
+import ProductCard from '@/components/products/ProductCard';
 import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import * as imageUtils from '@/lib/image-utils';
@@ -58,7 +58,7 @@ jest.mock('next/link', () => ({
 }));
 
 // Mock ImagePlaceholder component
-jest.mock('@/components/Products/ImagePlaceholder', () => ({
+jest.mock('@/components/products/ImagePlaceholder', () => ({
   ImagePlaceholder: ({ productName, category, size, className }: any) => (
     <div
       data-testid="image-placeholder"

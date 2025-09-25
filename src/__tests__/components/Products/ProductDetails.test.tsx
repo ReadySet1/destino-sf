@@ -5,7 +5,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ProductDetails from '@/components/Products/ProductDetails';
+import ProductDetails from '@/components/products/ProductDetails';
 import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import type { Product, Variant, Category } from '@/types/product';

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
-import ProductDetails from '@/components/Products/ProductDetails';
-import CategoryHeader from '@/components/Products/CategoryHeader';
+import ProductDetails from '@/components/products/ProductDetails';
+import CategoryHeader from '@/components/products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Product, Variant } from '@/types/product';
 import { redirect, notFound } from 'next/navigation';

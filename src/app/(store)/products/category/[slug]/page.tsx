@@ -3,8 +3,8 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ProductGrid } from '@/components/Products/ProductGrid';
-import { CategoryHeader } from '@/components/Products/CategoryHeader';
+import { ProductGrid } from '@/components/products/ProductGrid';
+import { CategoryHeader } from '@/components/products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 import { prisma, withRetry } from '@/lib/db-unified'; // Import unified Prisma client
 import { withDatabaseConnection } from '@/lib/db-utils';

@@ -7,10 +7,10 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
 // Import components for accessibility testing
-import ProductDetails from '@/components/Products/ProductDetails';
+import ProductDetails from '@/components/products/ProductDetails';
 import CheckoutForm from '@/components/store/CheckoutForm';
 import AccountProfile from '@/components/store/AccountProfile';
-import ProductCard from '@/components/Products/ProductCard';
+import ProductCard from '@/components/products/ProductCard';
 import BoxedLunchMenu from '@/components/Catering/BoxedLunchMenu';
 
 // Mock dependencies
