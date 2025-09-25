@@ -10,8 +10,8 @@ const nextConfig = {
   typescript: {
     // Re-enable TypeScript checking for production builds
     ignoreBuildErrors: false,
-    // Use main tsconfig.json for builds to ensure proper path resolution
-    tsconfigPath: './tsconfig.json',
+    // Use build-specific tsconfig.json to exclude test files
+    tsconfigPath: './tsconfig.build.json',
   },
   // Enable ESLint checking during builds
   eslint: {

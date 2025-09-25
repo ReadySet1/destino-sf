@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Plus, Settings, Activity, Eye } from 'lucide-react';
+import { Clock, Plus, Settings, Activity, Eye, AlertTriangle, Calendar, TrendingUp } from 'lucide-react';
 import { AvailabilityForm } from '@/components/admin/availability/AvailabilityForm';
 import { AvailabilityTimeline } from '@/components/admin/availability/AvailabilityTimeline';
 import { DetailedAvailabilityBadge } from '@/components/store/AvailabilityBadge';
@@ -31,6 +31,12 @@ export function AvailabilitySection({
   const [editingRule, setEditingRule] = useState<AvailabilityRule | null>(null);
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [isLoadingConflicts, setIsLoadingConflicts] = useState(false);
+  const [futurePreview, setFuturePreview] = useState<{
+    date: Date;
+    state: string;
+    ruleName: string;
+  }[]>([]);
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
 
   const {
     rules,
@@ -42,14 +48,7 @@ export function AvailabilitySection({
     error
   } = useAvailability(productId, { autoRefresh: true });
 
-  // Load conflicts when rules change
-  useEffect(() => {
-    if (rules.length > 1) {
-      loadConflicts();
-    }
-  }, [rules]);
-
-  const loadConflicts = async () => {
+  const loadConflicts = useCallback(async () => {
     try {
       setIsLoadingConflicts(true);
       const result = await getProductRuleConflicts(productId);
@@ -62,7 +61,52 @@ export function AvailabilitySection({
     } finally {
       setIsLoadingConflicts(false);
     }
-  };
+  }, [productId]);
+
+  const generateFuturePreview = useCallback(() => {
+    const now = new Date();
+    const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    const upcomingChanges = rules
+      .filter(rule => rule.enabled)
+      .flatMap(rule => {
+        const changes = [];
+        
+        // Check start date
+        if (rule.startDate && new Date(rule.startDate) > now && new Date(rule.startDate) <= next30Days) {
+          changes.push({
+            date: new Date(rule.startDate),
+            state: rule.state,
+            ruleName: rule.name,
+            type: 'start'
+          });
+        }
+        
+        // Check end date
+        if (rule.endDate && new Date(rule.endDate) > now && new Date(rule.endDate) <= next30Days) {
+          changes.push({
+            date: new Date(rule.endDate),
+            state: 'AVAILABLE', // Assumes returning to available state after rule ends
+            ruleName: `${rule.name} (ending)`,
+            type: 'end'
+          });
+        }
+        
+        return changes;
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 5); // Show only next 5 changes
+    
+    setFuturePreview(upcomingChanges);
+  }, [rules]);
+
+  // Load conflicts when rules change
+  useEffect(() => {
+    if (rules.length > 1) {
+      loadConflicts();
+    }
+    generateFuturePreview();
+  }, [rules, loadConflicts, generateFuturePreview]);
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
@@ -148,10 +192,20 @@ export function AvailabilitySection({
               Availability Status
             </CardTitle>
             
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Rule
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowQuickCreate(!showQuickCreate)}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Quick Create
+              </Button>
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Rule
+              </Button>
+            </div>
           </div>
         </CardHeader>
         
@@ -195,18 +249,116 @@ export function AvailabilitySection({
             </div>
           </div>
 
-          {/* Conflicts Warning */}
+          {/* Quick Create Widget */}
+          {showQuickCreate && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Quick Rule Templates
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateForm(true);
+                    setShowQuickCreate(false);
+                    // TODO: Pre-fill form with pre-order template
+                  }}
+                  className="text-left justify-start"
+                >
+                  📦 Pre-order Rule
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateForm(true);
+                    setShowQuickCreate(false);
+                    // TODO: Pre-fill form with seasonal template
+                  }}
+                  className="text-left justify-start"
+                >
+                  🌟 Seasonal Item
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateForm(true);
+                    setShowQuickCreate(false);
+                    // TODO: Pre-fill form with view-only template
+                  }}
+                  className="text-left justify-start"
+                >
+                  👁️ View Only
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Future State Preview */}
+          {futurePreview.length > 0 && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Upcoming Changes (Next 30 Days)
+              </h4>
+              <div className="space-y-2">
+                {futurePreview.map((change, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {format(change.date, 'MMM d')}
+                      </Badge>
+                      <span className="text-muted-foreground">→</span>
+                      <Badge className="text-xs">
+                        {change.state}
+                      </Badge>
+                    </div>
+                    <span className="text-muted-foreground text-xs">
+                      {change.ruleName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Conflicts Warning */}
           {conflicts.length > 0 && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800">
-                <Settings className="h-4 w-4" />
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800 mb-3">
+                <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">
-                  {conflicts.length} rule conflict{conflicts.length !== 1 ? 's' : ''} detected
+                  {conflicts.length} Rule Conflict{conflicts.length !== 1 ? 's' : ''} Detected
                 </span>
               </div>
-              <p className="text-sm text-amber-700 mt-1">
-                Multiple rules have the same priority or overlapping dates. Review your rules for optimal behavior.
-              </p>
+              <div className="space-y-2">
+                {conflicts.slice(0, 3).map((conflict, index) => (
+                  <div key={index} className="text-sm text-amber-700 bg-amber-100 p-2 rounded">
+                    <span className="font-medium">Priority {conflict.priority}:</span> {conflict.description}
+                  </div>
+                ))}
+                {conflicts.length > 3 && (
+                  <p className="text-xs text-amber-600">
+                    +{conflicts.length - 3} more conflicts. Click &apos;Timeline&apos; tab to review all conflicts.
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 text-amber-700 border-amber-300 hover:bg-amber-100"
+                onClick={() => {
+                  // Focus timeline tab to show conflicts
+                  const timelineTab = document.querySelector('[data-value="timeline"]') as HTMLElement;
+                  timelineTab?.click();
+                }}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Review in Timeline
+              </Button>
             </div>
           )}
         </CardContent>

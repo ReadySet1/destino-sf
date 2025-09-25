@@ -27,6 +27,8 @@ type ProductFiltersProps = {
   currentCategory: string;
   currentStatus: string;
   currentFeatured: string;
+  currentVisibility?: string;
+  currentAvailability?: string;
 };
 
 export default function ProductFilters({
@@ -35,6 +37,8 @@ export default function ProductFilters({
   currentCategory,
   currentStatus,
   currentFeatured,
+  currentVisibility = '',
+  currentAvailability = '',
 }: ProductFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,6 +48,8 @@ export default function ProductFilters({
   const [category, setCategory] = useState(currentCategory || 'all');
   const [status, setStatus] = useState(currentStatus || 'active');
   const [featured, setFeatured] = useState(currentFeatured || 'all');
+  const [visibility, setVisibility] = useState(currentVisibility || 'all');
+  const [availability, setAvailability] = useState(currentAvailability || 'all');
 
   // Function to create new URL with updated search params
   const applyFilters = useCallback(
@@ -52,6 +58,8 @@ export default function ProductFilters({
       category?: string;
       status?: string;
       featured?: string;
+      visibility?: string;
+      availability?: string;
       page?: string;
     }) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -91,10 +99,12 @@ export default function ProductFilters({
     setCategory('all');
     setStatus('all');
     setFeatured('all');
+    setVisibility('all');
+    setAvailability('all');
     router.push(pathname);
   };
 
-  const hasActiveFilters = search || category !== 'all' || status !== 'all' || featured !== 'all';
+  const hasActiveFilters = search || category !== 'all' || status !== 'all' || featured !== 'all' || visibility !== 'all' || availability !== 'all';
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
@@ -209,6 +219,77 @@ export default function ProductFilters({
               </Select>
             </ClientOnly>
           </div>
+        </div>
+
+        {/* Second Row: Visibility and Availability Filters */}
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Visibility Filter */}
+          <div className="w-full md:w-1/4">
+            <ClientOnly
+              fallback={
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <span className="text-muted-foreground">Loading...</span>
+                </div>
+              }
+            >
+              <Select
+                value={visibility}
+                onValueChange={value => {
+                  setVisibility(value);
+                  applyFilters({ visibility: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Visibility" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Visibility</SelectLabel>
+                    <SelectItem value="all">All Visibility</SelectItem>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </ClientOnly>
+          </div>
+
+          {/* Availability Filter */}
+          <div className="w-full md:w-1/4">
+            <ClientOnly
+              fallback={
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+                  <span className="text-muted-foreground">Loading...</span>
+                </div>
+              }
+            >
+              <Select
+                value={availability}
+                onValueChange={value => {
+                  setAvailability(value);
+                  applyFilters({ availability: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Availability</SelectLabel>
+                    <SelectItem value="all">All Availability</SelectItem>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="unavailable">Unavailable</SelectItem>
+                    <SelectItem value="preorder">Pre-order</SelectItem>
+                    <SelectItem value="view_only">View Only</SelectItem>
+                    <SelectItem value="hidden">Hidden</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </ClientOnly>
+          </div>
+
+          {/* Spacer to align with grid */}
+          <div className="w-full md:w-1/2"></div>
         </div>
 
         {/* Reset Filters Button - Only show if filters are active */}

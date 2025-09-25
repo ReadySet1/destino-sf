@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // First get all Square catalog items to know what's valid
     logger.info('Fetching all Square catalog items...');
     const requestBody = {
-      object_types: ['ITEM'],
+      object_types: ['ITEM' as const],
       include_deleted_objects: false,
     };
 
