@@ -113,7 +113,7 @@ export async function searchCatalogItems() {
     if (!squareClient.catalogApi?.searchCatalogObjects) {
       throw new Error('Square catalog API not available');
     }
-    const response = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const response = await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
 
     // Extract just the items (not categories, taxes, etc)
     const items = response.result.objects || [];

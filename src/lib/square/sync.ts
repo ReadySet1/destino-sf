@@ -1330,7 +1330,7 @@ async function getImageUrls(
             const imageResponse = await withSquareRetry(async () => {
               return await squareClient.catalogApi!.retrieveCatalogObject(imageId);
             });
-            const imageData = imageResponse?.result?.object;
+            const imageData = imageResponse?.result?.object as any;
 
             if (imageData?.image_data?.url) {
               imageUrl = imageData.image_data.url;
@@ -1688,7 +1688,7 @@ export async function syncProductOrderingFromSquare(): Promise<{
       object_types: ['ITEM'],
       include_related_objects: true,
       include_deleted_objects: false,
-    });
+    } as any);
 
     const squareItems = squareResponse.result?.objects || [];
     logger.info(`Found ${squareItems.length} items in Square catalog`);
@@ -1698,10 +1698,10 @@ export async function syncProductOrderingFromSquare(): Promise<{
     for (const item of squareItems) {
       if (
         item.type === 'ITEM' &&
-        item.item_data?.categories &&
-        item.item_data.categories.length > 0
+        (item.item_data as any)?.categories &&
+        (item.item_data as any).categories.length > 0
       ) {
-        const ordinal = item.item_data.categories[0].ordinal;
+        const ordinal = (item.item_data as any).categories[0].ordinal;
         if (ordinal !== undefined) {
           squareOrdinalsMap.set(item.id, BigInt(ordinal));
         }

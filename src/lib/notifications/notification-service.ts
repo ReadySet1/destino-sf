@@ -197,7 +197,7 @@ export class NotificationService {
 
     await this.emailService.sendWaitlistNotification({
       to: user.email,
-      customerName: user.firstName || 'Customer',
+      customerName: (user as any).firstName || user.name || 'Customer',
       product,
       notificationType: data.notificationType || 'available'
     });

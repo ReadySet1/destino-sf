@@ -48,7 +48,7 @@ async function getSquareItemIds(): Promise<Set<string>> {
       };
 
       const response: SquareSearchResponse =
-        await squareClient.catalogApi.searchCatalogObjects(requestBody);
+        await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
       const objects = response.result?.objects;
 
       if (objects && objects.length > 0) {

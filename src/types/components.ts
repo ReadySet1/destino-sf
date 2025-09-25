@@ -98,7 +98,7 @@ export interface FormValidation<T extends Record<string, any>> {
 // Zod-based Form Validation
 export type ZodFormSchema<T> = z.ZodSchema<T>;
 
-export interface ZodFormValidation<T> extends FormValidation<T> {
+export interface ZodFormValidation<T extends Record<string, any>> extends FormValidation<T> {
   schema: ZodFormSchema<T>;
   validate: (values: Partial<T>) => Promise<Partial<Record<keyof T, string>>>;
   validateField: (field: keyof T, value: T[keyof T]) => Promise<string | undefined>;
@@ -418,14 +418,14 @@ export interface DataRenderProps<T> extends RenderProps<WithDataProps<T>> {}
 
 // Generic Component Factory Types
 export interface ComponentFactory<P> {
-  (props: P): JSX.Element;
+  (props: P): React.JSX.Element;
   displayName?: string;
   defaultProps?: Partial<P>;
 }
 
 // Form Field Factory Types
 export interface FormFieldFactory<T, P = {}> {
-  (props: P & { value?: T; onChange?: (value: T) => void; error?: string }): JSX.Element;
+  (props: P & { value?: T; onChange?: (value: T) => void; error?: string }): React.JSX.Element;
 }
 
 // Theme-aware Component Types

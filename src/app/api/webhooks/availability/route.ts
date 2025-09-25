@@ -166,7 +166,7 @@ async function handleRuleChange(payload: AvailabilityWebhookPayload) {
     let hasChanges = false;
 
     // Apply state changes based on evaluation
-    switch (evaluation.currentState) {
+    switch (evaluation.currentState as any) {
       case 'AVAILABLE':
         if (!product.isAvailable || product.visibility === 'PRIVATE') {
           updates.isAvailable = true;

@@ -198,7 +198,7 @@ export class ProductionSyncManager {
           include_related_objects: true,
           include_deleted_objects: false,
           limit: 1000, // Maximum allowed by Square
-        });
+        } as any);
 
         const products = response.result?.objects?.filter(obj => obj.type === 'ITEM') || [];
         const relatedObjects = response.result?.related_objects || [];
@@ -209,8 +209,8 @@ export class ProductionSyncManager {
 
         return {
           success: true,
-          products,
-          relatedObjects,
+          products: products as any,
+          relatedObjects: relatedObjects as any,
         };
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -500,7 +500,7 @@ export class ProductionSyncManager {
     try {
       if (squareClient.catalogApi) {
         const response = await squareClient.catalogApi.retrieveCatalogObject(imageId);
-        const imageData = response.result?.object;
+        const imageData = response.result?.object as any;
 
         if (imageData?.image_data?.url) {
           return imageData.image_data.url;

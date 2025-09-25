@@ -436,9 +436,13 @@ export class AvailabilityProcessor {
           { startDate: null },
           { startDate: { lte: new Date() } }
         ],
-        OR: [
-          { endDate: null },
-          { endDate: { gte: new Date() } }
+        AND: [
+          { 
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date() } }
+            ]
+          }
         ]
       },
       orderBy: {
