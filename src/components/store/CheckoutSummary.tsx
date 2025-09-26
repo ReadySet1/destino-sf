@@ -23,7 +23,7 @@ interface CheckoutSummaryProps {
   taxRate?: number; // Allow custom tax rate, default to 8.25%
 }
 
-// Define the service fee rate
+// Define the convenience fee rate
 const SERVICE_FEE_RATE = 0.035; // 3.5%
 
 export function CheckoutSummary({
@@ -55,13 +55,13 @@ export function CheckoutSummary({
   // Calculate shipping cost
   const shippingCost = shippingRate ? shippingRate.amount : 0;
 
-  // Calculate the base total before service fee
+  // Calculate the base total before convenience fee
   const totalBeforeFee = subtotal + tax + deliveryFeeAmount + shippingCost;
 
-  // Calculate service fee only if includeServiceFee is true
+  // Calculate convenience fee only if includeServiceFee is true
   const serviceFee = includeServiceFee ? totalBeforeFee * SERVICE_FEE_RATE : 0;
 
-  // Calculate the final total including the service fee
+  // Calculate the final total including the convenience fee
   const total = totalBeforeFee + serviceFee;
 
   return (
@@ -149,7 +149,7 @@ export function CheckoutSummary({
             </div>
           )}
 
-          {/* Conditionally display the service fee */}
+          {/* Conditionally display the convenience fee */}
           {includeServiceFee && serviceFee > 0 && (
             <div className="flex justify-between text-sm text-destino-charcoal/70">
               <span>Convenience Fee (3.5%)</span>

@@ -35,7 +35,7 @@ import { PaymentMethod } from '@prisma/client';
 
 // Tax and fee constants to match server-side calculations
 const TAX_RATE = 0.0825; // 8.25% SF sales tax
-const SERVICE_FEE_RATE = 0.035; // 3.5% service fee
+const SERVICE_FEE_RATE = 0.035; // 3.5% convenience fee
 
 interface CateringCheckoutClientProps {
   userData: { id?: string; name?: string; email?: string; phone?: string } | null;
@@ -370,8 +370,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     const taxableAmount = subtotal + actualDeliveryFee;
     const taxAmount = taxableAmount * TAX_RATE;
     
-    // Calculate service fee on subtotal + delivery fee + tax
-    // Skip service fee for CASH payments
+    // Calculate convenience fee on subtotal + delivery fee + tax
     const totalBeforeServiceFee = subtotal + actualDeliveryFee + taxAmount;
     const serviceFee = paymentMethod === PaymentMethod.CASH ? 0 : totalBeforeServiceFee * SERVICE_FEE_RATE;
     

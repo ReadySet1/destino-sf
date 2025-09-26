@@ -81,7 +81,7 @@ export function OrderPricingBreakdown({
       {
         label: 'Tax, Fees & Other Charges',
         amount: discrepancyAmount,
-        description: 'Combined tax, service fees, and other charges',
+        description: 'Combined tax, convenience fees, and other charges',
         isVisible: true,
       }
     ] : [
@@ -108,7 +108,7 @@ export function OrderPricingBreakdown({
       {
         label: 'Convenience Fee',
         amount: serviceFee,
-        description: serviceFee > 0 ? 'Convenience fee (3.5%)' : 'No service fee applied',
+        description: serviceFee > 0 ? 'Processing fee (3.5%)' : 'No convenience fee applied',
         isVisible: true,
       },
       {

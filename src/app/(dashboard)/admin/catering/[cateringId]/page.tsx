@@ -426,7 +426,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                   const taxableAmount = subtotalFromItems + deliveryFee;
                   const taxAmount = taxableAmount * 0.0825;
                   
-                  // Calculate service fee (3.5% of subtotal + delivery fee + tax)
+                  // Calculate convenience fee (3.5% of subtotal + delivery fee + tax)
                   const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
                   const serviceFee = totalBeforeFee * 0.035;
 
@@ -470,7 +470,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                       {serviceFee > 0.01 && (
                         <tr>
                           <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
-                          Convenience Fee (3.5%):
+                            Convenience Fee (3.5%):
                           </td>
                           <td className="px-4 py-2 text-right text-sm">
                             {formatCurrency(serviceFee)}
