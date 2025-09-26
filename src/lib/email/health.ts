@@ -16,9 +16,25 @@ export async function checkEmailServiceHealth(): Promise<EmailHealthResult> {
     // Check domain status
     const domainsResponse = await resend.domains.list();
 
+    if (domainsResponse.error) {
+      return {
+        status: 'unhealthy',
+        error: domainsResponse.error.message
+      };
+    }
+
+    // Map the response data to the expected format
+    const domains = Array.isArray(domainsResponse.data) 
+      ? domainsResponse.data.map((domain: any) => ({
+          id: domain.id || '',
+          name: domain.name || '',
+          status: domain.status || 'unknown'
+        }))
+      : [];
+
     return {
       status: 'healthy',
-      domains: domainsResponse.data || []
+      domains
     };
   } catch (error) {
     return {

@@ -28,9 +28,16 @@ export async function sendAdminNotificationEmail(notificationData: AdminNotifica
       html,
     });
 
+    if (result.error) {
+      return {
+        success: false,
+        error: result.error.message
+      };
+    }
+
     return {
       success: true,
-      emailId: result.id
+      emailId: result.data?.id
     };
   } catch (error) {
     return {

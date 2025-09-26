@@ -9,23 +9,23 @@ export async function checkShippoHealth(): Promise<ShippoHealthResult> {
   const start = Date.now();
   
   try {
-    const shippo = await import('shippo');
+    const { ShippoClientManager } = await import('@/lib/shippo/client');
     
-    // Test with a simple address validation
-    await shippo.default.address.validate({
-      name: 'Test Address',
-      street1: '123 Test St',
-      city: 'San Francisco',
-      state: 'CA',
-      zip: '94102',
-      country: 'US'
-    });
+    // Validate the connection using the centralized client manager
+    const validation = await ShippoClientManager.validateConnection();
+    
+    if (!validation.connected) {
+      return {
+        status: 'unhealthy',
+        error: validation.error || 'Shippo connection failed'
+      };
+    }
     
     const responseTime = Date.now() - start;
     
     return {
       status: 'healthy',
-      apiVersion: '2018-02-08',
+      apiVersion: validation.version,
       responseTime
     };
   } catch (error) {

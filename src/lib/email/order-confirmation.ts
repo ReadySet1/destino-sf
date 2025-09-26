@@ -29,9 +29,16 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
       html: generateOrderConfirmationHtml(data.orderData),
     });
 
+    if (result.error) {
+      return {
+        success: false,
+        error: result.error.message
+      };
+    }
+
     return {
       success: true,
-      emailId: result.id
+      emailId: result.data?.id
     };
   } catch (error) {
     return {

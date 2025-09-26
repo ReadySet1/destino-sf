@@ -7,6 +7,13 @@ export async function checkSquareConnection(): Promise<SquareHealthResult> {
   try {
     const { squareClient } = await import('@/lib/square/client');
     
+    if (!squareClient || !squareClient.locationsApi) {
+      return {
+        status: 'unhealthy',
+        error: 'Square client not properly initialized'
+      };
+    }
+    
     // Test connection by retrieving first location
     const response = await squareClient.locationsApi.listLocations();
     
