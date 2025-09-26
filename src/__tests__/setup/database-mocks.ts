@@ -1,5 +1,5 @@
 // Comprehensive database mocking for business logic tests
-import { DeliveryZone } from '@/lib/deliveryUtils';
+import { DeliveryZone } from '@/types/catering';
 import { jest } from '@jest/globals';
 
 // Updated interface to match current Prisma client structure
@@ -128,7 +128,7 @@ export const mockOrders = [
     total: 108.25,
     status: 'pending',
     deliveryMethod: 'local_delivery',
-    deliveryZone: DeliveryZone.NEARBY,
+    deliveryZone: DeliveryZone.SAN_FRANCISCO,
   },
   {
     id: 'order-2',

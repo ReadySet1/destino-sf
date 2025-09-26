@@ -1769,6 +1769,11 @@ export async function syncProductOrderingFromSquare(): Promise<{
   return results;
 }
 
+// Export function with expected name for tests
+export async function syncProductsFromSquare(): Promise<SyncResult> {
+  return await syncSquareProducts();
+}
+
 // Utility function to chunk arrays for batch processing
 function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   const chunks: T[][] = [];

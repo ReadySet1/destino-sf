@@ -74,26 +74,28 @@ jest.mock('@/utils/supabase/server', () => ({
 }));
 
 jest.mock('shippo', () => ({
-  shipment: {
-    create: jest.fn(),
-    retrieve: jest.fn(),
-    list: jest.fn(),
-  },
-  rate: {
-    retrieve: jest.fn(),
-    list: jest.fn(),
-  },
-  address: {
-    create: jest.fn(),
-    validate: jest.fn(),
-  },
-  transaction: {
-    create: jest.fn(),
-    retrieve: jest.fn(),
-  },
-  track: {
-    get_status: jest.fn(),
-  },
+  default: {
+    shipment: {
+      create: jest.fn(),
+      retrieve: jest.fn(),
+      list: jest.fn(),
+    },
+    rate: {
+      retrieve: jest.fn(),
+      list: jest.fn(),
+    },
+    address: {
+      create: jest.fn(),
+      validate: jest.fn(),
+    },
+    transaction: {
+      create: jest.fn(),
+      retrieve: jest.fn(),
+    },
+    track: {
+      get_status: jest.fn(),
+    },
+  }
 }));
 
 jest.mock('@upstash/redis', () => ({
@@ -149,7 +151,7 @@ const mockSquareClient = squareClient as jest.Mocked<typeof squareClient>;
 const mockResend = Resend as jest.MockedClass<typeof Resend>;
 const mockSentry = Sentry as jest.Mocked<typeof Sentry>;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
-const mockShippo = shippo as jest.Mocked<typeof shippo>;
+const mockShippo = shippo.default as jest.Mocked<typeof shippo.default>;
 const mockRedis = Redis as jest.MockedClass<typeof Redis>;
 const mockRatelimit = Ratelimit as jest.MockedClass<typeof Ratelimit>;
 const mockPerformanceMonitor = performanceMonitor as jest.Mocked<typeof performanceMonitor>;
