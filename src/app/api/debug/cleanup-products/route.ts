@@ -26,12 +26,10 @@ export async function GET(request: NextRequest) {
 
     // First get all Square catalog items to know what's valid
     logger.info('Fetching all Square catalog items...');
-    const requestBody = {
-      object_types: ['ITEM'],
-      include_deleted_objects: false,
-    };
-
-    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects({
+      objectTypes: ['ITEM'],
+      includeDeletedObjects: false,
+    } as any);
     const validSquareItems = catalogResponse.result?.objects || [];
 
     // Extract valid Square IDs

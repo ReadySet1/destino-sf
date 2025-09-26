@@ -60,17 +60,6 @@ export async function GET(request: NextRequest) {
     // Search Square catalog for matching items
     logger.info(`Searching Square catalog for: ${product.name}`);
 
-    const searchRequest = {
-      object_types: ['ITEM'],
-      query: {
-        exact_query: {
-          attribute_name: 'name',
-          attribute_value: product.name,
-        },
-      },
-      include_related_objects: true,
-    };
-
     if (!squareClient.catalogApi) {
       return NextResponse.json(
         {
@@ -81,7 +70,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest);
+    const searchResponse = await squareClient.catalogApi.searchCatalogObjects({
+      objectTypes: ['ITEM'],
+      query: {
+        exactQuery: {
+          attributeName: 'name',
+          attributeValue: product.name,
+        },
+      },
+      includeRelatedObjects: true,
+    } as any);
 
     const items = (searchResponse.result?.objects || []) as SquareCatalogObject[];
     const relatedObjects = (searchResponse.result?.related_objects || []) as SquareCatalogObject[];

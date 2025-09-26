@@ -23,6 +23,14 @@ function getBestDatabaseUrl(): string {
   
   if (!poolerUrl) throw new Error('DATABASE_URL environment variable is required');
   
+  // Force pooler connection if explicitly requested (for public networks)
+  if (process.env.FORCE_POOLER_CONNECTION === 'true') {
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('🔗 Forcing pooler connection (FORCE_POOLER_CONNECTION=true)');
+    }
+    return buildOptimizedPoolerUrl(poolerUrl);
+  }
+  
   // For local development, prefer direct connection if available
   const isLocal = process.env.NODE_ENV !== 'production' && !process.env.VERCEL;
   
@@ -624,6 +632,34 @@ export async function shutdown(): Promise<void> {
   } catch (error) {
     console.error('Error during database shutdown:', error);
   }
+}
+
+/**
+ * Force reset database connection to clear cached plans
+ * This is useful after schema changes that cause "cached plan must not change result type" errors
+ */
+export async function forceResetConnection(): Promise<void> {
+  console.log('🔄 Forcing database connection reset to clear cached query plans...');
+
+  if (prismaClient) {
+    try {
+      await prismaClient.$disconnect();
+      console.log('✅ Old database connection closed');
+    } catch (error) {
+      console.warn('Error disconnecting old client:', error);
+    }
+  }
+
+  // Force recreation of the client by clearing the global reference
+  globalForPrisma.prisma = undefined;
+  globalForPrisma.prismaVersion = undefined;
+
+  // Wait a moment for cleanup
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // Get a fresh client instance
+  prismaClient = await getPrismaClient();
+  console.log('✅ Database connection reset complete');
 }
 
 // Handle process termination

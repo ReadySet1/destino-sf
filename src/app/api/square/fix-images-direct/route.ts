@@ -80,8 +80,8 @@ export async function POST() {
     const imageMap = new Map<string, string>();
 
     for (const obj of relatedObjects) {
-      if (obj.type === 'IMAGE' && obj.image_data?.url) {
-        imageMap.set(obj.id, obj.image_data.url);
+      if ((obj as any).type === 'IMAGE' && (obj as any).image_data?.url) {
+        imageMap.set(obj.id, (obj as any).image_data.url);
       }
     }
 

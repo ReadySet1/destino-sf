@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
     const squareItems = (catalogResponse.result?.objects || []) as SquareCatalogObject[];
     const relatedObjects = (catalogResponse.result?.related_objects || []) as SquareCatalogObject[];
 
@@ -280,8 +280,8 @@ async function getImageUrls(
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageData = imageResponse.result?.object;
 
-            if (imageData && imageData.image_data && imageData.image_data.url) {
-              const imageUrl = imageData.image_data.url;
+            if (imageData && (imageData as any).image_data && (imageData as any).image_data.url) {
+              const imageUrl = (imageData as any).image_data.url;
               const cacheBustedUrl = addCacheBustingParam(imageUrl);
               imageUrls.push(cacheBustedUrl);
             }

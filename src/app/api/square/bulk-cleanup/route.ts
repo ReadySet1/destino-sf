@@ -70,7 +70,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
     const squareItems = (catalogResponse.result?.objects || []) as SquareCatalogObject[];
 
     // Create a map of valid Square IDs and their names for quick lookup
@@ -325,7 +325,7 @@ async function getImageUrls(
         try {
           if (squareClient.catalogApi && squareClient.catalogApi.retrieveCatalogObject) {
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
-            const imageData = imageResponse.result?.object;
+            const imageData = imageResponse.result?.object as SquareCatalogObject;
 
             if (imageData && imageData.image_data && imageData.image_data.url) {
               const imageUrl = imageData.image_data.url;

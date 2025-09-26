@@ -51,7 +51,7 @@ nutrition_facts   JSONB           -- Complete nutrition facts as JSON
 ### Using the NutritionFacts Component
 
 ```tsx
-import { NutritionFacts } from '@/components/Products/NutritionFacts';
+import { NutritionFacts } from '@/components/products/NutritionFacts';
 
 function ProductPage({ product }) {
   return (
@@ -74,7 +74,7 @@ function ProductPage({ product }) {
 ### Using the Enhanced Product Card
 
 ```tsx
-import { ProductCardWithNutrition } from '@/components/Products/ProductCardWithNutrition';
+import { ProductCardWithNutrition } from '@/components/products/ProductCardWithNutrition';
 
 function ProductGrid({ products }) {
   return (

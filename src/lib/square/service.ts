@@ -174,7 +174,7 @@ export class SquareService {
 
     try {
       logger.debug('SquareService - Searching catalog', searchRequest);
-      const response = await this.client.catalogApi.searchCatalogObjects(searchRequest);
+      const response = await this.client.catalogApi.searchCatalogObjects(searchRequest as any);
       return response.result;
     } catch (error) {
       logger.error('SquareService - Error searching catalog:', error);

@@ -15,6 +15,11 @@ import { FormActions } from '@/components/ui/form/FormActions';
 import { FormButton } from '@/components/ui/form/FormButton';
 import { FormIcons } from '@/components/ui/form/FormIcons';
 
+// Import availability system
+import { AvailabilityQueries } from '@/lib/db/availability-queries';
+import { AvailabilityEngine } from '@/lib/availability/engine';
+import { AvailabilityState } from '@/types/availability';
+
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Disable static generation
@@ -43,7 +48,7 @@ type ProductWithCategory = {
     price: number | null; // Always a number or null after serialization
     squareVariantId: string | null;
   }>;
-  // Add availability fields for admin badges
+  // Legacy availability fields (kept for compatibility)
   isAvailable?: boolean;
   isPreorder?: boolean;
   visibility?: string;
@@ -52,6 +57,16 @@ type ProductWithCategory = {
   preorderEndDate?: Date | null;
   availabilityStart?: Date | null;
   availabilityEnd?: Date | null;
+  
+  // New availability evaluation result
+  evaluatedAvailability?: {
+    currentState: AvailabilityState;
+    appliedRulesCount: number;
+    nextStateChange?: {
+      date: Date;
+      newState: AvailabilityState;
+    };
+  };
 };
 
 type ProductPageProps = {
@@ -61,6 +76,8 @@ type ProductPageProps = {
     category?: string;
     status?: string;
     featured?: string;
+    visibility?: string;
+    availability?: string;
     _debugInfo?: string;
   }>;
 };
@@ -75,6 +92,8 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   const categoryFilter = params?.category || '';
   const statusFilter = params?.status || '';
   const featuredFilter = params?.featured || '';
+  const visibilityFilter = params?.visibility || '';
+  const availabilityFilter = params?.availability || '';
 
   const itemsPerPage = 10;
   const skip = (currentPage - 1) * itemsPerPage;
@@ -106,6 +125,34 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       where.featured = true;
     } else if (featuredFilter === 'notFeatured') {
       where.featured = false;
+    }
+  }
+
+  if (visibilityFilter && visibilityFilter !== 'all') {
+    where.visibility = visibilityFilter;
+  }
+
+  if (availabilityFilter && availabilityFilter !== 'all') {
+    switch (availabilityFilter) {
+      case 'available':
+        where.isAvailable = true;
+        where.visibility = { not: 'PRIVATE' };
+        break;
+      case 'unavailable':
+        where.OR = [
+          { isAvailable: false },
+          { visibility: 'PRIVATE' }
+        ];
+        break;
+      case 'preorder':
+        where.isPreorder = true;
+        break;
+      case 'view_only':
+        where.itemState = 'SEASONAL';
+        break;
+      case 'hidden':
+        where.visibility = 'PRIVATE';
+        break;
     }
   }
 
@@ -172,35 +219,51 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
     return 0;
   };
 
+  // Fetch availability rules for all products and evaluate them
+  const productIds = productsFromDb.map((product: any) => product.id);
+  const availabilityRules = await AvailabilityQueries.getMultipleProductRules(productIds);
+  const availabilityEvaluations = await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
+
   // Transform the products to match our expected type
-  const products = productsFromDb.map((product: any) => ({
-    id: product.id,
-    name: product.name,
-    price: decimalToNumber(product.price), // Convert Decimal to number
-    description: product.description,
-    images: product.images,
-    category: {
-      id: product.category?.id || '',
-      name: product.category?.name || 'Uncategorized',
-    },
-    featured: product.featured,
-    active: product.active,
-    variants: (product.variants || []).map((variant: any) => ({
-      id: variant.id,
-      name: variant.name,
-      price: variant.price ? decimalToNumber(variant.price) : null, // Convert Decimal to number
-      squareVariantId: variant.squareVariantId,
-    })),
-    // Add availability fields for admin badges
-    isAvailable: product.isAvailable,
-    isPreorder: product.isPreorder,
-    visibility: product.visibility,
-    itemState: product.itemState,
-    preorderStartDate: product.preorderStartDate,
-    preorderEndDate: product.preorderEndDate,
-    availabilityStart: product.availabilityStart,
-    availabilityEnd: product.availabilityEnd,
-  }));
+  const products = productsFromDb.map((product: any) => {
+    const evaluation = availabilityEvaluations.get(product.id);
+    
+    return {
+      id: product.id,
+      name: product.name,
+      price: decimalToNumber(product.price), // Convert Decimal to number
+      description: product.description,
+      images: product.images,
+      category: {
+        id: product.category?.id || '',
+        name: product.category?.name || 'Uncategorized',
+      },
+      featured: product.featured,
+      active: product.active,
+      variants: (product.variants || []).map((variant: any) => ({
+        id: variant.id,
+        name: variant.name,
+        price: variant.price ? decimalToNumber(variant.price) : null, // Convert Decimal to number
+        squareVariantId: variant.squareVariantId,
+      })),
+      // Legacy availability fields (kept for compatibility)
+      isAvailable: product.isAvailable,
+      isPreorder: product.isPreorder,
+      visibility: product.visibility,
+      itemState: product.itemState,
+      preorderStartDate: product.preorderStartDate,
+      preorderEndDate: product.preorderEndDate,
+      availabilityStart: product.availabilityStart,
+      availabilityEnd: product.availabilityEnd,
+      
+      // New availability evaluation result
+      evaluatedAvailability: evaluation ? {
+        currentState: evaluation.currentState,
+        appliedRulesCount: evaluation.appliedRules.length,
+        nextStateChange: evaluation.nextStateChange,
+      } : undefined,
+    };
+  });
 
   async function deleteProduct(formData: FormData) {
     'use server';
@@ -330,7 +393,34 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
             currentCategory={categoryFilter}
             currentStatus={statusFilter}
             currentFeatured={featuredFilter}
+            currentVisibility={visibilityFilter}
+            currentAvailability={availabilityFilter}
           />
+
+          {/* Bulk Actions Bar */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  Bulk Actions:
+                </span>
+                <div className="flex gap-2">
+                  <button className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 border border-blue-200">
+                    Set Visibility
+                  </button>
+                  <button className="px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 border border-green-200">
+                    Quick Toggle Available
+                  </button>
+                  <button className="px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 border border-purple-200">
+                    Create Rule
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                <span id="selected-count">0</span> products selected
+              </div>
+            </div>
+          </div>
 
           {/* Products Table */}
           <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
@@ -338,6 +428,13 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
               <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="w-12 px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        id="select-all"
+                      />
+                    </th>
                     <th className="w-20 px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Image
                     </th>
@@ -369,6 +466,13 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                     products.map((product: ProductWithCategory) => (
                       <tr key={product.id} className="hover:bg-gray-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 product-checkbox"
+                            data-product-id={product.id}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {product.images && product.images.length > 0 && product.images[0] ? (
                             <div className="h-12 w-12 relative">
                               <Image
@@ -389,39 +493,95 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1 pointer-events-none">
-                            {/* Availability Status Badge */}
-                            {product.isAvailable === false && (
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                Unavailable
-                              </span>
-                            )}
-                            
-                            {/* Pre-order Badge */}
-                            {product.isPreorder && (
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                Pre-order
-                              </span>
-                            )}
-                            
-                            {/* Visibility Badge */}
-                            {product.visibility === 'PRIVATE' && (
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                Hidden
-                              </span>
-                            )}
-                            
-                            {/* Seasonal Badge */}
-                            {product.itemState === 'SEASONAL' && (
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                                Seasonal
-                              </span>
-                            )}
-                            
-                            {/* Show "Available" only if no other status badges */}
-                            {product.isAvailable !== false && !product.isPreorder && product.visibility !== 'PRIVATE' && product.itemState !== 'SEASONAL' && (
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                Available
-                              </span>
+                            {/* New Availability System - Use evaluated availability if available */}
+                            {product.evaluatedAvailability ? (
+                              <>
+                                {/* Primary availability badge based on evaluation */}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.AVAILABLE && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Available
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.PRE_ORDER && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    Pre-order
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.VIEW_ONLY && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    View Only
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.HIDDEN && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Hidden
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.COMING_SOON && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                    Coming Soon
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.SOLD_OUT && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Sold Out
+                                  </span>
+                                )}
+                                {product.evaluatedAvailability.currentState === AvailabilityState.RESTRICTED && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                    Restricted
+                                  </span>
+                                )}
+                                
+                                {/* Show rules count if any rules are applied */}
+                                {product.evaluatedAvailability.appliedRulesCount > 0 && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                    {product.evaluatedAvailability.appliedRulesCount} rule{product.evaluatedAvailability.appliedRulesCount !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {/* Legacy Availability System - Fallback when no evaluation available */}
+                                {product.isAvailable === false && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Unavailable
+                                  </span>
+                                )}
+                                
+                                {/* Pre-order Badge */}
+                                {product.isPreorder && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    Pre-order
+                                  </span>
+                                )}
+                                
+                                {/* Visibility Badge */}
+                                {product.visibility === 'PRIVATE' && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Hidden
+                                  </span>
+                                )}
+                                
+                                {/* Seasonal Badge */}
+                                {product.itemState === 'SEASONAL' && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                    Seasonal
+                                  </span>
+                                )}
+                                
+                                {/* Show "Available" only if no other status badges */}
+                                {product.isAvailable !== false && !product.isPreorder && product.visibility !== 'PRIVATE' && product.itemState !== 'SEASONAL' && (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Available
+                                  </span>
+                                )}
+                                
+                                {/* Legacy system indicator */}
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
+                                  Legacy
+                                </span>
+                              </>
                             )}
                           </div>
                         </td>
@@ -473,7 +633,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                         <div className="flex flex-col items-center">
                           <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

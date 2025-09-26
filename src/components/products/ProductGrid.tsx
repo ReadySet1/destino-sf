@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProductCard from '@/components/Products/ProductCard';
+import ProductCard from '@/components/products/ProductCard';
 import { Product } from '@/types/product';
 
 interface ProductGridProps {

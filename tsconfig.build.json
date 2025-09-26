@@ -5,6 +5,7 @@
     "react-app/vite.config.ts",
     "**/vite.config.ts",
     "react-app/dist",
+    "scripts/**/*",
     "src/__tests__/**/*",
     "tests/**/*",
     "**/*.test.ts",
@@ -12,6 +13,20 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "jest.setup.js",
-    "src/types/jest.d.ts"
+    "src/types/jest.d.ts",
+    "src/app/api/debug",
+    "src/app/api/debug/**",
+    "src/app/api/square/debug/**/*",
+    "src/app/api/square/bulk-cleanup/**/*",
+    "src/app/api/square/debug-catalog/**/*",
+    "src/app/api/square/check-image/**/*",
+    "src/app/api/square/fix-ids/**/*",
+    "src/app/api/square/match-all/**/*",
+    "src/app/api/square/search-product/**/*",
+    "src/app/api/square/sync-product/**/*",
+    "src/lib/square/filtered-sync.ts",
+    "src/lib/square/production-sync.ts",
+    "src/lib/square/quickstart.ts",
+    "src/lib/square/sync.ts"
   ]
 }

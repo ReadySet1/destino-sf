@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest);
+    const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest as any);
 
     // Extract items and related objects from the response
     const items = (searchResponse.result?.objects || []) as SquareCatalogObject[];
@@ -104,8 +104,8 @@ export async function GET(request: NextRequest) {
               const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
               const imageData = imageResponse.result?.object;
 
-              if (imageData && imageData.image_data?.url) {
-                imageUrls.push(imageData.image_data.url);
+              if (imageData && (imageData as any).image_data?.url) {
+                imageUrls.push((imageData as any).image_data.url);
               }
             } catch (error) {
               logger.error(`Error retrieving image ${imageId}:`, error);

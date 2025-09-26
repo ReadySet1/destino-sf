@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const catalogResponse = await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
     const squareItems = (catalogResponse.result?.objects || []) as SquareCatalogObject[];
     const relatedObjects = (catalogResponse.result?.related_objects || []) as SquareCatalogObject[];
 

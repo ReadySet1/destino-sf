@@ -179,7 +179,7 @@ export class FilteredSyncManager {
         limit: 1000
       };
       
-      const response = await catalogApi.searchCatalogObjects(requestBody);
+      const response = await catalogApi.searchCatalogObjects(requestBody as any);
 
       if (!response.result) {
         return {
@@ -199,7 +199,7 @@ export class FilteredSyncManager {
       const allCategories = [...categoriesInObjects, ...categoriesInRelated];
       
       // Get all images for image extraction
-      const allImages = relatedObjects.filter(obj => obj.type === 'IMAGE');
+      const allImages = relatedObjects.filter(obj => (obj as any).type === 'IMAGE');
       
       logger.info(`📋 Found ${allCategories.length} categories in Square (${categoriesInObjects.length} in objects, ${categoriesInRelated.length} in related):`, 
         allCategories.map(cat => ({ 
@@ -211,7 +211,7 @@ export class FilteredSyncManager {
       logger.info(`📸 Found ${allImages.length} images in related objects:`, 
         allImages.slice(0, 3).map(img => ({ 
           id: img.id, 
-          hasUrl: !!img.image_data?.url 
+          hasUrl: !!(img as any).image_data?.url 
         }))
       );
 
@@ -640,9 +640,9 @@ export class FilteredSyncManager {
 
       for (const imageId of product.item_data.image_ids) {
         const imageObject = relatedObjects.find(obj => obj.id === imageId && obj.type === 'IMAGE');
-        if (imageObject?.image_data?.url) {
-          images.push(imageObject.image_data.url);
-          logger.debug(`✅ Found image URL for ${imageId}: ${imageObject.image_data.url}`);
+        if ((imageObject as any)?.image_data?.url) {
+          images.push((imageObject as any).image_data.url);
+          logger.debug(`✅ Found image URL for ${imageId}: ${(imageObject as any).image_data.url}`);
         } else {
           logger.warn(`❌ Could not find image object for ID ${imageId}`, {
             availableObjects: relatedObjects.filter(obj => obj.id === imageId).map(obj => ({ id: obj.id, type: obj.type }))

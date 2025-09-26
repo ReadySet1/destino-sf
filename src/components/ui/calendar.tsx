@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
+import { format } from 'date-fns';
+import { enUS } from 'date-fns/locale/en-US';
 
-import { cn } from '@/lib/slug';
+import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
@@ -12,8 +14,9 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
     <DayPicker
+      locale={enUS}
       showOutsideDays={showOutsideDays}
-      className={cn('p-3', className)}
+      className={cn('p-3 relative bg-background border-0', className)}
       classNames={{
         months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
         month: 'space-y-4',
@@ -53,6 +56,12 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         IconRight: ({ className, ...props }) => (
           <ChevronRight className={cn('h-4 w-4', className)} {...props} />
         ),
+      }}
+      formatters={{
+        // Add custom formatters for date-fns v4 compatibility
+        formatCaption: (date, options) => {
+          return format(date, 'LLLL yyyy', { locale: options?.locale });
+        },
       }}
       {...props}
     />

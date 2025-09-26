@@ -36,6 +36,9 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     BYPASS_RATE_LIMIT: z.string().optional(),
+    // Cron and Webhook Security
+    CRON_SECRET: z.string().optional(),
+    WEBHOOK_SECRET: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
@@ -88,6 +91,9 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     BYPASS_RATE_LIMIT: process.env.BYPASS_RATE_LIMIT,
+    // Cron and Webhook Security
+    CRON_SECRET: process.env.CRON_SECRET,
+    WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
     // Client-side environment variables
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -1,7 +1,7 @@
 // src/app/(store)/products/[slug]/loading.tsx
 
 import FoodLoader from '@/components/ui/FoodLoader';
-import CategoryHeader from '@/components/Products/CategoryHeader';
+import CategoryHeader from '@/components/products/CategoryHeader';
 
 export default function ProductLoading() {
   return (

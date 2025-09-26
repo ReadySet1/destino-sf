@@ -626,7 +626,10 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     : new Decimal(0);
 
   const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
-  const serviceFeeAmount = totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+  // Skip service fee for CASH payments
+  const serviceFeeAmount = paymentMethod === 'CASH' 
+    ? new Decimal(0) 
+    : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
   console.log(`Calculated Subtotal: ${subtotal.toFixed(2)}`);

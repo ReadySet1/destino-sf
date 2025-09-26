@@ -33,7 +33,7 @@ try {
 // Import and re-export everything from the unified client
 import { getHealthStatus as getHealthStatusInternal } from './db-unified';
 
-export { 
+export {
   prisma,
   withRetry,
   withWebhookRetry,
@@ -41,7 +41,8 @@ export {
   ensureConnection,
   getHealthStatus,
   checkConnection,
-  shutdown
+  shutdown,
+  forceResetConnection
 } from './db-unified';
 
 // Legacy aliases for backward compatibility
