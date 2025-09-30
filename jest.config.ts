@@ -21,10 +21,7 @@ const config: Config = {
         '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
         '^@/store/(.*)$': '<rootDir>/src/store/$1',
         
-        // Mock external modules that don't work in Node.js
-        '^square$': '<rootDir>/src/__mocks__/square.ts',
-        '^shippo$': '<rootDir>/src/__mocks__/shippo.ts',
-        '^@supabase/supabase-js$': '<rootDir>/src/__mocks__/@supabase/supabase-js.ts',
+        // Mock external modules that don't work in Node.js (remaining mocks only)
         '^@supabase/auth-helpers-nextjs$': '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
         '^resend$': '<rootDir>/src/__mocks__/resend.ts',
         '^next/router$': '<rootDir>/src/__mocks__/next/router.ts',
@@ -37,8 +34,7 @@ const config: Config = {
       },
       setupFilesAfterEnv: [
         '<rootDir>/jest.setup.enhanced.js',
-        // '<rootDir>/src/__tests__/setup/test-db-setup.ts', // Commented out to fix test initialization
-        '<rootDir>/src/__tests__/setup/enhanced-mocks.ts'
+        // Test infrastructure files removed for quick ship
       ],
       // Removed global setup/teardown to fix Jest import issues
       transform: {
@@ -81,10 +77,7 @@ const config: Config = {
         '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
         '^@/store/(.*)$': '<rootDir>/src/store/$1',
         
-        // Mock external modules for React environment
-        '^square$': '<rootDir>/src/__mocks__/square.ts',
-        '^shippo$': '<rootDir>/src/__mocks__/shippo.ts',
-        '^@supabase/supabase-js$': '<rootDir>/src/__mocks__/@supabase/supabase-js.ts',
+        // Mock external modules for React environment (remaining mocks only)
         '^@supabase/auth-helpers-nextjs$': '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
         '^resend$': '<rootDir>/src/__mocks__/resend.ts',
         '^next/router$': '<rootDir>/src/__mocks__/next/router.ts',
@@ -97,8 +90,7 @@ const config: Config = {
       },
       setupFilesAfterEnv: [
         '<rootDir>/jest.setup.enhanced.js',
-        '<rootDir>/src/__tests__/setup/jsdom-setup.ts',
-        '<rootDir>/src/__tests__/setup/enhanced-mocks.ts'
+        // Test infrastructure files removed for quick ship
       ],
       transform: {
         '^.+\\.tsx?$': ['ts-jest', {
