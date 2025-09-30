@@ -57,7 +57,7 @@ export default async function AvailabilityRulesPage({ searchParams }: RulesPageP
       <Suspense
         fallback={
           <div className="space-y-8 mt-8">
-            <AvailabilityTableSkeleton rows={8} columns={8} />
+            <AvailabilityTableSkeleton rows={8} columns={9} />
           </div>
         }
       >

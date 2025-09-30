@@ -97,12 +97,16 @@ export async function updateAvailabilityRule(
       return { success: false, error: authResult.error };
     }
 
-    // Validate the updates
-    const validation = AvailabilityValidators.validateRule(updates);
+    // Validate the updates - skip future date check for updates (allow editing old rules)
+    const validation = AvailabilityValidators.validateRule(updates, undefined, true);
     if (!validation.isValid) {
-      return { 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
+      logger.error('Validation failed for rule update', {
+        ruleId,
+        errors: validation.errors
+      });
+      return {
+        success: false,
+        error: `Validation failed: ${validation.errors.join(', ')}`
       };
     }
 

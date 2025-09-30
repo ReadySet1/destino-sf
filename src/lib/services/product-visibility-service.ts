@@ -13,23 +13,24 @@ import type { AvailabilityEvaluation } from '@/types/availability';
 export interface ProductVisibilityOptions {
   // Basic filters
   categoryId?: string;
+  categorySlug?: string;
   featured?: boolean;
   search?: string;
   exclude?: string;
-  
+
   // Visibility controls
   onlyActive?: boolean;
   excludeCatering?: boolean;
   includePrivate?: boolean; // For admin views
-  
+
   // Availability evaluation
   includeAvailabilityEvaluation?: boolean;
-  
+
   // Pagination
   page?: number;
   limit?: number;
   includePagination?: boolean;
-  
+
   // Additional options
   includeVariants?: boolean;
   orderBy?: 'name' | 'price' | 'created' | 'ordinal';
@@ -96,6 +97,7 @@ export class ProductVisibilityService {
   static async getProducts(options: ProductVisibilityOptions = {}): Promise<ProductQueryResult> {
     const {
       categoryId,
+      categorySlug,
       featured,
       search,
       exclude,
@@ -112,9 +114,24 @@ export class ProductVisibilityService {
     } = options;
 
     try {
+      // Resolve categoryId from categorySlug if provided
+      let resolvedCategoryId = categoryId;
+      if (categorySlug && !categoryId && !isBuildTime()) {
+        try {
+          const category = await withRetry(() =>
+            prisma.category.findUnique({
+              where: { slug: categorySlug },
+              select: { id: true }
+            }), 3, 'resolve-category-slug');
+          resolvedCategoryId = category?.id;
+        } catch (error) {
+          logger.error('Error resolving category slug:', { categorySlug, error });
+        }
+      }
+
       // Build base where condition
       const whereCondition = this.buildWhereCondition({
-        categoryId,
+        categoryId: resolvedCategoryId,
         featured,
         search,
         exclude,
@@ -305,7 +322,8 @@ export class ProductVisibilityService {
         { visibility: 'PUBLIC' },
         { visibility: null }, // Default to PUBLIC if null
       ];
-      whereCondition.isAvailable = true;
+      // Don't filter by isAvailable here - let availability evaluation handle it
+      // This allows "Coming Soon" and other states to be properly evaluated
       whereCondition.NOT = {
         OR: [
           { itemState: 'INACTIVE' },
@@ -405,21 +423,31 @@ export class ProductVisibilityService {
    * Filter products based on evaluated availability
    */
   private static async filterByEvaluatedAvailability(
-    products: any[], 
+    products: any[],
     evaluations: Map<string, AvailabilityEvaluation>
   ): Promise<any[]> {
     return products.filter(product => {
       const evaluation = evaluations.get(product.id);
-      
+
       // If no evaluation available, use database flags
       if (!evaluation) {
-        return product.isAvailable && 
-               product.visibility !== 'PRIVATE' && 
+        return product.isAvailable &&
+               product.visibility !== 'PRIVATE' &&
                !['INACTIVE', 'ARCHIVED'].includes(product.itemState);
       }
-      
-      // Filter based on evaluated state
-      return !['UNAVAILABLE', 'HIDDEN'].includes(evaluation.currentState);
+
+      // If evaluation exists but NO rules were applied, fall back to base product state
+      if (evaluation.appliedRules.length === 0) {
+        return product.isAvailable &&
+               product.visibility !== 'PRIVATE' &&
+               !['INACTIVE', 'ARCHIVED'].includes(product.itemState);
+      }
+
+      // Filter based on evaluated state when rules ARE applied
+      // Only exclude UNAVAILABLE and HIDDEN states
+      // Include: AVAILABLE, PRE_ORDER, VIEW_ONLY, COMING_SOON, SOLD_OUT, etc.
+      const state = evaluation.currentState.toUpperCase().replace(/[\s-]/g, '_');
+      return !['UNAVAILABLE', 'HIDDEN'].includes(state);
     });
   }
 

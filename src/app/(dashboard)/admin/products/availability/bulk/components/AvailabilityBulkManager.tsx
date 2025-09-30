@@ -94,12 +94,16 @@ interface AvailabilityBulkManagerProps {
 export function AvailabilityBulkManager({ initialProductIds = [] }: AvailabilityBulkManagerProps) {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [existingRules, setExistingRules] = useState<AvailabilityRule[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set(initialProductIds));
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [availabilityFilter, setAvailabilityFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingRules, setIsLoadingRules] = useState(true);
+  const [useExistingRule, setUseExistingRule] = useState(false);
+  const [selectedRuleId, setSelectedRuleId] = useState<string>('');
 
   const form = useForm<BulkRuleData>({
     resolver: zodResolver(BulkRuleSchema),
@@ -122,7 +126,28 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
   useEffect(() => {
     loadProducts();
+    loadExistingRules();
   }, []);
+
+  useEffect(() => {
+    // When switching to use existing rule, populate form with selected rule
+    if (useExistingRule && selectedRuleId) {
+      const rule = existingRules.find(r => r.id === selectedRuleId);
+      if (rule) {
+        form.reset({
+          name: rule.name,
+          ruleType: rule.ruleType as RuleType,
+          state: rule.state as AvailabilityState,
+          startDate: rule.startDate ? new Date(rule.startDate) : null,
+          endDate: rule.endDate ? new Date(rule.endDate) : null,
+          priority: rule.priority || 0,
+          enabled: rule.enabled,
+          preOrderMessage: rule.preOrderSettings?.message || '',
+          viewOnlyMessage: rule.viewOnlySettings?.message || '',
+        });
+      }
+    }
+  }, [useExistingRule, selectedRuleId, existingRules]);
 
   const loadProducts = async () => {
     try {
@@ -156,6 +181,26 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
       toast.error('Error loading products');
     } finally {
       setIsLoadingProducts(false);
+    }
+  };
+
+  const loadExistingRules = async () => {
+    try {
+      setIsLoadingRules(true);
+      const response = await fetch('/api/availability');
+
+      if (response.ok) {
+        const data = await response.json();
+        const rules = data.success ? data.data : [];
+        setExistingRules(rules);
+      } else {
+        toast.error('Failed to load existing rules');
+      }
+    } catch (error) {
+      console.error('Error loading rules:', error);
+      toast.error('Error loading existing rules');
+    } finally {
+      setIsLoadingRules(false);
     }
   };
 
@@ -437,6 +482,65 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
         variant="green"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Rule Source Selection */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-blue-900">Rule Source</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Choose whether to create a new rule or copy an existing one
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="useExisting" className="text-sm">
+                  {useExistingRule ? 'Copy Existing' : 'Create New'}
+                </Label>
+                <Switch
+                  id="useExisting"
+                  checked={useExistingRule}
+                  onCheckedChange={setUseExistingRule}
+                />
+              </div>
+            </div>
+
+            {useExistingRule && (
+              <div className="space-y-2">
+                <Label>Select Existing Rule to Copy</Label>
+                {isLoadingRules ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading rules...
+                  </div>
+                ) : existingRules.length === 0 ? (
+                  <div className="text-sm text-amber-600 p-3 bg-amber-50 border border-amber-200 rounded">
+                    No existing rules found. Create a new rule instead.
+                  </div>
+                ) : (
+                  <Select value={selectedRuleId} onValueChange={setSelectedRuleId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a rule to copy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingRules.map((rule) => {
+                        const product = products.find(p => p.id === rule.productId);
+                        return (
+                          <SelectItem key={rule.id} value={rule.id!}>
+                            <div className="flex flex-col py-1">
+                              <span className="font-medium">{rule.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {product?.name || 'Unknown Product'} • {rule.state} • Priority: {rule.priority}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -449,10 +553,16 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                     {...field}
                     placeholder="e.g., Holiday Sale Availability"
                     className={errors.name ? 'border-red-500' : ''}
+                    disabled={useExistingRule && !selectedRuleId}
                   />
                 )}
               />
               {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+              {useExistingRule && selectedRuleId && (
+                <p className="text-xs text-blue-600">
+                  Copied from existing rule. You can modify the settings before applying.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -490,7 +600,6 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                       <SelectItem value={RuleType.DATE_RANGE}>Date Range</SelectItem>
                       <SelectItem value={RuleType.SEASONAL}>Seasonal</SelectItem>
                       <SelectItem value={RuleType.TIME_BASED}>Time Based</SelectItem>
-                      <SelectItem value={RuleType.CUSTOM}>Custom</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -684,6 +793,11 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                   Ready to apply to {selectedProducts.size} product
                   {selectedProducts.size !== 1 ? 's' : ''}
                 </span>
+              ) : useExistingRule && !selectedRuleId ? (
+                <span className="flex items-center gap-2 text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  Select a rule to copy
+                </span>
               ) : (
                 <span className="flex items-center gap-2 text-amber-600">
                   <AlertTriangle className="h-4 w-4" />
@@ -705,18 +819,18 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
               <Button
                 type="submit"
-                disabled={isLoading || selectedProducts.size === 0}
+                disabled={isLoading || selectedProducts.size === 0 || (useExistingRule && !selectedRuleId)}
                 className="min-w-[180px]"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Applying Rules...
+                    {useExistingRule ? 'Copying Rule...' : 'Applying Rules...'}
                   </div>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Apply to {selectedProducts.size} Product{selectedProducts.size !== 1 ? 's' : ''}
+                    {useExistingRule ? 'Copy' : 'Apply'} to {selectedProducts.size} Product{selectedProducts.size !== 1 ? 's' : ''}
                   </>
                 )}
               </Button>

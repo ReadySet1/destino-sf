@@ -36,6 +36,16 @@ export interface Product {
   itemState?: string | null;
   availabilityMeta?: Record<string, any> | null;
   customAttributes?: Record<string, any> | null;
+  
+  // Evaluated availability from rules engine
+  evaluatedAvailability?: {
+    currentState: string;
+    appliedRulesCount: number;
+    nextStateChange?: {
+      date: Date | string;
+      newState: string;
+    };
+  };
 }
 
 export interface Category {

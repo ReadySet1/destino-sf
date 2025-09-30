@@ -14,43 +14,37 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, X, Filter } from 'lucide-react';
-import { AvailabilityState, RuleType } from '@/types/availability';
-import { AvailabilityFilterState } from '@/types/availability-ui';
-import { getAvailabilityStateLabel, getRuleTypeLabel } from '@/lib/availability-helpers';
+import { AvailabilityState } from '@/types/availability';
 
-interface AvailabilityFiltersProps {
+type ProductAvailabilityFiltersProps = {
   currentSearch: string;
-  currentRuleType: string;
+  currentCategory: string;
   currentState: string;
-  currentStatus: string;
-}
+  currentHasRules: string;
+};
 
-/**
- * Filters component for availability management
- * Follows OrderFilters design patterns with active filter display
- */
-export function AvailabilityFilters({
+export function ProductAvailabilityFilters({
   currentSearch,
-  currentRuleType,
+  currentCategory,
   currentState,
-  currentStatus,
-}: AvailabilityFiltersProps) {
+  currentHasRules,
+}: ProductAvailabilityFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(currentSearch);
-  const [ruleType, setRuleType] = useState(currentRuleType || 'all');
+  const [category, setCategory] = useState(currentCategory || 'all');
   const [state, setState] = useState(currentState || 'all');
-  const [status, setStatus] = useState(currentStatus || 'all');
+  const [hasRules, setHasRules] = useState(currentHasRules || 'all');
 
   // Function to create new URL with updated search params
   const applyFilters = useCallback(
     (updates: {
       search?: string;
-      ruleType?: string;
+      category?: string;
       state?: string;
-      status?: string;
+      hasRules?: string;
       page?: string;
     }) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -87,14 +81,13 @@ export function AvailabilityFilters({
 
   const resetFilters = () => {
     setSearch('');
-    setRuleType('all');
+    setCategory('all');
     setState('all');
-    setStatus('all');
+    setHasRules('all');
     router.push(pathname);
   };
 
-  const hasActiveFilters =
-    search || ruleType !== 'all' || state !== 'all' || status !== 'all';
+  const hasActiveFilters = search || category !== 'all' || state !== 'all' || hasRules !== 'all';
 
   return (
     <div className="bg-white rounded-xl border border-gray-200/70 p-8 space-y-6 shadow-sm">
@@ -110,7 +103,7 @@ export function AvailabilityFilters({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
-              placeholder="Search by rule name, product..."
+              placeholder="Search by product name..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
@@ -118,38 +111,31 @@ export function AvailabilityFilters({
           </div>
         </div>
 
-        {/* Rule Type Filter */}
-        <div className="w-full lg:w-48">
+        {/* Category Filter */}
+        <div className="w-full lg:w-52">
           <Select
-            value={ruleType}
+            value={category}
             onValueChange={value => {
-              setRuleType(value);
-              applyFilters({ ruleType: value });
+              setCategory(value);
+              applyFilters({ category: value });
             }}
           >
             <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <SelectValue placeholder="Rule Type" />
+              <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Rule Type</SelectLabel>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value={RuleType.DATE_RANGE}>
-                  {getRuleTypeLabel(RuleType.DATE_RANGE)}
-                </SelectItem>
-                <SelectItem value={RuleType.SEASONAL}>
-                  {getRuleTypeLabel(RuleType.SEASONAL)}
-                </SelectItem>
-                <SelectItem value={RuleType.TIME_BASED}>
-                  {getRuleTypeLabel(RuleType.TIME_BASED)}
-                </SelectItem>
+                <SelectLabel>Category</SelectLabel>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="empanadas">Empanadas</SelectItem>
+                <SelectItem value="alfajores">Alfajores</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
 
-        {/* State Filter */}
-        <div className="w-full lg:w-48">
+        {/* Availability State Filter */}
+        <div className="w-full lg:w-52">
           <Select
             value={state}
             onValueChange={value => {
@@ -158,50 +144,41 @@ export function AvailabilityFilters({
             }}
           >
             <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <SelectValue placeholder="State" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Availability State</SelectLabel>
                 <SelectItem value="all">All States</SelectItem>
-                <SelectItem value={AvailabilityState.AVAILABLE}>
-                  {getAvailabilityStateLabel(AvailabilityState.AVAILABLE)}
-                </SelectItem>
-                <SelectItem value={AvailabilityState.PRE_ORDER}>
-                  {getAvailabilityStateLabel(AvailabilityState.PRE_ORDER)}
-                </SelectItem>
-                <SelectItem value={AvailabilityState.VIEW_ONLY}>
-                  {getAvailabilityStateLabel(AvailabilityState.VIEW_ONLY)}
-                </SelectItem>
-                <SelectItem value={AvailabilityState.HIDDEN}>
-                  {getAvailabilityStateLabel(AvailabilityState.HIDDEN)}
-                </SelectItem>
-                <SelectItem value={AvailabilityState.COMING_SOON}>
-                  {getAvailabilityStateLabel(AvailabilityState.COMING_SOON)}
-                </SelectItem>
+                <SelectItem value={AvailabilityState.AVAILABLE}>Available</SelectItem>
+                <SelectItem value={AvailabilityState.PRE_ORDER}>Pre-Order</SelectItem>
+                <SelectItem value={AvailabilityState.COMING_SOON}>Coming Soon</SelectItem>
+                <SelectItem value={AvailabilityState.VIEW_ONLY}>View Only</SelectItem>
+                <SelectItem value={AvailabilityState.SOLD_OUT}>Sold Out</SelectItem>
+                <SelectItem value={AvailabilityState.HIDDEN}>Hidden</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Status Filter */}
-        <div className="w-full lg:w-40">
+        {/* Has Rules Filter */}
+        <div className="w-full lg:w-48">
           <Select
-            value={status}
+            value={hasRules}
             onValueChange={value => {
-              setStatus(value);
-              applyFilters({ status: value });
+              setHasRules(value);
+              applyFilters({ hasRules: value });
             }}
           >
             <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Rules" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Rule Status</SelectLabel>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="enabled">Enabled</SelectItem>
-                <SelectItem value="disabled">Disabled</SelectItem>
+                <SelectLabel>Rules Filter</SelectLabel>
+                <SelectItem value="all">All Products</SelectItem>
+                <SelectItem value="withRules">With Rules</SelectItem>
+                <SelectItem value="withoutRules">Without Rules</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -235,13 +212,13 @@ export function AvailabilityFilters({
               </button>
             </span>
           )}
-          {ruleType !== 'all' && (
+          {category !== 'all' && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-              Type: {getRuleTypeLabel(ruleType as RuleType)}
+              Category: {category}
               <button
                 onClick={() => {
-                  setRuleType('all');
-                  applyFilters({ ruleType: 'all' });
+                  setCategory('all');
+                  applyFilters({ category: 'all' });
                 }}
                 className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
               >
@@ -251,7 +228,7 @@ export function AvailabilityFilters({
           )}
           {state !== 'all' && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-              State: {getAvailabilityStateLabel(state as AvailabilityState)}
+              State: {state}
               <button
                 onClick={() => {
                   setState('all');
@@ -263,13 +240,13 @@ export function AvailabilityFilters({
               </button>
             </span>
           )}
-          {status !== 'all' && (
+          {hasRules !== 'all' && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-              Status: {status}
+              Rules: {hasRules === 'withRules' ? 'With Rules' : 'Without Rules'}
               <button
                 onClick={() => {
-                  setStatus('all');
-                  applyFilters({ status: 'all' });
+                  setHasRules('all');
+                  applyFilters({ hasRules: 'all' });
                 }}
                 className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
               >

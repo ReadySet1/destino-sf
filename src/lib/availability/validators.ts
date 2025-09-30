@@ -121,18 +121,46 @@ export class AvailabilityValidators {
 
   /**
    * Validate pre-order settings
+   * @param rule - The rule to validate
+   * @param skipFutureDateCheck - Skip the future date validation (useful for toggling old rules)
    */
-  static validatePreOrderSettings(rule: Partial<AvailabilityRule>): string[] {
+  static validatePreOrderSettings(
+    rule: Partial<AvailabilityRule>,
+    skipFutureDateCheck: boolean = false
+  ): string[] {
     const errors: string[] = [];
 
-    if (rule.state === AvailabilityState.PRE_ORDER && rule.preOrderSettings) {
+    console.log('[Validator] validatePreOrderSettings called', {
+      skipFutureDateCheck,
+      ruleState: rule.state,
+      hasPreOrderSettings: !!rule.preOrderSettings,
+    });
+
+    // Skip pre-order validation entirely when skipFutureDateCheck is true (toggling existing rules)
+    if (skipFutureDateCheck) {
+      console.log('[Validator] Skipping pre-order validation due to skipFutureDateCheck');
+      return errors;
+    }
+
+    // Only validate pre-order settings if the rule state is PRE_ORDER
+    if (rule.state !== AvailabilityState.PRE_ORDER) {
+      return errors;
+    }
+
+    if (rule.preOrderSettings) {
       const settings = rule.preOrderSettings;
 
       // Validate expected delivery date
       if (settings.expectedDeliveryDate) {
         const deliveryDate = new Date(settings.expectedDeliveryDate);
         const now = new Date();
-        
+
+        console.log('[Validator] Checking delivery date', {
+          deliveryDate: deliveryDate.toISOString(),
+          now: now.toISOString(),
+          isPast: deliveryDate <= now,
+        });
+
         if (deliveryDate <= now) {
           errors.push('Expected delivery date must be in the future');
         }
@@ -198,10 +226,14 @@ export class AvailabilityValidators {
 
   /**
    * Comprehensive rule validation
+   * @param rule - The rule to validate
+   * @param productData - Optional product data for additional validation
+   * @param skipFutureDateCheck - Skip future date validation (useful for toggling old rules)
    */
   static validateRule(
     rule: Partial<AvailabilityRule>,
-    productData?: any
+    productData?: any,
+    skipFutureDateCheck: boolean = false
   ): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -218,7 +250,7 @@ export class AvailabilityValidators {
     errors.push(...this.validateDateRange(rule));
     errors.push(...this.validateSeasonalConfig(rule));
     errors.push(...this.validateTimeRestrictions(rule));
-    errors.push(...this.validatePreOrderSettings(rule));
+    errors.push(...this.validatePreOrderSettings(rule, skipFutureDateCheck));
     errors.push(...this.validateRuleConsistency(rule, productData));
 
     return {

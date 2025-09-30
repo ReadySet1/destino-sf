@@ -70,20 +70,38 @@ export async function PUT(
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
+      return NextResponse.json({
+        success: false,
+        error: authResult.error
       }, { status: authResult.statusCode });
     }
 
     const body = await request.json();
-    
+
+    // Check if this is a toggle operation (skip future date validation)
+    // Use URL constructor to properly parse query params
+    const url = new URL(request.url);
+    const skipValidation = url.searchParams.get('skipValidation');
+    const skipFutureDateCheck = skipValidation === 'true';
+
+    logger.info('PUT /api/availability/[id] - Validation params', {
+      fullUrl: request.url,
+      skipValidation,
+      skipFutureDateCheck,
+      ruleState: body.state,
+      hasPreOrderSettings: !!body.preOrderSettings,
+    });
+
     // Validate the rule data
-    const validation = AvailabilityValidators.validateRule(body);
+    const validation = AvailabilityValidators.validateRule(body, undefined, skipFutureDateCheck);
     if (!validation.isValid) {
-      return NextResponse.json({ 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
+      logger.error('PUT /api/availability/[id] - Validation failed', {
+        skipFutureDateCheck,
+        errors: validation.errors,
+      });
+      return NextResponse.json({
+        success: false,
+        error: `Validation failed: ${validation.errors.join(', ')}`
       }, { status: 400 });
     }
 

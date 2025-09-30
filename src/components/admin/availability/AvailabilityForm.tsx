@@ -32,12 +32,21 @@ import {
 import { createAvailabilityRule, updateAvailabilityRule } from '@/actions/availability';
 import { cn } from '@/lib/utils';
 
+interface Product {
+  id: string;
+  name: string;
+  category?: {
+    name: string;
+  };
+}
+
 interface AvailabilityFormProps {
-  productId: string;
+  productId?: string;
   rule?: AvailabilityRule;
   onSuccess?: (rule: AvailabilityRule) => void;
   onCancel?: () => void;
   className?: string;
+  showProductSelector?: boolean;
 }
 
 export function AvailabilityForm({
@@ -45,15 +54,20 @@ export function AvailabilityForm({
   rule,
   onSuccess,
   onCancel,
-  className
+  className,
+  showProductSelector = false
 }: AvailabilityFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   
   const form = useForm<AvailabilityRule>({
-    resolver: zodResolver(AvailabilityRuleSchema),
+    // Temporarily disable Zod validation - we'll do it server-side
+    // resolver: zodResolver(AvailabilityRuleSchema),
+    mode: 'onSubmit',
     defaultValues: {
-      productId,
+      productId: productId || rule?.productId || '',
       name: rule?.name || '',
       enabled: rule?.enabled ?? true,
       priority: rule?.priority || 0,
@@ -61,9 +75,28 @@ export function AvailabilityForm({
       state: rule?.state || AvailabilityState.AVAILABLE,
       startDate: rule?.startDate ? new Date(rule.startDate) : null,
       endDate: rule?.endDate ? new Date(rule.endDate) : null,
-      seasonalConfig: rule?.seasonalConfig || null,
-      timeRestrictions: rule?.timeRestrictions || null,
-      preOrderSettings: rule?.preOrderSettings || null,
+      seasonalConfig: rule?.seasonalConfig ? {
+        ...rule.seasonalConfig,
+        yearly: rule.seasonalConfig.yearly ?? true,
+        timezone: rule.seasonalConfig.timezone || 'America/Los_Angeles'
+      } : {
+        startMonth: null as any,
+        startDay: null as any,
+        endMonth: null as any,
+        endDay: null as any,
+        yearly: true,
+        timezone: 'America/Los_Angeles'
+      },
+      timeRestrictions: rule?.timeRestrictions ? {
+        daysOfWeek: rule.timeRestrictions.daysOfWeek || [],
+        startTime: rule.timeRestrictions.startTime || '',
+        endTime: rule.timeRestrictions.endTime || '',
+        timezone: rule.timeRestrictions.timezone || 'America/Los_Angeles'
+      } : null,
+      preOrderSettings: rule?.preOrderSettings ? {
+        ...rule.preOrderSettings,
+        depositRequired: rule.preOrderSettings.depositRequired ?? false
+      } : null,
       viewOnlySettings: rule?.viewOnlySettings || null,
       overrideSquare: rule?.overrideSquare ?? true
     }
@@ -74,23 +107,167 @@ export function AvailabilityForm({
   const selectedState = watch('state');
   const startDate = watch('startDate');
   const endDate = watch('endDate');
+  const selectedProductId = watch('productId');
+  const seasonalStartMonth = watch('seasonalConfig.startMonth');
+  const seasonalStartDay = watch('seasonalConfig.startDay');
+  const seasonalEndMonth = watch('seasonalConfig.endMonth');
+  const seasonalEndDay = watch('seasonalConfig.endDay');
+
+  // Helper function to get max days in a month
+  const getMaxDaysInMonth = (month: number | undefined): number => {
+    if (!month) return 31;
+    // Use 2024 as a leap year to get accurate day counts
+    return new Date(2024, month, 0).getDate();
+  };
+
+  // Helper function to check if date is valid
+  const isValidDate = (month: number | undefined, day: number | undefined): boolean => {
+    if (!month || !day) return true; // Don't validate incomplete dates
+    const maxDays = getMaxDaysInMonth(month);
+    return day >= 1 && day <= maxDays;
+  };
+
+  // Validation state for seasonal dates
+  const [seasonalDateErrors, setSeasonalDateErrors] = useState({
+    startDate: '',
+    endDate: ''
+  });
+
+  // Load products for selector
+  useEffect(() => {
+    if (showProductSelector) {
+      loadProducts();
+    }
+  }, [showProductSelector]);
+
+  // Validate seasonal dates when they change
+  useEffect(() => {
+    if (selectedRuleType === RuleType.SEASONAL) {
+      const errors = { startDate: '', endDate: '' };
+
+      // Validate start date
+      if (seasonalStartMonth && seasonalStartDay) {
+        if (!isValidDate(seasonalStartMonth, seasonalStartDay)) {
+          const maxDays = getMaxDaysInMonth(seasonalStartMonth);
+          errors.startDate = `${getMonthName(seasonalStartMonth)} only has ${maxDays} days`;
+        }
+      }
+
+      // Validate end date
+      if (seasonalEndMonth && seasonalEndDay) {
+        if (!isValidDate(seasonalEndMonth, seasonalEndDay)) {
+          const maxDays = getMaxDaysInMonth(seasonalEndMonth);
+          errors.endDate = `${getMonthName(seasonalEndMonth)} only has ${maxDays} days`;
+        }
+      }
+
+      setSeasonalDateErrors(errors);
+    }
+  }, [selectedRuleType, seasonalStartMonth, seasonalStartDay, seasonalEndMonth, seasonalEndDay]);
+
+  // Helper to get month name
+  const getMonthName = (month: number): string => {
+    return new Date(2024, month - 1).toLocaleString('default', { month: 'long' });
+  };
+
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const response = await fetch('/api/products?onlyActive=false&excludeCatering=true');
+      if (response.ok) {
+        const data = await response.json();
+        const productsArray = Array.isArray(data) ? data : data.data || [];
+        setProducts(productsArray);
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const onSubmit = async (data: AvailabilityRule) => {
+
     try {
       setIsLoading(true);
-      
-      let result;
-      if (rule?.id) {
-        result = await updateAvailabilityRule(rule.id, data);
-      } else {
-        result = await createAvailabilityRule(productId, data);
+
+      // Clean up the data to ensure boolean fields are never null
+      const cleanedData = {
+        ...data,
+        // Only include seasonalConfig if ruleType is seasonal and has valid values
+        seasonalConfig: data.ruleType === 'seasonal' && data.seasonalConfig &&
+                       data.seasonalConfig.startMonth != null &&
+                       data.seasonalConfig.startDay != null &&
+                       data.seasonalConfig.endMonth != null &&
+                       data.seasonalConfig.endDay != null ? {
+          startMonth: Number(data.seasonalConfig.startMonth),
+          startDay: Number(data.seasonalConfig.startDay),
+          endMonth: Number(data.seasonalConfig.endMonth),
+          endDay: Number(data.seasonalConfig.endDay),
+          yearly: data.seasonalConfig.yearly ?? true,
+          timezone: data.seasonalConfig.timezone || 'America/Los_Angeles'
+        } : null,
+        preOrderSettings: data.preOrderSettings ? {
+          ...data.preOrderSettings,
+          depositRequired: data.preOrderSettings.depositRequired ?? false
+        } : null,
+        viewOnlySettings: data.viewOnlySettings ? {
+          ...data.viewOnlySettings,
+          showPrice: data.viewOnlySettings.showPrice ?? true,
+          allowWishlist: data.viewOnlySettings.allowWishlist ?? false,
+          notifyWhenAvailable: data.viewOnlySettings.notifyWhenAvailable ?? true
+        } : null
+      };
+
+      // Validate product ID is selected
+      if (!cleanedData.productId) {
+        toast.error('Please select a product');
+        setIsLoading(false);
+        return;
       }
+
+      // Validate seasonal config if seasonal rule
+      if (cleanedData.ruleType === 'seasonal') {
+        if (!cleanedData.seasonalConfig) {
+          toast.error('Please fill in all seasonal configuration fields');
+          setIsLoading(false);
+          return;
+        }
+        const config = cleanedData.seasonalConfig;
+        if (!config.startMonth || !config.startDay || !config.endMonth || !config.endDay) {
+          toast.error('Please fill in all seasonal configuration fields');
+          setIsLoading(false);
+          return;
+        }
+
+        // Validate date combinations are valid
+        if (!isValidDate(config.startMonth, config.startDay)) {
+          toast.error(`Invalid start date: ${getMonthName(config.startMonth)} only has ${getMaxDaysInMonth(config.startMonth)} days`);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!isValidDate(config.endMonth, config.endDay)) {
+          toast.error(`Invalid end date: ${getMonthName(config.endMonth)} only has ${getMaxDaysInMonth(config.endMonth)} days`);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const result = rule?.id
+        ? await updateAvailabilityRule(rule.id, cleanedData)
+        : await createAvailabilityRule(cleanedData.productId, cleanedData);
 
       if (result.success && result.data) {
         toast.success(rule ? 'Rule updated successfully' : 'Rule created successfully');
         onSuccess?.(result.data);
       } else {
-        toast.error(result.error || 'Failed to save rule');
+        // Show detailed error message
+        console.error('Form submission failed:', result.error);
+        toast.error(result.error || 'Failed to save rule', {
+          duration: 6000,
+        });
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -103,7 +280,8 @@ export function AvailabilityForm({
   // Update form defaults when rule type changes
   useEffect(() => {
     if (selectedRuleType === RuleType.SEASONAL) {
-      if (!watch('seasonalConfig')) {
+      const currentConfig = watch('seasonalConfig');
+      if (!currentConfig) {
         setValue('seasonalConfig', {
           startMonth: 1,
           startDay: 1,
@@ -112,16 +290,24 @@ export function AvailabilityForm({
           yearly: true,
           timezone: 'America/Los_Angeles'
         });
+      } else if (currentConfig.yearly === null || currentConfig.yearly === undefined) {
+        // Fix null yearly value
+        setValue('seasonalConfig', {
+          ...currentConfig,
+          yearly: true,
+          timezone: currentConfig.timezone || 'America/Los_Angeles'
+        });
       }
     }
 
     if (selectedRuleType === RuleType.TIME_BASED) {
-      if (!watch('timeRestrictions')) {
+      const currentRestrictions = watch('timeRestrictions');
+      if (!currentRestrictions || !currentRestrictions.startTime || !currentRestrictions.endTime) {
         setValue('timeRestrictions', {
-          daysOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
-          startTime: '09:00',
-          endTime: '17:00',
-          timezone: 'America/Los_Angeles'
+          daysOfWeek: currentRestrictions?.daysOfWeek || [1, 2, 3, 4, 5], // Monday-Friday
+          startTime: currentRestrictions?.startTime || '09:00',
+          endTime: currentRestrictions?.endTime || '17:00',
+          timezone: currentRestrictions?.timezone || 'America/Los_Angeles'
         });
       }
     }
@@ -129,29 +315,50 @@ export function AvailabilityForm({
 
   // Update state-specific settings when state changes
   useEffect(() => {
-    if (selectedState === AvailabilityState.PRE_ORDER && !watch('preOrderSettings')) {
-      setValue('preOrderSettings', {
-        message: 'Available for pre-order',
-        expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
-        maxQuantity: null,
-        depositRequired: false,
-        depositAmount: null
-      });
+    if (selectedState === AvailabilityState.PRE_ORDER) {
+      const currentSettings = watch('preOrderSettings');
+      if (!currentSettings) {
+        setValue('preOrderSettings', {
+          message: 'Available for pre-order',
+          expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+          maxQuantity: null,
+          depositRequired: false,
+          depositAmount: null
+        });
+      } else if (currentSettings.depositRequired === null || currentSettings.depositRequired === undefined) {
+        // Fix null depositRequired value
+        setValue('preOrderSettings', {
+          ...currentSettings,
+          depositRequired: false
+        });
+      }
+    } else {
+      // Clear pre-order settings when not in pre-order state
+      setValue('preOrderSettings', null);
     }
 
-    if (selectedState === AvailabilityState.VIEW_ONLY && !watch('viewOnlySettings')) {
-      setValue('viewOnlySettings', {
-        message: 'Currently unavailable for purchase',
-        showPrice: true,
-        allowWishlist: false,
-        notifyWhenAvailable: true
-      });
+    if (selectedState === AvailabilityState.VIEW_ONLY) {
+      if (!watch('viewOnlySettings')) {
+        setValue('viewOnlySettings', {
+          message: 'Currently unavailable for purchase',
+          showPrice: true,
+          allowWishlist: false,
+          notifyWhenAvailable: true
+        });
+      }
+    } else if (selectedState !== AvailabilityState.PRE_ORDER) {
+      // Clear view-only settings when not in view-only or pre-order state
+      setValue('viewOnlySettings', null);
     }
   }, [selectedState, setValue, watch]);
 
   return (
     <div className={cn("w-full max-w-6xl space-y-6", className)}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6"
+        noValidate
+      >
         
         {/* Basic Information Card */}
         <Card>
@@ -162,6 +369,50 @@ export function AvailabilityForm({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Product Selector */}
+            {showProductSelector && (
+              <div className="space-y-2 pb-4 border-b">
+                <Label htmlFor="productId">Product *</Label>
+                <Controller
+                  name="productId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={!!rule}
+                    >
+                      <SelectTrigger className={errors.productId ? 'border-red-500' : ''}>
+                        <SelectValue placeholder={loadingProducts ? "Loading products..." : "Select a product"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{product.name}</span>
+                              {product.category && (
+                                <span className="text-xs text-muted-foreground">
+                                  {product.category.name}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.productId && (
+                  <p className="text-sm text-red-500">{errors.productId.message}</p>
+                )}
+                {rule && (
+                  <p className="text-xs text-muted-foreground">
+                    Product cannot be changed when editing a rule
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Rule Name</Label>
@@ -218,8 +469,6 @@ export function AvailabilityForm({
                         <SelectItem value={RuleType.DATE_RANGE}>Date Range</SelectItem>
                         <SelectItem value={RuleType.SEASONAL}>Seasonal</SelectItem>
                         <SelectItem value={RuleType.TIME_BASED}>Time Based</SelectItem>
-                        <SelectItem value={RuleType.INVENTORY}>Inventory Based</SelectItem>
-                        <SelectItem value={RuleType.CUSTOM}>Custom</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -389,14 +638,17 @@ export function AvailabilityForm({
                 <h4 className="font-medium text-lg">Seasonal Configuration</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>Start Month</Label>
+                    <Label>Start Month *</Label>
                     <Controller
                       name="seasonalConfig.startMonth"
                       control={control}
                       render={({ field }) => (
-                        <Select value={field.value?.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
-                          <SelectTrigger>
-                            <SelectValue />
+                        <Select
+                          value={field.value?.toString() || ''}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <SelectTrigger className={!field.value ? 'border-amber-300 bg-amber-50' : ''}>
+                            <SelectValue placeholder="Select month" />
                           </SelectTrigger>
                           <SelectContent>
                             {Array.from({ length: 12 }, (_, i) => (
@@ -408,34 +660,53 @@ export function AvailabilityForm({
                         </Select>
                       )}
                     />
+                    {!watch('seasonalConfig.startMonth') && (
+                      <p className="text-xs text-amber-600">Required for seasonal rules</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Start Day</Label>
+                    <Label>Start Day *</Label>
                     <Controller
                       name="seasonalConfig.startDay"
                       control={control}
                       render={({ field }) => (
                         <Input
-                          {...field}
                           type="number"
                           min="1"
-                          max="31"
+                          max={getMaxDaysInMonth(seasonalStartMonth)}
+                          value={field.value ?? ''}
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          className={seasonalDateErrors.startDate ? 'border-red-500 bg-red-50' : !field.value ? 'border-amber-300 bg-amber-50' : ''}
                         />
                       )}
                     />
+                    {seasonalDateErrors.startDate ? (
+                      <p className="text-xs text-red-600">{seasonalDateErrors.startDate}</p>
+                    ) : !watch('seasonalConfig.startDay') ? (
+                      <p className="text-xs text-amber-600">Required for seasonal rules</p>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        Max: {getMaxDaysInMonth(seasonalStartMonth)} days
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>End Month</Label>
+                    <Label>End Month *</Label>
                     <Controller
                       name="seasonalConfig.endMonth"
                       control={control}
                       render={({ field }) => (
-                        <Select value={field.value?.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
-                          <SelectTrigger>
-                            <SelectValue />
+                        <Select
+                          value={field.value?.toString() || ''}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <SelectTrigger className={!field.value ? 'border-amber-300 bg-amber-50' : ''}>
+                            <SelectValue placeholder="Select month" />
                           </SelectTrigger>
                           <SelectContent>
                             {Array.from({ length: 12 }, (_, i) => (
@@ -447,23 +718,39 @@ export function AvailabilityForm({
                         </Select>
                       )}
                     />
+                    {!watch('seasonalConfig.endMonth') && (
+                      <p className="text-xs text-amber-600">Required for seasonal rules</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>End Day</Label>
+                    <Label>End Day *</Label>
                     <Controller
                       name="seasonalConfig.endDay"
                       control={control}
                       render={({ field }) => (
                         <Input
-                          {...field}
                           type="number"
                           min="1"
-                          max="31"
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 31)}
+                          max={getMaxDaysInMonth(seasonalEndMonth)}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          className={seasonalDateErrors.endDate ? 'border-red-500 bg-red-50' : !field.value ? 'border-amber-300 bg-amber-50' : ''}
                         />
                       )}
                     />
+                    {seasonalDateErrors.endDate ? (
+                      <p className="text-xs text-red-600">{seasonalDateErrors.endDate}</p>
+                    ) : !watch('seasonalConfig.endDay') ? (
+                      <p className="text-xs text-amber-600">Required for seasonal rules</p>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        Max: {getMaxDaysInMonth(seasonalEndMonth)} days
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -473,8 +760,8 @@ export function AvailabilityForm({
                     control={control}
                     render={({ field }) => (
                       <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                        checked={field.value ?? true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
                       />
                     )}
                   />
@@ -495,9 +782,13 @@ export function AvailabilityForm({
                       control={control}
                       render={({ field }) => (
                         <Input
-                          {...field}
                           type="time"
                           className="w-full"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       )}
                     />
@@ -510,9 +801,13 @@ export function AvailabilityForm({
                       control={control}
                       render={({ field }) => (
                         <Input
-                          {...field}
                           type="time"
                           className="w-full"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       )}
                     />
@@ -576,6 +871,7 @@ export function AvailabilityForm({
                       render={({ field }) => (
                         <Textarea
                           {...field}
+                          value={field.value || ''}
                           placeholder="e.g., Available for pre-order. Expected delivery in 2 weeks."
                           rows={2}
                         />
@@ -668,8 +964,8 @@ export function AvailabilityForm({
                       control={control}
                       render={({ field }) => (
                         <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                          checked={field.value ?? false}
+                          onCheckedChange={(checked) => field.onChange(checked)}
                         />
                       )}
                     />
@@ -688,6 +984,7 @@ export function AvailabilityForm({
                       render={({ field }) => (
                         <Textarea
                           {...field}
+                          value={field.value || ''}
                           placeholder="e.g., Currently unavailable for purchase. Check back soon!"
                           rows={2}
                         />
@@ -702,7 +999,7 @@ export function AvailabilityForm({
                         control={control}
                         render={({ field }) => (
                           <Switch
-                            checked={field.value}
+                            checked={field.value ?? true}
                             onCheckedChange={field.onChange}
                           />
                         )}
@@ -716,7 +1013,7 @@ export function AvailabilityForm({
                         control={control}
                         render={({ field }) => (
                           <Switch
-                            checked={field.value}
+                            checked={field.value ?? false}
                             onCheckedChange={field.onChange}
                           />
                         )}
@@ -730,7 +1027,7 @@ export function AvailabilityForm({
                         control={control}
                         render={({ field }) => (
                           <Switch
-                            checked={field.value}
+                            checked={field.value ?? true}
                             onCheckedChange={field.onChange}
                           />
                         )}
@@ -830,6 +1127,19 @@ export function AvailabilityForm({
                   type="submit"
                   disabled={isLoading}
                   className="min-w-[120px]"
+                  onClick={(e) => {
+                    console.log('=== BUTTON CLICKED ===');
+                    console.log('Form errors:', errors);
+                    console.log('Detailed errors:', JSON.stringify(errors, null, 2));
+                    console.log('Form is valid:', Object.keys(errors).length === 0);
+                    console.log('Current form values:', watch());
+                    console.log('Seasonal config values:', {
+                      startMonth: seasonalStartMonth,
+                      startDay: seasonalStartDay,
+                      endMonth: seasonalEndMonth,
+                      endDay: seasonalEndDay
+                    });
+                  }}
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-2">

@@ -153,6 +153,8 @@ export function AvailabilityRulesManager({
 
   const toggleRuleEnabled = async (rule: AvailabilityRule) => {
     try {
+      console.log('[AvailabilityRulesManager] Toggling rule', { ruleId: rule.id, currentEnabled: rule.enabled });
+
       const ruleData = {
         productId: rule.productId,
         name: rule.name,
@@ -169,7 +171,8 @@ export function AvailabilityRulesManager({
         overrideSquare: rule.overrideSquare,
       };
 
-      const response = await fetch(`/api/availability/${rule.id}`, {
+      // Add query parameter to skip future date validation when toggling
+      const response = await fetch(`/api/availability/${rule.id}?skipValidation=true`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -177,15 +180,24 @@ export function AvailabilityRulesManager({
         body: JSON.stringify(ruleData),
       });
 
+      console.log('[AvailabilityRulesManager] Response status', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[AvailabilityRulesManager] API error', errorData);
         throw new Error(errorData.error || 'Failed to update rule');
       }
 
+      const result = await response.json();
+      console.log('[AvailabilityRulesManager] Update successful', result);
+
       toast.success(`Rule ${rule.enabled ? 'disabled' : 'enabled'} successfully`);
-      loadRulesAndProducts();
+
+      console.log('[AvailabilityRulesManager] Reloading rules...');
+      await loadRulesAndProducts();
+      console.log('[AvailabilityRulesManager] Rules reloaded');
     } catch (error) {
-      console.error('Error updating rule:', error);
+      console.error('[AvailabilityRulesManager] Error updating rule:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update rule');
     }
   };
@@ -279,8 +291,9 @@ export function AvailabilityRulesManager({
     return (
       <div className="mt-8">
         <AvailabilityForm
-          productId={selectedProductId || '1'}
+          productId={selectedProductId || undefined}
           rule={editingRule || undefined}
+          showProductSelector={!selectedProductId}
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />

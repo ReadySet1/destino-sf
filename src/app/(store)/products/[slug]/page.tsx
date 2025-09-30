@@ -6,6 +6,8 @@ import { Product, Variant } from '@/types/product';
 import { redirect, notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
+import { AvailabilityQueries } from '@/lib/db/availability-queries';
+import { AvailabilityEngine } from '@/lib/availability/engine';
 
 // Helper function to convert product name to URL-friendly slug
 function slugify(text: string): string {
@@ -18,7 +20,6 @@ function slugify(text: string): string {
 }
 
 // Utility function to normalize image data from database
-// Adjusted to primarily handle string arrays or JSON strings
 function normalizeImages(images: any): string[] {
   if (!images) return [];
 
@@ -40,17 +41,12 @@ function normalizeImages(images: any): string[] {
       if (Array.isArray(parsed)) {
         return parsed.filter(url => url && typeof url === 'string');
       }
-      // If not a JSON array, and not a URL, maybe it's a malformed single entry?
-      // Or just return empty if parsing fails and it's not a URL.
       return [];
     } catch (e) {
-      // If not valid JSON and not a direct URL, return empty
       return [];
     }
   }
 
-  // Add handling for other potential DB formats if necessary
-  // For now, return empty array if format is unrecognized
   return [];
 }
 
@@ -77,7 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = resolvedParams;
 
   try {
-    // Basic UUID check (adjust regex if using different UUID format)
+    // Basic UUID check
     const isUUID =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
@@ -93,7 +89,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
 
     if (!dbProduct) {
-      // Return default metadata if product not found
       return generateSEO({
         title: 'Product Not Found | Destino SF',
         description: 'The requested product could not be found.',
@@ -102,7 +97,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       });
     }
 
-    // Get the primary product image
     const productImage =
       dbProduct.images && dbProduct.images.length > 0
         ? Array.isArray(dbProduct.images)
@@ -110,7 +104,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           : dbProduct.images
         : '/opengraph-image';
 
-    // Generate product-specific metadata
     return generateSEO({
       title: `${dbProduct.name} | Destino SF`,
       description:
@@ -136,8 +129,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   } catch (error) {
     console.error('Error generating product metadata:', error);
-
-    // Return fallback metadata
     return generateSEO({
       title: 'Product | Destino SF',
       description: 'Discover our handcrafted empanadas and alfajores made with authentic flavors.',
@@ -148,51 +139,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductPage({ params }: PageProps) {
-  // Await the params Promise to get the actual values
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
-  // Basic UUID check (adjust regex if using different UUID format)
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     slug
   );
 
-  // Fetch from database using slug or id (if it's a UUID)
+  // Fetch product from database
   const dbProduct = await prisma.product.findFirst({
     where: {
-      AND: [
-        {
-          OR: [
-            { slug: slug }, // Try matching by slug field
-            ...(isUUID ? [{ id: slug }] : []), // Conditionally add ID match if slug is a UUID
-          ],
-        },
-        {
-          active: true, // Only fetch active products
-        },
-        {
-          // Properly filter by visibility fields
-          OR: [
-            { visibility: 'PUBLIC' },
-            { visibility: null }, // Default to PUBLIC if null
-          ],
-        },
-        {
-          // Allow both available items AND pre-order items
-          OR: [
-            { isAvailable: true },
-            { isPreorder: true },
-          ],
-        },
-        {
-          NOT: {
-            OR: [
-              { itemState: 'INACTIVE' },
-              { itemState: 'ARCHIVED' },
-            ],
-          },
-        },
+      OR: [
+        { slug: slug },
+        ...(isUUID ? [{ id: slug }] : []),
       ],
+      active: true,
     },
     include: {
       variants: true,
@@ -200,61 +161,76 @@ export default async function ProductPage({ params }: PageProps) {
     },
   });
 
-  // If found by ID but the slug doesn't match the product's actual slug, redirect
+  // Redirect to SEO-friendly slug if accessed by ID
   if (dbProduct && isUUID && slug === dbProduct.id) {
-    const seoFriendlySlug = dbProduct.slug || slugify(dbProduct.name); // Use existing slug or generate one
-    // Check if redirection is actually needed
+    const seoFriendlySlug = dbProduct.slug || slugify(dbProduct.name);
     if (seoFriendlySlug !== slug) {
-      console.log(`Redirecting from ID-based slug "${slug}" to SEO slug "${seoFriendlySlug}"`);
       redirect(`/products/${seoFriendlySlug}`);
     }
   }
 
-  // If product is not found in the database by either name or ID
   if (!dbProduct) {
-    console.log(`Product not found for slug: "${slug}"`);
-    notFound(); // Use Next.js notFound function
+    notFound();
+  }
+
+  // Evaluate availability rules for this product
+  let evaluatedAvailability;
+  try {
+    const rules = await AvailabilityQueries.getProductRules(dbProduct.id);
+    const evaluation = await AvailabilityEngine.evaluateProduct(dbProduct.id, rules);
+
+    // Serialize for JSON (Next.js requirement)
+    evaluatedAvailability = {
+      currentState: String(evaluation.currentState),
+      appliedRulesCount: evaluation.appliedRules.length,
+      nextStateChange: evaluation.nextStateChange ? {
+        date: evaluation.nextStateChange.date.toISOString(),
+        newState: String(evaluation.nextStateChange.newState),
+      } : undefined,
+    };
+  } catch (error) {
+    console.error('[Server] Error evaluating product availability:', error);
+    // Continue without evaluation if there's an error
   }
 
   // Transform dbProduct to match the Product interface
   const product: Product = {
     id: dbProduct.id,
-    squareId: dbProduct.squareId || '', // Provide default empty string if null
+    squareId: dbProduct.squareId || '',
     name: dbProduct.name,
     description: dbProduct.description,
-    price: dbProduct.price ? Number(dbProduct.price) : 0, // Convert Decimal to number
-    images: normalizeImages(dbProduct.images), // Use the updated normalizeImages
-    slug: dbProduct.slug || dbProduct.id, // Add the missing slug field
-    categoryId: dbProduct.categoryId || '', // Provide default empty string if null
+    price: dbProduct.price ? Number(dbProduct.price) : 0,
+    images: normalizeImages(dbProduct.images),
+    slug: dbProduct.slug || dbProduct.id,
+    categoryId: dbProduct.categoryId || '',
     category: dbProduct.category
       ? {
-          // Map Prisma category to Product category type
           id: dbProduct.category.id,
           name: dbProduct.category.name,
           description: dbProduct.category.description,
-          order: dbProduct.category.order ?? 0, // Handle potential null order
-          active: dbProduct.category.active ?? true, // Default to true if not specified
+          order: dbProduct.category.order ?? 0,
+          active: dbProduct.category.active ?? true,
           createdAt: dbProduct.category.createdAt,
           updatedAt: dbProduct.category.updatedAt,
         }
-      : undefined, // Set to undefined if no category linked
+      : undefined,
     variants: dbProduct.variants.map(
       (variant: PrismaVariant): Variant => ({
         id: variant.id,
         name: variant.name,
-        price: variant.price ? Number(variant.price) : null, // Convert Decimal to number or keep null
+        price: variant.price ? Number(variant.price) : null,
         squareVariantId: variant.squareVariantId,
         productId: variant.productId,
         createdAt: variant.createdAt,
         updatedAt: variant.updatedAt,
       })
     ),
-    featured: dbProduct.featured || false, // Default to false if null/undefined
-    active: dbProduct.active, // Should always be true based on query, but include it
+    featured: dbProduct.featured || false,
+    active: dbProduct.active,
     createdAt: dbProduct.createdAt,
     updatedAt: dbProduct.updatedAt,
     
-    // Add availability fields for pre-order functionality
+    // Add availability fields
     isAvailable: dbProduct.isAvailable ?? true,
     isPreorder: dbProduct.isPreorder ?? false,
     visibility: dbProduct.visibility,
@@ -263,12 +239,14 @@ export default async function ProductPage({ params }: PageProps) {
     preorderEndDate: dbProduct.preorderEndDate,
     availabilityStart: dbProduct.availabilityStart,
     availabilityEnd: dbProduct.availabilityEnd,
+    
+    // Add evaluated availability from rules
+    evaluatedAvailability,
   };
 
   // Use the transformed product directly
   const validProduct: Product = {
     ...product,
-    // Provide a default image if images array is empty after normalization
     images: product.images.length > 0 ? product.images : ['/images/menu/empanadas.png'],
   };
 

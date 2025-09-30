@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 interface AvailabilityProductsTableProps {
   products: AvailabilityProductTableRow[];
   onManageProduct: (productId: string) => void;
+  onCreateRule: (productId: string) => void;
   onViewRules?: (productId: string) => void;
   onBulkAction?: (productIds: string[], action: AvailabilityBulkAction) => void;
   isLoading?: boolean;
@@ -40,6 +41,7 @@ interface AvailabilityProductsTableProps {
 export function AvailabilityProductsTable({
   products,
   onManageProduct,
+  onCreateRule,
   onViewRules,
   onBulkAction,
   isLoading = false
@@ -98,15 +100,6 @@ export function AvailabilityProductsTable({
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Create Rule
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkAction('delete_rules')}
-                className="bg-white hover:bg-gray-50 text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete Rules
               </Button>
             </div>
           </div>
@@ -187,31 +180,33 @@ export function AvailabilityProductsTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                          onClick={() => onManageProduct(product.id)}
-                          className="cursor-pointer"
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Manage Availability
-                        </DropdownMenuItem>
-                        {onViewRules && (
+                        {product.rulesCount > 0 ? (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onManageProduct(product.id)}
+                              className="cursor-pointer"
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Manage Rules ({product.rulesCount})
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onCreateRule(product.id)}
+                              className="cursor-pointer"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create New Rule
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
                           <DropdownMenuItem
-                            onClick={() => onViewRules(product.id)}
+                            onClick={() => onCreateRule(product.id)}
                             className="cursor-pointer"
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Rules
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Rule
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="cursor-pointer">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create New Rule
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete All Rules
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

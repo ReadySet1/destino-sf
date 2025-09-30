@@ -18,12 +18,13 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    
+
     // Parse query parameters and map to ProductVisibilityOptions
     const options = {
       includeVariants: searchParams.get('includeVariants') === 'true',
       onlyActive: searchParams.get('onlyActive') !== 'false', // Default to true
       categoryId: searchParams.get('categoryId') || undefined,
+      categorySlug: searchParams.get('categorySlug') || undefined,
       featured: searchParams.get('featured') === 'true' ? true : undefined,
       exclude: searchParams.get('exclude') || undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
