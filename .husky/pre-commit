@@ -1,15 +1,45 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-echo "🧪 Running pre-commit tests..."
+# Allow skipping hooks with SKIP_HOOKS=1 git commit
+if [ "$SKIP_HOOKS" = "1" ]; then
+  echo "⚠️  Skipping pre-commit hooks (SKIP_HOOKS=1)"
+  exit 0
+fi
 
-# Run critical path tests
-pnpm test:critical --bail --silent
+echo "🔍 Running pre-commit checks..."
 
-# Check if tests passed
+# Stage 1: Fast checks (lint & format)
+echo "  → Running lint-staged..."
+pnpm lint-staged
 if [ $? -ne 0 ]; then
-  echo "❌ Critical tests failed. Please fix before committing."
+  echo "❌ Linting failed. Please fix formatting issues."
   exit 1
 fi
 
-echo "✅ Pre-commit tests passed!"
+# Stage 2: Type checking
+echo "  → Type checking..."
+pnpm type-check --pretty
+if [ $? -ne 0 ]; then
+  echo "❌ Type check failed. Please fix TypeScript errors."
+  exit 1
+fi
+
+# Stage 3: Critical path tests (only for files that affect critical logic)
+# Check if any critical files were modified
+CRITICAL_FILES=$(git diff --cached --name-only | grep -E '(checkout|payment|order|square)' || true)
+
+if [ -n "$CRITICAL_FILES" ]; then
+  echo "  → Running critical path tests (critical files modified)..."
+  pnpm test:critical --bail --silent
+  if [ $? -ne 0 ]; then
+    echo "❌ Critical tests failed. Please fix before committing."
+    exit 1
+  fi
+else
+  echo "  → Skipping critical tests (no critical files modified)"
+fi
+
+echo "✅ All pre-commit checks passed!"
+echo ""
+echo "💡 Tip: Use 'SKIP_HOOKS=1 git commit' to skip hooks for urgent fixes"

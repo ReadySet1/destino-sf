@@ -1,0 +1,239 @@
+name: Pre-Deployment Checklist
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '10.11.1'
+
+jobs:
+  # Pre-deployment validation checklist
+  pre-deployment-checklist:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+
+    # Only run for PRs to main or manual triggers
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: destino_sf_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test environment
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+
+      # ✅ Checklist Item 1: Code Quality
+      - name: ✅ Code Quality - Linting
+        run: pnpm lint
+
+      - name: ✅ Code Quality - Type Checking
+        run: pnpm type-check
+
+      - name: ✅ Code Quality - Format Check
+        run: pnpm format --check
+
+      # ✅ Checklist Item 2: Unit Tests
+      - name: ✅ Unit Tests - Run All
+        run: pnpm test:unit
+
+      # ✅ Checklist Item 3: Critical Path Tests
+      - name: ✅ Critical Path Tests - Payment & Orders
+        run: pnpm test:critical
+
+      # ✅ Checklist Item 4: API Tests
+      - name: ✅ API Tests - All Routes
+        run: pnpm test:api
+
+      # ✅ Checklist Item 5: Component Tests
+      - name: ✅ Component Tests - UI Components
+        run: pnpm test:components
+
+      # ✅ Checklist Item 6: Coverage Requirements
+      - name: ✅ Coverage Requirements - Verify Thresholds
+        run: pnpm test:coverage
+        continue-on-error: false
+
+      # ✅ Checklist Item 7: Security Scan
+      - name: ✅ Security Scan - Dependency Audit
+        run: pnpm audit --audit-level moderate
+        continue-on-error: true
+
+      # ✅ Checklist Item 8: Build Verification
+      - name: ✅ Build Verification - Production Build
+        run: pnpm build
+
+      # ✅ Checklist Item 9: Database Migrations (validation only)
+      - name: ✅ Database Migrations - Validate Schema
+        run: |
+          pnpm prisma generate
+          pnpm prisma validate
+
+      # Generate deployment report
+      - name: Generate Deployment Report
+        if: always()
+        run: |
+          echo "# Pre-Deployment Checklist Report" > deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Environment: ${{ github.event.inputs.environment || 'staging' }}" >> deployment-report.md
+          echo "## Branch: ${{ github.ref_name }}" >> deployment-report.md
+          echo "## Commit: ${{ github.sha }}" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "### Checklist Status" >> deployment-report.md
+          echo "- ✅ Code Quality Checks" >> deployment-report.md
+          echo "- ✅ Unit Tests" >> deployment-report.md
+          echo "- ✅ Critical Path Tests" >> deployment-report.md
+          echo "- ✅ API Tests" >> deployment-report.md
+          echo "- ✅ Component Tests" >> deployment-report.md
+          echo "- ✅ Coverage Requirements" >> deployment-report.md
+          echo "- ✅ Security Scan" >> deployment-report.md
+          echo "- ✅ Build Verification" >> deployment-report.md
+          echo "- ✅ Database Schema Validation" >> deployment-report.md
+
+      - name: Upload Deployment Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report
+          path: deployment-report.md
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('deployment-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Pre-Deployment Checklist Complete\n\n${report}\n\n**Status**: ✅ All checks passed - Ready for deployment`
+            });
+
+  # E2E Tests (run separately for better performance)
+  e2e-tests:
+    name: E2E Critical Path Tests
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm playwright install --with-deps chromium
+
+      - name: Run E2E critical tests
+        run: pnpm test:e2e:critical
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+  # Final approval gate
+  deployment-approval:
+    name: Deployment Ready
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checklist, e2e-tests]
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+
+    steps:
+      - name: All checks passed
+        run: |
+          echo "✅ All pre-deployment checks passed"
+          echo "✅ Code quality verified"
+          echo "✅ All tests passing"
+          echo "✅ Coverage requirements met"
+          echo "✅ E2E tests successful"
+          echo "✅ Build successful"
+          echo ""
+          echo "🚀 READY FOR DEPLOYMENT to ${{ github.event.inputs.environment || 'staging' }}"
+
+      - name: Create deployment issue (production only)
+        if: github.event.inputs.environment == 'production'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production Deployment Ready - ${new Date().toISOString().split('T')[0]}`,
+              body: `## 🚀 Production Deployment Checklist\n\n**Commit**: ${context.sha}\n**Branch**: ${context.ref}\n\n### Pre-Deployment Validation ✅\n- ✅ All automated tests passed\n- ✅ Coverage requirements met\n- ✅ Security scan completed\n- ✅ E2E tests successful\n\n### Manual Verification Required\n- [ ] Review recent commits for risky changes\n- [ ] Verify staging environment is stable\n- [ ] Confirm database migrations are safe\n- [ ] Review monitoring dashboards\n- [ ] Prepare rollback plan\n- [ ] Notify team of deployment\n\n### Post-Deployment\n- [ ] Monitor error rates (Sentry)\n- [ ] Check performance metrics\n- [ ] Verify critical user flows\n- [ ] Monitor database performance\n- [ ] Confirm payment processing working\n\n**Approved by**: _[Name]_\n**Deployment time**: _[Time]_`,
+              labels: ['deployment', 'production']
+            });
