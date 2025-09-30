@@ -51,6 +51,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('customer-info');
+  const [orderCompleted, setOrderCompleted] = useState(false);
 
   // Customer info state with localStorage persistence
   const [customerInfo, setCustomerInfo] = useState(() => {
@@ -188,14 +189,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   }, [idempotencyKey]);
 
   // Redirect if cart is empty (but not during checkout submission or Square redirect)
+  // Also check that we're still on the checkout page to prevent redirects from confirmation page
   useEffect(() => {
-    console.log('🔍 [CATERING] Empty cart check - items:', cateringItems.length, 'isSubmitting:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current, 'isRedirectingToSquare:', isRedirectingToSquareRef.current);
+    // Only check if we're currently on the checkout page
+    const isOnCheckoutPage = typeof window !== 'undefined' && window.location.pathname === '/catering/checkout';
     
-    if (cateringItems.length === 0 && !isSubmitting && !isSubmittingRef.current && !isRedirectingToSquareRef.current) {
+    console.log('🔍 [CATERING] Empty cart check - items:', cateringItems.length, 'isSubmitting:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current, 'isRedirectingToSquare:', isRedirectingToSquareRef.current, 'isOnCheckoutPage:', isOnCheckoutPage);
+    
+    if (cateringItems.length === 0 && !isSubmitting && !isSubmittingRef.current && !isRedirectingToSquareRef.current && isOnCheckoutPage && !orderCompleted) {
       console.log('🔄 [CATERING] Cart is empty and not submitting/redirecting, redirecting to catering page');
       router.push('/catering');
     }
-  }, [cateringItems.length, router, isSubmitting]);
+  }, [cateringItems.length, router, isSubmitting, orderCompleted]);
 
   // Function to save delivery address to localStorage
   const saveDeliveryAddressToLocalStorage = useCallback((address: typeof deliveryAddress) => {
@@ -367,7 +372,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     
     // Calculate convenience fee on subtotal + delivery fee + tax
     const totalBeforeServiceFee = subtotal + actualDeliveryFee + taxAmount;
-    const serviceFee = totalBeforeServiceFee * SERVICE_FEE_RATE;
+    const serviceFee = paymentMethod === PaymentMethod.CASH ? 0 : totalBeforeServiceFee * SERVICE_FEE_RATE;
     
     // Final total
     const total = totalBeforeServiceFee + serviceFee;
@@ -691,6 +696,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           console.log('🔧 [CATERING-CHECKOUT] isSubmitting state:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current);
           
           // Set flag to prevent any other navigation during redirect
+          setOrderCompleted(true);
           isRedirectingToSquareRef.current = true;
           
           // CRITICAL FIX: Use window.location.replace for immediate redirect
@@ -726,6 +732,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               console.log('🔄 [CATERING-CHECKOUT] Redirecting to confirmation for existing order:', result.orderId);
               
               // Clear cart and redirect to confirmation for duplicate order
+              setOrderCompleted(true);
               clearCart();
               clearCustomerInfoFromLocalStorage();
               clearDeliveryAddressFromLocalStorage();
@@ -749,6 +756,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           // For other payment methods, proceed to confirmation page
           console.log('🔄 [DEBUG] Proceeding to confirmation page for non-Square payment');
           console.log('🛒 [DEBUG] Clearing cart for non-Square payment - items before clear:', cateringItems.length);
+          setOrderCompleted(true);
           clearCart();
           clearCustomerInfoFromLocalStorage();
           clearDeliveryAddressFromLocalStorage();
@@ -1373,10 +1381,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                       <span>${pricing.taxAmount.toFixed(2)}</span>
                     </div>
 
-                    <div className="flex justify-between text-sm">
-                      <span>Convenience Fee ({(SERVICE_FEE_RATE * 100).toFixed(1)}%)</span>
-                      <span>${pricing.serviceFee.toFixed(2)}</span>
-                    </div>
+                    {pricing.serviceFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Convenience Fee ({(SERVICE_FEE_RATE * 100).toFixed(1)}%)</span>
+                        <span>${pricing.serviceFee.toFixed(2)}</span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
                       <span>Total</span>

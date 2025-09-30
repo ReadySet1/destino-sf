@@ -24,7 +24,7 @@ async function testSquareApiConnection(): Promise<void> {
     if (!squareClient.catalogApi?.searchCatalogObjects) {
       throw new Error('Square catalog API not available');
     }
-    const catalogResult = await squareClient.catalogApi.searchCatalogObjects(requestBody);
+    const catalogResult = await squareClient.catalogApi.searchCatalogObjects(requestBody as any);
 
     // Check if we got a valid response
     if (catalogResult && catalogResult.result && catalogResult.result.objects) {

@@ -10,8 +10,8 @@ const nextConfig = {
   typescript: {
     // Re-enable TypeScript checking for production builds
     ignoreBuildErrors: false,
-    // Use main tsconfig.json for builds to ensure proper path resolution
-    tsconfigPath: './tsconfig.json',
+    // Use build-specific tsconfig.json to exclude test files
+    tsconfigPath: './tsconfig.build.json',
   },
   // Enable ESLint checking during builds
   eslint: {
@@ -262,6 +262,8 @@ const nextConfig = {
     unoptimized: false,
     // Add timeout and quality settings for better performance
     minimumCacheTTL: 3600, // 1 hour
+    // Configure image qualities (required for Next.js 16+)
+    qualities: [50, 75, 85, 90, 95, 100],
   },
 };
 

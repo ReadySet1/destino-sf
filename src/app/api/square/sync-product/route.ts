@@ -71,8 +71,8 @@ async function getImageUrls(
             const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
             const imageData = imageResponse.result?.object;
 
-            if (imageData && imageData.image_data && imageData.image_data.url) {
-              const imageUrl = imageData.image_data.url;
+            if (imageData && (imageData as any).image_data && (imageData as any).image_data.url) {
+              const imageUrl = (imageData as any).image_data.url;
               logger.info(`Retrieved image URL from API: ${imageUrl}`);
               if (imageUrl) {
                 const cacheBustedUrl = addCacheBustingParam(imageUrl);
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest);
+      const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest as any);
       const items = searchResponse.result?.objects || [];
 
       if (items.length === 0) {
@@ -207,14 +207,14 @@ export async function GET(request: NextRequest) {
     const item = itemResponse.result?.object;
     const relatedObjects = itemResponse.result?.related_objects || [];
 
-    logger.info(`Successfully retrieved Square catalog item: ${item.item_data?.name}`);
+    logger.info(`Successfully retrieved Square catalog item: ${item?.item_data?.name}`);
 
     // Get image URLs
-    const imageUrls = await getImageUrls(item, relatedObjects);
+    const imageUrls = item ? await getImageUrls(item as any, relatedObjects as any) : [];
     logger.info(`Found ${imageUrls.length} images for product ${product.name}`);
 
     // Process variations if available
-    const variations = item.item_data?.variations || [];
+    const variations = item?.item_data?.variations || [];
     let basePrice = product.price;
 
     if (variations.length > 0) {
@@ -229,9 +229,9 @@ export async function GET(request: NextRequest) {
     const updatedProduct = await prisma.product.update({
       where: { id: product.id },
       data: {
-        name: item.item_data?.name || product.name,
+        name: item?.item_data?.name || product.name,
         description:
-          item.item_data?.description !== null ? item.item_data?.description : product.description,
+          item?.item_data?.description !== null ? item?.item_data?.description : product.description,
         price: basePrice,
         images: imageUrls.length > 0 ? imageUrls : product.images,
         updatedAt: new Date(),
@@ -242,9 +242,9 @@ export async function GET(request: NextRequest) {
       success: true,
       product: updatedProduct,
       squareItem: {
-        id: item.id,
-        name: item.item_data?.name,
-        description: item.item_data?.description,
+        id: item?.id,
+        name: item?.item_data?.name,
+        description: item?.item_data?.description,
         imageCount: imageUrls.length,
       },
       imageUrls,

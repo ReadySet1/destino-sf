@@ -15,6 +15,7 @@ import {
   getPlaceholderCategory,
   getDefaultImageForCategory,
 } from '@/lib/image-utils';
+import { Calendar, Eye } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -86,12 +87,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const displayPrice = product.price;
 
-  // Don't show unavailable items at all (like Pride Alfajores out of season)
   // Handle undefined/null values gracefully
   const isAvailable = product.isAvailable ?? true;
   const isPreorder = product.isPreorder ?? false;
+  const itemState = product.itemState ?? 'ACTIVE';
+  const isSeasonal = itemState === 'SEASONAL';
   
-  if (!isAvailable && !isPreorder) {
+  // Check custom attributes for seasonal badge
+  const customAttrs = product.customAttributes as Record<string, any> | null;
+  const seasonalBadge = customAttrs?.seasonalBadge || 'Seasonal Item';
+  
+  // Don't show unavailable items UNLESS they're seasonal or pre-order
+  if (!isAvailable && !isPreorder && !isSeasonal) {
     return null;
   }
 
@@ -110,6 +117,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   const productUrl = `/products/${productId}`;
 
   const handleAddToCart = () => {
+    // Seasonal items cannot be added to cart
+    if (isSeasonal) {
+      return;
+    }
+
     if (isPreorder) {
       // For pre-order items, show a special modal or alert
       const preorderMessage = formatPreorderMessage(product);
@@ -194,7 +206,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                 Featured
               </span>
             )}
-            {isPreorder && (
+            {isSeasonal && (
+              <span className="bg-purple-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {seasonalBadge}
+              </span>
+            )}
+            {isPreorder && !isSeasonal && (
               <span className="bg-blue-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
                 Pre-order
               </span>
@@ -218,37 +236,51 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-gray-900">${formatPrice(displayPrice)}</span>
 
-            <button
-              className={cn(
-                "font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2",
-                isPreorder
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
-              )}
-              onClick={handleAddToCart}
-              disabled={!isAvailable && !isPreorder}
-            >
-              {isPreorder ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
-                  />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9"
-                  />
-                </svg>
-              )}
-              {isPreorder ? 'Pre-order Now' : 'Add to Cart'}
-            </button>
+            {isSeasonal ? (
+              <button
+                className={cn(
+                  "font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2",
+                  "bg-gray-300 text-gray-500 cursor-not-allowed"
+                )}
+                disabled
+                aria-label="This is a seasonal item and cannot be purchased at this time"
+              >
+                <Eye className="w-4 h-4" />
+                View Only
+              </button>
+            ) : (
+              <button
+                className={cn(
+                  "font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2",
+                  isPreorder
+                    ? "bg-blue-500 hover:bg-blue-600 text-white"
+                    : "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
+                )}
+                onClick={handleAddToCart}
+                disabled={!isAvailable && !isPreorder}
+              >
+                {isPreorder ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9"
+                    />
+                  </svg>
+                )}
+                {isPreorder ? 'Pre-order Now' : 'Add to Cart'}
+              </button>
+            )}
           </div>
         </div>
       </div>

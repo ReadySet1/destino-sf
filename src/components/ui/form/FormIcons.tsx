@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  Info, 
-  Shield, 
-  Image, 
-  Check, 
-  AlertTriangle, 
-  Grid3X3, 
-  ArrowLeft, 
+import {
+  Info,
+  Shield,
+  Image,
+  Check,
+  AlertTriangle,
+  Grid3X3,
+  ArrowLeft,
   Save,
   RefreshCw,
   Plus,
@@ -18,13 +18,16 @@ import {
   Home,
   Store,
   Utensils,
-  ShoppingBag
+  ShoppingBag,
+  List,
+  Calendar,
+  Upload
 } from 'lucide-react';
 
 // Icon components for form components
 export const FormIcons = {
   info: <Info className="w-full h-full" />,
-  shield: <Shield className="w-full h-full" />, 
+  shield: <Shield className="w-full h-full" />,
   image: <Image className="w-full h-full" aria-label="image icon" />,
   check: <Check className="w-full h-full" />,
   warning: <AlertTriangle className="w-full h-full" />,
@@ -42,6 +45,9 @@ export const FormIcons = {
   store: <Store className="w-full h-full" />,
   catering: <Utensils className="w-full h-full" />,
   shipping: <ShoppingBag className="w-full h-full" />,
+  list: <List className="w-full h-full" />,
+  calendar: <Calendar className="w-full h-full" />,
+  upload: <Upload className="w-full h-full" />,
 } as const;
 
 export type FormIconType = typeof FormIcons[keyof typeof FormIcons];

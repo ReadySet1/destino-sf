@@ -1,6 +1,6 @@
 import React from 'react';
 import MenuBanner from '@/components/Menu';
-import ProductList from '@/components/Products/ProductList';
+import ProductList from '@/components/products/ProductList';
 import MarketingSection from '@/components/Marketing/MarketingSection';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 import { generatePageSEO } from '@/lib/seo';

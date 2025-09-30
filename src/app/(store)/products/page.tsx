@@ -5,9 +5,9 @@ import { withDatabaseConnection } from '@/lib/db-utils';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';
-import ProductCard from '@/components/Products/ProductCard';
+import ProductCard from '@/components/products/ProductCard';
 import { Category, Product, Variant } from '@/types/product';
-import { CategoryHeader } from '@/components/Products/CategoryHeader';
+import { CategoryHeader } from '@/components/products/CategoryHeader';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Type for the accumulator in the reduce function - using Prisma types directly

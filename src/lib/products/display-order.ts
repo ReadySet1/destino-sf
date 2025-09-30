@@ -1,58 +1,124 @@
 // Utility functions for managing product display order
 
 import { prisma } from '@/lib/db';
+import { ProductVisibilityService } from '@/lib/services/product-visibility-service';
 import type { 
   ProductDisplayOrder, 
   ReorderUpdateItem, 
   ReorderStrategy 
 } from '@/types/product-admin';
+import { logger } from '@/utils/logger';
 
 /**
  * Get products by category, ordered by ordinal
+ * @deprecated Consider using ProductVisibilityService.getProductsByCategory for consistent visibility filtering
  */
 export async function getProductsByCategory(
   categoryId: string,
   includeInactive = false
 ): Promise<ProductDisplayOrder[]> {
-  const products = await prisma.product.findMany({
-    where: {
-      categoryId,
-      ...(includeInactive ? {} : { active: true })
-    },
-    orderBy: [
-      { ordinal: 'asc' },
-      { createdAt: 'asc' } // Fallback
-    ],
-    select: {
-      id: true,
-      name: true,
-      ordinal: true,
-      price: true,
-      images: true,
-      active: true,
-      categoryId: true,
-      // Additional fields for badge display
-      isAvailable: true,
-      isPreorder: true,
-      visibility: true,
-      itemState: true,
-    }
-  });
+  try {
+    // For admin operations, we can use direct DB queries
+    // For customer-facing operations, use ProductVisibilityService
+    logger.info('Getting products by category (legacy method)', { 
+      categoryId, 
+      includeInactive,
+      note: 'Consider using ProductVisibilityService for consistency'
+    });
 
-  return products.map(product => ({
-    id: product.id,
-    name: product.name,
-    ordinal: Number(product.ordinal || 0),
-    categoryId: product.categoryId,
-    imageUrl: product.images?.[0] || undefined,
-    price: Number(product.price),
-    active: product.active,
-    // Additional fields for badge display
-    isAvailable: product.isAvailable,
-    isPreorder: product.isPreorder,
-    visibility: product.visibility,
-    itemState: product.itemState,
-  }));
+    const products = await prisma.product.findMany({
+      where: {
+        categoryId,
+        ...(includeInactive ? {} : { active: true })
+      },
+      orderBy: [
+        { ordinal: 'asc' },
+        { createdAt: 'asc' } // Fallback
+      ],
+      select: {
+        id: true,
+        name: true,
+        ordinal: true,
+        price: true,
+        images: true,
+        active: true,
+        categoryId: true,
+        // Additional fields for badge display
+        isAvailable: true,
+        isPreorder: true,
+        visibility: true,
+        itemState: true,
+      }
+    });
+
+    return products.map(product => ({
+      id: product.id,
+      name: product.name,
+      ordinal: Number(product.ordinal || 0),
+      categoryId: product.categoryId,
+      imageUrl: product.images?.[0] || undefined,
+      price: Number(product.price),
+      active: product.active,
+      // Additional fields for badge display
+      isAvailable: product.isAvailable,
+      isPreorder: product.isPreorder,
+      visibility: product.visibility,
+      itemState: product.itemState,
+    }));
+  } catch (error) {
+    logger.error('Error in getProductsByCategory:', { categoryId, includeInactive, error });
+    throw error;
+  }
+}
+
+/**
+ * Get products by category using ProductVisibilityService (recommended)
+ */
+export async function getProductsByCategoryWithVisibility(
+  categoryId: string,
+  options: {
+    includeInactive?: boolean;
+    includeAvailabilityEvaluation?: boolean;
+    includePrivate?: boolean;
+  } = {}
+): Promise<ProductDisplayOrder[]> {
+  try {
+    const {
+      includeInactive = false,
+      includeAvailabilityEvaluation = false,
+      includePrivate = false
+    } = options;
+
+    const result = await ProductVisibilityService.getProductsByCategory(categoryId, {
+      onlyActive: !includeInactive,
+      includeAvailabilityEvaluation,
+      includePrivate,
+      orderBy: 'ordinal',
+      orderDirection: 'asc'
+    });
+
+    return result.products.map(product => ({
+      id: product.id,
+      name: product.name,
+      ordinal: 0, // Will be populated from database
+      categoryId: product.categoryId,
+      imageUrl: product.images?.[0] || undefined,
+      price: product.price,
+      active: product.active,
+      // Additional fields for badge display
+      isAvailable: product.isAvailable,
+      isPreorder: product.isPreorder,
+      visibility: product.visibility,
+      itemState: product.itemState,
+      // Add evaluation if available
+      ...(product.evaluatedAvailability && {
+        evaluatedAvailability: product.evaluatedAvailability
+      })
+    }));
+  } catch (error) {
+    logger.error('Error in getProductsByCategoryWithVisibility:', { categoryId, options, error });
+    throw error;
+  }
 }
 
 /**
