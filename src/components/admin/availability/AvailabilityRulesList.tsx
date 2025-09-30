@@ -128,26 +128,41 @@ export function AvailabilityRulesList({
 
   const toggleRuleEnabled = async (rule: AvailabilityRule) => {
     try {
+      // Only send the fields that are part of the schema, exclude relations and timestamps
+      const ruleData = {
+        productId: rule.productId,
+        name: rule.name,
+        enabled: !rule.enabled,
+        priority: rule.priority,
+        ruleType: rule.ruleType,
+        state: rule.state,
+        startDate: rule.startDate,
+        endDate: rule.endDate,
+        seasonalConfig: rule.seasonalConfig,
+        timeRestrictions: rule.timeRestrictions,
+        preOrderSettings: rule.preOrderSettings,
+        viewOnlySettings: rule.viewOnlySettings,
+        overrideSquare: rule.overrideSquare,
+      };
+
       const response = await fetch(`/api/availability/${rule.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...rule,
-          enabled: !rule.enabled
-        }),
+        body: JSON.stringify(ruleData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update rule');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update rule');
       }
 
       toast.success(`Rule ${rule.enabled ? 'disabled' : 'enabled'} successfully`);
       loadRulesAndProducts(); // Refresh the list
     } catch (error) {
       console.error('Error updating rule:', error);
-      toast.error('Failed to update rule');
+      toast.error(error instanceof Error ? error.message : 'Failed to update rule');
     }
   };
 

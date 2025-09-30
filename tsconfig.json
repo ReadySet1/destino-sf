@@ -39,5 +39,5 @@
     ".next/types/**/*.ts",
     "src/types/jest.d.ts"
   ],
-  "exclude": ["node_modules", "react-app/vite.config.ts", "**/vite.config.ts", "react-app/dist", "scripts/**/*"]
+  "exclude": ["node_modules", "react-app/vite.config.ts", "**/vite.config.ts", "react-app/dist", "scripts/**/*", "docs/**/*"]
 }
