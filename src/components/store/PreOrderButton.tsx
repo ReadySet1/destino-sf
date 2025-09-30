@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -117,9 +118,11 @@ export function PreOrderButton({
           {/* Product Summary */}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
             {product.images?.[0] && (
-              <img
+              <Image
                 src={product.images[0]}
                 alt={product.name}
+                width={48}
+                height={48}
                 className="w-12 h-12 object-cover rounded"
               />
             )}

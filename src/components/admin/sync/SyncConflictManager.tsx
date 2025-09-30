@@ -59,6 +59,7 @@ export function SyncConflictManager() {
 
   useEffect(() => {
     loadConflicts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFilter]);
 
   const loadConflicts = async () => {

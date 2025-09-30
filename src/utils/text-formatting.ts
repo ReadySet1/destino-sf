@@ -336,7 +336,7 @@ const formattedDesc = formatProductDescription(
 // Renders with proper bold/italic HTML elements
 */
 
-export default {
+const textFormatting = {
   capitalizeWithDashes,
   formatDescriptionKeywords,
   renderFormattedText,
@@ -347,3 +347,5 @@ export default {
   hasMarkdownFormatting,
   stripMarkdownFormatting,
 };
+
+export default textFormatting;
