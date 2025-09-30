@@ -19,8 +19,24 @@ import { BoxedLunchCard } from './BoxedLunchCard';
 import { BoxedLunchBuilder } from './BoxedLunchBuilder';
 import { toast } from '@/lib/toast';
 
-// Alfajores data for boxed lunch menu
-const ALFAJORES_ITEMS = [
+// Define menu context to determine which items to show
+type MenuContext = 'lunch' | 'appetizer' | 'buffet' | 'all';
+
+interface DessertItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  isVegetarian: boolean;
+  isVegan: boolean;
+  isGlutenFree: boolean;
+  servingSize: string;
+  availableIn: MenuContext[]; // Define where item is available
+}
+
+// All dessert items with menu context availability
+const ALL_DESSERT_ITEMS: DessertItem[] = [
+  // ALFAJORES - Available in ALL menus including lunch
   {
     id: 'alfajores-classic',
     name: 'Alfajores - Classic',
@@ -30,6 +46,7 @@ const ALFAJORES_ITEMS = [
     isVegan: false,
     isGlutenFree: false,
     servingSize: '1 piece',
+    availableIn: ['lunch', 'appetizer', 'buffet', 'all'],
   },
   {
     id: 'alfajores-chocolate',
@@ -40,6 +57,7 @@ const ALFAJORES_ITEMS = [
     isVegan: false,
     isGlutenFree: false,
     servingSize: '1 piece',
+    availableIn: ['lunch', 'appetizer', 'buffet', 'all'],
   },
   {
     id: 'alfajores-lemon',
@@ -50,6 +68,7 @@ const ALFAJORES_ITEMS = [
     isVegan: false,
     isGlutenFree: false,
     servingSize: '1 piece',
+    availableIn: ['lunch', 'appetizer', 'buffet', 'all'],
   },
   {
     id: 'alfajores-gluten-free',
@@ -60,16 +79,73 @@ const ALFAJORES_ITEMS = [
     isVegan: false,
     isGlutenFree: true,
     servingSize: '1 piece',
+    availableIn: ['lunch', 'appetizer', 'buffet', 'all'],
+  },
+  
+  // ITEMS REMOVED FROM LUNCH MENU - Only available in appetizer/buffet
+  {
+    id: 'lemon-bars',
+    name: 'Lemon Bars',
+    description: 'Tangy lemon custard on buttery shortbread crust',
+    price: 3.0,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    availableIn: ['appetizer', 'buffet'], // NOT in lunch
+  },
+  {
+    id: 'cupcakes',
+    name: 'Cupcakes',
+    description: 'Moist vanilla or chocolate cupcakes with buttercream frosting',
+    price: 3.5,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    availableIn: ['appetizer', 'buffet'], // NOT in lunch
+  },
+  {
+    id: 'brownies',
+    name: 'Brownies',
+    description: 'Fudgy chocolate brownies with walnuts',
+    price: 3.0,
+    isVegetarian: true,
+    isVegan: false,
+    isGlutenFree: false,
+    servingSize: '1 piece',
+    availableIn: ['appetizer', 'buffet'], // NOT in lunch
   },
 ];
+
+/**
+ * Filter dessert items based on menu context
+ */
+const filterDessertsByMenu = (
+  items: DessertItem[], 
+  context: MenuContext
+): DessertItem[] => {
+  if (context === 'all') {
+    return items;
+  }
+  
+  return items.filter(item => 
+    item.availableIn.includes(context) || 
+    item.availableIn.includes('all')
+  );
+};
 
 // Protein image mapping moved to BoxedLunchBuilder component
 
 interface BoxedLunchMenuProps {
   className?: string;
+  menuContext?: MenuContext; // Allow context to be passed in
 }
 
-export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => {
+export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ 
+  className,
+  menuContext = 'lunch' // Default to lunch context
+}) => {
   // Database-driven boxed lunch items state
   const [boxedLunchItems, setBoxedLunchItems] = useState<BoxedLunchItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,6 +217,12 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
   const setQuantity = (itemId: string, quantity: number) => {
     setQuantities(prev => ({ ...prev, [itemId]: Math.max(1, quantity) }));
   };
+
+  // Filter desserts based on menu context
+  const availableDesserts = React.useMemo(
+    () => filterDessertsByMenu(ALL_DESSERT_ITEMS, menuContext),
+    [menuContext]
+  );
 
   const addToCart = (type: 'salad' | 'addon' | 'alfajores', itemId: string, item: any) => {
     const quantity = getQuantity(itemId);
@@ -301,20 +383,30 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ className }) => 
         </div>
       </section>
 
-      {/* Alfajores Section */}
+      {/* Desserts Section - Context-aware filtering */}
       <section>
         <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
           <Cookie className="h-6 w-6 text-orange-600" />
-          Alfajores - $2.50 each
+          {menuContext === 'lunch' 
+            ? 'Alfajores - $2.50 each' 
+            : 'Desserts - Starting at $2.50'
+          }
         </h3>
+        
+        {availableDesserts.length === 0 && (
+          <p className="text-gray-600 italic">
+            No desserts available for this menu. Please check other menu sections.
+          </p>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ALFAJORES_ITEMS.map(alfajor => (
+          {availableDesserts.map(dessert => (
             <AlfajorCard
-              key={alfajor.id}
-              alfajor={alfajor}
-              onAddToCart={() => addToCart('alfajores', alfajor.id, alfajor)}
-              quantity={getQuantity(alfajor.id)}
-              onQuantityChange={qty => setQuantity(alfajor.id, qty)}
+              key={dessert.id}
+              alfajor={dessert}
+              onAddToCart={() => addToCart('alfajores', dessert.id, dessert)}
+              quantity={getQuantity(dessert.id)}
+              onQuantityChange={qty => setQuantity(dessert.id, qty)}
             />
           ))}
         </div>

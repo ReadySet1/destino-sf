@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ClientOnly } from '@/components/ui/client-only';
 
 interface AdminSidebarProps {
   user: {
@@ -100,6 +101,12 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
           label: 'Product Order',
           icon: <ArrowUpDown className="h-4 w-4" />,
           description: 'Arrange product display'
+        },
+        {
+          href: '/admin/products/availability',
+          label: 'Availability',
+          icon: <Clock className="h-4 w-4" />,
+          description: 'Manage availability rules'
         },
         {
           href: '/admin/categories',
@@ -213,8 +220,8 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
       <SidebarFooter className="px-4 py-6 border-t border-gray-100 bg-gray-50">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <ClientOnly
+              fallback={
                 <SidebarMenuButton className="hover:bg-gray-100">
                   <div className="flex items-center w-full">
                     <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
@@ -228,29 +235,50 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
                         {profileRole}
                       </div>
                     </div>
-                    <ChevronUp className="ml-auto h-4 w-4 text-gray-400" />
+                    <div className="ml-auto h-4 w-4 bg-gray-200 rounded animate-pulse" />
                   </div>
                 </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                <DropdownMenuItem disabled>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                    <p className="text-xs text-gray-500">ID: {user.id}</p>
-                    <p className="text-xs text-gray-500">Role: {profileRole}</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <form action={signOutAction}>
-                    <button type="submit" className="w-full text-left flex items-center gap-2 text-red-600 hover:text-red-700">
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
-                    </button>
-                  </form>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              }
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="hover:bg-gray-100">
+                    <div className="flex items-center w-full">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                        <User2 className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {user.email}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {profileRole}
+                        </div>
+                      </div>
+                      <ChevronUp className="ml-auto h-4 w-4 text-gray-400" />
+                    </div>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuItem disabled>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-900">{user.email}</p>
+                      <p className="text-xs text-gray-500">ID: {user.id}</p>
+                      <p className="text-xs text-gray-500">Role: {profileRole}</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <form action={signOutAction}>
+                      <button type="submit" className="w-full text-left flex items-center gap-2 text-red-600 hover:text-red-700">
+                        <LogOut className="h-4 w-4" />
+                        Sign Out
+                      </button>
+                    </form>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ClientOnly>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

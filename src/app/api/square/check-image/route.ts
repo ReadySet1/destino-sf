@@ -133,14 +133,14 @@ export async function GET(request: NextRequest) {
 
         const response = await squareClient.catalogApi.retrieveCatalogObject(imageId);
 
-        if (!response.result?.object || response.result.object.type !== 'IMAGE') {
+        if (!response.result?.object || (response.result.object as any).type !== 'IMAGE') {
           return NextResponse.json(
             { error: 'Not a valid image object', details: response.result },
             { status: 404 }
           );
         }
 
-        const imageData = response.result.object.image_data;
+        const imageData = (response.result.object as any).image_data;
         const originalUrl = imageData?.url || '';
 
         // Process the URL to create proxied versions to test
@@ -213,14 +213,14 @@ export async function GET(request: NextRequest) {
                 (obj: SquareCatalogObject) => obj.id === imageId && obj.type === 'IMAGE'
               );
 
-              if (imageFromRelated && imageFromRelated.image_data?.url) {
-                const originalUrl = imageFromRelated.image_data.url;
+              if (imageFromRelated && (imageFromRelated as any).image_data?.url) {
+                const originalUrl = (imageFromRelated as any).image_data.url;
                 const encodedUrl = Buffer.from(originalUrl).toString('base64');
                 const proxiedUrl = `/api/proxy/image?url=${encodedUrl}`;
 
                 return {
                   id: imageId,
-                  name: imageFromRelated.image_data.caption || 'No caption',
+                  name: (imageFromRelated as any).image_data.caption || 'No caption',
                   originalUrl,
                   proxiedUrl,
                   alternativeUrls: generateAlternativeUrls(originalUrl),
@@ -239,14 +239,14 @@ export async function GET(request: NextRequest) {
               const imageResponse = await squareClient.catalogApi.retrieveCatalogObject(imageId);
               const imageObject = imageResponse.result?.object;
 
-              if (imageObject && imageObject.image_data?.url) {
-                const originalUrl = imageObject.image_data.url;
+              if (imageObject && (imageObject as any).image_data?.url) {
+                const originalUrl = (imageObject as any).image_data.url;
                 const encodedUrl = Buffer.from(originalUrl).toString('base64');
                 const proxiedUrl = `/api/proxy/image?url=${encodedUrl}`;
 
                 return {
                   id: imageId,
-                  name: imageObject.image_data.caption || 'No caption',
+                  name: (imageObject as any).image_data.caption || 'No caption',
                   originalUrl,
                   proxiedUrl,
                   alternativeUrls: generateAlternativeUrls(originalUrl),

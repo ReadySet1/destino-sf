@@ -15,6 +15,18 @@ import {
   getPlaceholderCategory,
   getDefaultImageForCategory,
 } from '@/lib/image-utils';
+import { Calendar, Eye } from 'lucide-react';
+import {
+  getEffectiveAvailabilityState,
+  shouldRenderProduct,
+  canAddToCart,
+  isViewOnly,
+  isPreOrder,
+  isComingSoon,
+  getAddToCartButtonConfig,
+  getAvailabilityBadge,
+  formatPreorderMessage,
+} from '@/lib/availability/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -86,13 +98,28 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const displayPrice = product.price;
 
-  // Don't show unavailable items at all (like Pride Alfajores out of season)
-  // Handle undefined/null values gracefully
-  const isAvailable = product.isAvailable ?? true;
-  const isPreorder = product.isPreorder ?? false;
-  
-  if (!isAvailable && !isPreorder) {
+  // Check if product should be rendered using the availability utils
+  if (!shouldRenderProduct(product)) {
     return null;
+  }
+
+  // Get availability state and button config
+  const availabilityState = getEffectiveAvailabilityState(product);
+  const buttonConfig = getAddToCartButtonConfig(product);
+  const badge = getAvailabilityBadge(product);
+
+  // Debug logging for availability state
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[ProductCard] ${product.name}:`, {
+      availabilityState,
+      hasEvaluatedAvailability: !!product.evaluatedAvailability,
+      evaluatedState: product.evaluatedAvailability?.currentState,
+      isAvailable: product.isAvailable,
+      isPreorder: product.isPreorder,
+      itemState: product.itemState,
+      buttonText: buttonConfig.text,
+      badgeText: badge?.text
+    });
   }
 
   // Use image utilities to determine if we should show placeholder
@@ -110,8 +137,13 @@ export default function ProductCard({ product }: ProductCardProps) {
   const productUrl = `/products/${productId}`;
 
   const handleAddToCart = () => {
-    if (isPreorder) {
-      // For pre-order items, show a special modal or alert
+    // Check if product can be added to cart
+    if (!canAddToCart(product)) {
+      return;
+    }
+
+    // For pre-order items, show confirmation dialog
+    if (isPreOrder(product)) {
       const preorderMessage = formatPreorderMessage(product);
       if (!confirm(preorderMessage)) {
         return;
@@ -135,29 +167,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       variantId: undefined,
     });
 
-    const alertMessage = isPreorder 
+    const alertMessage = isPreOrder(product)
       ? `1 ${product.name} has been pre-ordered and added to your cart.`
       : `1 ${product.name} has been added to your cart.`;
     
     showAlert(alertMessage);
-  };
-
-  // Helper function to format pre-order message
-  const formatPreorderMessage = (product: Product): string => {
-    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
-      year: 'numeric', month: 'long', day: 'numeric' 
-    });
-
-    let message = `This item is available for pre-order only.\n\n`;
-    
-    if (product.preorderStartDate && product.preorderEndDate) {
-      message += `Expected availability: ${formatDate(product.preorderStartDate)} - ${formatDate(product.preorderEndDate)}\n\n`;
-    } else if (product.preorderEndDate) {
-      message += `Expected availability by: ${formatDate(product.preorderEndDate)}\n\n`;
-    }
-    
-    message += `Would you like to place a pre-order for this item?`;
-    return message;
   };
 
   return (
@@ -189,14 +203,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           {/* Badges */}
           <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
-            {product.featured && (
-              <span className="bg-orange-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
-                Featured
-              </span>
-            )}
-            {isPreorder && (
-              <span className="bg-blue-500 text-white px-2 py-1 text-xs font-semibold rounded shadow-sm">
-                Pre-order
+            {badge?.show && (
+              <span className={cn(
+                "px-2 py-1 text-xs font-semibold rounded shadow-sm flex items-center gap-1",
+                badge.className
+              )}>
+                {badge.icon === 'calendar' && <Calendar className="w-3 h-3" />}
+                {badge.icon === 'eye' && <Eye className="w-3 h-3" />}
+                {badge.text}
               </span>
             )}
           </div>
@@ -221,23 +235,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             <button
               className={cn(
                 "font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2",
-                isPreorder
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
+                buttonConfig.className
               )}
               onClick={handleAddToCart}
-              disabled={!isAvailable && !isPreorder}
+              disabled={buttonConfig.disabled}
+              aria-label={buttonConfig.ariaLabel}
             >
-              {isPreorder ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
-                  />
-                </svg>
-              ) : (
+              {buttonConfig.icon === 'cart' && (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -247,7 +251,19 @@ export default function ProductCard({ product }: ProductCardProps) {
                   />
                 </svg>
               )}
-              {isPreorder ? 'Pre-order Now' : 'Add to Cart'}
+              {buttonConfig.icon === 'preorder' && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
+                  />
+                </svg>
+              )}
+              {buttonConfig.icon === 'eye' && <Eye className="w-4 h-4" />}
+              {buttonConfig.icon === 'calendar' && <Calendar className="w-4 h-4" />}
+              {buttonConfig.text}
             </button>
           </div>
         </div>

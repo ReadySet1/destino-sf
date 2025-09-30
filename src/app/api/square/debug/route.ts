@@ -119,8 +119,8 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
     if (squareItem.item_data?.image_ids) {
       relatedIds.push(...squareItem.item_data.image_ids);
     }
-    if (squareItem.item_data?.categories) {
-      relatedIds.push(...squareItem.item_data.categories.map((cat: any) => cat.id));
+    if ((squareItem.item_data as any)?.categories) {
+      relatedIds.push(...(squareItem.item_data as any).categories.map((cat: any) => cat.id));
     }
 
     let relatedObjects: any[] = [];
@@ -225,7 +225,7 @@ async function debugAllItems() {
       include_related_objects: true,
       include_deleted_objects: false,
       limit: 20
-    });
+    } as any);
 
     const items = response.result?.objects || [];
     const relatedObjects = response.result?.related_objects || [];

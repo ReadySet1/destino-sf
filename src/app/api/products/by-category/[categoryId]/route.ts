@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductsByCategory } from '@/lib/products/display-order';
+import { ProductVisibilityService } from '@/lib/services/product-visibility-service';
+import { logger } from '@/utils/logger';
 
 interface RouteParams {
   params: Promise<{
@@ -9,7 +10,7 @@ interface RouteParams {
 
 /**
  * GET /api/products/by-category/[categoryId]
- * Get products for a category, ordered by ordinal
+ * Get products for a category with visibility filtering and availability evaluation
  */
 export async function GET(
   request: NextRequest,
@@ -25,21 +26,47 @@ export async function GET(
       );
     }
     
-    // Check for includeInactive query parameter
+    // Parse query parameters
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
+    const includeAvailabilityEvaluation = searchParams.get('includeAvailabilityEvaluation') === 'true';
+    const includePrivate = searchParams.get('includePrivate') === 'true';
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
+    const includePagination = searchParams.get('includePagination') === 'true';
     
-    const products = await getProductsByCategory(categoryId, includeInactive);
-    
-    return NextResponse.json({
-      success: true,
-      categoryId,
-      products,
-      count: products.length
+    // Use ProductVisibilityService with proper options
+    const result = await ProductVisibilityService.getProductsByCategory(categoryId, {
+      onlyActive: !includeInactive,
+      includeAvailabilityEvaluation,
+      includePrivate,
+      includeVariants: true, // Include variants for category listings
+      orderBy: 'ordinal', // Order by ordinal for categories
+      orderDirection: 'asc',
+      limit,
+      page,
+      includePagination
     });
     
+    const response = {
+      success: true,
+      categoryId,
+      products: result.products,
+      count: result.products.length,
+      ...(result.pagination && { pagination: result.pagination })
+    };
+    
+    logger.info('Products fetched by category', {
+      categoryId,
+      count: result.products.length,
+      includeInactive,
+      includeAvailabilityEvaluation
+    });
+    
+    return NextResponse.json(response);
+    
   } catch (error) {
-    console.error('Error fetching products by category:', error);
+    logger.error('Error fetching products by category:', { categoryId: context.params, error });
     
     return NextResponse.json(
       { error: 'Failed to fetch products' },

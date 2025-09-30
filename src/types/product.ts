@@ -18,6 +18,13 @@ export interface Product {
   createdAt: Date;
   updatedAt: Date;
   
+  // Nutrition fields
+  calories?: number | null;
+  dietaryPreferences?: string[];
+  ingredients?: string | null;
+  allergens?: string[];
+  nutritionFacts?: any;
+  
   // Availability fields for pre-order and seasonal items
   visibility?: string | null;
   isAvailable?: boolean;
@@ -29,6 +36,16 @@ export interface Product {
   itemState?: string | null;
   availabilityMeta?: Record<string, any> | null;
   customAttributes?: Record<string, any> | null;
+  
+  // Evaluated availability from rules engine
+  evaluatedAvailability?: {
+    currentState: string;
+    appliedRulesCount: number;
+    nextStateChange?: {
+      date: Date | string;
+      newState: string;
+    };
+  };
 }
 
 export interface Category {

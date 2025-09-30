@@ -10,7 +10,16 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Clock, Thermometer, Leaf, Users } from 'lucide-react';
+import { ChevronDown, Clock, Thermometer, Leaf, Users, Eye } from 'lucide-react';
+import {
+  getEffectiveAvailabilityState,
+  shouldRenderProduct,
+  canAddToCart,
+  isViewOnly,
+  isPreOrder,
+  getAddToCartButtonConfig,
+  formatPreorderMessage,
+} from '@/lib/availability/utils';
 
 interface ProductDetailsProps {
   product: Product;
@@ -370,6 +379,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const { addItem } = useCartStore();
   const { showAlert } = useCartAlertStore();
 
+
   // Ensure product exists and has required fields before rendering
   if (!product || !product.id || !product.name) {
     return (
@@ -394,32 +404,41 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const productId = product.id;
   const productName = product.name;
   const isActive = product.active ?? true;
-  const isAvailable = product.isAvailable ?? true;
-  const isPreorder = product.isPreorder ?? false;
   const stock: number = 999; // Explicitly type as number
+  
+  // Use availability utilities
+  const availabilityState = getEffectiveAvailabilityState(product);
+  const buttonConfig = getAddToCartButtonConfig(product);
+  const productIsViewOnly = isViewOnly(product);
+  const productIsPreOrder = isPreOrder(product);
+  const productCanAddToCart = canAddToCart(product);
 
-  // Helper function to format pre-order message
-  const formatPreorderMessage = (product: Product): string => {
-    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
-      year: 'numeric', month: 'long', day: 'numeric' 
-    });
-
-    let message = `This item is available for pre-order only.\n\n`;
-    
-    if (product.preorderStartDate && product.preorderEndDate) {
-      message += `Expected availability: ${formatDate(product.preorderStartDate)} - ${formatDate(product.preorderEndDate)}\n\n`;
-    } else if (product.preorderEndDate) {
-      message += `Expected availability by: ${formatDate(product.preorderEndDate)}\n\n`;
-    }
-    
-    message += `Would you like to place a pre-order for this item?`;
-    return message;
-  };
+  // Check if product should be rendered at all
+  if (!shouldRenderProduct(product)) {
+    return (
+      <div className="min-h-screen bg-[hsl(var(--header-orange))]">
+        <div className="py-8 mb-0">
+          <div className="max-w-4xl mx-auto px-4 text-center text-white">
+            <div className="py-20">
+              <h1 className="text-2xl font-bold mb-4">Product not available</h1>
+              <p className="text-white/80">
+                This product is currently not available for viewing or purchase.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
-    console.log('Adding to cart:', { productName, quantity, selectedVariant });
     
-    if (isPreorder) {
+    // Check if product can be added to cart
+    if (!productCanAddToCart) {
+      return;
+    }
+    
+    if (productIsPreOrder) {
       // For pre-order items, show a special confirmation dialog
       const preorderMessage = formatPreorderMessage(product);
       if (!confirm(preorderMessage)) {
@@ -442,9 +461,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     };
 
     addItem(cartItem);
-    console.log('Showing alert for:', cartItem);
-    
-    const alertMessage = isPreorder 
+
+    const alertMessage = productIsPreOrder
       ? `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been pre-ordered and added to your cart.`
       : `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart.`;
     
@@ -479,8 +497,16 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               className="h-full w-full object-cover object-center"
               priority
             />
-            {/* Pre-order Badge */}
-            {isPreorder && (
+            {/* Availability Badges */}
+            {productIsViewOnly && (
+              <div className="absolute top-4 right-4 z-10">
+                <span className="bg-gray-500 text-white px-3 py-1 text-sm font-semibold rounded-full shadow-lg flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  View Only
+                </span>
+              </div>
+            )}
+            {productIsPreOrder && !productIsViewOnly && (
               <div className="absolute top-4 right-4 z-10">
                 <span className="bg-blue-500 text-white px-3 py-1 text-sm font-semibold rounded-full shadow-lg">
                   Pre-order
@@ -497,6 +523,13 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
             {/* Product highlights */}
             <div className="mt-6 flex flex-wrap gap-3">
+              {/* Availability state badge */}
+              {productIsViewOnly && (
+                <div className="flex items-center gap-2 bg-gray-400/40 backdrop-blur-md border border-white/50 px-4 py-2 rounded-full">
+                  <Eye className="w-4 h-4 text-white" />
+                  <span className="text-sm font-medium text-white drop-shadow-sm">View Only</span>
+                </div>
+              )}
               {getProductHighlights(product).map((highlight, index) => (
                 <div
                   key={index}
@@ -619,41 +652,36 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                     </div>
                   </div>
 
-                  {/* Add to Cart / Pre-order Button */}
+                  {/* Add to Cart / Pre-order / View Only Button */}
                   <button
                     onClick={handleAddToCart}
-                    className={`h-10 px-6 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-                      isPreorder
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500'
-                        : 'bg-[#F7B614] hover:bg-[#E5A912] text-white focus:ring-orange-500'
-                    }`}
-                    disabled={(!isActive && !isPreorder) || stock === 0}
+                    className={`h-10 px-6 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${buttonConfig.className}`}
+                    disabled={buttonConfig.disabled || (!isActive && !productCanAddToCart) || stock === 0}
+                    aria-label={buttonConfig.ariaLabel}
                   >
-                    {isPreorder ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
-                          />
-                        </svg>
-                        Pre-order Now
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9"
-                          />
-                        </svg>
-                        Add to Cart
-                      </>
+                    {buttonConfig.icon === 'cart' && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9"
+                        />
+                      </svg>
                     )}
+                    {buttonConfig.icon === 'preorder' && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3a4 4 0 118 0v4m-4 8l-2-2m0 0l-2-2m2 2l2-2m-2 2v6"
+                        />
+                      </svg>
+                    )}
+                    {buttonConfig.icon === 'eye' && <Eye className="w-4 h-4" />}
+                    {buttonConfig.icon === 'calendar' && <Clock className="w-4 h-4" />}
+                    {buttonConfig.text}
                   </button>
                 </div>
               </motion.div>
