@@ -13,20 +13,24 @@ export async function GET(request: Request) {
   const origin = requestUrl.origin;
   const redirectTo = requestUrl.searchParams.get('redirect_to')?.toString();
 
-  console.log('🔗 Auth callback received:', {
-    code: code ? 'present' : 'missing',
-    token_hash: token_hash ? 'present' : 'missing',
-    type,
-    redirectTo,
-    origin,
-    fullUrl: requestUrl.toString(),
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔗 Auth callback received:', {
+      code: code ? 'present' : 'missing',
+      token_hash: token_hash ? 'present' : 'missing',
+      type,
+      redirectTo,
+      origin,
+      fullUrl: requestUrl.toString(),
+    });
+  }
 
   const supabase = await createClient();
 
   // Handle magic link / email verification (OTP) - Check this first
   if (token_hash && type) {
-    console.log('🪄 Processing magic link OTP verification...');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🪄 Processing magic link OTP verification...');
+    }
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
@@ -35,19 +39,25 @@ export async function GET(request: Request) {
       console.error('❌ Error verifying OTP:', error);
       return NextResponse.redirect(`${origin}/auth/auth-code-error`);
     }
-    console.log('✅ Magic link OTP verification successful');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Magic link OTP verification successful');
+    }
   }
   // Handle PKCE flow (authorization code) - Only if no OTP tokens
   else if (code) {
-    console.log('🔄 Processing PKCE code exchange...');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 Processing PKCE code exchange...');
+    }
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.error('❌ Error exchanging code for session:', error);
 
       // Check if this might be a magic link incorrectly sent as PKCE
       if (error.message?.includes('code challenge') || error.message?.includes('code verifier')) {
-        console.log('🔍 PKCE error detected - this might be a magic link sent as PKCE flow');
-        console.log('🔧 Attempting to handle as magic link...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 PKCE error detected - this might be a magic link sent as PKCE flow');
+          console.log('🔧 Attempting to handle as magic link...');
+        }
 
         // Try to extract potential magic link parameters from the URL
         const urlFragment = requestUrl.hash;
@@ -57,14 +67,18 @@ export async function GET(request: Request) {
           const refreshToken = hashParams.get('refresh_token');
 
           if (accessToken && refreshToken) {
-            console.log('🔄 Found tokens in URL fragment, attempting to set session...');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔄 Found tokens in URL fragment, attempting to set session...');
+            }
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
 
             if (!sessionError) {
-              console.log('✅ Successfully set session from URL fragment tokens');
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Successfully set session from URL fragment tokens');
+              }
             } else {
               console.error('❌ Failed to set session from URL fragment:', sessionError);
               return NextResponse.redirect(`${origin}/auth/auth-code-error`);
@@ -79,7 +93,9 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
     } else {
-      console.log('✅ PKCE code exchange successful');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ PKCE code exchange successful');
+      }
     }
   }
 
@@ -99,11 +115,15 @@ export async function GET(request: Request) {
 
   // If we have a redirect_to parameter, use it
   if (redirectTo) {
-    console.log('🎯 Redirecting to specified URL:', redirectTo);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 Redirecting to specified URL:', redirectTo);
+    }
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
 
   // Default redirect after successful authentication
-  console.log('🎯 Redirecting to default protected page');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🎯 Redirecting to default protected page');
+  }
   return NextResponse.redirect(`${origin}/protected`);
 }

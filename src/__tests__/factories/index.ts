@@ -84,7 +84,7 @@ export class UserFactory extends Factory<TestUser> {
       email: faker.internet.email({ firstName, lastName }).toLowerCase(),
       firstName,
       lastName,
-      phone: faker.phone.number('(###) ###-####'),
+      phone: faker.phone.number(),
       role: 'CUSTOMER',
     };
   }
@@ -188,7 +188,7 @@ export class OrderFactory extends Factory<TestOrder> {
       email: faker.internet.email({ firstName, lastName }).toLowerCase(),
       firstName,
       lastName,
-      phone: faker.phone.number('(###) ###-####'),
+      phone: faker.phone.number(),
       status: 'PENDING',
       paymentStatus: 'PENDING',
       fulfillmentType: 'PICKUP',
@@ -304,7 +304,7 @@ export class CateringOrderFactory extends Factory<TestCateringOrder> {
       email: faker.internet.email({ firstName, lastName }).toLowerCase(),
       firstName,
       lastName,
-      phone: faker.phone.number('(###) ###-####'),
+      phone: faker.phone.number(),
       eventDate: faker.date.future(),
       eventTime: '12:00 PM',
       numberOfPeople,

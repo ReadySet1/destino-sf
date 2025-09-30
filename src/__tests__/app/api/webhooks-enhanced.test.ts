@@ -29,7 +29,15 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
           .update(payload)
           .digest('base64');
 
-        return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+        const signatureBuffer = Buffer.from(signature);
+        const expectedBuffer = Buffer.from(expectedSignature);
+
+        // timingSafeEqual requires buffers of the same length
+        if (signatureBuffer.length !== expectedBuffer.length) {
+          return false;
+        }
+
+        return crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
       };
 
       const payload = '{"type":"payment.created","data":{"object":{"id":"payment-123"}}}';
@@ -48,7 +56,18 @@ describe('Webhook Handlers - Enhanced Security & Processing', () => {
           .update(payload)
           .digest('base64');
 
-        if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        const signatureBuffer = Buffer.from(signature);
+        const expectedBuffer = Buffer.from(expectedSignature);
+
+        // timingSafeEqual requires buffers of the same length
+        if (signatureBuffer.length !== expectedBuffer.length) {
+          return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        if (!crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
           return new Response(JSON.stringify({ error: 'Invalid signature' }), {
             status: 401,
             headers: { 'Content-Type': 'application/json' },

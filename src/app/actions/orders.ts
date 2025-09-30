@@ -380,7 +380,9 @@ export async function updateOrderPayment(
             orderWithItems,
             notes || 'Payment processing failed'
           );
-          console.log(`Payment failed alert sent for order ${orderId}`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Payment failed alert sent for order ${orderId}`);
+          }
         }
       }
 
@@ -401,9 +403,11 @@ export async function updateOrderPayment(
 
         if (orderWithItems) {
           await alertService.sendOrderStatusChangeAlert(orderWithItems, previousStatus);
-          console.log(
-            `Status change alert sent for order ${orderId}: ${previousStatus} → ${newStatus}`
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              `Status change alert sent for order ${orderId}: ${previousStatus} → ${newStatus}`
+            );
+          }
         }
       }
     } catch (alertError: any) {
@@ -489,8 +493,10 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   fulfillment: z.infer<typeof FulfillmentSchema>; // Use the discriminated union type
   paymentMethod: PaymentMethod; // CASH, SQUARE, etc.
 }): Promise<ServerActionResult> {
-  console.log('Server Action: createOrderAndGenerateCheckoutUrl started.');
-  console.log('Received Fulfillment Data:', JSON.stringify(formData.fulfillment, null, 2));
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Server Action: createOrderAndGenerateCheckoutUrl started.');
+    console.log('Received Fulfillment Data:', JSON.stringify(formData.fulfillment, null, 2));
+  }
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -632,14 +638,16 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
-  console.log(`Calculated Subtotal: ${subtotal.toFixed(2)}`);
-  console.log(`Calculated Tax: ${taxAmount.toFixed(2)}`);
-  console.log(
-    `Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
-  );
-  console.log(`Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
-  console.log(`Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
-  console.log(`Calculated Final Total: ${finalTotal.toFixed(2)}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Calculated Subtotal: ${subtotal.toFixed(2)}`);
+    console.log(`Calculated Tax: ${taxAmount.toFixed(2)}`);
+    console.log(
+      `Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
+    );
+    console.log(`Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
+    console.log(`Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
+    console.log(`Calculated Final Total: ${finalTotal.toFixed(2)}`);
+  }
 
   // --- Prepare Fulfillment DB Data ---
   let dbFulfillmentData: Partial<Prisma.OrderCreateInput> = {

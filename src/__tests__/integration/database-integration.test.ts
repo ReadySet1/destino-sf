@@ -313,7 +313,7 @@ describe('Database Integration Tests', () => {
 
   describe('Edge Cases', () => {
     test('should handle orders without user association', async () => {
-      const order = await orderFactory.create({ userId: null });
+      const order = await orderFactory.create({ userId: undefined });
       expect(order.userId).toBeNull();
     });
 
