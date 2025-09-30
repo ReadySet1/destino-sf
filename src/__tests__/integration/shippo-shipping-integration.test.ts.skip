@@ -4,16 +4,24 @@ import { calculateShippingWeight } from '@/lib/shippingUtils';
 import { ShippoClientManager } from '@/lib/shippo/client';
 
 // Mock Shippo SDK and centralized client
-jest.mock('shippo');
+jest.mock('shippo', () => ({
+  Shippo: jest.fn(),
+}));
 jest.mock('@/lib/shippingUtils');
 jest.mock('@/lib/db');
-jest.mock('@/lib/shippo/client');
+jest.mock('@/lib/shippo/client', () => ({
+  ShippoClientManager: {
+    getInstance: jest.fn(),
+    setMockClient: jest.fn(),
+    reset: jest.fn(),
+  },
+}));
 
-const MockShippo = Shippo as jest.MockedClass<typeof Shippo>;
+const { Shippo: MockShippo } = jest.requireMock('shippo');
 const mockCalculateShippingWeight = calculateShippingWeight as jest.MockedFunction<
   typeof calculateShippingWeight
 >;
-const mockShippoClientManager = ShippoClientManager as jest.Mocked<typeof ShippoClientManager>;
+const mockShippoClientManager = jest.requireMock('@/lib/shippo/client').ShippoClientManager;
 
 describe('Shippo Shipping Integration - E2E Testing', () => {
   let mockShippoClient: any;

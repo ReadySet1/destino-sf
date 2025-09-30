@@ -6,13 +6,15 @@ import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/orders/[orderId]/retry-payment/route';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
+const TEST_USER_ID = '550e8400-e29b-41d4-a716-446655440001';
+
 // Mock external dependencies
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({
     auth: {
       getUser: jest.fn(() =>
         Promise.resolve({
-          data: { user: { id: 'test-user-id' } },
+          data: { user: { id: TEST_USER_ID } },
         })
       ),
     },
@@ -38,6 +40,7 @@ jest.mock('crypto', () => ({
 
 describe('API Route: Retry Payment Protection', () => {
   const mockPrisma = require('@/lib/db').prisma;
+  const TEST_ORDER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,13 +51,13 @@ describe('API Route: Retry Payment Protection', () => {
     mockPrisma.order.findUnique.mockResolvedValue(null); // No order found because query filters by paymentMethod: 'SQUARE'
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
@@ -65,11 +68,11 @@ describe('API Route: Retry Payment Protection', () => {
   it('should allow retry attempts for SQUARE orders', async () => {
     // Mock a SQUARE order
     const mockOrder = {
-      id: 'test-order-id',
+      id: TEST_ORDER_ID,
       status: 'PENDING',
       paymentStatus: 'PENDING',
       paymentMethod: 'SQUARE',
-      userId: 'test-user-id',
+      userId: TEST_USER_ID,
       retryCount: 1,
       paymentUrl: null,
       paymentUrlExpiresAt: null,
@@ -106,13 +109,13 @@ describe('API Route: Retry Payment Protection', () => {
     );
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
@@ -124,11 +127,11 @@ describe('API Route: Retry Payment Protection', () => {
   it('should reject requests with additional safety check for non-SQUARE payment methods', async () => {
     // Mock an order that somehow passes the initial query but has CASH payment method
     const mockOrder = {
-      id: 'test-order-id',
+      id: TEST_ORDER_ID,
       status: 'PENDING',
       paymentStatus: 'PENDING',
       paymentMethod: 'CASH',
-      userId: 'test-user-id',
+      userId: TEST_USER_ID,
       retryCount: 0,
       items: [],
     };
@@ -137,13 +140,13 @@ describe('API Route: Retry Payment Protection', () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
@@ -154,11 +157,11 @@ describe('API Route: Retry Payment Protection', () => {
   it('should reject retry attempts when maximum retries exceeded', async () => {
     // Mock an order that has reached max retries
     const mockOrder = {
-      id: 'test-order-id',
+      id: TEST_ORDER_ID,
       status: 'PENDING',
       paymentStatus: 'PENDING',
       paymentMethod: 'SQUARE',
-      userId: 'test-user-id',
+      userId: TEST_USER_ID,
       retryCount: 3, // Maximum retries
       items: [],
     };
@@ -166,13 +169,13 @@ describe('API Route: Retry Payment Protection', () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
@@ -194,13 +197,13 @@ describe('API Route: Retry Payment Protection', () => {
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
@@ -214,11 +217,11 @@ describe('API Route: Retry Payment Protection', () => {
     futureDate.setHours(futureDate.getHours() + 2); // 2 hours in the future
 
     const mockOrder = {
-      id: 'test-order-id',
+      id: TEST_ORDER_ID,
       status: 'PENDING',
       paymentStatus: 'PENDING',
       paymentMethod: 'SQUARE',
-      userId: 'test-user-id',
+      userId: TEST_USER_ID,
       retryCount: 1,
       paymentUrl: 'https://existing-checkout-url.com',
       paymentUrlExpiresAt: futureDate,
@@ -228,13 +231,13 @@ describe('API Route: Retry Payment Protection', () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
     const request = new NextRequest(
-      'http://localhost:3000/api/orders/test-order-id/retry-payment',
+      `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
       {
         method: 'POST',
       }
     );
 
-    const params = { orderId: 'test-order-id' };
+    const params = { orderId: TEST_ORDER_ID };
     const response = await POST(request, { params });
     const data = await response.json();
 
