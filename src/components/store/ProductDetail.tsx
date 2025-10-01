@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { toast } from 'sonner';
 import { formatPrice, getProxiedImageUrl } from '@/lib/utils';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface Variant {
   name: string;
@@ -172,7 +173,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
           {product.description && (
             <div className="mb-6">
               <h2 className="mb-2 text-lg font-medium">Description</h2>
-              <p className="text-gray-700">{product.description}</p>
+              <div
+                className="text-gray-700"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeProductDescription(product.description)
+                }}
+              />
             </div>
           )}
 

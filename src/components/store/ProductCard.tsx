@@ -15,6 +15,7 @@ import { AvailabilityState } from '@/types/availability';
 import { Product as ProductType } from '@/types/product';
 import { serializeDecimal } from '@/utils/serialization';
 import { cn } from '@/lib/utils';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface ProductCardProps {
   product: ProductType;
@@ -143,9 +144,12 @@ export function ProductCard({
             </Link>
             
             {product.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {product.description}
-              </p>
+              <div
+                className="text-sm text-muted-foreground mt-1 line-clamp-2"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeProductDescription(product.description)
+                }}
+              />
             )}
           </div>
 

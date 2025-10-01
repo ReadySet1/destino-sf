@@ -18,6 +18,8 @@ interface SquareCatalogObject {
   item_data?: {
     name: string;
     description?: string | null;
+    description_html?: string | null;
+    description_plaintext?: string | null;
     category_id?: string; // Legacy field, kept for backward compatibility
     categories?: Array<{
       id: string;
@@ -844,9 +846,16 @@ async function processSquareItem(
   const variations = itemData.variations || [];
   const { variants, basePrice } = processVariations(variations);
 
-  const description = itemData.description;
-  const updateDescription = description === null ? undefined : description;
-  const createDescription = description ?? '';
+  // Use description_html (has formatting) instead of description (plain text)
+  // Falls back to description if description_html is not available
+  const rawDescription = itemData.description_html || itemData.description;
+
+  // Import sanitization utility
+  const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+  const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
+  const updateDescription = sanitizedDescription === '' ? undefined : sanitizedDescription;
+  const createDescription = sanitizedDescription;
 
   const baseSlug = createSlug(itemName);
 
