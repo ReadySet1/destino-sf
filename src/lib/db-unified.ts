@@ -20,8 +20,16 @@ const CURRENT_PRISMA_VERSION = '2025-09-09-unified-connection-fix';
 function getBestDatabaseUrl(): string {
   const directUrl = process.env.DIRECT_DATABASE_URL;
   const poolerUrl = process.env.DATABASE_URL;
-  
-  if (!poolerUrl) throw new Error('DATABASE_URL environment variable is required');
+
+  // During build time or static analysis, return a placeholder URL
+  // This prevents errors during Next.js build when DATABASE_URL isn't needed
+  if (!poolerUrl) {
+    if (process.env.NEXT_PHASE === 'phase-production-build' ||
+        process.env.NEXT_PHASE === 'phase-development-build') {
+      return 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
+    }
+    throw new Error('DATABASE_URL environment variable is required');
+  }
   
   // Force pooler connection if explicitly requested (for public networks)
   if (process.env.FORCE_POOLER_CONNECTION === 'true') {
@@ -265,15 +273,20 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   return initPromise;
 }
 
-// Initialize client immediately if needed
-if (shouldRegenerateClient()) {
-  initializePrismaClient().catch(error => {
-    console.error('Failed to initialize Prisma client:', error);
-  });
-} else if (globalForPrisma.prisma) {
-  prismaClient = globalForPrisma.prisma;
-  if (process.env.DB_DEBUG === 'true') {
-    console.log('♻️ Using existing global Prisma client');
+// Initialize client immediately if needed (skip during build)
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' ||
+                     process.env.NEXT_PHASE === 'phase-development-build';
+
+if (!isBuildPhase) {
+  if (shouldRegenerateClient()) {
+    initializePrismaClient().catch(error => {
+      console.error('Failed to initialize Prisma client:', error);
+    });
+  } else if (globalForPrisma.prisma) {
+    prismaClient = globalForPrisma.prisma;
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('♻️ Using existing global Prisma client');
+    }
   }
 }
 
@@ -333,8 +346,8 @@ function getCurrentPrismaClient(): PrismaClient {
   return prismaClient;
 }
 
-// Initialize the client at module load time
-if (!prismaClient || shouldRegenerateClient()) {
+// Initialize the client at module load time (skip during build)
+if (!isBuildPhase && (!prismaClient || shouldRegenerateClient())) {
   prismaClient = getCurrentPrismaClient();
 }
 
