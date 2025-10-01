@@ -11,6 +11,7 @@ interface SquareCatalogObject {
   type: string;
   id: string;
   is_deleted?: boolean;
+  is_archived?: boolean; // ← Added: Square's native archive status
   custom_attribute_values?: Record<string, any>;
   item_data?: {
     name: string;
@@ -374,6 +375,11 @@ export class ProductionSyncManager {
     const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
     const sanitizedDescription = sanitizeProductDescription(rawDescription);
 
+    // Determine archive status and reason
+    const isArchived = availabilityMeta.isArchived || false;
+    const archivedReason = isArchived ? 'square_archived' : null;
+    const archivedAt = isArchived ? new Date() : null;
+
     // Upsert product with transaction safety
     const productData = {
       squareId,
@@ -384,9 +390,9 @@ export class ProductionSyncManager {
       images: imageResult.validUrls,
       categoryId,
       featured: false,
-      active: true, // All products should be active by default
+      active: !isArchived, // Product is active if not archived
       updatedAt: new Date(),
-      
+
       // Availability fields
       visibility: availability.visibility,
       isAvailable: availability.isAvailable,
@@ -398,6 +404,11 @@ export class ProductionSyncManager {
       itemState: availability.state,
       availabilityMeta: availabilityMeta as any, // Cast to avoid TypeScript index signature issue
       customAttributes: availabilityMeta.customAttributes || {},
+
+      // Archive fields
+      isArchived,
+      archivedAt,
+      archivedReason,
     };
 
     if (existingProduct) {
@@ -850,44 +861,54 @@ export class ProductionSyncManager {
     catalogObject: SquareCatalogObject
   ): SquareItemAvailability {
     const itemData = catalogObject.item_data;
-    
-    // Note: Square's "Site visibility" settings (Visible/Hidden/Unavailable) are NOT 
-    // accessible through the Catalog API. These settings don't affect available_online 
-    // or other API fields. Manual overrides may be needed for items marked as 
+
+    // Note: Square's "Site visibility" settings (Visible/Hidden/Unavailable) are NOT
+    // accessible through the Catalog API. These settings don't affect available_online
+    // or other API fields. Manual overrides may be needed for items marked as
     // "Site visibility: Unavailable" in Square Dashboard.
-    
+
+    // Extract Square's archive and deletion status
+    const isArchived = catalogObject.is_archived || false;
+    const isDeleted = catalogObject.is_deleted || false;
+
     // Extract Square's visibility settings
     const visibility = itemData?.visibility || 'PUBLIC';
     const availableOnline = itemData?.available_online ?? true;
     const availableForPickup = itemData?.available_for_pickup ?? true;
-    
+
     // Map Square Dashboard visibility options to API fields:
     // - "Visible" = present_at_all_locations: true, available_online: true
-    // - "Hidden" = present_at_all_locations: false OR visibility: "PRIVATE"  
+    // - "Hidden" = present_at_all_locations: false OR visibility: "PRIVATE"
     // - "Unavailable" = available_online: false
-    
+    // - "Archived" = is_archived: true
+    // - "Deleted" = is_deleted: true
+
     const presentAtAllLocations = itemData?.present_at_all_locations ?? true;
-    const itemState = catalogObject.is_deleted ? 'ARCHIVED' : 
+
+    // Determine item state based on Square status (priority order: deleted > archived > inactive > active)
+    const itemState = isDeleted ? 'ARCHIVED' :
+                     isArchived ? 'ARCHIVED' :
                      (!presentAtAllLocations ? 'INACTIVE' : 'ACTIVE');
-    
+
     // Determine effective visibility based on Square settings
     let effectiveVisibility = visibility;
     let effectiveAvailableOnline = availableOnline;
-    
+
     // If item is not present at all locations, it's effectively hidden
     if (!presentAtAllLocations) {
       effectiveVisibility = 'PRIVATE';
       effectiveAvailableOnline = false;
     }
-    
+
     // If visibility is explicitly set to PRIVATE, respect that
     if (visibility === 'PRIVATE') {
       effectiveAvailableOnline = false;
     }
-    
+
     return {
       visibility: effectiveVisibility as 'PUBLIC' | 'PRIVATE',
       state: itemState as 'ACTIVE' | 'INACTIVE' | 'ARCHIVED',
+      isArchived, // ← Added: Pass through Square's archive status
       availableOnline: effectiveAvailableOnline,
       availableForPickup: availableForPickup,
       preorderCutoffDate: undefined, // TODO: Add fulfillment field to interface if needed
