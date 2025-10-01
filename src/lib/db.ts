@@ -10,23 +10,29 @@
 
 import { validateDatabaseEnvironment } from './db-environment-validator';
 
-// Validate database environment before initialization
-try {
-  const validation = validateDatabaseEnvironment();
-  if (!validation.isValid) {
-    console.error('🚨 Database environment validation failed:', validation.errors);
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Critical database configuration error: ${validation.errors.join(', ')}`);
+// Validate database environment before initialization (skip during build/tests)
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' ||
+                     process.env.NEXT_PHASE === 'phase-development-build' ||
+                     process.env.NODE_ENV === 'test';
+
+if (!isBuildPhase) {
+  try {
+    const validation = validateDatabaseEnvironment();
+    if (!validation.isValid) {
+      console.error('🚨 Database environment validation failed:', validation.errors);
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`Critical database configuration error: ${validation.errors.join(', ')}`);
+      }
     }
-  }
-  
-  if (validation.warnings.length > 0) {
-    validation.warnings.forEach(warning => console.warn(warning));
-  }
-} catch (error) {
-  console.error('Database environment validation error:', error);
-  if (process.env.NODE_ENV === 'production') {
-    throw error;
+
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(warning => console.warn(warning));
+    }
+  } catch (error) {
+    console.error('Database environment validation error:', error);
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
   }
 }
 
