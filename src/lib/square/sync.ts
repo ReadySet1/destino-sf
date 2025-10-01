@@ -850,9 +850,31 @@ async function processSquareItem(
   // Falls back to description if description_html is not available
   const rawDescription = itemData.description_html || itemData.description;
 
+  // DEBUG: Log description fields
+  if (itemName.toLowerCase().includes('acorn') || itemName.toLowerCase().includes('alfajor')) {
+    logger.info(`🔍 DEBUG Syncing: ${itemName}`, {
+      hasDescriptionHtml: !!itemData.description_html,
+      hasDescription: !!itemData.description,
+      descriptionHtmlPreview: itemData.description_html?.substring(0, 100),
+      descriptionPreview: itemData.description?.substring(0, 100),
+      usingField: itemData.description_html ? 'description_html' : 'description',
+    });
+  }
+
   // Import sanitization utility
   const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
   const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
+  // DEBUG: Log sanitization result
+  if (itemName.toLowerCase().includes('acorn') || itemName.toLowerCase().includes('alfajor')) {
+    logger.info(`🔍 DEBUG After sanitization: ${itemName}`, {
+      inputLength: rawDescription?.length || 0,
+      outputLength: sanitizedDescription.length,
+      hasHTMLBefore: /<[^>]+>/.test(rawDescription || ''),
+      hasHTMLAfter: /<[^>]+>/.test(sanitizedDescription),
+      sanitizedPreview: sanitizedDescription.substring(0, 100),
+    });
+  }
 
   const updateDescription = sanitizedDescription === '' ? undefined : sanitizedDescription;
   const createDescription = sanitizedDescription;

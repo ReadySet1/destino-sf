@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/lib/toast';
 import { cn, toTitleCase } from '@/lib/utils';
 import { CateringPackageSkeletonSimple } from '@/components/ui/catering-package-skeleton';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface AppetizerPackageSelectorProps {
   packages: CateringPackage[];
@@ -659,9 +660,12 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                           </h5>
 
                           {item.description && (
-                            <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                              {item.description}
-                            </p>
+                            <div
+                              className="text-xs text-gray-600 mb-3 line-clamp-2"
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeProductDescription(item.description)
+                              }}
+                            />
                           )}
 
                           <div className="flex flex-wrap gap-1">

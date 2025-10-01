@@ -18,6 +18,7 @@ import { useCateringCartStore } from '@/store/catering-cart';
 import { BoxedLunchCard } from './BoxedLunchCard';
 import { BoxedLunchBuilder } from './BoxedLunchBuilder';
 import { toast } from '@/lib/toast';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 // Define menu context to determine which items to show
 type MenuContext = 'lunch' | 'appetizer' | 'buffet' | 'all';
@@ -472,7 +473,12 @@ const SaladCard: React.FC<SaladCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-gray-600 text-sm">{salad.description}</p>
+        <div
+          className="text-gray-600 text-sm"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeProductDescription(salad.description)
+          }}
+        />
 
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
@@ -535,7 +541,12 @@ const AddOnCard: React.FC<AddOnCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-gray-600 text-sm">{addOn.description}</p>
+        <div
+          className="text-gray-600 text-sm"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeProductDescription(addOn.description)
+          }}
+        />
 
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
@@ -609,7 +620,12 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
       </CardHeader>
 
       <CardContent className="space-y-4 flex-1 flex flex-col">
-        <p className="text-gray-600 text-sm flex-1">{alfajor.description}</p>
+        <div
+          className="text-gray-600 text-sm flex-1"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeProductDescription(alfajor.description)
+          }}
+        />
 
         <div className="flex flex-wrap gap-1">
           {alfajor.isVegan && (

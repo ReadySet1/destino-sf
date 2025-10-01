@@ -15,6 +15,8 @@ interface SquareCatalogObject {
   item_data?: {
     name: string;
     description?: string | null;
+    description_html?: string | null; // ← Added: HTML formatted description from Square
+    description_plaintext?: string | null; // ← Added: Plain text version
     category_id?: string;
     categories?: Array<{
       id: string;
@@ -364,12 +366,20 @@ export class ProductionSyncManager {
     // Log visibility changes for audit trail
     this.logVisibilityChanges(existingProduct, availability, hasManualOverrides, productName);
 
+    // Process description: Use description_html (has formatting) instead of description (plain text)
+    const itemData = squareProduct.item_data;
+    const rawDescription = itemData.description_html || itemData.description;
+
+    // Dynamic import to avoid circular dependencies
+    const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+    const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
     // Upsert product with transaction safety
     const productData = {
       squareId,
       name: productName,
       slug,
-      description: squareProduct.item_data.description || '',
+      description: sanitizedDescription,
       price: basePrice,
       images: imageResult.validUrls,
       categoryId,
