@@ -10,11 +10,15 @@ import { AvailabilityForm } from '@/components/admin/availability/AvailabilityFo
 import { AvailabilityTimeline } from '@/components/admin/availability/AvailabilityTimeline';
 import { DetailedAvailabilityBadge } from '@/components/store/AvailabilityBadge';
 import { useAvailability } from '@/hooks/useAvailability';
-import { 
+import {
   getProductRuleConflicts,
-  deleteAvailabilityRule 
+  deleteAvailabilityRule
 } from '@/actions/availability';
-import { type AvailabilityRule } from '@/types/availability';
+import {
+  type AvailabilityRule,
+  RuleType,
+  AvailabilityState
+} from '@/types/availability';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -22,6 +26,46 @@ interface AvailabilitySectionProps {
   productId: string;
   productName: string;
 }
+
+interface QuickTemplate {
+  name: string;
+  ruleType: RuleType;
+  state: AvailabilityState;
+  priority: number;
+  preOrderSettings?: any;
+  viewOnlySettings?: any;
+}
+
+const templates: Record<string, QuickTemplate> = {
+  preorder: {
+    name: 'Pre-order Rule',
+    ruleType: RuleType.DATE_RANGE,
+    state: AvailabilityState.PRE_ORDER,
+    priority: 5,
+    preOrderSettings: {
+      releaseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      maxPreOrders: 100,
+      showEstimatedDate: true
+    }
+  },
+  seasonal: {
+    name: 'Seasonal Item',
+    ruleType: RuleType.SEASONAL,
+    state: AvailabilityState.AVAILABLE,
+    priority: 3
+  },
+  viewOnly: {
+    name: 'View Only',
+    ruleType: RuleType.CUSTOM,
+    state: AvailabilityState.VIEW_ONLY,
+    priority: 1,
+    viewOnlySettings: {
+      showPrice: true,
+      showContactButton: true,
+      customMessage: 'Contact us for availability'
+    }
+  }
+};
 
 export function AvailabilitySection({
   productId,
@@ -37,6 +81,8 @@ export function AvailabilitySection({
     ruleName: string;
   }[]>([]);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [templateData, setTemplateData] = useState<QuickTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState('rules');
 
   const {
     rules,
@@ -108,14 +154,23 @@ export function AvailabilitySection({
     generateFuturePreview();
   }, [rules, loadConflicts, generateFuturePreview]);
 
+  // Auto-switch to form tab when opening create/edit
+  useEffect(() => {
+    if (showCreateForm || editingRule) {
+      setActiveTab('form');
+    }
+  }, [showCreateForm, editingRule]);
+
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
+    setTemplateData(null);
     refresh();
     toast.success('Availability rule created successfully');
   };
 
   const handleEditSuccess = () => {
     setEditingRule(null);
+    setTemplateData(null);
     refresh();
     toast.success('Availability rule updated successfully');
   };
@@ -261,9 +316,9 @@ export function AvailabilitySection({
                   variant="outline"
                   size="sm"
                   onClick={() => {
+                    setTemplateData(templates.preorder);
                     setShowCreateForm(true);
                     setShowQuickCreate(false);
-                    // TODO: Pre-fill form with pre-order template
                   }}
                   className="text-left justify-start"
                 >
@@ -273,9 +328,9 @@ export function AvailabilitySection({
                   variant="outline"
                   size="sm"
                   onClick={() => {
+                    setTemplateData(templates.seasonal);
                     setShowCreateForm(true);
                     setShowQuickCreate(false);
-                    // TODO: Pre-fill form with seasonal template
                   }}
                   className="text-left justify-start"
                 >
@@ -285,9 +340,9 @@ export function AvailabilitySection({
                   variant="outline"
                   size="sm"
                   onClick={() => {
+                    setTemplateData(templates.viewOnly);
                     setShowCreateForm(true);
                     setShowQuickCreate(false);
-                    // TODO: Pre-fill form with view-only template
                   }}
                   className="text-left justify-start"
                 >
@@ -350,11 +405,7 @@ export function AvailabilitySection({
                 variant="outline"
                 size="sm"
                 className="mt-3 text-amber-700 border-amber-300 hover:bg-amber-100"
-                onClick={() => {
-                  // Focus timeline tab to show conflicts
-                  const timelineTab = document.querySelector('[data-value="timeline"]') as HTMLElement;
-                  timelineTab?.click();
-                }}
+                onClick={() => setActiveTab('timeline')}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Review in Timeline
@@ -367,12 +418,20 @@ export function AvailabilitySection({
       {/* Rules Management */}
       <Card>
         <CardContent className="p-0">
-          <Tabs defaultValue="rules" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-6 pt-6">
               <TabsList>
                 <TabsTrigger value="rules">Rules</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="form" disabled={!showCreateForm && !editingRule}>
+                <TabsTrigger
+                  value="form"
+                  disabled={!showCreateForm && !editingRule}
+                  onClick={() => {
+                    if (!showCreateForm && !editingRule) {
+                      setShowCreateForm(true);
+                    }
+                  }}
+                >
                   {editingRule ? 'Edit Rule' : 'Create Rule'}
                 </TabsTrigger>
               </TabsList>
@@ -467,10 +526,12 @@ export function AvailabilitySection({
                 <AvailabilityForm
                   productId={productId}
                   rule={editingRule || undefined}
+                  template={templateData || undefined}
                   onSuccess={editingRule ? handleEditSuccess : handleCreateSuccess}
                   onCancel={() => {
                     setShowCreateForm(false);
                     setEditingRule(null);
+                    setTemplateData(null);
                   }}
                 />
               )}
