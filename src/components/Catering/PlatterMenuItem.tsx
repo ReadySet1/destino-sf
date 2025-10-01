@@ -15,6 +15,7 @@ import { CateringOrderModal } from '@/components/Catering/CateringOrderModal';
 import { ShoppingCart } from 'lucide-react';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from '@/lib/toast';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface PlatterMenuItemProps {
   item: CateringItemWithVariations; // Single item with Square native variations
@@ -194,9 +195,12 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
 
           {/* Description */}
           <div className="mb-4 flex-grow">
-            <p className="text-gray-600 text-sm md:text-base">
-              {formatDescription(item.description)}
-            </p>
+            <div
+              className="text-gray-600 text-sm md:text-base"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeProductDescription(item.description)
+              }}
+            />
           </div>
 
           <div className="flex gap-2">

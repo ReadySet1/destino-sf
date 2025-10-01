@@ -20,6 +20,7 @@ import {
   getAddToCartButtonConfig,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface ProductDetailsProps {
   product: Product;
@@ -592,7 +593,12 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 transition={{ duration: 0.3 }}
               >
                 {product.description && (
-                  <p className="text-gray-600 mb-8 text-lg">{product.description}</p>
+                  <div
+                    className="text-gray-600 mb-8 text-lg"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeProductDescription(product.description)
+                    }}
+                  />
                 )}
 
                 <p className="text-3xl font-semibold mb-8 text-gray-900">

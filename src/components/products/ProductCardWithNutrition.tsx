@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { NutritionFacts } from './NutritionFacts';
 import { Info, ShoppingCart, Apple } from 'lucide-react';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface Product {
   id: string;
@@ -81,9 +82,12 @@ export function ProductCardWithNutrition({
           </div>
 
           {product.description && (
-            <CardDescription className="line-clamp-3">
-              {product.description}
-            </CardDescription>
+            <CardDescription
+              className="line-clamp-3"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeProductDescription(product.description)
+              }}
+            />
           )}
 
           {/* Quick nutrition indicators */}
