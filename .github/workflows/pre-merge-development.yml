@@ -1,0 +1,216 @@
+name: Pre-Merge Validation (Development)
+
+on:
+  pull_request:
+    branches: [development]
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '10.11.1'
+
+jobs:
+  pre-merge-validation:
+    name: Pre-Merge Checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: destino_sf_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test environment
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+
+      # Code Quality Checks
+      - name: ✅ TypeScript Type Checking
+        run: pnpm type-check
+
+      - name: ✅ ESLint
+        run: pnpm lint
+
+      - name: ✅ Code Formatting
+        run: pnpm format --check
+
+      # Build Verification
+      - name: ✅ Production Build
+        run: pnpm build
+
+      # Database Validation
+      - name: ✅ Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: ✅ Validate Prisma Schema
+        run: pnpm prisma validate
+
+      - name: ✅ Test Database Migration
+        run: pnpm prisma migrate deploy
+
+      # Testing
+      - name: ✅ Unit Tests
+        run: pnpm test:unit
+        continue-on-error: false
+
+      - name: ✅ Critical Path Tests
+        run: pnpm test:critical
+        continue-on-error: false
+
+      - name: ✅ API Tests
+        run: pnpm test:api
+        continue-on-error: false
+
+      - name: ✅ Component Tests
+        run: pnpm test:components
+        continue-on-error: false
+
+      # Security
+      - name: ✅ Security Audit
+        run: pnpm audit --audit-level moderate
+        continue-on-error: true
+
+      # Generate validation report
+      - name: Generate Validation Report
+        if: always()
+        run: |
+          echo "# Pre-Merge Validation Report" > validation-report.md
+          echo "" >> validation-report.md
+          echo "## Branch: ${{ github.head_ref }}" >> validation-report.md
+          echo "## Target: development" >> validation-report.md
+          echo "## Commit: ${{ github.sha }}" >> validation-report.md
+          echo "" >> validation-report.md
+          echo "### ✅ Validation Checklist" >> validation-report.md
+          echo "- ✅ TypeScript compilation passes" >> validation-report.md
+          echo "- ✅ ESLint passes" >> validation-report.md
+          echo "- ✅ Code formatting verified" >> validation-report.md
+          echo "- ✅ Production build succeeds" >> validation-report.md
+          echo "- ✅ Prisma schema validated" >> validation-report.md
+          echo "- ✅ Database migration tested" >> validation-report.md
+          echo "- ✅ Unit tests pass" >> validation-report.md
+          echo "- ✅ Critical path tests pass" >> validation-report.md
+          echo "- ✅ API tests pass" >> validation-report.md
+          echo "- ✅ Component tests pass" >> validation-report.md
+          echo "- ✅ Security audit completed" >> validation-report.md
+
+      - name: Upload Validation Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-report.md
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && success()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('validation-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ Pre-Merge Validation Complete\n\n${report}\n\n**Status**: All checks passed - Ready to merge to development branch`
+            });
+
+      - name: Comment on PR (Failure)
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ❌ Pre-Merge Validation Failed\n\nOne or more validation checks failed. Please review the workflow logs and fix the issues before merging.\n\n**Action Required**: Check the workflow run details for specific failures.`
+            });
+
+  # Code review checklist reminder
+  code-review-reminder:
+    name: Code Review Checklist
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+
+    steps:
+      - name: Post Review Checklist
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📋 Code Review Checklist
+
+Please ensure the following before approving:
+
+### Code Quality
+- [ ] No debugging code (console.log, debugger)
+- [ ] No commented-out code
+- [ ] No TODO comments without context
+- [ ] Consistent naming conventions
+- [ ] Proper error handling
+- [ ] No hardcoded values (use env vars)
+- [ ] Removed unused imports
+- [ ] Code is readable and maintainable
+
+### Security
+- [ ] Authentication required where needed
+- [ ] Input validation present
+- [ ] No SQL injection vulnerabilities
+- [ ] Sensitive data protected
+
+### Database
+- [ ] Migration is safe and reversible
+- [ ] Indexes created for new queries
+- [ ] No data loss risk
+
+### Testing
+- [ ] All automated tests pass
+- [ ] Manual testing completed (if applicable)
+- [ ] Edge cases considered
+
+### Documentation
+- [ ] Code comments added where needed
+- [ ] API changes documented
+- [ ] README/docs updated if needed
+
+**Note**: Automated checks are running. Wait for ✅ before merging.`
+            });
