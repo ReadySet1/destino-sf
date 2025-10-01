@@ -76,7 +76,12 @@ model Product {
   descriptionSource      String?   @default("SQUARE") @map("description_source") @db.VarChar(50)
   descriptionValidatedAt DateTime? @map("description_validated_at")
   mappingStatus          String?   @default("NEEDS_REVIEW") @map("mapping_status") @db.VarChar(20)
-  
+
+  // Archive fields for product lifecycle management
+  isArchived       Boolean   @default(false) @map("is_archived")
+  archivedAt       DateTime? @map("archived_at")
+  archivedReason   String?   @map("archived_reason") @db.VarChar(100)
+
   orderItems         OrderItem[]
   category           Category        @relation(fields: [categoryId], references: [id])
   spotlightPicks     SpotlightPick[]
@@ -98,6 +103,7 @@ model Product {
   @@index([nutritionFacts], map: "idx_products_nutrition_facts", type: Gin)
   @@index([isAvailable, visibility, active], map: "idx_products_availability")
   @@index([mappingStatus], map: "idx_products_mapping_status")
+  @@index([isArchived, active], map: "idx_products_archived_active")
   @@map("products")
 }
 
