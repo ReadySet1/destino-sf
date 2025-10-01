@@ -147,7 +147,7 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
         });
       }
     }
-  }, [useExistingRule, selectedRuleId, existingRules]);
+  }, [useExistingRule, selectedRuleId, existingRules, form]);
 
   const loadProducts = async () => {
     try {

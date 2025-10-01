@@ -72,9 +72,15 @@ jest.mock('@/middleware/rate-limit', () => ({
 
 // Mock webhook validator
 jest.mock('@/lib/square/webhook-validator', () => ({
-  WebhookValidator: jest.fn().mockImplementation(() => ({
-    validateSquareSignature: jest.fn().mockResolvedValue(true),
-  })),
+  validateWebhookSignature: jest.fn().mockResolvedValue({
+    valid: true,
+    environment: 'sandbox',
+    metadata: {}
+  }),
+  quickSignatureValidation: jest.fn().mockResolvedValue(true),
+  validateWebhookSecurity: jest.fn().mockResolvedValue({ valid: true }),
+  debugWebhookSignature: jest.fn(),
+  createWebhookError: jest.fn((result) => new Error('Webhook validation failed'))
 }));
 
 // Mock labels action

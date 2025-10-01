@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar } from '@/components/ui/calendar';
@@ -121,11 +121,11 @@ export function AvailabilityForm({
   };
 
   // Helper function to check if date is valid
-  const isValidDate = (month: number | undefined, day: number | undefined): boolean => {
+  const isValidDate = useCallback((month: number | undefined, day: number | undefined): boolean => {
     if (!month || !day) return true; // Don't validate incomplete dates
     const maxDays = getMaxDaysInMonth(month);
     return day >= 1 && day <= maxDays;
-  };
+  }, []);
 
   // Validation state for seasonal dates
   const [seasonalDateErrors, setSeasonalDateErrors] = useState({
@@ -163,7 +163,7 @@ export function AvailabilityForm({
 
       setSeasonalDateErrors(errors);
     }
-  }, [selectedRuleType, seasonalStartMonth, seasonalStartDay, seasonalEndMonth, seasonalEndDay]);
+  }, [selectedRuleType, seasonalStartMonth, seasonalStartDay, seasonalEndMonth, seasonalEndDay, isValidDate]);
 
   // Helper to get month name
   const getMonthName = (month: number): string => {

@@ -325,10 +325,15 @@ export async function validateWebhookSignature(
     // 7. Use constant-time comparison to prevent timing attacks
     let isValid: boolean;
     try {
-      isValid = crypto.timingSafeEqual(
-        Buffer.from(signature, 'base64'),
-        Buffer.from(expectedSignature, 'base64')
-      );
+      const signatureBuffer = Buffer.from(signature, 'base64');
+      const expectedBuffer = Buffer.from(expectedSignature, 'base64');
+
+      // timingSafeEqual requires buffers of the same length
+      if (signatureBuffer.length !== expectedBuffer.length) {
+        isValid = false;
+      } else {
+        isValid = crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+      }
     } catch {
       // If base64 decoding fails, fall back to string comparison
       isValid = signature === expectedSignature;

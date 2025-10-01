@@ -204,19 +204,15 @@ jobs:
 
       - name: Run critical path tests
         run: pnpm test:critical
-        continue-on-error: true
 
       - name: Run unit tests
         run: pnpm test:unit
-        continue-on-error: true
 
-      - name: Run API tests  
+      - name: Run API tests
         run: pnpm test:api
-        continue-on-error: true
 
       - name: Run component tests
         run: pnpm test:components
-        continue-on-error: true
 
       - name: Generate coverage report
         run: pnpm test:coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=json
@@ -311,12 +307,13 @@ jobs:
             exit 1
           fi
 
-          # Tests are allowed to have warnings but major failures will be reported
-          if [ "${{ needs.test.result }}" = "failure" ]; then
-            echo "⚠️ Tests had some failures - review test results"
-          else
-            echo "✅ Tests completed successfully"
+          # Tests must pass - failures will block deployment
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ Tests failed - deployment blocked"
+            exit 1
           fi
+
+          echo "✅ Tests completed successfully"
           
           echo "✅ All critical quality gates passed"
 

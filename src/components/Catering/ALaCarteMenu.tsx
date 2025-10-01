@@ -89,10 +89,14 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
     );
     filteredItems = uniqueItems;
   } else if (activeCategory === 'lunch') {
-    // For lunch tab, get regular lunch items plus dessert items, but exclude $0 items
+    // For lunch tab, get regular lunch items plus only Alfajores dessert items, but exclude $0 items
     const lunchItems = getItemsForTab(items, 'lunch').filter(item => item.price > 0);
+    // Only show Alfajores desserts in the lunch tab (filter out Lemon Bars, Mini Cupcakes, Brownie Bites)
     const dessertItems = items.filter(
-      item => item.squareCategory === 'CATERING- DESSERTS' && item.price > 0
+      item =>
+        item.squareCategory === 'CATERING- DESSERTS' &&
+        item.price > 0 &&
+        item.name.toLowerCase().includes('alfajor')
     );
     filteredItems = [...lunchItems, ...dessertItems];
   } else if (

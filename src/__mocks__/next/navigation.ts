@@ -18,10 +18,12 @@ export const redirect = jest.fn();
 
 export const notFound = jest.fn();
 
-export default {
+const navigationMock = {
   useRouter,
   usePathname,
   useSearchParams,
   redirect,
   notFound,
 };
+
+export default navigationMock;

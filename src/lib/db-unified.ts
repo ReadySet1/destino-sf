@@ -20,8 +20,17 @@ const CURRENT_PRISMA_VERSION = '2025-09-09-unified-connection-fix';
 function getBestDatabaseUrl(): string {
   const directUrl = process.env.DIRECT_DATABASE_URL;
   const poolerUrl = process.env.DATABASE_URL;
-  
-  if (!poolerUrl) throw new Error('DATABASE_URL environment variable is required');
+
+  // During build time, static analysis, or test environment, return a placeholder URL
+  // This prevents errors when DATABASE_URL isn't needed or mocked
+  if (!poolerUrl) {
+    if (process.env.NEXT_PHASE === 'phase-production-build' ||
+        process.env.NEXT_PHASE === 'phase-development-build' ||
+        process.env.NODE_ENV === 'test') {
+      return 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
+    }
+    throw new Error('DATABASE_URL environment variable is required');
+  }
   
   // Force pooler connection if explicitly requested (for public networks)
   if (process.env.FORCE_POOLER_CONNECTION === 'true') {
@@ -117,9 +126,19 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
  * Create optimized Prisma client with explicit connection and enhanced retry logic
  */
 async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClient> {
+  // In test environment, return dummy client immediately
+  if (process.env.NODE_ENV === 'test') {
+    return {
+      $connect: () => Promise.resolve(),
+      $disconnect: () => Promise.resolve(),
+      $queryRaw: () => Promise.resolve([]),
+      $transaction: (fn: any) => Promise.resolve(fn({} as any)),
+    } as any as PrismaClient;
+  }
+
   const isProduction = process.env.NODE_ENV === 'production';
   const databaseUrl = getBestDatabaseUrl();
-  
+
   const client = new PrismaClient({
     log: isProduction ? ['error'] : [
       { emit: 'event', level: 'error' },
@@ -265,15 +284,21 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   return initPromise;
 }
 
-// Initialize client immediately if needed
-if (shouldRegenerateClient()) {
-  initializePrismaClient().catch(error => {
-    console.error('Failed to initialize Prisma client:', error);
-  });
-} else if (globalForPrisma.prisma) {
-  prismaClient = globalForPrisma.prisma;
-  if (process.env.DB_DEBUG === 'true') {
-    console.log('♻️ Using existing global Prisma client');
+// Initialize client immediately if needed (skip during build and tests)
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' ||
+                     process.env.NEXT_PHASE === 'phase-development-build' ||
+                     process.env.NODE_ENV === 'test';
+
+if (!isBuildPhase) {
+  if (shouldRegenerateClient()) {
+    initializePrismaClient().catch(error => {
+      console.error('Failed to initialize Prisma client:', error);
+    });
+  } else if (globalForPrisma.prisma) {
+    prismaClient = globalForPrisma.prisma;
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('♻️ Using existing global Prisma client');
+    }
   }
 }
 
@@ -292,9 +317,22 @@ async function getPrismaClient(): Promise<PrismaClient> {
  * Create a basic Prisma client without complex async initialization
  */
 function createBasicPrismaClient(): PrismaClient {
+  // In test environment, don't create a real Prisma client
+  // Tests should use mocked clients
+  if (process.env.NODE_ENV === 'test') {
+    // Return a dummy client that won't try to connect
+    // This prevents "Authentication failed" errors in tests
+    return {
+      $connect: () => Promise.resolve(),
+      $disconnect: () => Promise.resolve(),
+      $queryRaw: () => Promise.resolve([]),
+      $transaction: (fn: any) => Promise.resolve(fn({} as any)),
+    } as any as PrismaClient;
+  }
+
   const databaseUrl = getBestDatabaseUrl();
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   return new PrismaClient({
     log: isProduction ? ['error'] : [
       { emit: 'event', level: 'error' },
@@ -333,8 +371,8 @@ function getCurrentPrismaClient(): PrismaClient {
   return prismaClient;
 }
 
-// Initialize the client at module load time
-if (!prismaClient || shouldRegenerateClient()) {
+// Initialize the client at module load time (skip during build)
+if (!isBuildPhase && (!prismaClient || shouldRegenerateClient())) {
   prismaClient = getCurrentPrismaClient();
 }
 

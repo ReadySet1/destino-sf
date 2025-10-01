@@ -22,6 +22,8 @@ const mockRouter = {
 
 export const useRouter = jest.fn(() => mockRouter);
 
-export default {
+const routerMock = {
   useRouter,
 };
+
+export default routerMock;

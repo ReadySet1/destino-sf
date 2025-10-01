@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { testProducts, testCustomer } from './fixtures/test-data';
+import { testProducts, testCustomer, testPaymentInfo } from './fixtures/test-data';
 
 /**
  * Critical Test 1: Complete Purchase Journey
@@ -60,8 +60,43 @@ test.describe('Complete Purchase Journey', () => {
     // Verify we're on checkout page
     await expect(page).toHaveURL('/checkout');
 
-    // Note: For a real implementation, you'd continue with the checkout flow
-    // This test verifies the core cart functionality works as expected
+    // Step 5: Fill in customer information
+    await page.getByLabel('First Name').fill(testCustomer.firstName);
+    await page.getByLabel('Last Name').fill(testCustomer.lastName);
+    await page.getByLabel('Email').fill(testCustomer.email);
+    await page.getByLabel('Phone').fill(testCustomer.phone);
+
+    // Step 6: Select fulfillment type (Pickup)
+    const pickupOption = page.getByRole('radio', { name: /pickup/i });
+    await pickupOption.click();
+
+    // Step 7: Fill in payment information
+    // Wait for Square payment form to load
+    await page.waitForSelector('iframe[title="Secure card payment input frame"]', { timeout: 10000 });
+
+    // Switch to Square payment form iframe
+    const paymentFrame = page.frameLocator('iframe[title="Secure card payment input frame"]');
+
+    // Fill in card details
+    await paymentFrame.getByPlaceholder('Card number').fill(testPaymentInfo.number);
+    await paymentFrame.getByPlaceholder('MM/YY').fill(testPaymentInfo.expiry);
+    await paymentFrame.getByPlaceholder('CVV').fill(testPaymentInfo.cvv);
+
+    // Step 8: Submit the order
+    const placeOrderButton = page.getByRole('button', { name: /place order|complete purchase/i });
+    await expect(placeOrderButton).toBeEnabled();
+    await placeOrderButton.click();
+
+    // Step 9: Verify order confirmation
+    // Wait for redirect to confirmation page
+    await page.waitForURL(/\/order-confirmation/, { timeout: 30000 });
+
+    // Verify confirmation page elements
+    await expect(page.getByText(/order confirmed|thank you for your order/i)).toBeVisible();
+    await expect(page.getByText(/order number|order id/i)).toBeVisible();
+
+    // Verify order summary is displayed
+    await expect(page.getByText(testProducts.empanada.name)).toBeVisible();
   });
 
   test('should add multiple items to cart', async ({ page }) => {

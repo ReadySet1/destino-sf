@@ -134,10 +134,42 @@ const config: Config = {
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   coverageThreshold: {
     global: {
-      branches: 0,  // Start with 0 to allow tests to pass initially
-      functions: 0,
-      lines: 0,
-      statements: 0,
+      branches: 50,
+      functions: 55,
+      lines: 60,
+      statements: 60,
+    },
+    // Critical paths - payment and checkout flow (higher standards)
+    './src/app/api/checkout/**/*.ts': {
+      branches: 75,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+    './src/lib/square/**/*.ts': {
+      branches: 70,
+      functions: 75,
+      lines: 75,
+      statements: 75,
+    },
+    './src/app/actions/orders*.ts': {
+      branches: 70,
+      functions: 75,
+      lines: 75,
+      statements: 75,
+    },
+    // Business logic (moderate standards)
+    './src/lib/**/*.ts': {
+      branches: 60,
+      functions: 65,
+      lines: 65,
+      statements: 65,
+    },
+    './src/utils/**/*.ts': {
+      branches: 55,
+      functions: 60,
+      lines: 60,
+      statements: 60,
     },
   },
   collectCoverage: false, // Enable only when running coverage explicitly

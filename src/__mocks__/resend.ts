@@ -47,6 +47,8 @@ export const Resend = jest.fn().mockImplementation(() => ({
   },
 }));
 
-export default {
+const resendMock = {
   Resend,
 };
+
+export default resendMock;

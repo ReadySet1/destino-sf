@@ -87,6 +87,7 @@ export function AvailabilityOverview() {
 
   useEffect(() => {
     loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery, categoryFilter, stateFilter, hasRulesFilter]);
 
   const loadStats = async () => {

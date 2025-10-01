@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -226,9 +227,11 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
                       const productImages = normalizeImages(item.product?.images);
                       const firstImage = productImages[0];
                       return firstImage ? (
-                        <img
+                        <Image
                           src={firstImage}
                           alt={item.product?.name || 'Product image'}
+                          width={64}
+                          height={64}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
                       ) : null;

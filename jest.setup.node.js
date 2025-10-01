@@ -59,6 +59,24 @@ jest.mock('@/lib/db', () => {
   };
 });
 
+// Mock @/lib/db-unified
+jest.mock('@/lib/db-unified', () => {
+  const { mockDeep } = require('jest-mock-extended');
+  const mockPrismaClient = mockDeep();
+
+  return {
+    prisma: mockPrismaClient,
+    withRetry: jest.fn((fn) => fn()),
+    withWebhookRetry: jest.fn((fn) => fn()),
+    withTransaction: jest.fn((fn) => fn(mockPrismaClient)),
+    ensureConnection: jest.fn().mockResolvedValue(undefined),
+    getHealthStatus: jest.fn().mockResolvedValue({ connected: true, latency: 10, version: 'test' }),
+    checkConnection: jest.fn().mockResolvedValue(true),
+    shutdown: jest.fn().mockResolvedValue(undefined),
+    forceResetConnection: jest.fn().mockResolvedValue(undefined),
+  };
+});
+
 // Mock Square Client for API tests
 jest.mock('@/lib/square', () => ({
   squareClient: {
