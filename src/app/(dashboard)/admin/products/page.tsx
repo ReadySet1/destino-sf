@@ -9,6 +9,7 @@ import ProductsClientWrapper from './client-wrapper';
 import CategorySelect from './components/CategorySelect';
 import ProductFilters from './components/ProductFilters';
 import Pagination from '@/components/ui/pagination';
+import { ArchiveFilter } from './components/ArchiveFilter';
 
 import { FormHeader } from '@/components/ui/form/FormHeader';
 import { FormActions } from '@/components/ui/form/FormActions';
@@ -78,6 +79,7 @@ type ProductPageProps = {
     featured?: string;
     visibility?: string;
     availability?: string;
+    archived?: string;
     _debugInfo?: string;
   }>;
 };
@@ -94,12 +96,22 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   const featuredFilter = params?.featured || '';
   const visibilityFilter = params?.visibility || '';
   const availabilityFilter = params?.availability || '';
+  const archivedFilter = params?.archived || 'all';
 
   const itemsPerPage = 10;
   const skip = (currentPage - 1) * itemsPerPage;
 
   // Build the where clause for filtering
   const where: any = {};
+
+  // Archive filter logic
+  if (archivedFilter === 'active') {
+    where.active = true;
+    where.isArchived = false;
+  } else if (archivedFilter === 'archived') {
+    where.isArchived = true;
+  }
+  // If 'all', no filter applied
 
   if (searchQuery) {
     where.name = {
@@ -177,6 +189,11 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   // Get total count for pagination
   const totalCount = await prisma.product.count({ where });
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Get archived count for badge
+  const archivedCount = await prisma.product.count({
+    where: { isArchived: true }
+  });
 
   // Fetch all categories for the dropdown and filters
   const categories = await prisma.category.findMany({
@@ -363,6 +380,16 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
             >
               Sync from Square
             </FormButton>
+
+            {archivedCount > 0 && (
+              <FormButton
+                variant="secondary"
+                href="/admin/products/archived"
+                leftIcon={FormIcons.archive}
+              >
+                View Archived ({archivedCount})
+              </FormButton>
+            )}
           </FormActions>
 
           {/* Warning Notice */}
@@ -386,6 +413,9 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
             </div>
           </div>
 
+          {/* Archive Filter */}
+          <ArchiveFilter currentFilter={archivedFilter} />
+
           {/* Filters Section */}
           <ProductFilters
             categories={categories}
@@ -397,44 +427,12 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
             currentAvailability={availabilityFilter}
           />
 
-          {/* Bulk Actions Bar */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  Bulk Actions:
-                </span>
-                <div className="flex gap-2">
-                  <button className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 border border-blue-200">
-                    Set Visibility
-                  </button>
-                  <button className="px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 border border-green-200">
-                    Quick Toggle Available
-                  </button>
-                  <button className="px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 border border-purple-200">
-                    Create Rule
-                  </button>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                <span id="selected-count">0</span> products selected
-              </div>
-            </div>
-          </div>
-
           {/* Products Table */}
           <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
             <div className="overflow-x-auto">
               <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="w-12 px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        id="select-all"
-                      />
-                    </th>
                     <th className="w-20 px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Image
                     </th>
@@ -465,13 +463,6 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                   {products.length > 0 ? (
                     products.map((product: ProductWithCategory) => (
                       <tr key={product.id} className="hover:bg-gray-50 transition-colors duration-150">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 product-checkbox"
-                            data-product-id={product.id}
-                          />
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {product.images && product.images.length > 0 && product.images[0] ? (
                             <div className="h-12 w-12 relative">
@@ -633,7 +624,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                         <div className="flex flex-col items-center">
                           <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
