@@ -47,9 +47,26 @@ export const PreOrderSettingsSchema = z.object({
   depositAmount: z.number().nullable().optional()
 });
 
-// View-only Settings Schema
+/**
+ * View-only Settings Schema
+ * 
+ * Used when a product is visible but cannot be purchased.
+ * 
+ * @property message - Custom message to display (null for default message)
+ * @property showPrice - Whether to show the product price
+ * @property allowWishlist - Whether users can add to wishlist
+ * @property notifyWhenAvailable - Whether to show "notify me" option
+ * 
+ * @example
+ * // With custom message
+ * { message: "Available next season", showPrice: true, allowWishlist: true, notifyWhenAvailable: true }
+ * 
+ * @example
+ * // With default message (null)
+ * { message: null, showPrice: true, allowWishlist: false, notifyWhenAvailable: true }
+ */
 export const ViewOnlySettingsSchema = z.object({
-  message: z.string(),
+  message: z.string().nullable(),
   showPrice: z.boolean().default(true),
   allowWishlist: z.boolean().default(false),
   notifyWhenAvailable: z.boolean().default(true)
