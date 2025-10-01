@@ -21,11 +21,12 @@ function getBestDatabaseUrl(): string {
   const directUrl = process.env.DIRECT_DATABASE_URL;
   const poolerUrl = process.env.DATABASE_URL;
 
-  // During build time or static analysis, return a placeholder URL
-  // This prevents errors during Next.js build when DATABASE_URL isn't needed
+  // During build time, static analysis, or test environment, return a placeholder URL
+  // This prevents errors when DATABASE_URL isn't needed or mocked
   if (!poolerUrl) {
     if (process.env.NEXT_PHASE === 'phase-production-build' ||
-        process.env.NEXT_PHASE === 'phase-development-build') {
+        process.env.NEXT_PHASE === 'phase-development-build' ||
+        process.env.NODE_ENV === 'test') {
       return 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
     }
     throw new Error('DATABASE_URL environment variable is required');
@@ -273,9 +274,10 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   return initPromise;
 }
 
-// Initialize client immediately if needed (skip during build)
+// Initialize client immediately if needed (skip during build and tests)
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' ||
-                     process.env.NEXT_PHASE === 'phase-development-build';
+                     process.env.NEXT_PHASE === 'phase-development-build' ||
+                     process.env.NODE_ENV === 'test';
 
 if (!isBuildPhase) {
   if (shouldRegenerateClient()) {
