@@ -13,10 +13,10 @@ import {
   formatPrice,
   getDietaryBadges,
   isTropicalSaladItem,
-  sanitizeDescription,
   createCartItemFromBoxedLunch,
   getModifierById,
 } from '@/lib/catering/boxed-lunch-utils';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from '@/lib/toast';
 
@@ -40,7 +40,6 @@ export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
   const totalPrice = calculateTotalPrice(item, selectedModifier);
   const dietaryBadges = getDietaryBadges(item);
   const isTropicalSalad = isTropicalSaladItem(item);
-  const sanitizedDescription = sanitizeDescription(item.description);
 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(Math.max(1, newQuantity));
@@ -113,9 +112,12 @@ export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
         )}
 
         {/* Description */}
-        <p className="text-gray-600 text-sm flex-1">
-          {sanitizedDescription}
-        </p>
+        <div
+          className="text-gray-600 text-sm flex-1"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeProductDescription(item.description)
+          }}
+        />
 
         {/* Tropical Salad Modifier */}
         {isTropicalSalad && item.modifiers && (
