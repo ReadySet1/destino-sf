@@ -263,6 +263,7 @@ describe('AvailabilityValidators.validateRule', () => {
         preOrderSettings: {
           message: 'Pre-order from last year',
           expectedDeliveryDate: pastDate,
+          depositRequired: false,
         },
       };
       

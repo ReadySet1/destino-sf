@@ -244,7 +244,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   // Transform the products to match our expected type
   const products = productsFromDb.map((product: any) => {
     const evaluation = availabilityEvaluations.get(product.id);
-    
+
     return {
       id: product.id,
       name: product.name,
@@ -257,12 +257,17 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       },
       featured: product.featured,
       active: product.active,
+      squareId: product.squareId,
       variants: (product.variants || []).map((variant: any) => ({
         id: variant.id,
         name: variant.name,
         price: variant.price ? decimalToNumber(variant.price) : null, // Convert Decimal to number
         squareVariantId: variant.squareVariantId,
       })),
+      // Archive fields
+      isArchived: product.isArchived || false,
+      archivedAt: product.archivedAt,
+      archivedReason: product.archivedReason,
       // Legacy availability fields (kept for compatibility)
       isAvailable: product.isAvailable,
       isPreorder: product.isPreorder,
@@ -272,7 +277,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       preorderEndDate: product.preorderEndDate,
       availabilityStart: product.availabilityStart,
       availabilityEnd: product.availabilityEnd,
-      
+
       // New availability evaluation result
       evaluatedAvailability: evaluation ? {
         currentState: evaluation.currentState,

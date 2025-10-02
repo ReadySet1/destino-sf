@@ -221,10 +221,12 @@ export function AvailabilityForm({
         } : null,
         preOrderSettings: data.preOrderSettings ? {
           ...data.preOrderSettings,
+          message: data.preOrderSettings.message || 'Available for pre-order',
           depositRequired: data.preOrderSettings.depositRequired ?? false
         } : null,
         viewOnlySettings: data.viewOnlySettings ? {
           ...data.viewOnlySettings,
+          message: data.viewOnlySettings.message || 'Currently unavailable for purchase',
           showPrice: data.viewOnlySettings.showPrice ?? true,
           allowWishlist: data.viewOnlySettings.allowWishlist ?? false,
           notifyWhenAvailable: data.viewOnlySettings.notifyWhenAvailable ?? true

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Category } from '@/types/product';
 import { logger } from '@/utils/logger';
 import { ProductImageSection } from '@/components/admin/products/ProductImageSection';
+import { ProductEditActions } from './components/ProductEditActions';
 
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
@@ -81,7 +82,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     return 0;
   };
 
-  // Fetch the product from Prisma with variants
+  // Fetch the product from Prisma with variants and archive fields
   const productFromDb = await prisma.product.findUnique({
     where: { id: productId },
     include: {
@@ -101,6 +102,9 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const product = {
     ...productFromDb,
     price: decimalToNumber(productFromDb.price),
+    isArchived: productFromDb.isArchived || false,
+    archivedAt: productFromDb.archivedAt,
+    archivedReason: productFromDb.archivedReason,
     variants: productFromDb.variants.map(variant => ({
       ...variant,
       price: variant.price ? decimalToNumber(variant.price) : null,
@@ -199,22 +203,23 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Product</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
+                {product.isArchived && (
+                  <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Archived
+                  </span>
+                )}
+              </div>
               <p className="text-base text-gray-600 leading-relaxed">
                 Update product information, pricing, and availability settings
               </p>
             </div>
-            <div className="flex-shrink-0">
-              <Link
-                href="/admin/products"
-                className="inline-flex items-center px-5 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Products
-              </Link>
-            </div>
+            <ProductEditActions
+              productId={productId}
+              productName={product.name}
+              isArchived={product.isArchived}
+            />
           </div>
         </div>
 
