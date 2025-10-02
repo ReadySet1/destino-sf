@@ -27,7 +27,7 @@ import {
   getAvailabilityBadge,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
-import { sanitizeProductDescription, htmlToPlainText } from '@/lib/utils/product-description';
+import { sanitizeProductDescription, htmlToPlainText, truncateHtmlDescription } from '@/lib/utils/product-description';
 
 interface ProductCardProps {
   product: Product;
@@ -54,16 +54,9 @@ const formatPrice = (price: any): string => {
 const getShortDescription = (productName: string, fullDescription?: string): string => {
   // ALWAYS prefer the actual description from the database first
   if (fullDescription && fullDescription.length > 0) {
-    // Convert HTML to plain text for length check
-    const plainText = htmlToPlainText(fullDescription);
-
-    // If plain text is short enough, return sanitized HTML
-    if (plainText.length <= 80) {
-      return sanitizeProductDescription(fullDescription);
-    }
-
-    // Truncate plain text and return (no HTML in truncated version to avoid broken tags)
-    return plainText.substring(0, 80).trim() + '...';
+    // Use truncateHtmlDescription utility to handle both short and long descriptions
+    // This ensures consistent handling of HTML content
+    return truncateHtmlDescription(fullDescription, 80);
   }
 
   // Only use fallbacks if there's no description in the database
