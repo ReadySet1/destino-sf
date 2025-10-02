@@ -53,16 +53,22 @@ const DEFAULT_PRODUCT_WEIGHT_LB = 0.5;
  * Determines the product type from product name for weight calculation
  */
 function getProductType(productName: string): string {
-  const name = productName.toLowerCase();
+  const name = productName.toLowerCase().trim();
+
+  // Log for monitoring
+  logger.debug(`[Shipping] Matching product: ${productName}`);
 
   if (name.includes('alfajor')) {
+    logger.debug('[Shipping] Matched: alfajores');
     return 'alfajores';
   }
 
   if (name.includes('empanada')) {
+    logger.debug('[Shipping] Matched: empanadas');
     return 'empanadas';
   }
 
+  logger.warn(`[Shipping] No specific match found, using default weight for: ${productName}`);
   return 'default';
 }
 
@@ -89,19 +95,19 @@ export async function getShippingWeightConfig(
         isActive: dbConfig.isActive,
         applicableForNationwideOnly: dbConfig.applicableForNationwideOnly,
       };
-      console.log(`📊 Found DB config for ${productType}:`, config);
+      logger.info(`[Shipping] ✓ Found database config for ${productType}:`, config);
       return config;
     }
 
     // Fall back to default configurations
     const defaultConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
-    console.log(`📊 Using default config for ${productType}:`, defaultConfig);
+    logger.warn(`[Shipping] ⚠️ No database config for ${productType}, using hardcoded default:`, defaultConfig);
     return defaultConfig;
   } catch (error) {
-    console.error('Error fetching shipping weight config:', error);
+    logger.error('[Shipping] ❌ Error fetching shipping weight config:', error);
     // Fall back to default configurations
     const fallbackConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
-    console.log(`📊 Using fallback config for ${productType}:`, fallbackConfig);
+    logger.warn(`[Shipping] ⚠️ Using fallback config for ${productType} due to database error:`, fallbackConfig);
     return fallbackConfig;
   }
 }
@@ -167,15 +173,27 @@ export async function calculateShippingWeight(
     }
   }
 
+  // Validate calculated weight
+  if (totalWeight < 0) {
+    logger.error(`[Shipping] ❌ Invalid negative weight calculated: ${totalWeight}lb. Using minimum weight.`);
+    totalWeight = 0.5;
+  }
+
   // Ensure minimum weight for shipping (most carriers require at least 0.5 lb for small packages)
   const finalWeight = Math.max(totalWeight, 0.5);
 
   // Round to 2 decimal places to avoid floating point precision issues
   const roundedWeight = Math.round(finalWeight * 100) / 100;
 
-  console.log(
-    `📏 Final shipping weight: ${totalWeight}lb → ${finalWeight}lb → ${roundedWeight}lb (rounded for API)`
+  // Validate final weight is reasonable (< 50 lbs for food items)
+  if (roundedWeight > 50) {
+    logger.warn(`[Shipping] ⚠️ Unusually high weight calculated: ${roundedWeight}lb. Please verify cart items.`);
+  }
+
+  logger.info(
+    `[Shipping] 📏 Final weight calculation: ${totalWeight}lb → min(0.5) → ${finalWeight}lb → ${roundedWeight}lb (rounded)`
   );
+
   return roundedWeight;
 }
 

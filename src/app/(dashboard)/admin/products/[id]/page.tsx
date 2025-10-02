@@ -1,13 +1,13 @@
 // src/app/(dashboard)/admin/products/[id]/page.tsx
 
-import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { env } from '@/env'; // Import the validated environment configuration
 import Link from 'next/link';
 import { Category } from '@/types/product';
 import { logger } from '@/utils/logger';
-import { AvailabilitySection } from '@/components/admin/products/AvailabilitySection';
+import { ProductImageSection } from '@/components/admin/products/ProductImageSection';
+import { ProductEditActions } from './components/ProductEditActions';
 
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
@@ -30,6 +30,23 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     logger.error(`Invalid product ID format: ${productId}`);
     notFound();
   }
+
+  // Utility function to strip HTML tags and decode entities
+  const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, '');
+    // Decode common HTML entities
+    text = text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+    return text.trim();
+  };
 
   // Helper function to convert Decimal to number safely
   const decimalToNumber = (value: any): number => {
@@ -65,7 +82,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     return 0;
   };
 
-  // Fetch the product from Prisma with variants
+  // Fetch the product from Prisma with variants and archive fields
   const productFromDb = await prisma.product.findUnique({
     where: { id: productId },
     include: {
@@ -85,6 +102,9 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const product = {
     ...productFromDb,
     price: decimalToNumber(productFromDb.price),
+    isArchived: productFromDb.isArchived || false,
+    archivedAt: productFromDb.archivedAt,
+    archivedReason: productFromDb.archivedReason,
     variants: productFromDb.variants.map(variant => ({
       ...variant,
       price: variant.price ? decimalToNumber(variant.price) : null,
@@ -107,16 +127,9 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     const price = parseFloat(formData.get('price') as string);
     const categoryId = formData.get('categoryId') as string;
     const imageUrlsString = formData.get('imageUrls') as string | null;
-    const featured = formData.has('featured');
-    const active = formData.has('active');
     const squareId = formData.get('squareId') as string;
     const productId = formData.get('productId') as string;
-    
-    // Availability fields for manual override
-    const isAvailable = formData.has('isAvailable');
-    const isPreorder = formData.has('isPreorder');
-    const visibility = formData.get('visibility') as string || 'PUBLIC';
-    const itemState = formData.get('itemState') as string || 'ACTIVE';
+    const productType = formData.get('productType') as string | null;
 
     if (!name || !price || isNaN(price) || !productId) {
       logger.error('Invalid product data');
@@ -151,14 +164,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           price,
           categoryId,
           images: prismaImageUrls,
-          featured,
-          active,
           squareId,
-          // Availability fields for manual override
-          isAvailable,
-          isPreorder,
-          visibility,
-          itemState,
+          ...(productType && { productType }),
         },
       });
       logger.info('Database update successful');
@@ -198,22 +205,23 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Product</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
+                {product.isArchived && (
+                  <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Archived
+                  </span>
+                )}
+              </div>
               <p className="text-base text-gray-600 leading-relaxed">
                 Update product information, pricing, and availability settings
               </p>
             </div>
-            <div className="flex-shrink-0">
-              <Link
-                href="/admin/products"
-                className="inline-flex items-center px-5 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Products
-              </Link>
-            </div>
+            <ProductEditActions
+              productId={productId}
+              productName={product.name}
+              isArchived={product.isArchived}
+            />
           </div>
         </div>
 
@@ -253,7 +261,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                     name="description"
                     id="description"
                     rows={5}
-                    defaultValue={product.description || ''}
+                    defaultValue={stripHtmlTags(product.description || '')}
                     className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200 resize-none"
                     placeholder="Describe your product features, ingredients, or other important details..."
                   ></textarea>
@@ -262,7 +270,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div>
                     <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-3">
                       Price *
@@ -303,6 +311,37 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="productType" className="block text-sm font-semibold text-gray-700 mb-3">
+                      Product Type
+                    </label>
+                    <select
+                      name="productType"
+                      id="productType"
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
+                      defaultValue={(product as any).productType || 'other'}
+                    >
+                      <option value="empanada">Empanada</option>
+                      <option value="salsa">Salsa</option>
+                      <option value="alfajor">Alfajor</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-sm text-gray-500">
+                        Determines which badges are shown on the product detail page
+                      </p>
+                      <Link
+                        href="/admin/products/badges"
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Badges
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -365,205 +404,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
               </div>
             </div>
             <div className="px-8 py-8">
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-                <div className="space-y-6">
-                  <div className="mx-auto w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Image Upload Component</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Drag and drop images here, or click to browse files
-                    </p>
-                    <p className="text-sm text-blue-600 bg-blue-100 inline-block px-4 py-2 rounded-lg font-medium">
-                      Current images: {initialImageUrls.length > 0 ? `${initialImageUrls.length} image(s)` : 'None'}
-                    </p>
-                  </div>
-                  <input type="hidden" name="imageUrls" value={JSON.stringify(initialImageUrls)} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Status */}
-          <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-200 bg-purple-50">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Product Status</h2>
-                  <p className="text-sm text-gray-600">
-                    Control how this product appears and behaves on your site
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="px-8 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-1">
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="active"
-                      id="active"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      defaultChecked={product.active}
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="active" className="text-base font-semibold text-gray-700">
-                        Active Product
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        Active products are included in your catalog and can be sold to customers
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="featured"
-                      id="featured"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      defaultChecked={product.featured}
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="featured" className="text-base font-semibold text-gray-700">
-                        Featured Product
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        Featured products appear prominently on your homepage and category pages
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Availability Override */}
-          <div className="bg-white shadow-sm rounded-xl border border-amber-200 overflow-hidden">
-            <div className="px-8 py-6 border-b border-amber-200 bg-amber-50">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Manual Availability Override</h2>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Square&apos;s &ldquo;Site visibility&rdquo; settings are not accessible through their API. 
-                    Use these controls to manually override availability when needed.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="px-8 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-8">
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="isAvailable"
-                      id="isAvailable"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      defaultChecked={product.isAvailable ?? true}
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="isAvailable" className="text-base font-semibold text-gray-700">
-                        Available for Purchase
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        When checked, customers can add this item to their cart and complete purchases
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="isPreorder"
-                      id="isPreorder"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      defaultChecked={product.isPreorder ?? false}
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="isPreorder" className="text-base font-semibold text-gray-700">
-                        Pre-order Item
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        Allow customers to pre-order this item before it becomes generally available
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-8">
-                  <div>
-                    <label htmlFor="visibility" className="block text-base font-semibold text-gray-700 mb-3">
-                      Site Visibility
-                    </label>
-                    <select
-                      name="visibility"
-                      id="visibility"
-                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
-                      defaultValue={product.visibility || 'PUBLIC'}
-                    >
-                      <option value="PUBLIC">Public (Visible to all customers)</option>
-                      <option value="PRIVATE">Private (Hidden from customers)</option>
-                    </select>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Controls whether this product appears in your public catalog and search results
-                    </p>
-                  </div>
-
-                  <div>
-                    <label htmlFor="itemState" className="block text-base font-semibold text-gray-700 mb-3">
-                      Item State
-                    </label>
-                    <select
-                      name="itemState"
-                      id="itemState"
-                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
-                      defaultValue={product.itemState || 'ACTIVE'}
-                    >
-                      <option value="ACTIVE">Active</option>
-                      <option value="INACTIVE">Inactive</option>
-                      <option value="SEASONAL">Seasonal</option>
-                      <option value="ARCHIVED">Archived</option>
-                    </select>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Sets the operational state of this product for inventory management
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                    <div className="ml-3">
-                      <p className="text-sm text-blue-800 leading-relaxed">
-                        <strong>Note:</strong> For advanced availability management including date ranges, seasonal rules, and pre-order settings, 
-                        use the dedicated <Link href={`/admin/products/availability`} className="underline font-medium">Availability Management</Link> system 
-                        which provides comprehensive control over product availability states.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProductImageSection initialImages={initialImageUrls} />
             </div>
           </div>
 
@@ -623,18 +464,6 @@ export default async function EditProductPage({ params, searchParams }: PageProp
               </div>
             </div>
           )}
-
-          {/* Advanced Availability Management */}
-          <Suspense fallback={
-            <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-8">
-              <div className="flex items-center justify-center">
-                <div className="h-8 w-8 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-                <span className="ml-2">Loading availability management...</span>
-              </div>
-            </div>
-          }>
-            <AvailabilitySection productId={productId} productName={product.name} />
-          </Suspense>
 
           {/* Form Actions */}
           <div className="bg-white rounded-xl border border-gray-200 px-8 py-6">

@@ -229,7 +229,10 @@ export default async function ProductPage({ params }: PageProps) {
     active: dbProduct.active,
     createdAt: dbProduct.createdAt,
     updatedAt: dbProduct.updatedAt,
-    
+
+    // Add product type for badges
+    productType: dbProduct.productType,
+
     // Add availability fields
     isAvailable: dbProduct.isAvailable ?? true,
     isPreorder: dbProduct.isPreorder ?? false,
@@ -239,7 +242,7 @@ export default async function ProductPage({ params }: PageProps) {
     preorderEndDate: dbProduct.preorderEndDate,
     availabilityStart: dbProduct.availabilityStart,
     availabilityEnd: dbProduct.availabilityEnd,
-    
+
     // Add evaluated availability from rules
     evaluatedAvailability,
   };

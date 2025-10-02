@@ -27,6 +27,7 @@ import {
 } from '@/types/catering';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from '@/lib/toast';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface BoxedLunchBuilderProps {
   onClose?: () => void;
@@ -291,7 +292,12 @@ export const BoxedLunchBuilder: React.FC<BoxedLunchBuilderProps> = ({ onClose })
                       )}
                       <h4 className="font-semibold text-sm mb-2">{entree.name}</h4>
                       {entree.description && (
-                        <p className="text-xs text-gray-600 mb-2">{entree.description}</p>
+                        <div
+                          className="text-xs text-gray-600 mb-2"
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeProductDescription(entree.description)
+                          }}
+                        />
                       )}
                       {entree.dietaryPreferences.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">

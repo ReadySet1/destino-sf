@@ -76,7 +76,15 @@ model Product {
   descriptionSource      String?   @default("SQUARE") @map("description_source") @db.VarChar(50)
   descriptionValidatedAt DateTime? @map("description_validated_at")
   mappingStatus          String?   @default("NEEDS_REVIEW") @map("mapping_status") @db.VarChar(20)
-  
+
+  // Archive fields for product lifecycle management
+  isArchived       Boolean   @default(false) @map("is_archived")
+  archivedAt       DateTime? @map("archived_at")
+  archivedReason   String?   @map("archived_reason") @db.VarChar(100)
+
+  // Product type for badge display
+  productType      String?   @default("other") @map("product_type") @db.VarChar(50)
+
   orderItems         OrderItem[]
   category           Category        @relation(fields: [categoryId], references: [id])
   spotlightPicks     SpotlightPick[]
@@ -98,7 +106,24 @@ model Product {
   @@index([nutritionFacts], map: "idx_products_nutrition_facts", type: Gin)
   @@index([isAvailable, visibility, active], map: "idx_products_availability")
   @@index([mappingStatus], map: "idx_products_mapping_status")
+  @@index([isArchived, active], map: "idx_products_archived_active")
   @@map("products")
+}
+
+model ProductTypeBadges {
+  id          Int      @id @default(autoincrement())
+  productType String   @unique @map("product_type") @db.VarChar(50)
+  badge1      String   @db.VarChar(100)
+  badge2      String   @db.VarChar(100)
+  badge3      String?  @db.VarChar(100)
+  icon1       String   @default("leaf") @map("icon1") @db.VarChar(50)
+  icon2       String   @default("clock") @map("icon2") @db.VarChar(50)
+  icon3       String?  @map("icon3") @db.VarChar(50)
+  bgColor     String   @default("#c2410c") @map("bg_color") @db.VarChar(20)
+  textColor   String   @default("#ffffff") @map("text_color") @db.VarChar(20)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("product_type_badges")
 }
 
 model Category {

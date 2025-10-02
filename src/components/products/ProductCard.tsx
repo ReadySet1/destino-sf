@@ -27,6 +27,7 @@ import {
   getAvailabilityBadge,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
+import { sanitizeProductDescription, htmlToPlainText, truncateHtmlDescription } from '@/lib/utils/product-description';
 
 interface ProductCardProps {
   product: Product;
@@ -49,14 +50,13 @@ const formatPrice = (price: any): string => {
 };
 
 // Helper function to create short, card-appropriate descriptions
+// Now handles HTML-formatted descriptions from Square
 const getShortDescription = (productName: string, fullDescription?: string): string => {
   // ALWAYS prefer the actual description from the database first
   if (fullDescription && fullDescription.length > 0) {
-    const truncated =
-      fullDescription.length > 80
-        ? fullDescription.substring(0, 80).trim() + '...'
-        : fullDescription;
-    return truncated;
+    // Use truncateHtmlDescription utility to handle both short and long descriptions
+    // This ensures consistent handling of HTML content
+    return truncateHtmlDescription(fullDescription, 80);
   }
 
   // Only use fallbacks if there's no description in the database
@@ -224,9 +224,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
 
-        <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">
-          {getShortDescription(product.name, product.description || undefined)}
-        </p>
+        <div
+          className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4"
+          dangerouslySetInnerHTML={{
+            __html: getShortDescription(product.name, product.description || undefined)
+          }}
+        />
 
         <div className="mt-auto">
           <div className="flex items-center justify-between">

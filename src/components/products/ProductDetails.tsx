@@ -10,7 +10,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Clock, Thermometer, Leaf, Users, Eye } from 'lucide-react';
+import { ChevronDown, Clock, Thermometer, Leaf, Users, Eye, Star, Heart, Zap, Award, CheckCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import {
   getEffectiveAvailabilityState,
   shouldRenderProduct,
@@ -20,6 +20,7 @@ import {
   getAddToCartButtonConfig,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface ProductDetailsProps {
   product: Product;
@@ -215,90 +216,150 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
   );
 }
 
-// Dynamic product highlights based on product type
-const getProductHighlights = (product: Product) => {
-  const categoryName = product.category?.name?.toLowerCase() || '';
-  const productName = product.name.toLowerCase();
+// Dynamic product highlights based on product type - fetched from database
+interface ProductTypeBadge {
+  badge1: string;
+  badge2: string;
+  badge3?: string;
+  icon1: string;
+  icon2: string;
+  icon3?: string;
+  bgColor: string;
+  textColor: string;
+}
+
+const useProductTypeBadges = (productType: string | null | undefined) => {
+  const [badges, setBadges] = useState<ProductTypeBadge | null>(null);
+
+  useEffect(() => {
+    const fetchBadges = async () => {
+      if (!productType) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/product-type-badges/${productType}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBadges(data);
+        }
+      } catch (error) {
+        console.error('Error fetching product type badges:', error);
+      }
+    };
+
+    fetchBadges();
+  }, [productType]);
+
+  return badges;
+};
+
+// Icon mapping function
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, any> = {
+    'leaf': Leaf,
+    'clock': Clock,
+    'thermometer': Thermometer,
+    'users': Users,
+    'eye': Eye,
+    'star': Star,
+    'heart': Heart,
+    'zap': Zap,
+    'award': Award,
+    'check-circle': CheckCircle,
+    'shield-check': ShieldCheck,
+    'sparkles': Sparkles,
+  };
+  return iconMap[iconName] || Leaf;
+};
+
+const getProductHighlights = (product: Product, badges: ProductTypeBadge | null) => {
   const isPreorder = product.isPreorder ?? false;
 
-  // Special highlights for pre-order items
+  // If preorder, show preorder badge first
   if (isPreorder) {
+    const defaultBgColor = badges?.bgColor || '#3b82f6'; // Blue for preorder
+    const defaultTextColor = badges?.textColor || '#ffffff';
+
     const highlights = [
       {
-        icon: <Clock className="w-4 h-4 text-blue-300" />,
+        icon: <Clock className="w-4 h-4" style={{ color: defaultTextColor }} />,
         text: 'Pre-order',
-        color: 'text-blue-300',
+        color: '',
+        bgColor: defaultBgColor,
+        textColor: defaultTextColor,
       },
     ];
 
     // Add expected delivery date if available
     if (product.preorderEndDate) {
       const endDate = new Date(product.preorderEndDate);
-      // Use consistent date formatting to avoid hydration issues
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const formattedDate = `${months[endDate.getMonth()]} ${endDate.getDate()}`;
       highlights.push({
-        icon: <Clock className="w-4 h-4 text-blue-300" />,
+        icon: <Clock className="w-4 h-4" style={{ color: defaultTextColor }} />,
         text: `Available ${formattedDate}`,
-        color: 'text-blue-300',
-      });
-    }
-
-    // Add category-specific third highlight
-    if (categoryName.includes('alfajor') || productName.includes('alfajor')) {
-      highlights.push({
-        icon: <Users className="w-4 h-4 text-purple-300" />,
-        text: '6-pack combo',
-        color: 'text-purple-300',
-      });
-    } else {
-      highlights.push({
-        icon: <Users className="w-4 h-4 text-purple-300" />,
-        text: '4 pack',
-        color: 'text-purple-300',
+        color: '',
+        bgColor: defaultBgColor,
+        textColor: defaultTextColor,
       });
     }
 
     return highlights;
   }
 
-  // Check if it's alfajores
-  if (categoryName.includes('alfajor') || productName.includes('alfajor')) {
-    return [
+  // Use badges from database if available
+  if (badges) {
+    const Icon1 = getIconComponent(badges.icon1);
+    const Icon2 = getIconComponent(badges.icon2);
+    const Icon3 = badges.icon3 ? getIconComponent(badges.icon3) : null;
+
+    const highlights = [
       {
-        icon: <Leaf className="w-4 h-4 text-green-300" />,
-        text: 'Ready to Eat',
-        color: 'text-green-300',
+        icon: <Icon1 className="w-4 h-4" style={{ color: badges.textColor }} />,
+        text: badges.badge1,
+        color: '',
+        bgColor: badges.bgColor,
+        textColor: badges.textColor,
       },
       {
-        icon: <Clock className="w-4 h-4 text-blue-300" />,
-        text: '2 weeks fresh',
-        color: 'text-blue-300',
-      },
-      {
-        icon: <Users className="w-4 h-4 text-purple-300" />,
-        text: '6-pack combo',
-        color: 'text-purple-300',
+        icon: <Icon2 className="w-4 h-4" style={{ color: badges.textColor }} />,
+        text: badges.badge2,
+        color: '',
+        bgColor: badges.bgColor,
+        textColor: badges.textColor,
       },
     ];
+
+    // Add badge3 if it exists
+    if (badges.badge3 && Icon3) {
+      highlights.push({
+        icon: <Icon3 className="w-4 h-4" style={{ color: badges.textColor }} />,
+        text: badges.badge3,
+        color: '',
+        bgColor: badges.bgColor,
+        textColor: badges.textColor,
+      });
+    }
+
+    return highlights;
   }
 
-  // Default empanadas highlights
+  // Fallback to default badges if no badges found
   return [
     {
-      icon: <Thermometer className="w-4 h-4 text-orange-300" />,
-      text: 'Ready to Cook',
-      color: 'text-orange-300',
+      icon: <Thermometer className="w-4 h-4 text-white" />,
+      text: 'Premium Quality',
+      color: 'text-white',
+      bgColor: '#c2410c',
+      textColor: '#ffffff',
     },
     {
-      icon: <Clock className="w-4 h-4 text-green-300" />,
-      text: '15-20 min',
-      color: 'text-green-300',
-    },
-    {
-      icon: <Users className="w-4 h-4 text-blue-300" />,
-      text: '4 pack',
-      color: 'text-blue-300',
+      icon: <Clock className="w-4 h-4 text-white" />,
+      text: 'Handcrafted',
+      color: 'text-white',
+      bgColor: '#c2410c',
+      textColor: '#ffffff',
     },
   ];
 };
@@ -378,6 +439,10 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [openFAQItems, setOpenFAQItems] = useState<number[]>([]);
   const { addItem } = useCartStore();
   const { showAlert } = useCartAlertStore();
+
+  // Fetch badges based on product type
+  const productType = (product as any).productType || null;
+  const badges = useProductTypeBadges(productType);
 
 
   // Ensure product exists and has required fields before rendering
@@ -530,13 +595,19 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                   <span className="text-sm font-medium text-white drop-shadow-sm">View Only</span>
                 </div>
               )}
-              {getProductHighlights(product).map((highlight, index) => (
+              {getProductHighlights(product, badges).map((highlight, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 bg-white/40 backdrop-blur-md border border-white/50 px-4 py-2 rounded-full"
+                  className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
+                  style={{
+                    backgroundColor: `${highlight.bgColor}e6`, // Add 90% opacity
+                    color: highlight.textColor
+                  }}
                 >
-                  <span className={`${highlight.color} w-4 h-4`}>{highlight.icon}</span>
-                  <span className="text-sm font-medium text-white drop-shadow-sm">{highlight.text}</span>
+                  <span className="w-4 h-4">{highlight.icon}</span>
+                  <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                    {highlight.text}
+                  </span>
                 </div>
               ))}
             </div>
@@ -592,7 +663,12 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 transition={{ duration: 0.3 }}
               >
                 {product.description && (
-                  <p className="text-gray-600 mb-8 text-lg">{product.description}</p>
+                  <div
+                    className="text-gray-600 mb-8 text-lg"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeProductDescription(product.description)
+                    }}
+                  />
                 )}
 
                 <p className="text-3xl font-semibold mb-8 text-gray-900">

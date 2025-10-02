@@ -655,10 +655,15 @@ async function fetchSquareItemsForCategory(categoryId: string, categoryName: str
             basePrice
           });
 
+          // Use description_html (formatted) instead of description_plaintext
+          const rawDescription = item.item_data.description_html || item.item_data.description || '';
+          const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+          const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
           items.push({
             id: item.id,
             name: item.item_data.name,
-            description: item.item_data.description_plaintext || '',
+            description: sanitizedDescription,
             price: basePrice,
             categoryId,
             categoryName,

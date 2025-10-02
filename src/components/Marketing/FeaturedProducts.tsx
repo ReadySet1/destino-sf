@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Dancing_Script } from 'next/font/google';
 import { SpotlightPick } from '@/types/spotlight';
+import { truncateHtmlDescription } from '@/lib/utils/product-description';
 
 // Configure the font
 const dancingScript = Dancing_Script({
@@ -62,11 +63,9 @@ export function FeaturedProducts() {
       slug: pick.product?.slug || '#',
     };
 
-    // Generate short description (max 80 characters)
+    // Generate short description (max 80 characters) with proper HTML handling
     const shortDescription = productData.description
-      ? productData.description.length > 80
-        ? productData.description.substring(0, 80).trim() + '...'
-        : productData.description
+      ? truncateHtmlDescription(productData.description, 80)
       : '';
 
     const linkHref = pick.product?.slug ? `/products/${pick.product.slug}` : '#';
@@ -89,7 +88,10 @@ export function FeaturedProducts() {
         <div className="mt-4">
           <h3 className="font-semibold text-lg text-gray-900">{productData.name}</h3>
           {shortDescription && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{shortDescription}</p>
+            <div
+              className="text-sm text-gray-600 mt-1 line-clamp-2"
+              dangerouslySetInnerHTML={{ __html: shortDescription }}
+            />
           )}
           {productData.price && <p className="font-medium text-amber-600 mt-2">{productData.price}</p>}
         </div>

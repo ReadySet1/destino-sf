@@ -113,6 +113,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
   }, []);
 
   const handleTabClick = (tabId: string) => {
+    logger.info(`📱 Tab clicked: ${tabId}`);
     setActiveTab(tabId);
   };
 
@@ -122,12 +123,20 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
         {tabs.map(tab => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => handleTabClick(tab.id)}
-            className={`text-center px-3 py-3 rounded-md border border-gray-200 text-base md:text-lg font-medium transition-all duration-200 ${
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleTabClick(tab.id);
+            }}
+            className={`text-center px-3 py-3 rounded-md border border-gray-200 text-base md:text-lg font-medium transition-all duration-200 touch-manipulation active:scale-95 ${
               activeTab === tab.id
                 ? 'bg-white text-gray-800 shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
             }`}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+            aria-pressed={activeTab === tab.id}
+            aria-label={`Switch to ${tab.label} menu`}
           >
             {tab.label}
           </button>

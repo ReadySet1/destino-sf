@@ -79,6 +79,9 @@ export async function archiveRemovedSquareProducts(
         },
         data: {
           active: false,
+          isArchived: true,
+          archivedAt: new Date(),
+          archivedReason: 'removed_from_square',
           updatedAt: new Date()
         }
       });
@@ -119,6 +122,9 @@ export async function archiveRemovedSquareProducts(
             where: { id: product.id },
             data: {
               active: false,
+              isArchived: true,
+              archivedAt: new Date(),
+              archivedReason: 'removed_from_square',
               updatedAt: new Date()
             }
           });
@@ -157,11 +163,12 @@ export async function archiveRemovedSquareProducts(
 export async function getArchivedProductsCount(): Promise<{
   total: number;
   byCategory: Record<string, number>;
+  byReason: Record<string, number>;
 }> {
   try {
     const archivedProducts = await prisma.product.findMany({
       where: {
-        active: false,
+        isArchived: true, // Use dedicated archive field
       },
       include: {
         category: {
@@ -173,15 +180,20 @@ export async function getArchivedProductsCount(): Promise<{
     });
 
     const byCategory: Record<string, number> = {};
-    
+    const byReason: Record<string, number> = {};
+
     archivedProducts.forEach(product => {
       const categoryName = product.category?.name || 'Uncategorized';
       byCategory[categoryName] = (byCategory[categoryName] || 0) + 1;
+
+      const reason = product.archivedReason || 'unknown';
+      byReason[reason] = (byReason[reason] || 0) + 1;
     });
 
     return {
       total: archivedProducts.length,
-      byCategory
+      byCategory,
+      byReason
     };
   } catch (error) {
     logger.error('❌ Error getting archived products count:', error);
@@ -197,7 +209,7 @@ export async function restoreArchivedProduct(squareId: string): Promise<boolean>
     const archivedProduct = await prisma.product.findFirst({
       where: {
         squareId,
-        active: false
+        isArchived: true // Use dedicated archive field
       }
     });
 
@@ -206,6 +218,9 @@ export async function restoreArchivedProduct(squareId: string): Promise<boolean>
         where: { id: archivedProduct.id },
         data: {
           active: true,
+          isArchived: false,
+          archivedAt: null,
+          archivedReason: null,
           updatedAt: new Date()
         }
       });

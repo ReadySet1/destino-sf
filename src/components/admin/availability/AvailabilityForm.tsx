@@ -40,9 +40,19 @@ interface Product {
   };
 }
 
+interface QuickTemplate {
+  name: string;
+  ruleType: RuleType;
+  state: AvailabilityState;
+  priority: number;
+  preOrderSettings?: any;
+  viewOnlySettings?: any;
+}
+
 interface AvailabilityFormProps {
   productId?: string;
   rule?: AvailabilityRule;
+  template?: QuickTemplate;
   onSuccess?: (rule: AvailabilityRule) => void;
   onCancel?: () => void;
   className?: string;
@@ -52,6 +62,7 @@ interface AvailabilityFormProps {
 export function AvailabilityForm({
   productId,
   rule,
+  template,
   onSuccess,
   onCancel,
   className,
@@ -61,18 +72,18 @@ export function AvailabilityForm({
   const [showPreview, setShowPreview] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  
+
   const form = useForm<AvailabilityRule>({
     // Temporarily disable Zod validation - we'll do it server-side
     // resolver: zodResolver(AvailabilityRuleSchema),
     mode: 'onSubmit',
     defaultValues: {
       productId: productId || rule?.productId || '',
-      name: rule?.name || '',
+      name: rule?.name || template?.name || '',
       enabled: rule?.enabled ?? true,
-      priority: rule?.priority || 0,
-      ruleType: rule?.ruleType || RuleType.DATE_RANGE,
-      state: rule?.state || AvailabilityState.AVAILABLE,
+      priority: rule?.priority ?? template?.priority ?? 0,
+      ruleType: rule?.ruleType || template?.ruleType || RuleType.DATE_RANGE,
+      state: rule?.state || template?.state || AvailabilityState.AVAILABLE,
       startDate: rule?.startDate ? new Date(rule.startDate) : null,
       endDate: rule?.endDate ? new Date(rule.endDate) : null,
       seasonalConfig: rule?.seasonalConfig ? {
@@ -96,8 +107,8 @@ export function AvailabilityForm({
       preOrderSettings: rule?.preOrderSettings ? {
         ...rule.preOrderSettings,
         depositRequired: rule.preOrderSettings.depositRequired ?? false
-      } : null,
-      viewOnlySettings: rule?.viewOnlySettings || null,
+      } : template?.preOrderSettings || null,
+      viewOnlySettings: rule?.viewOnlySettings || template?.viewOnlySettings || null,
       overrideSquare: rule?.overrideSquare ?? true
     }
   });
@@ -210,10 +221,12 @@ export function AvailabilityForm({
         } : null,
         preOrderSettings: data.preOrderSettings ? {
           ...data.preOrderSettings,
+          message: data.preOrderSettings.message || 'Available for pre-order',
           depositRequired: data.preOrderSettings.depositRequired ?? false
         } : null,
         viewOnlySettings: data.viewOnlySettings ? {
           ...data.viewOnlySettings,
+          message: data.viewOnlySettings.message || 'Currently unavailable for purchase',
           showPrice: data.viewOnlySettings.showPrice ?? true,
           allowWishlist: data.viewOnlySettings.allowWishlist ?? false,
           notifyWhenAvailable: data.viewOnlySettings.notifyWhenAvailable ?? true

@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toTitleCase } from '@/lib/utils';
 import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from '@/lib/toast';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface ALaCarteMenuProps {
   items: CateringItem[];
@@ -279,27 +280,19 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
   };
 
   // Enhanced formatting for menu item descriptions
+  // Now renders HTML safely instead of treating as plain text
   const formatMenuItemDescription = (desc: string | null | undefined): React.ReactNode => {
     if (!desc) return null;
 
-    // Format the basic description
-    const formattedDesc = formatDescription(desc);
+    // Sanitize and render HTML description
+    const sanitizedHtml = sanitizeProductDescription(desc);
 
-    // Check if description has multiple parts we can format differently
-    if (formattedDesc.includes(',') && formattedDesc.split(',').length >= 2) {
-      const parts = formattedDesc.split(',');
-
-      return (
-        <div className="text-sm md:text-base">
-          <span className="font-medium">{parts[0].trim()}</span>
-          <span className="text-gray-600">{parts.length > 1 ? ',' : ''} </span>
-          <span className="italic">{parts.slice(1).join(',').trim()}</span>
-        </div>
-      );
-    }
-
-    // If it's a simple description without commas, just add some basic styling
-    return <p className="text-gray-600 text-sm md:text-base">{formattedDesc}</p>;
+    return (
+      <div
+        className="text-sm md:text-base"
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      />
+    );
   };
 
   const handleAddToCart = () => {
@@ -478,7 +471,12 @@ const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCate
                   </div>
 
                   <div className="mb-4 flex-grow">
-                    <p className="text-gray-600 text-sm">{addOn.description}</p>
+                    <div
+                      className="text-gray-600 text-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeProductDescription(addOn.description)
+                      }}
+                    />
                   </div>
 
                   <div className="mt-auto pt-2 flex gap-2">

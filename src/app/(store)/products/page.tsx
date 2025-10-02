@@ -71,6 +71,7 @@ export default async function ProductsPage() {
     return await prisma.product.findMany({
       where: {
         active: true, // Fetch only active products
+        isArchived: false, // Exclude archived products
         // Properly filter by visibility fields
         OR: [
           { visibility: 'PUBLIC' },

@@ -318,6 +318,7 @@ export class ProductVisibilityService {
 
     // Add visibility filtering for customer-facing queries
     if (onlyActive && !includePrivate) {
+      whereCondition.isArchived = false; // Exclude archived products
       whereCondition.OR = [
         { visibility: 'PUBLIC' },
         { visibility: null }, // Default to PUBLIC if null

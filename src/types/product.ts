@@ -25,6 +25,9 @@ export interface Product {
   allergens?: string[];
   nutritionFacts?: any;
   
+  // Product type for badge display
+  productType?: string | null;
+
   // Availability fields for pre-order and seasonal items
   visibility?: string | null;
   isAvailable?: boolean;

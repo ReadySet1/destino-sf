@@ -544,9 +544,14 @@ export class FilteredSyncManager {
     }
 
     // Prepare product data
+    // Use description_html (formatted) instead of description (plain text)
+    const rawDescription = itemData.description_html || itemData.description || '';
+    const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+    const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
     const productData = {
       name: itemData.name || 'Unknown Product',
-      description: itemData.description || '',
+      description: sanitizedDescription,
       price: extractedPrice,
       squareId: product.id,
       categoryId: category.id,

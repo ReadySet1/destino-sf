@@ -238,6 +238,7 @@ export interface SyncReport {
 export interface SquareItemAvailability {
   visibility: 'PUBLIC' | 'PRIVATE';
   state: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+  isArchived?: boolean; // ← Added: Square's native archive status
   availableOnline?: boolean;
   availableForPickup?: boolean;
   preorderCutoffDate?: string;
