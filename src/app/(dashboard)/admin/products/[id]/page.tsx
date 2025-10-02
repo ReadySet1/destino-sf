@@ -129,6 +129,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     const imageUrlsString = formData.get('imageUrls') as string | null;
     const squareId = formData.get('squareId') as string;
     const productId = formData.get('productId') as string;
+    const productType = formData.get('productType') as string | null;
 
     if (!name || !price || isNaN(price) || !productId) {
       logger.error('Invalid product data');
@@ -164,6 +165,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           categoryId,
           images: prismaImageUrls,
           squareId,
+          ...(productType && { productType }),
         },
       });
       logger.info('Database update successful');
@@ -268,7 +270,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div>
                     <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-3">
                       Price *
@@ -309,6 +311,37 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="productType" className="block text-sm font-semibold text-gray-700 mb-3">
+                      Product Type
+                    </label>
+                    <select
+                      name="productType"
+                      id="productType"
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
+                      defaultValue={(product as any).productType || 'other'}
+                    >
+                      <option value="empanada">Empanada</option>
+                      <option value="salsa">Salsa</option>
+                      <option value="alfajor">Alfajor</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-sm text-gray-500">
+                        Determines which badges are shown on the product detail page
+                      </p>
+                      <Link
+                        href="/admin/products/badges"
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Badges
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
