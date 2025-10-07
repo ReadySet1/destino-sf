@@ -259,6 +259,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           paymentUrl: true,
           paymentUrlExpiresAt: true,
           createdAt: true,
+          metadata: true, // Include metadata to get actual tax and service fee amounts
           items: {
             select: {
               id: true,
@@ -316,6 +317,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               paymentUrl: true,
               paymentUrlExpiresAt: true,
               createdAt: true,
+              metadata: true, // Include metadata to get actual tax and service fee amounts
               items: {
                 select: {
                   id: true,
@@ -387,19 +389,30 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         status: cateringOrder!.status,
         paymentStatus: cateringOrder!.paymentStatus,
         total: cateringOrder!.totalAmount?.toNumber() ?? 0,
+        // Use actual tax and service fee amounts from metadata instead of recalculating
         taxAmount: (() => {
-          // Calculate tax dynamically like admin view (8.25% on subtotal + delivery fee)
+          const metadata = cateringOrder!.metadata as any;
+          // Try to get from metadata first (stored during order creation)
+          if (metadata?.taxAmount && typeof metadata.taxAmount === 'number') {
+            return metadata.taxAmount;
+          }
+          // Fallback: calculate if metadata not available (older orders)
           const subtotalFromItems = cateringOrder!.items.reduce(
             (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
             0
           );
           const deliveryFee = cateringOrder!.deliveryFee?.toNumber() || 0;
           const taxableAmount = subtotalFromItems + deliveryFee;
-          return Math.round(taxableAmount * 0.0825 * 100) / 100; // 8.25% tax, rounded to 2 decimals
+          return Math.round(taxableAmount * 0.0825 * 100) / 100;
         })(),
         deliveryFee: cateringOrder!.deliveryFee?.toNumber() ?? 0,
         serviceFee: (() => {
-          // Calculate convenience fee dynamically like admin view (3.5% on subtotal + delivery + tax)
+          const metadata = cateringOrder!.metadata as any;
+          // Try to get from metadata first (stored during order creation)
+          if (metadata?.serviceFee !== undefined && typeof metadata.serviceFee === 'number') {
+            return metadata.serviceFee;
+          }
+          // Fallback: calculate if metadata not available (older orders)
           const subtotalFromItems = cateringOrder!.items.reduce(
             (sum, item) => sum + (item.totalPrice?.toNumber() || 0),
             0
@@ -408,7 +421,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           const taxableAmount = subtotalFromItems + deliveryFee;
           const taxAmount = taxableAmount * 0.0825;
           const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
-          return Math.round(totalBeforeFee * 0.035 * 100) / 100; // 3.5% convenience fee, rounded to 2 decimals
+          return Math.round(totalBeforeFee * 0.035 * 100) / 100;
         })(),
         gratuityAmount: 0, // Catering orders don't store gratuity separately
         shippingCost: 0, // Catering orders don't have shipping

@@ -761,13 +761,13 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           clearCustomerInfoFromLocalStorage();
           clearDeliveryAddressFromLocalStorage();
           clearFulfillmentInfoFromLocalStorage();
-          
+
           // Reset submission state only for non-redirect paths
           isSubmittingRef.current = false;
           setIsSubmitting(false);
           isRedirectingToSquareRef.current = false; // Reset redirect flag
-          // Otherwise go to the confirmation page
-          router.push(`/catering/confirmation?orderId=${result.orderId}`);
+          // Otherwise go to the confirmation page with confirmed status for cash payments
+          router.push(`/catering/confirmation?orderId=${result.orderId}&status=confirmed`);
         }
       } else {
         console.log('❌ [DEBUG] Server action was not successful');

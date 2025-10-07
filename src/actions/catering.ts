@@ -444,6 +444,8 @@ export async function saveContactInfo(data: {
       deliveryZone: data.deliveryZone,
       deliveryFee: data.deliveryFee,
       paymentMethod: data.paymentMethod,
+      // Keep PENDING for all payment methods - cash will be collected at pickup
+      // The confirmation UI logic handles cash orders appropriately via payment method check
       paymentStatus: PaymentStatus.PENDING,
     };
 
@@ -851,6 +853,7 @@ export async function createCateringOrderAndProcessPayment(data: {
           calculatedAt: new Date().toISOString(),
           feesIncludedInSquare: false, // Cash payment, no Square
           feesIncludedInTotal: true,
+          paymentMethod: 'CASH', // Explicitly store payment method for status determination
         },
       });
 
