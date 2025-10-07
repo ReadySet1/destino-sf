@@ -6,6 +6,7 @@ import { prisma, withRetry } from '@/lib/db-unified';
 ;
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
+import { syncCustomerToProfile } from '@/lib/profile-sync';
 
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {
@@ -98,6 +99,16 @@ export async function POST(request: Request) {
         },
       })
     );
+
+    // Sync customer information to profile (async, non-blocking)
+    syncCustomerToProfile(user?.id, {
+      email: customerInfo.email,
+      name: customerInfo.name,
+      phone: customerInfo.phone,
+    }).catch(error => {
+      console.error('Failed to sync customer data to profile:', error);
+      // Don't fail the order if profile sync fails
+    });
 
     // Create order in Square
     // This is simplified - you'd map your products to Square catalog items
