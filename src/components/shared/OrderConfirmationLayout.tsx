@@ -361,19 +361,33 @@ export function OrderConfirmationLayout({
                               className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
                             >
                               <div className="flex-1">
-                                <h5 className="font-medium text-gray-900">
-                                  {item.name || item.product?.name || 'Unknown Item'}
-                                  {item.variant?.name && ` (${item.variant.name})`}
-                                </h5>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {item.metadata?.type && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {item.metadata.type === 'package' ? 'Package' : 'Item'}
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-medium text-gray-900">
+                                    {item.name || item.product?.name || 'Unknown Item'}
+                                    {item.variant?.name && ` (${item.variant.name})`}
+                                  </h5>
+                                  {item.product?.isPreorder && (
+                                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">
+                                      Pre-order
                                     </Badge>
                                   )}
-                                  <span className="text-sm text-gray-500">
-                                    Qty: {item.quantity}
-                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-1 mt-1">
+                                  <div className="flex items-center gap-2">
+                                    {item.metadata?.type && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {item.metadata.type === 'package' ? 'Package' : 'Item'}
+                                      </Badge>
+                                    )}
+                                    <span className="text-sm text-gray-500">
+                                      Qty: {item.quantity}
+                                    </span>
+                                  </div>
+                                  {item.product?.isPreorder && item.product?.preorderEndDate && (
+                                    <span className="text-xs text-gray-500">
+                                      Est. delivery: {format(new Date(item.product.preorderEndDate), 'MMM d, yyyy')}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="text-right ml-4">

@@ -23,6 +23,8 @@ interface OrderItem {
   price: number;
   product: {
     name: string;
+    isPreorder?: boolean;
+    preorderEndDate?: Date | string | null;
   };
   variant?: {
     name: string;

@@ -24,7 +24,11 @@ type FetchedOrderData =
         id: string;
         quantity: number;
         price: Prisma.Decimal;
-        product: { name: string | null } | null;
+        product: {
+          name: string | null;
+          isPreorder: boolean;
+          preorderEndDate: Date | null;
+        } | null;
         variant: { name: string | null } | null;
       }>;
     })
@@ -49,7 +53,11 @@ export type SerializableFetchedOrderData =
         id: string;
         quantity: number;
         price: number;
-        product: { name: string | null } | null;
+        product: {
+          name: string | null;
+          isPreorder?: boolean;
+          preorderEndDate?: string | null;
+        } | null;
         variant: { name: string | null } | null;
       }>;
     })
@@ -94,7 +102,13 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
                 id: true,
                 quantity: true,
                 price: true,
-                product: { select: { name: true } },
+                product: {
+                  select: {
+                    name: true,
+                    isPreorder: true,
+                    preorderEndDate: true,
+                  },
+                },
                 variant: { select: { name: true } },
               },
             },
@@ -111,6 +125,11 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
             items: orderData.items.map(item => ({
               ...item,
               price: item.price.toNumber(),
+              product: item.product ? {
+                name: item.product.name,
+                isPreorder: item.product.isPreorder,
+                preorderEndDate: item.product.preorderEndDate ? item.product.preorderEndDate.toISOString() : null,
+              } : null,
             })),
           };
         }
