@@ -173,44 +173,46 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const body = `## 📋 Code Review Checklist
+
+            Please ensure the following before approving:
+
+            ### Code Quality
+            - [ ] No debugging code (console.log, debugger)
+            - [ ] No commented-out code
+            - [ ] No TODO comments without context
+            - [ ] Consistent naming conventions
+            - [ ] Proper error handling
+            - [ ] No hardcoded values (use env vars)
+            - [ ] Removed unused imports
+            - [ ] Code is readable and maintainable
+
+            ### Security
+            - [ ] Authentication required where needed
+            - [ ] Input validation present
+            - [ ] No SQL injection vulnerabilities
+            - [ ] Sensitive data protected
+
+            ### Database
+            - [ ] Migration is safe and reversible
+            - [ ] Indexes created for new queries
+            - [ ] No data loss risk
+
+            ### Testing
+            - [ ] All automated tests pass
+            - [ ] Manual testing completed (if applicable)
+            - [ ] Edge cases considered
+
+            ### Documentation
+            - [ ] Code comments added where needed
+            - [ ] API changes documented
+            - [ ] README/docs updated if needed
+
+            **Note**: Automated checks are running. Wait for ✅ before merging.`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 📋 Code Review Checklist
-
-Please ensure the following before approving:
-
-### Code Quality
-- [ ] No debugging code (console.log, debugger)
-- [ ] No commented-out code
-- [ ] No TODO comments without context
-- [ ] Consistent naming conventions
-- [ ] Proper error handling
-- [ ] No hardcoded values (use env vars)
-- [ ] Removed unused imports
-- [ ] Code is readable and maintainable
-
-### Security
-- [ ] Authentication required where needed
-- [ ] Input validation present
-- [ ] No SQL injection vulnerabilities
-- [ ] Sensitive data protected
-
-### Database
-- [ ] Migration is safe and reversible
-- [ ] Indexes created for new queries
-- [ ] No data loss risk
-
-### Testing
-- [ ] All automated tests pass
-- [ ] Manual testing completed (if applicable)
-- [ ] Edge cases considered
-
-### Documentation
-- [ ] Code comments added where needed
-- [ ] API changes documented
-- [ ] README/docs updated if needed
-
-**Note**: Automated checks are running. Wait for ✅ before merging.`
+              body: body
             });

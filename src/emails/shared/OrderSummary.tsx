@@ -8,6 +8,8 @@ interface OrderItem {
   price: number;
   product: {
     name: string;
+    isPreorder?: boolean;
+    preorderEndDate?: Date | string | null;
   };
   variant?: {
     name: string;
@@ -75,6 +77,18 @@ const priceText = {
   color: '#2d3748',
   textAlign: 'right' as const,
   margin: '0',
+};
+
+const preorderBadge = {
+  display: 'inline-block',
+  padding: '2px 8px',
+  backgroundColor: '#dbeafe',
+  color: '#1e40af',
+  fontSize: '11px',
+  fontWeight: 'bold',
+  borderRadius: '4px',
+  marginLeft: '8px',
+  textTransform: 'uppercase' as const,
 };
 
 const totalRow = {
@@ -153,6 +167,17 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
   return formatted;
 };
 
+const formatEstimatedDelivery = (date: Date | string | null) => {
+  if (!date) return null;
+
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   orderId,
   items,
@@ -182,8 +207,16 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           <Column style={{ width: '60%' }}>
             <Text style={itemName}>
               {item.quantity}x {item.product.name}
+              {item.product.isPreorder && (
+                <span style={preorderBadge}>Pre-order</span>
+              )}
             </Text>
             {item.variant && <Text style={itemDetails}>{item.variant.name}</Text>}
+            {item.product.isPreorder && item.product.preorderEndDate && (
+              <Text style={itemDetails}>
+                Estimated delivery: {formatEstimatedDelivery(item.product.preorderEndDate)}
+              </Text>
+            )}
           </Column>
           <Column style={{ width: '40%' }}>
             <Text style={priceText}>{formatCurrency(item.price * item.quantity)}</Text>

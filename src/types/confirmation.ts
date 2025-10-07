@@ -23,7 +23,11 @@ export interface OrderItem {
     minPeople?: number;
   };
   // Store-specific fields
-  product?: { name: string | null } | null;
+  product?: {
+    name: string | null;
+    isPreorder?: boolean;
+    preorderEndDate?: string | null;
+  } | null;
   variant?: { name: string | null } | null;
 }
 
