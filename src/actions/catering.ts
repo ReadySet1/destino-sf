@@ -2,6 +2,7 @@
 
 import { prisma as db, withRetry, ensureConnection } from '@/lib/db-unified';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
+import { syncCustomerToProfile } from '@/lib/profile-sync';
 import {
   type CateringPackage,
   CateringPackageType,
@@ -444,6 +445,8 @@ export async function saveContactInfo(data: {
       deliveryZone: data.deliveryZone,
       deliveryFee: data.deliveryFee,
       paymentMethod: data.paymentMethod,
+      // Keep PENDING for all payment methods - cash will be collected at pickup
+      // The confirmation UI logic handles cash orders appropriately via payment method check
       paymentStatus: PaymentStatus.PENDING,
     };
 
@@ -508,6 +511,16 @@ export async function saveContactInfo(data: {
     }, 3, 'createCateringOrder');
 
     console.log(`✅ [CATERING ORDER DEBUG] Order created successfully with ID: ${newOrder.id}`);
+
+    // Sync customer information to profile (async, non-blocking)
+    syncCustomerToProfile(data.customerId, {
+      email: data.email,
+      name: data.name,
+      phone: data.phone,
+    }).catch(error => {
+      console.error('[CATERING] Failed to sync customer data to profile:', error);
+      // Don't fail the order if profile sync fails
+    });
 
     revalidatePath('/catering');
     revalidatePath('/admin/catering');
@@ -851,6 +864,7 @@ export async function createCateringOrderAndProcessPayment(data: {
           calculatedAt: new Date().toISOString(),
           feesIncludedInSquare: false, // Cash payment, no Square
           feesIncludedInTotal: true,
+          paymentMethod: 'CASH', // Explicitly store payment method for status determination
         },
       });
 

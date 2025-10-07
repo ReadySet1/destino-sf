@@ -90,20 +90,26 @@ export async function GET(
 
     // Determine status based on database state
     let determinedStatus = 'processing';
-    
+
     if (orderData.paymentStatus === 'PAID') {
       determinedStatus = 'success';
     } else if (orderData.paymentStatus === 'FAILED' || orderData.status === 'CANCELLED') {
       determinedStatus = 'failed';
     } else if (orderData.paymentStatus === 'PENDING') {
-      // Check if order was recently created (within 5 minutes)
-      const orderAge = Date.now() - new Date(orderData.createdAt).getTime();
-      const fiveMinutes = 5 * 60 * 1000;
-      
-      if (orderAge < fiveMinutes) {
-        determinedStatus = 'processing';
+      // For CASH payments, treat as confirmed even if payment status is pending
+      // (payment will be collected at pickup)
+      if (orderData.paymentMethod === 'CASH') {
+        determinedStatus = 'confirmed';
       } else {
-        determinedStatus = 'pending';
+        // Check if order was recently created (within 5 minutes)
+        const orderAge = Date.now() - new Date(orderData.createdAt).getTime();
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (orderAge < fiveMinutes) {
+          determinedStatus = 'processing';
+        } else {
+          determinedStatus = 'pending';
+        }
       }
     }
 
