@@ -133,18 +133,21 @@ export async function reorderProducts(
       updates: updates.slice(0, 3) // Log first 3 for debugging
     });
 
-    // Use transaction for atomic updates
-    const updateResults = await prisma.$transaction(
-      updates.map(({ id, ordinal }) =>
-        prisma.product.update({
+    // Use interactive transaction for atomic updates
+    const updateResults = await prisma.$transaction(async (tx) => {
+      const results = [];
+      for (const { id, ordinal } of updates) {
+        const result = await tx.product.update({
           where: { id },
           data: {
             ordinal: BigInt(ordinal),
             updatedAt: new Date()
           }
-        })
-      )
-    );
+        });
+        results.push(result);
+      }
+      return results;
+    });
 
     logger.info('Products reordered successfully', { updatedCount: updateResults.length });
 
