@@ -229,29 +229,72 @@ export default function CateringConfirmationContent({ status, orderData, squareO
 
   // Transform orderData to match CateringOrderData interface
   const transformedOrderData: CateringOrderData | null = orderData
-    ? {
-        id: orderData.id,
-        status: orderData.status,
-        total: orderData.totalAmount,
-        customerName: orderData.name,
-        createdAt: orderData.createdAt.toString(),
-        eventDetails: {
-          eventDate: orderData.eventDate.toString(),
-          specialRequests: orderData.specialRequests || undefined,
-        },
-        items: orderData.items.map(item => ({
-          id: item.id,
-          name: item.itemName,
-          price: item.pricePerUnit,
-          quantity: item.quantity,
-          pricePerUnit: item.pricePerUnit,
-          totalPrice: item.totalPrice,
-          metadata: {
-            type: item.itemType === 'package' ? 'package' : 'item',
+    ? (() => {
+        // Calculate subtotal from items
+        const subtotal = orderData.items.reduce(
+          (sum, item) => sum + item.totalPrice,
+          0
+        );
+
+        // Calculate tax amount
+        const taxAmount = (() => {
+          const metadata = orderData.metadata as any;
+          // Try to get from metadata first (stored during order creation)
+          if (metadata?.taxAmount && typeof metadata.taxAmount === 'number') {
+            return metadata.taxAmount;
+          }
+          // Fallback: calculate if metadata not available (older orders)
+          const deliveryFee = orderData.deliveryFee || 0;
+          const taxableAmount = subtotal + deliveryFee;
+          return Math.round(taxableAmount * 0.0825 * 100) / 100;
+        })();
+
+        // Calculate service fee
+        const serviceFee = (() => {
+          const metadata = orderData.metadata as any;
+          // Try to get from metadata first (stored during order creation)
+          if (metadata?.serviceFee !== undefined && typeof metadata.serviceFee === 'number') {
+            return metadata.serviceFee;
+          }
+          // Fallback: calculate if metadata not available (older orders)
+          const deliveryFee = orderData.deliveryFee || 0;
+          const taxableAmount = subtotal + deliveryFee;
+          const tax = taxableAmount * 0.0825;
+          const totalBeforeFee = subtotal + deliveryFee + tax;
+          return Math.round(totalBeforeFee * 0.035 * 100) / 100;
+        })();
+
+        return {
+          id: orderData.id,
+          status: orderData.status,
+          total: orderData.totalAmount,
+          customerName: orderData.name,
+          createdAt: orderData.createdAt.toString(),
+          // Pricing breakdown
+          subtotal,
+          taxAmount,
+          deliveryFee: orderData.deliveryFee || 0,
+          serviceFee,
+          gratuityAmount: 0, // Catering doesn't have gratuity
+          shippingCost: 0, // Catering doesn't have shipping
+          eventDetails: {
+            eventDate: orderData.eventDate.toString(),
+            specialRequests: orderData.specialRequests || undefined,
           },
-        })),
-        totalAmount: orderData.totalAmount,
-      }
+          items: orderData.items.map(item => ({
+            id: item.id,
+            name: item.itemName,
+            price: item.pricePerUnit,
+            quantity: item.quantity,
+            pricePerUnit: item.pricePerUnit,
+            totalPrice: item.totalPrice,
+            metadata: {
+              type: item.itemType === 'package' ? 'package' : 'item',
+            },
+          })),
+          totalAmount: orderData.totalAmount,
+        };
+      })()
     : null;
 
   // Extract customer info

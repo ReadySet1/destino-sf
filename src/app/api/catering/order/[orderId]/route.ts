@@ -42,6 +42,8 @@ export async function GET(
           deliveryZone: true,
           deliveryAddress: true,
           deliveryAddressJson: true,
+          deliveryFee: true,
+          metadata: true,
           createdAt: true,
           paymentStatus: true,
           paymentMethod: true,
@@ -81,6 +83,7 @@ export async function GET(
     const serializedOrder = {
       ...orderData,
       totalAmount: orderData.totalAmount.toNumber(),
+      deliveryFee: orderData.deliveryFee?.toNumber() ?? 0,
       items: orderData.items.map(item => ({
         ...item,
         pricePerUnit: item.pricePerUnit.toNumber(),
