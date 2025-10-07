@@ -48,6 +48,7 @@ export interface ProductWithEvaluation {
   featured: boolean;
   active: boolean;
   squareId: string;
+  ordinal: bigint | null;
   variants?: Array<{
     id: string;
     name: string;
@@ -185,6 +186,7 @@ export class ProductVisibilityService {
             featured: true,
             active: true,
             squareId: true,
+            ordinal: true,
             // Visibility fields
             isAvailable: true,
             isPreorder: true,
@@ -237,10 +239,11 @@ export class ProductVisibilityService {
       // Convert and serialize products
       const serializedProducts: ProductWithEvaluation[] = filteredProducts.map(product => {
         const evaluation = availabilityEvaluations.get(product.id);
-        
+
         return {
           ...product,
           price: product.price ? parseFloat(product.price.toString()) : 0,
+          ordinal: product.ordinal,
           variants: includeVariants && product.variants
             ? product.variants.map((variant: any) => ({
                 ...variant,
@@ -334,7 +337,8 @@ export class ProductVisibilityService {
     }
 
     // Exclude catering products by default (unless explicitly requested)
-    if (excludeCatering) {
+    // Only apply if we're NOT filtering by a specific categoryId
+    if (excludeCatering && !categoryId) {
       if (whereCondition.NOT) {
         whereCondition.NOT.OR.push({
           category: {

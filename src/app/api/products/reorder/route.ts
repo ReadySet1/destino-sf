@@ -56,10 +56,14 @@ export async function POST(request: NextRequest) {
     
     // Perform the reorder operation
     const result = await reorderProducts(updates);
-    
+
     if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to update product order' },
+        {
+          error: 'Failed to update product order',
+          message: result.error || 'Failed to update product order',
+          details: result.error
+        },
         { status: 500 }
       );
     }
@@ -114,10 +118,14 @@ export async function PUT(request: NextRequest) {
     
     // Apply the updates
     const result = await reorderProducts(updates);
-    
+
     if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to apply sorting strategy' },
+        {
+          error: 'Failed to apply sorting strategy',
+          message: result.error || 'Failed to apply sorting strategy',
+          details: result.error
+        },
         { status: 500 }
       );
     }
