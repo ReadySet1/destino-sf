@@ -31,6 +31,7 @@ import type {
   CateringOrderData,
 } from '@/types/confirmation';
 import { isStoreOrder, isCateringOrder } from '@/types/confirmation';
+import { OrderPricingBreakdown } from '@/components/ui/order-pricing-breakdown';
 
 export function OrderConfirmationLayout({
   orderType,
@@ -403,15 +404,24 @@ export function OrderConfirmationLayout({
                         })}
                       </div>
 
+                      {/* Pricing Breakdown */}
                       <div className="border-t border-gray-200 mt-4 pt-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg font-bold text-gray-900">Total:</span>
-                          <span className="text-lg font-bold text-gray-900">
-                            {formatCurrency(
-                              isCateringOrder(orderData) ? orderData.totalAmount : orderData.total
-                            )}
-                          </span>
-                        </div>
+                        <OrderPricingBreakdown
+                          subtotal={orderData.subtotal || 0}
+                          taxAmount={orderData.taxAmount || 0}
+                          deliveryFee={orderData.deliveryFee || 0}
+                          serviceFee={orderData.serviceFee || 0}
+                          gratuityAmount={orderData.gratuityAmount || 0}
+                          shippingCost={orderData.shippingCost || 0}
+                          total={isCateringOrder(orderData) ? orderData.totalAmount : orderData.total}
+                          orderType={orderType === 'catering' ? 'catering' : 'regular'}
+                          shippingCarrier={
+                            isStoreOrder(orderData) && orderData.fulfillment?.shippingCarrier
+                              ? orderData.fulfillment.shippingCarrier
+                              : undefined
+                          }
+                          showDebugInfo={false}
+                        />
                       </div>
                     </div>
                   </div>

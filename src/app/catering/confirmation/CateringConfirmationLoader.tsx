@@ -18,6 +18,8 @@ export type SerializableCateringOrderData = {
   deliveryZone: string | null;
   deliveryAddress: string | null;
   deliveryAddressJson: any | null;
+  deliveryFee: number;
+  metadata: any | null;
   createdAt: Date;
   paymentStatus: string;
   paymentMethod: string;

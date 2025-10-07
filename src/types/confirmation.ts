@@ -7,6 +7,13 @@ export interface BaseOrderData {
   total: number;
   customerName: string;
   createdAt?: string;
+  // Pricing breakdown
+  subtotal?: number;
+  taxAmount?: number;
+  deliveryFee?: number;
+  serviceFee?: number;
+  gratuityAmount?: number;
+  shippingCost?: number;
 }
 
 export interface OrderItem {
