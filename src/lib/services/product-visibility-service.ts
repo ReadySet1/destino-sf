@@ -337,7 +337,8 @@ export class ProductVisibilityService {
     }
 
     // Exclude catering products by default (unless explicitly requested)
-    if (excludeCatering) {
+    // Only apply if we're NOT filtering by a specific categoryId
+    if (excludeCatering && !categoryId) {
       if (whereCondition.NOT) {
         whereCondition.NOT.OR.push({
           category: {

@@ -40,6 +40,7 @@ export async function GET(
       onlyActive: !includeInactive,
       includeAvailabilityEvaluation,
       includePrivate,
+      excludeCatering: false, // Allow all categories including catering for admin
       includeVariants: true, // Include variants for category listings
       orderBy: 'ordinal', // Order by ordinal for categories
       orderDirection: 'asc',
