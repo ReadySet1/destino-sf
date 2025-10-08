@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { type AvailabilityRule } from '@/types/availability';
 
@@ -47,6 +48,7 @@ export function BulkRuleModal({
   productNames,
   onSuccess
 }: BulkRuleModalProps) {
+  const router = useRouter();
   const [ruleAggregations, setRuleAggregations] = useState<RuleAggregation[]>([]);
   const [selectedRuleName, setSelectedRuleName] = useState<string>('');
   const [action, setAction] = useState<'enable' | 'disable'>('enable');
@@ -190,6 +192,15 @@ export function BulkRuleModal({
     }
   };
 
+  const handleCreateNewRule = () => {
+    // Close the modal
+    onOpenChange(false);
+
+    // Navigate to availability page with selected products as query params
+    const productIdsParam = selectedProductIds.join(',');
+    router.push(`/admin/products/availability/bulk?productIds=${productIdsParam}`);
+  };
+
   const selectedAggregation = ruleAggregations.find(
     r => r.templateRule.name === selectedRuleName
   );
@@ -210,11 +221,15 @@ export function BulkRuleModal({
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : ruleAggregations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 space-y-2">
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <AlertCircle className="w-8 h-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground text-center">
-              No availability rules found in the system. Create rules first to apply them to products.
+              No availability rules found in the system.
             </p>
+            <Button onClick={handleCreateNewRule} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Create New Rule
+            </Button>
           </div>
         ) : (
           <div className="space-y-4 py-4">
@@ -238,9 +253,32 @@ export function BulkRuleModal({
               </div>
             </div>
 
+            {/* Create New Rule Option */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900">
+                    Don&apos;t see the rule you need?
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Create a new availability rule for the selected products
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCreateNewRule}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-blue-300 hover:bg-blue-100"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Rule
+                </Button>
+              </div>
+            </div>
+
             {/* Rule Selection */}
             <div className="space-y-2">
-              <Label htmlFor="rule-select">Select Rule</Label>
+              <Label htmlFor="rule-select">Select Existing Rule</Label>
               <Select value={selectedRuleName} onValueChange={setSelectedRuleName}>
                 <SelectTrigger id="rule-select">
                   <SelectValue placeholder="Choose a rule..." />
