@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -13,6 +12,7 @@ import { Separator } from '../ui/separator';
 import type { User } from '@supabase/supabase-js';
 import type { Profile } from '@prisma/client';
 import { Mail, Phone, User as UserIcon, LogOut, Save } from 'lucide-react';
+import { updateProfileAction } from '@/app/(store)/account/actions';
 
 export interface AccountProfileProps {
   user: User | null;
@@ -29,7 +29,6 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -59,30 +58,15 @@ export function AccountProfile({ user, profile, onSignOut }: AccountProfileProps
       return;
     }
     setIsSaving(true);
-    console.log('Attempting to update profile with data:', data);
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.name || null,
-          phone: data.phone || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+      const result = await updateProfileAction({
+        name: data.name || null,
+        phone: data.phone || null,
+      });
 
-      if (error) {
-        console.error('Supabase error details:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        console.error('Error details:', error.details);
-        console.error('Error hint:', error.hint);
-        console.error('Full error object:', JSON.stringify(error, null, 2));
-
-        if (error.code === '42501') {
-          throw new Error('Permission denied. You might not be allowed to update this profile.');
-        }
-        throw new Error(`Failed to update profile: ${error.message || 'Unknown error'}`);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update profile');
       }
 
       toast.success('Profile updated successfully');
