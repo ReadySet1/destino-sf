@@ -41,8 +41,11 @@ jobs:
       - name: Build application
         run: pnpm build
         env:
-          # Use minimal env vars for build
           NODE_ENV: production
+          # Supabase environment variables required for build
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Run Lighthouse CI
         run: |
@@ -149,6 +152,12 @@ jobs:
 
       - name: Build application
         run: pnpm build
+        env:
+          NODE_ENV: production
+          # Supabase environment variables required for build
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Run Lighthouse CI (Mobile)
         run: |
