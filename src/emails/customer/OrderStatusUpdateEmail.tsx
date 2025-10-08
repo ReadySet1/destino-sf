@@ -33,6 +33,11 @@ interface OrderStatusUpdateEmailProps {
     customerName: string;
     email: string;
     total: number;
+    taxAmount?: number;
+    deliveryFee?: number;
+    serviceFee?: number;
+    gratuityAmount?: number;
+    shippingCostCents?: number;
     status: string;
     fulfillmentType?: string;
     pickupTime?: Date | null;
@@ -258,6 +263,12 @@ export const OrderStatusUpdateEmail = ({
 
   const previewText = `Order #${order.id} status update: ${formatStatus(order.status)}`;
 
+  // Calculate subtotal from items
+  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Convert shipping cost from cents to dollars if provided
+  const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : undefined;
+
   return (
     <Html>
       <Head />
@@ -377,13 +388,19 @@ export const OrderStatusUpdateEmail = ({
             orderId={order.id}
             items={order.items}
             total={Number(order.total)}
+            subtotal={subtotal}
+            tax={order.taxAmount}
+            shippingCost={shippingCost}
+            deliveryFee={order.deliveryFee}
+            serviceFee={order.serviceFee}
+            gratuityAmount={order.gratuityAmount}
             fulfillmentType={order.fulfillmentType}
             pickupTime={order.pickupTime}
             deliveryDate={order.deliveryDate}
             deliveryTime={order.deliveryTime}
             trackingNumber={order.trackingNumber}
             notes={order.notes}
-            showPricing={false}
+            showPricing={true}
           />
 
           {/* Call to Action */}

@@ -23,6 +23,9 @@ interface OrderSummaryProps {
   tax?: number;
   subtotal?: number;
   shippingCost?: number;
+  deliveryFee?: number;
+  serviceFee?: number;
+  gratuityAmount?: number;
   fulfillmentType?: string;
   pickupTime?: Date | null;
   deliveryDate?: string | null;
@@ -185,6 +188,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   tax,
   subtotal,
   shippingCost,
+  deliveryFee,
+  serviceFee,
+  gratuityAmount,
   fulfillmentType,
   pickupTime,
   deliveryDate,
@@ -263,6 +269,45 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               <Column style={{ width: '40%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(shippingCost)}
+                </Text>
+              </Column>
+            </Row>
+          )}
+
+          {deliveryFee && deliveryFee > 0 && (
+            <Row style={{ padding: '4px 0' }}>
+              <Column style={{ width: '60%' }}>
+                <Text style={itemDetails}>Delivery Fee:</Text>
+              </Column>
+              <Column style={{ width: '40%' }}>
+                <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
+                  {formatCurrency(deliveryFee)}
+                </Text>
+              </Column>
+            </Row>
+          )}
+
+          {serviceFee && serviceFee > 0 && (
+            <Row style={{ padding: '4px 0' }}>
+              <Column style={{ width: '60%' }}>
+                <Text style={itemDetails}>Service Fee:</Text>
+              </Column>
+              <Column style={{ width: '40%' }}>
+                <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
+                  {formatCurrency(serviceFee)}
+                </Text>
+              </Column>
+            </Row>
+          )}
+
+          {gratuityAmount && gratuityAmount > 0 && (
+            <Row style={{ padding: '4px 0' }}>
+              <Column style={{ width: '60%' }}>
+                <Text style={itemDetails}>Gratuity:</Text>
+              </Column>
+              <Column style={{ width: '40%' }}>
+                <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
+                  {formatCurrency(gratuityAmount)}
                 </Text>
               </Column>
             </Row>
