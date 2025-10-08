@@ -60,10 +60,11 @@ export async function createAvailabilityRule(
     }
 
     // Revalidate relevant pages
+    revalidatePath('/admin/products'); // Main product list
     revalidatePath('/admin/products/availability');
     revalidatePath(`/admin/products/availability/${productId}`);
     revalidatePath(`/products/${productId}`);
-    
+
     logger.info('Created availability rule via server action', {
       ruleId: result.id,
       productId,
@@ -118,10 +119,11 @@ export async function updateAvailabilityRule(
     await AvailabilityScheduler.scheduleRuleChanges(result);
 
     // Revalidate relevant pages
+    revalidatePath('/admin/products'); // Main product list
     revalidatePath('/admin/products/availability');
     revalidatePath(`/admin/products/availability/${result.productId}`);
     revalidatePath(`/products/${result.productId}`);
-    
+
     logger.info('Updated availability rule via server action', {
       ruleId,
       userId: authResult.user!.id,
@@ -163,12 +165,13 @@ export async function deleteAvailabilityRule(
     });
 
     // Revalidate relevant pages
+    revalidatePath('/admin/products'); // Main product list
     revalidatePath('/admin/products/availability');
     if (rule?.productId) {
       revalidatePath(`/admin/products/availability/${rule.productId}`);
       revalidatePath(`/products/${rule.productId}`);
     }
-    
+
     logger.info('Deleted availability rule via server action', {
       ruleId,
       userId: authResult.user!.id
@@ -250,12 +253,13 @@ export async function bulkUpdateAvailability(
     }
 
     // Revalidate relevant pages
+    revalidatePath('/admin/products'); // Main product list
     revalidatePath('/admin/products/availability');
     for (const productId of request.productIds) {
       revalidatePath(`/admin/products/availability/${productId}`);
       revalidatePath(`/products/${productId}`);
     }
-    
+
     logger.info('Bulk availability operation completed', {
       operation: request.operation,
       productCount: request.productIds.length,
@@ -393,8 +397,9 @@ export async function processPendingChanges(): Promise<{ success: boolean; error
     await AvailabilityScheduler.processPendingChanges();
 
     // Revalidate all availability-related pages
+    revalidatePath('/admin/products'); // Main product list
     revalidatePath('/admin/products/availability');
-    
+
     logger.info('Processed pending availability changes', {
       userId: authResult.user!.id
     });
