@@ -20,7 +20,7 @@ import {
   getAddToCartButtonConfig,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
-import { sanitizeProductDescription } from '@/lib/utils/product-description';
+import { sanitizeProductDescription, htmlToPlainText } from '@/lib/utils/product-description';
 
 interface ProductDetailsProps {
   product: Product;
@@ -111,8 +111,14 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
         );
         if (response.ok) {
           const products = await response.json();
-          // Filter out any products with $0.00 price as an additional safety measure
+          // Filter out products that shouldn't be visible
           const filteredProducts = products.filter((product: Product) => {
+            // Check visibility using availability utils
+            if (!shouldRenderProduct(product)) {
+              return false;
+            }
+
+            // Filter out any products with $0.00 price as an additional safety measure
             const price =
               typeof product.price === 'object' &&
               product.price !== null &&
@@ -177,7 +183,7 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
             <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-              {product.description || 'Delicious handmade product'}
+              {htmlToPlainText(product.description) || 'Delicious handmade product'}
             </p>
             <p className="text-lg font-bold text-gray-900">${formatPrice(product.price)}</p>
           </Link>
@@ -230,28 +236,37 @@ interface ProductTypeBadge {
 
 const useProductTypeBadges = (productType: string | null | undefined) => {
   const [badges, setBadges] = useState<ProductTypeBadge | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchBadges = async () => {
       if (!productType) {
+        setLoading(false);
         return;
       }
 
+      setLoading(true);
       try {
         const response = await fetch(`/api/product-type-badges/${productType}`);
         if (response.ok) {
           const data = await response.json();
           setBadges(data);
+        } else {
+          // If badges API fails, set to null so fallback is used
+          setBadges(null);
         }
       } catch (error) {
         console.error('Error fetching product type badges:', error);
+        setBadges(null);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchBadges();
   }, [productType]);
 
-  return badges;
+  return { badges, loading };
 };
 
 // Icon mapping function
@@ -442,7 +457,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
   // Fetch badges based on product type
   const productType = (product as any).productType || null;
-  const badges = useProductTypeBadges(productType);
+  const { badges, loading: badgesLoading } = useProductTypeBadges(productType);
 
 
   // Ensure product exists and has required fields before rendering
@@ -595,21 +610,36 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                   <span className="text-sm font-medium text-white drop-shadow-sm">View Only</span>
                 </div>
               )}
-              {getProductHighlights(product, badges).map((highlight, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
-                  style={{
-                    backgroundColor: `${highlight.bgColor}e6`, // Add 90% opacity
-                    color: highlight.textColor
-                  }}
-                >
-                  <span className="w-4 h-4">{highlight.icon}</span>
-                  <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                    {highlight.text}
-                  </span>
-                </div>
-              ))}
+              {/* Show loading skeletons while badges are loading */}
+              {badgesLoading && productType ? (
+                <>
+                  <div className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg bg-white/20 animate-pulse">
+                    <div className="w-4 h-4 bg-white/40 rounded-full"></div>
+                    <div className="h-3 w-20 bg-white/40 rounded"></div>
+                  </div>
+                  <div className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg bg-white/20 animate-pulse">
+                    <div className="w-4 h-4 bg-white/40 rounded-full"></div>
+                    <div className="h-3 w-16 bg-white/40 rounded"></div>
+                  </div>
+                </>
+              ) : (
+                /* Show badges only after loading is complete */
+                getProductHighlights(product, badges).map((highlight, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
+                    style={{
+                      backgroundColor: `${highlight.bgColor}e6`, // Add 90% opacity
+                      color: highlight.textColor
+                    }}
+                  >
+                    <span className="w-4 h-4">{highlight.icon}</span>
+                    <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                      {highlight.text}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
