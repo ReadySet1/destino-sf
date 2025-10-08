@@ -48,7 +48,7 @@ export interface ProductWithEvaluation {
   featured: boolean;
   active: boolean;
   squareId: string;
-  ordinal: bigint | null;
+  ordinal: number | null;
   variants?: Array<{
     id: string;
     name: string;
@@ -243,7 +243,7 @@ export class ProductVisibilityService {
         return {
           ...product,
           price: product.price ? parseFloat(product.price.toString()) : 0,
-          ordinal: product.ordinal,
+          ordinal: product.ordinal !== null ? Number(product.ordinal) : null,
           variants: includeVariants && product.variants
             ? product.variants.map((variant: any) => ({
                 ...variant,
@@ -265,9 +265,9 @@ export class ProductVisibilityService {
       const paginationData = includePagination && totalCount !== undefined && itemsPerPage ? {
         page,
         limit: itemsPerPage,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / itemsPerPage),
-        hasNextPage: page < Math.ceil(totalCount / itemsPerPage),
+        total: Number(totalCount),
+        totalPages: Math.ceil(Number(totalCount) / itemsPerPage),
+        hasNextPage: page < Math.ceil(Number(totalCount) / itemsPerPage),
         hasPreviousPage: page > 1,
       } : undefined;
 

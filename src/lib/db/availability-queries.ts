@@ -181,13 +181,18 @@ export class AvailabilityQueries {
     userId: string
   ): Promise<AvailabilityRule> {
     try {
+      // Remove fields that cannot be updated via Prisma
+      // productId is part of a relation and cannot be updated directly
+      // If you need to move a rule to a different product, delete and recreate
+      const { productId, productIds, id, createdAt, updatedAt, createdBy, ...allowedUpdates } = updates as any;
+
       // Clean up null values for JSON fields
       const cleanUpdates = {
-        ...updates,
-        seasonalConfig: updates.seasonalConfig === null ? undefined : updates.seasonalConfig,
-        preOrderSettings: updates.preOrderSettings === null ? undefined : updates.preOrderSettings,
-        viewOnlySettings: updates.viewOnlySettings === null ? undefined : updates.viewOnlySettings,
-        timeRestrictions: updates.timeRestrictions === null ? undefined : updates.timeRestrictions,
+        ...allowedUpdates,
+        seasonalConfig: allowedUpdates.seasonalConfig === null ? undefined : allowedUpdates.seasonalConfig,
+        preOrderSettings: allowedUpdates.preOrderSettings === null ? undefined : allowedUpdates.preOrderSettings,
+        viewOnlySettings: allowedUpdates.viewOnlySettings === null ? undefined : allowedUpdates.viewOnlySettings,
+        timeRestrictions: allowedUpdates.timeRestrictions === null ? undefined : allowedUpdates.timeRestrictions,
         updatedBy: userId
       };
 
@@ -206,7 +211,7 @@ export class AvailabilityQueries {
 
       logger.info('Updated availability rule', {
         ruleId,
-        changes: Object.keys(updates)
+        changes: Object.keys(allowedUpdates)
       });
 
       return updatedRule as AvailabilityRule;
@@ -406,13 +411,16 @@ export class AvailabilityQueries {
         const updatedRules: AvailabilityRule[] = [];
 
         for (const update of updates) {
+          // Remove fields that cannot be updated via Prisma
+          const { productId, productIds, id, createdAt, updatedAt, createdBy, ...allowedData } = update.data as any;
+
           // Clean up null values for JSON fields
           const cleanUpdateData = {
-            ...update.data,
-            seasonalConfig: update.data.seasonalConfig === null ? undefined : update.data.seasonalConfig,
-            preOrderSettings: update.data.preOrderSettings === null ? undefined : update.data.preOrderSettings,
-            viewOnlySettings: update.data.viewOnlySettings === null ? undefined : update.data.viewOnlySettings,
-            timeRestrictions: update.data.timeRestrictions === null ? undefined : update.data.timeRestrictions,
+            ...allowedData,
+            seasonalConfig: allowedData.seasonalConfig === null ? undefined : allowedData.seasonalConfig,
+            preOrderSettings: allowedData.preOrderSettings === null ? undefined : allowedData.preOrderSettings,
+            viewOnlySettings: allowedData.viewOnlySettings === null ? undefined : allowedData.viewOnlySettings,
+            timeRestrictions: allowedData.timeRestrictions === null ? undefined : allowedData.timeRestrictions,
             updatedBy: userId
           };
 

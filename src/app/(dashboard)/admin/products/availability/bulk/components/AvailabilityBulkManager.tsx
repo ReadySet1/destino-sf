@@ -291,7 +291,7 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
       if (result.success) {
         toast.success(`Successfully created availability rules for ${selectedProducts.size} products`);
-        router.push('/admin/products/availability/rules');
+        router.push('/admin/products/availability');
       } else {
         toast.error(result.error || 'Failed to create bulk rules');
       }

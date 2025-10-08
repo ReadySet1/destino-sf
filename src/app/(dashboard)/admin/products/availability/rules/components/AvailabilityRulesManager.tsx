@@ -1,46 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FormSection } from '@/components/ui/form/FormSection';
 import { AvailabilityFilters } from '@/components/admin/availability/AvailabilityFilters';
-import { AvailabilityStatusBadge } from '@/components/admin/availability/AvailabilityStatusBadge';
 import { AvailabilityForm } from '@/components/admin/availability/AvailabilityForm';
+import { RuleCard } from './RuleCard';
 import {
-  MoreHorizontal,
-  Edit,
   Trash2,
-  Eye,
-  EyeOff,
   Calendar,
   ListFilter,
   Loader2,
+  Layers,
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
   AvailabilityState,
   RuleType,
   type AvailabilityRule,
 } from '@/types/availability';
-import { getRuleTypeLabel, getPriorityColor } from '@/lib/availability-helpers';
 import { cn } from '@/lib/utils';
 
 interface ProductInfo {
@@ -259,22 +239,44 @@ export function AvailabilityRulesManager({
     setSelectedProductId('');
   };
 
-  // Filter rules
-  const filteredRules = rules.filter(rule => {
-    const matchesSearch =
-      !searchTerm ||
-      rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      products.get(rule.productId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter and aggregate rules by name
+  const { filteredRules, aggregatedRules } = useMemo(() => {
+    // First, filter individual rules
+    const filtered = rules.filter(rule => {
+      const matchesSearch =
+        !searchTerm ||
+        rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        products.get(rule.productId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesType = filterType === 'all' || rule.ruleType === filterType;
-    const matchesState = filterState === 'all' || rule.state === filterState;
-    const matchesStatus =
-      filterStatus === 'all' ||
-      (filterStatus === 'enabled' && rule.enabled) ||
-      (filterStatus === 'disabled' && !rule.enabled);
+      const matchesType = filterType === 'all' || rule.ruleType === filterType;
+      const matchesState = filterState === 'all' || rule.state === filterState;
+      const matchesStatus =
+        filterStatus === 'all' ||
+        (filterStatus === 'enabled' && rule.enabled) ||
+        (filterStatus === 'disabled' && !rule.enabled);
 
-    return matchesSearch && matchesType && matchesState && matchesStatus;
-  });
+      return matchesSearch && matchesType && matchesState && matchesStatus;
+    });
+
+    // Then, aggregate by rule name
+    const aggregated = new Map<string, AvailabilityRule[]>();
+    filtered.forEach(rule => {
+      const existing = aggregated.get(rule.name) || [];
+      aggregated.set(rule.name, [...existing, rule]);
+    });
+
+    // Sort by priority (descending) then by name
+    const sortedEntries = Array.from(aggregated.entries()).sort((a, b) => {
+      const priorityDiff = (b[1][0].priority || 0) - (a[1][0].priority || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a[0].localeCompare(b[0]);
+    });
+
+    return {
+      filteredRules: filtered,
+      aggregatedRules: new Map(sortedEntries),
+    };
+  }, [rules, searchTerm, filterType, filterState, filterStatus, products]);
 
   if (loading) {
     return (
@@ -302,7 +304,7 @@ export function AvailabilityRulesManager({
   }
 
   return (
-    <div className="space-y-8 mt-8">
+    <div className="space-y-6 mt-8">
       {/* Filters */}
       <AvailabilityFilters
         currentSearch={searchTerm}
@@ -311,228 +313,99 @@ export function AvailabilityRulesManager({
         currentStatus={filterStatus}
       />
 
-      {/* Rules Table */}
-      <FormSection
-        title="Availability Rules"
-        description="Manage product availability rules and scheduling"
-        icon={<ListFilter className="w-6 h-6" />}
-        variant="blue"
-      >
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Bulk Actions Toolbar */}
-          {selectedRules.length > 0 && (
-            <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-200">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-indigo-900">
-                  {selectedRules.length} rule{selectedRules.length !== 1 ? 's' : ''} selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBulkDelete}
-                    className="bg-white hover:bg-gray-50 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete Selected
-                  </Button>
-                </div>
-              </div>
+      {/* Stats Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Layers className="h-5 w-5 text-indigo-600" />
             </div>
-          )}
-
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      checked={
-                        filteredRules.length > 0 &&
-                        selectedRules.length === filteredRules.length
-                      }
-                      onChange={e => handleSelectAll(e.target.checked)}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                  </TableHead>
-                  <TableHead>Rule Name</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>State</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRules.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12">
-                      <div className="text-gray-500">
-                        <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p className="text-lg font-medium mb-2">
-                          {rules.length === 0
-                            ? 'No availability rules found'
-                            : 'No rules match your filters'}
-                        </p>
-                        <p className="text-sm">
-                          {rules.length === 0
-                            ? 'Create your first availability rule to get started'
-                            : 'Try adjusting your search or filter criteria'}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredRules.map(rule => {
-                    const product = products.get(rule.productId);
-                    return (
-                      <TableRow
-                        key={rule.id}
-                        className={cn(
-                          'hover:bg-gray-50 transition-colors',
-                          selectedRules.includes(rule.id!) && 'bg-indigo-50/50'
-                        )}
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedRules.includes(rule.id!)}
-                            onChange={e => handleSelectRule(rule.id!, e.target.checked)}
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium text-gray-900">
-                          {rule.name}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {product?.name || 'Unknown Product'}
-                            </div>
-                            {product?.category && (
-                              <div className="text-sm text-gray-500">
-                                {product.category.name}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-normal">
-                            {getRuleTypeLabel(rule.ruleType as RuleType)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <AvailabilityStatusBadge
-                            state={rule.state as AvailabilityState}
-                            size="sm"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={cn('font-semibold', getPriorityColor(rule.priority || 0))}
-                          >
-                            {rule.priority || 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {rule.startDate && (
-                              <div className="text-gray-900">
-                                Start: {format(new Date(rule.startDate), 'MMM d, yyyy')}
-                              </div>
-                            )}
-                            {rule.endDate && (
-                              <div className="text-gray-600">
-                                End: {format(new Date(rule.endDate), 'MMM d, yyyy')}
-                              </div>
-                            )}
-                            {!rule.startDate && !rule.endDate && (
-                              <span className="text-gray-400">No schedule</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleRuleEnabled(rule)}
-                            className={cn(
-                              'flex items-center gap-1 h-8 px-2',
-                              rule.enabled ? 'text-green-600' : 'text-gray-400'
-                            )}
-                          >
-                            {rule.enabled ? (
-                              <>
-                                <Eye className="h-3 w-3" />
-                                <span className="text-xs">Enabled</span>
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="h-3 w-3" />
-                                <span className="text-xs">Disabled</span>
-                              </>
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-gray-100"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem
-                                onClick={() => handleEditRule(rule)}
-                                className="cursor-pointer"
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Rule
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => toggleRuleEnabled(rule)}
-                                className="cursor-pointer"
-                              >
-                                {rule.enabled ? (
-                                  <>
-                                    <EyeOff className="h-4 w-4 mr-2" />
-                                    Disable Rule
-                                  </>
-                                ) : (
-                                  <>
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Enable Rule
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => rule.id && handleDeleteRule(rule.id)}
-                                className="cursor-pointer text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Rule
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+            <div>
+              <p className="text-sm text-gray-600">Total Rules</p>
+              <p className="text-2xl font-bold text-gray-900">{aggregatedRules.size}</p>
+            </div>
           </div>
         </div>
-      </FormSection>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Calendar className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Active Products</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {filteredRules.filter(r => r.enabled).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <ListFilter className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Filtered</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {aggregatedRules.size} / {new Set(rules.map(r => r.name)).size}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">High Priority</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {Array.from(aggregatedRules.values()).filter(
+                  rules => rules[0].priority >= 70
+                ).length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rules Grid */}
+      <div>
+        {aggregatedRules.size === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {rules.length === 0
+                ? 'No availability rules found'
+                : 'No rules match your filters'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {rules.length === 0
+                ? 'Create your first availability rule to get started'
+                : 'Try adjusting your search or filter criteria'}
+            </p>
+            {rules.length === 0 && (
+              <Button onClick={() => window.location.href = '/admin/products/availability/rules?action=create'}>
+                Create Your First Rule
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {Array.from(aggregatedRules.entries()).map(([ruleName, ruleGroup]) => (
+              <RuleCard
+                key={ruleName}
+                ruleName={ruleName}
+                rules={ruleGroup}
+                products={products}
+                onEdit={handleEditRule}
+                onDelete={handleDeleteRule}
+                onToggleEnabled={toggleRuleEnabled}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

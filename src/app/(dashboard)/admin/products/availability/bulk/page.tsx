@@ -40,7 +40,7 @@ export default async function AvailabilityBulkEditorPage({ searchParams }: BulkP
         </FormButton>
         <FormButton
           variant="secondary"
-          href="/admin/products/availability/rules"
+          href="/admin/products/availability"
           leftIcon={FormIcons.list}
         >
           View Rules

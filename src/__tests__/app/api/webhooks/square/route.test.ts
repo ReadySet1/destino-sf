@@ -39,12 +39,38 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    webhookQueue: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+  },
+}));
+
+jest.mock('@/lib/db-unified', () => ({
+  prisma: {
+    webhookQueue: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
   },
 }));
 
 // Mock webhook queue to prevent async operations
 jest.mock('@/lib/webhook-queue', () => ({
   handleWebhookWithQueue: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock webhook logging
+jest.mock('@/lib/db/queries/webhooks', () => ({
+  logWebhook: jest.fn().mockResolvedValue({
+    webhookId: 'test-webhook-id-123',
+    id: 'log-123'
+  }),
+}));
+
+// Mock webhook metrics and monitoring
+jest.mock('@/lib/monitoring/webhook-metrics', () => ({
+  trackMetric: jest.fn().mockResolvedValue(undefined),
+  sendWebhookAlert: jest.fn().mockResolvedValue(undefined),
+  checkAlertThresholds: jest.fn().mockReturnValue([]),
 }));
 
 // Mock alert service
@@ -437,17 +463,11 @@ describe('/api/webhooks/square - POST', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(data.received).toBe(true);
-    expect(data.eventId).toBeDefined();
-    expect(data.type).toBeDefined();
-    expect(data.environment).toBeDefined();
-    expect(data.processingTimeMs).toBeDefined();
+    // Invalid JSON should return 400 error
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Invalid JSON payload');
 
-    // Wait for async processing to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Invalid JSON should still be acknowledged but not processed
+    // Invalid JSON should not be processed
     const { handleWebhookWithQueue } = require('@/lib/webhook-queue');
     expect(handleWebhookWithQueue).not.toHaveBeenCalled();
   }, 10000);
@@ -466,17 +486,13 @@ describe('/api/webhooks/square - POST', () => {
     const response = await POST(request);
     const data = await response.json();
 
+    // Empty body should return 200 with health check response
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.eventId).toBeDefined();
-    expect(data.type).toBeDefined();
-    expect(data.environment).toBeDefined();
-    expect(data.processingTimeMs).toBeDefined();
+    expect(data.message).toBe('Empty body received - treating as health check');
+    expect(data.timestamp).toBeDefined();
 
-    // Wait for async processing to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Empty body should be acknowledged but not processed
+    // Empty body should not be processed
     const { handleWebhookWithQueue } = require('@/lib/webhook-queue');
     expect(handleWebhookWithQueue).not.toHaveBeenCalled();
   }, 10000);
