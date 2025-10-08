@@ -48,6 +48,7 @@ export interface ProductWithEvaluation {
   featured: boolean;
   active: boolean;
   squareId: string;
+  ordinal: number | null;
   variants?: Array<{
     id: string;
     name: string;
@@ -185,6 +186,7 @@ export class ProductVisibilityService {
             featured: true,
             active: true,
             squareId: true,
+            ordinal: true,
             // Visibility fields
             isAvailable: true,
             isPreorder: true,
@@ -237,10 +239,11 @@ export class ProductVisibilityService {
       // Convert and serialize products
       const serializedProducts: ProductWithEvaluation[] = filteredProducts.map(product => {
         const evaluation = availabilityEvaluations.get(product.id);
-        
+
         return {
           ...product,
           price: product.price ? parseFloat(product.price.toString()) : 0,
+          ordinal: product.ordinal !== null ? Number(product.ordinal) : null,
           variants: includeVariants && product.variants
             ? product.variants.map((variant: any) => ({
                 ...variant,
@@ -262,9 +265,9 @@ export class ProductVisibilityService {
       const paginationData = includePagination && totalCount !== undefined && itemsPerPage ? {
         page,
         limit: itemsPerPage,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / itemsPerPage),
-        hasNextPage: page < Math.ceil(totalCount / itemsPerPage),
+        total: Number(totalCount),
+        totalPages: Math.ceil(Number(totalCount) / itemsPerPage),
+        hasNextPage: page < Math.ceil(Number(totalCount) / itemsPerPage),
         hasPreviousPage: page > 1,
       } : undefined;
 
@@ -334,7 +337,8 @@ export class ProductVisibilityService {
     }
 
     // Exclude catering products by default (unless explicitly requested)
-    if (excludeCatering) {
+    // Only apply if we're NOT filtering by a specific categoryId
+    if (excludeCatering && !categoryId) {
       if (whereCondition.NOT) {
         whereCondition.NOT.OR.push({
           category: {

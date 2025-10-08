@@ -107,6 +107,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup build environment variables
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+
       - name: Build application
         run: |
           echo "Starting build process..."
@@ -154,7 +161,7 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     needs: setup
-    
+
     services:
       postgres:
         image: postgres:15
@@ -276,7 +283,7 @@ jobs:
       - name: Type checking
         run: pnpm type-check
 
-  # Job 7: Quality gates  
+  # Job 7: Quality gates
   quality-gates:
     name: Quality Gates
     runs-on: ubuntu-latest
@@ -285,23 +292,23 @@ jobs:
       - name: Evaluate quality gates
         run: |
           echo "Evaluating quality gates..."
-          
+
           # Check if all required checks passed
           if [ "${{ needs.lint.result }}" != "success" ]; then
             echo "❌ Linting failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.build.result }}" != "success" ]; then
             echo "❌ Build failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.security.result }}" != "success" ]; then
             echo "❌ Security scan failed"
             exit 1
           fi
-          
+
           if [ "${{ needs.type-check.result }}" != "success" ]; then
             echo "❌ Type check failed"
             exit 1
@@ -314,7 +321,7 @@ jobs:
           fi
 
           echo "✅ Tests completed successfully"
-          
+
           echo "✅ All critical quality gates passed"
 
       - name: Create deployment comment
@@ -332,4 +339,4 @@ jobs:
 # Workflow-level settings
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true 
+  cancel-in-progress: true

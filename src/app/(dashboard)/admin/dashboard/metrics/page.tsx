@@ -4,16 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DollarSign, 
-  ShoppingCart, 
-  Users, 
-  TrendingUp, 
+import {
+  DollarSign,
+  ShoppingCart,
+  Users,
+  TrendingUp,
   AlertTriangle,
   Clock,
   Package,
   CreditCard,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { getBusinessMetrics, getPerformanceMetrics, getSystemHealth } from '@/lib/admin/metrics';
 import { formatCurrency, formatNumber, formatPercentage } from '@/lib/utils';
@@ -24,7 +24,7 @@ import { RecentOrdersList } from '@/components/admin/RecentOrdersList';
 
 export const metadata: Metadata = {
   title: 'Business Metrics Dashboard | Destino SF Admin',
-  description: 'Real-time business metrics and performance monitoring'
+  description: 'Real-time business metrics and performance monitoring',
 };
 
 interface BusinessMetrics {
@@ -55,7 +55,7 @@ interface BusinessMetrics {
     total: number;
     newToday: number;
     returning: number;
-    topSpenders: Array<{ name: string; total: number; }>;
+    topSpenders: Array<{ name: string; total: number }>;
   };
   salesHistory: Array<{
     date: string;
@@ -101,7 +101,7 @@ async function MetricsLoader() {
   const [businessMetrics, performanceMetrics, systemHealth] = await Promise.all([
     getBusinessMetrics(),
     getPerformanceMetrics(),
-    getSystemHealth()
+    getSystemHealth(),
   ]);
 
   return (
@@ -110,9 +110,7 @@ async function MetricsLoader() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Business Metrics</h1>
-          <p className="text-muted-foreground">
-            Real-time insights into your business performance
-          </p>
+          <p className="text-muted-foreground">Real-time insights into your business performance</p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant={systemHealth.overall === 'healthy' ? 'success' : 'danger'}>
@@ -138,7 +136,9 @@ async function MetricsLoader() {
             <div className="space-y-2">
               {systemHealth.issues.map((issue, index) => (
                 <div key={index} className="text-sm">
-                  <Badge variant="danger" className="mr-2">{issue.service}</Badge>
+                  <Badge variant="danger" className="mr-2">
+                    {issue.service}
+                  </Badge>
                   {issue.message}
                 </div>
               ))}
@@ -305,7 +305,9 @@ async function MetricsLoader() {
             />
             <MetricCard
               title="Returning Customers"
-              value={formatPercentage(businessMetrics.customers.returning / businessMetrics.customers.total)}
+              value={formatPercentage(
+                businessMetrics.customers.returning / businessMetrics.customers.total
+              )}
               description="Customer retention rate"
               icon={Users}
             />
@@ -375,7 +377,11 @@ async function MetricsLoader() {
                 <CardTitle>Database Health</CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant={performanceMetrics.systemHealth.database === 'healthy' ? 'success' : 'danger'}>
+                <Badge
+                  variant={
+                    performanceMetrics.systemHealth.database === 'healthy' ? 'success' : 'danger'
+                  }
+                >
                   {performanceMetrics.systemHealth.database}
                 </Badge>
               </CardContent>
@@ -386,7 +392,11 @@ async function MetricsLoader() {
                 <CardTitle>Payment System</CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant={performanceMetrics.systemHealth.payments === 'healthy' ? 'success' : 'danger'}>
+                <Badge
+                  variant={
+                    performanceMetrics.systemHealth.payments === 'healthy' ? 'success' : 'danger'
+                  }
+                >
                   {performanceMetrics.systemHealth.payments}
                 </Badge>
               </CardContent>
@@ -397,7 +407,11 @@ async function MetricsLoader() {
                 <CardTitle>Cache System</CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant={performanceMetrics.systemHealth.cache === 'healthy' ? 'success' : 'danger'}>
+                <Badge
+                  variant={
+                    performanceMetrics.systemHealth.cache === 'healthy' ? 'success' : 'danger'
+                  }
+                >
                   {performanceMetrics.systemHealth.cache}
                 </Badge>
               </CardContent>
@@ -470,9 +484,9 @@ function LoadingFallback() {
           <p className="text-muted-foreground">Loading metrics...</p>
         </div>
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4].map(i => (
           <Card key={i}>
             <CardContent className="p-6">
               <div className="animate-pulse space-y-2">

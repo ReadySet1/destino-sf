@@ -22,6 +22,8 @@ interface SerializedOrderItem {
   product?: {
     id: string;
     name: string;
+    isPreorder?: boolean;
+    preorderEndDate?: string | null;
   } | null;
   variant?: {
     id: string;
@@ -121,6 +123,8 @@ function manuallySerializeOrder(order: any): SerializedOrder {
       ? {
           id: item.product.id,
           name: item.product.name,
+          isPreorder: item.product.isPreorder || false,
+          preorderEndDate: item.product.preorderEndDate ? new Date(item.product.preorderEndDate).toISOString() : null,
         }
       : null,
     variant: item.variant
@@ -268,7 +272,14 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
         include: {
           items: {
             include: {
-              product: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  isPreorder: true,
+                  preorderEndDate: true,
+                },
+              },
               variant: true,
             },
           },
@@ -301,7 +312,14 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
             include: {
               items: {
                 include: {
-                  product: true,
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                      isPreorder: true,
+                      preorderEndDate: true,
+                    },
+                  },
                   variant: true,
                 },
               },
@@ -644,10 +662,26 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   serializedOrder.items.map((item: SerializedOrderItem) => {
                     const itemPrice = item.price || 0;
                     const quantity = item.quantity || 0;
+                    const isPreorder = item.product?.isPreorder || false;
+                    const preorderEndDate = item.product?.preorderEndDate;
                     return (
                       <tr key={item.id || 'unknown'}>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {item.product?.name || 'N/A'}
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span>{item.product?.name || 'N/A'}</span>
+                              {isPreorder && (
+                                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                  Pre-order
+                                </Badge>
+                              )}
+                            </div>
+                            {isPreorder && preorderEndDate && (
+                              <span className="text-xs text-gray-500 mt-1">
+                                Est. delivery: {format(new Date(preorderEndDate), 'MMM d, yyyy')}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">{item.variant?.name || '-'}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">{quantity}</td>

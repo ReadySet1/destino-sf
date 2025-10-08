@@ -204,15 +204,27 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
     }
   };
 
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const matchesAvailability =
-      availabilityFilter === 'all' || product.currentAvailabilityState === availabilityFilter;
+  // Filter and sort products (selected products first)
+  const filteredProducts = products
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+      const matchesAvailability =
+        availabilityFilter === 'all' || product.currentAvailabilityState === availabilityFilter;
 
-    return matchesSearch && matchesCategory && matchesAvailability;
-  });
+      return matchesSearch && matchesCategory && matchesAvailability;
+    })
+    .sort((a, b) => {
+      // Sort selected products to the top
+      const aSelected = selectedProducts.has(a.id);
+      const bSelected = selectedProducts.has(b.id);
+
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+
+      // If both selected or both not selected, maintain alphabetical order
+      return a.name.localeCompare(b.name);
+    });
 
   // Get unique categories
   const categories = Array.from(new Set(products.map(p => p.category))).sort();
@@ -291,7 +303,7 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
       if (result.success) {
         toast.success(`Successfully created availability rules for ${selectedProducts.size} products`);
-        router.push('/admin/products/availability/rules');
+        router.push('/admin/products/availability');
       } else {
         toast.error(result.error || 'Failed to create bulk rules');
       }
@@ -388,9 +400,16 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
         <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
           <span>Showing {filteredProducts.length} of {products.length} products</span>
           {selectedProducts.size > 0 && (
-            <span className="font-medium text-indigo-600">
-              {selectedProducts.size} selected
-            </span>
+            <>
+              <span className="font-medium text-indigo-600">
+                {selectedProducts.size} selected
+              </span>
+              {initialProductIds.length > 0 && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  Pre-selected from bulk manage
+                </span>
+              )}
+            </>
           )}
         </div>
 
@@ -434,14 +453,18 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredProducts.map(product => (
-                    <TableRow
-                      key={product.id}
-                      className={cn(
-                        'hover:bg-gray-50',
-                        selectedProducts.has(product.id) && 'bg-indigo-50/50'
-                      )}
-                    >
+                  filteredProducts.map(product => {
+                    const isPreSelected = initialProductIds.includes(product.id);
+                    return (
+                      <TableRow
+                        key={product.id}
+                        className={cn(
+                          'hover:bg-gray-50',
+                          selectedProducts.has(product.id) && 'bg-indigo-50/50',
+                          isPreSelected && selectedProducts.has(product.id) && 'border-l-4 border-l-blue-500'
+                        )}
+                      >
+
                       <TableCell>
                         <Checkbox
                           checked={selectedProducts.has(product.id)}
@@ -466,7 +489,8 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

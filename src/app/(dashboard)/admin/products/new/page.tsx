@@ -28,12 +28,6 @@ export default async function NewProductPage() {
     const featured = formData.has('featured');
     const active = formData.has('active');
     const squareId = formData.get('squareId') as string;
-    
-    // Availability fields for manual override
-    const isAvailable = formData.has('isAvailable');
-    const isPreorder = formData.has('isPreorder');
-    const visibility = formData.get('visibility') as string || 'PUBLIC';
-    const itemState = formData.get('itemState') as string || 'ACTIVE';
 
     if (!name || !price || isNaN(price) || !categoryId) {
       logger.error('Invalid product data');
@@ -67,11 +61,11 @@ export default async function NewProductPage() {
           featured,
           active,
           squareId: squareId || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          // Availability fields for manual override
-          isAvailable,
-          isPreorder,
-          visibility,
-          itemState,
+          // Set sensible defaults for availability - use Availability Manager for advanced rules
+          isAvailable: active, // Match active state by default
+          isPreorder: false,
+          visibility: 'PUBLIC',
+          itemState: active ? 'ACTIVE' : 'INACTIVE',
         },
       });
       logger.info('Database creation successful');
@@ -296,7 +290,7 @@ export default async function NewProductPage() {
                 <div className="ml-3">
                   <h2 className="text-xl font-semibold text-gray-900 mb-1">Product Status</h2>
                   <p className="text-sm text-gray-600">
-                    Control how this product appears and behaves on your site
+                    Basic visibility and feature settings for this product
                   </p>
                 </div>
               </div>
@@ -345,98 +339,53 @@ export default async function NewProductPage() {
             </div>
           </div>
 
-          {/* Availability Settings */}
-          <div className="bg-white shadow-sm rounded-xl border border-amber-200 overflow-hidden">
-            <div className="px-8 py-6 border-b border-amber-200 bg-amber-50">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-1">Availability Settings</h2>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Configure product availability and visibility settings
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Availability Settings - Info Box */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl overflow-hidden shadow-sm">
             <div className="px-8 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-8">
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="isAvailable"
-                      id="isAvailable"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      defaultChecked={true}
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="isAvailable" className="text-base font-semibold text-gray-700">
-                        Available for Purchase
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        When checked, customers can add this item to their cart and complete purchases
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      name="isPreorder"
-                      id="isPreorder"
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <div className="ml-3">
-                      <label htmlFor="isPreorder" className="text-base font-semibold text-gray-700">
-                        Pre-order Item
-                      </label>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        Allow customers to pre-order this item before it becomes generally available
-                      </p>
-                    </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
                 </div>
-
-                <div className="space-y-8">
-                  <div>
-                    <label htmlFor="visibility" className="block text-base font-semibold text-gray-700 mb-3">
-                      Site Visibility
-                    </label>
-                    <select
-                      name="visibility"
-                      id="visibility"
-                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
-                      defaultValue="PUBLIC"
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    Advanced Availability Management
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                      After Creation
+                    </span>
+                  </h3>
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    New products are created with basic availability settings (matching the Active status above).
+                    For advanced features like <strong>scheduling</strong>, <strong>pre-orders</strong>, <strong>seasonal availability</strong>,
+                    and <strong>date-based rules</strong>, use the dedicated Availability Manager after creating this product.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/admin/products/availability"
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                     >
-                      <option value="PUBLIC">Public (Visible to all customers)</option>
-                      <option value="PRIVATE">Private (Hidden from customers)</option>
-                    </select>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Controls whether this product appears in your public catalog and search results
-                    </p>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Open Availability Manager
+                    </Link>
+                    <Link
+                      href="/admin/products/availability/timeline"
+                      className="inline-flex items-center px-4 py-2 bg-white border-2 border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      View Availability Timeline
+                    </Link>
                   </div>
-
-                  <div>
-                    <label htmlFor="itemState" className="block text-base font-semibold text-gray-700 mb-3">
-                      Item State
-                    </label>
-                    <select
-                      name="itemState"
-                      id="itemState"
-                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 transition-all duration-200"
-                      defaultValue="ACTIVE"
-                    >
-                      <option value="ACTIVE">Active</option>
-                      <option value="INACTIVE">Inactive</option>
-                      <option value="SEASONAL">Seasonal</option>
-                      <option value="ARCHIVED">Archived</option>
-                    </select>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Sets the operational state of this product for inventory management
+                  <div className="mt-4 p-3 bg-white border border-blue-200 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      <strong className="text-gray-900">💡 Pro Tip:</strong> The Availability Manager lets you create
+                      complex rules for seasonal items, limited-time offers, and automatic state transitions.
                     </p>
                   </div>
                 </div>

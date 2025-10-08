@@ -31,7 +31,7 @@ export default async function AvailabilityTimelinePage() {
         </FormButton>
         <FormButton
           variant="secondary"
-          href="/admin/products/availability/rules"
+          href="/admin/products/availability"
           leftIcon={FormIcons.list}
         >
           View Rules

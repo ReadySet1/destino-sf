@@ -31,6 +31,7 @@ import type {
   CateringOrderData,
 } from '@/types/confirmation';
 import { isStoreOrder, isCateringOrder } from '@/types/confirmation';
+import { OrderPricingBreakdown } from '@/components/ui/order-pricing-breakdown';
 
 export function OrderConfirmationLayout({
   orderType,
@@ -361,19 +362,33 @@ export function OrderConfirmationLayout({
                               className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
                             >
                               <div className="flex-1">
-                                <h5 className="font-medium text-gray-900">
-                                  {item.name || item.product?.name || 'Unknown Item'}
-                                  {item.variant?.name && ` (${item.variant.name})`}
-                                </h5>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {item.metadata?.type && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {item.metadata.type === 'package' ? 'Package' : 'Item'}
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-medium text-gray-900">
+                                    {item.name || item.product?.name || 'Unknown Item'}
+                                    {item.variant?.name && ` (${item.variant.name})`}
+                                  </h5>
+                                  {item.product?.isPreorder && (
+                                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">
+                                      Pre-order
                                     </Badge>
                                   )}
-                                  <span className="text-sm text-gray-500">
-                                    Qty: {item.quantity}
-                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-1 mt-1">
+                                  <div className="flex items-center gap-2">
+                                    {item.metadata?.type && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {item.metadata.type === 'package' ? 'Package' : 'Item'}
+                                      </Badge>
+                                    )}
+                                    <span className="text-sm text-gray-500">
+                                      Qty: {item.quantity}
+                                    </span>
+                                  </div>
+                                  {item.product?.isPreorder && item.product?.preorderEndDate && (
+                                    <span className="text-xs text-gray-500">
+                                      Est. delivery: {format(new Date(item.product.preorderEndDate), 'MMM d, yyyy')}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="text-right ml-4">
@@ -389,15 +404,24 @@ export function OrderConfirmationLayout({
                         })}
                       </div>
 
+                      {/* Pricing Breakdown */}
                       <div className="border-t border-gray-200 mt-4 pt-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg font-bold text-gray-900">Total:</span>
-                          <span className="text-lg font-bold text-gray-900">
-                            {formatCurrency(
-                              isCateringOrder(orderData) ? orderData.totalAmount : orderData.total
-                            )}
-                          </span>
-                        </div>
+                        <OrderPricingBreakdown
+                          subtotal={orderData.subtotal || 0}
+                          taxAmount={orderData.taxAmount || 0}
+                          deliveryFee={orderData.deliveryFee || 0}
+                          serviceFee={orderData.serviceFee || 0}
+                          gratuityAmount={orderData.gratuityAmount || 0}
+                          shippingCost={orderData.shippingCost || 0}
+                          total={isCateringOrder(orderData) ? orderData.totalAmount : orderData.total}
+                          orderType={orderType === 'catering' ? 'catering' : 'regular'}
+                          shippingCarrier={
+                            isStoreOrder(orderData) && orderData.fulfillment?.shippingCarrier
+                              ? orderData.fulfillment.shippingCarrier
+                              : undefined
+                          }
+                          showDebugInfo={false}
+                        />
                       </div>
                     </div>
                   </div>

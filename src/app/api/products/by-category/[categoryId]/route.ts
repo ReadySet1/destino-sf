@@ -40,6 +40,7 @@ export async function GET(
       onlyActive: !includeInactive,
       includeAvailabilityEvaluation,
       includePrivate,
+      excludeCatering: false, // Allow all categories including catering for admin
       includeVariants: true, // Include variants for category listings
       orderBy: 'ordinal', // Order by ordinal for categories
       orderDirection: 'asc',
@@ -48,17 +49,32 @@ export async function GET(
       includePagination
     });
     
+    // Map products to match ProductDisplayOrder interface
+    const mappedProducts = result.products.map(product => ({
+      id: product.id,
+      name: product.name,
+      ordinal: product.ordinal ? Number(product.ordinal) : 0,
+      categoryId: product.categoryId,
+      imageUrl: product.images && product.images.length > 0 ? product.images[0] : undefined,
+      price: product.price,
+      active: product.active,
+      isAvailable: product.isAvailable,
+      isPreorder: product.isPreorder,
+      visibility: product.visibility,
+      itemState: product.itemState,
+    }));
+
     const response = {
       success: true,
       categoryId,
-      products: result.products,
-      count: result.products.length,
+      products: mappedProducts,
+      count: mappedProducts.length,
       ...(result.pagination && { pagination: result.pagination })
     };
     
     logger.info('Products fetched by category', {
       categoryId,
-      count: result.products.length,
+      count: mappedProducts.length,
       includeInactive,
       includeAvailabilityEvaluation
     });

@@ -149,6 +149,13 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
         createdAt: new Date().toISOString(), // Default to current time if not available
         pickupTime: orderData.pickupTime ? orderData.pickupTime.toString() : undefined,
         paymentStatus: orderData.paymentStatus,
+        // Pricing breakdown
+        subtotal: orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        taxAmount: orderData.taxAmount || 0,
+        deliveryFee: orderData.deliveryFee || 0,
+        serviceFee: orderData.serviceFee || 0,
+        gratuityAmount: orderData.gratuityAmount || 0,
+        shippingCost: orderData.shippingCost || 0,
         items: orderData.items.map(item => ({
           id: item.id,
           name: item.product?.name || 'Unknown Product',

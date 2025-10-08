@@ -36,12 +36,6 @@ export default async function AvailabilityManagementPage() {
         >
           Bulk Editor
         </FormButton>
-        <FormButton
-          href="/admin/products/availability/rules"
-          leftIcon={FormIcons.list}
-        >
-          Manage Rules
-        </FormButton>
       </FormActions>
 
       {/* Main Content with Suspense */}

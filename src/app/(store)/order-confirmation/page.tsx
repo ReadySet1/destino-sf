@@ -19,12 +19,21 @@ type FetchedOrderData =
       | 'shippingCarrier'
       | 'fulfillmentType'
       | 'notes'
+      | 'taxAmount'
+      | 'deliveryFee'
+      | 'serviceFee'
+      | 'gratuityAmount'
+      | 'shippingCostCents'
     > & {
       items: Array<{
         id: string;
         quantity: number;
         price: Prisma.Decimal;
-        product: { name: string | null } | null;
+        product: {
+          name: string | null;
+          isPreorder: boolean;
+          preorderEndDate: Date | null;
+        } | null;
         variant: { name: string | null } | null;
       }>;
     })
@@ -45,11 +54,20 @@ export type SerializableFetchedOrderData =
       | 'notes'
     > & {
       total: number | null;
+      taxAmount: number | null;
+      deliveryFee: number | null;
+      serviceFee: number | null;
+      gratuityAmount: number | null;
+      shippingCost: number | null;
       items: Array<{
         id: string;
         quantity: number;
         price: number;
-        product: { name: string | null } | null;
+        product: {
+          name: string | null;
+          isPreorder?: boolean;
+          preorderEndDate?: string | null;
+        } | null;
         variant: { name: string | null } | null;
       }>;
     })
@@ -89,12 +107,24 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
             shippingCarrier: true,
             fulfillmentType: true,
             notes: true,
+            // Pricing breakdown fields
+            taxAmount: true,
+            deliveryFee: true,
+            serviceFee: true,
+            gratuityAmount: true,
+            shippingCostCents: true,
             items: {
               select: {
                 id: true,
                 quantity: true,
                 price: true,
-                product: { select: { name: true } },
+                product: {
+                  select: {
+                    name: true,
+                    isPreorder: true,
+                    preorderEndDate: true,
+                  },
+                },
                 variant: { select: { name: true } },
               },
             },
@@ -108,9 +138,19 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
           serializableOrderData = {
             ...orderData,
             total: orderData.total?.toNumber() ?? null,
+            taxAmount: orderData.taxAmount?.toNumber() ?? null,
+            deliveryFee: orderData.deliveryFee?.toNumber() ?? null,
+            serviceFee: orderData.serviceFee?.toNumber() ?? null,
+            gratuityAmount: orderData.gratuityAmount?.toNumber() ?? null,
+            shippingCost: orderData.shippingCostCents ? orderData.shippingCostCents / 100 : null,
             items: orderData.items.map(item => ({
               ...item,
               price: item.price.toNumber(),
+              product: item.product ? {
+                name: item.product.name,
+                isPreorder: item.product.isPreorder,
+                preorderEndDate: item.product.preorderEndDate ? item.product.preorderEndDate.toISOString() : null,
+              } : null,
             })),
           };
         }

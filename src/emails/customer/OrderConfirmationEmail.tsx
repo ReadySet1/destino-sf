@@ -23,6 +23,8 @@ interface OrderItem {
   price: number;
   product: {
     name: string;
+    isPreorder?: boolean;
+    preorderEndDate?: Date | string | null;
   };
   variant?: {
     name: string;
@@ -36,6 +38,11 @@ interface OrderConfirmationEmailProps {
     email: string;
     phone: string;
     total: number;
+    taxAmount?: number;
+    deliveryFee?: number;
+    serviceFee?: number;
+    gratuityAmount?: number;
+    shippingCostCents?: number;
     fulfillmentType?: string;
     pickupTime?: Date | null;
     deliveryDate?: string | null;
@@ -196,6 +203,12 @@ export const OrderConfirmationEmail = ({
 }: OrderConfirmationEmailProps) => {
   const previewText = `Order confirmation #${order.id} - ${formatFulfillmentType(order.fulfillmentType || 'pickup')} order placed successfully`;
 
+  // Calculate subtotal from items
+  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Convert shipping cost from cents to dollars if provided
+  const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : undefined;
+
   return (
     <Html>
       <Head />
@@ -218,6 +231,12 @@ export const OrderConfirmationEmail = ({
             orderId={order.id}
             items={order.items}
             total={Number(order.total)}
+            subtotal={subtotal}
+            tax={order.taxAmount}
+            shippingCost={shippingCost}
+            deliveryFee={order.deliveryFee}
+            serviceFee={order.serviceFee}
+            gratuityAmount={order.gratuityAmount}
             fulfillmentType={order.fulfillmentType}
             pickupTime={order.pickupTime}
             deliveryDate={order.deliveryDate}

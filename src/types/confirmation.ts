@@ -7,6 +7,13 @@ export interface BaseOrderData {
   total: number;
   customerName: string;
   createdAt?: string;
+  // Pricing breakdown
+  subtotal?: number;
+  taxAmount?: number;
+  deliveryFee?: number;
+  serviceFee?: number;
+  gratuityAmount?: number;
+  shippingCost?: number;
 }
 
 export interface OrderItem {
@@ -23,7 +30,11 @@ export interface OrderItem {
     minPeople?: number;
   };
   // Store-specific fields
-  product?: { name: string | null } | null;
+  product?: {
+    name: string | null;
+    isPreorder?: boolean;
+    preorderEndDate?: string | null;
+  } | null;
   variant?: { name: string | null } | null;
 }
 

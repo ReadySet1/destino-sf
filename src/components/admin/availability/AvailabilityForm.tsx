@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar } from '@/components/ui/calendar';
+import { useRouter } from 'next/navigation';
+import { DatePickerField, DateRangePickerField } from '@/components/ui/date-picker-field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { MultiProductSelect } from '@/components/ui/multi-product-select';
 import { 
   CalendarIcon, 
   AlertCircle, 
@@ -68,17 +70,20 @@ export function AvailabilityForm({
   className,
   showProductSelector = false
 }: AvailabilityFormProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  const form = useForm<AvailabilityRule>({
+  const form = useForm<any>({
     // Temporarily disable Zod validation - we'll do it server-side
     // resolver: zodResolver(AvailabilityRuleSchema),
     mode: 'onSubmit',
     defaultValues: {
       productId: productId || rule?.productId || '',
+      // When editing, pre-populate with the current product; when creating, use provided productId or empty
+      productIds: rule?.productId ? [rule.productId] : (productId ? [productId] : []),
       name: rule?.name || template?.name || '',
       enabled: rule?.enabled ?? true,
       priority: rule?.priority ?? template?.priority ?? 0,
@@ -119,6 +124,7 @@ export function AvailabilityForm({
   const startDate = watch('startDate');
   const endDate = watch('endDate');
   const selectedProductId = watch('productId');
+  const selectedProductIds = watch('productIds');
   const seasonalStartMonth = watch('seasonalConfig.startMonth');
   const seasonalStartDay = watch('seasonalConfig.startDay');
   const seasonalEndMonth = watch('seasonalConfig.endMonth');
@@ -198,7 +204,7 @@ export function AvailabilityForm({
     }
   };
 
-  const onSubmit = async (data: AvailabilityRule) => {
+  const onSubmit = async (data: any) => {
 
     try {
       setIsLoading(true);
@@ -233,11 +239,24 @@ export function AvailabilityForm({
         } : null
       };
 
-      // Validate product ID is selected
-      if (!cleanedData.productId) {
-        toast.error('Please select a product');
+      // Validate product ID(s) are selected
+      if (!cleanedData.productIds || cleanedData.productIds.length === 0) {
+        toast.error('Please select at least one product');
         setIsLoading(false);
         return;
+      }
+
+      // Validate date range for DATE_RANGE rule type
+      if (cleanedData.ruleType === 'date_range') {
+        if (cleanedData.startDate && cleanedData.endDate) {
+          const start = new Date(cleanedData.startDate);
+          const end = new Date(cleanedData.endDate);
+          if (end < start) {
+            toast.error('End date must be after start date');
+            setIsLoading(false);
+            return;
+          }
+        }
       }
 
       // Validate seasonal config if seasonal rule
@@ -268,19 +287,119 @@ export function AvailabilityForm({
         }
       }
 
-      const result = rule?.id
-        ? await updateAvailabilityRule(rule.id, cleanedData)
-        : await createAvailabilityRule(cleanedData.productId, cleanedData);
+      const productIds = cleanedData.productIds;
+      const successCount: string[] = [];
+      const failedCount: Array<{ productId: string; error: string }> = [];
 
-      if (result.success && result.data) {
-        toast.success(rule ? 'Rule updated successfully' : 'Rule created successfully');
-        onSuccess?.(result.data);
+      if (rule?.id) {
+        // Editing mode: Update/create rules for all selected products
+        const originalProductId = rule.productId;
+
+        for (const productId of productIds) {
+          try {
+            if (productId === originalProductId) {
+              // Update the original rule
+              const result = await updateAvailabilityRule(rule.id, {
+                ...cleanedData,
+                productId
+              });
+
+              if (result.success && result.data) {
+                successCount.push(productId);
+              } else {
+                failedCount.push({ productId, error: result.error || 'Update failed' });
+              }
+            } else {
+              // Create new rules for additional products
+              const result = await createAvailabilityRule(productId, {
+                ...cleanedData,
+                productId
+              });
+
+              if (result.success && result.data) {
+                successCount.push(productId);
+              } else {
+                failedCount.push({ productId, error: result.error || 'Creation failed' });
+              }
+            }
+          } catch (error) {
+            failedCount.push({
+              productId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+
+        // Show summary toast
+        if (successCount.length > 0) {
+          const wasUpdate = productIds.includes(originalProductId);
+          const wasCreate = productIds.some((id: string) => id !== originalProductId);
+
+          if (wasUpdate && wasCreate) {
+            toast.success(
+              `Rule updated and applied to ${successCount.length} product${successCount.length !== 1 ? 's' : ''}`,
+              { duration: 3000 }
+            );
+          } else if (wasUpdate) {
+            toast.success('Rule updated successfully', { duration: 3000 });
+          } else {
+            toast.success(
+              `Rule applied to ${successCount.length} product${successCount.length !== 1 ? 's' : ''}`,
+              { duration: 3000 }
+            );
+          }
+
+          // Force refresh router cache to show updated data
+          router.refresh();
+
+          if (onSuccess) {
+            onSuccess({} as any);
+          }
+        }
       } else {
-        // Show detailed error message
-        console.error('Form submission failed:', result.error);
-        toast.error(result.error || 'Failed to save rule', {
-          duration: 6000,
-        });
+        // Creating mode: Create new rules for all selected products
+        for (const productId of productIds) {
+          try {
+            const result = await createAvailabilityRule(productId, {
+              ...cleanedData,
+              productId
+            });
+
+            if (result.success && result.data) {
+              successCount.push(productId);
+            } else {
+              failedCount.push({ productId, error: result.error || 'Creation failed' });
+            }
+          } catch (error) {
+            failedCount.push({
+              productId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+
+        // Show summary toast
+        if (successCount.length > 0) {
+          toast.success(
+            `Rule created successfully for ${successCount.length} product${successCount.length !== 1 ? 's' : ''}`,
+            { duration: 3000 }
+          );
+
+          // Force refresh router cache to show updated data
+          router.refresh();
+
+          if (onSuccess) {
+            onSuccess({} as any);
+          }
+        }
+      }
+
+      // Show errors if any
+      if (failedCount.length > 0) {
+        toast.error(
+          `Failed to process ${failedCount.length} product${failedCount.length !== 1 ? 's' : ''}`,
+          { duration: 5000 }
+        );
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -366,61 +485,92 @@ export function AvailabilityForm({
   }, [selectedState, setValue, watch]);
 
   return (
-    <div className={cn("w-full max-w-6xl space-y-6", className)}>
+    <div className={cn("w-full max-w-6xl space-y-6 pb-32", className)}>
+      {/* Form Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg shadow-md p-6 text-white">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+            <Settings className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">
+              {rule ? 'Edit Availability Rule' : 'Create New Availability Rule'}
+            </h2>
+            <p className="text-indigo-100 text-sm mt-1">
+              {rule
+                ? 'Update rule settings and apply to multiple products'
+                : 'Configure availability settings for one or more products'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-6"
         noValidate
       >
-        
+
         {/* Basic Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5" />
+        <Card className="shadow-sm">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Info className="h-5 w-5 text-indigo-600" />
               Rule Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             {/* Product Selector */}
             {showProductSelector && (
-              <div className="space-y-2 pb-4 border-b">
-                <Label htmlFor="productId">Product *</Label>
+              <div className="space-y-3 pb-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="productIds" className="text-base font-semibold">
+                    Products *
+                  </Label>
+                  {rule && (
+                    <Badge variant="secondary" className="text-xs">
+                      Editing Mode
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Always use multi-product selector */}
                 <Controller
-                  name="productId"
+                  name="productIds"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={!!rule}
-                    >
-                      <SelectTrigger className={errors.productId ? 'border-red-500' : ''}>
-                        <SelectValue placeholder={loadingProducts ? "Loading products..." : "Select a product"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{product.name}</span>
-                              {product.category && (
-                                <span className="text-xs text-muted-foreground">
-                                  {product.category.name}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiProductSelect
+                      products={products}
+                      selectedIds={field.value || []}
+                      onChange={field.onChange}
+                      placeholder={loadingProducts ? "Loading products..." : "Select products to apply this rule"}
+                      disabled={loadingProducts}
+                    />
                   )}
                 />
+
                 {errors.productId && (
-                  <p className="text-sm text-red-500">{errors.productId.message}</p>
+                  <p className="text-sm text-red-500">{String(errors.productId.message || 'Invalid product selection')}</p>
                 )}
-                {rule && (
-                  <p className="text-xs text-muted-foreground">
-                    Product cannot be changed when editing a rule
+                {errors.productIds && (
+                  <p className="text-sm text-red-500">{String(errors.productIds.message || 'Invalid product selection')}</p>
+                )}
+
+                {rule ? (
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-blue-700">
+                        <p className="font-medium mb-1">Editing Multiple Products</p>
+                        <p>
+                          Select additional products to apply this rule configuration to. This will update the rule for all selected products.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Select one or more products to apply this rule to. The same rule configuration will be created for each product.
                   </p>
                 )}
               </div>
@@ -441,7 +591,7 @@ export function AvailabilityForm({
                   )}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                  <p className="text-sm text-red-500">{String(errors.name.message || 'Invalid name')}</p>
                 )}
               </div>
 
@@ -544,105 +694,82 @@ export function AvailabilityForm({
         </Card>
 
         {/* Schedule & Calendar Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
+        <Card className="shadow-sm">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <CalendarIcon className="h-5 w-5 text-indigo-600" />
               Schedule & Calendar
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
             {selectedRuleType === RuleType.DATE_RANGE && (
               <div className="space-y-4">
-                <h4 className="font-medium text-lg">Date Range Configuration</h4>
-                
-                {/* Date Selection Layout */}
+                <div className="mb-4">
+                  <h4 className="font-medium text-base">Date Range Configuration</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select the start and end dates for this availability rule
+                  </p>
+                </div>
+
+                {/* Date Range Picker */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Start Date Section */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">Start Date</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-sm font-medium">
+                      Start Date
+                    </Label>
                     <Controller
                       name="startDate"
                       control={control}
                       render={({ field }) => (
-                        <div className="space-y-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-11",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            onClick={() => {/* Calendar will be shown inline below */}}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select start date'}
-                          </Button>
-                          {/* Inline Calendar */}
-                          <div className="border rounded-lg p-3 bg-muted/20">
-                            <Calendar
-                              mode="single"
-                              selected={field.value || undefined}
-                              onSelect={field.onChange}
-                              className="w-full"
-                              classNames={{
-                                months: "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                                month: "space-y-4 w-full flex flex-col",
-                                table: "w-full h-full border-collapse space-y-1",
-                                head_row: "",
-                                row: "w-full mt-2"
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <DatePickerField
+                          value={field.value}
+                          onSelect={field.onChange}
+                          placeholder="Select start date"
+                          ariaLabel="Rule start date"
+                        />
                       )}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      When this rule becomes active
+                    </p>
                   </div>
 
                   {/* End Date Section */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">End Date</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-sm font-medium">
+                      End Date (Optional)
+                    </Label>
                     <Controller
                       name="endDate"
                       control={control}
                       render={({ field }) => (
-                        <div className="space-y-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-11",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            onClick={() => {/* Calendar will be shown inline below */}}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select end date'}
-                          </Button>
-                          {/* Inline Calendar */}
-                          <div className="border rounded-lg p-3 bg-muted/20">
-                            <Calendar
-                              mode="single"
-                              selected={field.value || undefined}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                startDate ? date < startDate : false
-                              }
-                              className="w-full"
-                              classNames={{
-                                months: "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                                month: "space-y-4 w-full flex flex-col",
-                                table: "w-full h-full border-collapse space-y-1",
-                                head_row: "",
-                                row: "w-full mt-2"
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <DatePickerField
+                          value={field.value}
+                          onSelect={field.onChange}
+                          placeholder="Select end date"
+                          minDate={startDate || undefined}
+                          ariaLabel="Rule end date"
+                        />
                       )}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty for no end date
+                    </p>
                   </div>
                 </div>
+
+                {/* Date Range Validation Feedback */}
+                {startDate && endDate && endDate < startDate && (
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 mt-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-red-700">
+                        End date must be after start date
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -845,7 +972,7 @@ export function AvailabilityForm({
                               onClick={() => {
                                 const current = field.value || [];
                                 if (isSelected) {
-                                  field.onChange(current.filter(d => d !== index));
+                                  field.onChange(current.filter((d: number) => d !== index));
                                 } else {
                                   field.onChange([...current, index].sort());
                                 }
@@ -866,14 +993,14 @@ export function AvailabilityForm({
 
         {/* State-specific Settings Card */}
         {(selectedState === AvailabilityState.PRE_ORDER || selectedState === AvailabilityState.VIEW_ONLY) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+          <Card className="shadow-sm">
+            <CardHeader className="bg-gray-50 border-b border-gray-200">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <Settings className="h-5 w-5 text-indigo-600" />
                 {selectedState === AvailabilityState.PRE_ORDER ? 'Pre-Order Settings' : 'View-Only Settings'}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {selectedState === AvailabilityState.PRE_ORDER && (
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -893,41 +1020,23 @@ export function AvailabilityForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Expected Delivery Date</Label>
+                    <Label htmlFor="expectedDeliveryDate">Expected Delivery Date</Label>
                     <Controller
                       name="preOrderSettings.expectedDeliveryDate"
                       control={control}
                       render={({ field }) => (
-                        <div className="space-y-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-11",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'PPP', { locale: enUS }) : 'Select expected delivery date'}
-                          </Button>
-                          {/* Inline Calendar for Delivery Date */}
-                          <div className="border rounded-lg p-3 bg-muted/20">
-                            <Calendar
-                              mode="single"
-                              selected={field.value || undefined}
-                              onSelect={field.onChange}
-                              disabled={(date) => date < new Date()}
-                              className="w-full"
-                              classNames={{
-                                months: "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
-                                month: "space-y-4 w-full flex flex-col",
-                                table: "w-full h-full border-collapse space-y-1",
-                                head_row: "",
-                                row: "w-full mt-2"
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <>
+                          <DatePickerField
+                            value={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Select expected delivery date"
+                            disablePastDates
+                            ariaLabel="Expected delivery date"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            When customers can expect to receive their pre-order
+                          </p>
+                        </>
                       )}
                     />
                   </div>
@@ -1055,14 +1164,14 @@ export function AvailabilityForm({
         )}
 
         {/* Advanced Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+        <Card className="shadow-sm">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Settings className="h-5 w-5 text-indigo-600" />
               Advanced Settings
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="flex items-center space-x-2">
               <Controller
                 name="enabled"
@@ -1107,51 +1216,46 @@ export function AvailabilityForm({
           </CardContent>
         </Card>
 
-        {/* Form Actions Card */}
-        <Card>
-          <CardContent className="pt-6">
+        {/* Sticky Action Bar */}
+        <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-6xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowPreview(!showPreview)}
-                  size="sm"
-                >
-                  <Info className="h-4 w-4 mr-2" />
-                  {showPreview ? 'Hide' : 'Show'} Preview
-                </Button>
-              </div>
+              {/* Left: Preview Toggle */}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowPreview(!showPreview)}
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <Info className="h-4 w-4 mr-2" />
+                {showPreview ? 'Hide' : 'Show'} Preview
+              </Button>
 
-              <div className="flex items-center gap-2">
+              {/* Right: Action Buttons */}
+              <div className="flex items-center gap-3">
                 {onCancel && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onCancel}
                     disabled={isLoading}
+                    className="min-w-[100px]"
                   >
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
                 )}
-                
+
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="min-w-[120px]"
+                  className="min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
                   onClick={(e) => {
                     console.log('=== BUTTON CLICKED ===');
                     console.log('Form errors:', errors);
-                    console.log('Detailed errors:', JSON.stringify(errors, null, 2));
                     console.log('Form is valid:', Object.keys(errors).length === 0);
                     console.log('Current form values:', watch());
-                    console.log('Seasonal config values:', {
-                      startMonth: seasonalStartMonth,
-                      startDay: seasonalStartDay,
-                      endMonth: seasonalEndMonth,
-                      endDay: seasonalEndDay
-                    });
                   }}
                 >
                   {isLoading ? (
@@ -1162,7 +1266,7 @@ export function AvailabilityForm({
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      {rule ? 'Update Rule' : 'Create Rule'}
+                      {rule ? 'Save Changes' : 'Create Rule'}
                     </>
                   )}
                 </Button>
@@ -1171,21 +1275,52 @@ export function AvailabilityForm({
 
             {/* Preview Section */}
             {showPreview && (
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Rule Preview</h4>
-                <div className="text-sm space-y-1">
-                  <p><strong>Name:</strong> {watch('name') || 'Unnamed rule'}</p>
-                  <p><strong>Type:</strong> {watch('ruleType')}</p>
-                  <p><strong>State:</strong> {watch('state')}</p>
-                  <p><strong>Priority:</strong> {watch('priority')}</p>
-                  {startDate && <p><strong>Start:</strong> {format(startDate, 'PPP', { locale: enUS })}</p>}
-                  {endDate && <p><strong>End:</strong> {format(endDate, 'PPP', { locale: enUS })}</p>}
-                  <p><strong>Enabled:</strong> {watch('enabled') ? 'Yes' : 'No'}</p>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-semibold text-sm mb-3 text-gray-900">Rule Preview</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">Name:</span>
+                    <p className="font-medium text-gray-900">{watch('name') || 'Unnamed rule'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Type:</span>
+                    <p className="font-medium text-gray-900">{watch('ruleType')}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">State:</span>
+                    <p className="font-medium text-gray-900">{watch('state')}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Priority:</span>
+                    <p className="font-medium text-gray-900">{watch('priority')}</p>
+                  </div>
+                  {selectedProductIds && selectedProductIds.length > 0 && (
+                    <div>
+                      <span className="text-gray-600">Products:</span>
+                      <p className="font-medium text-gray-900">{selectedProductIds.length} selected</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-600">Status:</span>
+                    <p className="font-medium text-gray-900">{watch('enabled') ? 'Enabled' : 'Disabled'}</p>
+                  </div>
+                  {startDate && (
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Start:</span>
+                      <p className="font-medium text-gray-900">{format(startDate, 'PPP', { locale: enUS })}</p>
+                    </div>
+                  )}
+                  {endDate && (
+                    <div className="col-span-2">
+                      <span className="text-gray-600">End:</span>
+                      <p className="font-medium text-gray-900">{format(endDate, 'PPP', { locale: enUS })}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </form>
     </div>
   );
