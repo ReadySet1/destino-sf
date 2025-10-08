@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import { DatePickerField, DateRangePickerField } from '@/components/ui/date-picker-field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +70,7 @@ export function AvailabilityForm({
   className,
   showProductSelector = false
 }: AvailabilityFormProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -347,6 +349,9 @@ export function AvailabilityForm({
             );
           }
 
+          // Force refresh router cache to show updated data
+          router.refresh();
+
           if (onSuccess) {
             onSuccess({} as any);
           }
@@ -379,6 +384,9 @@ export function AvailabilityForm({
             `Rule created successfully for ${successCount.length} product${successCount.length !== 1 ? 's' : ''}`,
             { duration: 3000 }
           );
+
+          // Force refresh router cache to show updated data
+          router.refresh();
 
           if (onSuccess) {
             onSuccess({} as any);
