@@ -1294,79 +1294,139 @@ async function performUnifiedSync(
     await preloadCategoryCache();
     
     // Get categories to sync (use LEGACY_CATEGORY_MAPPINGS to match database format)
-    const categoriesToSync = categories?.length 
-      ? Object.entries(LEGACY_CATEGORY_MAPPINGS).filter(([, localName]) => 
+    const rawCategoriesToSync = categories?.length
+      ? Object.entries(LEGACY_CATEGORY_MAPPINGS).filter(([, localName]) =>
           categories.includes(localName))
       : Object.entries(LEGACY_CATEGORY_MAPPINGS);
 
-    syncLogger.logInfo(`Syncing ${categoriesToSync.length} categories (catering + core products)`, { count: categoriesToSync.length, categories: categoriesToSync.map(([,name]) => name) });
+    // DEDUPLICATION: Check for duplicate category names with different Square IDs
+    const categoryNameMap = new Map<string, Array<[string, string]>>();
+    for (const [squareId, localName] of rawCategoriesToSync) {
+      const existing = categoryNameMap.get(localName) || [];
+      existing.push([squareId, localName]);
+      categoryNameMap.set(localName, existing);
+    }
 
-    // Process each category
-    for (const [squareId, localName] of categoriesToSync) {
-      const categoryStartTime = Date.now();
-      syncLogger.logCategoryStart(localName, 0); // Will update count
+    // Detect and warn about duplicates
+    const duplicateWarnings: string[] = [];
+    for (const [categoryName, entries] of categoryNameMap.entries()) {
+      if (entries.length > 1) {
+        const squareIds = entries.map(([id]) => id).join(', ');
+        const warning = `⚠️ DUPLICATE CATEGORY DETECTED: "${categoryName}" has ${entries.length} different Square IDs: ${squareIds}`;
+        duplicateWarnings.push(warning);
+        syncLogger.logInfo(warning);
+      }
+    }
 
-      try {
-        // Fetch items from Square with caching (with timing)
-        const fetchStartTime = Date.now();
-        const squareItems = await fetchSquareItemsForCategory(squareId, localName, true); // true = use cache
-        const fetchTime = Date.now() - fetchStartTime;
-        timings.squareFetch += fetchTime;
-        
-        syncLogger.logInfo(`Found ${squareItems.length} items in Square for ${localName} (${fetchTime}ms)`);
+    // Use only unique categories (prefer first occurrence for consistency)
+    const categoriesToSync = Array.from(categoryNameMap.values()).map(entries => entries[0]);
 
-        allSyncedItems.push(...squareItems);
-        let categorySynced = 0;
-        let categorySkipped = 0;
-        let categoryErrors = 0;
+    syncLogger.logInfo(`Syncing ${categoriesToSync.length} unique categories (catering + core products)`, {
+      count: categoriesToSync.length,
+      categories: categoriesToSync.map(([,name]) => name),
+      duplicatesDetected: duplicateWarnings.length
+    });
 
-        // Process items in batch for improved performance (with timing)
-        const dbStartTime = Date.now();
-        if (dryRun) {
-          // During dry run, log items as if they would be synced so they appear in the report
-          squareItems.forEach(item => {
-            syncLogger.logItemProcessed(item.id, item.name, 'synced', '[DRY RUN] Would sync to products table');
-          });
-          categorySynced = squareItems.length;
-        } else {
-          // Use batch sync for better performance
-          const batchResult = await batchSyncToProducts(squareItems, syncLogger, forceUpdate);
-          categorySynced = batchResult.synced;
-          categorySkipped += batchResult.skipped;
-          categoryErrors = batchResult.errors;
-          errorCount += batchResult.errors;
-          
-          // DIRECT FIX: Apply Share Platter variants fix if this is the Share Platters category
-          if (localName === 'CATERING- SHARE PLATTERS') {
-            logger.info('🎯 DIRECT FIX: Applying targeted fix for Share Platters category...');
-            const fixedVariants = await ensureSharePlatterVariants(syncLogger);
-            if (fixedVariants > 0) {
-              syncLogger.logInfo(`🎯 DIRECT FIX: Successfully applied variants to ${fixedVariants} Share Platter items`);
+    // PERFORMANCE OPTIMIZATION: Process categories in parallel with controlled concurrency
+    const categoryLimit = pLimit(5); // Process 5 categories concurrently
+
+    const categoryProcessingPromises = categoriesToSync.map(([squareId, localName]) =>
+      categoryLimit(async () => {
+        const categoryStartTime = Date.now();
+        syncLogger.logCategoryStart(localName, 0); // Will update count
+
+        try {
+          // Fetch items from Square with caching (with timing)
+          const fetchStartTime = Date.now();
+          const squareItems = await fetchSquareItemsForCategory(squareId, localName, true); // true = use cache
+          const fetchTime = Date.now() - fetchStartTime;
+
+          syncLogger.logInfo(`Found ${squareItems.length} items in Square for ${localName} (${fetchTime}ms)`);
+
+          let categorySynced = 0;
+          let categorySkipped = 0;
+          let categoryErrors = 0;
+
+          // Process items in batch for improved performance (with timing)
+          const dbStartTime = Date.now();
+          if (dryRun) {
+            // During dry run, log items as if they would be synced so they appear in the report
+            squareItems.forEach(item => {
+              syncLogger.logItemProcessed(item.id, item.name, 'synced', '[DRY RUN] Would sync to products table');
+            });
+            categorySynced = squareItems.length;
+          } else {
+            // Use batch sync for better performance
+            const batchResult = await batchSyncToProducts(squareItems, syncLogger, forceUpdate);
+            categorySynced = batchResult.synced;
+            categorySkipped = batchResult.skipped;
+            categoryErrors = batchResult.errors;
+
+            // DIRECT FIX: Apply Share Platter variants fix if this is the Share Platters category
+            if (localName === 'CATERING- SHARE PLATTERS') {
+              logger.info('🎯 DIRECT FIX: Applying targeted fix for Share Platters category...');
+              const fixedVariants = await ensureSharePlatterVariants(syncLogger);
+              if (fixedVariants > 0) {
+                syncLogger.logInfo(`🎯 DIRECT FIX: Successfully applied variants to ${fixedVariants} Share Platter items`);
+              }
             }
           }
+          const dbTime = Date.now() - dbStartTime;
+
+          const categoryTotalTime = Date.now() - categoryStartTime;
+
+          syncLogger.logCategoryComplete(localName, categorySynced, categorySkipped, categoryErrors);
+
+          // Performance warning for slow categories
+          if (categoryTotalTime > 30000) { // 30 seconds
+            syncLogger.logInfo(`⚠️ Slow category processing: ${localName} took ${Math.round(categoryTotalTime/1000)}s`);
+          }
+
+          return {
+            success: true,
+            localName,
+            squareItems,
+            categorySynced,
+            categorySkipped,
+            categoryErrors,
+            fetchTime,
+            dbTime,
+            categoryTotalTime
+          };
+
+        } catch (categoryError) {
+          const categoryTotalTime = Date.now() - categoryStartTime;
+
+          syncLogger.logError(`Failed to process category ${localName}: ${categoryError}`);
+
+          return {
+            success: false,
+            localName,
+            squareItems: [],
+            categorySynced: 0,
+            categorySkipped: 0,
+            categoryErrors: 1,
+            fetchTime: 0,
+            dbTime: 0,
+            categoryTotalTime,
+            error: categoryError
+          };
         }
-        const dbTime = Date.now() - dbStartTime;
-        timings.dbOperations += dbTime;
+      })
+    );
 
-        const categoryTotalTime = Date.now() - categoryStartTime;
-        timings.categoryProcessing[localName] = categoryTotalTime;
+    // Execute all category processing in parallel with controlled concurrency
+    const categoryResults = await Promise.all(categoryProcessingPromises);
 
-        syncedCount += categorySynced;
-        skippedCount += categorySkipped;
-        syncLogger.logCategoryComplete(localName, categorySynced, categorySkipped, categoryErrors);
-        
-        // Performance warning for slow categories
-        if (categoryTotalTime > 30000) { // 30 seconds
-          syncLogger.logInfo(`⚠️ Slow category processing: ${localName} took ${Math.round(categoryTotalTime/1000)}s`);
-        }
-
-      } catch (categoryError) {
-        const categoryTotalTime = Date.now() - categoryStartTime;
-        timings.categoryProcessing[localName] = categoryTotalTime;
-        
-        syncLogger.logError(`Failed to process category ${localName}: ${categoryError}`);
-        errorCount++;
-      }
+    // Aggregate results from parallel processing
+    for (const result of categoryResults) {
+      allSyncedItems.push(...result.squareItems);
+      syncedCount += result.categorySynced;
+      skippedCount += result.categorySkipped;
+      errorCount += result.categoryErrors;
+      timings.squareFetch += result.fetchTime;
+      timings.dbOperations += result.dbTime;
+      timings.categoryProcessing[result.localName] = result.categoryTotalTime;
     }
 
     // Archive products that are no longer in Square (if not dry run)

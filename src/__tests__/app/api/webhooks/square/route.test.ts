@@ -75,12 +75,12 @@ jest.mock('@/lib/square/webhook-validator', () => ({
   validateWebhookSignature: jest.fn().mockResolvedValue({
     valid: true,
     environment: 'sandbox',
-    metadata: {}
+    metadata: {},
   }),
   quickSignatureValidation: jest.fn().mockResolvedValue(true),
   validateWebhookSecurity: jest.fn().mockResolvedValue({ valid: true }),
   debugWebhookSignature: jest.fn(),
-  createWebhookError: jest.fn((result) => new Error('Webhook validation failed'))
+  createWebhookError: jest.fn(result => new Error('Webhook validation failed')),
 }));
 
 // Mock labels action
@@ -191,7 +191,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBe('payment.created');
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -244,7 +247,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -286,7 +292,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -321,7 +330,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -358,7 +370,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -395,7 +410,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -421,7 +439,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -447,7 +468,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -494,7 +518,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -539,7 +566,10 @@ describe('/api/webhooks/square - POST', () => {
 
       expect(response.status).toBe(200);
       expect(data.received).toBe(true);
-      expect(data.processing).toBe('async');
+      expect(data.eventId).toBeDefined();
+      expect(data.type).toBeDefined();
+      expect(data.environment).toBeDefined();
+      expect(data.processingTimeMs).toBeDefined();
 
       // Wait for async processing to complete
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -577,7 +607,10 @@ describe('/api/webhooks/square - POST', () => {
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(data.processing).toBe('async');
+    expect(data.eventId).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(data.environment).toBeDefined();
+    expect(data.processingTimeMs).toBeDefined();
 
     // Wait for async processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -636,7 +669,10 @@ describe('/api/webhooks/square - POST', () => {
 
       expect(response.status).toBe(200);
       expect(data.received).toBe(true);
-      expect(data.processing).toBe('async');
+      expect(data.eventId).toBeDefined();
+      expect(data.type).toBeDefined();
+      expect(data.environment).toBeDefined();
+      expect(data.processingTimeMs).toBeDefined();
 
       // Wait for async processing to complete
       await new Promise(resolve => setTimeout(resolve, 100));

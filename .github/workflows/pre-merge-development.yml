@@ -57,6 +57,9 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
           echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key" >> $GITHUB_ENV
 
       # Code Quality Checks
       - name: ✅ TypeScript Type Checking
@@ -70,6 +73,8 @@ jobs:
 
       # Build Verification
       - name: ✅ Production Build
+        env:
+          NODE_ENV: production
         run: pnpm build
 
       # Database Validation
