@@ -33,6 +33,11 @@ interface Order {
   email: string;
   phone: string;
   total: number | { toNumber: () => number };
+  taxAmount?: number | { toNumber: () => number } | null;
+  deliveryFee?: number | { toNumber: () => number } | null;
+  serviceFee?: number | { toNumber: () => number } | null;
+  gratuityAmount?: number | { toNumber: () => number } | null;
+  shippingCostCents?: number | null;
   fulfillmentType?: string | null;
   pickupTime?: Date | null;
   deliveryDate?: string | null;
@@ -67,6 +72,24 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
 
   // Format notes to extract shipping address and other information
   const formattedNotes = formatOrderNotes(order.notes || null);
+
+  // Calculate subtotal from items
+  const subtotal = order.items.reduce((sum, item) => {
+    const itemPrice = typeof item.price === 'number' ? item.price : item.price.toNumber();
+    return sum + (itemPrice * item.quantity);
+  }, 0);
+
+  // Helper function to convert Decimal to number
+  const toNumber = (value: number | { toNumber: () => number } | undefined | null): number => {
+    if (value === undefined || value === null) return 0;
+    return typeof value === 'number' ? value : value.toNumber();
+  };
+
+  const taxAmount = toNumber(order.taxAmount);
+  const deliveryFee = toNumber(order.deliveryFee);
+  const serviceFee = toNumber(order.serviceFee);
+  const gratuityAmount = toNumber(order.gratuityAmount);
+  const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : 0;
 
   // Format payment status for display
   const formatPaymentStatus = (status: string) => {
@@ -307,6 +330,90 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
             ))}
           </Section>
 
+          {/* Order Summary / Cost Breakdown */}
+          <Section style={styles.summarySection}>
+            <Heading as="h2" style={styles.sectionTitle}>
+              💰 Order Summary
+            </Heading>
+
+            <Row>
+              <Column style={styles.summaryLabelColumn}>
+                <Text style={styles.summaryLabel}>Subtotal:</Text>
+              </Column>
+              <Column style={styles.summaryValueColumn}>
+                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+              </Column>
+            </Row>
+
+            {taxAmount > 0 && (
+              <Row>
+                <Column style={styles.summaryLabelColumn}>
+                  <Text style={styles.summaryLabel}>Tax:</Text>
+                </Column>
+                <Column style={styles.summaryValueColumn}>
+                  <Text style={styles.summaryValue}>${taxAmount.toFixed(2)}</Text>
+                </Column>
+              </Row>
+            )}
+
+            {deliveryFee > 0 && (
+              <Row>
+                <Column style={styles.summaryLabelColumn}>
+                  <Text style={styles.summaryLabel}>Delivery Fee:</Text>
+                </Column>
+                <Column style={styles.summaryValueColumn}>
+                  <Text style={styles.summaryValue}>${deliveryFee.toFixed(2)}</Text>
+                </Column>
+              </Row>
+            )}
+
+            {shippingCost > 0 && (
+              <Row>
+                <Column style={styles.summaryLabelColumn}>
+                  <Text style={styles.summaryLabel}>Shipping:</Text>
+                </Column>
+                <Column style={styles.summaryValueColumn}>
+                  <Text style={styles.summaryValue}>${shippingCost.toFixed(2)}</Text>
+                </Column>
+              </Row>
+            )}
+
+            {serviceFee > 0 && (
+              <Row>
+                <Column style={styles.summaryLabelColumn}>
+                  <Text style={styles.summaryLabel}>Service Fee:</Text>
+                </Column>
+                <Column style={styles.summaryValueColumn}>
+                  <Text style={styles.summaryValue}>${serviceFee.toFixed(2)}</Text>
+                </Column>
+              </Row>
+            )}
+
+            {gratuityAmount > 0 && (
+              <Row>
+                <Column style={styles.summaryLabelColumn}>
+                  <Text style={styles.summaryLabel}>Gratuity:</Text>
+                </Column>
+                <Column style={styles.summaryValueColumn}>
+                  <Text style={styles.summaryValue}>${gratuityAmount.toFixed(2)}</Text>
+                </Column>
+              </Row>
+            )}
+
+            <Hr style={styles.summaryDivider} />
+
+            <Row>
+              <Column style={styles.summaryLabelColumn}>
+                <Text style={styles.summaryTotalLabel}>Total:</Text>
+              </Column>
+              <Column style={styles.summaryValueColumn}>
+                <Text style={styles.summaryTotalValue}>
+                  ${toNumber(order.total).toFixed(2)}
+                </Text>
+              </Column>
+            </Row>
+          </Section>
+
           <Section style={styles.statsSection}>
             <Text style={styles.statsText}>📊 This is order #{totalOrdersToday} today</Text>
           </Section>
@@ -445,6 +552,47 @@ const styles = {
     fontWeight: '600',
     color: '#1f2937',
     margin: '0',
+  },
+  summarySection: {
+    backgroundColor: '#fefce8',
+    padding: '16px 24px',
+    marginBottom: '16px',
+    border: '1px solid #facc15',
+    borderRadius: '6px',
+  },
+  summaryLabelColumn: {
+    width: '70%',
+  },
+  summaryValueColumn: {
+    width: '30%',
+    textAlign: 'right' as const,
+  },
+  summaryLabel: {
+    fontSize: '14px',
+    color: '#713f12',
+    margin: '4px 0',
+  },
+  summaryValue: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#713f12',
+    margin: '4px 0',
+  },
+  summaryDivider: {
+    borderColor: '#facc15',
+    margin: '8px 0',
+  },
+  summaryTotalLabel: {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#713f12',
+    margin: '4px 0',
+  },
+  summaryTotalValue: {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#2563eb',
+    margin: '4px 0',
   },
   statsSection: {
     padding: '0 24px 24px 24px',
