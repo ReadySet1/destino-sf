@@ -52,7 +52,7 @@ const FulfillmentSelector: React.FC<FulfillmentSelectorProps> = ({
             <Label htmlFor="delivery" className="font-medium">
               Local Delivery
             </Label>
-            <p className="text-sm text-muted-foreground mt-1">Same-day delivery in San Francisco</p>
+            <p className="text-sm text-muted-foreground mt-1">Delivery within San Francisco</p>
             <p className="text-sm font-medium mt-2">$8.99</p>
           </div>
         </Card>
