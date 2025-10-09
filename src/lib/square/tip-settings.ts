@@ -50,6 +50,31 @@ export function createCateringOrderTipSettings(): SquareTipSettings {
 }
 
 /**
+ * Creates tip settings for delivery orders with 0% default
+ * Shows 0%, 10%, 15% as options with 0% as default (no pre-selection)
+ */
+export function createDeliveryOrderTipSettings(): SquareTipSettings {
+  return createTipSettings([0, 10, 15], {
+    // Allow custom tip field so customers can enter their own amount
+    custom_tip_field: true,
+  });
+}
+
+/**
+ * Creates settings that disable tipping entirely
+ * Used for pickup and shipping orders
+ */
+export function createNoTipSettings(): SquareTipSettings {
+  return {
+    allow_tipping: false,
+    separate_tip_screen: false,
+    custom_tip_field: false,
+    tip_percentages: [],
+    smart_tip_amounts: false,
+  };
+}
+
+/**
  * Validates tip settings configuration
  * @param tipSettings - The tip settings to validate
  * @throws Error if configuration is invalid

@@ -197,19 +197,39 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [error, setError] = useState<string | null>(null);
   
   // Get saved checkout data from localStorage
-  const getSavedCheckoutData = () => {
+  const getSavedCheckoutData = useCallback(() => {
     if (typeof window !== 'undefined') {
       const savedData = localStorage.getItem('regularCheckoutData');
       if (savedData) {
         try {
-          return JSON.parse(savedData);
+          const parsed = JSON.parse(savedData);
+
+          // SECURITY FIX: Validate that saved data belongs to current user
+          // If user is logged in, saved data must match their ID
+          if (initialUserData?.id) {
+            // If saved data has a userId and it doesn't match, clear it
+            if (parsed.userId && parsed.userId !== initialUserData.id) {
+              console.log('Clearing stale checkout data from different user session');
+              localStorage.removeItem('regularCheckoutData');
+              return null;
+            }
+            // If saved data doesn't have userId, it's old format - clear it for logged-in users
+            if (!parsed.userId) {
+              console.log('Clearing legacy checkout data without userId for logged-in user');
+              localStorage.removeItem('regularCheckoutData');
+              return null;
+            }
+          }
+
+          return parsed;
         } catch (error) {
           console.error('Error parsing saved checkout data:', error);
+          localStorage.removeItem('regularCheckoutData');
         }
       }
     }
     return null;
-  };
+  }, [initialUserData?.id]);
 
   const savedCheckoutData = getSavedCheckoutData();
   
@@ -253,13 +273,18 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     if (typeof window !== 'undefined') {
       try {
         const existingData = getSavedCheckoutData() || {};
-        const updatedData = { ...existingData, ...data };
+        const updatedData = {
+          ...existingData,
+          ...data,
+          // SECURITY FIX: Always save userId with checkout data for validation
+          userId: initialUserData?.id || null,
+        };
         localStorage.setItem('regularCheckoutData', JSON.stringify(updatedData));
       } catch (error) {
         console.error('Error saving checkout data to localStorage:', error);
       }
     }
-  }, []);
+  }, [initialUserData?.id, getSavedCheckoutData]);
 
   const clearCheckoutDataFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -273,13 +298,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
-    // --- Set defaultValues using savedData, then initialUserData ---
+    // --- SECURITY FIX: Prioritize initialUserData (server-side) over savedCheckoutData (localStorage) ---
+    // For logged-in users, always use their profile data to prevent data leakage between accounts
     defaultValues: {
       fulfillmentMethod: savedCheckoutData?.fulfillmentMethod || 'pickup',
       paymentMethod: savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
-      name: savedCheckoutData?.name || initialUserData?.name || '',
-      email: savedCheckoutData?.email || initialUserData?.email || '',
-      phone: savedCheckoutData?.phone || initialUserData?.phone || '',
+      // CRITICAL: Use initialUserData first if user is logged in
+      name: initialUserData?.name || savedCheckoutData?.name || '',
+      email: initialUserData?.email || savedCheckoutData?.email || '',
+      phone: initialUserData?.phone || savedCheckoutData?.phone || '',
       pickupDate: savedCheckoutData?.pickupDate || format(defaultPickupDate, 'yyyy-MM-dd'),
       pickupTime: savedCheckoutData?.pickupTime || defaultPickupTime,
       deliveryDate: savedCheckoutData?.deliveryDate || format(defaultDeliveryDate, 'yyyy-MM-dd'),
@@ -347,10 +374,11 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // Keep this effect, but initialize based on potentially pre-filled common data
   useEffect(() => {
     reset(currentValues => {
+      // SECURITY FIX: Prioritize initialUserData over savedCheckoutData for logged-in users
       const commonData = {
-        name: currentValues.name || savedCheckoutData?.name || initialUserData?.name || '', // Prioritize current, then saved, then initial
-        email: currentValues.email || savedCheckoutData?.email || initialUserData?.email || '',
-        phone: currentValues.phone || savedCheckoutData?.phone || initialUserData?.phone || '',
+        name: currentValues.name || initialUserData?.name || savedCheckoutData?.name || '',
+        email: currentValues.email || initialUserData?.email || savedCheckoutData?.email || '',
+        phone: currentValues.phone || initialUserData?.phone || savedCheckoutData?.phone || '',
         paymentMethod: currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
       };
 

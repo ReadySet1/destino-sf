@@ -12,7 +12,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
-import { createRegularOrderTipSettings } from '@/lib/square/tip-settings';
+import { createDeliveryOrderTipSettings, createNoTipSettings } from '@/lib/square/tip-settings';
 import { safeSquareOrderPayload } from '@/lib/square/order-validation';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
@@ -996,8 +996,15 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     cancelUrl.searchParams.set('status', 'cancelled');
     cancelUrl.searchParams.set('orderId', dbOrder.id); // Include orderId in cancel URL
 
+    // Determine tip settings based on fulfillment method
+    // Only allow tipping for local delivery orders
+    const isDeliveryOrder = fulfillment.method === 'local_delivery';
+    const tipSettings = isDeliveryOrder
+      ? createDeliveryOrderTipSettings() // 0%, 10%, 15% with 0% default
+      : createNoTipSettings(); // No tipping for pickup and shipping
+
     const squareCheckoutOptions = {
-      allow_tipping: true,
+      allow_tipping: isDeliveryOrder, // Only allow tipping for delivery
       redirect_url: redirectUrl.toString(),
       merchant_support_email: supportEmail, // Now has proper fallback
       ask_for_shipping_address: false, // Provided via fulfillment
@@ -1008,8 +1015,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         afterpay_clearpay: false,
         venmo: false,
       },
-      // Custom tip settings with 5%, 10%, and 15% instead of default 15%, 20%, 25%
-      tip_settings: createRegularOrderTipSettings(),
+      // Tip settings: Only for delivery (0%, 10%, 15% with 0% default), disabled for pickup/shipping
+      tip_settings: tipSettings,
     };
 
     // --- Build Full Square Request Body ---

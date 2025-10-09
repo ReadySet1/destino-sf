@@ -463,6 +463,7 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
 
   const internalOrderId = order.id;
   const paymentAmount = paymentData?.amount_money?.amount;
+  const tipAmount = paymentData?.tip_money?.amount || 0; // Capture tip amount from Square
 
   if (paymentAmount === undefined || paymentAmount === null) {
     console.warn(`⚠️ Payment ${data.id} received without an amount.`);
@@ -470,7 +471,7 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
   }
 
   console.log(
-    `🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}`
+    `🔄 Attempting to upsert payment record: squarePaymentId=${data.id}, internalOrderId=${internalOrderId}, amount=${paymentAmount / 100}, tip=${tipAmount / 100}`
   );
 
   try {
@@ -540,6 +541,12 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
       updateData.status = 'PROCESSING';
     }
 
+    // Update gratuity amount from Square payment tip
+    if (tipAmount > 0) {
+      updateData.gratuityAmount = tipAmount / 100; // Convert from cents to dollars
+      console.log(`💵 Captured tip amount: $${tipAmount / 100} for order ${internalOrderId}`);
+    }
+
     // Update customer information if order has placeholder data
     const hasPlaceholderData =
       currentOrder.customerName === 'Pending' ||
@@ -606,6 +613,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
   const squareOrderId = paymentData?.order_id;
   const paymentStatus = paymentData?.status?.toUpperCase();
   const eventId = payload.event_id;
+  const tipAmount = paymentData?.tip_money?.amount || 0; // Capture tip amount from Square
 
   console.log(`🔄 Processing payment.updated event: ${squarePaymentId} (Event: ${eventId})`);
   console.log(`📋 Payment data:`, {
@@ -613,6 +621,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     squareOrderId,
     paymentStatus,
     amount: paymentData?.amount_money?.amount,
+    tip: tipAmount,
     eventId,
   });
 
@@ -757,13 +766,21 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       return await prisma.$transaction(async (tx) => {
         // Update the order with detailed logging
         console.log(`💾 Updating order ${order.id} in database...`);
+        const orderUpdateData: Prisma.OrderUpdateInput = {
+          paymentStatus: updatedPaymentStatus,
+          status: updatedOrderStatus,
+          updatedAt: new Date(),
+        };
+
+        // Include tip amount if present
+        if (tipAmount > 0) {
+          orderUpdateData.gratuityAmount = tipAmount / 100; // Convert from cents to dollars
+          console.log(`💵 Capturing tip amount: $${tipAmount / 100} for order ${order.id}`);
+        }
+
         await tx.order.update({
           where: { id: order.id },
-          data: {
-            paymentStatus: updatedPaymentStatus,
-            status: updatedOrderStatus,
-            updatedAt: new Date(),
-          },
+          data: orderUpdateData,
         });
         console.log(`✅ Order ${order.id} updated in database with paymentStatus: ${updatedPaymentStatus}`);
 

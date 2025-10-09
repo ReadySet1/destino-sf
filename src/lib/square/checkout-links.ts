@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '@/utils/logger';
 import { safeSquareOrderPayload } from './order-validation';
 import { formatPhoneForSquarePaymentLink, formatEmailForSquare } from './formatting';
-import { createRegularOrderTipSettings } from './tip-settings';
+import { createDeliveryOrderTipSettings } from './tip-settings';
 
 export interface SquareCheckoutLinkParams {
   orderId: string;
@@ -150,7 +150,8 @@ export async function createCheckoutLink(params: SquareCheckoutLinkParams): Prom
           afterpay_clearpay: false,
           venmo: false,
         },
-        tip_settings: createRegularOrderTipSettings(),
+        // Catering orders are delivered, so show tip but default to 0%
+        tip_settings: createDeliveryOrderTipSettings(),
       },
       // Remove pre_populated_data entirely when fulfillments are present
       // Square's sandbox test payments work better without conflicting buyer data
