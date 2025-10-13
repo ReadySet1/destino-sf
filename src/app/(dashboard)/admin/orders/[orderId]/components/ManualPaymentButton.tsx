@@ -22,13 +22,17 @@ interface ManualPaymentButtonProps {
   squareOrderId: string | null;
   paymentStatus: string;
   status: string;
+  paymentMethod: string | null;
+  fulfillmentType?: string | null;
 }
 
-export function ManualPaymentButton({ 
-  orderId, 
-  squareOrderId, 
-  paymentStatus, 
-  status 
+export function ManualPaymentButton({
+  orderId,
+  squareOrderId,
+  paymentStatus,
+  status,
+  paymentMethod,
+  fulfillmentType
 }: ManualPaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,6 +40,26 @@ export function ManualPaymentButton({
 
   // Only show the button if payment is pending/failed
   const shouldShowButton = ['PENDING', 'FAILED'].includes(paymentStatus.toUpperCase());
+
+  // Determine if this is a cash payment
+  const isCashPayment = paymentMethod?.toUpperCase() === 'CASH';
+
+  // Get contextual message based on payment method and fulfillment type
+  const getContextualMessage = () => {
+    if (isCashPayment) {
+      const fulfillment = fulfillmentType?.toLowerCase();
+
+      if (fulfillment === 'pickup') {
+        return 'Mark this order as paid once the customer picks up their order and pays in cash.';
+      } else if (fulfillment === 'local_delivery') {
+        return 'Mark this order as paid once the driver collects cash payment upon delivery.';
+      } else {
+        return 'Mark this order as paid once you have received the cash payment from the customer.';
+      }
+    }
+
+    return 'If you have confirmed that the payment was completed outside the system, you can manually mark this order as paid.';
+  };
 
   const handlePaymentSync = async () => {
 
@@ -86,16 +110,20 @@ export function ManualPaymentButton({
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    <div className={`flex flex-col gap-3 p-4 rounded-lg ${
+      isCashPayment
+        ? 'bg-blue-50 border border-blue-200'
+        : 'bg-yellow-50 border border-yellow-200'
+    }`}>
       <div className="flex items-center gap-2">
-        <AlertCircle className="h-5 w-5 text-yellow-600" />
-        <span className="font-medium text-yellow-800 text-sm">
-          Manual Payment Override
+        <AlertCircle className={`h-5 w-5 ${isCashPayment ? 'text-blue-600' : 'text-yellow-600'}`} />
+        <span className={`font-medium text-sm ${isCashPayment ? 'text-blue-800' : 'text-yellow-800'}`}>
+          {isCashPayment ? 'Cash Payment - Action Required' : 'Manual Payment Override'}
         </span>
       </div>
-      
-      <p className="text-sm text-yellow-700">
-        If you have confirmed that the payment was completed outside the system, you can manually mark this order as paid.
+
+      <p className={`text-sm ${isCashPayment ? 'text-blue-700' : 'text-yellow-700'}`}>
+        {getContextualMessage()}
       </p>
 
       <div className="flex gap-2 flex-wrap">
@@ -157,9 +185,11 @@ export function ManualPaymentButton({
         </Dialog>
       </div>
 
-      <div className="text-xs text-yellow-600">
-        <strong>Square Order ID:</strong> {squareOrderId}
-      </div>
+      {squareOrderId && (
+        <div className={`text-xs ${isCashPayment ? 'text-blue-600' : 'text-yellow-600'}`}>
+          <strong>Square Order ID:</strong> {squareOrderId}
+        </div>
+      )}
     </div>
   );
 }
