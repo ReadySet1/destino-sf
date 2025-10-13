@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/db';
 import { notFound, redirect } from 'next/navigation';
-import { formatDistance, format } from 'date-fns';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { formatCurrency, formatDateTime } from '@/utils/formatting';
+import { formatCurrency } from '@/utils/formatting';
 import { logger } from '@/utils/logger';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import ErrorDisplay from '@/components/ui/ErrorDisplay';
@@ -11,6 +11,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { FormattedNotes } from '@/components/Order/FormattedNotes';
 import { ShippingLabelButton } from '../components/ShippingLabelButton';
 import { ManualPaymentButton } from './components/ManualPaymentButton';
+import { LocalTimestamp, LocalTimestampWithRelative } from '@/components/ui/local-timestamp';
 
 // Define types for serialized data
 interface SerializedOrderItem {
@@ -539,16 +540,16 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 <strong>Total Items:</strong> {totalQuantity}
               </p>
               <p>
-                <strong>Pickup/Delivery Time:</strong> {formatDateTime(serializedOrder?.pickupTime)}
+                <strong>Pickup/Delivery Time:</strong>{' '}
+                <LocalTimestamp date={serializedOrder?.pickupTime} />
               </p>
               <p>
-                <strong>Order Placed:</strong> {formatDateTime(serializedOrder?.createdAt)}
-                {serializedOrder?.createdAt
-                  ? ` (${formatDistance(new Date(serializedOrder.createdAt), new Date(), { addSuffix: true })})`
-                  : ''}
+                <strong>Order Placed:</strong>{' '}
+                <LocalTimestampWithRelative date={serializedOrder?.createdAt} />
               </p>
               <p>
-                <strong>Last Updated:</strong> {formatDateTime(serializedOrder?.updatedAt)}
+                <strong>Last Updated:</strong>{' '}
+                <LocalTimestamp date={serializedOrder?.updatedAt} />
               </p>
 
               {serializedOrder?.trackingNumber && (
@@ -573,6 +574,8 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 squareOrderId={serializedOrder.squareOrderId}
                 paymentStatus={serializedOrder.paymentStatus}
                 status={serializedOrder.status}
+                paymentMethod={serializedOrder.paymentMethod}
+                fulfillmentType={serializedOrder.fulfillmentType}
               />
             </div>
           </div>
@@ -876,7 +879,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         {formatCurrency(payment.amount)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {formatDateTime(payment.createdAt)}
+                        <LocalTimestamp date={payment.createdAt} />
                       </td>
                     </tr>
                   ))}

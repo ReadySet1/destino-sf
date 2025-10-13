@@ -11,21 +11,12 @@ import { getBoxedLunchImage } from '@/lib/utils';
 import { OrderItemImage } from '@/components/ui/order-item-image';
 import { RetryPaymentButton } from '@/components/Orders/RetryPaymentButton';
 import { OrderPricingBreakdown } from '@/components/ui/order-pricing-breakdown';
+import { LocalTimestamp } from '@/components/ui/local-timestamp';
 
 // Types
 interface PageProps {
   params: Promise<{ orderId: string }>;
 }
-
-// Helper to format dates consistently
-const formatDateTime = (date: Date | string | null | undefined): string => {
-  if (!date) return 'N/A';
-  try {
-    return format(new Date(date), 'PPpp'); // Format: Apr 29, 2025, 1:30 PM
-  } catch (error) {
-    return 'Invalid date';
-  }
-};
 
 // Helper to format currency
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -567,7 +558,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                         <Calendar className="h-4 w-4 text-gray-600" />
                         <div>
                           <p className="text-sm text-gray-600">Pickup Time</p>
-                          <p className="text-gray-900">{formatDateTime(orderData.pickupTime)}</p>
+                          <p className="text-gray-900">
+                            <LocalTimestamp date={orderData.pickupTime} customFormat="PPpp" />
+                          </p>
                         </div>
                       </div>
                     )}
@@ -621,7 +614,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       <Calendar className="h-4 w-4 text-gray-600" />
                       <div>
                         <p className="text-sm text-gray-600">Event Date</p>
-                        <p className="text-gray-900">{formatDateTime(orderData.eventDate)}</p>
+                        <p className="text-gray-900">
+                          <LocalTimestamp date={orderData.eventDate} customFormat="PPpp" />
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -656,7 +651,8 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 )}
 
                 <div className="pt-4 border-t border-gray-200 text-sm text-gray-600">
-                  <strong>Order Placed:</strong> {formatDateTime(orderData.createdAt)}
+                  <strong>Order Placed:</strong>{' '}
+                  <LocalTimestamp date={orderData.createdAt} customFormat="PPpp" />
                 </div>
               </CardContent>
             </Card>

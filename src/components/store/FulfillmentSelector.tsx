@@ -54,7 +54,7 @@ export function FulfillmentSelector({
           <HomeIcon className="h-5 w-5 text-destino-orange" />
           <Label htmlFor="local_delivery" className="flex-1 cursor-pointer">
             <div className="font-medium text-destino-charcoal">Local Delivery</div>
-            <div className="text-sm text-gray-600">Same-day delivery to your door</div>
+            <div className="text-sm text-gray-600">Local delivery to your door</div>
           </Label>
         </div>
 
