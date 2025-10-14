@@ -11,6 +11,8 @@ import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Clock, Thermometer, Leaf, Users, Eye, Star, Heart, Zap, Award, CheckCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import { TrustSignalCard, TrustSignalCardSkeleton } from '@/components/products/TrustSignalCard';
+import { getTrustSignalsArray, type TrustSignalsConfig } from '@/types/trust-signals';
 import {
   getEffectiveAvailabilityState,
   shouldRenderProduct,
@@ -92,6 +94,96 @@ const getFAQForProduct = (product: Product) => {
     },
   ];
 };
+
+// Trust Signals Section Component
+interface TrustSignalsSectionProps {
+  currentProduct: Product;
+}
+
+function TrustSignalsSection({ currentProduct }: TrustSignalsSectionProps) {
+  const [trustSignals, setTrustSignals] = useState<TrustSignalsConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTrustSignals() {
+      try {
+        const productType = (currentProduct as any).productType;
+        if (!productType) {
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/product-type-badges/${productType}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTrustSignals(data);
+        }
+      } catch (error) {
+        console.error('Error fetching trust signals:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTrustSignals();
+  }, [currentProduct]);
+
+  if (loading) {
+    return (
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <TrustSignalCardSkeleton />
+          <TrustSignalCardSkeleton />
+          <TrustSignalCardSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (!trustSignals) {
+    // Fallback to default trust signals if API fails
+    return (
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+              <Leaf className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Fresh Ingredients</h3>
+            <p className="text-gray-600 text-sm">Made with premium, locally-sourced ingredients</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+              <Thermometer className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Flash Frozen</h3>
+            <p className="text-gray-600 text-sm">Locks in freshness and flavor</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+              <Clock className="w-6 h-6 text-orange-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Quick & Easy</h3>
+            <p className="text-gray-600 text-sm">Ready in just 15-20 minutes</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Convert trust signals config to array of trust signal objects
+  const signals = getTrustSignalsArray(trustSignals);
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        {signals.map((signal, index) => (
+          <TrustSignalCard key={index} signal={signal} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Related Products Component
 interface RelatedProductsProps {
@@ -190,34 +282,8 @@ function RelatedProducts({ currentProduct }: RelatedProductsProps) {
         ))}
       </div>
 
-      {/* Trust Signals */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
-              <Leaf className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Fresh Ingredients</h3>
-            <p className="text-gray-600 text-sm">Made with premium, locally-sourced ingredients</p>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-              <Thermometer className="w-6 h-6 text-blue-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Flash Frozen</h3>
-            <p className="text-gray-600 text-sm">Locks in freshness and flavor</p>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
-              <Clock className="w-6 h-6 text-orange-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Quick & Easy</h3>
-            <p className="text-gray-600 text-sm">Ready in just 15-20 minutes</p>
-          </div>
-        </div>
-      </div>
+      {/* Trust Signals - Dynamic from Database */}
+      <TrustSignalsSection currentProduct={currentProduct} />
     </div>
   );
 }
@@ -232,6 +298,22 @@ interface ProductTypeBadge {
   icon3?: string;
   bgColor: string;
   textColor: string;
+  // Trust signals
+  trustSignal1Title?: string;
+  trustSignal1Desc?: string;
+  trustSignal1Icon?: string;
+  trustSignal1IconColor?: string;
+  trustSignal1BgColor?: string;
+  trustSignal2Title?: string;
+  trustSignal2Desc?: string;
+  trustSignal2Icon?: string;
+  trustSignal2IconColor?: string;
+  trustSignal2BgColor?: string;
+  trustSignal3Title?: string;
+  trustSignal3Desc?: string;
+  trustSignal3Icon?: string;
+  trustSignal3IconColor?: string;
+  trustSignal3BgColor?: string;
 }
 
 const useProductTypeBadges = (productType: string | null | undefined) => {
