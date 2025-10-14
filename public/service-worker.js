@@ -1,8 +1,8 @@
 // Enhanced Service Worker for Destino SF
-// Version 1.2 - Production Ready
+// Version 1.3 - Production Ready
 
 // Cache Names
-const CACHE_VERSION = 'v1.2';
+const CACHE_VERSION = 'v1.3';
 const STATIC_CACHE = `destino-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `destino-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `destino-api-${CACHE_VERSION}`;
@@ -110,8 +110,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Skip admin routes and sensitive APIs
+  // Skip admin routes, account routes, and sensitive APIs
   if (url.pathname.startsWith('/admin') || 
+      url.pathname.startsWith('/account') ||
       url.pathname.startsWith('/api/auth') ||
       url.pathname.startsWith('/api/checkout') ||
       url.pathname.startsWith('/api/orders')) {
