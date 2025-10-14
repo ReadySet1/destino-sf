@@ -16,7 +16,7 @@ export async function GET(
       );
     }
 
-    // Use raw query to ensure we get all fields
+    // Use raw query to ensure we get all fields including trust signals
     const result = await withRetry(
       () => prisma.$queryRaw<Array<{
         id: number;
@@ -29,6 +29,21 @@ export async function GET(
         icon3: string | null;
         bg_color: string;
         text_color: string;
+        trust_signal1_title: string;
+        trust_signal1_desc: string;
+        trust_signal1_icon: string;
+        trust_signal1_icon_color: string;
+        trust_signal1_bg_color: string;
+        trust_signal2_title: string;
+        trust_signal2_desc: string;
+        trust_signal2_icon: string;
+        trust_signal2_icon_color: string;
+        trust_signal2_bg_color: string;
+        trust_signal3_title: string;
+        trust_signal3_desc: string;
+        trust_signal3_icon: string;
+        trust_signal3_icon_color: string;
+        trust_signal3_bg_color: string;
         updated_at: Date;
       }>>`
         SELECT * FROM product_type_badges WHERE product_type = ${type}
@@ -46,7 +61,7 @@ export async function GET(
 
     const badges = result[0];
 
-    // Return with camelCase field names
+    // Return with camelCase field names including trust signals
     return NextResponse.json({
       id: badges.id,
       productType: badges.product_type,
@@ -58,6 +73,22 @@ export async function GET(
       icon3: badges.icon3,
       bgColor: badges.bg_color,
       textColor: badges.text_color,
+      // Trust signals
+      trustSignal1Title: badges.trust_signal1_title,
+      trustSignal1Desc: badges.trust_signal1_desc,
+      trustSignal1Icon: badges.trust_signal1_icon,
+      trustSignal1IconColor: badges.trust_signal1_icon_color,
+      trustSignal1BgColor: badges.trust_signal1_bg_color,
+      trustSignal2Title: badges.trust_signal2_title,
+      trustSignal2Desc: badges.trust_signal2_desc,
+      trustSignal2Icon: badges.trust_signal2_icon,
+      trustSignal2IconColor: badges.trust_signal2_icon_color,
+      trustSignal2BgColor: badges.trust_signal2_bg_color,
+      trustSignal3Title: badges.trust_signal3_title,
+      trustSignal3Desc: badges.trust_signal3_desc,
+      trustSignal3Icon: badges.trust_signal3_icon,
+      trustSignal3IconColor: badges.trust_signal3_icon_color,
+      trustSignal3BgColor: badges.trust_signal3_bg_color,
       updatedAt: badges.updated_at,
     });
   } catch (error) {

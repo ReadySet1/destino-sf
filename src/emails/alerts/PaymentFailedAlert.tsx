@@ -23,6 +23,9 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
   error,
   timestamp,
 }) => {
+  // Clean app URL to prevent double slashes
+  const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
   const formattedTotal = Number(order.total).toFixed(2);
   const formattedTimestamp = timestamp.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -187,7 +190,7 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
 
           <Section style={styles.quickActions}>
             <Link
-              href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+              href={`${cleanAppUrl}/admin/orders/${order.id}`}
               style={styles.primaryButton}
             >
               View Order in Admin

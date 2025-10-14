@@ -11,6 +11,9 @@ interface Recommendation {
 
 export async function GET() {
   try {
+    // Clean app URL to prevent double slashes
+    const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
     const diagnostics = {
       timestamp: new Date().toISOString(),
       environment: {
@@ -22,8 +25,8 @@ export async function GET() {
       },
       urls: {
         current_site_url: env.NEXT_PUBLIC_APP_URL,
-        callback_url: `${env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-        magic_link_redirect: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?redirect_to=/admin`,
+        callback_url: `${cleanAppUrl}/auth/callback`,
+        magic_link_redirect: `${cleanAppUrl}/auth/callback?redirect_to=/admin`,
       },
       supabase_config_check: {},
       recommendations: [] as Recommendation[],

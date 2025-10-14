@@ -170,11 +170,14 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       });
       logger.info('Database update successful');
 
+      // Clean app URL to prevent double slashes
+      const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
       // Revalidate both pages
       await Promise.all([
-        fetch(`${env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products`),
+        fetch(`${cleanAppUrl}/api/revalidate?path=/admin/products`),
         fetch(
-          `${env.NEXT_PUBLIC_APP_URL}/api/revalidate?path=/admin/products/${productId}`
+          `${cleanAppUrl}/api/revalidate?path=/admin/products/${productId}`
         ),
       ]);
 
