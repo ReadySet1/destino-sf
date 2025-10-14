@@ -61,6 +61,9 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
   timestamp,
   totalOrdersToday,
 }) => {
+  // Clean app URL to prevent double slashes
+  const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
   const formattedTimestamp = timestamp.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
     weekday: 'short',
@@ -420,7 +423,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
 
           <Section style={styles.actionSection}>
             <Link
-              href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+              href={`${cleanAppUrl}/admin/orders/${order.id}`}
               style={styles.actionButton}
             >
               View Order in Admin
