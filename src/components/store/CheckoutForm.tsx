@@ -675,13 +675,24 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     return () => subscription.unsubscribe();
   }, [watch, contactSaved, saveContactInfoImmediately]);
 
-  // Function to check for duplicate orders
-  const checkForDuplicates = async (email: string) => {
-    console.log('🔍 [DUPLICATE-CHECK] Starting duplicate check for:', email);
+  // Function to check for duplicate orders with timeout and retry logic
+  const checkForDuplicates = async (email: string, isRetry: boolean = false): Promise<boolean> => {
+    console.log('🔍 [DUPLICATE-CHECK] Starting duplicate check for:', email, isRetry ? '(retry)' : '');
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
+
+    // Set up 10-second timeout protection
+    const timeoutId = setTimeout(() => {
+      console.warn('⏱️ [DUPLICATE-CHECK] Timeout after 10 seconds');
+      setPendingOrderCheck({
+        isChecking: false,
+        hasPendingOrder: false,
+      });
+      toast.error('Duplicate check timed out. Please try again.');
+    }, 10000);
 
     try {
       const duplicateCheck = await checkForDuplicateOrders(items, email);
+      clearTimeout(timeoutId); // Clear timeout on success
       console.log('📊 [DUPLICATE-CHECK] Result:', duplicateCheck);
 
       if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
@@ -702,18 +713,42 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       });
       return false; // No duplicate
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('❌ [DUPLICATE-CHECK] Error checking for duplicates:', error);
-      // DES-52: Always clear the checking state, even on error
+
+      // If there's a session error and this isn't a retry, attempt session refresh
+      if (sessionError && !isRetry) {
+        console.log('🔄 [DUPLICATE-CHECK] Attempting session refresh...');
+        try {
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError) {
+            console.log('✅ [DUPLICATE-CHECK] Session refreshed successfully, retrying check...');
+            // Clear session error state
+            setSessionError(null);
+            // Retry the duplicate check once with fresh session
+            return checkForDuplicates(email, true);
+          } else {
+            console.error('❌ [DUPLICATE-CHECK] Session refresh failed:', refreshError);
+          }
+        } catch (refreshErr) {
+          console.error('❌ [DUPLICATE-CHECK] Session refresh exception:', refreshErr);
+        }
+      }
+
+      // Always clear the checking state, even on error
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
       });
-      // If there's a session error, don't continue with checkout
+
+      // If there's still a session error after refresh attempt, block checkout
       if (sessionError) {
         toast.error('Please log in again to continue with checkout');
         return true; // Block checkout
       }
-      return false; // Continue on other errors
+
+      // For other errors, allow checkout to proceed
+      return false;
     }
   };
 
