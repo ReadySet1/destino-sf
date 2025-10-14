@@ -1141,6 +1141,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             onContinueExisting={handleContinueExisting}
             onCreateNew={handleCreateNew}
             onDismiss={handleDismissAlert}
+            currentUserEmail={watch('email') || initialUserData?.email}
           />
         </div>
       )}
