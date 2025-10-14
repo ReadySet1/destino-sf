@@ -25,6 +25,9 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
   timestamp,
   isCustomer,
 }) => {
+  // Clean app URL to prevent double slashes
+  const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
   const formattedTotal = Number(order.total).toFixed(2);
   const formattedTimestamp = timestamp.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -190,7 +193,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           {!isCustomer && (
             <Section style={styles.adminActionSection}>
               <Link
-                href={`${env.NEXT_PUBLIC_APP_URL}/admin/orders/${order.id}`}
+                href={`${cleanAppUrl}/admin/orders/${order.id}`}
                 style={styles.adminButton}
               >
                 View Order in Admin

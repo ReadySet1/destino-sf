@@ -82,9 +82,12 @@ export async function GET() {
 }
 
 async function validateSquareRoutes(validations: RouteValidation[], criticalIssues: string[]) {
+  // Clean app URL to prevent double slashes
+  const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
   // Validate Square sync route
   try {
-    const response = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/square/sync`, {
+    const response = await fetch(`${cleanAppUrl}/api/square/sync`, {
       method: 'HEAD',
     });
 
@@ -141,9 +144,12 @@ async function validateSquareRoutes(validations: RouteValidation[], criticalIssu
 }
 
 async function validateProductRoutes(validations: RouteValidation[], criticalIssues: string[]) {
+  // Clean app URL to prevent double slashes
+  const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
   // Validate products API
   try {
-    const response = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/products?limit=1`, {
+    const response = await fetch(`${cleanAppUrl}/api/products?limit=1`, {
       method: 'GET',
     });
 

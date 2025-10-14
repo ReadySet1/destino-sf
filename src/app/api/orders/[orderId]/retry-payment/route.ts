@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
     }
 
     // Prepare order items based on order type
-    const orderItems = isRegularOrder 
+    const orderItems = isRegularOrder
       ? order!.items.map(item => ({
           quantity: item.quantity,
           price: item.price,
@@ -115,14 +115,17 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
           variant: null,
         }));
 
+    // Clean app URL to prevent double slashes
+    const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
     // Create new Square checkout session
-    const redirectUrl = isRegularOrder 
-      ? `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${targetOrder!.id}`
-      : `${env.NEXT_PUBLIC_APP_URL}/catering/confirmation?status=success&orderId=${targetOrder!.id}`;
+    const redirectUrl = isRegularOrder
+      ? `${cleanAppUrl}/checkout/success?orderId=${targetOrder!.id}`
+      : `${cleanAppUrl}/catering/confirmation?status=success&orderId=${targetOrder!.id}`;
 
     const cancelUrl = isRegularOrder
-      ? `${env.NEXT_PUBLIC_APP_URL}/orders/${targetOrder!.id}?payment=cancelled`
-      : `${env.NEXT_PUBLIC_APP_URL}/catering/confirmation?status=cancelled&orderId=${targetOrder!.id}`;
+      ? `${cleanAppUrl}/orders/${targetOrder!.id}?payment=cancelled`
+      : `${cleanAppUrl}/catering/confirmation?status=cancelled&orderId=${targetOrder!.id}`;
 
     // Format items for the existing working checkout function
     const lineItems = orderItems.map(item => ({
