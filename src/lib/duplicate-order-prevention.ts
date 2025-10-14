@@ -27,17 +27,9 @@ export async function checkForDuplicateOrder(
   email?: string
 ): Promise<PendingOrderCheck> {
   try {
-    // DES-52: Log function entry
-    console.log('🚀 [DUPLICATE-CHECK-START] Starting duplicate order check:', {
-      userId,
-      email,
+    console.log('[Duplicate Check] Checking for duplicate orders:', {
+      identifier: userId || email,
       cartItemsCount: cartItems.length,
-      cartItems: cartItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        variantId: item.variantId,
-      })),
     });
 
     // Build the where clause based on available identifiers
@@ -59,13 +51,6 @@ export async function checkForDuplicateOrder(
       return { hasPendingOrder: false };
     }
 
-    // DES-52: Add comprehensive logging for debugging
-    console.log('🔍 [DUPLICATE-CHECK-QUERY] Query params:', {
-      userId,
-      email,
-      whereClause: JSON.stringify(whereClause, null, 2),
-    });
-
     // Find pending orders
     const pendingOrders = await prisma.order.findMany({
       where: whereClause,
@@ -83,28 +68,22 @@ export async function checkForDuplicateOrder(
       take: 5, // Limit to recent orders
     });
 
-    console.log('📊 [DUPLICATE-CHECK-QUERY] Found pending orders:', {
+    console.log('[Duplicate Check] Found pending orders:', {
       count: pendingOrders.length,
       orderIds: pendingOrders.map(o => o.id),
-      orders: pendingOrders.map(o => ({
-        id: o.id,
-        email: o.email,
-        status: o.status,
-        paymentStatus: o.paymentStatus,
-        total: o.total,
-        itemCount: o.items.length,
-        createdAt: o.createdAt,
-      })),
     });
 
     if (pendingOrders.length === 0) {
-      console.log('❌ [DUPLICATE-CHECK-QUERY] No pending orders found');
       return { hasPendingOrder: false };
     }
 
     // Check if any pending order has similar items
     for (const order of pendingOrders) {
       if (hasSimilarItems(order.items, cartItems)) {
+        console.log('[Duplicate Check] Duplicate order detected:', {
+          orderId: order.id,
+          total: order.total,
+        });
         return {
           hasPendingOrder: true,
           existingOrderId: order.id,
@@ -122,7 +101,7 @@ export async function checkForDuplicateOrder(
 
     return { hasPendingOrder: false };
   } catch (error) {
-    console.error('Error checking for duplicate orders:', error);
+    console.error('[Duplicate Check] Error checking for duplicate orders:', error);
     return { hasPendingOrder: false };
   }
 }
@@ -134,13 +113,7 @@ export async function checkForDuplicateOrder(
  * @returns true if items are similar (same products and quantities)
  */
 function hasSimilarItems(orderItems: any[], cartItems: CartItem[]): boolean {
-  console.log('🔄 [DUPLICATE-CHECK-COMPARE] Comparing items:', {
-    orderItemsCount: orderItems.length,
-    cartItemsCount: cartItems.length,
-  });
-
   if (orderItems.length !== cartItems.length) {
-    console.log('❌ [DUPLICATE-CHECK-COMPARE] Item count mismatch');
     return false;
   }
 
@@ -152,55 +125,26 @@ function hasSimilarItems(orderItems: any[], cartItems: CartItem[]): boolean {
   orderItems.forEach(item => {
     const key = `${item.product.id}:${item.variant?.id || 'default'}`;
     orderItemsMap.set(key, item.quantity);
-    console.log('📦 [DUPLICATE-CHECK-COMPARE] Order item:', {
-      productId: item.product.id,
-      productName: item.product.name,
-      variantId: item.variant?.id || 'default',
-      quantity: item.quantity,
-      key,
-    });
   });
 
   // Build cart items map
   cartItems.forEach(item => {
     const key = `${item.id}:${item.variantId || 'default'}`;
     cartItemsMap.set(key, item.quantity);
-    console.log('🛒 [DUPLICATE-CHECK-COMPARE] Cart item:', {
-      id: item.id,
-      name: item.name,
-      variantId: item.variantId || 'default',
-      quantity: item.quantity,
-      key,
-    });
   });
 
   // Compare maps
   if (orderItemsMap.size !== cartItemsMap.size) {
-    console.log('❌ [DUPLICATE-CHECK-COMPARE] Map size mismatch:', {
-      orderMapSize: orderItemsMap.size,
-      cartMapSize: cartItemsMap.size,
-    });
     return false;
   }
-
-  console.log('🔍 [DUPLICATE-CHECK-COMPARE] Comparing keys:', {
-    orderKeys: Array.from(orderItemsMap.keys()),
-    cartKeys: Array.from(cartItemsMap.keys()),
-  });
 
   for (const [key, quantity] of orderItemsMap.entries()) {
     const cartQuantity = cartItemsMap.get(key);
     if (cartQuantity !== quantity) {
-      console.log('❌ [DUPLICATE-CHECK-COMPARE] Quantity mismatch for key:', {
-        key,
-        orderQuantity: quantity,
-        cartQuantity,
-      });
       return false;
     }
   }
 
-  console.log('✅ [DUPLICATE-CHECK-COMPARE] Items match!');
   return true;
 }
 
