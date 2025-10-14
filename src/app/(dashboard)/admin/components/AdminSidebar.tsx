@@ -21,6 +21,7 @@ import {
   Plus,
   Image as ImageIcon,
   ArrowUpDown,
+  Badge,
 } from 'lucide-react';
 import { signOutAction } from '@/app/actions/auth';
 import {
@@ -113,6 +114,12 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
           label: 'Categories',
           icon: <Tag className="h-4 w-4" />,
           description: 'Organize products'
+        },
+        {
+          href: '/admin/products/badges',
+          label: 'Product Type Badges',
+          icon: <Badge className="h-4 w-4" />,
+          description: 'Customize badges & trust signals'
         },
         {
           href: '/admin/square-sync',

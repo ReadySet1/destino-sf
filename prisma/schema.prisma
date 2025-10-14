@@ -121,6 +121,26 @@ model ProductTypeBadges {
   icon3       String?  @map("icon3") @db.VarChar(50)
   bgColor     String   @default("#c2410c") @map("bg_color") @db.VarChar(20)
   textColor   String   @default("#ffffff") @map("text_color") @db.VarChar(20)
+
+  // Trust Signals (shown below "You Might Also Like" section)
+  trustSignal1Title    String   @default("Fresh Ingredients") @map("trust_signal1_title") @db.VarChar(100)
+  trustSignal1Desc     String   @default("Made with premium, locally-sourced ingredients") @map("trust_signal1_desc")
+  trustSignal1Icon     String   @default("leaf") @map("trust_signal1_icon") @db.VarChar(50)
+  trustSignal1IconColor String  @default("green") @map("trust_signal1_icon_color") @db.VarChar(20)
+  trustSignal1BgColor  String   @default("green-100") @map("trust_signal1_bg_color") @db.VarChar(20)
+
+  trustSignal2Title    String   @default("Flash Frozen") @map("trust_signal2_title") @db.VarChar(100)
+  trustSignal2Desc     String   @default("Locks in freshness and flavor") @map("trust_signal2_desc")
+  trustSignal2Icon     String   @default("thermometer") @map("trust_signal2_icon") @db.VarChar(50)
+  trustSignal2IconColor String  @default("blue") @map("trust_signal2_icon_color") @db.VarChar(20)
+  trustSignal2BgColor  String   @default("blue-100") @map("trust_signal2_bg_color") @db.VarChar(20)
+
+  trustSignal3Title    String   @default("Quick & Easy") @map("trust_signal3_title") @db.VarChar(100)
+  trustSignal3Desc     String   @default("Ready in just 15-20 minutes") @map("trust_signal3_desc")
+  trustSignal3Icon     String   @default("clock") @map("trust_signal3_icon") @db.VarChar(50)
+  trustSignal3IconColor String  @default("orange") @map("trust_signal3_icon_color") @db.VarChar(20)
+  trustSignal3BgColor  String   @default("orange-100") @map("trust_signal3_bg_color") @db.VarChar(20)
+
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("product_type_badges")

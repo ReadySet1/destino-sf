@@ -14,6 +14,25 @@ const updateBadgesSchema = z.object({
   icon3: z.string().max(50, 'Icon 3 must be 50 characters or less').nullable().optional(),
   bg_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Background color must be a valid hex color'),
   text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Text color must be a valid hex color'),
+
+  // Trust signals (optional fields with defaults)
+  trust_signal1_title: z.string().max(100).optional(),
+  trust_signal1_desc: z.string().optional(),
+  trust_signal1_icon: z.string().max(50).optional(),
+  trust_signal1_icon_color: z.string().max(20).optional(),
+  trust_signal1_bg_color: z.string().max(20).optional(),
+
+  trust_signal2_title: z.string().max(100).optional(),
+  trust_signal2_desc: z.string().optional(),
+  trust_signal2_icon: z.string().max(50).optional(),
+  trust_signal2_icon_color: z.string().max(20).optional(),
+  trust_signal2_bg_color: z.string().max(20).optional(),
+
+  trust_signal3_title: z.string().max(100).optional(),
+  trust_signal3_desc: z.string().optional(),
+  trust_signal3_icon: z.string().max(50).optional(),
+  trust_signal3_icon_color: z.string().max(20).optional(),
+  trust_signal3_bg_color: z.string().max(20).optional(),
 });
 
 // Check if user is admin
@@ -83,9 +102,35 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { product_type, badge1, badge2, badge3, icon1, icon2, icon3, bg_color, text_color } = validationResult.data;
+    const {
+      product_type,
+      badge1,
+      badge2,
+      badge3,
+      icon1,
+      icon2,
+      icon3,
+      bg_color,
+      text_color,
+      trust_signal1_title,
+      trust_signal1_desc,
+      trust_signal1_icon,
+      trust_signal1_icon_color,
+      trust_signal1_bg_color,
+      trust_signal2_title,
+      trust_signal2_desc,
+      trust_signal2_icon,
+      trust_signal2_icon_color,
+      trust_signal2_bg_color,
+      trust_signal3_title,
+      trust_signal3_desc,
+      trust_signal3_icon,
+      trust_signal3_icon_color,
+      trust_signal3_bg_color,
+    } = validationResult.data;
 
     // Update the badges for the product type using raw query
+    // Only update trust signal fields if they are provided
     await withRetry(
       () => prisma.$executeRaw`
         UPDATE product_type_badges
@@ -97,6 +142,21 @@ export async function PUT(request: NextRequest) {
             icon3 = ${icon3},
             bg_color = ${bg_color},
             text_color = ${text_color},
+            trust_signal1_title = COALESCE(${trust_signal1_title}, trust_signal1_title),
+            trust_signal1_desc = COALESCE(${trust_signal1_desc}, trust_signal1_desc),
+            trust_signal1_icon = COALESCE(${trust_signal1_icon}, trust_signal1_icon),
+            trust_signal1_icon_color = COALESCE(${trust_signal1_icon_color}, trust_signal1_icon_color),
+            trust_signal1_bg_color = COALESCE(${trust_signal1_bg_color}, trust_signal1_bg_color),
+            trust_signal2_title = COALESCE(${trust_signal2_title}, trust_signal2_title),
+            trust_signal2_desc = COALESCE(${trust_signal2_desc}, trust_signal2_desc),
+            trust_signal2_icon = COALESCE(${trust_signal2_icon}, trust_signal2_icon),
+            trust_signal2_icon_color = COALESCE(${trust_signal2_icon_color}, trust_signal2_icon_color),
+            trust_signal2_bg_color = COALESCE(${trust_signal2_bg_color}, trust_signal2_bg_color),
+            trust_signal3_title = COALESCE(${trust_signal3_title}, trust_signal3_title),
+            trust_signal3_desc = COALESCE(${trust_signal3_desc}, trust_signal3_desc),
+            trust_signal3_icon = COALESCE(${trust_signal3_icon}, trust_signal3_icon),
+            trust_signal3_icon_color = COALESCE(${trust_signal3_icon_color}, trust_signal3_icon_color),
+            trust_signal3_bg_color = COALESCE(${trust_signal3_bg_color}, trust_signal3_bg_color),
             updated_at = NOW()
         WHERE product_type = ${product_type}
       `,
@@ -117,6 +177,21 @@ export async function PUT(request: NextRequest) {
         icon3: string | null;
         bg_color: string;
         text_color: string;
+        trust_signal1_title: string;
+        trust_signal1_desc: string;
+        trust_signal1_icon: string;
+        trust_signal1_icon_color: string;
+        trust_signal1_bg_color: string;
+        trust_signal2_title: string;
+        trust_signal2_desc: string;
+        trust_signal2_icon: string;
+        trust_signal2_icon_color: string;
+        trust_signal2_bg_color: string;
+        trust_signal3_title: string;
+        trust_signal3_desc: string;
+        trust_signal3_icon: string;
+        trust_signal3_icon_color: string;
+        trust_signal3_bg_color: string;
         updated_at: Date;
       }>>`
         SELECT * FROM product_type_badges WHERE product_type = ${product_type}
