@@ -850,8 +850,12 @@ async function processSquareItem(
   // Falls back to description if description_html is not available
   const rawDescription = itemData.description_html || itemData.description;
 
-  // DEBUG: Log description fields
-  if (itemName.toLowerCase().includes('acorn') || itemName.toLowerCase().includes('alfajor')) {
+  // DEBUG: Log description fields for specific products
+  const isDebugProduct = itemName.toLowerCase().includes('acorn') ||
+                        itemName.toLowerCase().includes('alfajor') ||
+                        itemName.toLowerCase().includes('empanada');
+
+  if (isDebugProduct) {
     logger.info(`🔍 DEBUG Syncing: ${itemName}`, {
       hasDescriptionHtml: !!itemData.description_html,
       hasDescription: !!itemData.description,
@@ -866,7 +870,7 @@ async function processSquareItem(
   const sanitizedDescription = sanitizeProductDescription(rawDescription);
 
   // DEBUG: Log sanitization result
-  if (itemName.toLowerCase().includes('acorn') || itemName.toLowerCase().includes('alfajor')) {
+  if (isDebugProduct) {
     logger.info(`🔍 DEBUG After sanitization: ${itemName}`, {
       inputLength: rawDescription?.length || 0,
       outputLength: sanitizedDescription.length,
@@ -876,7 +880,9 @@ async function processSquareItem(
     });
   }
 
-  const updateDescription = sanitizedDescription === '' ? undefined : sanitizedDescription;
+  // FIXED: Always update description, even if empty
+  // This ensures formatting changes (like removing bold text) are properly synced
+  const updateDescription = sanitizedDescription;
   const createDescription = sanitizedDescription;
 
   const baseSlug = createSlug(itemName);
@@ -1124,13 +1130,18 @@ async function handleUniqueConstraintViolation(
           `Found existing product via variant: ${existingVariant.product.id}, updating it.`
         );
 
+        // Process description consistently with main sync path
+        const rawDescription = item.item_data?.description_html || item.item_data?.description;
+        const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+        const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
         const nutritionInfo = extractNutritionInfo(item);
         await prisma.product.update({
           where: { id: existingVariant.product.id },
           data: {
             squareId: item.id,
             name: itemName,
-            description: item.item_data?.description,
+            description: sanitizedDescription,
             price: processVariations(item.item_data?.variations || []).basePrice,
             images: finalImages,
             ordinal: ordinal,
@@ -1155,13 +1166,19 @@ async function handleUniqueConstraintViolation(
   } else {
     const timestampSlug = `${baseSlug}-${Date.now()}`;
     logger.info(`Retrying creation with unique slug: ${timestampSlug}`);
+
+    // Process description consistently with main sync path
+    const rawDescription = item.item_data?.description_html || item.item_data?.description;
+    const { sanitizeProductDescription } = await import('@/lib/utils/product-description');
+    const sanitizedDescription = sanitizeProductDescription(rawDescription);
+
     const nutritionInfo = extractNutritionInfo(item);
     await prisma.product.create({
       data: {
         squareId: item.id,
         name: itemName,
         slug: timestampSlug,
-        description: item.item_data?.description ?? '',
+        description: sanitizedDescription,
         price: processVariations(item.item_data?.variations || []).basePrice,
         images: finalImages,
         ordinal: ordinal,
