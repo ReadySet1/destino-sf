@@ -591,6 +591,33 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
       console.log(
         `✅ Successfully updated order ${internalOrderId} with payment and customer data`
       );
+
+      // Send new order alert when payment is confirmed (DES-55)
+      if (currentOrder.paymentStatus !== 'PAID' && updateData.paymentStatus === 'PAID') {
+        console.log(`💳 Payment confirmed for order ${internalOrderId} - sending admin alert`);
+        try {
+          const orderWithItems = await prisma.order.findUnique({
+            where: { id: internalOrderId },
+            include: {
+              items: {
+                include: {
+                  product: true,
+                  variant: true,
+                },
+              },
+            },
+          });
+
+          if (orderWithItems) {
+            const alertService = new AlertService();
+            await alertService.sendNewOrderAlert(orderWithItems);
+            console.log(`✅ New order alert sent for paid order ${internalOrderId}`);
+          }
+        } catch (alertError: any) {
+          console.error(`Failed to send new order alert for order ${internalOrderId}:`, alertError);
+          // Don't fail the webhook if alert fails
+        }
+      }
     } else {
       console.log(`ℹ️ Order ${internalOrderId} already up to date, no changes needed`);
     }
@@ -819,9 +846,37 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     console.log(
       `✅ [WEBHOOK-FIX] Final status - Payment: ${updatedPaymentStatus}, Order: ${updatedOrderStatus} (Event: ${payload.event_id})`
     );
-    
+
     if (updatedPaymentStatus === 'PAID') {
       console.log(`🎉 [WEBHOOK-FIX] *** FIX SUCCESSFUL *** Order ${order.id} is now PAID and will show as paid in admin!`);
+    }
+
+    // Send new order alert when payment is confirmed (DES-55)
+    if (order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID') {
+      console.log(`💳 Payment confirmed for order ${order.id} - sending admin alert`);
+      try {
+        const orderWithItems = await prisma.order.findUnique({
+          where: { id: order.id },
+          include: {
+            items: {
+              include: {
+                product: true,
+                variant: true,
+              },
+            },
+          },
+        });
+
+        if (orderWithItems) {
+          const { AlertService } = await import('@/lib/alerts');
+          const alertService = new AlertService();
+          await alertService.sendNewOrderAlert(orderWithItems);
+          console.log(`✅ New order alert sent for paid order ${order.id}`);
+        }
+      } catch (alertError: any) {
+        console.error(`Failed to send new order alert for order ${order.id}:`, alertError);
+        // Don't fail the webhook if alert fails
+      }
     }
 
     // Purchase shipping label if applicable (PRIMARY trigger - no duplicates)

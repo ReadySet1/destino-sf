@@ -748,29 +748,34 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       `Database order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
     );
 
-    // Send new order alert to admin
-    try {
-      // Fetch the complete order with items for the alert
-      const orderWithItems = await prisma.order.findUnique({
-        where: { id: dbOrder.id },
-        include: {
-          items: {
-            include: {
-              product: true,
-              variant: true,
+    // Send new order alert to admin ONLY for CASH orders
+    // For credit card orders, wait for payment confirmation webhook (DES-55)
+    if (paymentMethod === 'CASH') {
+      try {
+        // Fetch the complete order with items for the alert
+        const orderWithItems = await prisma.order.findUnique({
+          where: { id: dbOrder.id },
+          include: {
+            items: {
+              include: {
+                product: true,
+                variant: true,
+              },
             },
           },
-        },
-      });
+        });
 
-      if (orderWithItems) {
-        const alertService = new AlertService();
-        await alertService.sendNewOrderAlert(orderWithItems);
-        console.log(`New order alert sent for order ${dbOrder.id}`);
+        if (orderWithItems) {
+          const alertService = new AlertService();
+          await alertService.sendNewOrderAlert(orderWithItems);
+          console.log(`New order alert sent for CASH order ${dbOrder.id}`);
+        }
+      } catch (alertError: any) {
+        console.error(`Failed to send new order alert for order ${dbOrder.id}:`, alertError);
+        // Don't fail the order creation if alert fails
       }
-    } catch (alertError: any) {
-      console.error(`Failed to send new order alert for order ${dbOrder.id}:`, alertError);
-      // Don't fail the order creation if alert fails
+    } else {
+      console.log(`Order ${dbOrder.id} created with ${paymentMethod} payment - alert will be sent after payment confirmation`);
     }
   } catch (error: any) {
     console.error('Database Error creating order:', error);
@@ -1392,7 +1397,8 @@ export async function createManualPaymentOrder(formData: {
       `Manual payment order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
     );
 
-    // Send new order alert to admin
+    // Send new order alert to admin for manual payment orders (CASH only)
+    // Cash orders get immediate notification since payment confirmation happens at pickup/delivery (DES-55)
     try {
       // Fetch the complete order with items for the alert
       const orderWithItems = await prisma.order.findUnique({
@@ -1410,7 +1416,7 @@ export async function createManualPaymentOrder(formData: {
       if (orderWithItems) {
         const alertService = new AlertService();
         await alertService.sendNewOrderAlert(orderWithItems);
-        console.log(`New order alert sent for manual payment order ${dbOrder.id}`);
+        console.log(`New order alert sent for manual payment (CASH) order ${dbOrder.id}`);
       }
     } catch (alertError: any) {
       console.error(
