@@ -491,20 +491,17 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 </CardTitle>
                 <CardDescription className="text-gray-600">Order #{orderData.id.slice(-8)}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">Status</p>
-                    <Badge variant={getStatusVariant(orderData.status)} className="mt-1">
+                    <p className="text-sm text-gray-600 font-medium mb-2">Status</p>
+                    <Badge variant={getStatusVariant(orderData.status)}>
                       {getStatusDisplayText(orderData.status, orderData.fulfillmentType)}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">Payment Status</p>
-                    <Badge
-                      variant={getPaymentStatusVariant(orderData.paymentStatus)}
-                      className="mt-1"
-                    >
+                    <p className="text-sm text-gray-600 font-medium mb-2">Payment Status</p>
+                    <Badge variant={getPaymentStatusVariant(orderData.paymentStatus)}>
                       {orderData.paymentStatus}
                     </Badge>
                     {/* Show retry payment button for all orders with pending/failed payments */}
@@ -528,8 +525,8 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                 {/* Add Payment Method Row */}
                 <div className="pt-4 border-t border-gray-200">
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">Payment Method</p>
-                    <Badge variant="outline" className="mt-1">
+                    <p className="text-sm text-gray-600 font-medium mb-2">Payment Method</p>
+                    <Badge variant="outline">
                       {isRegularOrder
                         ? regularOrder?.paymentMethod || 'SQUARE'
                         : cateringOrder!.paymentMethod || 'SQUARE'}
@@ -620,10 +617,10 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-gray-600" />
+                      <Users className="h-4 w-4 text-gray-600 flex-shrink-0" />
                       <div>
                         <p className="text-sm text-gray-600">Number of People</p>
-                        <p className="text-gray-900">{orderData.numberOfPeople}</p>
+                        <p className="text-gray-900 font-medium">{Number(orderData.numberOfPeople) || 0}</p>
                       </div>
                     </div>
                     {orderData.deliveryAddress && (
@@ -635,7 +632,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                         </div>
                       </div>
                     )}
-                    {orderData.deliveryFee && orderData.deliveryFee > 0 && (
+                    {orderData.deliveryFee > 0 && (
                       <div>
                         <p className="text-sm text-gray-600">Delivery Fee</p>
                         <p className="text-gray-900">{formatCurrency(orderData.deliveryFee)}</p>
