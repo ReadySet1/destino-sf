@@ -17,28 +17,52 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Apply user-based rate limiting for order retry endpoint (3 requests per minute per user)
-    const rateLimitResponse = await applyUserBasedRateLimit(request, user.id, {
-      config: { id: 'order-retry', limit: 3, window: 60 * 1000, prefix: 'order_retry_rl' },
-    });
-    if (rateLimitResponse) {
-      console.warn(`Order retry rate limit exceeded for user ${user.id}`);
-      return rateLimitResponse;
-    }
-
     const { orderId } = await params;
+
+    // Parse request body for guest email verification
+    let requestBody: { email?: string } = {};
+    try {
+      requestBody = await request.json();
+    } catch {
+      // No body provided, continue with authenticated user flow
+    }
+
+    // Guest user verification: Allow retry if email matches order email
+    const isGuestRequest = !user && requestBody.email;
+
+    if (!user && !isGuestRequest) {
+      return NextResponse.json({
+        error: 'Authentication required. Please provide your email address to retry payment.'
+      }, { status: 401 });
+    }
+
+    // Apply rate limiting (user-based or email-based for guests)
+    if (user) {
+      const rateLimitResponse = await applyUserBasedRateLimit(request, user.id, {
+        config: { id: 'order-retry', limit: 3, window: 60 * 1000, prefix: 'order_retry_rl' },
+      });
+      if (rateLimitResponse) {
+        console.warn(`Order retry rate limit exceeded for user ${user.id}`);
+        return rateLimitResponse;
+      }
+    } else if (isGuestRequest) {
+      // Use email-based rate limiting for guests
+      const rateLimitResponse = await applyUserBasedRateLimit(request, requestBody.email!, {
+        config: { id: 'order-retry-guest', limit: 3, window: 60 * 1000, prefix: 'order_retry_guest_rl' },
+      });
+      if (rateLimitResponse) {
+        console.warn(`Order retry rate limit exceeded for email ${requestBody.email}`);
+        return rateLimitResponse;
+      }
+    }
 
     // Try to find as regular order first
     let order = await prisma.order.findUnique({
       where: {
         id: orderId,
-        userId: user.id, // Ensure user owns the order
         paymentMethod: 'SQUARE', // Only allow retries for Square payments
         paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status only
+        ...(user ? { userId: user.id } : {}), // Filter by userId only if authenticated
       },
       include: {
         items: {
@@ -56,9 +80,9 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       cateringOrder = await prisma.cateringOrder.findUnique({
         where: {
           id: orderId,
-          customerId: user.id, // Ensure user owns the catering order
           paymentMethod: 'SQUARE', // Only allow retries for Square payments
           paymentStatus: { in: ['PENDING', 'FAILED'] }, // Check payment status only
+          ...(user ? { customerId: user.id } : {}), // Filter by customerId only if authenticated
         },
         include: {
           items: true,
@@ -77,6 +101,16 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
     const targetOrder = order || cateringOrder;
     const isRegularOrder = !!order;
     const isCateringOrder = !!cateringOrder;
+
+    // For guest requests, verify email matches order email
+    if (isGuestRequest) {
+      if (targetOrder!.email.toLowerCase() !== requestBody.email!.toLowerCase()) {
+        return NextResponse.json(
+          { error: 'Email address does not match order email' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Additional check for payment method (extra safety)
     if (targetOrder!.paymentMethod !== 'SQUARE') {

@@ -17,10 +17,12 @@ interface PendingOrderAlertProps {
     paymentUrl?: string;
     paymentUrlExpiresAt?: Date;
     retryCount: number;
+    email?: string; // Order email for guest retry verification
   };
   onContinueExisting: () => void;
   onCreateNew: () => void;
   onDismiss: () => void;
+  currentUserEmail?: string; // Current user's email for guest checkout
 }
 
 export default function PendingOrderAlert({
@@ -28,6 +30,7 @@ export default function PendingOrderAlert({
   onContinueExisting,
   onCreateNew,
   onDismiss,
+  currentUserEmail,
 }: PendingOrderAlertProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -35,11 +38,15 @@ export default function PendingOrderAlert({
     setIsProcessing(true);
 
     try {
+      // Include email in request body for guest checkout verification
+      const requestBody = currentUserEmail ? { email: currentUserEmail } : {};
+
       const response = await fetch(`/api/orders/${existingOrder.id}/retry-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -50,7 +57,7 @@ export default function PendingOrderAlert({
 
       if (result.success && result.checkoutUrl) {
         toast.success('Redirecting to payment...');
-        
+
         // Use setTimeout to ensure the redirect happens reliably
         setTimeout(() => {
           window.location.href = result.checkoutUrl;
