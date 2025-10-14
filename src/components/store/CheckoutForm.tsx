@@ -265,8 +265,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     hasPendingOrder: false,
   });
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
-  // Client Supabase needed only if performing client-side auth actions, otherwise remove
-  // const supabase = createClient();
+  // DES-52: Add session state tracking
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  // Client Supabase for session checking
+  const supabase = createClient();
 
   // Functions to save and clear checkout data in localStorage
   const saveCheckoutDataToLocalStorage = useCallback((data: any) => {
@@ -481,6 +483,39 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setIsMounted(true);
   }, []);
 
+  // DES-52: Check session status on mount and periodically
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('❌ [SESSION-CHECK] Error getting session:', error);
+          setSessionError('Your session has expired. Please log in to continue.');
+          return;
+        }
+
+        if (!session && initialUserData) {
+          // User was logged in but session is now expired
+          console.warn('⚠️ [SESSION-CHECK] Session expired during checkout');
+          setSessionError('Your session has expired. Please log in to continue.');
+        } else {
+          // Session is valid or user is guest
+          setSessionError(null);
+        }
+      } catch (error) {
+        console.error('❌ [SESSION-CHECK] Unexpected error:', error);
+      }
+    };
+
+    if (isMounted) {
+      checkSession();
+      // Check session every 60 seconds
+      const interval = setInterval(checkSession, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [isMounted, supabase, initialUserData]);
+
   // Watch form values and save to localStorage
   useEffect(() => {
     const subscription = form.watch((value) => {
@@ -642,12 +677,15 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // Function to check for duplicate orders
   const checkForDuplicates = async (email: string) => {
+    console.log('🔍 [DUPLICATE-CHECK] Starting duplicate check for:', email);
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
-    
+
     try {
       const duplicateCheck = await checkForDuplicateOrders(items, email);
-      
+      console.log('📊 [DUPLICATE-CHECK] Result:', duplicateCheck);
+
       if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
+        console.log('⚠️ [DUPLICATE-CHECK] Found existing order:', duplicateCheck.existingOrder.id);
         setPendingOrderCheck({
           isChecking: false,
           hasPendingOrder: true,
@@ -656,19 +694,26 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         setShowDuplicateAlert(true);
         return true; // Has duplicate
       }
-      
+
+      console.log('✅ [DUPLICATE-CHECK] No duplicates found');
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
       });
       return false; // No duplicate
     } catch (error) {
-      console.error('Error checking for duplicates:', error);
+      console.error('❌ [DUPLICATE-CHECK] Error checking for duplicates:', error);
+      // DES-52: Always clear the checking state, even on error
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
       });
-      return false; // Continue on error
+      // If there's a session error, don't continue with checkout
+      if (sessionError) {
+        toast.error('Please log in again to continue with checkout');
+        return true; // Block checkout
+      }
+      return false; // Continue on other errors
     }
   };
 
@@ -1147,6 +1192,27 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   return (
     <>
+      {/* DES-52: Session Expiration Alert */}
+      {sessionError && (
+        <Alert variant="destructive" className="mb-6 bg-red-50/90 backdrop-blur-sm border-red-400 shadow-lg">
+          <AlertDescription className="text-red-800 font-medium">
+            <div className="flex flex-col gap-3">
+              <div>
+                <strong className="text-lg">⚠️ Session Expired</strong>
+                <p className="mt-1">{sessionError}</p>
+              </div>
+              <Link
+                href={`/sign-in?redirect=/checkout`}
+                className="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                <LogInIcon className="w-4 h-4 mr-2" />
+                Log In to Continue
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Pending Order Alert */}
       {showDuplicateAlert && pendingOrderCheck.existingOrder && (
         <div className="mb-6 relative z-10">
@@ -1490,9 +1556,11 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         <Button
           type="submit"
           className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-60 disabled:cursor-not-allowed"
-          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
+          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid || !!sessionError}
         >
-          {pendingOrderCheck.isChecking
+          {sessionError
+            ? 'Session Expired - Please Log In'
+            : pendingOrderCheck.isChecking
             ? 'Checking for existing orders...'
             : isSubmitting
               ? 'Processing...'
