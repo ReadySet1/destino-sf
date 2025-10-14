@@ -1540,7 +1540,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
               {currentMethod === 'nationwide_shipping' && !currentRateId ? (
                 <>
                   <strong>Missing shipping information:</strong> Please complete the shipping address,
-                  click "Fetch Shipping Rates", and select a shipping method before continuing.
+                  click &quot;Fetch Shipping Rates&quot;, and select a shipping method before continuing.
                 </>
               ) : (
                 <>
