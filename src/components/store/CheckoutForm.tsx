@@ -337,6 +337,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   const currentMethod = watch('fulfillmentMethod');
   const currentPaymentMethod = watch('paymentMethod');
+  const currentRateId = watch('rateId');
 
   // Function to save contact info immediately
   const saveContactInfoImmediately = useCallback(
@@ -863,6 +864,19 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setShowDuplicateAlert(false);
   };
 
+  // Add effect to log form validation status for debugging (DES-52)
+  useEffect(() => {
+    if (isMounted) {
+      console.log('📋 [CHECKOUT-DEBUG] Form Validation Status:', {
+        isValid,
+        fulfillmentMethod: currentMethod,
+        hasShippingRate: currentMethod === 'nationwide_shipping' ? !!currentRateId : 'N/A',
+        rateId: currentRateId,
+        errors: Object.keys(errors).length > 0 ? errors : 'No errors',
+      });
+    }
+  }, [isValid, currentMethod, currentRateId, errors, isMounted]);
+
   // --- Keep onSubmit function ---
   const onSubmit = async (formData: CheckoutFormData, event?: React.BaseSyntheticEvent) => {
     // Prevent any default form submission behavior
@@ -870,7 +884,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       event.preventDefault();
       event.stopPropagation();
     }
-    
+
     console.log('🚀 [CHECKOUT] Starting form submission...');
     setIsSubmitting(true);
     setError('');
@@ -1453,10 +1467,29 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           </Alert>
         )}
 
+        {/* Form Validation Helper (DES-52 Fix) */}
+        {!isValid && isMounted && !isSubmitting && !pendingOrderCheck.isChecking && items.length > 0 && (
+          <Alert className="bg-amber-50/80 backdrop-blur-sm border-amber-300/50">
+            <AlertDescription className="text-amber-800">
+              {currentMethod === 'nationwide_shipping' && !currentRateId ? (
+                <>
+                  <strong>Missing shipping information:</strong> Please complete the shipping address,
+                  click "Fetch Shipping Rates", and select a shipping method before continuing.
+                </>
+              ) : (
+                <>
+                  <strong>Please complete all required fields.</strong> Check the form above for any
+                  validation errors highlighted in red.
+                </>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
+          className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-60 disabled:cursor-not-allowed"
           disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
         >
           {pendingOrderCheck.isChecking
