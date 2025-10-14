@@ -3,6 +3,9 @@ import { PrismaClient, Prisma } from '@prisma/client';
 /**
  * Unified database client that consolidates all database connection logic
  * and provides optimized handling for different use cases (webhooks, regular operations)
+ *
+ * FIX: DES-53 & DES-54 - Updated to use correct Supabase pooler connection
+ * Uses aws-0-us-west-1.pooler.supabase.com:6543 with proper pgbouncer params
  */
 
 // Global singleton storage
