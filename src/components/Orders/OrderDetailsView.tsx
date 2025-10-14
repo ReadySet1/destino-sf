@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { logger } from '@/utils/logger';
 
 type RegularOrderData = {
   id: string;
@@ -110,7 +111,7 @@ export function OrderDetailsView({ order, isAuthenticated }: Props) {
         throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('Retry payment error:', error);
+      logger.error('Retry payment error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to retry payment');
     } finally {
       setIsRetrying(false);
