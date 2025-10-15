@@ -494,21 +494,46 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // DES-73: Enhanced session management with proactive refresh and auth state listener
   useEffect(() => {
+    // Track when the component first mounted to allow cookie propagation time
+    const mountTime = Date.now();
+    const COOKIE_PROPAGATION_DELAY = 3000; // 3 seconds grace period after mount
+
     const checkAndRefreshSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        const timeSinceMount = Date.now() - mountTime;
 
         if (error) {
           console.error('❌ [SESSION-CHECK] Error getting session:', error);
-          setSessionError('Your session has expired. Please log in to continue.');
+          // Only show error if component has been mounted for a while (not during initial load)
+          if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+            setSessionError('Your session has expired. Please log in to continue.');
+          }
           return;
         }
 
+        // DES-73 FIX: Don't show error immediately if no session found
+        // The session might be establishing after login, give it time
         if (!session && initialUserData) {
-          // User was logged in but session is now expired
-          console.warn('⚠️ [SESSION-CHECK] Session expired during checkout');
-          setSessionError('Your session has expired. Please log in to continue.');
-          return;
+          // Try refreshing the session first before showing error
+          console.warn('⚠️ [SESSION-CHECK] No client session found, attempting refresh...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            // Only show error if refresh also fails AND component has been mounted long enough
+            console.error('❌ [SESSION-CHECK] Session refresh failed, session truly expired');
+            if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+              setSessionError('Your session has expired. Please log in to continue.');
+            } else {
+              console.log('⏱️ [SESSION-CHECK] Suppressing error during cookie propagation period');
+            }
+            return;
+          } else {
+            console.log('✅ [SESSION-CHECK] Session refreshed successfully after initial check');
+            // Session is now valid, clear any errors
+            setSessionError(null);
+            return;
+          }
         }
 
         if (session && session.expires_at) {
@@ -522,7 +547,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
             if (refreshError) {
               console.error('❌ [SESSION-CHECK] Failed to refresh session:', refreshError);
-              setSessionError('Your session has expired. Please log in to continue.');
+              // Only show error if component has been mounted long enough
+              if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+                setSessionError('Your session has expired. Please log in to continue.');
+              }
             } else {
               console.log('✅ [SESSION-CHECK] Session refreshed successfully');
               setSessionError(null);
@@ -841,6 +869,42 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setError('');
 
     try {
+      // DES-73 FIX: Ensure session is fresh before submission
+      // This prevents server-side session validation failures
+      if (initialUserData) {
+        console.log('🔄 [SESSION] Refreshing session before submission (no duplicate check)...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
+          setSessionError('Your session has expired. Please log in to continue.');
+          setIsSubmitting(false);
+          toast.error('Your session has expired. Please log in to continue.');
+          return;
+        }
+
+        // Proactively refresh if session expires soon (< 5 minutes)
+        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            console.error('❌ [SESSION] Failed to refresh session:', refreshError);
+            setSessionError('Your session has expired. Please log in to continue.');
+            setIsSubmitting(false);
+            toast.error('Your session has expired. Please log in to continue.');
+            return;
+          }
+
+          console.log('✅ [SESSION] Session refreshed successfully');
+        } else {
+          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+        }
+
+        // Clear any session errors since session is valid
+        setSessionError(null);
+      }
+
       // First check if cart is empty
       if (!items || items.length === 0) {
         setError('Your cart is empty.');
@@ -1032,6 +1096,42 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setError('');
 
     try {
+      // DES-73 FIX: Ensure session is fresh before submission
+      // This prevents server-side session validation failures
+      if (initialUserData) {
+        console.log('🔄 [SESSION] Refreshing session before submission...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
+          setSessionError('Your session has expired. Please log in to continue.');
+          setIsSubmitting(false);
+          toast.error('Your session has expired. Please log in to continue.');
+          return;
+        }
+
+        // Proactively refresh if session expires soon (< 5 minutes)
+        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            console.error('❌ [SESSION] Failed to refresh session:', refreshError);
+            setSessionError('Your session has expired. Please log in to continue.');
+            setIsSubmitting(false);
+            toast.error('Your session has expired. Please log in to continue.');
+            return;
+          }
+
+          console.log('✅ [SESSION] Session refreshed successfully');
+        } else {
+          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+        }
+
+        // Clear any session errors since session is valid
+        setSessionError(null);
+      }
+
       // First check if cart is empty
       if (!items || items.length === 0) {
         setError('Your cart is empty.');
