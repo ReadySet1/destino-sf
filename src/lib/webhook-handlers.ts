@@ -39,20 +39,32 @@ function mapSquareStateToOrderStatus(state: string): OrderStatus {
 
 /**
  * Helper function to get Square client instance
- * Uses production token for order retrieval
+ * Respects sandbox/production configuration from environment variables
  */
 function getSquareClient(): SquareClient {
-  const accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
+  // Check if we're using sandbox mode
+  const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true' ||
+                     process.env.SQUARE_ENVIRONMENT === 'sandbox';
+
+  // Select the appropriate token and environment
+  const accessToken = useSandbox
+    ? process.env.SQUARE_SANDBOX_TOKEN
+    : (process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
+
+  const environment = useSandbox ? SquareEnvironment.Sandbox : SquareEnvironment.Production;
 
   if (!accessToken) {
+    const tokenName = useSandbox ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_PRODUCTION_TOKEN';
     throw new Error(
-      'Square access token not configured. Set SQUARE_PRODUCTION_TOKEN or SQUARE_ACCESS_TOKEN.'
+      `Square access token not configured. Set ${tokenName} for ${environment} environment.`
     );
   }
 
+  console.log(`🔧 [SQUARE-CLIENT] Creating Square client for ${environment} environment`);
+
   return new SquareClient({
     token: accessToken,
-    environment: SquareEnvironment.Production, // Orders from POS/external sources are in production
+    environment: environment,
   });
 }
 
