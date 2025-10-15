@@ -841,6 +841,42 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setError('');
 
     try {
+      // DES-73 FIX: Ensure session is fresh before submission
+      // This prevents server-side session validation failures
+      if (initialUserData) {
+        console.log('🔄 [SESSION] Refreshing session before submission (no duplicate check)...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
+          setSessionError('Your session has expired. Please log in to continue.');
+          setIsSubmitting(false);
+          toast.error('Your session has expired. Please log in to continue.');
+          return;
+        }
+
+        // Proactively refresh if session expires soon (< 5 minutes)
+        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            console.error('❌ [SESSION] Failed to refresh session:', refreshError);
+            setSessionError('Your session has expired. Please log in to continue.');
+            setIsSubmitting(false);
+            toast.error('Your session has expired. Please log in to continue.');
+            return;
+          }
+
+          console.log('✅ [SESSION] Session refreshed successfully');
+        } else {
+          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+        }
+
+        // Clear any session errors since session is valid
+        setSessionError(null);
+      }
+
       // First check if cart is empty
       if (!items || items.length === 0) {
         setError('Your cart is empty.');
@@ -1032,6 +1068,42 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setError('');
 
     try {
+      // DES-73 FIX: Ensure session is fresh before submission
+      // This prevents server-side session validation failures
+      if (initialUserData) {
+        console.log('🔄 [SESSION] Refreshing session before submission...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
+          setSessionError('Your session has expired. Please log in to continue.');
+          setIsSubmitting(false);
+          toast.error('Your session has expired. Please log in to continue.');
+          return;
+        }
+
+        // Proactively refresh if session expires soon (< 5 minutes)
+        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            console.error('❌ [SESSION] Failed to refresh session:', refreshError);
+            setSessionError('Your session has expired. Please log in to continue.');
+            setIsSubmitting(false);
+            toast.error('Your session has expired. Please log in to continue.');
+            return;
+          }
+
+          console.log('✅ [SESSION] Session refreshed successfully');
+        } else {
+          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+        }
+
+        // Clear any session errors since session is valid
+        setSessionError(null);
+      }
+
       // First check if cart is empty
       if (!items || items.length === 0) {
         setError('Your cart is empty.');
