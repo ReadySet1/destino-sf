@@ -494,13 +494,21 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // DES-73: Enhanced session management with proactive refresh and auth state listener
   useEffect(() => {
+    // Track when the component first mounted to allow cookie propagation time
+    const mountTime = Date.now();
+    const COOKIE_PROPAGATION_DELAY = 3000; // 3 seconds grace period after mount
+
     const checkAndRefreshSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        const timeSinceMount = Date.now() - mountTime;
 
         if (error) {
           console.error('❌ [SESSION-CHECK] Error getting session:', error);
-          setSessionError('Your session has expired. Please log in to continue.');
+          // Only show error if component has been mounted for a while (not during initial load)
+          if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+            setSessionError('Your session has expired. Please log in to continue.');
+          }
           return;
         }
 
@@ -512,9 +520,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
           if (refreshError || !refreshData.session) {
-            // Only show error if refresh also fails
+            // Only show error if refresh also fails AND component has been mounted long enough
             console.error('❌ [SESSION-CHECK] Session refresh failed, session truly expired');
-            setSessionError('Your session has expired. Please log in to continue.');
+            if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+              setSessionError('Your session has expired. Please log in to continue.');
+            } else {
+              console.log('⏱️ [SESSION-CHECK] Suppressing error during cookie propagation period');
+            }
             return;
           } else {
             console.log('✅ [SESSION-CHECK] Session refreshed successfully after initial check');
@@ -535,7 +547,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
             if (refreshError) {
               console.error('❌ [SESSION-CHECK] Failed to refresh session:', refreshError);
-              setSessionError('Your session has expired. Please log in to continue.');
+              // Only show error if component has been mounted long enough
+              if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
+                setSessionError('Your session has expired. Please log in to continue.');
+              }
             } else {
               console.log('✅ [SESSION-CHECK] Session refreshed successfully');
               setSessionError(null);
