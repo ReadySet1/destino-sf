@@ -27,6 +27,11 @@ export async function checkForDuplicateOrder(
   email?: string
 ): Promise<PendingOrderCheck> {
   try {
+    console.log('[Duplicate Check] Checking for duplicate orders:', {
+      identifier: userId || email,
+      cartItemsCount: cartItems.length,
+    });
+
     // Build the where clause based on available identifiers
     const whereClause: any = {
       status: { in: ['PENDING'] },
@@ -63,6 +68,11 @@ export async function checkForDuplicateOrder(
       take: 5, // Limit to recent orders
     });
 
+    console.log('[Duplicate Check] Found pending orders:', {
+      count: pendingOrders.length,
+      orderIds: pendingOrders.map(o => o.id),
+    });
+
     if (pendingOrders.length === 0) {
       return { hasPendingOrder: false };
     }
@@ -70,6 +80,10 @@ export async function checkForDuplicateOrder(
     // Check if any pending order has similar items
     for (const order of pendingOrders) {
       if (hasSimilarItems(order.items, cartItems)) {
+        console.log('[Duplicate Check] Duplicate order detected:', {
+          orderId: order.id,
+          total: order.total,
+        });
         return {
           hasPendingOrder: true,
           existingOrderId: order.id,
@@ -87,7 +101,7 @@ export async function checkForDuplicateOrder(
 
     return { hasPendingOrder: false };
   } catch (error) {
-    console.error('Error checking for duplicate orders:', error);
+    console.error('[Duplicate Check] Error checking for duplicate orders:', error);
     return { hasPendingOrder: false };
   }
 }
@@ -125,7 +139,8 @@ function hasSimilarItems(orderItems: any[], cartItems: CartItem[]): boolean {
   }
 
   for (const [key, quantity] of orderItemsMap.entries()) {
-    if (cartItemsMap.get(key) !== quantity) {
+    const cartQuantity = cartItemsMap.get(key);
+    if (cartQuantity !== quantity) {
       return false;
     }
   }
