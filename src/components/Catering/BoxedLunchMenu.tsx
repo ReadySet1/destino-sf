@@ -82,7 +82,7 @@ const ALL_DESSERT_ITEMS: DessertItem[] = [
     servingSize: '1 piece',
     availableIn: ['lunch', 'appetizer', 'buffet', 'all'],
   },
-  
+
   // ITEMS REMOVED FROM LUNCH MENU - Only available in appetizer/buffet
   {
     id: 'lemon-bars',
@@ -122,17 +122,13 @@ const ALL_DESSERT_ITEMS: DessertItem[] = [
 /**
  * Filter dessert items based on menu context
  */
-const filterDessertsByMenu = (
-  items: DessertItem[], 
-  context: MenuContext
-): DessertItem[] => {
+const filterDessertsByMenu = (items: DessertItem[], context: MenuContext): DessertItem[] => {
   if (context === 'all') {
     return items;
   }
-  
-  return items.filter(item => 
-    item.availableIn.includes(context) || 
-    item.availableIn.includes('all')
+
+  return items.filter(
+    item => item.availableIn.includes(context) || item.availableIn.includes('all')
   );
 };
 
@@ -143,17 +139,17 @@ interface BoxedLunchMenuProps {
   menuContext?: MenuContext; // Allow context to be passed in
 }
 
-export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({ 
+export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
   className,
-  menuContext = 'lunch' // Default to lunch context
+  menuContext = 'lunch', // Default to lunch context
 }) => {
   // Database-driven boxed lunch items state
   const [boxedLunchItems, setBoxedLunchItems] = useState<BoxedLunchItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Note: Tier system now handled by BoxedLunchBuilder component
-  
+
   // Shared state for salads, add-ons, and quantities
   const [selectedSalads, setSelectedSalads] = useState<Set<SaladOption>>(new Set());
   const [selectedAddOns, setSelectedAddOns] = useState<Set<AddOnOption>>(new Set());
@@ -167,14 +163,14 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const response = await fetch('/api/catering/boxed-lunches');
         const data: BoxedLunchResponse = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch boxed lunch items');
         }
-        
+
         if (data.success) {
           setBoxedLunchItems(data.items);
         } else {
@@ -276,11 +272,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
             <span className="text-lg">Error loading boxed lunch options</span>
           </div>
           <p className="text-gray-600 mt-2">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-            variant="outline"
-          >
+          <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">
             Try Again
           </Button>
         </div>
@@ -301,8 +293,9 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
             Individual Packaged Lunch Options - 2025
           </h2>
           <p className="text-lg text-gray-600 max-w-4xl mx-auto">
-            Choose from our pre-made boxed lunches or build your own with our customizable tier system. 
-            Each option includes carefully selected sides and fresh ingredients. Perfect for corporate events, meetings, and group gatherings.
+            Choose from our pre-made boxed lunches or build your own with our customizable tier
+            system. Each option includes carefully selected sides and fresh ingredients. Perfect for
+            corporate events, meetings, and group gatherings.
           </p>
         </motion.div>
       </div>
@@ -314,7 +307,7 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
             <ShoppingCart className="h-6 w-6 text-amber-600" />
             Pre-Made Boxed Lunches ({boxedLunchItems.length} options)
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {boxedLunchItems.map((item, index) => (
               <motion.div
@@ -388,18 +381,15 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
       <section>
         <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
           <Cookie className="h-6 w-6 text-orange-600" />
-          {menuContext === 'lunch' 
-            ? 'Alfajores - $2.50 each' 
-            : 'Desserts - Starting at $2.50'
-          }
+          {menuContext === 'lunch' ? 'Alfajores - $2.50 each' : 'Desserts - Starting at $2.50'}
         </h3>
-        
+
         {availableDesserts.length === 0 && (
           <p className="text-gray-600 italic">
             No desserts available for this menu. Please check other menu sections.
           </p>
         )}
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {availableDesserts.map(dessert => (
             <AlfajorCard
@@ -439,8 +429,6 @@ export const BoxedLunchMenu: React.FC<BoxedLunchMenuProps> = ({
   );
 };
 
-
-
 // Salad Card Component
 interface SaladCardProps {
   saladOption: SaladOption;
@@ -476,7 +464,7 @@ const SaladCard: React.FC<SaladCardProps> = ({
         <div
           className="text-gray-600 text-sm"
           dangerouslySetInnerHTML={{
-            __html: sanitizeProductDescription(salad.description)
+            __html: sanitizeProductDescription(salad.description),
           }}
         />
 
@@ -544,7 +532,7 @@ const AddOnCard: React.FC<AddOnCardProps> = ({
         <div
           className="text-gray-600 text-sm"
           dangerouslySetInnerHTML={{
-            __html: sanitizeProductDescription(addOn.description)
+            __html: sanitizeProductDescription(addOn.description),
           }}
         />
 
@@ -623,7 +611,7 @@ const AlfajorCard: React.FC<AlfajorCardProps> = ({
         <div
           className="text-gray-600 text-sm flex-1"
           dangerouslySetInnerHTML={{
-            __html: sanitizeProductDescription(alfajor.description)
+            __html: sanitizeProductDescription(alfajor.description),
           }}
         />
 

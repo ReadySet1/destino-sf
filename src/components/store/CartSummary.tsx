@@ -15,8 +15,8 @@ export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: Cart
   return (
     <div
       className={`rounded-xl border p-4 sm:p-6 bg-gradient-to-br from-white to-gray-50/30 shadow-sm lg:shadow-lg ${
-        cartType === 'catering' 
-          ? 'border-destino-orange/30 lg:border-destino-orange/40 shadow-destino-orange/10' 
+        cartType === 'catering'
+          ? 'border-destino-orange/30 lg:border-destino-orange/40 shadow-destino-orange/10'
           : 'border-destino-yellow/30 lg:border-destino-yellow/40 shadow-destino-yellow/10'
       }`}
       data-testid="cart-summary"
@@ -35,7 +35,9 @@ export function CartSummary({ subtotal, totalItems, cartType = 'regular' }: Cart
         </div>
         <div className="flex justify-between text-destino-charcoal/80" data-testid="order-tax">
           <span className="text-sm sm:text-base">
-            {cartType === 'catering' ? `Tax (${(taxRate * 100).toFixed(2)}%)` : 'Tax (No tax on regular items)'}
+            {cartType === 'catering'
+              ? `Tax (${(taxRate * 100).toFixed(2)}%)`
+              : 'Tax (No tax on regular items)'}
           </span>
           <span className="font-semibold text-sm sm:text-base">{formatCurrency(tax)}</span>
         </div>

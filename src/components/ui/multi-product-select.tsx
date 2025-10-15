@@ -33,7 +33,7 @@ export function MultiProductSelect({
   onChange,
   placeholder = 'Select products',
   disabled = false,
-  className
+  className,
 }: MultiProductSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +42,7 @@ export function MultiProductSelect({
     if (!searchQuery) return products;
     const query = searchQuery.toLowerCase();
     return products.filter(
-      (product) =>
+      product =>
         product.name.toLowerCase().includes(query) ||
         product.category?.name.toLowerCase().includes(query)
     );
@@ -50,14 +50,14 @@ export function MultiProductSelect({
 
   const handleToggleProduct = (productId: string) => {
     if (selectedIds.includes(productId)) {
-      onChange(selectedIds.filter((id) => id !== productId));
+      onChange(selectedIds.filter(id => id !== productId));
     } else {
       onChange([...selectedIds, productId]);
     }
   };
 
   const handleSelectAll = () => {
-    onChange(filteredProducts.map((p) => p.id));
+    onChange(filteredProducts.map(p => p.id));
   };
 
   const handleClearAll = () => {
@@ -65,7 +65,7 @@ export function MultiProductSelect({
   };
 
   const selectedProducts = useMemo(
-    () => products.filter((p) => selectedIds.includes(p.id)),
+    () => products.filter(p => selectedIds.includes(p.id)),
     [products, selectedIds]
   );
 
@@ -108,7 +108,7 @@ export function MultiProductSelect({
             <Input
               placeholder="Search products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 px-0"
             />
             {searchQuery && (
@@ -160,7 +160,7 @@ export function MultiProductSelect({
               </div>
             ) : (
               <div className="p-2">
-                {filteredProducts.map((product) => {
+                {filteredProducts.map(product => {
                   const isSelected = selectedIds.includes(product.id);
                   return (
                     <div
@@ -177,13 +177,9 @@ export function MultiProductSelect({
                         className="mt-1"
                       />
                       <div className="flex-1 space-y-0.5">
-                        <p className="text-sm font-medium leading-none">
-                          {product.name}
-                        </p>
+                        <p className="text-sm font-medium leading-none">{product.name}</p>
                         {product.category && (
-                          <p className="text-xs text-muted-foreground">
-                            {product.category.name}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{product.category.name}</p>
                         )}
                       </div>
                     </div>

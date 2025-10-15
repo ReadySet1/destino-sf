@@ -1,9 +1,9 @@
 /**
  * Legacy database client (DEPRECATED)
- * 
+ *
  * This file is maintained for backward compatibility only.
  * For new code, use @/lib/db-unified instead.
- * 
+ *
  * This file now simply re-exports the unified client to prevent
  * dual initialization conflicts that were causing connection issues.
  */
@@ -11,9 +11,10 @@
 import { validateDatabaseEnvironment } from './db-environment-validator';
 
 // Validate database environment before initialization (skip during build/tests)
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' ||
-                     process.env.NEXT_PHASE === 'phase-development-build' ||
-                     process.env.NODE_ENV === 'test';
+const isBuildPhase =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.NEXT_PHASE === 'phase-development-build' ||
+  process.env.NODE_ENV === 'test';
 
 if (!isBuildPhase) {
   try {
@@ -48,23 +49,23 @@ export {
   getHealthStatus,
   checkConnection,
   shutdown,
-  forceResetConnection
+  forceResetConnection,
 } from './db-unified';
 
 // Legacy aliases for backward compatibility
-export { 
+export {
   prisma as unifiedPrisma,
   withRetry as unifiedWithRetry,
   withTransaction as unifiedWithTransaction,
   ensureConnection as unifiedEnsureConnection,
   checkConnection as unifiedCheckConnection,
-  
+
   // Legacy exports for existing code
   prisma as db,
   withRetry as executeWithConnectionManagement,
   withRetry as withConnectionManagement,
   withRetry as withPreparedStatementHandling,
-  withRetry as simpleWithRetry
+  withRetry as simpleWithRetry,
 } from './db-unified';
 
 // Legacy functions for backward compatibility (now using unified client)
@@ -73,7 +74,9 @@ export async function forceRegenerateClient(): Promise<void> {
 }
 
 export async function initializeDatabase(): Promise<void> {
-  console.log('initializeDatabase is deprecated - unified client handles initialization automatically');
+  console.log(
+    'initializeDatabase is deprecated - unified client handles initialization automatically'
+  );
 }
 
 export async function startupDatabase(): Promise<void> {
@@ -93,6 +96,6 @@ export async function checkDatabaseHealth(): Promise<{
   return {
     connected: health.connected,
     latency: health.latency,
-    error: health.error
+    error: health.error,
   };
 }

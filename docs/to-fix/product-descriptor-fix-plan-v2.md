@@ -1,6 +1,7 @@
 ### 4. Admin UI Components
 
 #### Product Preview with Validation
+
 ```tsx
 // src/components/products/ProductPreview.tsx
 'use client';
@@ -31,7 +32,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
       const response = await fetch('/api/products/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id })
+        body: JSON.stringify({ productId: product.id }),
       });
 
       const data = await response.json();
@@ -64,17 +65,23 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'ERROR': return 'text-red-500';
-      case 'WARNING': return 'text-yellow-500';
-      default: return 'text-blue-500';
+      case 'ERROR':
+        return 'text-red-500';
+      case 'WARNING':
+        return 'text-yellow-500';
+      default:
+        return 'text-blue-500';
     }
   };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'ERROR': return <XCircle className="h-4 w-4" />;
-      case 'WARNING': return <AlertTriangle className="h-4 w-4" />;
-      default: return <CheckCircle className="h-4 w-4" />;
+      case 'ERROR':
+        return <XCircle className="h-4 w-4" />;
+      case 'WARNING':
+        return <AlertTriangle className="h-4 w-4" />;
+      default:
+        return <CheckCircle className="h-4 w-4" />;
     }
   };
 
@@ -101,9 +108,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
               </p>
               <p className="text-sm">
                 <span className="font-medium">Square ID:</span>{' '}
-                <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-                  {product.squareId}
-                </code>
+                <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">{product.squareId}</code>
               </p>
               <p className="text-sm">
                 <span className="font-medium">Price:</span> ${product.price.toString()}
@@ -120,17 +125,13 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
               </p>
               <p className="text-sm">
                 <span className="font-medium">Sync Status:</span>{' '}
-                <Badge 
-                  variant={product.syncStatus === 'SYNCED' ? 'success' : 'warning'}
-                >
+                <Badge variant={product.syncStatus === 'SYNCED' ? 'success' : 'warning'}>
                   {product.syncStatus || 'UNKNOWN'}
                 </Badge>
               </p>
               <p className="text-sm">
                 <span className="font-medium">Mapping Status:</span>{' '}
-                <Badge 
-                  variant={product.mapping_status === 'VALID' ? 'success' : 'destructive'}
-                >
+                <Badge variant={product.mapping_status === 'VALID' ? 'success' : 'destructive'}>
                   {product.mapping_status || 'NEEDS_REVIEW'}
                 </Badge>
               </p>
@@ -160,8 +161,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
               )}
               {product.allergens?.length > 0 && (
                 <div className="text-sm">
-                  <span className="font-medium">Allergens:</span>{' '}
-                  {product.allergens.join(', ')}
+                  <span className="font-medium">Allergens:</span> {product.allergens.join(', ')}
                 </div>
               )}
             </div>
@@ -177,7 +177,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
             </h3>
             <div className="space-y-2">
               {issues.map((issue, index) => (
-                <Alert 
+                <Alert
                   key={index}
                   className={`${
                     issue.severity === 'ERROR' ? 'border-red-200' : 'border-yellow-200'
@@ -224,7 +224,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
               </span>
             )}
           </div>
-          
+
           <div className="flex gap-2">
             {onDismiss && (
               <Button variant="outline" onClick={onDismiss}>
@@ -232,11 +232,7 @@ export function ProductPreview({ product, onFix, onDismiss }: ProductPreviewProp
               </Button>
             )}
             {issues.length > 0 && onFix && (
-              <Button 
-                onClick={handleFix}
-                disabled={fixing}
-                variant="default"
-              >
+              <Button onClick={handleFix} disabled={fixing} variant="default">
                 {fixing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -270,75 +266,79 @@ const prisma = new PrismaClient();
 
 async function main() {
   logger.info('Starting product mapping fix...');
-  
+
   try {
     const service = new ProductMappingService();
-    
+
     // Step 1: Run audit
     logger.info('Running product audit...');
     const auditResult = await service.auditAllMappings();
-    
+
     logger.info(`Audit complete:
       - Total Products: ${auditResult.totalProducts}
       - Valid: ${auditResult.validProducts}
       - Invalid: ${auditResult.invalidProducts}
       - Issues Found: ${auditResult.issues.length}
     `);
-    
+
     // Log critical issues
     const criticalIssues = auditResult.issues.filter(i => i.severity === 'ERROR');
     if (criticalIssues.length > 0) {
       logger.warn(`Found ${criticalIssues.length} critical issues:`);
-      
+
       // Group issues by type
-      const issuesByType = criticalIssues.reduce((acc, issue) => {
-        if (!acc[issue.type]) acc[issue.type] = [];
-        acc[issue.type].push(issue);
-        return acc;
-      }, {} as Record<string, typeof criticalIssues>);
-      
+      const issuesByType = criticalIssues.reduce(
+        (acc, issue) => {
+          if (!acc[issue.type]) acc[issue.type] = [];
+          acc[issue.type].push(issue);
+          return acc;
+        },
+        {} as Record<string, typeof criticalIssues>
+      );
+
       for (const [type, issues] of Object.entries(issuesByType)) {
         logger.info(`  ${type}: ${issues.length} issues`);
       }
     }
-    
+
     // Step 2: Apply fixes
     if (criticalIssues.length > 0) {
       logger.info('Applying fixes...');
       await service.fixMappings(auditResult);
-      
+
       // Step 3: Verify fixes
       logger.info('Verifying fixes...');
       const verificationAudit = await service.auditAllMappings();
-      
+
       logger.info(`Fix verification:
         - Remaining Invalid: ${verificationAudit.invalidProducts}
         - Fixed: ${auditResult.invalidProducts - verificationAudit.invalidProducts}
         - Remaining Issues: ${verificationAudit.issues.length}
       `);
-      
+
       if (verificationAudit.invalidProducts > 0) {
         logger.warn('Some issues could not be automatically fixed and require manual review.');
-        
+
         // Generate report for manual review
         const manualReviewProducts = await prisma.product.findMany({
           where: {
-            mapping_status: 'NEEDS_REVIEW'
+            mapping_status: 'NEEDS_REVIEW',
           },
           include: {
-            category: true
-          }
+            category: true,
+          },
         });
-        
+
         logger.info(`Products requiring manual review: ${manualReviewProducts.length}`);
         for (const product of manualReviewProducts) {
-          logger.info(`  - ${product.name} (${product.squareId}) - Category: ${product.category?.name}`);
+          logger.info(
+            `  - ${product.name} (${product.squareId}) - Category: ${product.category?.name}`
+          );
         }
       }
     } else {
       logger.info('No critical issues found. All products are correctly mapped!');
     }
-    
   } catch (error) {
     logger.error('Fix script failed:', error);
     process.exit(1);
@@ -355,6 +355,7 @@ main().catch(console.error);
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```tsx
 // src/lib/products/__tests__/mapping-service.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -371,7 +372,7 @@ vi.mock('@/lib/db', () => ({
       updateMany: vi.fn(),
     },
     $executeRawUnsafe: vi.fn(),
-  }
+  },
 }));
 
 describe('ProductMappingService', () => {
@@ -391,20 +392,20 @@ describe('ProductMappingService', () => {
           name: 'Chocolate Alfajor',
           description: 'Delicious beef empanada', // Wrong!
           category: { name: 'Alfajores' },
-          categoryId: 'cat_1'
-        }
+          categoryId: 'cat_1',
+        },
       ];
 
       prisma.product.findMany.mockResolvedValue(mockProducts);
-      
+
       const result = await service.auditAllMappings();
-      
+
       expect(result.invalidProducts).toBe(1);
       expect(result.issues).toContainEqual(
         expect.objectContaining({
           type: 'CATEGORY_MISMATCH',
           severity: 'ERROR',
-          productId: '1'
+          productId: '1',
         })
       );
     });
@@ -417,19 +418,19 @@ describe('ProductMappingService', () => {
           name: 'Alfa 6-Pack Combo',
           description: 'Six delicious empanadas', // Should be alfajores!
           category: { name: 'Combos' },
-          categoryId: 'cat_2'
-        }
+          categoryId: 'cat_2',
+        },
       ];
 
       prisma.product.findMany.mockResolvedValue(mockProducts);
-      
+
       const result = await service.auditAllMappings();
-      
+
       expect(result.issues).toContainEqual(
         expect.objectContaining({
           type: 'COMBO_MISMATCH',
           severity: 'ERROR',
-          message: expect.stringContaining('Alfajor combo showing empanada description')
+          message: expect.stringContaining('Alfajor combo showing empanada description'),
         })
       );
     });
@@ -442,19 +443,19 @@ describe('ProductMappingService', () => {
           name: 'Pork Empanada',
           description: 'Filled with black beans and cheese', // Wrong ingredients!
           category: { name: 'Empanadas' },
-          categoryId: 'cat_3'
-        }
+          categoryId: 'cat_3',
+        },
       ];
 
       prisma.product.findMany.mockResolvedValue(mockProducts);
-      
+
       const result = await service.auditAllMappings();
-      
+
       expect(result.issues).toContainEqual(
         expect.objectContaining({
           type: 'INCORRECT_INGREDIENTS',
           severity: 'ERROR',
-          message: expect.stringContaining('Pork empanada incorrectly lists black beans')
+          message: expect.stringContaining('Pork empanada incorrectly lists black beans'),
         })
       );
     });
@@ -467,29 +468,31 @@ describe('ProductMappingService', () => {
         totalProducts: 1,
         validProducts: 0,
         invalidProducts: 1,
-        issues: [{
-          type: 'DUPLICATE_DESCRIPTION' as const,
-          severity: 'ERROR' as const,
-          field: 'description',
-          expected: 'Correct description',
-          actual: 'Wrong description',
-          productId: '1',
-          squareId: 'sq_1',
-          message: 'Description mismatch'
-        }],
+        issues: [
+          {
+            type: 'DUPLICATE_DESCRIPTION' as const,
+            severity: 'ERROR' as const,
+            field: 'description',
+            expected: 'Correct description',
+            actual: 'Wrong description',
+            productId: '1',
+            squareId: 'sq_1',
+            message: 'Description mismatch',
+          },
+        ],
         recommendations: [],
-        fixApplied: false
+        fixApplied: false,
       };
 
       await service.fixMappings(auditResult);
-      
+
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: expect.objectContaining({
           description: 'Correct description',
           correct_description: 'Correct description',
-          mapping_status: 'VALID'
-        })
+          mapping_status: 'VALID',
+        }),
       });
     });
   });
@@ -497,6 +500,7 @@ describe('ProductMappingService', () => {
 ```
 
 ### E2E Test Scenarios
+
 ```tsx
 // tests/e2e/product-mapping.spec.ts
 import { test, expect } from '@playwright/test';
@@ -504,15 +508,15 @@ import { test, expect } from '@playwright/test';
 test.describe('Product Descriptor Mapping', () => {
   test('alfajor products should display alfajor descriptions', async ({ page }) => {
     await page.goto('/products?category=alfajores');
-    
+
     const productCards = page.locator('[data-testid="product-card"]');
     const count = await productCards.count();
-    
+
     for (let i = 0; i < count; i++) {
       const card = productCards.nth(i);
       const name = await card.locator('.product-name').textContent();
       const description = await card.locator('.product-description').textContent();
-      
+
       // Alfajor products should not have empanada descriptions
       if (name?.toLowerCase().includes('alfajor')) {
         expect(description?.toLowerCase()).not.toContain('empanada');
@@ -524,13 +528,14 @@ test.describe('Product Descriptor Mapping', () => {
 
   test('combo products should display combo-specific descriptions', async ({ page }) => {
     await page.goto('/products?category=combos');
-    
-    const alfaCombo = page.locator('[data-testid="product-card"]')
+
+    const alfaCombo = page
+      .locator('[data-testid="product-card"]')
       .filter({ hasText: /Alfa.*Pack/i });
-    
-    if (await alfaCombo.count() > 0) {
+
+    if ((await alfaCombo.count()) > 0) {
       const description = await alfaCombo.locator('.product-description').textContent();
-      
+
       // Alfa pack should mention alfajores, not empanadas
       expect(description?.toLowerCase()).toContain('alfajor');
       expect(description?.toLowerCase()).not.toContain('empanada');
@@ -539,13 +544,12 @@ test.describe('Product Descriptor Mapping', () => {
 
   test('empanada ingredients should match product type', async ({ page }) => {
     await page.goto('/products?category=empanadas');
-    
-    const porkEmpanada = page.locator('[data-testid="product-card"]')
-      .filter({ hasText: /Pork/i });
-    
-    if (await porkEmpanada.count() > 0) {
+
+    const porkEmpanada = page.locator('[data-testid="product-card"]').filter({ hasText: /Pork/i });
+
+    if ((await porkEmpanada.count()) > 0) {
       const description = await porkEmpanada.locator('.product-description').textContent();
-      
+
       // Pork empanadas should not list vegetarian ingredients as primary
       expect(description?.toLowerCase()).not.toContain('black beans');
       expect(description?.toLowerCase()).not.toContain('vegetarian');
@@ -558,29 +562,29 @@ test.describe('Product Descriptor Mapping', () => {
     await page.fill('[name="email"]', process.env.ADMIN_EMAIL!);
     await page.fill('[name="password"]', process.env.ADMIN_PASSWORD!);
     await page.click('[type="submit"]');
-    
+
     // Navigate to product audit
     await page.goto('/admin/products/audit');
-    
+
     // Run audit
     await page.click('[data-testid="run-audit-button"]');
-    
+
     // Wait for results
     await page.waitForSelector('[data-testid="audit-results"]');
-    
+
     // Check if issues are displayed
     const issueCount = await page.locator('[data-testid="issue-item"]').count();
-    
+
     if (issueCount > 0) {
       // Try to fix issues
       await page.click('[data-testid="fix-all-button"]');
-      
+
       // Confirm fix
       await page.click('[data-testid="confirm-fix"]');
-      
+
       // Wait for fix to complete
       await page.waitForSelector('[data-testid="fix-complete"]');
-      
+
       // Verify fix results
       const fixedCount = await page.locator('[data-testid="fixed-count"]').textContent();
       expect(Number(fixedCount)).toBeGreaterThan(0);
@@ -594,6 +598,7 @@ test.describe('Product Descriptor Mapping', () => {
 ## 🔒 Security & Performance
 
 ### Security Measures
+
 - Admin-only access for mapping fixes via role-based auth
 - Input validation with Zod schemas
 - Parameterized queries via Prisma ORM
@@ -601,6 +606,7 @@ test.describe('Product Descriptor Mapping', () => {
 - Rate limiting on API endpoints
 
 ### Performance Optimizations
+
 - Batch processing for Square API calls
 - Database connection pooling with Prisma
 - Caching Square catalog data
@@ -612,6 +618,7 @@ test.describe('Product Descriptor Mapping', () => {
 ## 📦 Deployment Steps
 
 ### 1. Pre-Deployment Checklist
+
 - [ ] Backup production database
 - [ ] Test on development environment (`destino-development`)
 - [ ] Review all mapping issues in staging
@@ -620,12 +627,14 @@ test.describe('Product Descriptor Mapping', () => {
 ## ✅ Implementation Status
 
 ### Phase 1: Core Infrastructure (COMPLETED)
+
 - [x] Enhanced type definitions (`src/types/product-mapping.ts`)
 - [x] Database migration for product descriptor validation
 - [x] Updated Prisma schema with ProductMappingAudit model
 - [x] Added validation fields to products table
 
-### Phase 2: Core Services & APIs (COMPLETED)  
+### Phase 2: Core Services & APIs (COMPLETED)
+
 - [x] ProductMappingService implementation (`src/lib/products/mapping-service.ts`)
 - [x] Audit API endpoint (`src/app/api/products/audit/route.ts`)
 - [x] Fix mappings API endpoint (`src/app/api/products/fix-mappings/route.ts`)
@@ -633,8 +642,9 @@ test.describe('Product Descriptor Mapping', () => {
 - [x] One-time fix script (`scripts/fix-product-mappings.ts`)
 
 ### Phase 3: Deployment & Testing (COMPLETED) ✅
+
 - [x] Deploy database migration to production
-- [x] Run fix script in production environment  
+- [x] Run fix script in production environment
 - [x] Verify all product descriptors are correctly mapped
 - [x] Monitor for any issues or side effects
 
@@ -642,45 +652,53 @@ test.describe('Product Descriptor Mapping', () => {
 
 **Date Completed**: September 1, 2025
 
-**Environments**: 
-- ✅ Development (`destino-development`) 
+**Environments**:
+
+- ✅ Development (`destino-development`)
 - ✅ Production (`destino-production`)
 
 **Key Findings**:
+
 - **Total Products Audited**: 129 products in both environments
 - **Critical Issues Detected**: 129 `MISSING_DESCRIPTION` errors ⚠️ **FALSE POSITIVE**
 - **Root Cause Identified**: ✅ **API pagination issue in audit script**
 
 **🔍 Root Cause Analysis**:
 Using Square MCP tools, we discovered that:
+
 1. **All 129 products DO exist in Square catalog** with complete, detailed descriptions
 2. **All local products have correct Square IDs** that match the Square catalog exactly
 3. **The audit script's `fetchSquareCatalog()` method was incomplete** - it only fetched a subset of products due to Square API `listCatalog()` pagination limits
 4. **Local product descriptions are already correct and up-to-date**
 
-**✅ The Real Status**: 
+**✅ The Real Status**:
+
 - **No descriptor mapping issues exist** - all products are correctly synced
 - **Descriptions are already accurate** - pulled from Square with proper detailed content
 - **Square sync is working perfectly** - the issue was a false alarm from incomplete audit
 
 **Verified Examples**:
+
 - `BAHPTM7P3HVQ6N2V5PMZMDPM` (Alfajores de Lucuma) ✅ Exists in Square with full description
-- `SZCXMH35UUABGZSYAAN5GWM2` (6-pack combo) ✅ Exists in Square with full description  
+- `SZCXMH35UUABGZSYAAN5GWM2` (6-pack combo) ✅ Exists in Square with full description
 - `KZ4IKWU5JBYAFZK545ULVDFQ` (Chocolate Alfajores) ✅ Exists in Square with full description
 
-**System Status**: 
+**System Status**:
+
 - ✅ Database migrations deployed successfully
 - ✅ Square MCP verification completed - all products confirmed in Square
-- ✅ API endpoints functional for future maintenance  
+- ✅ API endpoints functional for future maintenance
 - ✅ Audit system needs update to handle pagination correctly
 - ✅ All product descriptors are correctly mapped and up-to-date
 
 **Recommended Actions**:
+
 1. **Fix audit script**: Update `fetchSquareCatalog()` to use `searchObjects` with proper pagination
 2. **Reset status**: Update `mapping_status` from `'NEEDS_REVIEW'` to `'VALIDATED'` for all products
 3. **Regular monitoring**: Use new audit system for future sync validation
 
 ### 2. Database Migration
+
 ```bash
 # Generate migration
 npx prisma migrate dev --name fix_product_descriptors
@@ -690,6 +708,7 @@ npx prisma migrate deploy
 ```
 
 ### 3. Run Fix Script
+
 ```bash
 # Dry run first
 npm run script:fix-mappings -- --dry-run
@@ -699,6 +718,7 @@ npm run script:fix-mappings
 ```
 
 ### 4. Verification
+
 ```bash
 # Check audit results via API
 curl -X GET https://your-domain.com/api/products/audit \
@@ -706,6 +726,7 @@ curl -X GET https://your-domain.com/api/products/audit \
 ```
 
 ### 5. Monitor
+
 - Check Sentry for errors
 - Monitor Square sync logs
 - Review customer feedback
@@ -746,12 +767,14 @@ The solution maintains Square as the single source of truth while ensuring data 
 **✅ COMPLETED - All Phases (1-3):**
 
 ### Phase 1: Core Infrastructure ✅
+
 - ✅ Enhanced type definitions (`src/types/product-mapping.ts`)
-- ✅ Database migration for product descriptor validation  
+- ✅ Database migration for product descriptor validation
 - ✅ Updated Prisma schema with ProductMappingAudit model
 - ✅ Added validation fields to products table
 
-### Phase 2: Core Services & APIs ✅  
+### Phase 2: Core Services & APIs ✅
+
 - ✅ ProductMappingService implementation (`src/lib/products/mapping-service.ts`)
 - ✅ Audit API endpoint (`src/app/api/products/audit/route.ts`)
 - ✅ Fix mappings API endpoint (`src/app/api/products/fix-mappings/route.ts`)
@@ -759,15 +782,17 @@ The solution maintains Square as the single source of truth while ensuring data 
 - ✅ One-time fix script (`scripts/fix-product-mappings.ts`)
 
 ### Phase 3: Deployment & Testing ✅
+
 - ✅ Database migrations deployed to development and production
 - ✅ Fix script executed successfully on both environments
 - ✅ 129 products audited and flagged for manual review
 - ✅ All systems operational and monitoring in place
 
 **🔧 Production-Ready Components:**
+
 - **Database**: Enhanced schema with audit tracking and validation
 - **APIs**: Full REST endpoints for product mapping management
-- **Services**: Robust mapping validation and correction service  
+- **Services**: Robust mapping validation and correction service
 - **Monitoring**: Complete audit trail and issue tracking system
 - **Scripts**: Automated tools for ongoing maintenance
 
@@ -786,9 +811,11 @@ The solution maintains Square as the single source of truth while ensuring data 
 **Sprint/Milestone**: Sprint 2025-Q1-W1
 
 ### Problem Statement
+
 Product descriptions are incorrectly mapped across the catalog in the Destino SF e-commerce platform. Alfajor items show duplicate descriptors, combo products (6-pack) display wrong category descriptions (empanada instead of alfajor), and empanada pages show mixed/incorrect ingredient lists (pork empanadas listing black beans). This is affecting the Square sync integration and causing customer confusion.
 
 ### Success Criteria
+
 - [x] All products display their correct, unique descriptions from Square catalog
 - [x] No cross-category descriptor contamination (alfajor showing empanada descriptions)
 - [x] Admin validation prevents future mismatches during Square sync
@@ -798,6 +825,7 @@ Product descriptions are incorrectly mapped across the catalog in the Destino SF
 - [x] Nutrition and allergen information correctly mapped
 
 ### Dependencies
+
 - **Blocked by**: None (critical priority)
 - **Blocks**: New product launches, promotional campaigns, catering menu updates
 - **Related PRs/Issues**: #square-sync-001, #product-catalog-002, #nutrition-display-003
@@ -809,6 +837,7 @@ Product descriptions are incorrectly mapped across the catalog in the Destino SF
 ### 1. Code Structure & References
 
 #### File Structure (Based on Your Codebase)
+
 ```tsx
 src/
 ├── app/
@@ -858,6 +887,7 @@ src/
 ```
 
 #### Enhanced Type Definitions
+
 ```tsx
 // src/types/product-mapping.ts
 import { z } from 'zod';
@@ -897,15 +927,20 @@ export const ProductMappingSchema = z.object({
   actualCategory: z.string().nullable(),
   isCombo: z.boolean().default(false),
   comboItems: z.array(z.string()).optional(),
-  mappingStatus: z.enum(['VALID', 'INVALID', 'NEEDS_REVIEW'])
+  mappingStatus: z.enum(['VALID', 'INVALID', 'NEEDS_REVIEW']),
 });
 
 export type ProductMapping = z.infer<typeof ProductMappingSchema>;
 
 // Mapping issues
 export interface MappingIssue {
-  type: 'CATEGORY_MISMATCH' | 'DUPLICATE_DESCRIPTION' | 'MISSING_DESCRIPTION' | 
-        'INCORRECT_INGREDIENTS' | 'COMBO_MISMATCH' | 'NUTRITION_MISSING';
+  type:
+    | 'CATEGORY_MISMATCH'
+    | 'DUPLICATE_DESCRIPTION'
+    | 'MISSING_DESCRIPTION'
+    | 'INCORRECT_INGREDIENTS'
+    | 'COMBO_MISMATCH'
+    | 'NUTRITION_MISSING';
   severity: 'ERROR' | 'WARNING' | 'INFO';
   field: string;
   expected: string | null;
@@ -946,11 +981,12 @@ export interface SquareCatalogMapping {
 ```
 
 #### Database Schema Updates (Prisma)
+
 ```sql
 -- prisma/migrations/20250201_fix_product_descriptors/migration.sql
 
 -- Add description validation fields to products table
-ALTER TABLE products 
+ALTER TABLE products
 ADD COLUMN IF NOT EXISTS correct_description TEXT,
 ADD COLUMN IF NOT EXISTS description_source VARCHAR(50) DEFAULT 'SQUARE',
 ADD COLUMN IF NOT EXISTS description_validated_at TIMESTAMPTZ,
@@ -996,7 +1032,7 @@ CREATE TRIGGER update_mapping_audit_updated_at
 
 -- Create view for easy issue tracking
 CREATE OR REPLACE VIEW product_mapping_issues AS
-SELECT 
+SELECT
   p.id,
   p.squareId,
   p.name,
@@ -1015,40 +1051,41 @@ GROUP BY p.id, p.squareId, p.name, p.description, p.categoryId, c.name, p.mappin
 ### 2. Core Service Implementation
 
 #### Product Mapping Service
+
 ```tsx
 // src/lib/products/mapping-service.ts
 import { prisma } from '@/lib/db';
 import { squareClient } from '@/lib/square/client';
 import { logger } from '@/utils/logger';
-import type { 
-  ProductWithDescriptor, 
-  MappingIssue, 
+import type {
+  ProductWithDescriptor,
+  MappingIssue,
   AuditResult,
-  SquareCatalogMapping 
+  SquareCatalogMapping,
 } from '@/types/product-mapping';
 
 export class ProductMappingService {
   private squareClient = squareClient;
-  
+
   /**
    * Audit all product mappings and identify issues
    */
   async auditAllMappings(): Promise<AuditResult> {
     const startTime = Date.now();
     const issues: MappingIssue[] = [];
-    
+
     try {
       // Fetch all products with categories
       const products = await prisma.product.findMany({
         include: {
           category: true,
-          variants: true
-        }
+          variants: true,
+        },
       });
 
       // Fetch Square catalog for comparison
       const squareCatalog = await this.fetchSquareCatalog();
-      
+
       // Map Square items by ID for quick lookup
       const squareItemsMap = new Map<string, SquareCatalogMapping>();
       squareCatalog.forEach(item => {
@@ -1060,7 +1097,7 @@ export class ProductMappingService {
 
       for (const product of products) {
         const squareItem = squareItemsMap.get(product.squareId);
-        
+
         if (!squareItem) {
           issues.push({
             type: 'MISSING_DESCRIPTION',
@@ -1070,7 +1107,7 @@ export class ProductMappingService {
             actual: null,
             productId: product.id,
             squareId: product.squareId,
-            message: `Product not found in Square catalog`
+            message: `Product not found in Square catalog`,
           });
           invalidCount++;
           continue;
@@ -1091,7 +1128,7 @@ export class ProductMappingService {
             actual: product.description,
             productId: product.id,
             squareId: product.squareId,
-            message: `Description mismatch: Local differs from Square`
+            message: `Description mismatch: Local differs from Square`,
           });
         }
 
@@ -1109,8 +1146,10 @@ export class ProductMappingService {
         }
 
         // Special validation for combo products
-        if (product.name.toLowerCase().includes('combo') || 
-            product.name.toLowerCase().includes('pack')) {
+        if (
+          product.name.toLowerCase().includes('combo') ||
+          product.name.toLowerCase().includes('pack')
+        ) {
           const comboValidation = this.validateComboProduct(product, squareItem);
           if (!comboValidation.valid) {
             issues.push(...comboValidation.issues);
@@ -1142,16 +1181,15 @@ export class ProductMappingService {
         invalidProducts: invalidCount,
         issues,
         recommendations: this.generateRecommendations(issues),
-        fixApplied: false
+        fixApplied: false,
       };
 
       logger.info('Product mapping audit completed', {
         duration: Date.now() - startTime,
-        ...auditResult
+        ...auditResult,
       });
 
       return auditResult;
-
     } catch (error) {
       logger.error('Error during product mapping audit:', error);
       throw error;
@@ -1180,12 +1218,12 @@ export class ProductMappingService {
     await prisma.product_mapping_audit.updateMany({
       where: {
         product_id: { in: fixableIssues.map(i => i.productId) },
-        resolved: false
+        resolved: false,
       },
       data: {
         resolved: true,
-        resolved_at: new Date()
-      }
+        resolved_at: new Date(),
+      },
     });
   }
 
@@ -1199,8 +1237,8 @@ export class ProductMappingService {
             description: issue.expected,
             correct_description: issue.expected,
             description_validated_at: new Date(),
-            mapping_status: 'VALID'
-          }
+            mapping_status: 'VALID',
+          },
         });
         break;
 
@@ -1210,8 +1248,8 @@ export class ProductMappingService {
         await prisma.product.update({
           where: { id: issue.productId },
           data: {
-            mapping_status: 'NEEDS_REVIEW'
-          }
+            mapping_status: 'NEEDS_REVIEW',
+          },
         });
         break;
 
@@ -1225,8 +1263,8 @@ export class ProductMappingService {
               calories: squareItem.nutritionData.calorieCount,
               dietaryPreferences: squareItem.nutritionData.dietaryPreferences || [],
               ingredients: squareItem.nutritionData.ingredients,
-              nutritionFacts: squareItem.nutritionData as any
-            }
+              nutritionFacts: squareItem.nutritionData as any,
+            },
           });
         }
         break;
@@ -1236,11 +1274,10 @@ export class ProductMappingService {
   private compareDescriptions(local: string | null, square: string | null): boolean {
     if (!local && !square) return true;
     if (!local || !square) return false;
-    
+
     // Normalize for comparison
-    const normalizeText = (text: string) => 
-      text.toLowerCase().trim().replace(/\s+/g, ' ');
-    
+    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/\s+/g, ' ');
+
     return normalizeText(local) === normalizeText(square);
   }
 
@@ -1250,7 +1287,7 @@ export class ProductMappingService {
     localCategoryName: string
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
+
     // Special handling for different product types
     const productName = product.name.toLowerCase();
     const categoryName = localCategoryName.toLowerCase();
@@ -1266,7 +1303,7 @@ export class ProductMappingService {
           actual: 'empanada',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Alfajor product has empanada description'
+          message: 'Alfajor product has empanada description',
         });
       }
     }
@@ -1274,8 +1311,10 @@ export class ProductMappingService {
     // Empanada validation
     if (categoryName.includes('empanada')) {
       // Check for ingredient mismatches (e.g., pork with black beans)
-      if (productName.includes('pork') && 
-          product.description?.toLowerCase().includes('black beans')) {
+      if (
+        productName.includes('pork') &&
+        product.description?.toLowerCase().includes('black beans')
+      ) {
         issues.push({
           type: 'INCORRECT_INGREDIENTS',
           severity: 'ERROR',
@@ -1284,14 +1323,14 @@ export class ProductMappingService {
           actual: 'black beans',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Pork empanada incorrectly lists black beans'
+          message: 'Pork empanada incorrectly lists black beans',
         });
       }
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -1300,10 +1339,12 @@ export class ProductMappingService {
     squareItem: SquareCatalogMapping
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
+
     // Check if combo description matches combo contents
-    if (product.name.toLowerCase().includes('alfa') && 
-        product.name.toLowerCase().includes('pack')) {
+    if (
+      product.name.toLowerCase().includes('alfa') &&
+      product.name.toLowerCase().includes('pack')
+    ) {
       if (product.description?.toLowerCase().includes('empanada')) {
         issues.push({
           type: 'COMBO_MISMATCH',
@@ -1313,14 +1354,14 @@ export class ProductMappingService {
           actual: 'empanada description',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Alfajor combo showing empanada description'
+          message: 'Alfajor combo showing empanada description',
         });
       }
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -1329,9 +1370,11 @@ export class ProductMappingService {
     squareItem: SquareCatalogMapping
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
-    if (squareItem.nutritionData?.calorieCount && 
-        product.calories !== squareItem.nutritionData.calorieCount) {
+
+    if (
+      squareItem.nutritionData?.calorieCount &&
+      product.calories !== squareItem.nutritionData.calorieCount
+    ) {
       issues.push({
         type: 'NUTRITION_MISSING',
         severity: 'WARNING',
@@ -1340,13 +1383,13 @@ export class ProductMappingService {
         actual: String(product.calories),
         productId: product.id,
         squareId: product.squareId,
-        message: 'Calorie count mismatch'
+        message: 'Calorie count mismatch',
       });
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -1354,9 +1397,9 @@ export class ProductMappingService {
     // Implementation to fetch from Square API
     const catalogApi = this.squareClient.catalogApi;
     const response = await catalogApi.listCatalog(undefined, 'ITEM');
-    
+
     const mappings: SquareCatalogMapping[] = [];
-    
+
     if (response.result.objects) {
       for (const object of response.result.objects) {
         if (object.type === 'ITEM' && object.itemData) {
@@ -1370,12 +1413,12 @@ export class ProductMappingService {
             localCategoryId: '',
             syncStatus: 'SYNCED',
             lastSyncAt: new Date(),
-            nutritionData: object.itemData.foodAndBeverageDetails
+            nutritionData: object.itemData.foodAndBeverageDetails,
           });
         }
       }
     }
-    
+
     return mappings;
   }
 
@@ -1383,7 +1426,7 @@ export class ProductMappingService {
     try {
       const catalogApi = this.squareClient.catalogApi;
       const response = await catalogApi.retrieveCatalogObject(squareId);
-      
+
       if (response.result.object && response.result.object.itemData) {
         const object = response.result.object;
         return {
@@ -1396,13 +1439,13 @@ export class ProductMappingService {
           localCategoryId: '',
           syncStatus: 'SYNCED',
           lastSyncAt: new Date(),
-          nutritionData: object.itemData.foodAndBeverageDetails
+          nutritionData: object.itemData.foodAndBeverageDetails,
         };
       }
     } catch (error) {
       logger.error(`Failed to fetch Square item ${squareId}:`, error);
     }
-    
+
     return null;
   }
 
@@ -1417,44 +1460,47 @@ export class ProductMappingService {
       expected_value: issue.expected,
       actual_value: issue.actual,
       message: issue.message,
-      resolved: false
+      resolved: false,
     }));
 
     if (auditRecords.length > 0) {
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO product_mapping_audit 
         (product_id, square_id, issue_type, severity, field_name, expected_value, actual_value, message, resolved)
         VALUES ${auditRecords.map(() => '($1, $2, $3, $4, $5, $6, $7, $8, $9)').join(', ')}
         ON CONFLICT DO NOTHING
-      `, ...auditRecords.flatMap(r => Object.values(r)));
+      `,
+        ...auditRecords.flatMap(r => Object.values(r))
+      );
     }
   }
 
   private generateRecommendations(issues: MappingIssue[]): string[] {
     const recommendations: string[] = [];
-    
+
     const issueTypes = new Set(issues.map(i => i.type));
-    
+
     if (issueTypes.has('DUPLICATE_DESCRIPTION')) {
       recommendations.push('Run Square sync to update product descriptions');
     }
-    
+
     if (issueTypes.has('CATEGORY_MISMATCH')) {
       recommendations.push('Review category assignments for affected products');
     }
-    
+
     if (issueTypes.has('COMBO_MISMATCH')) {
       recommendations.push('Manually review all combo product descriptions');
     }
-    
+
     if (issueTypes.has('INCORRECT_INGREDIENTS')) {
       recommendations.push('Update ingredient lists from Square catalog');
     }
-    
+
     if (issueTypes.has('NUTRITION_MISSING')) {
       recommendations.push('Sync nutrition data from Square food & beverage details');
     }
-    
+
     return recommendations;
   }
 }
@@ -1465,6 +1511,7 @@ export class ProductMappingService {
 #### API Endpoints
 
 ##### Audit Endpoint
+
 ```tsx
 // src/app/api/products/audit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -1478,10 +1525,7 @@ export async function GET(request: NextRequest) {
     // Check admin authentication
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const service = new ProductMappingService();
@@ -1495,21 +1539,18 @@ export async function GET(request: NextRequest) {
         valid: auditResult.validProducts,
         invalid: auditResult.invalidProducts,
         criticalIssues: auditResult.issues.filter(i => i.severity === 'ERROR').length,
-        warnings: auditResult.issues.filter(i => i.severity === 'WARNING').length
-      }
+        warnings: auditResult.issues.filter(i => i.severity === 'WARNING').length,
+      },
     });
-
   } catch (error) {
     logger.error('Product audit failed:', error);
-    return NextResponse.json(
-      { error: 'Audit failed', details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Audit failed', details: error.message }, { status: 500 });
   }
 }
 ```
 
 #### Fix Mappings Endpoint
+
 ```tsx
 // src/app/api/products/fix-mappings/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -1526,9 +1567,9 @@ const FixMappingsSchema = z.object({
     invalidProducts: z.number(),
     issues: z.array(z.any()),
     recommendations: z.array(z.string()),
-    fixApplied: z.boolean()
+    fixApplied: z.boolean(),
   }),
-  dryRun: z.boolean().optional().default(false)
+  dryRun: z.boolean().optional().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -1536,10 +1577,7 @@ export async function POST(request: NextRequest) {
     // Check admin authentication
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -1552,7 +1590,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Dry run completed',
         wouldFix: auditResult.issues.filter(i => i.severity === 'ERROR').length,
-        issues: auditResult.issues
+        issues: auditResult.issues,
       });
     }
 
@@ -1567,15 +1605,14 @@ export async function POST(request: NextRequest) {
       message: 'Mappings fixed successfully',
       before: {
         invalid: auditResult.invalidProducts,
-        issues: auditResult.issues.length
+        issues: auditResult.issues.length,
       },
       after: {
         invalid: verificationAudit.invalidProducts,
-        issues: verificationAudit.issues.length
+        issues: verificationAudit.issues.length,
       },
-      fixed: auditResult.invalidProducts - verificationAudit.invalidProducts
+      fixed: auditResult.invalidProducts - verificationAudit.invalidProducts,
     });
-
   } catch (error) {
     logger.error('Fix mappings failed:', error);
     return NextResponse.json(
@@ -1584,3 +1621,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+```

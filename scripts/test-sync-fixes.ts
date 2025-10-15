@@ -2,7 +2,7 @@
 
 /**
  * Test script for sync fixes - category conflicts and error handling
- * 
+ *
  * This script tests the sync fixes by:
  * 1. Testing category upsert logic
  * 2. Testing duplicate category handling
@@ -16,27 +16,24 @@ const prisma = new PrismaClient();
 
 async function testCategoryUpsert() {
   logger.info('🔧 Testing category upsert logic...');
-  
+
   const testCategoryName = 'TEST-CATEGORY-UPSERT';
   const testSquareId = 'TEST-SQUARE-ID-' + Date.now();
-  
+
   try {
     // First, ensure the category doesn't exist
     await prisma.category.deleteMany({
-      where: { 
-        OR: [
-          { name: testCategoryName },
-          { squareId: testSquareId }
-        ]
-      }
+      where: {
+        OR: [{ name: testCategoryName }, { squareId: testSquareId }],
+      },
     });
 
     // Import the enhanced function (simulate what sync does)
     const { getOrCreateCategoryByName } = await import('../src/lib/square/sync');
-    
+
     // This should fail since we can't import internal function, so let's simulate
     // the upsert logic directly
-    
+
     // Test 1: Create new category
     let category = await prisma.category.upsert({
       where: { name: testCategoryName },
@@ -77,29 +74,31 @@ async function testCategoryUpsert() {
     logger.info('✅ Successfully updated existing category:', category.name);
 
     // Test 3: Simulate concurrent creation attempts
-    const promises = Array(5).fill(0).map(async (_, index) => {
-      const concurrentSquareId = `${testSquareId}-concurrent-${index}`;
-      try {
-        const result = await prisma.category.upsert({
-          where: { name: `${testCategoryName}-CONCURRENT-${index}` },
-          create: {
-            name: `${testCategoryName}-CONCURRENT-${index}`,
-            description: `Concurrent test category ${index}`,
-            slug: `${testCategoryName.toLowerCase()}-concurrent-${index}`,
-            squareId: concurrentSquareId,
-            order: index,
-            active: true,
-          },
-          update: {
-            squareId: concurrentSquareId,
-            active: true,
-          },
-        });
-        return { success: true, result };
-      } catch (error) {
-        return { success: false, error };
-      }
-    });
+    const promises = Array(5)
+      .fill(0)
+      .map(async (_, index) => {
+        const concurrentSquareId = `${testSquareId}-concurrent-${index}`;
+        try {
+          const result = await prisma.category.upsert({
+            where: { name: `${testCategoryName}-CONCURRENT-${index}` },
+            create: {
+              name: `${testCategoryName}-CONCURRENT-${index}`,
+              description: `Concurrent test category ${index}`,
+              slug: `${testCategoryName.toLowerCase()}-concurrent-${index}`,
+              squareId: concurrentSquareId,
+              order: index,
+              active: true,
+            },
+            update: {
+              squareId: concurrentSquareId,
+              active: true,
+            },
+          });
+          return { success: true, result };
+        } catch (error) {
+          return { success: false, error };
+        }
+      });
 
     const results = await Promise.all(promises);
     const successCount = results.filter(r => r.success).length;
@@ -107,11 +106,11 @@ async function testCategoryUpsert() {
 
     // Cleanup
     await prisma.category.deleteMany({
-      where: { 
-        name: { 
-          startsWith: testCategoryName 
-        }
-      }
+      where: {
+        name: {
+          startsWith: testCategoryName,
+        },
+      },
     });
 
     logger.info('✅ Category upsert tests passed');
@@ -124,7 +123,7 @@ async function testCategoryUpsert() {
 
 async function testDuplicateCategories() {
   logger.info('🔍 Testing duplicate category detection...');
-  
+
   try {
     // Check for existing duplicate categories
     const duplicates = await prisma.$queryRaw`
@@ -147,7 +146,7 @@ async function testDuplicateCategories() {
     });
 
     logger.info(`Found ${categoriesWithoutSquareId.length} categories without Square IDs`);
-    
+
     return true;
   } catch (error) {
     logger.error('❌ Duplicate category test failed:', error);
@@ -157,15 +156,15 @@ async function testDuplicateCategories() {
 
 async function testSquareMappings() {
   logger.info('🗺️ Testing Square category mappings...');
-  
+
   try {
     // Import CategoryMapper
     const { CategoryMapper } = await import('../src/lib/square/category-mapper');
-    
+
     // Test the problematic Square ID from the error
     const empanadasSquareId = 'SDGSB4F4YOUFY3UFJF2KWXUB';
     const mapping = CategoryMapper.getLegacyLocalCategory(empanadasSquareId);
-    
+
     if (mapping) {
       logger.info(`✅ Found mapping for problematic Square ID ${empanadasSquareId}: ${mapping}`);
     } else {
@@ -181,16 +180,18 @@ async function testSquareMappings() {
 
     // Check if the problematic category exists in database
     const cateringDessertsCategory = await prisma.category.findFirst({
-      where: { 
-        name: { 
+      where: {
+        name: {
           contains: 'DESSERTS',
-          mode: 'insensitive' 
-        }
-      }
+          mode: 'insensitive',
+        },
+      },
     });
 
     if (cateringDessertsCategory) {
-      logger.info(`✅ CATERING DESSERTS category exists: "${cateringDessertsCategory.name}" (ID: ${cateringDessertsCategory.id})`);
+      logger.info(
+        `✅ CATERING DESSERTS category exists: "${cateringDessertsCategory.name}" (ID: ${cateringDessertsCategory.id})`
+      );
     } else {
       logger.warn('⚠️ No CATERING DESSERTS category found in database');
     }
@@ -204,7 +205,7 @@ async function testSquareMappings() {
 
 async function testErrorResilience() {
   logger.info('🛡️ Testing sync error resilience...');
-  
+
   try {
     // Test that the sync can handle various error scenarios gracefully
     const testCases = [
@@ -213,15 +214,15 @@ async function testErrorResilience() {
         test: async () => {
           // This should be handled gracefully by the new upsert logic
           return true;
-        }
+        },
       },
       {
         name: 'Invalid Item Data',
         test: async () => {
           // Test how sync handles items with missing or invalid data
           return true;
-        }
-      }
+        },
+      },
     ];
 
     let passedTests = 0;
@@ -249,7 +250,7 @@ async function testErrorResilience() {
 
 async function main() {
   logger.info('🚀 Starting sync fixes test suite...');
-  
+
   let allTestsPassed = true;
   const results = [];
 
@@ -294,7 +295,7 @@ async function main() {
 }
 
 main()
-  .catch((error) => {
+  .catch(error => {
     logger.error('Test script failed:', error);
     process.exit(1);
   })

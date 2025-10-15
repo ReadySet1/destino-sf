@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 /**
  * ScrollAreaProps extends the Radix ScrollAreaPrimitive props for flexibility.
  */
-export interface ScrollAreaProps extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
+export interface ScrollAreaProps
+  extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
   children: React.ReactNode;
   className?: string;
 }
@@ -46,4 +47,4 @@ export const ScrollArea = React.forwardRef<
   </ScrollAreaPrimitive.Root>
 ));
 
-ScrollArea.displayName = 'ScrollArea'; 
+ScrollArea.displayName = 'ScrollArea';

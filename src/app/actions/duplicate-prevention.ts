@@ -30,7 +30,9 @@ export async function checkForDuplicateOrders(
   try {
     // Get current user if logged in
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user && !email) {
       return {
@@ -59,4 +61,4 @@ export async function checkForDuplicateOrders(
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
-} 
+}

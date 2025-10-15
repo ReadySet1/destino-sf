@@ -37,7 +37,7 @@ export async function performIntegrationHealthCheck(): Promise<IntegrationHealth
     supabase: { status: 'healthy' },
     redis: { status: 'healthy' },
     shippo: { status: 'healthy' },
-    overall: { status: 'healthy' }
+    overall: { status: 'healthy' },
   };
 
   const failedServices: string[] = [];

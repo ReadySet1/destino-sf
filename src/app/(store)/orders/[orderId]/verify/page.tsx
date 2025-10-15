@@ -67,7 +67,7 @@ export default function VerifyOrderPage({ params }: { params: Promise<{ orderId:
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className="border-destino-yellow/40 focus:border-destino-orange focus:ring-destino-orange/20"
                 required
               />
@@ -95,9 +95,7 @@ export default function VerifyOrderPage({ params }: { params: Promise<{ orderId:
             </Button>
 
             <div className="text-center text-sm text-gray-600">
-              <p>
-                Order #{resolvedParams.orderId.slice(-8)}
-              </p>
+              <p>Order #{resolvedParams.orderId.slice(-8)}</p>
             </div>
           </form>
         </CardContent>

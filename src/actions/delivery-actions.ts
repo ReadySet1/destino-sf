@@ -42,7 +42,7 @@ async function getActiveDeliveryZones() {
     return zones;
   } catch (error) {
     console.error('Error fetching regular delivery zones:', error);
-    
+
     // Fallback to hardcoded zones if database is unavailable
     return getFallbackZones();
   }
@@ -58,8 +58,42 @@ function getFallbackZones() {
       name: 'San Francisco Nearby',
       minimumOrderForFree: 75,
       deliveryFee: 15,
-      postalCodes: ['94102', '94103', '94104', '94105', '94107', '94108', '94109', '94110', '94111', '94112', '94114', '94115', '94116', '94117', '94118', '94121', '94122', '94123', '94124', '94127', '94131', '94132', '94133', '94134', '94158'],
-      cities: ['san francisco', 'south san francisco', 'daly city', 'brisbane', 'millbrae', 'burlingame', 'san mateo'],
+      postalCodes: [
+        '94102',
+        '94103',
+        '94104',
+        '94105',
+        '94107',
+        '94108',
+        '94109',
+        '94110',
+        '94111',
+        '94112',
+        '94114',
+        '94115',
+        '94116',
+        '94117',
+        '94118',
+        '94121',
+        '94122',
+        '94123',
+        '94124',
+        '94127',
+        '94131',
+        '94132',
+        '94133',
+        '94134',
+        '94158',
+      ],
+      cities: [
+        'san francisco',
+        'south san francisco',
+        'daly city',
+        'brisbane',
+        'millbrae',
+        'burlingame',
+        'san mateo',
+      ],
       active: true,
     },
     {
@@ -67,8 +101,58 @@ function getFallbackZones() {
       name: 'San Francisco Extended',
       minimumOrderForFree: 0, // No minimum for free delivery
       deliveryFee: 25,
-      postalCodes: ['94070', '94401', '94402', '94403', '94404', '94002', '94010', '94015', '94030', '94066', '94080', '94128', '94014', '94065', '94301', '94302', '94303', '94304', '94305', '94306', '94085', '94086', '94087', '94089', '94301'],
-      cities: ['belmont', 'san carlos', 'redwood city', 'menlo park', 'palo alto', 'mountain view', 'sunnyvale', 'santa clara', 'san jose', 'sausalito', 'mill valley', 'tiburon', 'larkspur', 'corte madera', 'san rafael', 'novato', 'oakland', 'berkeley', 'alameda', 'emeryville', 'san leandro', 'hayward', 'richmond'],
+      postalCodes: [
+        '94070',
+        '94401',
+        '94402',
+        '94403',
+        '94404',
+        '94002',
+        '94010',
+        '94015',
+        '94030',
+        '94066',
+        '94080',
+        '94128',
+        '94014',
+        '94065',
+        '94301',
+        '94302',
+        '94303',
+        '94304',
+        '94305',
+        '94306',
+        '94085',
+        '94086',
+        '94087',
+        '94089',
+        '94301',
+      ],
+      cities: [
+        'belmont',
+        'san carlos',
+        'redwood city',
+        'menlo park',
+        'palo alto',
+        'mountain view',
+        'sunnyvale',
+        'santa clara',
+        'san jose',
+        'sausalito',
+        'mill valley',
+        'tiburon',
+        'larkspur',
+        'corte madera',
+        'san rafael',
+        'novato',
+        'oakland',
+        'berkeley',
+        'alameda',
+        'emeryville',
+        'san leandro',
+        'hayward',
+        'richmond',
+      ],
       active: true,
     },
   ];
@@ -84,9 +168,7 @@ async function getDeliveryZone(city: string, postalCode?: string): Promise<any |
 
     // First try to match by postal code if provided
     if (postalCode) {
-      const postalMatch = zones.find(zone => 
-        zone.postalCodes.includes(postalCode)
-      );
+      const postalMatch = zones.find(zone => zone.postalCodes.includes(postalCode));
       if (postalMatch) {
         return postalMatch;
       }
@@ -94,9 +176,7 @@ async function getDeliveryZone(city: string, postalCode?: string): Promise<any |
 
     // Then try to match by city name
     const cityMatch = zones.find(zone =>
-      zone.cities.some((zoneCity: string) => 
-        zoneCity.toLowerCase() === normalizedCity
-      )
+      zone.cities.some((zoneCity: string) => zoneCity.toLowerCase() === normalizedCity)
     );
 
     return cityMatch || null;
@@ -109,7 +189,10 @@ async function getDeliveryZone(city: string, postalCode?: string): Promise<any |
 /**
  * SERVER ACTION: Calculates the delivery fee based on the address and order subtotal
  */
-export async function calculateDeliveryFeeAction(address: Address, subtotal: number): Promise<DeliveryFeeResult | null> {
+export async function calculateDeliveryFeeAction(
+  address: Address,
+  subtotal: number
+): Promise<DeliveryFeeResult | null> {
   try {
     const zone = await getDeliveryZone(address.city, address.postalCode);
 

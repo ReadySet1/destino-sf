@@ -10,7 +10,11 @@ import Pagination from '@/components/ui/pagination';
 import { getArchivedOrders } from '@/app/actions/orders';
 import ArchivedOrdersTable from './components/ArchivedOrdersTable';
 import ArchivedOrdersFilters from './components/ArchivedOrdersFilters';
-import { ResponsivePageHeader, BreadcrumbItem, BreadcrumbSeparator } from '@/components/ui/responsive-page-header';
+import {
+  ResponsivePageHeader,
+  BreadcrumbItem,
+  BreadcrumbSeparator,
+} from '@/components/ui/responsive-page-header';
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic';

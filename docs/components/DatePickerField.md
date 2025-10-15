@@ -11,29 +11,34 @@ A reusable, accessible date picker component that matches the admin design syste
 ## Features
 
 ✅ **Design System Consistency**
+
 - Matches Input component height (`h-11`)
 - Uses Popover pattern (like Select component)
 - Orange highlight color (`#FF8C42`) for selected dates
 - Proper spacing and typography
 
 ✅ **TypeScript Safety**
+
 - Fully typed props with JSDoc comments
 - Type-safe date handling with date-fns
 - Proper generic types for React Hook Form Controller
 
 ✅ **Accessibility**
+
 - ARIA labels support
 - Keyboard navigation
 - Focus management
 - Screen reader friendly
 
 ✅ **Validation & Edge Cases**
+
 - Disable past dates option
 - Min/max date constraints
 - Custom disabled date function
 - End date must be after start date (automatic)
 
 ✅ **Integration**
+
 - Works seamlessly with React Hook Form Controller
 - Controlled and uncontrolled mode support
 - Error state styling
@@ -128,7 +133,7 @@ interface DateRangePickerFieldProps {
   disablePastDates={true}
   errors={{
     startDate: !!errors.startDate,
-    endDate: !!errors.endDate
+    endDate: !!errors.endDate,
   }}
 />
 ```
@@ -138,12 +143,14 @@ interface DateRangePickerFieldProps {
 The calendar component has been updated in the Availability Rule Editor:
 
 ### Before (Lines 555-647)
+
 - Always-visible inline calendars
 - Took up significant vertical space
 - Two large calendar sections side-by-side
 - No consistent height with other inputs
 
 ### After (Lines 555-623)
+
 - Popover-based date pickers
 - Compact button trigger (h-11 height)
 - Calendar shows on click
@@ -219,20 +226,20 @@ Visit: `http://localhost:3000/admin/products/availability`
 
 ```css
 /* Button Trigger */
-height: 2.75rem;           /* h-11 = 44px */
-border-radius: 0.375rem;   /* rounded-md */
+height: 2.75rem; /* h-11 = 44px */
+border-radius: 0.375rem; /* rounded-md */
 
 /* Selected Date */
-background: #FF8C42;       /* Orange primary color */
-color: #FFFFFF;
+background: #ff8c42; /* Orange primary color */
+color: #ffffff;
 
 /* Error State */
-border-color: #EF4444;     /* red-500 */
-ring-color: #EF4444;
+border-color: #ef4444; /* red-500 */
+ring-color: #ef4444;
 
 /* Popover */
 z-index: 9999;
-animation: fade-in, zoom-in, slide-in
+animation: fade-in, zoom-in, slide-in;
 ```
 
 ## Migration Guide
@@ -240,11 +247,13 @@ animation: fade-in, zoom-in, slide-in
 To use this component in other admin forms:
 
 1. **Import the component:**
+
    ```tsx
    import { DatePickerField } from '@/components/ui/date-picker-field';
    ```
 
 2. **Replace existing Calendar usage:**
+
    ```tsx
    // Old
    <Calendar
@@ -267,11 +276,7 @@ To use this component in other admin forms:
      name="fieldName"
      control={control}
      render={({ field }) => (
-       <DatePickerField
-         value={field.value}
-         onSelect={field.onChange}
-         error={!!errors.fieldName}
-       />
+       <DatePickerField value={field.value} onSelect={field.onChange} error={!!errors.fieldName} />
      )}
    />
    ```

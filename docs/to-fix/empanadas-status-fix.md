@@ -54,7 +54,7 @@ interface SquareCatalogObject {
   item_data?: {
     name: string;
     description?: string | null;
-    category_id?: string;  // This is the Square category ID
+    category_id?: string; // This is the Square category ID
     categories?: Array<{
       id: string;
       ordinal?: number;
@@ -83,17 +83,17 @@ interface ProductSyncResult {
 
 ```sql
 -- Ensure categories exist with correct Square mappings
-UPDATE categories 
+UPDATE categories
 SET square_id = 'CBCQ73NCXQKUAFWGP2KQFOJN'
 WHERE name = 'EMPANADAS';
 
 -- Fix all empanadas to be active and in correct category
 UPDATE products p
-SET 
+SET
   active = true,
   category_id = (SELECT id FROM categories WHERE name = 'EMPANADAS')
-WHERE 
-  p.name LIKE '%Empanada%' 
+WHERE
+  p.name LIKE '%Empanada%'
   OR p.name LIKE '%empanada%';
 ```
 
@@ -129,11 +129,11 @@ async function determineProductCategory(
   product: SquareCatalogObject,
   relatedObjects: SquareCatalogObject[],
   defaultCategory: { id: string; name: string }
-): Promise<string>
+): Promise<string>;
 
 // lib/square/category-sync.ts (new)
-async function ensureCategoriesExist(): Promise<Map<string, string>>
-async function mapSquareToLocalCategory(squareCategoryId: string): Promise<string>
+async function ensureCategoriesExist(): Promise<Map<string, string>>;
+async function mapSquareToLocalCategory(squareCategoryId: string): Promise<string>;
 ```
 
 ### Client-Server Data Flow
@@ -175,10 +175,10 @@ describe('Product Sync', () => {
       id: 'PROD_123',
       item_data: {
         name: 'Beef Empanada',
-        category_id: 'CBCQ73NCXQKUAFWGP2KQFOJN'
-      }
+        category_id: 'CBCQ73NCXQKUAFWGP2KQFOJN',
+      },
     };
-    
+
     const result = await syncSingleProduct(mockProduct);
     expect(result.categoryName).toBe('EMPANADAS');
     expect(result.active).toBe(true);
@@ -200,21 +200,21 @@ describe('Square Sync Integration', () => {
           type: 'ITEM',
           item_data: {
             name: 'Beef Empanada',
-            category_id: 'CBCQ73NCXQKUAFWGP2KQFOJN'
-          }
-        }
-      ]
+            category_id: 'CBCQ73NCXQKUAFWGP2KQFOJN',
+          },
+        },
+      ],
     };
 
     // Run sync
     const result = await syncProductsProduction();
-    
+
     // Verify database state
     const product = await prisma.product.findUnique({
       where: { squareId: 'ITEM_123' },
-      include: { category: true }
+      include: { category: true },
     });
-    
+
     expect(product.category.name).toBe('EMPANADAS');
     expect(product.active).toBe(true);
   });
@@ -241,7 +241,10 @@ const isValidSquareCategoryId = (id: string): boolean => {
 
 // Sanitize category names
 const sanitizeCategoryName = (name: string): string => {
-  return name.trim().toUpperCase().replace(/[^A-Z0-9\s-]/g, '');
+  return name
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s-]/g, '');
 };
 ```
 
@@ -308,9 +311,9 @@ private async determineProductCategory(
 ): Promise<string> {
   try {
     // Get Square category ID from product
-    const squareCategoryId = product.item_data?.category_id || 
+    const squareCategoryId = product.item_data?.category_id ||
                             product.item_data?.categories?.[0]?.id;
-    
+
     if (!squareCategoryId) {
       logger.warn(`No category found for product ${product.item_data?.name}, using default`);
       return defaultCategory.id;
@@ -319,7 +322,7 @@ private async determineProductCategory(
     // Check if we have a mapping for this Square category
     const localCategoryName = CategoryMapper.getLegacyLocalCategory(squareCategoryId) ||
                               CategoryMapper.getLocalCategory(squareCategoryId);
-    
+
     if (!localCategoryName) {
       logger.warn(`No mapping for Square category ${squareCategoryId}, using default`);
       return defaultCategory.id;
@@ -359,7 +362,7 @@ private async determineProductCategory(
 
     logger.debug(`Product ${product.item_data?.name} assigned to category ${localCategoryName}`);
     return localCategory.id;
-    
+
   } catch (error) {
     logger.error(`Error determining category for product ${product.item_data?.name}:`, error);
     return defaultCategory.id;
@@ -382,15 +385,12 @@ async function fixEmpanadasStatus() {
   try {
     // Step 1: Ensure EMPANADAS category exists with correct Square ID
     console.log('1. Checking EMPANADAS category...');
-    
+
     const squareEmpanadasId = 'CBCQ73NCXQKUAFWGP2KQFOJN';
     let empanadasCategory = await prisma.category.findFirst({
       where: {
-        OR: [
-          { name: 'EMPANADAS' },
-          { squareId: squareEmpanadasId }
-        ]
-      }
+        OR: [{ name: 'EMPANADAS' }, { squareId: squareEmpanadasId }],
+      },
     });
 
     if (!empanadasCategory) {
@@ -402,17 +402,17 @@ async function fixEmpanadasStatus() {
           slug: 'empanadas',
           description: 'Delicious empanadas',
           active: true,
-          order: 1
-        }
+          order: 1,
+        },
       });
     } else if (!empanadasCategory.squareId) {
       console.log('Updating EMPANADAS category with Square ID...');
       empanadasCategory = await prisma.category.update({
         where: { id: empanadasCategory.id },
-        data: { 
+        data: {
           squareId: squareEmpanadasId,
-          active: true
-        }
+          active: true,
+        },
       });
     }
 
@@ -420,35 +420,35 @@ async function fixEmpanadasStatus() {
 
     // Step 2: Find all empanada products
     console.log('\n2. Finding empanada products...');
-    
+
     const empanadasProducts = await prisma.product.findMany({
       where: {
         OR: [
           { name: { contains: 'Empanada', mode: 'insensitive' } },
-          { name: { contains: 'empanada', mode: 'insensitive' } }
-        ]
+          { name: { contains: 'empanada', mode: 'insensitive' } },
+        ],
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     console.log(`Found ${empanadasProducts.length} empanada products`);
 
     // Step 3: Update products to correct category and active status
     console.log('\n3. Updating products...');
-    
+
     let updatedCount = 0;
     for (const product of empanadasProducts) {
       const needsUpdate = product.categoryId !== empanadasCategory.id || !product.active;
-      
+
       if (needsUpdate) {
         await prisma.product.update({
           where: { id: product.id },
           data: {
             categoryId: empanadasCategory.id,
-            active: true
-          }
+            active: true,
+          },
         });
         updatedCount++;
         console.log(`  ✅ Updated: ${product.name}`);
@@ -461,12 +461,12 @@ async function fixEmpanadasStatus() {
 
     // Step 4: Verify the fix
     console.log('\n4. Verifying fix...');
-    
+
     const verifyProducts = await prisma.product.count({
       where: {
         categoryId: empanadasCategory.id,
-        active: true
-      }
+        active: true,
+      },
     });
 
     console.log(`\n✅ Fix complete!`);
@@ -476,21 +476,20 @@ async function fixEmpanadasStatus() {
     // Step 5: Display sample products
     const sampleProducts = await prisma.product.findMany({
       where: {
-        categoryId: empanadasCategory.id
+        categoryId: empanadasCategory.id,
       },
       take: 5,
       select: {
         name: true,
         active: true,
-        price: true
-      }
+        price: true,
+      },
     });
 
     console.log('\n📋 Sample empanadas:');
     sampleProducts.forEach(p => {
       console.log(`   - ${p.name}: $${p.price} (active: ${p.active})`);
     });
-
   } catch (error) {
     console.error('❌ Fix failed:', error);
     process.exit(1);
@@ -512,13 +511,13 @@ export async function POST(request: Request) {
   try {
     logger.info('🚀 Square sync API triggered via POST');
     logger.info('📊 Pre-sync statistics:');
-    
+
     // Log current state before sync
     const preStats = await prisma.product.groupBy({
       by: ['active', 'categoryId'],
-      _count: true
+      _count: true,
     });
-    
+
     logger.info('Pre-sync product distribution:', preStats);
 
     // Parse request body for options
@@ -536,22 +535,22 @@ export async function POST(request: Request) {
     // Log post-sync state
     const postStats = await prisma.product.groupBy({
       by: ['active', 'categoryId'],
-      _count: true
+      _count: true,
     });
-    
+
     logger.info('Post-sync product distribution:', postStats);
 
     // Check specifically for empanadas
     const empanadasCategory = await prisma.category.findFirst({
-      where: { name: 'EMPANADAS' }
+      where: { name: 'EMPANADAS' },
     });
-    
+
     if (empanadasCategory) {
       const empanadasCount = await prisma.product.count({
         where: {
           categoryId: empanadasCategory.id,
-          active: true
-        }
+          active: true,
+        },
       });
       logger.info(`✅ Active empanadas after sync: ${empanadasCount}`);
     }
@@ -597,7 +596,7 @@ CREATE TABLE categories_backup_20250117 AS SELECT * FROM categories;
 
 -- Rollback if needed
 UPDATE products p
-SET 
+SET
   category_id = b.category_id,
   active = b.active
 FROM products_backup_20250117 b
@@ -626,6 +625,7 @@ if (USE_ENHANCED_CATEGORY_MAPPING) {
 ### How to Run the Fix
 
 1. **First, run the one-time fix script to correct existing data:**
+
    ```bash
    npx tsx src/scripts/fix-empanadas-status.ts
    ```
@@ -633,6 +633,7 @@ if (USE_ENHANCED_CATEGORY_MAPPING) {
 2. **Deploy the updated sync code**
 
 3. **Trigger a new sync to verify the fix:**
+
    ```bash
    curl -X POST http://localhost:3000/api/square/sync
    ```
@@ -642,8 +643,9 @@ if (USE_ENHANCED_CATEGORY_MAPPING) {
 ### Monitoring
 
 Monitor these metrics after deployment:
+
 - Number of products in EMPANADAS category
-- Active status of empanada products  
+- Active status of empanada products
 - Category assignment logs during sync
 - Sync completion time
 

@@ -9,7 +9,7 @@
         {
           "id": "BAHPTM7P3HVQ6N2V5PMZMDPM",
           "name": "Alfajores de Lucuma (10 per packet)",
-          "price": 15.00,
+          "price": 15.0,
           "description": "Seasonal item! Hop into the season with our Alfajores de Lucuma! 10 buttery cookies filled with dreamy lucuma dulce de leche- the perfect combo of sweet & creamy goodness.",
           "has_image": true,
           "ecom_available": true
@@ -17,7 +17,7 @@
         {
           "id": "SZCXMH35UUABGZSYAAN5GWM2",
           "name": "Alfajores- 6-pack combo",
-          "price": 10.00,
+          "price": 10.0,
           "description": "OUR 6-PACK COMBO! Treat yourself or that special someone with a great selection of our favorite alfajores: Lemon, Classic & Chocolate!",
           "has_image": true,
           "ecom_available": true
@@ -25,7 +25,7 @@
         {
           "id": "KZ4IKWU5JBYAFZK545ULVDFQ",
           "name": "Alfajores- Chocolate (1 dozen- packet)",
-          "price": 20.00,
+          "price": 20.0,
           "description": "A dark chocolate coating is a perfect complement to our butter cookie filled with creamy dulce de leche. To finish it off, a sprinkle of Peruvian sea salt.",
           "has_image": true,
           "ecom_available": true
@@ -33,7 +33,7 @@
         {
           "id": "N6FQCAR5XZILI7BGUIN4NF4Q",
           "name": "Alfajores- Classic (1 dozen- packet)",
-          "price": 14.00,
+          "price": 14.0,
           "description": "DESTINO has always taken great pleasure in sharing our alfajores with our community. Our family recipe stems from years of inspiration from both the Schenk and Castellanos families.",
           "has_image": true,
           "ecom_available": true
@@ -41,7 +41,7 @@
         {
           "id": "7G5XMKCZMNFYWMO3LHGJLDH5",
           "name": "Alfajores- Gingerbread (1 dozen- packet)",
-          "price": 15.00,
+          "price": 15.0,
           "description": "Seasonal item! Satisfy your sweet tooth this holiday season with our delightful GINGERBREAD ALFAJORES!",
           "has_image": true,
           "ecom_available": false
@@ -49,7 +49,7 @@
         {
           "id": "FK7CM63FVZUW7FA43AL3GV6K",
           "name": "Alfajores- Gluten Free (1 dozen- packet)",
-          "price": 15.00,
+          "price": 15.0,
           "description": "DESTINO has always taken great pleasure in sharing our alfajores with our community- now we offer our Gluten Free Alfajor!",
           "has_image": true,
           "ecom_available": true
@@ -57,7 +57,7 @@
         {
           "id": "7BXDV6HSXT3DFRM7MO2OCIMX",
           "name": "Alfajores- Lemon (1 dozen packet)",
-          "price": 15.00,
+          "price": 15.0,
           "description": "Our classic butter cookies with dulce de leche are blanketed with a vibrant & tangy lemon royal icing- for extra deliciousness!",
           "has_image": true,
           "ecom_available": true
@@ -65,7 +65,7 @@
         {
           "id": "XUAQTOVBDESAKNUQMIXEHOWV",
           "name": "Alfajores- Pride (6-pack)",
-          "price": 10.00,
+          "price": 10.0,
           "description": "🌈 Celebrate Pride Month with love and sweetness! ❤️✨ Our special edition heart-shaped alfajores are here to add a touch of joy to your celebrations.",
           "has_image": true,
           "ecom_available": false
@@ -73,7 +73,7 @@
         {
           "id": "FK4XVAEV5ZGMDB6AY7WRFDFL",
           "name": "Alfajores- Pumpkin Spice (1 dozen packet)",
-          "price": 15.00,
+          "price": 15.0,
           "description": "Coming Soon! One of own most delicious alfajores- Pumpkin Spice! A perfect combination of soft, butter cookies filled with creamy dulce de leche coated in pumpkin spice icing!",
           "has_image": true,
           "ecom_available": false
@@ -81,7 +81,7 @@
         {
           "id": "AZLWFM7CJR4U4HG5W72G2XNC",
           "name": "Pastelitos de queso y guayaba",
-          "price": 14.00,
+          "price": 14.0,
           "description": "Puff pastry filled with cream cheese & guava paste! Truly addicting and delicious Latin American pastries! Packet of 4 frozen.",
           "has_image": true,
           "ecom_available": false
@@ -95,7 +95,7 @@
         {
           "id": "6T2ZRJYG6OEWSCUVDMENEKES",
           "name": "Empanadas- Argentine Beef (frozen- 4 pack)",
-          "price": 16.00,
+          "price": 16.0,
           "description": "Box of four frozen empanadas. Our recipe is based on a traditional Argentine beef empanada- ground beef, pimiento stuffed olives, egg and golden raisins!",
           "has_image": true,
           "ecom_available": true
@@ -103,7 +103,7 @@
         {
           "id": "NZ7MVVH4J5AT3F6CA572XZJU",
           "name": "Empanadas- Caribbean Pork (frozen- 4 pack)",
-          "price": 16.00,
+          "price": 16.0,
           "description": "Box of four frozen empanadas. Our Caribbean pork empanadas are delicious and addicting! These empanadas feature ground pork, black mission figs and a medley of spices!",
           "has_image": true,
           "ecom_available": true
@@ -111,7 +111,7 @@
         {
           "id": "WIEPXEA7OFFMHRJWDCKHNRJ5",
           "name": "Empanadas- Combo (frozen- 4 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "Box of four frozen empanadas. Customize your own combo pack of empanadas! Select from our four savory options: beef, chicken, pork or vegetarian!",
           "has_image": true,
           "ecom_available": true
@@ -119,7 +119,7 @@
         {
           "id": "ZOOVARL76JAPJGN524L2YW6Y",
           "name": "Empanadas- Huacatay Chicken (frozen- 4 pack)",
-          "price": 17.00,
+          "price": 17.0,
           "description": "Our huacatay chicken empanadas are divine! Savory Peruvian black mint with corn and spinach are truly satisfying- leaving you craving for more.",
           "has_image": true,
           "ecom_available": true
@@ -127,7 +127,7 @@
         {
           "id": "HKVAL6EYEVHLCLQNSJ2U3CJC",
           "name": "Empanadas- Lomo Saltado (frozen- 4 pack)",
-          "price": 17.00,
+          "price": 17.0,
           "description": "LOMO SALTADO EMPANADAS! If you love Lomo Saltado like we do- you would love this spin on a Peruvian classic! Top sirloin / aji amarillo / red onion / roasted potatoes.",
           "has_image": true,
           "ecom_available": true
@@ -135,7 +135,7 @@
         {
           "id": "LXYPIXWTY2NBU5HV2C6CF466",
           "name": "Empanadas- Peruvian Chicken (frozen- 4 pack)",
-          "price": 17.00,
+          "price": 17.0,
           "description": "Box of four frozen empanadas. Our chicken empanadas are inspired by a Peruvian classic \"Aji de Gallina.\" Our recipe features free range chicken mixed with a delicious aji amarillo-cream sauce.",
           "has_image": true,
           "ecom_available": true
@@ -143,7 +143,7 @@
         {
           "id": "XTONAWF5K6PDV72FPY6ZZSIS",
           "name": "Empanadas- Salmon (frozen- 4 pack)",
-          "price": 17.00,
+          "price": 17.0,
           "description": "Box of four frozen empanadas. Our Limited Edition Salmon empanadas are a treat! These empanadas feature local King salmon marinated with a sweet & tangy tamarind-panela glaze are addicting!",
           "has_image": true,
           "ecom_available": false
@@ -151,7 +151,7 @@
         {
           "id": "NPW5UPF33KKZOKRJC6ECSB74",
           "name": "Empanadas- Vegetarian (frozen- 4 pack)",
-          "price": 16.00,
+          "price": 16.0,
           "description": "Box of four frozen empanadas. Our vegetarian empanadas have become one of biggest sellers- featuring hearts of palms, aji amarillo, parmesan & mozzarella cheeses.",
           "has_image": true,
           "ecom_available": true
@@ -159,7 +159,7 @@
         {
           "id": "LBBEKRBBCWNK7KXLYHYXRARN",
           "name": "Appetizer Size Empanadas- Argentine Beef (frozen- 6 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "Box of six frozen empanadas. Perfect size for parties and gatherings! Our recipe is based on a traditional Argentine beef empanada- ground beef, pimiento stuffed olives, egg and golden raisins!",
           "has_image": true,
           "ecom_available": true
@@ -167,7 +167,7 @@
         {
           "id": "ESCXIJ2FDNRI57LAX2LRDKST",
           "name": "Appetizer Size Empanadas- Caribbean Pork (frozen- 6 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "Box of six frozen empanadas. Perfect size as appetizers for gatherings! Our Caribbean pork empanadas are delicious and addicting!",
           "has_image": true,
           "ecom_available": true
@@ -175,7 +175,7 @@
         {
           "id": "TBJN4K3RYE7NDO5OQYFTNZAW",
           "name": "Appetizer Size Empanadas- Lomo Saltado (frozen- 6 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "LOMO SALTADO EMPANADAS! Perfect size as appetizers for gatherings! If you love Lomo Saltado like we do- you would love this spin on a Peruvian classic!",
           "has_image": true,
           "ecom_available": true
@@ -183,7 +183,7 @@
         {
           "id": "7YZSSGEH5DYLPSN4QKBEUTGN",
           "name": "Appetizer Size Empanadas- Peruvian Chicken (frozen- 6 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "Box of six frozen empanadas- perfect as appetizers for gatherings. Our chicken empanadas are inspired by a Peruvian classic \"Aji de Gallina.\"",
           "has_image": true,
           "ecom_available": true
@@ -191,7 +191,7 @@
         {
           "id": "3OECVZYGF7T55HVMTCR32ZK3",
           "name": "Appetizer Size Empanadas- Vegetarian (frozen- 6 pack)",
-          "price": 18.00,
+          "price": 18.0,
           "description": "Box of six frozen empanadas. Ideal for events and gatherings! Our vegetarian empanadas have become one of biggest sellers- featuring hearts of palms, aji amarillo, parmesan & parmesan cheeses.",
           "has_image": true,
           "ecom_available": true
@@ -205,7 +205,7 @@
         {
           "id": "2HKY7CZYFOBQMT7NLS2EKV2S",
           "name": "acorn squash",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) roasted acorn squash / sweet potato puree / coconut milk / romesco salsa -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -213,7 +213,7 @@
         {
           "id": "LEWKEMUNABAMCHVNLO3RGMWF",
           "name": "adobo rubbed pork loin",
-          "price": 16.00,
+          "price": 16.0,
           "description": "sliced pork loin / caribbean spice adobo -gf",
           "has_image": true,
           "ecom_available": false
@@ -283,7 +283,7 @@
         {
           "id": "PRL37GLSSR4FLMAWY25ZS34V",
           "name": "beef stir fry",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) angus top sirloin stir fry / roma tomatoes / soy-balsamic reduction",
           "has_image": true,
           "ecom_available": false
@@ -291,7 +291,7 @@
         {
           "id": "YLLY4C4SH4SJAMVGIL3BKGK3",
           "name": "chicken w/ tamarind-sugar cane salsa",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) grilled chicken breast / tamarind-panela glaze / cilantro / pasilla chile -gf",
           "has_image": true,
           "ecom_available": false
@@ -299,7 +299,7 @@
         {
           "id": "OFGF5EPQJPSP7L6OPGHYGYDF",
           "name": "chicken with orange mojo",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz)- grilled chicken breast / piquillo pepper / onions / orange-garlic sauce -gf",
           "has_image": true,
           "ecom_available": false
@@ -307,7 +307,7 @@
         {
           "id": "QNIHZKZA5I5QCRR4CNIY22FP",
           "name": "churrasco with chimichurri",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) top sirloin steak / chimichurri salsa / peruvian sea salt -gf",
           "has_image": true,
           "ecom_available": false
@@ -315,7 +315,7 @@
         {
           "id": "G3YW33BT7LM5IJW7U2WD4ZIQ",
           "name": "peruvian ceviche",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) wild halibut / aji amarillo / cilantro / lime / corn nuts -gf",
           "has_image": true,
           "ecom_available": false
@@ -323,7 +323,7 @@
         {
           "id": "D77SY5QMLNRHMHL5AOT4DBUU",
           "name": "prawn tostada",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) corn tostada / sautéed tiger prawns / corn-goat cheese sauce -gf",
           "has_image": true,
           "ecom_available": false
@@ -331,7 +331,7 @@
         {
           "id": "Q2DIMYOOIEGMO2Q7GRQSIKOS",
           "name": "pulled pork (ropa vieja)",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) slow-braised pork shoulder / roma tomatoes / guajillo chile / queso cotija -gf",
           "has_image": true,
           "ecom_available": false
@@ -339,7 +339,7 @@
         {
           "id": "PO3WVLV54OS77REYSMPLQDY2",
           "name": "shredded chicken (aji de gallina)",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) free-range chicken breast / cream–aji chile reduction / parmesan",
           "has_image": true,
           "ecom_available": false
@@ -347,7 +347,7 @@
         {
           "id": "DGUO7JDN4GYUNNUZLXE3Q3NM",
           "name": "sweet corn casserole",
-          "price": 16.00,
+          "price": 16.0,
           "description": "(6oz) creamed corn / ground sirloin / chicken breast / sun-dried black olives -gf",
           "has_image": true,
           "ecom_available": false
@@ -361,7 +361,7 @@
         {
           "id": "H3PTCE4NB6GGRDRLB6KFJV7O",
           "name": "black beans",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) caribbean black beans -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -369,7 +369,7 @@
         {
           "id": "W4C7F7WUDJWDFPQT53G2DCSB",
           "name": "chipotle mashed potatoes",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) yukon potato / chipotle / garlic / cream -gf, vg",
           "has_image": true,
           "ecom_available": false
@@ -377,7 +377,7 @@
         {
           "id": "3NR6HVHT73GANQ7RIC24RQXR",
           "name": "cilantro rice",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) cilantro infused rice / bell pepper / spices -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -385,7 +385,7 @@
         {
           "id": "G5XT4V77CU5OS4PCFPYA7U2N",
           "name": "gallo pinto",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) black beans / white rice / herbs -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -393,7 +393,7 @@
         {
           "id": "2UHXKYGFGL7V4YNI4JLSUNQ2",
           "name": "locro",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) butternut squash puree / corn / goat cheese / onion -gf, vg",
           "has_image": true,
           "ecom_available": false
@@ -401,7 +401,7 @@
         {
           "id": "PLYCIGULCVFFU65RX5INK6QY",
           "name": "sautéed kale",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) white quinoa / raisins / pine nuts -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -409,7 +409,7 @@
         {
           "id": "6H5WSB5D5AOUE7NBUZ34O2RT",
           "name": "sauteed veggies",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) seasonal sauteed veggies / garlic / spices -gf, vg, vegan",
           "has_image": true,
           "ecom_available": false
@@ -417,7 +417,7 @@
         {
           "id": "LR74HMWJATRS6QRUHYQKM2PL",
           "name": "tomato rice",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) tomato sofrito rice / oregano / english peas -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -425,7 +425,7 @@
         {
           "id": "DYUNPB7JIS7M4QDWZEV6FZEC",
           "name": "white rice",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(4oz) white rice / garlic -gf, vg, vgn",
           "has_image": true,
           "ecom_available": false
@@ -439,7 +439,7 @@
         {
           "id": "AI5BF2DI4FCGR3F6MYLAL6PM",
           "name": "brownie bites",
-          "price": 2.50,
+          "price": 2.5,
           "description": "brownie bites- double dark chocolate brownie, candied hot pepper jelly",
           "has_image": true,
           "ecom_available": false
@@ -447,7 +447,7 @@
         {
           "id": "ZWYZBVGUNHZLV5MME3C4T7MY",
           "name": "chocolate alfajores",
-          "price": 2.50,
+          "price": 2.5,
           "description": "chocolate- dulce de leche / dark chocolate / peruvian sea salt -vg",
           "has_image": true,
           "ecom_available": false
@@ -455,7 +455,7 @@
         {
           "id": "B24SIASVHN3NIM6NKKBA3GM5",
           "name": "classic alfajores",
-          "price": 2.50,
+          "price": 2.5,
           "description": "classic- shortbread / dulce de leche -vg",
           "has_image": true,
           "ecom_available": false
@@ -463,7 +463,7 @@
         {
           "id": "6FTDP2YRCJQYSARTZUL64TO3",
           "name": "gluten-free alfajores",
-          "price": 2.50,
+          "price": 2.5,
           "description": "gluten-free- gluten-free dulce de leche butter cookies -gf, vg",
           "has_image": true,
           "ecom_available": false
@@ -471,7 +471,7 @@
         {
           "id": "RTMR7DCXPYPXJQRTZQEVV3OR",
           "name": "lemon alfajores",
-          "price": 2.50,
+          "price": 2.5,
           "description": "lemon- shortbread / dulce de leche / lemon royal icing -vg",
           "has_image": true,
           "ecom_available": false
@@ -479,7 +479,7 @@
         {
           "id": "4C4DUXDDMGAKXKHRVWT537CH",
           "name": "lemon bars",
-          "price": 2.50,
+          "price": 2.5,
           "description": "lemon bars- meyer lemon zest, blueberry compote",
           "has_image": true,
           "ecom_available": false
@@ -487,7 +487,7 @@
         {
           "id": "4PE44N5KMQ3VV5AQE7W5F66X",
           "name": "mini cupcakes",
-          "price": 2.50,
+          "price": 2.5,
           "description": "mini cupcakes- selection of dark chocolate or vanilla buttercream",
           "has_image": true,
           "ecom_available": false
@@ -501,7 +501,7 @@
         {
           "id": "EQYCKASECLGFRETKT2L3AYXX",
           "name": "Aji Amarillo Salsa (7oz)",
-          "price": 8.00,
+          "price": 8.0,
           "description": "Our creamy and delicious aji amarillo salsa is a must have for any kitchen! Aji amarillo is the most utilized and versatile pepper in Peru.",
           "has_image": true,
           "ecom_available": true
@@ -509,7 +509,7 @@
         {
           "id": "RUY6T7DCAHU65YQXJDAI62FQ",
           "name": "Aji Huacatay Salsa (7oz)",
-          "price": 8.00,
+          "price": 8.0,
           "description": "Huacatay is a Peruvian black mint that is grown locally. Our earthy and tangy aji huacatay salsa is a perfect accent for our empanadas!",
           "has_image": true,
           "ecom_available": true
@@ -517,7 +517,7 @@
         {
           "id": "OLXVUHZDTAA6KO5FMCL6EGDF",
           "name": "Chimichurri Sauce",
-          "price": 8.00,
+          "price": 8.0,
           "description": "Our version of traditional Argentine chimichurri! A perfect compliment to empanadas or any protein.",
           "has_image": true,
           "ecom_available": false
@@ -531,7 +531,7 @@
         {
           "id": "HPK5Y23NMTLL7YPFQTRBCG3V",
           "name": "lunch- acorn squash",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(6oz) roasted squash / sweet potato puree / mushrooms / coconut milk / carrot pepitas / romesco salsa -gf, veggie, vegan",
           "has_image": true,
           "ecom_available": false
@@ -547,7 +547,7 @@
         {
           "id": "QN3FQNTMKWZ5RSDFVVKGEKLR",
           "name": "lunch- beef stir fry",
-          "price": 9.00,
+          "price": 9.0,
           "description": "(6oz) top sirloin stir fry / roma tomatoes / red onions / soy-balsamic reduction",
           "has_image": true,
           "ecom_available": false
@@ -555,7 +555,7 @@
         {
           "id": "YPJQYMSMPGBRSBKFQ7OWFMSV",
           "name": "lunch- chicken with mojo",
-          "price": 8.50,
+          "price": 8.5,
           "description": "(6oz) grilled chicken breast / piquillo pepper / onions / orange-garlic mojo -gf",
           "has_image": true,
           "ecom_available": false
@@ -563,7 +563,7 @@
         {
           "id": "DXWOJEFUFOL7XD3Z637X67EH",
           "name": "lunch- churrasco with chimichurri",
-          "price": 9.50,
+          "price": 9.5,
           "description": "(6oz) grilled sirloin steak / argentine chimichurri / peruvian sea salt -gf",
           "has_image": true,
           "ecom_available": false
@@ -579,7 +579,7 @@
         {
           "id": "GHW6EUVISCQ2YK7NLCWQR6T5",
           "name": "lunch- quinoa-bean entree",
-          "price": 8.00,
+          "price": 8.0,
           "description": "(6oz) white quinoa / kidney beans / sweet white corn / cilantro / cider vinegar -gf, veggie, vegan",
           "has_image": true,
           "ecom_available": false
@@ -587,7 +587,7 @@
         {
           "id": "VI4KVKUJPC2YXM24B6SDZBEX",
           "name": "lunch- rope vieja",
-          "price": 8.50,
+          "price": 8.5,
           "description": "(6oz) slow braised pork shoulder / guajillo chiles / kidney beans / tomatoes -gf",
           "has_image": true,
           "ecom_available": false
@@ -595,7 +595,7 @@
         {
           "id": "VURRFLAJ3E2RKGPLJF5UITO6",
           "name": "lunch- tamarind chicken",
-          "price": 8.50,
+          "price": 8.5,
           "description": "(6oz) grilled chicken breast / tamarind-panela glaze / cilantro / pasilla chile -gf",
           "has_image": true,
           "ecom_available": false
@@ -608,9 +608,9 @@
     "total_items_with_images": 195,
     "total_items_ecom_available": 45,
     "price_ranges": {
-      "min": 2.50,
-      "max": 75.00,
-      "most_common_prices": [8.00, 15.00, 16.00, 17.00, 18.00]
+      "min": 2.5,
+      "max": 75.0,
+      "most_common_prices": [8.0, 15.0, 16.0, 17.0, 18.0]
     },
     "categories_with_most_items": [
       "EMPANADAS (25 items)",

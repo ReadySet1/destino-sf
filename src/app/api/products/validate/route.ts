@@ -33,21 +33,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       issues,
-      isValid: issues.length === 0
+      isValid: issues.length === 0,
     });
-
   } catch (error) {
     logger.error('Product validation failed:', error);
-    
+
     if (error instanceof Error && error.message.includes('not found')) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     return NextResponse.json(
-      { error: 'Validation failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Validation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

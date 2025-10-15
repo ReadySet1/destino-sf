@@ -21,7 +21,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -120,7 +126,12 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
     },
   });
 
-  const { watch, control, handleSubmit, formState: { errors } } = form;
+  const {
+    watch,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = form;
   const selectedState = watch('state');
   const selectedRuleType = watch('ruleType');
 
@@ -152,7 +163,9 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
   const loadProducts = async () => {
     try {
       setIsLoadingProducts(true);
-      const response = await fetch('/api/products?includeAvailabilityEvaluation=true&onlyActive=false&excludeCatering=true');
+      const response = await fetch(
+        '/api/products?includeAvailabilityEvaluation=true&onlyActive=false&excludeCatering=true'
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -168,7 +181,8 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
             name: product.name,
             price: product.price || 0,
             category: product.category?.name || 'No Category',
-            currentAvailabilityState: product.evaluatedAvailability?.currentState || AvailabilityState.AVAILABLE,
+            currentAvailabilityState:
+              product.evaluatedAvailability?.currentState || AvailabilityState.AVAILABLE,
             activeRulesCount: product.evaluatedAvailability?.appliedRulesCount || 0,
           }));
 
@@ -302,7 +316,9 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
       const result = await bulkUpdateAvailability(bulkRequest);
 
       if (result.success) {
-        toast.success(`Successfully created availability rules for ${selectedProducts.size} products`);
+        toast.success(
+          `Successfully created availability rules for ${selectedProducts.size} products`
+        );
         router.push('/admin/products/availability');
       } else {
         toast.error(result.error || 'Failed to create bulk rules');
@@ -398,12 +414,12 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
         {/* Selection Summary */}
         <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
-          <span>Showing {filteredProducts.length} of {products.length} products</span>
+          <span>
+            Showing {filteredProducts.length} of {products.length} products
+          </span>
           {selectedProducts.size > 0 && (
             <>
-              <span className="font-medium text-indigo-600">
-                {selectedProducts.size} selected
-              </span>
+              <span className="font-medium text-indigo-600">{selectedProducts.size} selected</span>
               {initialProductIds.length > 0 && (
                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                   Pre-selected from bulk manage
@@ -421,7 +437,10 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.has(p.id))}
+                      checked={
+                        filteredProducts.length > 0 &&
+                        filteredProducts.every(p => selectedProducts.has(p.id))
+                      }
                       onCheckedChange={checked => {
                         if (checked) {
                           selectAllFiltered();
@@ -461,34 +480,39 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                         className={cn(
                           'hover:bg-gray-50',
                           selectedProducts.has(product.id) && 'bg-indigo-50/50',
-                          isPreSelected && selectedProducts.has(product.id) && 'border-l-4 border-l-blue-500'
+                          isPreSelected &&
+                            selectedProducts.has(product.id) &&
+                            'border-l-4 border-l-blue-500'
                         )}
                       >
-
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedProducts.has(product.id)}
-                          onCheckedChange={() => toggleProduct(product.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{formatCurrency(product.price)}</TableCell>
-                      <TableCell>
-                        {product.currentAvailabilityState && (
-                          <AvailabilityStatusBadge state={product.currentAvailabilityState} size="sm" />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {product.activeRulesCount ? (
-                          <Badge variant="outline">
-                            {product.activeRulesCount} rule{product.activeRulesCount !== 1 ? 's' : ''}
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-gray-400">No rules</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedProducts.has(product.id)}
+                            onCheckedChange={() => toggleProduct(product.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>{product.category}</TableCell>
+                        <TableCell>{formatCurrency(product.price)}</TableCell>
+                        <TableCell>
+                          {product.currentAvailabilityState && (
+                            <AvailabilityStatusBadge
+                              state={product.currentAvailabilityState}
+                              size="sm"
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {product.activeRulesCount ? (
+                            <Badge variant="outline">
+                              {product.activeRulesCount} rule
+                              {product.activeRulesCount !== 1 ? 's' : ''}
+                            </Badge>
+                          ) : (
+                            <span className="text-sm text-gray-400">No rules</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
@@ -545,14 +569,15 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                       <SelectValue placeholder="Select a rule to copy" />
                     </SelectTrigger>
                     <SelectContent>
-                      {existingRules.map((rule) => {
+                      {existingRules.map(rule => {
                         const product = products.find(p => p.id === rule.productId);
                         return (
                           <SelectItem key={rule.id} value={rule.id!}>
                             <div className="flex flex-col py-1">
                               <span className="font-medium">{rule.name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {product?.name || 'Unknown Product'} • {rule.state} • Priority: {rule.priority}
+                                {product?.name || 'Unknown Product'} • {rule.state} • Priority:{' '}
+                                {rule.priority}
                               </span>
                             </div>
                           </SelectItem>
@@ -604,7 +629,9 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                   />
                 )}
               />
-              <p className="text-xs text-gray-500">Higher priority rules override lower priority ones</p>
+              <p className="text-xs text-gray-500">
+                Higher priority rules override lower priority ones
+              </p>
             </div>
           </div>
 
@@ -843,7 +870,9 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
 
               <Button
                 type="submit"
-                disabled={isLoading || selectedProducts.size === 0 || (useExistingRule && !selectedRuleId)}
+                disabled={
+                  isLoading || selectedProducts.size === 0 || (useExistingRule && !selectedRuleId)
+                }
                 className="min-w-[180px]"
               >
                 {isLoading ? (
@@ -854,7 +883,8 @@ export function AvailabilityBulkManager({ initialProductIds = [] }: Availability
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    {useExistingRule ? 'Copy' : 'Apply'} to {selectedProducts.size} Product{selectedProducts.size !== 1 ? 's' : ''}
+                    {useExistingRule ? 'Copy' : 'Apply'} to {selectedProducts.size} Product
+                    {selectedProducts.size !== 1 ? 's' : ''}
                   </>
                 )}
               </Button>

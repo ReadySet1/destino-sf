@@ -91,7 +91,7 @@ Test the new indexes by running queries that should now be faster:
 EXPLAIN ANALYZE SELECT id, name FROM products WHERE active = true LIMIT 100;
 
 -- Test composite index (should use new composite index)
-EXPLAIN ANALYZE SELECT id, name FROM products 
+EXPLAIN ANALYZE SELECT id, name FROM products
 WHERE square_id IS NOT NULL AND active = true LIMIT 100;
 ```
 
@@ -141,12 +141,12 @@ Test admin panel navigation:
 
 ### Performance Baselines
 
-| Metric | Before | After (Expected) | Improvement |
-|--------|--------|------------------|-------------|
-| Sync Duration | 51 seconds | 5-10 seconds | 80-90% |
-| Admin Page Load | 2-3 seconds | 500ms | 3-5x |
-| Database Queries | 100+ per page | 10-20 per page | 80-90% |
-| Connection Errors | Multiple per hour | 0 | 100% |
+| Metric            | Before            | After (Expected) | Improvement |
+| ----------------- | ----------------- | ---------------- | ----------- |
+| Sync Duration     | 51 seconds        | 5-10 seconds     | 80-90%      |
+| Admin Page Load   | 2-3 seconds       | 500ms            | 3-5x        |
+| Database Queries  | 100+ per page     | 10-20 per page   | 80-90%      |
+| Connection Errors | Multiple per hour | 0                | 100%        |
 
 ## Rollback Plan
 
@@ -155,6 +155,7 @@ If issues arise, you can rollback the changes:
 ### 1. Rollback Code Changes
 
 Revert to the previous version of:
+
 - `src/lib/db-connection.ts`
 - `src/lib/square/sync.ts`
 - `src/middleware.ts`
@@ -181,6 +182,7 @@ DROP INDEX IF EXISTS "products_square_id_sync_status_idx";
 **Problem:** Database migration fails during deployment
 
 **Solution:**
+
 ```bash
 # Check database connection
 pnpm prisma db pull
@@ -197,6 +199,7 @@ pnpm prisma migrate resolve
 **Problem:** After deployment, performance is still slow
 
 **Solution:**
+
 ```bash
 # Verify indexes were created
 pnpm prisma db pull
@@ -211,6 +214,7 @@ pnpm prisma db pull
 **Problem:** Still seeing database connection errors
 
 **Solution:**
+
 - Check environment variables
 - Verify database is accessible
 - Check connection pool settings

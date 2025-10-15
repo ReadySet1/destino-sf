@@ -63,14 +63,14 @@ export interface ConnectionHealth {
   lastChecked: Date;
 }
 
-export type ConnectionError = 
+export type ConnectionError =
   | { type: 'PREPARED_STATEMENT_NOT_EXISTS'; code: '26000'; details: string }
   | { type: 'PREPARED_STATEMENT_EXISTS'; code: '42P05'; details: string }
   | { type: 'CONNECTION_TIMEOUT'; timeoutMs: number }
   | { type: 'POOL_EXHAUSTED'; waitTime: number };
 
 // Result type for database operations
-export type DatabaseResult<T> = 
+export type DatabaseResult<T> =
   | { success: true; data: T; metrics?: QueryMetrics }
   | { success: false; error: ConnectionError; shouldRetry: boolean };
 
@@ -89,7 +89,10 @@ export interface PoolStats {
 }
 
 // Extended Prisma Types for better transaction handling
-export type PrismaTransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
+export type PrismaTransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'
+>;
 
 export interface TransactionOptions {
   maxWait?: number;
@@ -102,30 +105,30 @@ export type TransactionCallback<T> = (tx: PrismaTransactionClient) => Promise<T>
 export interface TransactionManager {
   execute: <T>(callback: TransactionCallback<T>, options?: TransactionOptions) => Promise<T>;
   executeWithRetry: <T>(
-    callback: TransactionCallback<T>, 
+    callback: TransactionCallback<T>,
     options?: TransactionOptions & { maxRetries?: number }
   ) => Promise<T>;
 }
 
 // Database operation result types with enhanced error handling
-export type DatabaseOperationResult<T> = 
+export type DatabaseOperationResult<T> =
   | { success: true; data: T; metrics?: QueryMetrics; warnings?: string[] }
   | { success: false; error: DatabaseError; shouldRetry: boolean; context?: Record<string, any> };
 
 export type DatabaseError = ConnectionError | TransactionError | ValidationError | ConstraintError;
 
-export type TransactionError = 
+export type TransactionError =
   | { type: 'TRANSACTION_TIMEOUT'; timeoutMs: number; operation: string }
   | { type: 'TRANSACTION_ROLLBACK'; reason: string; operation: string }
   | { type: 'TRANSACTION_DEADLOCK'; conflictingQueries: string[] }
   | { type: 'TRANSACTION_SERIALIZATION_FAILURE'; retryable: boolean };
 
-export type ValidationError = 
+export type ValidationError =
   | { type: 'INVALID_INPUT'; field: string; value: any; expected: string }
   | { type: 'MISSING_REQUIRED_FIELD'; field: string }
   | { type: 'TYPE_MISMATCH'; field: string; expected: string; received: string };
 
-export type ConstraintError = 
+export type ConstraintError =
   | { type: 'UNIQUE_CONSTRAINT_VIOLATION'; constraint: string; field: string; value: any }
   | { type: 'FOREIGN_KEY_CONSTRAINT_VIOLATION'; constraint: string; table: string; field: string }
   | { type: 'CHECK_CONSTRAINT_VIOLATION'; constraint: string; condition: string }
@@ -167,9 +170,9 @@ export interface BatchOperation<T> {
 
 export interface BatchResult<T> {
   succeeded: T[];
-  failed: Array<{ 
-    operation: BatchOperation<T>; 
-    error: DatabaseError; 
+  failed: Array<{
+    operation: BatchOperation<T>;
+    error: DatabaseError;
     index: number;
   }>;
   totalProcessed: number;
@@ -200,11 +203,11 @@ export interface SchemaValidation {
   isValid: boolean;
   missingTables: string[];
   missingColumns: Array<{ table: string; column: string }>;
-  typesMismatch: Array<{ 
-    table: string; 
-    column: string; 
-    expected: string; 
-    actual: string; 
+  typesMismatch: Array<{
+    table: string;
+    column: string;
+    expected: string;
+    actual: string;
   }>;
   suggestions: string[];
 }

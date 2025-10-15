@@ -14,12 +14,15 @@ Make the most of your Destino SF account! This guide shows you how to manage you
 ## 👤 **Profile Management**
 
 ### **Personal Information**
+
 **Profile Fields Available**:
+
 - **Full Name**: Used for orders and customer service
 - **Email Address**: Primary contact and login
 - **Phone Number**: For delivery coordination and updates
 
 ### **Updating Your Profile**
+
 1. **Sign in** to your account
 2. **Go to** your account dashboard
 3. **Edit** your name or phone number in the profile section
@@ -32,13 +35,17 @@ Make the most of your Destino SF account! This guide shows you how to manage you
 ## 📊 **Account Dashboard**
 
 ### **Quick Statistics**
+
 Your dashboard shows:
+
 - **Total Orders**: Complete count of all your orders
 - **Recent Orders**: Orders placed in the last 30 days
 - **Account Status**: Active status and member since date
 
 ### **Quick Actions Available**
+
 From your dashboard, you can:
+
 - **🛒 Browse Menu**: Start shopping for products
 - **🍽️ Catering**: Plan events and large orders
 - **📦 All Orders**: View complete order history
@@ -49,13 +56,16 @@ From your dashboard, you can:
 ## 📋 **Order History**
 
 ### **Complete Order Tracking**
+
 **Information Available**:
+
 - **Regular Orders**: Individual product purchases
 - **Catering Orders**: Large quantity and event orders
 - **Order Status**: Current progress of each order
 - **Order Details**: Items, quantities, pricing, and delivery information
 
 ### **Order Status Types**
+
 - **Pending**: Order placed, awaiting processing
 - **Processing**: Order confirmed and being prepared
 - **Shipped**: Order in transit to your address
@@ -63,7 +73,9 @@ From your dashboard, you can:
 - **Cancelled**: Order was cancelled
 
 ### **Easy Reordering**
+
 **How to Reorder Favorites**:
+
 1. **Go to** your order history
 2. **Find** the order you want to repeat
 3. **Click** "Reorder" button
@@ -75,6 +87,7 @@ From your dashboard, you can:
 ## 📱 **Account Features**
 
 ### **✅ What Your Account Includes**
+
 - **Order History**: Complete record of all purchases
 - **Order Tracking**: Monitor current order progress
 - **Easy Reordering**: Quickly repeat favorite orders
@@ -83,6 +96,7 @@ From your dashboard, you can:
 - **Quick Navigation**: Fast access to menu and catering
 
 ### **❌ Current Limitations**
+
 - **No Saved Addresses**: Enter delivery address with each order
 - **No Stored Payment**: Payment processed securely each time
 - **No Notification Preferences**: Standard email updates for all
@@ -94,18 +108,22 @@ From your dashboard, you can:
 ## 🔐 **Account Security**
 
 ### **Sign Out Process**
+
 **To sign out safely**:
+
 1. **Go to** your account page
 2. **Click** "Sign Out" button in the top right
 3. **Confirm** you want to end your session
 
 ### **Security Best Practices**
+
 - **Use strong passwords** with mixed characters
 - **Don't share** account credentials with others
 - **Sign out** when using shared or public computers
 - **Contact support** immediately if you notice suspicious activity
 
 ### **Password Management**
+
 - **Forgot Password**: Use the reset link on the sign-in page
 - **Change Password**: Contact support for password changes
 - **Account Recovery**: Email verification required for access
@@ -115,6 +133,7 @@ From your dashboard, you can:
 ## 📞 **Customer Support**
 
 ### **When to Contact Support**
+
 - **Account access issues**: Can't sign in or forgot password
 - **Order problems**: Missing items, delivery issues, or refunds
 - **Profile updates**: Need to change email address
@@ -122,11 +141,13 @@ From your dashboard, you can:
 - **General questions**: Product information or policies
 
 ### **How to Get Help**
+
 - **Contact Form**: Available on our website
 - **Response Time**: 1-2 business days
 - **Order-Specific Issues**: Include order number in your message
 
 ### **Information to Have Ready**
+
 - **Account email address**
 - **Order numbers** (if applicable)
 - **Clear description** of the issue or question
@@ -137,18 +158,21 @@ From your dashboard, you can:
 ## 💡 **Tips for Best Experience**
 
 ### **Account Management**
+
 - **Keep profile updated** with current phone number
 - **Check order history** to track preferences and reorder favorites
 - **Save confirmation emails** for your records
 - **Sign in regularly** to monitor order status
 
 ### **Ordering Efficiency**
+
 - **Use reorder feature** for items you buy regularly
 - **Double-check addresses** since they're not saved
 - **Review cart carefully** before checkout
 - **Plan catering orders** well in advance
 
 ### **Mobile Usage**
+
 - **Website works great** on mobile devices
 - **Same features available** on phone, tablet, and desktop
 - **Responsive design** adapts to your screen size
@@ -181,6 +205,7 @@ A: Accounts are individual, but family members can place separate orders to the 
 ## 🔜 **Next Steps**
 
 Ready to make the most of your account?
+
 - **[Placing Orders](placing-orders.md)**: Learn the complete ordering process
 - **[Order Tracking](order-tracking.md)**: Monitor your order progress
 - **[Catering Orders](catering-orders.md)**: Plan large quantity orders

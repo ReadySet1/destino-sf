@@ -91,12 +91,18 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
     <FormContainer>
       <FormHeader
         title={isEditing ? 'Edit User' : 'Add New User'}
-        description={isEditing ? 'Update user information and settings' : 'Create a new user account'}
+        description={
+          isEditing ? 'Update user information and settings' : 'Create a new user account'
+        }
         backUrl="/admin/users"
         backLabel="Back to Users"
       />
 
-      {error && <div className="mb-6 p-4 text-red-700 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
+      {error && (
+        <div className="mb-6 p-4 text-red-700 bg-red-50 border border-red-200 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <FormStack spacing={10}>
@@ -107,7 +113,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
             icon={FormIcons.user}
           >
             {user?.id && <input type="hidden" name="id" value={user.id} />}
-            
+
             <FormStack spacing={6}>
               <FormField label="Email" required>
                 <FormInput
@@ -121,11 +127,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
 
               <FormGrid cols={2}>
                 <FormField label="Name">
-                  <FormInput
-                    name="name"
-                    placeholder="John Doe"
-                    defaultValue={user?.name || ''}
-                  />
+                  <FormInput name="name" placeholder="John Doe" defaultValue={user?.name || ''} />
                 </FormField>
                 <FormField label="Phone">
                   <FormInput
@@ -138,11 +140,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
               </FormGrid>
 
               <FormField label="Role" required>
-                <FormSelect
-                  name="role"
-                  defaultValue={user?.role || 'CUSTOMER'}
-                  required
-                >
+                <FormSelect name="role" defaultValue={user?.role || 'CUSTOMER'} required>
                   <option value="CUSTOMER">Customer</option>
                   <option value="ADMIN">Admin</option>
                 </FormSelect>
@@ -163,7 +161,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                 label="Add Address Information"
                 description="Include shipping and billing address for this user"
                 checked={hasAddress}
-                onChange={(e) => setHasAddress(e.target.checked)}
+                onChange={e => setHasAddress(e.target.checked)}
               />
 
               {hasAddress && (
@@ -214,7 +212,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
                         required={hasAddress}
                       >
                         <option value="">Select state</option>
-                        {US_STATES.map((state) => (
+                        {US_STATES.map(state => (
                           <option key={state.code} value={state.code}>
                             {state.code} - {state.name}
                           </option>
@@ -261,10 +259,7 @@ export default function UserForm({ user, isEditing = false }: UserFormProps) {
 
           {/* Form Actions */}
           <FormActions>
-            <FormButton
-              variant="secondary"
-              href="/admin/users"
-            >
+            <FormButton variant="secondary" href="/admin/users">
               Cancel
             </FormButton>
             <FormButton

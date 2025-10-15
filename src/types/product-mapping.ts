@@ -36,15 +36,20 @@ export const ProductMappingSchema = z.object({
   actualCategory: z.string().nullable(),
   isCombo: z.boolean().default(false),
   comboItems: z.array(z.string()).optional(),
-  mappingStatus: z.enum(['VALID', 'INVALID', 'NEEDS_REVIEW'])
+  mappingStatus: z.enum(['VALID', 'INVALID', 'NEEDS_REVIEW']),
 });
 
 export type ProductMapping = z.infer<typeof ProductMappingSchema>;
 
 // Mapping issues
 export interface MappingIssue {
-  type: 'CATEGORY_MISMATCH' | 'DUPLICATE_DESCRIPTION' | 'MISSING_DESCRIPTION' | 
-        'INCORRECT_INGREDIENTS' | 'COMBO_MISMATCH' | 'NUTRITION_MISSING';
+  type:
+    | 'CATEGORY_MISMATCH'
+    | 'DUPLICATE_DESCRIPTION'
+    | 'MISSING_DESCRIPTION'
+    | 'INCORRECT_INGREDIENTS'
+    | 'COMBO_MISMATCH'
+    | 'NUTRITION_MISSING';
   severity: 'ERROR' | 'WARNING' | 'INFO';
   field: string;
   expected: string | null;
@@ -85,22 +90,24 @@ export interface SquareCatalogMapping {
 
 // Validation result schemas
 export const ValidateProductRequestSchema = z.object({
-  productId: z.string().uuid()
+  productId: z.string().uuid(),
 });
 
 export const ValidateProductResponseSchema = z.object({
   success: z.boolean(),
-  issues: z.array(z.object({
-    type: z.string(),
-    severity: z.string(),
-    field: z.string(),
-    expected: z.string().nullable(),
-    actual: z.string().nullable(),
-    productId: z.string(),
-    squareId: z.string(),
-    message: z.string()
-  })),
-  isValid: z.boolean()
+  issues: z.array(
+    z.object({
+      type: z.string(),
+      severity: z.string(),
+      field: z.string(),
+      expected: z.string().nullable(),
+      actual: z.string().nullable(),
+      productId: z.string(),
+      squareId: z.string(),
+      message: z.string(),
+    })
+  ),
+  isValid: z.boolean(),
 });
 
 export type ValidateProductRequest = z.infer<typeof ValidateProductRequestSchema>;

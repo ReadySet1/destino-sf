@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Power,
-  PowerOff
+  PowerOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AvailabilityState, type AvailabilityRule } from '@/types/availability';
@@ -33,7 +33,7 @@ export function RuleQuickToggle({
   productName,
   currentState,
   rulesCount = 0,
-  onRulesUpdated
+  onRulesUpdated,
 }: RuleQuickToggleProps) {
   const [open, setOpen] = useState(false);
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
@@ -76,7 +76,7 @@ export function RuleQuickToggle({
 
     // Optimistic update
     const originalRules = [...rules];
-    setRules(rules.map(r => r.id === ruleId ? { ...r, enabled: newEnabled } : r));
+    setRules(rules.map(r => (r.id === ruleId ? { ...r, enabled: newEnabled } : r)));
 
     try {
       // Get the full rule to send complete data
@@ -90,8 +90,8 @@ export function RuleQuickToggle({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...ruleToUpdate,
-          enabled: newEnabled
-        })
+          enabled: newEnabled,
+        }),
       });
 
       const data = await response.json();
@@ -101,12 +101,11 @@ export function RuleQuickToggle({
       }
 
       // Update with server response
-      setRules(rules.map(r => r.id === ruleId ? data.data : r));
+      setRules(rules.map(r => (r.id === ruleId ? data.data : r)));
 
-      toast.success(
-        `Rule "${ruleToUpdate.name}" ${newEnabled ? 'enabled' : 'disabled'}`,
-        { duration: 2000 }
-      );
+      toast.success(`Rule "${ruleToUpdate.name}" ${newEnabled ? 'enabled' : 'disabled'}`, {
+        duration: 2000,
+      });
 
       // Notify parent to refresh product list
       onRulesUpdated?.();
@@ -136,8 +135,8 @@ export function RuleQuickToggle({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...rule,
-            enabled
-          })
+            enabled,
+          }),
         }).then(res => res.json())
       );
 
@@ -148,10 +147,9 @@ export function RuleQuickToggle({
         throw new Error(`Failed to update ${failed.length} rule(s)`);
       }
 
-      toast.success(
-        `${enabled ? 'Enabled' : 'Disabled'} all ${rules.length} rule(s)`,
-        { duration: 2000 }
-      );
+      toast.success(`${enabled ? 'Enabled' : 'Disabled'} all ${rules.length} rule(s)`, {
+        duration: 2000,
+      });
 
       onRulesUpdated?.();
     } catch (err) {
@@ -189,16 +187,12 @@ export function RuleQuickToggle({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-auto p-0 hover:bg-transparent"
-        >
+        <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
           <div className="flex flex-wrap gap-1">
             {currentState && (
               <Badge
                 variant="outline"
-                className={cn("text-xs font-semibold", getStateBadgeColor(currentState))}
+                className={cn('text-xs font-semibold', getStateBadgeColor(currentState))}
               >
                 {currentState.replace('_', ' ')}
               </Badge>
@@ -221,9 +215,7 @@ export function RuleQuickToggle({
           {/* Header */}
           <div className="space-y-1">
             <h4 className="font-semibold text-sm">Availability Rules</h4>
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {productName}
-            </p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{productName}</p>
           </div>
 
           <Separator />
@@ -241,12 +233,7 @@ export function RuleQuickToggle({
               <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="space-y-2 flex-1">
                 <p className="text-xs text-red-800">{error}</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={fetchRules}
-                  className="h-7 text-xs"
-                >
+                <Button size="sm" variant="outline" onClick={fetchRules} className="h-7 text-xs">
                   Retry
                 </Button>
               </div>
@@ -297,21 +284,19 @@ export function RuleQuickToggle({
 
               {/* Rules */}
               <div className="space-y-2 max-h-80 overflow-y-auto">
-                {rules.map((rule) => (
+                {rules.map(rule => (
                   <div
                     key={rule.id}
                     className={cn(
-                      "flex items-start gap-3 p-2 rounded-lg border transition-colors",
+                      'flex items-start gap-3 p-2 rounded-lg border transition-colors',
                       rule.enabled
-                        ? "bg-indigo-50/50 border-indigo-200"
-                        : "bg-gray-50 border-gray-200"
+                        ? 'bg-indigo-50/50 border-indigo-200'
+                        : 'bg-gray-50 border-gray-200'
                     )}
                   >
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">
-                          {rule.name}
-                        </p>
+                        <p className="text-sm font-medium truncate">{rule.name}</p>
                         {rule.enabled ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                         ) : (
@@ -324,7 +309,7 @@ export function RuleQuickToggle({
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={cn("text-xs", getStateBadgeColor(rule.state))}
+                          className={cn('text-xs', getStateBadgeColor(rule.state))}
                         >
                           {rule.state.replace('_', ' ')}
                         </Badge>
@@ -348,12 +333,7 @@ export function RuleQuickToggle({
               <Separator />
 
               {/* Footer Link */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs"
-                asChild
-              >
+              <Button variant="outline" size="sm" className="w-full justify-center text-xs" asChild>
                 <a href={`/admin/products/availability?productId=${productId}`} target="_blank">
                   Manage All Rules
                   <ExternalLink className="w-3 h-3 ml-1" />
@@ -366,15 +346,8 @@ export function RuleQuickToggle({
           {!loading && !error && rules.length === 0 && (
             <div className="text-center py-8 space-y-2">
               <Settings className="w-8 h-8 mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No availability rules configured
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                asChild
-              >
+              <p className="text-sm text-muted-foreground">No availability rules configured</p>
+              <Button variant="outline" size="sm" className="text-xs" asChild>
                 <a href={`/admin/products/availability?productId=${productId}`} target="_blank">
                   Create Rule
                   <ExternalLink className="w-3 h-3 ml-1" />

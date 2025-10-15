@@ -1,6 +1,6 @@
 /**
  * Filtered Square Sync Button
- * 
+ *
  * Simplified sync UI that uses the new filtered sync process.
  * Only syncs alfajores and empanadas while protecting catering items.
  */
@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, Eye, Play, RotateCcw, History } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -71,11 +71,11 @@ export function FilteredSyncButton() {
   const handlePreview = async () => {
     try {
       setIsLoading(true);
-      
+
       const response = await fetch('/api/square/sync-filtered', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: true })
+        body: JSON.stringify({ preview: true }),
       });
 
       if (!response.ok) {
@@ -83,14 +83,14 @@ export function FilteredSyncButton() {
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Preview failed');
       }
 
       setPreviewData(result.data);
       setShowPreview(true);
-      
+
       toast.success(`Preview loaded: ${result.data.summary.willSync} products will be synced`);
     } catch (error) {
       console.error('Preview error:', error);
@@ -104,11 +104,11 @@ export function FilteredSyncButton() {
     try {
       setIsLoading(true);
       setShowPreview(false);
-      
+
       const response = await fetch('/api/square/sync-filtered', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: false })
+        body: JSON.stringify({ preview: false }),
       });
 
       if (!response.ok) {
@@ -116,7 +116,7 @@ export function FilteredSyncButton() {
       }
 
       const result = await response.json();
-      
+
       setSyncResult(result);
 
       if (result.success) {
@@ -142,14 +142,14 @@ export function FilteredSyncButton() {
 
     try {
       setIsLoading(true);
-      
+
       const response = await fetch('/api/square/sync-filtered/rollback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           syncId: syncResult.metadata.syncId,
-          confirmRollback: true 
-        })
+          confirmRollback: true,
+        }),
       });
 
       if (!response.ok) {
@@ -157,7 +157,7 @@ export function FilteredSyncButton() {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         toast.success(`Rollback completed: ${result.data.productsRestored} products affected`);
         setSyncResult(null);
@@ -176,12 +176,7 @@ export function FilteredSyncButton() {
     <div className="space-y-4">
       {/* Main Action Buttons */}
       <div className="flex gap-2 flex-wrap">
-        <Button
-          onClick={handlePreview}
-          disabled={isLoading}
-          variant="outline"
-          className="gap-2"
-        >
+        <Button onClick={handlePreview} disabled={isLoading} variant="outline" className="gap-2">
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           <Eye className="h-4 w-4" />
           Preview Sync
@@ -219,7 +214,8 @@ export function FilteredSyncButton() {
             Filtered Sync Information
           </CardTitle>
           <CardDescription className="text-blue-600">
-            This sync only imports alfajores and empanadas from Square while protecting all catering items.
+            This sync only imports alfajores and empanadas from Square while protecting all catering
+            items.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -230,16 +226,21 @@ export function FilteredSyncButton() {
             <Badge variant="outline">🛡️ Protects: Custom Images</Badge>
           </div>
           <p className="text-blue-700">
-            <strong>Safe:</strong> Catering items, packages, and custom implementations are fully protected from modification.
+            <strong>Safe:</strong> Catering items, packages, and custom implementations are fully
+            protected from modification.
           </p>
         </CardContent>
       </Card>
 
       {/* Sync Results */}
       {syncResult && (
-        <Card className={`border-2 ${syncResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+        <Card
+          className={`border-2 ${syncResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}
+        >
           <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${syncResult.success ? 'text-green-800' : 'text-red-800'}`}>
+            <CardTitle
+              className={`flex items-center gap-2 ${syncResult.success ? 'text-green-800' : 'text-red-800'}`}
+            >
               {syncResult.success ? '✅ Sync Completed' : '❌ Sync Failed'}
             </CardTitle>
             <CardDescription className={syncResult.success ? 'text-green-600' : 'text-red-600'}>
@@ -260,11 +261,15 @@ export function FilteredSyncButton() {
               {syncResult.productDetails && (
                 <>
                   <div className="text-center p-2 bg-white rounded border">
-                    <div className="text-2xl font-bold text-amber-600">{syncResult.productDetails.created}</div>
+                    <div className="text-2xl font-bold text-amber-600">
+                      {syncResult.productDetails.created}
+                    </div>
                     <div className="text-xs text-gray-600">Created</div>
                   </div>
                   <div className="text-center p-2 bg-white rounded border">
-                    <div className="text-2xl font-bold text-purple-600">{syncResult.productDetails.updated}</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {syncResult.productDetails.updated}
+                    </div>
                     <div className="text-xs text-gray-600">Updated</div>
                   </div>
                 </>
@@ -274,7 +279,9 @@ export function FilteredSyncButton() {
             {/* Errors and Warnings */}
             {syncResult.errors.length > 0 && (
               <div className="bg-red-100 border border-red-300 rounded p-3">
-                <h4 className="font-semibold text-red-800 mb-2">Errors ({syncResult.errors.length})</h4>
+                <h4 className="font-semibold text-red-800 mb-2">
+                  Errors ({syncResult.errors.length})
+                </h4>
                 <ul className="list-disc pl-5 text-sm text-red-700 space-y-1">
                   {syncResult.errors.map((error, index) => (
                     <li key={index}>{error}</li>
@@ -285,7 +292,9 @@ export function FilteredSyncButton() {
 
             {syncResult.warnings.length > 0 && (
               <div className="bg-amber-100 border border-amber-300 rounded p-3">
-                <h4 className="font-semibold text-amber-800 mb-2">Warnings ({syncResult.warnings.length})</h4>
+                <h4 className="font-semibold text-amber-800 mb-2">
+                  Warnings ({syncResult.warnings.length})
+                </h4>
                 <ul className="list-disc pl-5 text-sm text-amber-700 space-y-1">
                   {syncResult.warnings.map((warning, index) => (
                     <li key={index}>{warning}</li>
@@ -297,11 +306,14 @@ export function FilteredSyncButton() {
             {/* Metadata */}
             {syncResult.metadata && (
               <div className="text-xs text-gray-500 bg-gray-100 rounded p-2">
-                <strong>Sync ID:</strong> {syncResult.metadata.syncId}<br />
-                <strong>Started:</strong> {new Date(syncResult.metadata.startedAt).toLocaleString()}<br />
+                <strong>Sync ID:</strong> {syncResult.metadata.syncId}
+                <br />
+                <strong>Started:</strong> {new Date(syncResult.metadata.startedAt).toLocaleString()}
+                <br />
                 {syncResult.metadata.completedAt && (
                   <>
-                    <strong>Completed:</strong> {new Date(syncResult.metadata.completedAt).toLocaleString()}
+                    <strong>Completed:</strong>{' '}
+                    {new Date(syncResult.metadata.completedAt).toLocaleString()}
                   </>
                 )}
               </div>
@@ -315,9 +327,7 @@ export function FilteredSyncButton() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Sync Preview</DialogTitle>
-            <DialogDescription>
-              Review what will be synced before proceeding
-            </DialogDescription>
+            <DialogDescription>Review what will be synced before proceeding</DialogDescription>
           </DialogHeader>
 
           {previewData && (
@@ -334,15 +344,21 @@ export function FilteredSyncButton() {
                       <div className="text-sm text-gray-600">Total Products</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{previewData.summary.willSync}</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {previewData.summary.willSync}
+                      </div>
                       <div className="text-sm text-gray-600">Will Sync</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-amber-600">{previewData.summary.willSkip}</div>
+                      <div className="text-2xl font-bold text-amber-600">
+                        {previewData.summary.willSkip}
+                      </div>
                       <div className="text-sm text-gray-600">Will Skip</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{previewData.summary.protectedItems}</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {previewData.summary.protectedItems}
+                      </div>
                       <div className="text-sm text-gray-600">Protected</div>
                     </div>
                   </div>
@@ -353,12 +369,17 @@ export function FilteredSyncButton() {
               {previewData.productsToSync.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-green-800">Products to Sync ({previewData.productsToSync.length})</CardTitle>
+                    <CardTitle className="text-green-800">
+                      Products to Sync ({previewData.productsToSync.length})
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="max-h-64 overflow-y-auto space-y-2">
                       {previewData.productsToSync.map((product, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-green-50 rounded border">
+                        <div
+                          key={index}
+                          className="flex justify-between items-center p-2 bg-green-50 rounded border"
+                        >
                           <span className="font-medium">{product.name}</span>
                           <div className="flex gap-2">
                             <Badge variant="outline">{product.category}</Badge>
@@ -377,12 +398,17 @@ export function FilteredSyncButton() {
               {previewData.itemsToSkip.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-amber-800">Items to Skip ({previewData.itemsToSkip.length})</CardTitle>
+                    <CardTitle className="text-amber-800">
+                      Items to Skip ({previewData.itemsToSkip.length})
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="max-h-64 overflow-y-auto space-y-2">
                       {previewData.itemsToSkip.slice(0, 10).map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-amber-50 rounded border">
+                        <div
+                          key={index}
+                          className="flex justify-between items-center p-2 bg-amber-50 rounded border"
+                        >
                           <span className="font-medium">{item.name}</span>
                           <span className="text-sm text-amber-700">{item.reason}</span>
                         </div>

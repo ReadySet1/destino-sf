@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     // Forward the request to the existing alerts/customer endpoint
     const body = await request.json();
-    
+
     // Ensure the request has the correct type for contact form
     const contactData = {
       ...body,
@@ -64,4 +64,4 @@ export async function GET(request: NextRequest) {
     },
     { status: 200 }
   );
-} 
+}

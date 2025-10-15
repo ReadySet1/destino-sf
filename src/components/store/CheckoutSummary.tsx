@@ -4,10 +4,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { calculateTaxForItems } from '@/utils/tax-exemption';
 
 interface CheckoutSummaryProps {
-  items: Array<{ 
-    id: string; 
-    name: string; 
-    price: number; 
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
     quantity: number;
     category?: { name?: string } | null;
   }>;
@@ -35,7 +35,7 @@ export function CheckoutSummary({
   taxRate = 0.0825, // Default to 8.25% tax
 }: CheckoutSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  
+
   // Calculate tax with exemptions - only catering items are taxable
   const itemsForTaxCalculation = items.map(item => ({
     product: {
@@ -45,7 +45,7 @@ export function CheckoutSummary({
     price: item.price,
     quantity: item.quantity,
   }));
-  
+
   const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRate);
   const tax = taxCalculation.taxAmount;
 
@@ -72,14 +72,19 @@ export function CheckoutSummary({
       <CardContent>
         <div className="space-y-3">
           {items.map(item => (
-            <div key={item.id} className="flex items-center justify-between text-sm hover:bg-destino-cream/20 rounded-lg p-2 transition-colors">
+            <div
+              key={item.id}
+              className="flex items-center justify-between text-sm hover:bg-destino-cream/20 rounded-lg p-2 transition-colors"
+            >
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-destino-orange" />
                 <span className="text-destino-charcoal">
                   {item.quantity} × {item.name}
                 </span>
               </div>
-              <span className="font-semibold text-destino-charcoal">${(item.price * item.quantity).toFixed(2)}</span>
+              <span className="font-semibold text-destino-charcoal">
+                ${(item.price * item.quantity).toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
@@ -113,7 +118,9 @@ export function CheckoutSummary({
                 <div className="flex items-center gap-2">
                   <Truck className="h-4 w-4 text-destino-orange" />
                   <div>
-                    <span className="font-medium text-sm text-destino-charcoal">Shipping ({shippingRate.carrier})</span>
+                    <span className="font-medium text-sm text-destino-charcoal">
+                      Shipping ({shippingRate.carrier})
+                    </span>
                     <div className="text-xs text-destino-charcoal/70">
                       {shippingRate.name}
                       {shippingRate.estimatedDays && (

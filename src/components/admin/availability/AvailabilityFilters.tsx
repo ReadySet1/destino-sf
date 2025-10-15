@@ -93,8 +93,7 @@ export function AvailabilityFilters({
     router.push(pathname);
   };
 
-  const hasActiveFilters =
-    search || ruleType !== 'all' || state !== 'all' || status !== 'all';
+  const hasActiveFilters = search || ruleType !== 'all' || state !== 'all' || status !== 'all';
 
   return (
     <div className="bg-white rounded-xl border border-gray-200/70 p-8 space-y-6 shadow-sm">

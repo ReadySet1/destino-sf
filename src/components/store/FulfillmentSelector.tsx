@@ -17,8 +17,12 @@ export function FulfillmentSelector({
   className = '',
 }: FulfillmentSelectorProps) {
   return (
-    <div className={`mb-8 flex flex-col gap-2 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-destino-yellow/30 ${className}`}>
-      <h3 className="text-lg font-medium mb-1 text-destino-charcoal">How would you like to receive your order?</h3>
+    <div
+      className={`mb-8 flex flex-col gap-2 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-destino-yellow/30 ${className}`}
+    >
+      <h3 className="text-lg font-medium mb-1 text-destino-charcoal">
+        How would you like to receive your order?
+      </h3>
       <RadioGroup
         value={selectedMethod}
         onValueChange={value => onSelectMethod(value as FulfillmentMethod)}
@@ -73,9 +77,7 @@ export function FulfillmentSelector({
           <Truck className="h-5 w-5 text-blue-600" />
           <Label htmlFor="nationwide_shipping" className="cursor-pointer">
             <div className="font-medium text-destino-charcoal">Shipping</div>
-            <div className="text-sm text-gray-600">
-              Standard shipping (3-5 business days)
-            </div>
+            <div className="text-sm text-gray-600">Standard shipping (3-5 business days)</div>
           </Label>
         </div>
       </RadioGroup>

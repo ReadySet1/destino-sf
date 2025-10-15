@@ -1,16 +1,16 @@
 /**
  * Scheduled Square Integration Monitor
- * 
+ *
  * This script runs comprehensive monitoring checks on the Square integration
  * and sends alerts when issues are detected.
- * 
+ *
  * Usage:
  *   pnpm tsx scripts/monitor-square-integration.ts [--silent] [--alerts-off]
- * 
+ *
  * Recommended Cron Schedule:
  *   0 0/15 * * * * - Every 15 minutes for critical monitoring
  *   0 0 0/2 * * * - Every 2 hours for less critical checks
- * 
+ *
  * Environment Variables:
  *   MONITORING_ENABLED=true          # Enable/disable monitoring
  *   ALERT_CHANNELS=slack,email       # Comma-separated list of alert channels
@@ -62,7 +62,7 @@ class ScheduledMonitor {
 
       // Run comprehensive monitoring
       const result = await this.monitor.monitorSquareIntegration();
-      
+
       // Log results
       this.logMonitoringResults(result);
 
@@ -81,15 +81,14 @@ class ScheduledMonitor {
           status: this.getOverallStatus(result),
         });
       }
-
     } catch (error) {
       logger.error('💥 Error during scheduled monitoring:', error);
-      
+
       // Send critical alert about monitoring failure
       if (this.config.alertsEnabled) {
         await this.sendMonitoringFailureAlert(error);
       }
-      
+
       throw error;
     }
   }
@@ -99,7 +98,7 @@ class ScheduledMonitor {
    */
   private logMonitoringResults(result: any): void {
     const status = this.getOverallStatus(result);
-    
+
     if (status === 'CRITICAL' || !this.config.silent) {
       logger.info('📊 Monitoring Results:', {
         status,
@@ -134,10 +133,10 @@ class ScheduledMonitor {
     for (const alert of alerts) {
       try {
         const results = await this.alertSystem.sendAlert(alert);
-        
+
         const successCount = results.filter(r => r.success).length;
         const failureCount = results.length - successCount;
-        
+
         if (!this.config.silent) {
           logger.info(`Alert sent through ${successCount} channels`, {
             alertType: alert.type,
@@ -153,7 +152,6 @@ class ScheduledMonitor {
             failures: failures.map(f => ({ channel: f.channel, error: f.error })),
           });
         }
-
       } catch (error) {
         logger.error('Failed to send alert:', error);
       }
@@ -168,7 +166,9 @@ class ScheduledMonitor {
 
     // High number of stuck orders
     if (result.stuckOrders > this.config.alertThresholds.stuckOrderCount) {
-      criticalIssues.push(`${result.stuckOrders} stuck orders detected (threshold: ${this.config.alertThresholds.stuckOrderCount})`);
+      criticalIssues.push(
+        `${result.stuckOrders} stuck orders detected (threshold: ${this.config.alertThresholds.stuckOrderCount})`
+      );
     }
 
     // Critical alerts present
@@ -239,7 +239,7 @@ class ScheduledMonitor {
 // Parse command line arguments
 function parseArgs(): MonitoringConfig {
   const args = process.argv.slice(2);
-  
+
   return {
     silent: args.includes('--silent'),
     alertsEnabled: !args.includes('--alerts-off'),
@@ -260,14 +260,14 @@ function logStartupInfo(config: MonitoringConfig): void {
   console.log(`📢 Alerts: ${config.alertsEnabled ? 'Enabled' : 'Disabled'}`);
   console.log(`📊 Stuck Order Threshold: ${config.alertThresholds.stuckOrderCount}`);
   console.log(`⏱️  API Response Threshold: ${config.alertThresholds.apiResponseTime}ms`);
-  
+
   // Show configured alert channels
   const channels = [];
   if (process.env.SLACK_WEBHOOK_URL) channels.push('Slack');
   if (process.env.DISCORD_WEBHOOK_URL) channels.push('Discord');
   if (process.env.ALERT_EMAIL_TO) channels.push('Email');
   channels.push('Console', 'Database');
-  
+
   console.log(`📡 Alert Channels: ${channels.join(', ')}`);
   console.log('');
 }
@@ -275,13 +275,13 @@ function logStartupInfo(config: MonitoringConfig): void {
 // Main execution
 async function main(): Promise<void> {
   const config = parseArgs();
-  
+
   if (!config.silent) {
     logStartupInfo(config);
   }
 
   const monitor = new ScheduledMonitor(config);
-  
+
   try {
     await monitor.run();
   } finally {
@@ -295,7 +295,7 @@ if (require.main === module) {
     .then(() => {
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('💥 Monitoring failed:', error.message);
       process.exit(1);
     });

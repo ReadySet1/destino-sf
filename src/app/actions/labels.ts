@@ -4,12 +4,12 @@ import { prisma } from '@/lib/db';
 import { OrderStatus } from '@prisma/client';
 import { getShippingRates } from '@/lib/shipping';
 import { ShippoClientManager } from '@/lib/shippo/client';
-import { 
-  ShippingLabelResponse, 
-  ShippoError, 
-  isRateExpiredError, 
-  createShippoError, 
-  DEFAULT_RETRY_CONFIG 
+import {
+  ShippingLabelResponse,
+  ShippoError,
+  isRateExpiredError,
+  createShippoError,
+  DEFAULT_RETRY_CONFIG,
 } from '@/types/shippo';
 
 /**
@@ -19,9 +19,7 @@ export async function purchaseShippingLabel(
   orderId: string,
   shippoRateId: string
 ): Promise<ShippingLabelResponse> {
-  console.log(
-    `🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}`
-  );
+  console.log(`🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}`);
 
   try {
     // Get current order and check retry count
@@ -48,7 +46,7 @@ export async function purchaseShippingLabel(
         attempts: order.retryCount,
         lastError: 'Maximum retry attempts exceeded',
       };
-      
+
       return {
         success: false,
         error: `Maximum retry attempts (${DEFAULT_RETRY_CONFIG.maxAttempts}) exceeded for order ${orderId}`,
@@ -61,7 +59,7 @@ export async function purchaseShippingLabel(
   } catch (error) {
     console.error(`❌ Error in purchaseShippingLabel for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
-    
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -79,20 +77,20 @@ async function attemptLabelPurchase(
   retryAttempt: number = 0
 ): Promise<ShippingLabelResponse> {
   const orderId = order.id;
-  
+
   try {
     console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
-    
+
     // Check if label creation is already in progress or completed
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { 
-        id: true, 
-        trackingNumber: true, 
+      select: {
+        id: true,
+        trackingNumber: true,
         labelUrl: true,
         lastRetryAt: true,
-        status: true 
-      }
+        status: true,
+      },
     });
 
     if (!currentOrder) {
@@ -114,7 +112,9 @@ async function attemptLabelPurchase(
     // Don't block on general order updates from webhooks
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
     if (currentOrder.lastRetryAt && currentOrder.lastRetryAt > twoMinutesAgo) {
-      console.log(`⏳ Order ${orderId} has recent label creation attempt, skipping to prevent concurrent processing`);
+      console.log(
+        `⏳ Order ${orderId} has recent label creation attempt, skipping to prevent concurrent processing`
+      );
       return {
         success: false,
         error: 'Label creation already in progress. Please wait before retrying.',
@@ -122,13 +122,15 @@ async function attemptLabelPurchase(
         retryAttempt: retryAttempt,
       };
     }
-    
+
     // Get Shippo client
     const shippo = ShippoClientManager.getInstance();
-    
+
     // Validate rate ID before attempting transaction
     if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
-      throw new Error(`Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`);
+      throw new Error(
+        `Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`
+      );
     }
 
     // Update lastRetryAt to prevent concurrent processing during this attempt
@@ -185,16 +187,17 @@ async function attemptLabelPurchase(
       };
     } else {
       // Handle transaction failure - update retry count without throwing
-      const errorMessage = transaction.messages?.map((m: any) => m.text).join(', ') || 
-                          `Transaction failed with status: ${transaction.status}`;
-      
+      const errorMessage =
+        transaction.messages?.map((m: any) => m.text).join(', ') ||
+        `Transaction failed with status: ${transaction.status}`;
+
       // Update retry tracking safely
       try {
         await updateRetryTracking(orderId, retryAttempt);
       } catch (updateError) {
         console.error(`Failed to update retry tracking for order ${orderId}:`, updateError);
       }
-      
+
       console.error(`❌ Label creation failed for Order ID: ${orderId}: ${errorMessage}`);
       return {
         success: false,
@@ -205,26 +208,26 @@ async function attemptLabelPurchase(
     }
   } catch (error: any) {
     console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
-    
+
     // Check if this is a rate expiration error or invalid input (undefined rate)
     if (isRateExpiredError(error) || error.message.includes('Input validation failed')) {
       console.log(`🔄 Rate expired/invalid for Order ID: ${orderId}, attempting refresh...`);
       return await handleRateExpiration(order, retryAttempt);
     }
-    
+
     // Check if we should retry for other errors
     if (retryAttempt < DEFAULT_RETRY_CONFIG.maxAttempts - 1) {
       const delay = calculateRetryDelay(retryAttempt);
       console.log(`⏳ Retrying Order ID: ${orderId} in ${delay}ms...`);
-      
+
       await new Promise(resolve => setTimeout(resolve, delay));
       return await attemptLabelPurchase(order, shippoRateId, retryAttempt + 1);
     }
-    
+
     // Final failure
     const shippoError = createShippoError(error);
     await updateRetryTracking(orderId, retryAttempt + 1, error.message);
-    
+
     return {
       success: false,
       error: error.message,
@@ -237,12 +240,17 @@ async function attemptLabelPurchase(
 /**
  * Handle rate expiration by refreshing rates and retrying
  */
-async function handleRateExpiration(order: any, retryAttempt: number): Promise<ShippingLabelResponse> {
+async function handleRateExpiration(
+  order: any,
+  retryAttempt: number
+): Promise<ShippingLabelResponse> {
   const orderId = order.id;
-  
+
   // Check if we've exceeded rate refresh attempts to prevent infinite loops
   if (retryAttempt >= DEFAULT_RETRY_CONFIG.maxAttempts) {
-    console.error(`❌ Rate refresh limit exceeded for Order ID: ${orderId} after ${retryAttempt} attempts`);
+    console.error(
+      `❌ Rate refresh limit exceeded for Order ID: ${orderId} after ${retryAttempt} attempts`
+    );
     return {
       success: false,
       error: `Maximum rate refresh attempts (${DEFAULT_RETRY_CONFIG.maxAttempts}) exceeded for order ${orderId}`,
@@ -250,13 +258,15 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
       retryAttempt: retryAttempt,
     };
   }
-  
+
   try {
-    console.log(`🔄 Refreshing rates for Order ID: ${orderId} (attempt ${retryAttempt + 1}/${DEFAULT_RETRY_CONFIG.maxAttempts})...`);
-    
+    console.log(
+      `🔄 Refreshing rates for Order ID: ${orderId} (attempt ${retryAttempt + 1}/${DEFAULT_RETRY_CONFIG.maxAttempts})...`
+    );
+
     // Extract shipping information from order
     const { cartItems, shippingAddress } = extractOrderShippingInfo(order);
-    
+
     // Get fresh shipping rates
     const ratesResponse = await getShippingRates({
       cartItems,
@@ -271,16 +281,20 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
 
     // Find best matching rate
     const bestRate = findBestMatchingRate(ratesResponse.rates, order.shippingCarrier);
-    
+
     console.log(`🔍 [DEBUG] Rate structure:`, JSON.stringify(bestRate, null, 2));
     console.log(`🔍 [DEBUG] Available rate properties:`, Object.keys(bestRate || {}));
-    console.log(`🎯 Selected rate: ${bestRate?.id || bestRate?.object_id || 'NO_ID_FOUND'} (${bestRate?.carrier} - ${bestRate?.name || bestRate?.servicename})`);
+    console.log(
+      `🎯 Selected rate: ${bestRate?.id || bestRate?.object_id || 'NO_ID_FOUND'} (${bestRate?.carrier} - ${bestRate?.name || bestRate?.servicename})`
+    );
 
     // Get the correct rate ID
     const rateId = bestRate?.id || bestRate?.object_id;
     if (!rateId) {
       console.error(`❌ [ERROR] No valid rate ID found in bestRate:`, bestRate);
-      throw new Error(`Selected rate has no valid ID. Available properties: ${Object.keys(bestRate || {}).join(', ')}`);
+      throw new Error(
+        `Selected rate has no valid ID. Available properties: ${Object.keys(bestRate || {}).join(', ')}`
+      );
     }
 
     // Update order with new rate ID
@@ -296,7 +310,7 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
   } catch (error) {
     console.error(`❌ Rate refresh failed for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
-    
+
     return {
       success: false,
       error: `Rate refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -309,7 +323,11 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
 /**
  * Update retry tracking in database
  */
-async function updateRetryTracking(orderId: string, retryCount: number, errorMessage?: string): Promise<void> {
+async function updateRetryTracking(
+  orderId: string,
+  retryCount: number,
+  errorMessage?: string
+): Promise<void> {
   await prisma.order.update({
     where: { id: orderId },
     data: {
@@ -334,7 +352,7 @@ function calculateRetryDelay(retryAttempt: number): number {
 /**
  * Extract shipping information from order
  */
-function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddress: any } {
+function extractOrderShippingInfo(order: any): { cartItems: any[]; shippingAddress: any } {
   // Extract cart items
   const cartItems = order.items.map((item: any) => ({
     id: item.product.squareId,
@@ -348,7 +366,7 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
   console.log(`🔍 [DEBUG] Order fulfillmentType: ${order.fulfillmentType}`);
   console.log(`🔍 [DEBUG] Order notes: ${order.notes}`);
   console.log(`🔍 [DEBUG] RawData structure:`, JSON.stringify(order.rawData, null, 2));
-  
+
   const rawData = order.rawData as any;
   let shippingAddress: any;
 
@@ -367,7 +385,7 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
       phone: recipient.phone_number || order.phone,
       email: order.email,
     };
-  } 
+  }
   // Method 2: Extract from Square fulfillment delivery_details (alternative pattern)
   else if (rawData?.fulfillment?.delivery_details?.recipient) {
     console.log(`✅ [DEBUG] Found shipping address in fulfillment.delivery_details.recipient`);
@@ -422,11 +440,11 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
       console.log(`⚠️ [DEBUG] Failed to parse notes as JSON:`, parseError);
     }
   }
-  
+
   // Method 4: Try to extract from other rawData patterns
   if (!shippingAddress && rawData) {
     console.log(`🔍 [DEBUG] Searching for alternative patterns in rawData`);
-    
+
     // Check for direct address in rawData
     if (rawData.address) {
       console.log(`✅ [DEBUG] Found address in rawData.address`);
@@ -464,7 +482,9 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
     console.error(`❌ [ERROR] Unable to extract shipping address from order ${order.id}`);
     console.error(`❌ [ERROR] Available order data keys:`, Object.keys(order));
     console.error(`❌ [ERROR] RawData keys:`, order.rawData ? Object.keys(order.rawData) : 'null');
-    throw new Error(`Unable to extract shipping address from order ${order.id}. Please check order data structure.`);
+    throw new Error(
+      `Unable to extract shipping address from order ${order.id}. Please check order data structure.`
+    );
   }
 
   console.log(`✅ [DEBUG] Successfully extracted shipping address:`, shippingAddress);
@@ -498,7 +518,7 @@ function findBestMatchingRate(rates: any[], originalCarrier?: string): any {
  */
 export async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelResponse> {
   console.log(`🔄 Manual refresh and retry for Order ID: ${orderId}`);
-  
+
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -530,7 +550,7 @@ export async function refreshAndRetryLabel(orderId: string): Promise<ShippingLab
   } catch (error) {
     console.error(`❌ Error in refreshAndRetryLabel for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
-    
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -542,7 +562,11 @@ export async function refreshAndRetryLabel(orderId: string): Promise<ShippingLab
 /**
  * Validate Shippo connection
  */
-export async function validateShippoConnection(): Promise<{ connected: boolean; version: string; error?: string }> {
+export async function validateShippoConnection(): Promise<{
+  connected: boolean;
+  version: string;
+  error?: string;
+}> {
   try {
     return await ShippoClientManager.validateConnection();
   } catch (error) {
@@ -557,7 +581,10 @@ export async function validateShippoConnection(): Promise<{ connected: boolean; 
 /**
  * Reset shipping rate for an order (useful when carrier issues occur)
  */
-export async function resetOrderShippingRate(orderId: string, preferredCarrier: string = 'USPS'): Promise<{ success: boolean; message: string }> {
+export async function resetOrderShippingRate(
+  orderId: string,
+  preferredCarrier: string = 'USPS'
+): Promise<{ success: boolean; message: string }> {
   try {
     await prisma.order.update({
       where: { id: orderId },
@@ -571,12 +598,12 @@ export async function resetOrderShippingRate(orderId: string, preferredCarrier: 
 
     return {
       success: true,
-      message: `Order ${orderId} shipping rate reset successfully. Carrier set to ${preferredCarrier}.`
+      message: `Order ${orderId} shipping rate reset successfully. Carrier set to ${preferredCarrier}.`,
     };
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }

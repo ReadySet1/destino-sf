@@ -14,10 +14,12 @@ This migration updates the product sync system to use Square's `description_html
 ### What Changed
 
 **Before:**
+
 - Synced `description` field (plain text, all formatting stripped by Square)
 - Example: "GF, Veggie, Vegan" (no formatting)
 
 **After:**
+
 - Syncs `description_html` field (HTML formatted)
 - Sanitizes HTML for security (removes scripts, iframes, etc.)
 - Safely renders HTML in React components
@@ -28,11 +30,13 @@ This migration updates the product sync system to use Square's `description_html
 ## Files Changed
 
 ### New Files
+
 1. **`src/lib/utils/product-description.ts`** - HTML sanitization utilities
 2. **`scripts/test-html-sanitization.ts`** - Security testing script
 3. **`scripts/check-square-descriptions.ts`** - Square API verification script
 
 ### Modified Files
+
 1. **`src/lib/square/sync.ts`** - Updated to sync `description_html`
 2. **`src/components/products/ProductCard.tsx`** - Renders HTML safely
 3. **`src/components/products/ProductDetails.tsx`** - Renders HTML safely
@@ -45,6 +49,7 @@ This migration updates the product sync system to use Square's `description_html
 ## Database Changes
 
 ### Schema
+
 **No migration required** ✅
 
 The existing `products.description` field is already `String?` in Prisma, which maps to PostgreSQL `TEXT` type. This can store HTML without any schema changes.
@@ -54,6 +59,7 @@ The existing `products.description` field is already `String?` in Prisma, which 
 ## Testing in Development
 
 ### 1. Security Testing
+
 Run the security test suite to verify HTML sanitization:
 
 ```bash
@@ -61,19 +67,23 @@ npx tsx scripts/test-html-sanitization.ts
 ```
 
 **Expected output:**
+
 - ✓ All tests pass (29/29)
 - ✓ Malicious HTML (scripts, iframes) stripped
 - ✓ Safe formatting (bold, italic) preserved
 
 ### 2. Product Re-Sync
+
 Re-sync products from Square to pull HTML descriptions:
 
 **Option A: Admin Dashboard**
+
 1. Navigate to `/admin/products`
 2. Click "Sync Products from Square"
 3. Verify sync completes successfully
 
 **Option B: Manual Sync (for testing)**
+
 ```bash
 # Load environment variables
 set -a && source .env.local && set +a
@@ -87,27 +97,33 @@ set -a && source .env.local && set +a
 Test these pages in development:
 
 #### Product Cards (Homepage/Menu)
+
 - [ ] Navigate to `/menu`
 - [ ] Check product descriptions show bold/italic formatting
 - [ ] Verify truncation still works (line-clamp-2)
 - [ ] No weird spacing or broken HTML
 
 #### Product Details Pages
+
 - [ ] Open any product detail page
 - [ ] Check full description shows formatting
 - [ ] Test products with different formatting (bold only, italic only, both)
 
 #### Catering Pages
+
 - [ ] Navigate to `/catering`
 - [ ] Check catering lunch items show formatting
 - [ ] Verify dietary labels (GF, V, VG) are formatted
 
 #### Store Components
+
 - [ ] Test `/store` pages if applicable
 - [ ] Verify product cards and details render correctly
 
 ### 4. Browser Testing
+
 Test in multiple browsers:
+
 - [ ] Chrome/Edge (latest)
 - [ ] Firefox (latest)
 - [ ] Safari (latest)
@@ -134,6 +150,7 @@ Query these products in dev to verify formatting:
 ## Production Deployment Plan
 
 ### Prerequisites
+
 ✅ All dev tests pass
 ✅ Visual verification complete
 ✅ Security tests pass
@@ -143,6 +160,7 @@ Query these products in dev to verify formatting:
 ### Deployment Steps
 
 #### Step 1: Pre-Deployment
+
 ```bash
 # 1. Verify production database connection
 echo $DATABASE_URL  # Should show production URL
@@ -153,6 +171,7 @@ pnpm backup-db
 ```
 
 #### Step 2: Deploy Code
+
 ```bash
 # 1. Merge PR to main
 git checkout main
@@ -170,6 +189,7 @@ git pull origin main
 **DO NOT RUN PRODUCT SYNC IMMEDIATELY**
 
 1. **Verify deployment:**
+
    ```bash
    # Check production site is up
    curl https://destinosf.com
@@ -193,6 +213,7 @@ git pull origin main
 #### Step 4: Monitoring
 
 Monitor for 24-48 hours:
+
 - [ ] Check error logs (Vercel/Sentry)
 - [ ] Monitor user reports
 - [ ] Verify no XSS vulnerabilities reported
@@ -205,6 +226,7 @@ Monitor for 24-48 hours:
 If issues occur in production:
 
 ### Quick Rollback (Code)
+
 ```bash
 # 1. Revert the PR in GitHub
 # 2. Vercel will auto-deploy previous version
@@ -212,6 +234,7 @@ If issues occur in production:
 ```
 
 ### Database Rollback (if needed)
+
 ```bash
 # Products table not modified, no rollback needed
 # Descriptions will just show as plain text
@@ -222,6 +245,7 @@ If issues occur in production:
 ## Security Considerations
 
 ### HTML Sanitization
+
 - Uses **DOMPurify** library (industry standard)
 - Whitelist approach: only allows safe tags
 - Strips all dangerous content:
@@ -232,7 +256,9 @@ If issues occur in production:
   - JavaScript URLs
 
 ### Allowed HTML Tags
+
 Safe formatting only:
+
 - `<b>`, `<strong>` - Bold text
 - `<i>`, `<em>` - Italic text
 - `<p>` - Paragraphs
@@ -242,6 +268,7 @@ Safe formatting only:
 **No attributes allowed** (prevents onclick, href, etc.)
 
 ### Testing Results
+
 - ✅ 29/29 security tests passing
 - ✅ XSS attacks blocked
 - ✅ Malformed HTML handled gracefully
@@ -273,32 +300,38 @@ Safe formatting only:
 ### Issue: Formatting not showing after sync
 
 **Diagnosis:**
+
 ```bash
 # Check if description_html exists in Square
 npx tsx scripts/check-square-descriptions.ts
 ```
 
 **Solution:**
+
 - If Square has plain text descriptions, formatting must be added in Square first
 - Re-sync after adding formatting in Square
 
 ### Issue: Broken HTML rendering
 
 **Diagnosis:**
+
 - Check browser console for errors
 - Verify sanitization is working: `npx tsx scripts/test-html-sanitization.ts`
 
 **Solution:**
+
 - HTML should auto-close malformed tags
 - If issues persist, check DOMPurify configuration in `product-description.ts`
 
 ### Issue: Performance degradation
 
 **Diagnosis:**
+
 - HTML parsing shouldn't impact performance significantly
 - If slowdown occurs, check browser performance tools
 
 **Solution:**
+
 - Sanitization runs once per product on server-side sync
 - Client-side rendering uses pre-sanitized HTML
 - No real-time sanitization on page load
@@ -323,11 +356,13 @@ Before marking this migration as complete:
 ## Support
 
 **Questions or issues?**
+
 - Check this guide first
 - Review test results: `scripts/test-html-sanitization.ts`
 - Check Square API docs: https://developer.squareup.com/reference/square/objects/CatalogItem
 
 **For Emmanuel:**
+
 - All code changes documented
 - Security measures in place
 - Rollback procedure ready

@@ -48,7 +48,12 @@ async function identifyOrdersWithBreakdownIssues(limit = 50): Promise<OrderBreak
     const storedGratuityAmount = order.gratuityAmount?.toNumber() || 0;
     const storedShippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : 0;
 
-    const totalStoredBreakdown = storedTaxAmount + storedDeliveryFee + storedServiceFee + storedGratuityAmount + storedShippingCost;
+    const totalStoredBreakdown =
+      storedTaxAmount +
+      storedDeliveryFee +
+      storedServiceFee +
+      storedGratuityAmount +
+      storedShippingCost;
     const calculatedTotal = calculatedSubtotal + totalStoredBreakdown;
     const actualTotal = order.total?.toNumber() || 0;
     const discrepancy = actualTotal - calculatedTotal;
@@ -82,16 +87,16 @@ async function suggestBreakdownFix(issue: OrderBreakdownIssue): Promise<{
 }> {
   // Simple heuristic: if all breakdown fields are 0 but there's a discrepancy,
   // assume it's likely tax (8.25%) and possibly service fee (3.5%)
-  
+
   if (issue.totalStoredBreakdown === 0 && issue.discrepancy > 0) {
     // Calculate what 8.25% tax would be on the subtotal
     const estimatedTax = issue.calculatedSubtotal * 0.0825;
-    
+
     // Calculate what 3.5% service fee would be on (subtotal + tax)
     const estimatedServiceFee = (issue.calculatedSubtotal + estimatedTax) * 0.035;
-    
+
     const estimatedTotal = issue.calculatedSubtotal + estimatedTax + estimatedServiceFee;
-    
+
     // If this estimate is close to the actual discrepancy, suggest it
     if (Math.abs(issue.discrepancy - (estimatedTax + estimatedServiceFee)) < 1) {
       return {
@@ -114,25 +119,27 @@ async function suggestBreakdownFix(issue: OrderBreakdownIssue): Promise<{
 
 async function main() {
   console.log('🔧 Order Breakdown Analysis Tool\n');
-  
+
   try {
     const issues = await identifyOrdersWithBreakdownIssues();
-    
+
     if (issues.length === 0) {
       console.log('✅ No breakdown discrepancies found in recent orders!');
       return;
     }
 
     console.log(`⚠️  Found ${issues.length} orders with breakdown discrepancies:\n`);
-    
+
     for (const issue of issues) {
       console.log(`📋 Order: ${issue.orderId.substring(0, 8)}... (${issue.customerName})`);
       console.log(`   Created: ${issue.createdAt.toLocaleDateString()}`);
       console.log(`   Subtotal: $${issue.calculatedSubtotal.toFixed(2)}`);
-      console.log(`   Stored breakdown: $${issue.totalStoredBreakdown.toFixed(2)} (tax: $${issue.storedTaxAmount}, delivery: $${issue.storedDeliveryFee}, service: $${issue.storedServiceFee}, gratuity: $${issue.storedGratuityAmount}, shipping: $${issue.storedShippingCost})`);
+      console.log(
+        `   Stored breakdown: $${issue.totalStoredBreakdown.toFixed(2)} (tax: $${issue.storedTaxAmount}, delivery: $${issue.storedDeliveryFee}, service: $${issue.storedServiceFee}, gratuity: $${issue.storedGratuityAmount}, shipping: $${issue.storedShippingCost})`
+      );
       console.log(`   Grand Total: $${issue.total.toFixed(2)}`);
       console.log(`   🚨 Discrepancy: $${issue.discrepancy.toFixed(2)}`);
-      
+
       const suggestion = await suggestBreakdownFix(issue);
       console.log(`   💡 ${suggestion.reasoning}`);
       if (suggestion.suggestedTax) {
@@ -148,7 +155,6 @@ async function main() {
     console.log('1. Review each order manually in the admin panel');
     console.log('2. Use the "Edit Order" feature to add missing breakdown data');
     console.log('3. Or create a follow-up script to batch update based on patterns found');
-    
   } catch (error) {
     console.error('❌ Error analyzing orders:', error);
   } finally {

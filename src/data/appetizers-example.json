@@ -6,13 +6,13 @@
       "dietary": ["vg"]
     },
     {
-      "name": "Beef Empanada", 
+      "name": "Beef Empanada",
       "ingredients": ["ground beef", "onions", "spices", "pastry"],
       "dietary": []
     },
     {
       "name": "Chicken Empanada",
-      "ingredients": ["chicken", "onions", "peppers", "pastry"], 
+      "ingredients": ["chicken", "onions", "peppers", "pastry"],
       "dietary": []
     },
     {

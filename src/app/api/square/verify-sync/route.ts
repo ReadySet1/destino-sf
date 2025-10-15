@@ -1,6 +1,6 @@
 /**
  * Square Sync Verification API Endpoint
- * 
+ *
  * Phase 1 of the fix plan: Diagnosis & Verification
  * This endpoint verifies the sync status between Square and local database
  * to identify discrepancies and missing items.
@@ -15,14 +15,14 @@ import type { CategoryMapping, SyncVerificationResult } from '@/types/square-syn
 
 // Category mappings from Square to local DB (from enhanced-sync)
 const CATERING_CATEGORY_MAPPINGS = {
-  'UF2WY4B4635ZDAH4TCJVDQAN': 'CATERING- APPETIZERS',
-  'UOWY2ZPV24Q6K6BBD5CZRM4B': 'CATERING- BUFFET, STARTERS', 
-  'HKLMA3HI34UUW6OCDMEKE224': 'CATERING- BUFFET, ENTREES',
-  'ZOWZ26OBOK3KUCT4ZBE6AV26': 'CATERING- BUFFET, SIDES',
+  UF2WY4B4635ZDAH4TCJVDQAN: 'CATERING- APPETIZERS',
+  UOWY2ZPV24Q6K6BBD5CZRM4B: 'CATERING- BUFFET, STARTERS',
+  HKLMA3HI34UUW6OCDMEKE224: 'CATERING- BUFFET, ENTREES',
+  ZOWZ26OBOK3KUCT4ZBE6AV26: 'CATERING- BUFFET, SIDES',
   '4YZ7LW7PRJRDICUM76U3FTGU': 'CATERING- SHARE PLATTERS',
   '5ZH6ON3LTLXC2775JLBI3T3V': 'CATERING- DESSERTS',
-  'B527RVCSLNZ5XR3OZR76VNIH': 'CATERING- LUNCH, STARTERS',
-  'K2O3B7JUWT7QD7HGQ5AL2R2N': 'CATERING- LUNCH, ENTREES',
+  B527RVCSLNZ5XR3OZR76VNIH: 'CATERING- LUNCH, STARTERS',
+  K2O3B7JUWT7QD7HGQ5AL2R2N: 'CATERING- LUNCH, ENTREES',
   '7F45BAY6KVJOBF4YXYBSL4JH': 'CATERING- LUNCH, SIDES',
 } as const;
 
@@ -36,11 +36,11 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<any[]> {
       query: {
         exact_query: {
           attribute_name: 'category_id',
-          attribute_value: categoryId
-        }
+          attribute_value: categoryId,
+        },
       },
       limit: 100,
-      include_related_objects: true
+      include_related_objects: true,
     };
 
     const response = await searchCatalogObjects(requestBody);
@@ -60,7 +60,9 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<any[]> {
 /**
  * Get counts from local database for both products and catering_items tables
  */
-async function getLocalItemCounts(): Promise<Record<string, { products: number; cateringItems: number; total: number }>> {
+async function getLocalItemCounts(): Promise<
+  Record<string, { products: number; cateringItems: number; total: number }>
+> {
   try {
     const counts: Record<string, { products: number; cateringItems: number; total: number }> = {};
 
@@ -70,17 +72,17 @@ async function getLocalItemCounts(): Promise<Record<string, { products: number; 
         active: true,
         category: {
           name: {
-            contains: 'CATERING'
-          }
-        }
+            contains: 'CATERING',
+          },
+        },
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     // Get catering products from products table (catering_items table removed)
-    const cateringProducts = productsWithCategories.filter(product => 
+    const cateringProducts = productsWithCategories.filter(product =>
       product.category.name.includes('CATERING')
     );
 
@@ -112,13 +114,15 @@ async function getLocalItemCounts(): Promise<Record<string, { products: number; 
 /**
  * Find missing items by comparing Square and local data
  */
-async function findMissingItems(): Promise<Array<{ squareId: string; name: string; category: string }>> {
+async function findMissingItems(): Promise<
+  Array<{ squareId: string; name: string; category: string }>
+> {
   const missingItems: Array<{ squareId: string; name: string; category: string }> = [];
 
   for (const [squareCategoryId, localCategoryName] of Object.entries(CATERING_CATEGORY_MAPPINGS)) {
     try {
       const squareItems = await fetchSquareItemsForCategory(squareCategoryId);
-      
+
       for (const squareItem of squareItems) {
         const squareId = squareItem.id;
         const name = squareItem.item_data?.name || 'Unnamed Item';
@@ -126,22 +130,23 @@ async function findMissingItems(): Promise<Array<{ squareId: string; name: strin
         // Check if item exists in products table
         const existsInProducts = await prisma.product.findFirst({
           where: {
-            squareId: squareId
+            squareId: squareId,
           },
           include: {
-            category: true
-          }
+            category: true,
+          },
         });
 
         // Check if item exists in catering categories in products table
         // (catering_items table removed - checking catering categories in products)
-        const existsInCatering = existsInProducts && existsInProducts.category.name.includes('CATERING');
+        const existsInCatering =
+          existsInProducts && existsInProducts.category.name.includes('CATERING');
 
         if (!existsInProducts) {
           missingItems.push({
             squareId,
             name,
-            category: localCategoryName
+            category: localCategoryName,
           });
         }
       }
@@ -162,7 +167,7 @@ async function findExtraItems(): Promise<Array<{ id: string; name: string; categ
   try {
     // Get all Square item IDs for comparison
     const allSquareIds = new Set<string>();
-    
+
     for (const [squareCategoryId] of Object.entries(CATERING_CATEGORY_MAPPINGS)) {
       const squareItems = await fetchSquareItemsForCategory(squareCategoryId);
       for (const item of squareItems) {
@@ -174,18 +179,18 @@ async function findExtraItems(): Promise<Array<{ id: string; name: string; categ
     const productsWithSquareIds = await prisma.product.findMany({
       where: {
         squareId: {
-          not: null
+          not: null,
         } as any,
         active: true,
         category: {
           name: {
-            contains: 'CATERING'
-          }
-        }
+            contains: 'CATERING',
+          },
+        },
       },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     for (const product of productsWithSquareIds) {
@@ -193,14 +198,13 @@ async function findExtraItems(): Promise<Array<{ id: string; name: string; categ
         extraItems.push({
           id: product.id,
           name: product.name,
-          category: product.category.name
+          category: product.category.name,
         });
       }
     }
 
     // Catering products are already checked in the productsWithSquareIds loop above
     // (catering_items table removed - using unified products approach)
-
   } catch (error) {
     logger.error('Error finding extra items:', error);
   }
@@ -232,11 +236,13 @@ async function compareCategories(): Promise<CategoryMapping[]> {
         itemCount: {
           square: squareCount,
           local: localCount,
-          discrepancy
-        }
+          discrepancy,
+        },
       });
 
-      logger.info(`Category ${localName}: Square=${squareCount}, Local=${localCount}, Discrepancy=${discrepancy}`);
+      logger.info(
+        `Category ${localName}: Square=${squareCount}, Local=${localCount}, Discrepancy=${discrepancy}`
+      );
     } catch (error) {
       logger.error(`Error comparing category ${localName}:`, error);
       // Add category with error state
@@ -247,8 +253,8 @@ async function compareCategories(): Promise<CategoryMapping[]> {
         itemCount: {
           square: 0,
           local: localCounts[localName]?.total || 0,
-          discrepancy: localCounts[localName]?.total || 0
-        }
+          discrepancy: localCounts[localName]?.total || 0,
+        },
       });
     }
   }
@@ -263,15 +269,21 @@ function generateRecommendations(verificationResult: SyncVerificationResult): st
   const recommendations: string[] = [];
 
   if (verificationResult.totalDiscrepancy > 0) {
-    recommendations.push(`Found ${verificationResult.totalDiscrepancy} total discrepancies across categories`);
+    recommendations.push(
+      `Found ${verificationResult.totalDiscrepancy} total discrepancies across categories`
+    );
   }
 
   if (verificationResult.missingItems.length > 0) {
-    recommendations.push(`${verificationResult.missingItems.length} items exist in Square but not locally - consider running enhanced sync`);
+    recommendations.push(
+      `${verificationResult.missingItems.length} items exist in Square but not locally - consider running enhanced sync`
+    );
   }
 
   if (verificationResult.extraItems.length > 0) {
-    recommendations.push(`${verificationResult.extraItems.length} items exist locally but not in Square - check for orphaned data`);
+    recommendations.push(
+      `${verificationResult.extraItems.length} items exist locally but not in Square - check for orphaned data`
+    );
   }
 
   // Check for dual storage issues
@@ -281,7 +293,9 @@ function generateRecommendations(verificationResult: SyncVerificationResult): st
   });
 
   if (categoriesWithBothTables.length > 0) {
-    recommendations.push('Some categories may have items in both products and catering_items tables - consider data consolidation');
+    recommendations.push(
+      'Some categories may have items in both products and catering_items tables - consider data consolidation'
+    );
   }
 
   if (recommendations.length === 0) {
@@ -293,7 +307,7 @@ function generateRecommendations(verificationResult: SyncVerificationResult): st
 
 /**
  * GET /api/square/verify-sync
- * 
+ *
  * Verify sync status between Square and local database
  */
 export async function GET(request: NextRequest) {
@@ -320,23 +334,28 @@ export async function GET(request: NextRequest) {
     const [categoryMappings, missingItems, extraItems] = await Promise.all([
       compareCategories(),
       findMissingItems(),
-      findExtraItems()
+      findExtraItems(),
     ]);
 
-    const totalDiscrepancy = categoryMappings.reduce((sum, cat) => sum + cat.itemCount.discrepancy, 0);
+    const totalDiscrepancy = categoryMappings.reduce(
+      (sum, cat) => sum + cat.itemCount.discrepancy,
+      0
+    );
 
     const verificationResult: SyncVerificationResult = {
       categories: categoryMappings,
       totalDiscrepancy,
       missingItems,
-      extraItems
+      extraItems,
     };
 
     const recommendations = generateRecommendations(verificationResult);
     const duration = Date.now() - startTime;
 
     logger.info(`✅ Sync verification completed in ${duration}ms`);
-    logger.info(`📊 Results: ${totalDiscrepancy} discrepancies, ${missingItems.length} missing, ${extraItems.length} extra`);
+    logger.info(
+      `📊 Results: ${totalDiscrepancy} discrepancies, ${missingItems.length} missing, ${extraItems.length} extra`
+    );
 
     return NextResponse.json({
       success: true,
@@ -346,24 +365,26 @@ export async function GET(request: NextRequest) {
         verificationId: `verify-${Date.now()}`,
         timestamp: new Date().toISOString(),
         duration,
-        categoriesChecked: categoryMappings.length
-      }
+        categoriesChecked: categoryMappings.length,
+      },
     });
-
   } catch (error) {
     logger.error('❌ Sync verification error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Sync verification failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Sync verification failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * POST /api/square/verify-sync
- * 
+ *
  * Run verification with optional parameters
  */
 export async function POST(request: NextRequest) {
@@ -376,14 +397,16 @@ export async function POST(request: NextRequest) {
     // For now, delegate to GET but with potential for filtered verification
     // This can be expanded to handle specific category verification
     return GET(request);
-
   } catch (error) {
     logger.error('❌ Targeted sync verification error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Targeted verification failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Targeted verification failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }

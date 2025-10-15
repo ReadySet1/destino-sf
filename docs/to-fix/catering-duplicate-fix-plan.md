@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Q1 2025 - Order System Stability
 
 ### Problem Statement
+
 Multiple form submissions are occurring during catering checkout, creating risk of duplicate orders and payments. Additionally, redundant data fetching and webhook race conditions are impacting system performance and reliability.
 
 ### Success Criteria
+
 - [ ] Zero duplicate orders created from multiple form submissions
 - [ ] Submit button disabled immediately after first click with proper loading state
 - [ ] Reduced API calls for catering product data by 50%
@@ -23,6 +25,7 @@ Multiple form submissions are occurring during catering checkout, creating risk 
 - [ ] All catering orders process correctly with single payment intent
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Future payment processing improvements
 - **Related PRs/Issues**: Square webhook integration, Catering checkout flow
@@ -34,6 +37,7 @@ Multiple form submissions are occurring during catering checkout, creating risk 
 ### 1. Code Structure & References
 
 #### File Structure
+
 ```tsx
 src/
 ├── app/
@@ -71,10 +75,11 @@ src/
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/catering.ts
 export interface CateringCheckoutRequest {
-  idempotencyKey: string;  // Add for duplicate prevention
+  idempotencyKey: string; // Add for duplicate prevention
   contactInfo: ContactInfo;
   items: CateringItem[];
   paymentMethod: PaymentMethod;
@@ -101,6 +106,7 @@ export interface WebhookEventQueue {
 ### 2. Architecture Patterns
 
 #### Data Flow Architecture
+
 ```mermaid
 graph TD
     A[Checkout Form] -->|Single Submit| B[Submission Guard]
@@ -108,12 +114,12 @@ graph TD
     C -->|Check Duplicate| D[Database]
     D -->|Exists| E[Return Existing]
     D -->|New| F[Create Order]
-    
+
     G[Product Pages] -->|First Load| H[Data Fetching Hook]
     H -->|Check Cache| I[Cache Layer]
     I -->|Miss| J[API Call]
     I -->|Hit| K[Return Cached]
-    
+
     L[Square Webhook] -->|Event| M[Event Queue]
     M -->|Order Created| N[Process Events]
     M -->|Other Event| O[Hold in Queue]
@@ -124,6 +130,7 @@ graph TD
 #### Critical Fix Areas
 
 **1. Form Submission Prevention (CRITICAL)**
+
 - Location: `/app/catering/checkout/page.tsx`
 - Current Issue: Multiple rapid POST requests to `/catering/checkout`
 - Fix Strategy:
@@ -133,6 +140,7 @@ graph TD
   - Generate client-side idempotency key
 
 **2. Backend Idempotency (CRITICAL)**
+
 - Location: `/app/api/catering/checkout/route.ts`
 - Current Issue: No duplicate prevention at API level
 - Fix Strategy:
@@ -141,6 +149,7 @@ graph TD
   - 24-hour TTL for idempotency keys
 
 **3. Data Fetching Optimization**
+
 - Locations: `/app/catering/buffet|lunch|appetizers/page.tsx`
 - Current Issue: Duplicate API calls on page load
 - Fix Strategy:
@@ -149,6 +158,7 @@ graph TD
   - Use unstable_cache for server-side caching
 
 **4. Webhook Queue Management**
+
 - Location: `/app/api/webhooks/square/route.ts`
 - Current Issue: Race conditions with event ordering
 - Fix Strategy:
@@ -218,6 +228,7 @@ describe('Webhook Event Processing', () => {
 ## 🔒 Security Analysis
 
 ### Security Checklist
+
 - [ ] **Idempotency Keys**: Generate cryptographically secure keys client-side
 - [ ] **Rate Limiting**: Implement per-user checkout rate limits
 - [ ] **Payment Security**: Ensure single payment intent per order
@@ -231,6 +242,7 @@ describe('Webhook Event Processing', () => {
 ## 📊 Performance & Monitoring
 
 ### Performance Metrics to Track
+
 ```yaml
 metrics:
   duplicate_order_rate: 0%  # Target
@@ -241,6 +253,7 @@ metrics:
 ```
 
 ### Monitoring Implementation
+
 ```tsx
 // Add comprehensive logging
 const checkoutMetrics = {
@@ -248,7 +261,7 @@ const checkoutMetrics = {
   duplicatesBlocked: 0,
   idempotencyHits: 0,
   cacheHitRate: 0,
-  webhookQueueSize: 0
+  webhookQueueSize: 0,
 };
 ```
 
@@ -257,6 +270,7 @@ const checkoutMetrics = {
 ## 🎨 UI/UX Considerations
 
 ### User Experience Improvements
+
 - [ ] **Loading States**: Clear visual feedback during submission
 - [ ] **Error Messages**: User-friendly duplicate prevention messages
 - [ ] **Button States**: Disabled state with spinner/loading text
@@ -264,6 +278,7 @@ const checkoutMetrics = {
 - [ ] **Confirmation**: Clear order confirmation with order ID
 
 ### Component Updates Required
+
 ```tsx
 // CheckoutForm Component Enhancements
 - Add useFormSubmission hook
@@ -278,6 +293,7 @@ const checkoutMetrics = {
 ## 📦 Deployment & Rollback
 
 ### Pre-Deployment Checklist
+
 - [ ] **Load Testing**: Simulate rapid form submissions
 - [ ] **Idempotency Testing**: Verify duplicate prevention
 - [ ] **Cache Testing**: Confirm data caching works
@@ -287,22 +303,25 @@ const checkoutMetrics = {
 - [ ] **Monitoring**: Set up alerts for duplicate orders
 
 ### Feature Flags
+
 ```tsx
 export const features = {
   CATERING_IDEMPOTENCY: true,
   CATERING_DATA_CACHE: true,
   WEBHOOK_QUEUE: true,
-  FORM_SUBMISSION_GUARD: true
+  FORM_SUBMISSION_GUARD: true,
 } as const;
 ```
 
 ### Rollback Strategy
+
 - Keep old checkout flow available via feature flag
 - Monitor duplicate order metrics closely
 - Have database cleanup scripts ready
 - Document rollback procedure for support team
 
 ### Post-Deployment Monitoring
+
 - [ ] Zero duplicate orders in first 24 hours
 - [ ] Checkout success rate maintained or improved
 - [ ] No increase in payment failures
@@ -330,17 +349,16 @@ const handleCompleteOrder = async () => {
 
   // Set ref immediately to prevent race conditions
   isSubmittingRef.current = true;
-  
+
   // Track submission attempts
   setSubmissionAttempts(prev => prev + 1);
   console.log(`📤 Catering checkout submission attempt #${submissionAttempts + 1}`);
-  
+
   setIsSubmitting(true);
   setSubmitError(null);
 
   try {
     // ... existing order creation logic ...
-    
   } catch (error) {
     // ... existing error handling ...
   } finally {
@@ -369,18 +387,20 @@ const handleCompleteOrder = async () => {
   ) : (
     'Complete Order'
   )}
-</Button>
+</Button>;
 
 // Add loading overlay when submitting (add after the main grid div)
-{isSubmitting && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-    <div className="bg-white p-8 rounded-lg shadow-xl">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d3538] mx-auto" />
-      <p className="mt-4 text-lg font-medium">Processing your catering order...</p>
-      <p className="mt-2 text-sm text-gray-500">Please do not close this window</p>
+{
+  isSubmitting && (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-xl">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d3538] mx-auto" />
+        <p className="mt-4 text-lg font-medium">Processing your catering order...</p>
+        <p className="mt-2 text-sm text-gray-500">Please do not close this window</p>
+      </div>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 ### Priority 2: Fix Duplicate API Calls
@@ -395,10 +415,10 @@ export const dynamic = 'force-cache'; // Use cache when possible
 export async function GET(request: Request) {
   // Add request deduplication
   const cacheKey = 'catering-buffet-products';
-  
+
   try {
     // ... existing fetch logic ...
-    
+
     return NextResponse.json(products, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
@@ -416,26 +436,31 @@ export async function GET(request: Request) {
 ## 🔄 Implementation Phases
 
 ### Phase 1: Critical Form Submission Fix (Day 1)
+
 1. Implement submission guard in checkout form
 2. Add loading states and button disabling
 3. Deploy with feature flag
 
 ### Phase 2: Backend Idempotency (Day 2)
+
 1. Add idempotency key handling
 2. Implement duplicate detection
 3. Add comprehensive logging
 
 ### Phase 3: Data Optimization (Day 3)
+
 1. Implement caching strategy
 2. Reduce redundant API calls
 3. Add cache headers
 
 ### Phase 4: Webhook Enhancement (Day 4)
+
 1. Implement event queue
 2. Improve race condition handling
 3. Clean up logging
 
 ### Phase 5: Testing & Monitoring (Day 5)
+
 1. Complete all test coverage
 2. Set up monitoring dashboards
 3. Document and deploy
@@ -447,11 +472,13 @@ export async function GET(request: Request) {
 ### ✅ **COMPLETED PHASES**
 
 #### **Phase 1: Critical Form Submission Fix** ✅ **COMPLETED**
+
 - **Status**: ✅ Deployed and Active
 - **Implementation Date**: January 3, 2025
 - **Location**: `src/components/Catering/CateringCheckoutClient.tsx`
 
 **Changes Made:**
+
 - ✅ Added `useRef` submission guard to prevent race conditions
 - ✅ Enhanced button states with loading spinner and pointer events disabled
 - ✅ Implemented submission attempt tracking for debugging
@@ -460,16 +487,19 @@ export async function GET(request: Request) {
 - ✅ Immediate state reset on successful submissions
 
 **Results:**
+
 - **Zero** form submission duplicates expected
 - Enhanced user experience with clear loading states
 - Better error handling and retry mechanisms
 
 #### **Phase 2: Backend Idempotency Enhancement** ✅ **COMPLETED**
+
 - **Status**: ✅ Deployed and Active
 - **Implementation Date**: January 3, 2025
 - **Location**: `src/actions/catering.ts`
 
 **Changes Made:**
+
 - ✅ Enhanced idempotency key generation with cryptographic security
 - ✅ Comprehensive duplicate detection with multiple fallback strategies
 - ✅ Extended detection window from 10 to 15 minutes
@@ -478,16 +508,19 @@ export async function GET(request: Request) {
 - ✅ Error categorization and handling
 
 **Results:**
+
 - **50%+ improvement** in duplicate detection accuracy
 - **Comprehensive audit trail** for all duplicate attempts
 - **Robust fallback mechanisms** for edge cases
 
 #### **Phase 3: Webhook Queue Management** ✅ **COMPLETED**
+
 - **Status**: ✅ Deployed and Active
 - **Implementation Date**: January 3, 2025
 - **Location**: `src/app/api/webhooks/square/route.ts`
 
 **Changes Made:**
+
 - ✅ Enhanced catering order detection with exponential backoff (5 retries vs 3)
 - ✅ Extended retry delays (2s base vs 1s) with exponential backoff
 - ✅ Added final safety check for recent catering orders (30-second window)
@@ -497,6 +530,7 @@ export async function GET(request: Request) {
 - ✅ Better customer data extraction from payment webhooks
 
 **Results:**
+
 - **Eliminates** webhook race condition duplicates
 - **Prevents** placeholder order creation when catering orders are detected
 - **10-second delay queue** for edge cases with automatic retry
@@ -504,23 +538,24 @@ export async function GET(request: Request) {
 
 ### 📊 **EXPECTED METRICS IMPROVEMENTS**
 
-| Metric | Before Fix | Target | Expected Result |
-|--------|------------|--------|-----------------|
-| **Duplicate Order Rate** | ~5-10% | 0% | ✅ **0%** |
-| **Form Submission Count** | 1-3 per checkout | 1 per checkout | ✅ **1 per checkout** |
-| **Placeholder Orders** | ~2-5 per day | 0 per day | ✅ **0 per day** |
-| **Webhook Processing Time** | Variable | <500ms | ✅ **<500ms with queuing** |
-| **API Call Reduction** | Baseline | 50% reduction | ✅ **50%+ with HTTP caching** |
-| **Customer Support Tickets** | 3-5 per week | 0-1 per week | ✅ **Expected 80% reduction** |
+| Metric                       | Before Fix       | Target         | Expected Result               |
+| ---------------------------- | ---------------- | -------------- | ----------------------------- |
+| **Duplicate Order Rate**     | ~5-10%           | 0%             | ✅ **0%**                     |
+| **Form Submission Count**    | 1-3 per checkout | 1 per checkout | ✅ **1 per checkout**         |
+| **Placeholder Orders**       | ~2-5 per day     | 0 per day      | ✅ **0 per day**              |
+| **Webhook Processing Time**  | Variable         | <500ms         | ✅ **<500ms with queuing**    |
+| **API Call Reduction**       | Baseline         | 50% reduction  | ✅ **50%+ with HTTP caching** |
+| **Customer Support Tickets** | 3-5 per week     | 0-1 per week   | ✅ **Expected 80% reduction** |
 
 ### 🔍 **MONITORING & OBSERVABILITY**
 
 #### **Log Monitoring Tags**
+
 ```bash
 # Form Submission Monitoring
 grep "📤 Catering checkout submission attempt" logs/
 
-# Idempotency Monitoring  
+# Idempotency Monitoring
 grep "\[IDEMPOTENCY\]" logs/
 
 # Webhook Queue Monitoring
@@ -537,6 +572,7 @@ grep "\[CACHE-OPT\]" logs/
 ```
 
 #### **Key Success Indicators**
+
 - ✅ **Zero** logs showing "DUPLICATE ORDER DETECTED"
 - ✅ **Zero** logs showing "PREVENTING PLACEHOLDER ORDER CREATION"
 - ✅ **All** catering checkouts show single submission attempt
@@ -546,13 +582,14 @@ grep "\[CACHE-OPT\]" logs/
 ### 🚨 **ROLLBACK PROCEDURE** (If Needed)
 
 1. **Immediate Rollback** (if critical issues):
+
    ```bash
    # Revert form submission changes
    git revert <commit-hash-phase-1>
-   
-   # Revert webhook changes  
+
+   # Revert webhook changes
    git revert <commit-hash-phase-3>
-   
+
    # Deploy immediately
    vercel --prod
    ```
@@ -560,11 +597,11 @@ grep "\[CACHE-OPT\]" logs/
 2. **Database Cleanup** (if duplicates created):
    ```sql
    -- Identify recent duplicates
-   SELECT * FROM catering_orders 
+   SELECT * FROM catering_orders
    WHERE created_at >= '2025-01-03'
    AND email IN (
      SELECT email FROM catering_orders
-     WHERE created_at >= '2025-01-03' 
+     WHERE created_at >= '2025-01-03'
      GROUP BY email, event_date, total_amount
      HAVING COUNT(*) > 1
    );
@@ -573,11 +610,13 @@ grep "\[CACHE-OPT\]" logs/
 ### 🔄 **PENDING PHASES**
 
 #### **Phase 4: Data Fetching Optimization** ✅ **COMPLETED**
+
 - **Status**: ✅ Deployed and Active
 - **Implementation Date**: January 3, 2025
 - **Location**: `src/app/api/catering/{buffet,lunch,appetizers}/route.ts`
 
 **Changes Made:**
+
 - ✅ Added 1-hour cache revalidation (`revalidate = 3600`) to all catering API routes
 - ✅ Implemented `force-static` dynamic configuration for better caching
 - ✅ Added comprehensive cache headers (`Cache-Control`, `X-Cache-Source`, `X-Data-Timestamp`)
@@ -585,12 +624,14 @@ grep "\[CACHE-OPT\]" logs/
 - ✅ Cache key generation and monitoring for debugging
 
 **Results:**
+
 - **50%+ reduction** in API calls through proper HTTP caching
 - **Performance monitoring** with processing time tracking (1.8-2.6s baseline)
 - **Enhanced debugging** with cache source identification
 - **Better CDN compatibility** with proper cache headers
 
-#### **Phase 5: Testing & Monitoring** ⏳ **PENDING**  
+#### **Phase 5: Testing & Monitoring** ⏳ **PENDING**
+
 - **Target**: Complete test coverage and monitoring dashboards
 - **Implementation**: Automated tests + metrics dashboards
 - **Priority**: Medium (observability)
@@ -610,11 +651,12 @@ Monitor these metrics for **7 days post-deployment**:
 **CRITICAL BUG FIXED**: The catering order duplication issue has been **completely resolved** through a comprehensive four-phase approach:
 
 1. **Frontend**: Bulletproof form submission prevention ✅
-2. **Backend**: Enhanced idempotency with comprehensive logging ✅  
+2. **Backend**: Enhanced idempotency with comprehensive logging ✅
 3. **Webhooks**: Advanced queue management eliminating race conditions ✅
 4. **Performance**: Data fetching optimization with 50%+ API call reduction ✅
 
 **ROOT CAUSE ELIMINATED**: The primary source of placeholder duplicate orders (webhook race conditions) has been eliminated through:
+
 - Enhanced detection timing (5 retries with exponential backoff)
 - Final safety checks for recent catering orders
 - Webhook queuing system for edge cases

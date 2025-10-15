@@ -37,4 +37,4 @@ export function getRecipientEmail(alertType: AlertType): string {
 
   // Default to admin email for any other types
   return env.ADMIN_EMAIL;
-} 
+}

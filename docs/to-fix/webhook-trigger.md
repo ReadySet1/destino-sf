@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Emergency Production Fix
 
 ### Problem Statement
+
 Square webhook signature validation is consistently failing due to environment variable corruption (newline character appended to webhook secret) and incorrect signature calculation algorithm. This causes payment webhooks to be rejected, preventing order processing and customer notifications.
 
 ### Success Criteria
+
 - [x] Webhook signature validates correctly for sandbox environment
 - [x] Webhook signature validates correctly for production environment
 - [ ] Zero failed webhook validations in 24-hour period
@@ -24,6 +26,7 @@ Square webhook signature validation is consistently failing due to environment v
 - [ ] Complete test coverage for signature validation
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Payment processing, Order fulfillment, Customer notifications
 - **Related PRs/Issues**: #webhook-timeout, #payment-status-fix
@@ -35,6 +38,7 @@ Square webhook signature validation is consistently failing due to environment v
 ### 1. Code Structure & References
 
 #### File Structure
+
 ```tsx
 src/
 ├── app/
@@ -88,6 +92,7 @@ src/
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/webhook.ts
 import { z } from 'zod';
@@ -106,8 +111,8 @@ export const SquareWebhookPayloadSchema = z.object({
   data: z.object({
     type: z.string(),
     id: z.string(),
-    object: z.record(z.unknown())
-  })
+    object: z.record(z.unknown()),
+  }),
 });
 
 export type SquareWebhookPayload = z.infer<typeof SquareWebhookPayloadSchema>;
@@ -149,12 +154,13 @@ export interface PaymentSyncResult {
 }
 
 // Result type for better error handling
-export type Result<T, E = WebhookValidationError> = 
+export type Result<T, E = WebhookValidationError> =
   | { success: true; data: T }
   | { success: false; error: E };
 ```
 
 #### Database Schema
+
 ```sql
 -- migrations/001_webhook_logs.sql
 CREATE TABLE IF NOT EXISTS webhook_logs (
@@ -177,7 +183,7 @@ CREATE TABLE IF NOT EXISTS webhook_logs (
 CREATE INDEX idx_webhook_logs_event_type ON webhook_logs(event_type);
 CREATE INDEX idx_webhook_logs_merchant_id ON webhook_logs(merchant_id);
 CREATE INDEX idx_webhook_logs_created_at ON webhook_logs(created_at DESC);
-CREATE INDEX idx_webhook_logs_signature_valid ON webhook_logs(signature_valid) 
+CREATE INDEX idx_webhook_logs_signature_valid ON webhook_logs(signature_valid)
   WHERE signature_valid = false;
 
 -- migrations/002_payment_sync_status.sql
@@ -216,6 +222,7 @@ CREATE TRIGGER update_webhook_logs_updated_at
 ### 2. Architecture Patterns
 
 #### Data Flow Architecture
+
 ```mermaid
 graph TD
     A[Square Webhook] -->|POST| B[API Route Handler]
@@ -225,17 +232,18 @@ graph TD
     D --> F[Process Payment]
     F --> G[Update Database]
     F --> H[Send Notifications]
-    
+
     I[Cron Job] -->|Every 5 min| J[Payment Sync Service]
     J --> K[Square API]
     K --> L[Compare with DB]
     L -->|Missing Payments| M[Process Missing]
-    
+
     N[Admin Dashboard] --> O[Monitor Webhooks]
     N --> P[Manual Sync Trigger]
 ```
 
 #### Error Handling Pattern
+
 ```tsx
 // lib/square/webhook-error-handler.ts
 export class WebhookError extends Error {
@@ -256,35 +264,35 @@ export async function handleWebhookError(error: unknown): Promise<Result<never>>
     await logToMonitoring({
       error: error.code,
       message: error.message,
-      details: error.details
+      details: error.details,
     });
-    
-    return { 
-      success: false, 
-      error: { 
-        type: 'WEBHOOK_ERROR' as const, 
+
+    return {
+      success: false,
+      error: {
+        type: 'WEBHOOK_ERROR' as const,
         code: error.code,
-        message: error.message 
-      }
+        message: error.message,
+      },
     };
   }
-  
+
   // Log unexpected errors with full stack trace
   console.error('Unexpected webhook error:', error);
-  
+
   // Send alert for unexpected errors
   await sendAlert({
     severity: 'high',
     title: 'Unexpected Webhook Error',
-    details: error
+    details: error,
   });
-  
+
   return {
     success: false,
-    error: { 
-      type: 'INTERNAL' as const, 
-      message: 'An unexpected error occurred' 
-    }
+    error: {
+      type: 'INTERNAL' as const,
+      message: 'An unexpected error occurred',
+    },
   };
 }
 ```
@@ -292,6 +300,7 @@ export async function handleWebhookError(error: unknown): Promise<Result<never>>
 ### 3. Full Stack Integration Points
 
 #### API Endpoints
+
 ```tsx
 // POST /api/webhooks/square - Square webhook receiver
 // GET /api/webhooks/square - Health check
@@ -302,6 +311,7 @@ export async function handleWebhookError(error: unknown): Promise<Result<never>>
 ```
 
 #### Webhook Handler Implementation
+
 ```tsx
 // app/api/webhooks/square/route.ts
 'use server';
@@ -314,28 +324,27 @@ import { trackMetric } from '@/lib/monitoring/webhook-metrics';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = performance.now();
-  
+
   try {
     // 1. Read and validate body
     const body = await request.text();
     const headers = Object.fromEntries(request.headers.entries());
-    
+
     // 2. Clean environment variables (remove any trailing newlines)
     const cleanEnvVars = () => {
       if (process.env.SQUARE_WEBHOOK_SECRET_SANDBOX) {
-        process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = 
+        process.env.SQUARE_WEBHOOK_SECRET_SANDBOX =
           process.env.SQUARE_WEBHOOK_SECRET_SANDBOX.trim();
       }
       if (process.env.SQUARE_WEBHOOK_SECRET) {
-        process.env.SQUARE_WEBHOOK_SECRET = 
-          process.env.SQUARE_WEBHOOK_SECRET.trim();
+        process.env.SQUARE_WEBHOOK_SECRET = process.env.SQUARE_WEBHOOK_SECRET.trim();
       }
     };
     cleanEnvVars();
-    
+
     // 3. Validate signature
     const validationResult = await validateWebhookSignature(request, body);
-    
+
     // 4. Log webhook attempt
     const webhookLog = await logWebhook({
       payload: JSON.parse(body),
@@ -343,17 +352,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       signatureValid: validationResult.valid,
       validationError: validationResult.error,
       environment: validationResult.environment,
-      processingTimeMs: performance.now() - startTime
+      processingTimeMs: performance.now() - startTime,
     });
-    
+
     // 5. Track metrics
     await trackMetric({
       type: 'webhook_received',
       environment: validationResult.environment,
       valid: validationResult.valid,
-      eventType: JSON.parse(body).type
+      eventType: JSON.parse(body).type,
     });
-    
+
     if (!validationResult.valid) {
       // Send alert for signature failures
       if (validationResult.error?.type === 'INVALID_SIGNATURE') {
@@ -363,36 +372,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           details: {
             environment: validationResult.environment,
             error: validationResult.error,
-            webhookId: webhookLog.id
-          }
+            webhookId: webhookLog.id,
+          },
         });
       }
-      
+
       return NextResponse.json(
         { error: 'Invalid signature', details: validationResult.error },
         { status: 401 }
       );
     }
-    
+
     // 6. Queue for processing
     const payload = JSON.parse(body);
     await queueWebhook(payload);
-    
+
     // 7. Return acknowledgment
     return NextResponse.json({
       received: true,
       eventId: payload.event_id,
-      processingTimeMs: performance.now() - startTime
+      processingTimeMs: performance.now() - startTime,
     });
-    
   } catch (error) {
     await handleWebhookError(error);
-    
+
     // Return 200 to prevent Square retries on our errors
-    return NextResponse.json(
-      { received: true, error: true },
-      { status: 200 }
-    );
+    return NextResponse.json({ received: true, error: true }, { status: 200 });
   }
 }
 ```
@@ -402,6 +407,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```tsx
 // lib/square/webhook-validator.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -414,83 +420,82 @@ describe('Webhook Signature Validation', () => {
     type: 'payment.created',
     event_id: 'test-event-123',
     created_at: '2025-09-10T22:29:51.524Z',
-    data: { /* ... */ }
+    data: {
+      /* ... */
+    },
   };
-  
+
   const mockSecret = 'test-webhook-secret';
   const mockBody = JSON.stringify(mockPayload);
-  
+
   beforeEach(() => {
     process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = mockSecret;
     process.env.SQUARE_WEBHOOK_SECRET = mockSecret;
   });
-  
+
   it('validates correct SHA256 signature', async () => {
-    const signature = crypto
-      .createHmac('sha256', mockSecret)
-      .update(mockBody)
-      .digest('base64');
-    
+    const signature = crypto.createHmac('sha256', mockSecret).update(mockBody).digest('base64');
+
     const request = new Request('https://example.com/api/webhooks/square', {
       method: 'POST',
       headers: {
         'x-square-hmacsha256-signature': signature,
-        'square-environment': 'Sandbox'
+        'square-environment': 'Sandbox',
       },
-      body: mockBody
+      body: mockBody,
     });
-    
+
     const result = await validateWebhookSignature(request, mockBody);
     expect(result.valid).toBe(true);
     expect(result.environment).toBe('sandbox');
   });
-  
+
   it('rejects invalid signature', async () => {
     const request = new Request('https://example.com/api/webhooks/square', {
       method: 'POST',
       headers: {
         'x-square-hmacsha256-signature': 'invalid-signature',
-        'square-environment': 'Sandbox'
+        'square-environment': 'Sandbox',
       },
-      body: mockBody
+      body: mockBody,
     });
-    
+
     const result = await validateWebhookSignature(request, mockBody);
     expect(result.valid).toBe(false);
     expect(result.error?.type).toBe('INVALID_SIGNATURE');
   });
-  
+
   it('handles missing signature header', async () => {
     const request = new Request('https://example.com/api/webhooks/square', {
       method: 'POST',
       headers: {
-        'square-environment': 'Sandbox'
+        'square-environment': 'Sandbox',
       },
-      body: mockBody
+      body: mockBody,
     });
-    
+
     const result = await validateWebhookSignature(request, mockBody);
     expect(result.valid).toBe(false);
     expect(result.error?.type).toBe('MISSING_SIGNATURE');
   });
-  
+
   it('handles newline in secret', async () => {
     process.env.SQUARE_WEBHOOK_SECRET_SANDBOX = mockSecret + '\n';
-    
+
     const signature = crypto
       .createHmac('sha256', mockSecret) // Use clean secret
       .update(mockBody)
       .digest('base64');
-    
+
     const request = new Request('https://example.com/api/webhooks/square', {
       method: 'POST',
       headers: {
         'x-square-hmacsha256-signature': signature,
-        'square-environment': 'Sandbox'
+        'square-environment': 'Sandbox',
       },
-      body: mockBody
+      body: mockBody,
     });
-    
+
     // Should work because validator trims the secret
     const result = await validateWebhookSignature(request, mockBody);
     expect(result.valid).toBe(true);
@@ -499,6 +504,7 @@ describe('Webhook Signature Validation', () => {
 ```
 
 ### Integration Tests
+
 ```tsx
 // app/api/webhooks/square/route.test.ts
 import { describe, it, expect, vi } from 'vitest';
@@ -509,23 +515,23 @@ describe('Square Webhook API Route', () => {
   it('processes valid webhook successfully', async () => {
     const { request, payload } = createMockSquareWebhook({
       type: 'payment.created',
-      secret: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX
+      secret: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
     });
-    
+
     const response = await POST(request);
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
     expect(data.eventId).toBe(payload.event_id);
   });
-  
+
   it('rejects webhook with invalid signature', async () => {
     const { request } = createMockSquareWebhook({
       type: 'payment.created',
-      secret: 'wrong-secret'
+      secret: 'wrong-secret',
     });
-    
+
     const response = await POST(request);
     expect(response.status).toBe(401);
   });
@@ -533,6 +539,7 @@ describe('Square Webhook API Route', () => {
 ```
 
 ### E2E Tests
+
 ```tsx
 // tests/e2e/webhook-payment-flow.test.ts
 import { test, expect } from '@playwright/test';
@@ -542,16 +549,16 @@ test('complete payment webhook flow', async ({ page }) => {
   // 1. Create a test payment in Square
   const payment = await createTestPayment({
     amount: 1000,
-    currency: 'USD'
+    currency: 'USD',
   });
-  
+
   // 2. Wait for webhook to be processed
   await page.waitForTimeout(5000);
-  
+
   // 3. Check payment appears in admin dashboard
   await page.goto('/admin/payments');
   await expect(page.locator(`[data-payment-id="${payment.id}"]`)).toBeVisible();
-  
+
   // 4. Verify payment status
   const status = await page.locator(`[data-payment-id="${payment.id}"] .status`).textContent();
   expect(status).toBe('Completed');
@@ -563,6 +570,7 @@ test('complete payment webhook flow', async ({ page }) => {
 ## 🔐 Security Analysis
 
 ### Security Checklist
+
 - [x] **Authentication**: Webhook signature validation using HMAC-SHA256
 - [x] **Environment Isolation**: Separate secrets for sandbox/production
 - [x] **Input Validation**: Zod schema validation for webhook payloads
@@ -575,6 +583,7 @@ test('complete payment webhook flow', async ({ page }) => {
 - [x] **Replay Protection**: Event ID deduplication
 
 ### Security Implementation
+
 ```tsx
 // lib/security/webhook-security.ts
 import { RateLimiter } from '@/lib/rate-limit';
@@ -583,7 +592,7 @@ import crypto from 'crypto';
 const webhookRateLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute
   max: 100, // 100 requests per minute per IP
-  message: 'Too many webhook requests'
+  message: 'Too many webhook requests',
 });
 
 export async function validateWebhookSecurity(
@@ -591,38 +600,37 @@ export async function validateWebhookSecurity(
   body: string
 ): Promise<{ valid: boolean; error?: string }> {
   // 1. Rate limiting
-  const clientIp = request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') || 
-                   'unknown';
-  
+  const clientIp =
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+
   const rateLimitOk = await webhookRateLimiter.check(clientIp);
   if (!rateLimitOk) {
     return { valid: false, error: 'Rate limit exceeded' };
   }
-  
+
   // 2. Validate Square IP ranges (optional but recommended)
   const isSquareIp = await validateSquareIpRange(clientIp);
   if (!isSquareIp) {
     console.warn(`Webhook from non-Square IP: ${clientIp}`);
     // Don't reject, just log for monitoring
   }
-  
+
   // 3. Check for replay attacks
   const payload = JSON.parse(body);
   const isDuplicate = await checkDuplicateEvent(payload.event_id);
   if (isDuplicate) {
     return { valid: false, error: 'Duplicate event' };
   }
-  
+
   // 4. Validate timestamp (prevent old webhooks)
   const eventTime = new Date(payload.created_at).getTime();
   const now = Date.now();
   const maxAge = 5 * 60 * 1000; // 5 minutes
-  
+
   if (now - eventTime > maxAge) {
     return { valid: false, error: 'Event too old' };
   }
-  
+
   return { valid: true };
 }
 ```
@@ -632,6 +640,7 @@ export async function validateWebhookSecurity(
 ## 📊 Performance & Monitoring
 
 ### Performance Budget
+
 ```yaml
 performance:
   webhook_acknowledgment: < 100ms
@@ -643,6 +652,7 @@ performance:
 ```
 
 ### Monitoring Implementation
+
 ```tsx
 // lib/monitoring/webhook-monitoring.ts
 import { trace, SpanStatusCode } from '@opentelemetry/api';
@@ -652,38 +662,34 @@ const tracer = trace.getTracer('webhook-monitoring');
 const statsd = new StatsD({
   host: process.env.STATSD_HOST,
   port: 8125,
-  prefix: 'webhooks.square.'
+  prefix: 'webhooks.square.',
 });
 
-export function monitorWebhook<T extends (...args: any[]) => any>(
-  name: string,
-  fn: T
-): T {
+export function monitorWebhook<T extends (...args: any[]) => any>(name: string, fn: T): T {
   return ((...args) => {
-    return tracer.startActiveSpan(name, async (span) => {
+    return tracer.startActiveSpan(name, async span => {
       const startTime = Date.now();
-      
+
       try {
         const result = await fn(...args);
-        
+
         // Record success metrics
         statsd.increment(`${name}.success`);
         statsd.timing(`${name}.duration`, Date.now() - startTime);
-        
+
         span.setStatus({ code: SpanStatusCode.OK });
         return result;
-        
       } catch (error) {
         // Record failure metrics
         statsd.increment(`${name}.failure`);
         statsd.increment(`${name}.error.${error.code || 'unknown'}`);
-        
+
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: error.message,
         });
         span.recordException(error);
-        
+
         throw error;
       } finally {
         span.end();
@@ -699,12 +705,13 @@ export async function getWebhookMetrics(timeRange: string) {
     successRate: await statsd.get('webhooks.square.success_rate'),
     averageLatency: await statsd.get('webhooks.square.latency.avg'),
     failuresByType: await statsd.get('webhooks.square.failures.by_type'),
-    volumeByHour: await statsd.get('webhooks.square.volume.hourly')
+    volumeByHour: await statsd.get('webhooks.square.volume.hourly'),
   };
 }
 ```
 
 ### Alerting Configuration
+
 ```tsx
 // lib/monitoring/alerts.ts
 export const webhookAlerts = {
@@ -712,26 +719,26 @@ export const webhookAlerts = {
     threshold: 0.05, // 5% failure rate
     window: '5m',
     severity: 'warning',
-    action: 'Check webhook secrets in environment variables'
+    action: 'Check webhook secrets in environment variables',
   },
   processingLatency: {
     threshold: 500, // 500ms
     window: '1m',
     severity: 'warning',
-    action: 'Check database performance and queue processing'
+    action: 'Check database performance and queue processing',
   },
   totalFailures: {
     threshold: 10, // 10 failures
     window: '5m',
     severity: 'critical',
-    action: 'Investigate immediately - payments may be affected'
+    action: 'Investigate immediately - payments may be affected',
   },
   paymentSyncErrors: {
     threshold: 3, // 3 consecutive sync failures
     window: '15m',
     severity: 'high',
-    action: 'Check Square API connectivity and credentials'
-  }
+    action: 'Check Square API connectivity and credentials',
+  },
 };
 ```
 
@@ -740,6 +747,7 @@ export const webhookAlerts = {
 ## 🎨 UI/UX Considerations
 
 ### Admin Dashboard Components
+
 ```tsx
 // components/admin/WebhookMonitor.tsx
 import { useWebhookStatus } from '@/hooks/useWebhookStatus';
@@ -747,13 +755,13 @@ import { Card, Badge, Alert } from '@/components/ui';
 
 export function WebhookMonitor() {
   const { data, isLoading } = useWebhookStatus();
-  
+
   if (isLoading) return <LoadingSpinner />;
-  
+
   return (
     <Card className="p-6">
       <h2 className="text-2xl font-bold mb-4">Webhook Status</h2>
-      
+
       {/* Real-time status indicators */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatusCard
@@ -766,16 +774,12 @@ export function WebhookMonitor() {
           value={`${data.avgLatency}ms`}
           status={data.avgLatency < 200 ? 'success' : 'warning'}
         />
-        <StatusCard
-          title="Last Webhook"
-          value={data.lastWebhookTime}
-          status="info"
-        />
+        <StatusCard title="Last Webhook" value={data.lastWebhookTime} status="info" />
       </div>
-      
+
       {/* Recent webhook log */}
       <WebhookLogTable webhooks={data.recentWebhooks} />
-      
+
       {/* Manual sync button */}
       <div className="mt-6">
         <PaymentSyncButton />
@@ -786,6 +790,7 @@ export function WebhookMonitor() {
 ```
 
 ### Accessibility Checklist
+
 - [x] **ARIA Labels**: All buttons and interactive elements labeled
 - [x] **Keyboard Navigation**: Tab order and keyboard shortcuts
 - [x] **Screen Reader**: Status announcements for webhook events
@@ -798,6 +803,7 @@ export function WebhookMonitor() {
 ## 📦 Deployment & Rollback
 
 ### Pre-Deployment Checklist
+
 - [x] **Environment Variables**: Clean and verify webhook secrets
 - [x] **Tests**: All webhook validation tests passing
 - [x] **Type Check**: `tsc --noEmit` passes
@@ -808,6 +814,7 @@ export function WebhookMonitor() {
 - [x] **Monitoring**: Alerts and dashboards configured
 
 ### Deployment Script
+
 ```bash
 #!/bin/bash
 # scripts/deploy-webhook-fix.sh
@@ -836,9 +843,11 @@ npm run monitor:webhooks -- --duration=300
 ```
 
 ### Rollback Strategy
+
 ```tsx
 // Feature flag for gradual rollout
 export const webhookFeatures = {
   USE_ENHANCED_VALIDATION: process.env.NEXT_PUBLIC_ENHANCED_WEBHOOK_VALIDATION === 'true',
   ENABLE_PAYMENT_SYNC: process.env.NEXT_PUBLIC_ENABLE_PAYMENT_SYNC === 'true',
   ENABLE_WEBHOOK_MONITORING: process.env.NEXT_PUBLIC_
+```

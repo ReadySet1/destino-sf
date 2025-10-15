@@ -663,7 +663,7 @@ export const AppetizerPackageSelector: React.FC<AppetizerPackageSelectorProps> =
                             <div
                               className="text-xs text-gray-600 mb-3 line-clamp-2"
                               dangerouslySetInnerHTML={{
-                                __html: sanitizeProductDescription(item.description)
+                                __html: sanitizeProductDescription(item.description),
                               }}
                             />
                           )}

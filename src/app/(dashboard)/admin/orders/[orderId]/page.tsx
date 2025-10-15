@@ -125,7 +125,9 @@ function manuallySerializeOrder(order: any): SerializedOrder {
           id: item.product.id,
           name: item.product.name,
           isPreorder: item.product.isPreorder || false,
-          preorderEndDate: item.product.preorderEndDate ? new Date(item.product.preorderEndDate).toISOString() : null,
+          preorderEndDate: item.product.preorderEndDate
+            ? new Date(item.product.preorderEndDate).toISOString()
+            : null,
         }
       : null,
     variant: item.variant
@@ -199,7 +201,10 @@ function getStatusColor(status: string | null | undefined): string {
 }
 
 // Helper function to get the display text for payment status
-function getPaymentStatusDisplay(paymentStatus: string | null | undefined, paymentMethod: string | null | undefined): string {
+function getPaymentStatusDisplay(
+  paymentStatus: string | null | undefined,
+  paymentMethod: string | null | undefined
+): string {
   // If payment method is CASH and status is PENDING, show CASH
   if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus?.toUpperCase() === 'PENDING') {
     return 'CASH';
@@ -208,10 +213,13 @@ function getPaymentStatusDisplay(paymentStatus: string | null | undefined, payme
 }
 
 // Helper for payment status badge colors
-function getPaymentStatusColor(paymentStatus: string | null | undefined, paymentMethod: string | null | undefined): string {
+function getPaymentStatusColor(
+  paymentStatus: string | null | undefined,
+  paymentMethod: string | null | undefined
+): string {
   // Get the display status first
   const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
-  
+
   switch (displayStatus.toUpperCase()) {
     case 'PAID':
       return 'bg-green-100 text-green-800';
@@ -251,7 +259,8 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
     // Validate UUID format before making database query
     const isValidUUID = (uuid: string): boolean => {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       return uuidRegex.test(uuid);
     };
 
@@ -266,7 +275,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     // Try to fetch as a regular order first with enhanced error handling
     let order = null;
     let cateringOrder = null;
-    
+
     try {
       order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -293,21 +302,23 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
       console.error('Failed to fetch admin order:', {
         orderId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any)?.code
+        code: (error as any)?.code,
       });
-      
+
       // Check if it's a prepared statement error
-      if (error instanceof Error && 
-          ((error as any).code === '42P05' || // prepared statement already exists
-           (error as any).code === '26000' || // prepared statement does not exist
-           error.message.includes('prepared statement'))) {
+      if (
+        error instanceof Error &&
+        ((error as any).code === '42P05' || // prepared statement already exists
+          (error as any).code === '26000' || // prepared statement does not exist
+          error.message.includes('prepared statement'))
+      ) {
         console.log('Detected prepared statement error in admin order query, attempting retry...');
-        
+
         // Attempt one retry with a fresh connection
         try {
           await prisma.$disconnect();
           await new Promise(resolve => setTimeout(resolve, 100));
-          
+
           order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
@@ -327,7 +338,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
               payments: true,
             },
           });
-          
+
           console.log('✅ Admin order retry successful after prepared statement error');
         } catch (retryError) {
           console.error('❌ Admin order retry failed:', retryError);
@@ -353,21 +364,25 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
         console.error('Failed to fetch admin catering order:', {
           orderId,
           error: error instanceof Error ? error.message : 'Unknown error',
-          code: (error as any)?.code
+          code: (error as any)?.code,
         });
-        
+
         // Check if it's a prepared statement error
-        if (error instanceof Error && 
-            ((error as any).code === '42P05' || // prepared statement already exists
-             (error as any).code === '26000' || // prepared statement does not exist
-             error.message.includes('prepared statement'))) {
-          console.log('Detected prepared statement error in admin catering order query, attempting retry...');
-          
+        if (
+          error instanceof Error &&
+          ((error as any).code === '42P05' || // prepared statement already exists
+            (error as any).code === '26000' || // prepared statement does not exist
+            error.message.includes('prepared statement'))
+        ) {
+          console.log(
+            'Detected prepared statement error in admin catering order query, attempting retry...'
+          );
+
           // Attempt one retry with a fresh connection
           try {
             await prisma.$disconnect();
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             cateringOrder = await prisma.cateringOrder.findUnique({
               where: { id: orderId },
               include: {
@@ -375,7 +390,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 customer: true,
               },
             });
-            
+
             console.log('✅ Admin catering order retry successful after prepared statement error');
           } catch (retryError) {
             console.error('❌ Admin catering order retry failed:', retryError);
@@ -388,7 +403,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     }
 
     // Log database query result
-    console.log('Database query result:', order ? 'Regular order found' : (cateringOrder ? 'Catering order found' : 'No order found'));
+    console.log(
+      'Database query result:',
+      order ? 'Regular order found' : cateringOrder ? 'Catering order found' : 'No order found'
+    );
 
     // If this is a catering order, redirect to the catering order details page
     if (cateringOrder) {
@@ -399,23 +417,35 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
     if (!order) {
       console.error(`Order not found for ID: ${orderId}`);
-      
+
       // Return custom error page instead of generic 404
       return (
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
-              
+
               <h1 className="text-2xl font-bold text-red-900 mb-2">Order Not Found</h1>
               <p className="text-red-700 mb-4">
-                The order with ID <code className="bg-red-100 px-2 py-1 rounded font-mono text-sm">{orderId}</code> could not be found.
+                The order with ID{' '}
+                <code className="bg-red-100 px-2 py-1 rounded font-mono text-sm">{orderId}</code>{' '}
+                could not be found.
               </p>
-              
+
               <div className="text-sm text-red-600 mb-6">
                 <p>This could happen if:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
@@ -425,7 +455,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   <li>There was a temporary database issue</li>
                 </ul>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/admin/orders"
@@ -530,7 +560,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 <Badge
                   className={`text-xs ${getPaymentStatusColor(serializedOrder?.paymentStatus, serializedOrder?.paymentMethod)}`}
                 >
-                  {getPaymentStatusDisplay(serializedOrder?.paymentStatus, serializedOrder?.paymentMethod)}
+                  {getPaymentStatusDisplay(
+                    serializedOrder?.paymentStatus,
+                    serializedOrder?.paymentMethod
+                  )}
                 </Badge>
               </div>
               <p>
@@ -548,8 +581,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                 <LocalTimestampWithRelative date={serializedOrder?.createdAt} />
               </p>
               <p>
-                <strong>Last Updated:</strong>{' '}
-                <LocalTimestamp date={serializedOrder?.updatedAt} />
+                <strong>Last Updated:</strong> <LocalTimestamp date={serializedOrder?.updatedAt} />
               </p>
 
               {serializedOrder?.trackingNumber && (
@@ -562,11 +594,12 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
               {serializedOrder?.fulfillmentType && (
                 <p>
-                  <strong>Fulfillment Type:</strong> {serializedOrder.fulfillmentType.replace('_', ' ').toUpperCase()}
+                  <strong>Fulfillment Type:</strong>{' '}
+                  {serializedOrder.fulfillmentType.replace('_', ' ').toUpperCase()}
                 </p>
               )}
             </div>
-            
+
             {/* Manual Payment Button - Only show for admin users when payment is pending/failed */}
             <div className="mt-4">
               <ManualPaymentButton
@@ -713,7 +746,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                     (sum: number, item: SerializedOrderItem) => {
                       const itemPrice = item.price || 0;
                       const quantity = item.quantity || 0;
-                      return sum + (itemPrice * quantity);
+                      return sum + itemPrice * quantity;
                     },
                     0
                   );
@@ -723,23 +756,28 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                   const deliveryFee = serializedOrder?.deliveryFee || 0;
                   const serviceFee = serializedOrder?.serviceFee || 0;
                   const gratuityAmount = serializedOrder?.gratuityAmount || 0;
-                  const shippingCostDollars = serializedOrder?.shippingCostCents 
-                    ? (serializedOrder.shippingCostCents / 100) 
+                  const shippingCostDollars = serializedOrder?.shippingCostCents
+                    ? serializedOrder.shippingCostCents / 100
                     : 0;
 
                   // Check if we have a fee breakdown discrepancy
-                  const totalFees = taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCostDollars;
+                  const totalFees =
+                    taxAmount + deliveryFee + serviceFee + gratuityAmount + shippingCostDollars;
                   const calculatedTotal = subtotalFromItems + totalFees;
                   const actualTotal = orderTotal;
                   const discrepancy = actualTotal - calculatedTotal;
-                  const allFeesAreZero = taxAmount === 0 && deliveryFee === 0 && serviceFee === 0 && gratuityAmount === 0 && shippingCostDollars === 0;
+                  const allFeesAreZero =
+                    taxAmount === 0 &&
+                    deliveryFee === 0 &&
+                    serviceFee === 0 &&
+                    gratuityAmount === 0 &&
+                    shippingCostDollars === 0;
                   const hasSignificantDiscrepancy = Math.abs(discrepancy) > 0.05;
-                  const shouldShowConsolidatedFees = allFeesAreZero && hasSignificantDiscrepancy && discrepancy > 0;
-
+                  const shouldShowConsolidatedFees =
+                    allFeesAreZero && hasSignificantDiscrepancy && discrepancy > 0;
 
                   return (
                     <>
-
                       {/* Subtotal */}
                       <tr className="border-t border-gray-200">
                         <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
@@ -765,7 +803,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                           {/* Tax */}
                           {taxAmount > 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                              <td
+                                colSpan={4}
+                                className="px-4 py-2 text-right text-sm text-gray-600"
+                              >
                                 Tax (8.25%):
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
@@ -777,7 +818,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                           {/* Shipping */}
                           {shippingCostDollars > 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                              <td
+                                colSpan={4}
+                                className="px-4 py-2 text-right text-sm text-gray-600"
+                              >
                                 Shipping ({serializedOrder?.shippingCarrier || 'N/A'}):
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
@@ -789,7 +833,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                           {/* Delivery Fee */}
                           {deliveryFee > 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                              <td
+                                colSpan={4}
+                                className="px-4 py-2 text-right text-sm text-gray-600"
+                              >
                                 Delivery Fee:
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
@@ -801,7 +848,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                           {/* Convenience Fee */}
                           {serviceFee > 0.01 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                              <td
+                                colSpan={4}
+                                className="px-4 py-2 text-right text-sm text-gray-600"
+                              >
                                 Convenience Fee:
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
@@ -813,7 +863,10 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                           {/* Gratuity */}
                           {gratuityAmount > 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-right text-sm text-gray-600">
+                              <td
+                                colSpan={4}
+                                className="px-4 py-2 text-right text-sm text-gray-600"
+                              >
                                 Gratuity/Tip:
                               </td>
                               <td className="px-4 py-2 text-right text-sm">
@@ -824,15 +877,12 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         </>
                       )}
 
-
                       {/* Grand Total */}
                       <tr className="border-t-2 border-gray-300 font-bold text-base">
                         <td colSpan={4} className="px-4 py-3 text-right">
                           Grand Total:
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          {formatCurrency(orderTotal)}
-                        </td>
+                        <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
                       </tr>
                     </>
                   );
@@ -871,7 +921,9 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
                         {payment.squarePaymentId || 'N/A'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge className={`text-xs ${getPaymentStatusColor(payment.status, serializedOrder?.paymentMethod)}`}>
+                        <Badge
+                          className={`text-xs ${getPaymentStatusColor(payment.status, serializedOrder?.paymentMethod)}`}
+                        >
                           {payment.status || 'UNKNOWN'}
                         </Badge>
                       </td>
@@ -892,10 +944,12 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
     );
   } catch (error) {
     // Check if this is a Next.js redirect error (which is normal behavior)
-    const isRedirectError = error instanceof Error && 'digest' in error && 
-      typeof (error as any).digest === 'string' && 
+    const isRedirectError =
+      error instanceof Error &&
+      'digest' in error &&
+      typeof (error as any).digest === 'string' &&
       (error as any).digest.startsWith('NEXT_REDIRECT');
-    
+
     if (isRedirectError) {
       // This is a normal redirect, don't log it as an error and re-throw to complete the redirect
       throw error;

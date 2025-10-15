@@ -64,7 +64,7 @@ export async function getSquareClient(): Promise<any> {
   if (config.app.isBuildTime) {
     return null;
   }
-  
+
   return await initializeSquareClient();
 }
 

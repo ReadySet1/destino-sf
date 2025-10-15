@@ -8,16 +8,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  AlertTriangle, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import {
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Clock,
   Settings,
   Eye,
   EyeOff,
   Package,
-  Calendar
+  Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -94,7 +94,7 @@ export function SyncConflictManager() {
       const existing = updated.get(conflictId) || {
         conflictId,
         resolution: 'keep_manual',
-        applyToFuture: false
+        applyToFuture: false,
       };
       updated.set(conflictId, { ...existing, ...resolution });
       return updated;
@@ -113,8 +113,8 @@ export function SyncConflictManager() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          resolutions: Array.from(resolutions.values())
-        })
+          resolutions: Array.from(resolutions.values()),
+        }),
       });
 
       const data = await response.json();
@@ -139,21 +139,31 @@ export function SyncConflictManager() {
 
   const getConflictIcon = (type: string) => {
     switch (type) {
-      case 'visibility': return <Eye className="h-4 w-4" />;
-      case 'availability': return <Package className="h-4 w-4" />;
-      case 'state': return <Settings className="h-4 w-4" />;
-      case 'preorder': return <Calendar className="h-4 w-4" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
+      case 'visibility':
+        return <Eye className="h-4 w-4" />;
+      case 'availability':
+        return <Package className="h-4 w-4" />;
+      case 'state':
+        return <Settings className="h-4 w-4" />;
+      case 'preorder':
+        return <Calendar className="h-4 w-4" />;
+      default:
+        return <AlertTriangle className="h-4 w-4" />;
     }
   };
 
   const getConflictBadgeColor = (type: string) => {
     switch (type) {
-      case 'visibility': return 'bg-blue-100 text-blue-800';
-      case 'availability': return 'bg-green-100 text-green-800';
-      case 'state': return 'bg-yellow-100 text-yellow-800';
-      case 'preorder': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'visibility':
+        return 'bg-blue-100 text-blue-800';
+      case 'availability':
+        return 'bg-green-100 text-green-800';
+      case 'state':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'preorder':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -164,8 +174,8 @@ export function SyncConflictManager() {
     return value?.toString() || 'N/A';
   };
 
-  const filteredConflicts = conflicts.filter(conflict => 
-    selectedFilter === 'all' || conflict.conflictType === selectedFilter
+  const filteredConflicts = conflicts.filter(
+    conflict => selectedFilter === 'all' || conflict.conflictType === selectedFilter
   );
 
   if (loading) {
@@ -185,8 +195,8 @@ export function SyncConflictManager() {
           <p className="text-gray-600">Resolve conflicts between Square and manual settings</p>
         </div>
         {resolutions.size > 0 && (
-          <Button 
-            onClick={resolveConflicts} 
+          <Button
+            onClick={resolveConflicts}
             disabled={resolving}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
@@ -288,7 +298,7 @@ export function SyncConflictManager() {
         <div className="space-y-4">
           {filteredConflicts.map(conflict => {
             const resolution = resolutions.get(conflict.id);
-            
+
             return (
               <Card key={conflict.id}>
                 <CardHeader>
@@ -316,16 +326,22 @@ export function SyncConflictManager() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="bg-blue-50 p-3 rounded-lg">
                         <p className="text-sm font-medium text-blue-900">Current Value</p>
-                        <p className="text-lg text-blue-700">{formatValue(conflict.currentValue)}</p>
+                        <p className="text-lg text-blue-700">
+                          {formatValue(conflict.currentValue)}
+                        </p>
                       </div>
                       <div className="bg-orange-50 p-3 rounded-lg">
                         <p className="text-sm font-medium text-orange-900">Square Value</p>
-                        <p className="text-lg text-orange-700">{formatValue(conflict.squareValue)}</p>
+                        <p className="text-lg text-orange-700">
+                          {formatValue(conflict.squareValue)}
+                        </p>
                       </div>
                       {conflict.manualValue !== undefined && (
                         <div className="bg-green-50 p-3 rounded-lg">
                           <p className="text-sm font-medium text-green-900">Manual Value</p>
-                          <p className="text-lg text-green-700">{formatValue(conflict.manualValue)}</p>
+                          <p className="text-lg text-green-700">
+                            {formatValue(conflict.manualValue)}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -335,9 +351,11 @@ export function SyncConflictManager() {
                       <h4 className="font-medium mb-3">Resolution</h4>
                       <RadioGroup
                         value={resolution?.resolution || 'keep_manual'}
-                        onValueChange={(value) => updateResolution(conflict.id, { 
-                          resolution: value as any 
-                        })}
+                        onValueChange={value =>
+                          updateResolution(conflict.id, {
+                            resolution: value as any,
+                          })
+                        }
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="keep_manual" id={`${conflict.id}-keep`} />
@@ -373,9 +391,11 @@ export function SyncConflictManager() {
                         <Checkbox
                           id={`${conflict.id}-future`}
                           checked={resolution?.applyToFuture || false}
-                          onCheckedChange={(checked) => updateResolution(conflict.id, {
-                            applyToFuture: !!checked
-                          })}
+                          onCheckedChange={checked =>
+                            updateResolution(conflict.id, {
+                              applyToFuture: !!checked,
+                            })
+                          }
                         />
                         <Label htmlFor={`${conflict.id}-future`} className="text-sm">
                           Apply this resolution to future syncs (prevent similar conflicts)
@@ -385,8 +405,8 @@ export function SyncConflictManager() {
 
                     {/* Metadata */}
                     <div className="text-xs text-gray-500 border-t pt-2">
-                      Last sync: {new Date(conflict.lastSyncAt).toLocaleString()} |
-                      Conflict detected: {new Date(conflict.createdAt).toLocaleString()}
+                      Last sync: {new Date(conflict.lastSyncAt).toLocaleString()} | Conflict
+                      detected: {new Date(conflict.createdAt).toLocaleString()}
                     </div>
                   </div>
                 </CardContent>
@@ -400,8 +420,8 @@ export function SyncConflictManager() {
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          <strong>About Sync Conflicts:</strong> These occur when your manual product settings 
-          differ from Square&apos;s configuration. Resolving conflicts ensures data consistency 
+          <strong>About Sync Conflicts:</strong> These occur when your manual product settings
+          differ from Square&apos;s configuration. Resolving conflicts ensures data consistency
           while preserving your intended product visibility and availability settings.
         </AlertDescription>
       </Alert>

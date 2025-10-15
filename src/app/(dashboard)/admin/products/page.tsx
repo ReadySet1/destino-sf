@@ -59,7 +59,7 @@ type ProductWithCategory = {
   preorderEndDate?: Date | null;
   availabilityStart?: Date | null;
   availabilityEnd?: Date | null;
-  
+
   // New availability evaluation result
   evaluatedAvailability?: {
     currentState: AvailabilityState;
@@ -152,10 +152,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
         where.visibility = { not: 'PRIVATE' };
         break;
       case 'unavailable':
-        where.OR = [
-          { isAvailable: false },
-          { visibility: 'PRIVATE' }
-        ];
+        where.OR = [{ isAvailable: false }, { visibility: 'PRIVATE' }];
         break;
       case 'preorder':
         where.isPreorder = true;
@@ -179,8 +176,8 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       category: true,
       variants: {
         orderBy: {
-          price: 'asc'
-        }
+          price: 'asc',
+        },
       },
     },
     skip,
@@ -193,7 +190,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 
   // Get archived count for badge
   const archivedCount = await prisma.product.count({
-    where: { isArchived: true }
+    where: { isArchived: true },
   });
 
   // Fetch all categories for the dropdown and filters
@@ -206,10 +203,10 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   // Helper function to convert Decimal to number safely
   const decimalToNumber = (value: any): number => {
     if (value === null || value === undefined) return 0;
-    
+
     // If it's already a number
     if (typeof value === 'number') return isNaN(value) ? 0 : value;
-    
+
     // If it's a Decimal object
     if (typeof value === 'object' && value !== null) {
       try {
@@ -227,20 +224,21 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
         return 0;
       }
     }
-    
+
     // If it's a string that can be parsed as a number
     if (typeof value === 'string') {
       const parsed = parseFloat(value);
       return isNaN(parsed) ? 0 : parsed;
     }
-    
+
     return 0;
   };
 
   // Fetch availability rules for all products and evaluate them
   const productIds = productsFromDb.map((product: any) => product.id);
   const availabilityRules = await AvailabilityQueries.getMultipleProductRules(productIds);
-  const availabilityEvaluations = await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
+  const availabilityEvaluations =
+    await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
 
   // Transform the products to match our expected type
   const products = productsFromDb.map((product: any) => {
@@ -280,11 +278,13 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
       availabilityEnd: product.availabilityEnd,
 
       // New availability evaluation result
-      evaluatedAvailability: evaluation ? {
-        currentState: evaluation.currentState,
-        appliedRulesCount: evaluation.appliedRules.length,
-        nextStateChange: evaluation.nextStateChange,
-      } : undefined,
+      evaluatedAvailability: evaluation
+        ? {
+            currentState: evaluation.currentState,
+            appliedRulesCount: evaluation.appliedRules.length,
+            nextStateChange: evaluation.nextStateChange,
+          }
+        : undefined,
     };
   });
 
@@ -379,11 +379,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
         <div className="space-y-8 mt-8">
           {/* Action Buttons */}
           <FormActions>
-            <FormButton
-              variant="secondary"
-              href="/admin/square-sync"
-              leftIcon={FormIcons.refresh}
-            >
+            <FormButton variant="secondary" href="/admin/square-sync" leftIcon={FormIcons.refresh}>
               Sync from Square
             </FormButton>
 

@@ -9,16 +9,16 @@ console.log('🔍 Running Test Diagnostics...\n');
 // Function to run a command and capture output
 function runCommand(command) {
   try {
-    const output = execSync(command, { 
+    const output = execSync(command, {
       encoding: 'utf8',
-      env: { ...process.env, CI: 'true' }
+      env: { ...process.env, CI: 'true' },
     });
     return { success: true, output };
   } catch (error) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       output: error.stdout || '',
-      error: error.stderr || error.message 
+      error: error.stderr || error.message,
     };
   }
 }
@@ -41,7 +41,9 @@ const testDirs = [
 testDirs.forEach(dir => {
   const fullPath = path.join(process.cwd(), dir);
   if (fs.existsSync(fullPath)) {
-    const files = fs.readdirSync(fullPath).filter(f => f.endsWith('.test.ts') || f.endsWith('.test.tsx'));
+    const files = fs
+      .readdirSync(fullPath)
+      .filter(f => f.endsWith('.test.ts') || f.endsWith('.test.tsx'));
     console.log(`✅ ${dir}: ${files.length} test files`);
   } else {
     console.log(`❌ ${dir}: Directory not found`);
@@ -86,12 +88,12 @@ if (!verboseTest.success) {
   // Parse and display specific errors
   const output = verboseTest.error || verboseTest.output;
   const lines = output.split('\n');
-  
+
   // Find FAIL lines
   const failedTests = lines.filter(line => line.includes('FAIL'));
   console.log('Failed test files:');
   failedTests.forEach(test => console.log(`  ❌ ${test}`));
-  
+
   // Find error messages
   console.log('\nCommon error patterns:');
   const errorPatterns = [
@@ -101,14 +103,14 @@ if (!verboseTest.success) {
     /SyntaxError:/gi,
     /Mock.*not.*function/gi,
   ];
-  
+
   errorPatterns.forEach(pattern => {
     const matches = output.match(pattern);
     if (matches) {
       console.log(`  ⚠️ Found ${matches.length} instances of: ${pattern.source}`);
     }
   });
-  
+
   // Show first actual error
   const errorIndex = output.indexOf('● ');
   if (errorIndex !== -1) {

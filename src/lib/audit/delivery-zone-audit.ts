@@ -30,13 +30,13 @@ export async function setAuditContext(context: AuditContext) {
     SELECT set_config('app.admin_user_id', ${context.adminUserId}, true),
            set_config('app.admin_email', ${context.adminEmail}, true)
   `;
-  
+
   if (context.ipAddress) {
     await prisma.$executeRaw`
       SELECT set_config('app.ip_address', ${context.ipAddress}, true)
     `;
   }
-  
+
   if (context.userAgent) {
     await prisma.$executeRaw`
       SELECT set_config('app.user_agent', ${context.userAgent}, true)
@@ -66,7 +66,7 @@ export async function getZoneAuditLog(zoneId: string, limit = 50): Promise<Audit
     ORDER BY created_at DESC 
     LIMIT ${limit}
   `;
-  
+
   return result;
 }
 
@@ -91,7 +91,7 @@ export async function getRecentAuditLog(limit = 100): Promise<AuditLogEntry[]> {
     ORDER BY created_at DESC 
     LIMIT ${limit}
   `;
-  
+
   return result;
 }
 
@@ -103,7 +103,7 @@ export async function getAuditSummary(limit = 50) {
     SELECT * FROM delivery_zone_audit_summary
     LIMIT ${limit}
   `;
-  
+
   return result;
 }
 
@@ -115,7 +115,7 @@ export async function cleanupOldAuditLogs(olderThanDays = 90) {
     DELETE FROM delivery_zone_audit_log 
     WHERE created_at < NOW() - INTERVAL '${olderThanDays} days'
   `;
-  
+
   return result;
 }
 
@@ -123,11 +123,13 @@ export async function cleanupOldAuditLogs(olderThanDays = 90) {
  * Get audit statistics
  */
 export async function getAuditStats() {
-  const stats = await prisma.$queryRaw<Array<{
-    operation: string;
-    count: bigint;
-    latest: Date;
-  }>>`
+  const stats = await prisma.$queryRaw<
+    Array<{
+      operation: string;
+      count: bigint;
+      latest: Date;
+    }>
+  >`
     SELECT 
       operation,
       COUNT(*) as count,
@@ -136,17 +138,17 @@ export async function getAuditStats() {
     GROUP BY operation
     ORDER BY count DESC
   `;
-  
+
   const totalCount = await prisma.$queryRaw<Array<{ total: bigint }>>`
     SELECT COUNT(*) as total FROM delivery_zone_audit_log
   `;
-  
+
   return {
     byOperation: stats.map(s => ({
       operation: s.operation,
       count: Number(s.count),
-      latest: s.latest
+      latest: s.latest,
     })),
-    total: Number(totalCount[0]?.total || 0)
+    total: Number(totalCount[0]?.total || 0),
   };
 }

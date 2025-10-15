@@ -36,7 +36,7 @@ export function ArchiveFilter({ currentFilter }: ArchiveFilterProps) {
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700">Status:</span>
         <div className="flex gap-2">
-          {filters.map((filter) => {
+          {filters.map(filter => {
             const Icon = filter.icon;
             const isActive = currentFilter === filter.value;
 
@@ -46,9 +46,10 @@ export function ArchiveFilter({ currentFilter }: ArchiveFilterProps) {
                 onClick={() => handleFilterChange(filter.value)}
                 className={`
                   px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                  ${isActive
-                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                    : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                  ${
+                    isActive
+                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
                   }
                 `}
               >

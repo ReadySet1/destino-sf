@@ -111,7 +111,7 @@ export class ProductVisibilityService {
       includePagination = false,
       includeVariants = false,
       orderBy = 'name',
-      orderDirection = 'asc'
+      orderDirection = 'asc',
     } = options;
 
     try {
@@ -119,11 +119,15 @@ export class ProductVisibilityService {
       let resolvedCategoryId = categoryId;
       if (categorySlug && !categoryId && !isBuildTime()) {
         try {
-          const category = await withRetry(() =>
-            prisma.category.findUnique({
-              where: { slug: categorySlug },
-              select: { id: true }
-            }), 3, 'resolve-category-slug');
+          const category = await withRetry(
+            () =>
+              prisma.category.findUnique({
+                where: { slug: categorySlug },
+                select: { id: true },
+              }),
+            3,
+            'resolve-category-slug'
+          );
           resolvedCategoryId = category?.id;
         } catch (error) {
           logger.error('Error resolving category slug:', { categorySlug, error });
@@ -138,7 +142,7 @@ export class ProductVisibilityService {
         exclude,
         onlyActive,
         excludeCatering,
-        includePrivate
+        includePrivate,
       });
 
       // Handle build time scenarios
@@ -153,9 +157,9 @@ export class ProductVisibilityService {
               total: 0,
               totalPages: 0,
               hasNextPage: false,
-              hasPreviousPage: false
-            }
-          })
+              hasPreviousPage: false,
+            },
+          }),
         };
       }
 
@@ -172,48 +176,51 @@ export class ProductVisibilityService {
       const orderByClause = this.buildOrderBy(orderBy, orderDirection);
 
       // Fetch products with visibility filtering
-      const products = await withRetry(() =>
-        prisma.product.findMany({
-          where: whereCondition,
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
-            images: true,
-            slug: true,
-            categoryId: true,
-            featured: true,
-            active: true,
-            squareId: true,
-            ordinal: true,
-            // Visibility fields
-            isAvailable: true,
-            isPreorder: true,
-            visibility: true,
-            itemState: true,
-            // Variants if requested
-            variants: includeVariants ? {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                squareVariantId: true,
-              }
-            } : false,
-            // Category info
-            category: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              }
-            }
-          },
-          orderBy: orderByClause,
-          skip,
-          take: itemsPerPage,
-        }),
+      const products = await withRetry(
+        () =>
+          prisma.product.findMany({
+            where: whereCondition,
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              price: true,
+              images: true,
+              slug: true,
+              categoryId: true,
+              featured: true,
+              active: true,
+              squareId: true,
+              ordinal: true,
+              // Visibility fields
+              isAvailable: true,
+              isPreorder: true,
+              visibility: true,
+              itemState: true,
+              // Variants if requested
+              variants: includeVariants
+                ? {
+                    select: {
+                      id: true,
+                      name: true,
+                      price: true,
+                      squareVariantId: true,
+                    },
+                  }
+                : false,
+              // Category info
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+            orderBy: orderByClause,
+            skip,
+            take: itemsPerPage,
+          }),
         3,
         'products-visibility-fetch'
       );
@@ -224,7 +231,8 @@ export class ProductVisibilityService {
         try {
           const productIds = products.map(p => p.id);
           const availabilityRules = await AvailabilityQueries.getMultipleProductRules(productIds);
-          availabilityEvaluations = await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
+          availabilityEvaluations =
+            await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
         } catch (error) {
           logger.error('Error evaluating availability in ProductVisibilityService:', error);
           // Continue without availability evaluation if there's an error
@@ -232,7 +240,7 @@ export class ProductVisibilityService {
       }
 
       // Apply additional filtering based on evaluated availability
-      const filteredProducts = onlyActive 
+      const filteredProducts = onlyActive
         ? await this.filterByEvaluatedAvailability(products, availabilityEvaluations)
         : products;
 
@@ -244,45 +252,49 @@ export class ProductVisibilityService {
           ...product,
           price: product.price ? parseFloat(product.price.toString()) : 0,
           ordinal: product.ordinal !== null ? Number(product.ordinal) : null,
-          variants: includeVariants && product.variants
-            ? product.variants.map((variant: any) => ({
-                ...variant,
-                price: variant.price ? parseFloat(variant.price.toString()) : null,
-              }))
-            : undefined,
+          variants:
+            includeVariants && product.variants
+              ? product.variants.map((variant: any) => ({
+                  ...variant,
+                  price: variant.price ? parseFloat(variant.price.toString()) : null,
+                }))
+              : undefined,
           // Add availability evaluation if requested and available
-          ...(includeAvailabilityEvaluation && evaluation && {
-            evaluatedAvailability: {
-              currentState: evaluation.currentState,
-              appliedRulesCount: evaluation.appliedRules.length,
-              nextStateChange: evaluation.nextStateChange,
-            }
-          }),
+          ...(includeAvailabilityEvaluation &&
+            evaluation && {
+              evaluatedAvailability: {
+                currentState: evaluation.currentState,
+                appliedRulesCount: evaluation.appliedRules.length,
+                nextStateChange: evaluation.nextStateChange,
+              },
+            }),
         };
       });
 
       // Build pagination metadata
-      const paginationData = includePagination && totalCount !== undefined && itemsPerPage ? {
-        page,
-        limit: itemsPerPage,
-        total: Number(totalCount),
-        totalPages: Math.ceil(Number(totalCount) / itemsPerPage),
-        hasNextPage: page < Math.ceil(Number(totalCount) / itemsPerPage),
-        hasPreviousPage: page > 1,
-      } : undefined;
+      const paginationData =
+        includePagination && totalCount !== undefined && itemsPerPage
+          ? {
+              page,
+              limit: itemsPerPage,
+              total: Number(totalCount),
+              totalPages: Math.ceil(Number(totalCount) / itemsPerPage),
+              hasNextPage: page < Math.ceil(Number(totalCount) / itemsPerPage),
+              hasPreviousPage: page > 1,
+            }
+          : undefined;
 
       logger.info('Products fetched with visibility service', {
         count: serializedProducts.length,
         withAvailabilityEvaluation: includeAvailabilityEvaluation,
         categoryId,
-        onlyActive
+        onlyActive,
       });
 
       return {
         products: serializedProducts,
-        ...(paginationData && { pagination: paginationData })
+        ...(paginationData && { pagination: paginationData }),
       };
-
     } catch (error) {
       logger.error('Error in ProductVisibilityService.getProducts:', error);
       throw error;
@@ -293,7 +305,7 @@ export class ProductVisibilityService {
    * Get products for a specific category with visibility filtering
    */
   static async getProductsByCategory(
-    categoryId: string, 
+    categoryId: string,
     options: Omit<ProductVisibilityOptions, 'categoryId'> = {}
   ): Promise<ProductQueryResult> {
     return this.getProducts({ ...options, categoryId });
@@ -311,8 +323,9 @@ export class ProductVisibilityService {
     excludeCatering: boolean;
     includePrivate: boolean;
   }) {
-    const { categoryId, featured, search, exclude, onlyActive, excludeCatering, includePrivate } = options;
-    
+    const { categoryId, featured, search, exclude, onlyActive, excludeCatering, includePrivate } =
+      options;
+
     const whereCondition: any = {
       active: onlyActive ? true : undefined,
       categoryId: categoryId,
@@ -329,10 +342,7 @@ export class ProductVisibilityService {
       // Don't filter by isAvailable here - let availability evaluation handle it
       // This allows "Coming Soon" and other states to be properly evaluated
       whereCondition.NOT = {
-        OR: [
-          { itemState: 'INACTIVE' },
-          { itemState: 'ARCHIVED' },
-        ],
+        OR: [{ itemState: 'INACTIVE' }, { itemState: 'ARCHIVED' }],
       };
     }
 
@@ -407,7 +417,7 @@ export class ProductVisibilityService {
    */
   private static buildOrderBy(orderBy: string, orderDirection: string) {
     const sortOrder = orderDirection as 'asc' | 'desc';
-    
+
     switch (orderBy) {
       case 'price':
         return { price: sortOrder };
@@ -416,7 +426,7 @@ export class ProductVisibilityService {
       case 'ordinal':
         return [
           { ordinal: sortOrder },
-          { name: 'asc' as const } // Fallback
+          { name: 'asc' as const }, // Fallback
         ];
       case 'name':
       default:
@@ -436,16 +446,20 @@ export class ProductVisibilityService {
 
       // If no evaluation available, use database flags
       if (!evaluation) {
-        return product.isAvailable &&
-               product.visibility !== 'PRIVATE' &&
-               !['INACTIVE', 'ARCHIVED'].includes(product.itemState);
+        return (
+          product.isAvailable &&
+          product.visibility !== 'PRIVATE' &&
+          !['INACTIVE', 'ARCHIVED'].includes(product.itemState)
+        );
       }
 
       // If evaluation exists but NO rules were applied, fall back to base product state
       if (evaluation.appliedRules.length === 0) {
-        return product.isAvailable &&
-               product.visibility !== 'PRIVATE' &&
-               !['INACTIVE', 'ARCHIVED'].includes(product.itemState);
+        return (
+          product.isAvailable &&
+          product.visibility !== 'PRIVATE' &&
+          !['INACTIVE', 'ARCHIVED'].includes(product.itemState)
+        );
       }
 
       // Filter based on evaluated state when rules ARE applied
@@ -459,14 +473,16 @@ export class ProductVisibilityService {
   /**
    * Get product with full availability evaluation
    */
-  static async getProductWithAvailability(productId: string): Promise<ProductWithEvaluation | null> {
+  static async getProductWithAvailability(
+    productId: string
+  ): Promise<ProductWithEvaluation | null> {
     try {
       const result = await this.getProducts({
         includeAvailabilityEvaluation: true,
         includeVariants: true,
         onlyActive: false, // Get product regardless of active state for admin
         includePrivate: true,
-        limit: 1
+        limit: 1,
       });
 
       const product = result.products.find(p => p.id === productId);

@@ -40,15 +40,17 @@ export interface RateCalculationResult {
   error?: string;
 }
 
-export async function calculateShippingRates(params: RateCalculationParams): Promise<RateCalculationResult> {
+export async function calculateShippingRates(
+  params: RateCalculationParams
+): Promise<RateCalculationResult> {
   try {
     const { ShippoClientManager } = await import('@/lib/shippo/client');
     const shippoClient = ShippoClientManager.getInstance();
-    
+
     if (!shippoClient) {
       return {
         success: false,
-        error: 'Shippo client not available'
+        error: 'Shippo client not available',
       };
     }
 
@@ -58,17 +60,17 @@ export async function calculateShippingRates(params: RateCalculationParams): Pro
     const shipment = await shippoClient.shipments?.create?.({
       address_from: params.fromAddress,
       address_to: params.toAddress,
-      parcels: [params.parcel]
+      parcels: [params.parcel],
     });
 
     return {
       success: true,
-      rates: shipment?.rates || []
+      rates: shipment?.rates || [],
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Rate calculation failed'
+      error: error instanceof Error ? error.message : 'Rate calculation failed',
     };
   }
 }

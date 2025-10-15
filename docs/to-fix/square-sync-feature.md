@@ -11,35 +11,40 @@
 ✅ **COMPLETED** - Phase 3: Core Sync Service (FilteredSyncManager)  
 ✅ **COMPLETED** - Phase 4: API Route Implementation (/api/square/sync-filtered)  
 ✅ **COMPLETED** - Phase 5: Webhook Handler for Square catalog updates (/api/webhooks/square/catalog-update)  
-✅ **COMPLETED** - Phase 6: Admin Dashboard Component (/admin/square-sync)  
+✅ **COMPLETED** - Phase 6: Admin Dashboard Component (/admin/square-sync)
 
 ### 📝 Implementation Notes
 
 The Square Sync feature is now **FULLY IMPLEMENTED** with all phases complete:
 
 #### ✅ **Phase 1: Enhanced Database Schema**
+
 - **NEW SyncLog model** with comprehensive tracking (itemsSynced, itemsCreated, itemsUpdated, etc.)
 - **Enhanced Product model** with squareVersion, squareUpdatedAt, syncStatus fields
 - **Applied migrations** successfully to production database
 
 #### ✅ **Phase 2: Enhanced Type Definitions**
+
 - **NEW square-sync-enhanced.ts** with EnhancedSyncConfig, SyncMetrics, SquareItemTransformed
 - **Comprehensive error handling** with structured SyncError types
 - **Supports both dry-run and production sync modes**
 
 #### ✅ **Phase 3-4: Working Sync System**
+
 - **FilteredSyncManager** handles alfajores/empanadas sync with catering protection
 - **Admin dashboard** (/admin/square-sync) provides real-time preview and sync execution
 - **API endpoints** (/api/square/sync-filtered) support both preview and execution modes
 - **Database tracking** uses both SyncHistory and new SyncLog models
 
 #### ✅ **Phase 5: Real-time Webhook Integration**
+
 - **NEW Webhook Handler** at `/api/webhooks/square/catalog-update/route.ts`
 - **Square signature verification** for security
 - **Smart filtering** for EMPANADAS and ALFAJORES categories only
 - **Automatic logging** of webhook events in SyncLog table
 
 #### ✅ **Phase 6: Production-Ready Build**
+
 - **Build verification** completed successfully (pnpm build ✅)
 - **All TypeScript compilation** passes without errors
 - **Ready for local testing and deployment**
@@ -49,7 +54,7 @@ The Square Sync feature is now **FULLY IMPLEMENTED** with all phases complete:
 All phases are now complete and the system is ready for testing. The implementation provides:
 
 - 📊 **Comprehensive tracking** with detailed sync logs and statistics
-- 🔄 **Real-time webhooks** for automatic Square catalog updates  
+- 🔄 **Real-time webhooks** for automatic Square catalog updates
 - 📈 **Enhanced monitoring** with error/warning tracking and performance metrics
 - ⚡ **Production-ready** with successful build verification
 - 🛡️ **Security** with proper authentication and catering item protection
@@ -92,7 +97,7 @@ CREATE TABLE "sync_logs" (
   "started_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "completed_at" TIMESTAMP(3),
   "created_by" UUID,
-  
+
   CONSTRAINT "sync_logs_pkey" PRIMARY KEY ("id")
 );
 
@@ -102,7 +107,7 @@ CREATE INDEX "sync_logs_started_at_idx" ON "sync_logs"("started_at" DESC);
 CREATE INDEX "sync_logs_sync_type_idx" ON "sync_logs"("sync_type");
 
 -- Add new columns to products table for better sync tracking
-ALTER TABLE "products" 
+ALTER TABLE "products"
   ADD COLUMN IF NOT EXISTS "square_version" BIGINT,
   ADD COLUMN IF NOT EXISTS "square_updated_at" TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "sync_status" VARCHAR(20) DEFAULT 'SYNCED';
@@ -131,7 +136,7 @@ model SyncLog {
   startedAt      DateTime  @default(now()) @map("started_at")
   completedAt    DateTime? @map("completed_at")
   createdBy      String?   @db.Uuid @map("created_by")
-  
+
   @@index([status])
   @@index([startedAt])
   @@index([syncType])
@@ -230,30 +235,29 @@ Create `/src/lib/square/empanadas-alfajores-sync.ts`:
 import { Client, Environment } from 'square';
 import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
-import type { 
-  EnhancedSyncConfig, 
-  SquareItemTransformed, 
+import type {
+  EnhancedSyncConfig,
+  SquareItemTransformed,
   SyncMetrics,
-  DEFAULT_SYNC_CONFIG 
+  DEFAULT_SYNC_CONFIG,
 } from '@/types/square-sync-enhanced';
 
 export class EmpanadasAlfajoresSyncService {
   private client: Client;
   private config: EnhancedSyncConfig;
   private metrics: SyncMetrics;
-  
+
   constructor(accessToken: string, config: Partial<EnhancedSyncConfig> = {}) {
     this.client = new Client({
       accessToken,
-      environment: process.env.NODE_ENV === 'production' 
-        ? Environment.Production 
-        : Environment.Sandbox,
+      environment:
+        process.env.NODE_ENV === 'production' ? Environment.Production : Environment.Sandbox,
     });
-    
+
     this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
     this.metrics = this.initializeMetrics();
   }
-  
+
   private initializeMetrics(): SyncMetrics {
     return {
       startTime: Date.now(),
@@ -265,92 +269,88 @@ export class EmpanadasAlfajoresSyncService {
       warnings: [],
     };
   }
-  
+
   async performSync(): Promise<SyncMetrics> {
     const syncLog = await this.createSyncLog();
-    
+
     try {
       console.log('🚀 Starting sync for EMPANADAS and ALFAJORES...');
-      
+
       // Step 1: Fetch all catalog items from Square
       const squareItems = await this.fetchFilteredItems();
       console.log(`📦 Found ${squareItems.length} items to process`);
-      
+
       // Step 2: Ensure categories exist
       await this.ensureCategories();
-      
+
       // Step 3: Process items in batches
       await this.processItemsBatch(squareItems);
-      
+
       // Step 4: Handle deleted items
       await this.handleDeletedItems(squareItems);
-      
+
       // Complete metrics
       this.metrics.endTime = Date.now();
-      
+
       // Update sync log
       await this.updateSyncLog(syncLog.id, 'COMPLETED');
-      
+
       console.log('✅ Sync completed successfully!');
       return this.metrics;
-      
     } catch (error) {
       console.error('❌ Sync failed:', error);
       this.metrics.errors.push({
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date(),
       });
-      
+
       await this.updateSyncLog(syncLog.id, 'FAILED');
       throw error;
     }
   }
-  
+
   private async fetchFilteredItems(): Promise<SquareItemTransformed[]> {
     const items: SquareItemTransformed[] = [];
     let cursor: string | undefined;
-    
+
     do {
-      const response = await this.client.catalogApi.listCatalog(
-        cursor,
-        'ITEM'
-      );
-      
+      const response = await this.client.catalogApi.listCatalog(cursor, 'ITEM');
+
       if (response.result.objects) {
         const filtered = response.result.objects
           .filter(obj => this.shouldSyncItem(obj))
           .map(obj => this.transformSquareItem(obj));
-        
+
         items.push(...filtered);
       }
-      
+
       cursor = response.result.cursor;
     } while (cursor);
-    
+
     return items;
   }
-  
+
   private shouldSyncItem(catalogObject: any): boolean {
     const itemData = catalogObject.itemData;
     if (!itemData) return false;
-    
+
     // Check if item belongs to target categories
     const categories = itemData.categories || [];
-    return categories.some((cat: any) => 
+    return categories.some((cat: any) =>
       this.config.targetCategories.includes(cat.name?.toUpperCase())
     );
   }
-  
+
   private transformSquareItem(catalogObject: any): SquareItemTransformed {
     const itemData = catalogObject.itemData;
     const category = itemData.categories?.[0] || { name: 'UNCATEGORIZED' };
-    
+
     // Get first variation for price
     const firstVariation = itemData.variations?.[0];
-    const price = firstVariation?.itemVariationData?.priceMoney?.amount 
+    const price = firstVariation?.itemVariationData?.priceMoney?.amount
       ? new Decimal(firstVariation.itemVariationData.priceMoney.amount).div(100)
       : new Decimal(0);
-    
+
     return {
       squareId: catalogObject.id,
       version: BigInt(catalogObject.version || 0),
@@ -365,18 +365,18 @@ export class EmpanadasAlfajoresSyncService {
       isDeleted: catalogObject.isDeleted || false,
     };
   }
-  
+
   private transformVariations(variations: any[]): any[] {
     return variations.map(v => ({
       squareVariantId: v.id,
       name: v.itemVariationData?.name || 'Default',
-      price: v.itemVariationData?.priceMoney?.amount 
+      price: v.itemVariationData?.priceMoney?.amount
         ? new Decimal(v.itemVariationData.priceMoney.amount).div(100)
         : null,
       sku: v.itemVariationData?.sku || null,
     }));
   }
-  
+
   private async ensureCategories(): Promise<void> {
     for (const categoryName of this.config.targetCategories) {
       await prisma.category.upsert({
@@ -390,56 +390,55 @@ export class EmpanadasAlfajoresSyncService {
       });
     }
   }
-  
+
   private async processItemsBatch(items: SquareItemTransformed[]): Promise<void> {
     const { batchSize } = this.config;
-    
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
-      
+
       if (this.config.dryRun) {
         console.log(`[DRY RUN] Would process batch ${i / batchSize + 1}`);
         this.metrics.itemsProcessed += batch.length;
         continue;
       }
-      
-      await prisma.$transaction(async (tx) => {
+
+      await prisma.$transaction(async tx => {
         for (const item of batch) {
           await this.upsertProduct(tx, item);
         }
       });
-      
+
       console.log(`✓ Processed batch ${i / batchSize + 1} (${batch.length} items)`);
     }
   }
-  
+
   private async upsertProduct(tx: any, item: SquareItemTransformed): Promise<void> {
     try {
       // Get category
       const category = await tx.category.findFirst({
         where: { name: item.categoryName },
       });
-      
+
       if (!category) {
         this.metrics.warnings.push(`Category not found for ${item.name}`);
         this.metrics.itemsSkipped++;
         return;
       }
-      
+
       // Check if product exists
       const existing = await tx.product.findUnique({
         where: { squareId: item.squareId },
         include: { variants: true },
       });
-      
+
       if (existing) {
         // Check if update is needed
-        if (!this.config.forceUpdate && 
-            existing.squareVersion === item.version) {
+        if (!this.config.forceUpdate && existing.squareVersion === item.version) {
           this.metrics.itemsSkipped++;
           return;
         }
-        
+
         // Update product
         await tx.product.update({
           where: { squareId: item.squareId },
@@ -455,10 +454,10 @@ export class EmpanadasAlfajoresSyncService {
             syncStatus: 'SYNCED',
           },
         });
-        
+
         // Update variants
         await this.updateVariants(tx, existing.id, item.variations);
-        
+
         this.metrics.itemsUpdated++;
       } else {
         // Create new product
@@ -477,7 +476,7 @@ export class EmpanadasAlfajoresSyncService {
             active: true,
           },
         });
-        
+
         // Create variants
         if (item.variations.length > 0) {
           await tx.variant.createMany({
@@ -487,10 +486,10 @@ export class EmpanadasAlfajoresSyncService {
             })),
           });
         }
-        
+
         this.metrics.itemsCreated++;
       }
-      
+
       this.metrics.itemsProcessed++;
     } catch (error) {
       this.metrics.errors.push({
@@ -501,13 +500,13 @@ export class EmpanadasAlfajoresSyncService {
       });
     }
   }
-  
+
   private async updateVariants(tx: any, productId: string, newVariants: any[]): Promise<void> {
     // Delete existing variants
     await tx.variant.deleteMany({
       where: { productId },
     });
-    
+
     // Create new variants
     if (newVariants.length > 0) {
       await tx.variant.createMany({
@@ -518,10 +517,10 @@ export class EmpanadasAlfajoresSyncService {
       });
     }
   }
-  
+
   private async handleDeletedItems(currentItems: SquareItemTransformed[]): Promise<void> {
     const currentIds = currentItems.map(item => item.squareId);
-    
+
     // Find products that exist in DB but not in Square
     const deletedProducts = await prisma.product.findMany({
       where: {
@@ -532,13 +531,13 @@ export class EmpanadasAlfajoresSyncService {
         syncLocked: false,
       },
     });
-    
+
     if (deletedProducts.length > 0) {
       if (this.config.dryRun) {
         console.log(`[DRY RUN] Would soft-delete ${deletedProducts.length} products`);
         return;
       }
-      
+
       // Soft delete by marking as inactive
       await prisma.product.updateMany({
         where: {
@@ -550,11 +549,11 @@ export class EmpanadasAlfajoresSyncService {
           lastSyncAt: new Date(),
         },
       });
-      
+
       this.metrics.itemsDeleted = deletedProducts.length;
     }
   }
-  
+
   private async createSyncLog(): Promise<{ id: string }> {
     return await prisma.syncLog.create({
       data: {
@@ -564,7 +563,7 @@ export class EmpanadasAlfajoresSyncService {
       },
     });
   }
-  
+
   private async updateSyncLog(id: string, status: string): Promise<void> {
     await prisma.syncLog.update({
       where: { id },
@@ -579,7 +578,7 @@ export class EmpanadasAlfajoresSyncService {
         errors: this.metrics.errors.length > 0 ? this.metrics.errors : null,
         warnings: this.metrics.warnings.length > 0 ? this.metrics.warnings : null,
         metadata: {
-          duration: this.metrics.endTime 
+          duration: this.metrics.endTime
             ? `${(this.metrics.endTime - this.metrics.startTime) / 1000}s`
             : null,
           config: this.config,
@@ -616,16 +615,13 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Parse request body
     const body = await request.json().catch(() => ({}));
     const params = SyncRequestSchema.parse(body);
-    
+
     // Check for existing sync in progress
     const inProgress = await prisma.syncLog.findFirst({
       where: {
@@ -633,42 +629,36 @@ export async function POST(request: NextRequest) {
         status: 'IN_PROGRESS',
       },
     });
-    
+
     if (inProgress) {
       return NextResponse.json(
-        { 
+        {
           error: 'Sync already in progress',
           syncId: inProgress.id,
         },
         { status: 409 }
       );
     }
-    
+
     // Initialize sync service
-    const syncService = new EmpanadasAlfajoresSyncService(
-      process.env.SQUARE_ACCESS_TOKEN!,
-      {
-        dryRun: params.dryRun,
-        forceUpdate: params.forceUpdate,
-        verbose: params.verbose,
-      }
-    );
-    
+    const syncService = new EmpanadasAlfajoresSyncService(process.env.SQUARE_ACCESS_TOKEN!, {
+      dryRun: params.dryRun,
+      forceUpdate: params.forceUpdate,
+      verbose: params.verbose,
+    });
+
     // Perform sync
     const result = await syncService.performSync();
-    
+
     return NextResponse.json({
       success: true,
-      message: params.dryRun 
-        ? 'Dry run completed successfully'
-        : 'Sync completed successfully',
+      message: params.dryRun ? 'Dry run completed successfully' : 'Sync completed successfully',
       result,
     });
-    
   } catch (error) {
     console.error('Sync error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Sync failed',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
@@ -682,12 +672,9 @@ export async function GET(request: NextRequest) {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Get latest sync status
     const latestSync = await prisma.syncLog.findFirst({
       where: {
@@ -697,7 +684,7 @@ export async function GET(request: NextRequest) {
         startedAt: 'desc',
       },
     });
-    
+
     // Get sync statistics
     const stats = await prisma.syncLog.aggregate({
       where: {
@@ -712,7 +699,7 @@ export async function GET(request: NextRequest) {
         itemsDeleted: true,
       },
     });
-    
+
     return NextResponse.json({
       latestSync,
       statistics: {
@@ -723,13 +710,9 @@ export async function GET(request: NextRequest) {
         totalItemsDeleted: stats._sum.itemsDeleted || 0,
       },
     });
-    
   } catch (error) {
     console.error('Error fetching sync status:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sync status' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch sync status' }, { status: 500 });
   }
 }
 ```
@@ -761,60 +744,46 @@ const WebhookSchema = z.object({
   }),
 });
 
-function verifyWebhookSignature(
-  body: string,
-  signature: string | null,
-  secret: string
-): boolean {
+function verifyWebhookSignature(body: string, signature: string | null, secret: string): boolean {
   if (!signature) return false;
-  
+
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(body);
   const expectedSignature = hmac.digest('base64');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('x-square-signature');
-  
+
   // Verify webhook signature
-  if (!verifyWebhookSignature(
-    body,
-    signature,
-    process.env.SQUARE_WEBHOOK_SECRET!
-  )) {
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 401 }
-    );
+  if (!verifyWebhookSignature(body, signature, process.env.SQUARE_WEBHOOK_SECRET!)) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
-  
+
   try {
     const event = WebhookSchema.parse(JSON.parse(body));
-    
+
     // Check if the item belongs to our target categories
     const catalogObject = event.data.object.catalog_object;
     if (catalogObject?.type !== 'ITEM') {
       return NextResponse.json({ message: 'Not an item update' });
     }
-    
+
     const categories = catalogObject.item_data?.categories || [];
-    const isRelevant = categories.some((cat: any) => 
+    const isRelevant = categories.some((cat: any) =>
       ['EMPANADAS', 'ALFAJORES'].includes(cat.name?.toUpperCase())
     );
-    
+
     if (!isRelevant) {
       return NextResponse.json({ message: 'Item not in target categories' });
     }
-    
+
     // Trigger a partial sync for just this item
     console.log(`Webhook received for item: ${catalogObject.id}`);
-    
+
     // You could implement a partial sync here or queue it for processing
     // For now, we'll just log it
     await prisma.syncLog.create({
@@ -829,15 +798,11 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-    
+
     return NextResponse.json({ success: true });
-    
   } catch (error) {
     console.error('Webhook processing error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process webhook' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process webhook' }, { status: 500 });
   }
 }
 ```
@@ -902,7 +867,7 @@ export default function SquareSyncPage() {
       if (!response.ok) throw new Error('Failed to fetch status');
       const data = await response.json();
       setSyncStatus(data);
-      
+
       // Check if sync is in progress
       if (data.latestSync?.status === 'IN_PROGRESS') {
         setIsSyncing(true);
@@ -925,11 +890,11 @@ export default function SquareSyncPage() {
   // Polling for sync status
   useEffect(() => {
     if (!polling) return;
-    
+
     const interval = setInterval(() => {
       fetchSyncStatus();
     }, 2000);
-    
+
     return () => clearInterval(interval);
   }, [polling]);
 
@@ -939,7 +904,7 @@ export default function SquareSyncPage() {
       setIsLoading(true);
       setIsSyncing(true);
       setPolling(true);
-      
+
       const response = await fetch('/api/square/sync-empanadas-alfajores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -949,22 +914,17 @@ export default function SquareSyncPage() {
           verbose: true,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Sync failed');
       }
-      
-      toast.success(
-        dryRun 
-          ? 'Dry run completed successfully!' 
-          : 'Sync started successfully!'
-      );
-      
+
+      toast.success(dryRun ? 'Dry run completed successfully!' : 'Sync started successfully!');
+
       // Refresh status
       await fetchSyncStatus();
-      
     } catch (error) {
       console.error('Sync error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to start sync');
@@ -993,15 +953,9 @@ export default function SquareSyncPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Square Sync</h1>
-          <p className="text-muted-foreground">
-            Sync Empanadas and Alfajores from Square catalog
-          </p>
+          <p className="text-muted-foreground">Sync Empanadas and Alfajores from Square catalog</p>
         </div>
-        <Button
-          onClick={handleSync}
-          disabled={isLoading || isSyncing}
-          size="lg"
-        >
+        <Button onClick={handleSync} disabled={isLoading || isSyncing} size="lg">
           {isLoading || isSyncing ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -1030,9 +984,7 @@ export default function SquareSyncPage() {
               onCheckedChange={setDryRun}
               disabled={isSyncing}
             />
-            <Label htmlFor="dry-run">
-              Dry Run (preview changes without applying)
-            </Label>
+            <Label htmlFor="dry-run">Dry Run (preview changes without applying)</Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch
@@ -1041,9 +993,7 @@ export default function SquareSyncPage() {
               onCheckedChange={setForceUpdate}
               disabled={isSyncing}
             />
-            <Label htmlFor="force-update">
-              Force Update (update even if versions match)
-            </Label>
+            <Label htmlFor="force-update">Force Update (update even if versions match)</Label>
           </div>
         </CardContent>
       </Card>
@@ -1064,9 +1014,7 @@ export default function SquareSyncPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Synced</p>
-                <p className="text-2xl font-bold">
-                  {syncStatus.latestSync.itemsSynced}
-                </p>
+                <p className="text-2xl font-bold">{syncStatus.latestSync.itemsSynced}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Created</p>
@@ -1119,7 +1067,9 @@ export default function SquareSyncPage() {
                   <p className="font-semibold mb-2">Warnings:</p>
                   <ul className="list-disc list-inside space-y-1">
                     {syncStatus.latestSync.warnings.slice(0, 5).map((warning, idx) => (
-                      <li key={idx} className="text-sm">{warning}</li>
+                      <li key={idx} className="text-sm">
+                        {warning}
+                      </li>
                     ))}
                   </ul>
                 </AlertDescription>
@@ -1133,41 +1083,29 @@ export default function SquareSyncPage() {
       <Card>
         <CardHeader>
           <CardTitle>Overall Statistics</CardTitle>
-          <CardDescription>
-            Cumulative sync statistics
-          </CardDescription>
+          <CardDescription>Cumulative sync statistics</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Total Syncs</p>
-              <p className="text-2xl font-bold">
-                {syncStatus?.statistics.totalSyncs || 0}
-              </p>
+              <p className="text-2xl font-bold">{syncStatus?.statistics.totalSyncs || 0}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Items Synced</p>
-              <p className="text-2xl font-bold">
-                {syncStatus?.statistics.totalItemsSynced || 0}
-              </p>
+              <p className="text-2xl font-bold">{syncStatus?.statistics.totalItemsSynced || 0}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Items Created</p>
-              <p className="text-2xl font-bold">
-                {syncStatus?.statistics.totalItemsCreated || 0}
-              </p>
+              <p className="text-2xl font-bold">{syncStatus?.statistics.totalItemsCreated || 0}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Items Updated</p>
-              <p className="text-2xl font-bold">
-                {syncStatus?.statistics.totalItemsUpdated || 0}
-              </p>
+              <p className="text-2xl font-bold">{syncStatus?.statistics.totalItemsUpdated || 0}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Items Deleted</p>
-              <p className="text-2xl font-bold">
-                {syncStatus?.statistics.totalItemsDeleted || 0}
-              </p>
+              <p className="text-2xl font-bold">{syncStatus?.statistics.totalItemsDeleted || 0}</p>
             </div>
           </div>
         </CardContent>
@@ -1210,10 +1148,9 @@ function SyncHistoryTable() {
         <CardDescription>Recent sync operations</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">
-          History will be displayed here once implemented
-        </p>
+        <p className="text-muted-foreground">History will be displayed here once implemented</p>
       </CardContent>
     </Card>
   );
 }
+```

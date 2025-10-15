@@ -11,16 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Store, 
-  DollarSign, 
-  Calculator, 
-  Clock, 
-  Mail, 
-  Phone, 
+import {
+  Store,
+  DollarSign,
+  Calculator,
+  Clock,
+  Mail,
+  Phone,
   MapPin,
   Save,
-  Info
+  Info,
 } from 'lucide-react';
 import { z } from 'zod';
 
@@ -78,7 +78,13 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
     },
   });
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = form;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
   const isStoreOpen = watch('isStoreOpen');
 
   const onSubmit = async (data: ApiStoreSettings) => {
@@ -113,43 +119,43 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
         icon: <Mail className="h-4 w-4" />,
         label: 'Customer Communications',
         description: 'Email appears on receipts and order confirmations',
-        isActive: !!settings?.email
+        isActive: !!settings?.email,
       },
       {
         icon: <Store className="h-4 w-4" />,
         label: 'Shipping Labels',
         description: 'Address used for return labels and business identification',
-        isActive: !!settings?.address
-      }
+        isActive: !!settings?.address,
+      },
     ],
     financial: [
       {
         icon: <Calculator className="h-4 w-4" />,
         label: 'Tax Calculation',
         description: 'Applied to all taxable items at checkout',
-        isActive: (settings?.taxRate || 0) > 0
+        isActive: (settings?.taxRate || 0) > 0,
       },
       {
         icon: <DollarSign className="h-4 w-4" />,
         label: 'Order Validation',
         description: 'Prevents orders below minimum amounts',
-        isActive: (settings?.minOrderAmount || 0) > 0
-      }
+        isActive: (settings?.minOrderAmount || 0) > 0,
+      },
     ],
     catering: [
       {
         icon: <Clock className="h-4 w-4" />,
         label: 'Advance Booking',
         description: 'Controls when customers can place catering orders',
-        isActive: (settings?.minAdvanceHours || 0) > 0
+        isActive: (settings?.minAdvanceHours || 0) > 0,
       },
       {
         icon: <DollarSign className="h-4 w-4" />,
         label: 'Catering Minimums',
         description: 'Enforced for catering orders when no zone-specific minimum exists',
-        isActive: (settings?.cateringMinimumAmount || 0) > 0
-      }
-    ]
+        isActive: (settings?.cateringMinimumAmount || 0) > 0,
+      },
+    ],
   };
 
   return (
@@ -179,7 +185,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-blue-900">{indicator.label}</span>
-                      <Badge variant={indicator.isActive ? "default" : "secondary"} className="text-xs">
+                      <Badge
+                        variant={indicator.isActive ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {indicator.isActive ? 'Active' : 'Not Set'}
                       </Badge>
                     </div>
@@ -193,14 +202,8 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="name">Store Name *</Label>
-              <Input 
-                id="name" 
-                {...register('name')} 
-                placeholder="Your Store Name"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
-              )}
+              <Input id="name" {...register('name')} placeholder="Your Store Name" />
+              {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
               <p className="text-xs text-gray-500 mt-1">
                 Displayed on all customer communications and legal documents
               </p>
@@ -208,15 +211,13 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
             <div>
               <Label htmlFor="email">Business Email *</Label>
-              <Input 
-                id="email" 
+              <Input
+                id="email"
                 type="email"
-                {...register('email')} 
+                {...register('email')}
                 placeholder="business@yourstore.com"
               />
-              {errors.email && (
-                <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
               <p className="text-xs text-gray-500 mt-1">
                 Used for order confirmations and customer support
               </p>
@@ -224,23 +225,13 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
             <div>
               <Label htmlFor="phone">Business Phone *</Label>
-              <Input 
-                id="phone" 
-                {...register('phone')} 
-                placeholder="(555) 123-4567"
-              />
-              {errors.phone && (
-                <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
-              )}
+              <Input id="phone" {...register('phone')} placeholder="(555) 123-4567" />
+              {errors.phone && <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>}
             </div>
 
             <div>
               <Label htmlFor="address">Business Address *</Label>
-              <Input 
-                id="address" 
-                {...register('address')} 
-                placeholder="123 Business St"
-              />
+              <Input id="address" {...register('address')} placeholder="123 Business St" />
               {errors.address && (
                 <p className="text-sm text-red-600 mt-1">{errors.address.message}</p>
               )}
@@ -248,35 +239,21 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
             <div>
               <Label htmlFor="city">City *</Label>
-              <Input 
-                id="city" 
-                {...register('city')} 
-                placeholder="San Francisco"
-              />
-              {errors.city && (
-                <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>
-              )}
+              <Input id="city" {...register('city')} placeholder="San Francisco" />
+              {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="state">State *</Label>
-                <Input 
-                  id="state" 
-                  {...register('state')} 
-                  placeholder="CA"
-                />
+                <Input id="state" {...register('state')} placeholder="CA" />
                 {errors.state && (
                   <p className="text-sm text-red-600 mt-1">{errors.state.message}</p>
                 )}
               </div>
               <div>
                 <Label htmlFor="zipCode">ZIP Code *</Label>
-                <Input 
-                  id="zipCode" 
-                  {...register('zipCode')} 
-                  placeholder="94105"
-                />
+                <Input id="zipCode" {...register('zipCode')} placeholder="94105" />
                 {errors.zipCode && (
                   <p className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
                 )}
@@ -311,7 +288,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-green-900">{indicator.label}</span>
-                      <Badge variant={indicator.isActive ? "default" : "secondary"} className="text-xs">
+                      <Badge
+                        variant={indicator.isActive ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {indicator.isActive ? 'Active' : 'Not Set'}
                       </Badge>
                     </div>
@@ -328,13 +308,13 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                 <Calculator className="h-4 w-4 text-green-600" />
                 Tax Rate (%)
               </Label>
-              <Input 
-                id="taxRate" 
-                type="number" 
+              <Input
+                id="taxRate"
+                type="number"
                 step="0.01"
                 min="0"
                 max="100"
-                {...register('taxRate', { valueAsNumber: true })} 
+                {...register('taxRate', { valueAsNumber: true })}
                 placeholder="8.25"
               />
               {errors.taxRate && (
@@ -350,12 +330,12 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                 <DollarSign className="h-4 w-4 text-green-600" />
                 Regular Order Minimum ($)
               </Label>
-              <Input 
-                id="minOrderAmount" 
+              <Input
+                id="minOrderAmount"
                 type="number"
                 step="0.01"
                 min="0"
-                {...register('minOrderAmount', { valueAsNumber: true })} 
+                {...register('minOrderAmount', { valueAsNumber: true })}
                 placeholder="25.00"
               />
               {errors.minOrderAmount && (
@@ -394,7 +374,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-orange-900">{indicator.label}</span>
-                      <Badge variant={indicator.isActive ? "default" : "secondary"} className="text-xs">
+                      <Badge
+                        variant={indicator.isActive ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
                         {indicator.isActive ? 'Active' : 'Not Set'}
                       </Badge>
                     </div>
@@ -411,12 +394,12 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                 <DollarSign className="h-4 w-4 text-orange-600" />
                 General Catering Minimum ($)
               </Label>
-              <Input 
-                id="cateringMinimumAmount" 
+              <Input
+                id="cateringMinimumAmount"
                 type="number"
                 step="0.01"
                 min="0"
-                {...register('cateringMinimumAmount', { valueAsNumber: true })} 
+                {...register('cateringMinimumAmount', { valueAsNumber: true })}
                 placeholder="500.00"
               />
               {errors.cateringMinimumAmount && (
@@ -432,36 +415,32 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                 <Clock className="h-4 w-4 text-orange-600" />
                 Minimum Advance Hours
               </Label>
-              <Input 
-                id="minAdvanceHours" 
+              <Input
+                id="minAdvanceHours"
                 type="number"
                 min="0"
-                {...register('minAdvanceHours', { valueAsNumber: true })} 
+                {...register('minAdvanceHours', { valueAsNumber: true })}
                 placeholder="24"
               />
               {errors.minAdvanceHours && (
                 <p className="text-sm text-red-600 mt-1">{errors.minAdvanceHours.message}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                How far in advance orders must be placed
-              </p>
+              <p className="text-xs text-gray-500 mt-1">How far in advance orders must be placed</p>
             </div>
 
             <div>
               <Label htmlFor="maxDaysInAdvance">Maximum Days Advance</Label>
-              <Input 
-                id="maxDaysInAdvance" 
+              <Input
+                id="maxDaysInAdvance"
                 type="number"
                 min="1"
-                {...register('maxDaysInAdvance', { valueAsNumber: true })} 
+                {...register('maxDaysInAdvance', { valueAsNumber: true })}
                 placeholder="30"
               />
               {errors.maxDaysInAdvance && (
                 <p className="text-sm text-red-600 mt-1">{errors.maxDaysInAdvance.message}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                Maximum days in advance for booking
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Maximum days in advance for booking</p>
             </div>
           </div>
         </CardContent>
@@ -474,9 +453,7 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             <Store className="h-5 w-5 text-purple-600" />
             Store Status
           </CardTitle>
-          <CardDescription>
-            Control whether your store is accepting new orders
-          </CardDescription>
+          <CardDescription>Control whether your store is accepting new orders</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -488,10 +465,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
                 When disabled, customers cannot place new orders. Existing orders remain unaffected.
               </p>
             </div>
-            <Switch 
+            <Switch
               id="isStoreOpen"
               checked={isStoreOpen}
-              onCheckedChange={(checked) => setValue('isStoreOpen', checked)}
+              onCheckedChange={checked => setValue('isStoreOpen', checked)}
             />
           </div>
         </CardContent>
@@ -499,11 +476,7 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-2"
-        >
+        <Button type="submit" disabled={saving} className="flex items-center gap-2">
           <Save className="h-4 w-4" />
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>

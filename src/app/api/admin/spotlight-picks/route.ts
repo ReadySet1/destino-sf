@@ -22,10 +22,11 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   }
 
   const adminProfile = await withRetry(
-    () => prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    }),
+    () =>
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }),
     3,
     'check admin profile in spotlight-picks'
   );

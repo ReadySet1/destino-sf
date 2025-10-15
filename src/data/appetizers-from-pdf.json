@@ -4,7 +4,7 @@
   "cateringNotice": "Catering orders must be confirmed 5 days in advance",
   "dietaryLegend": {
     "gf": "gluten free",
-    "vg": "vegetarian", 
+    "vg": "vegetarian",
     "vgn": "vegan"
   },
   "appetizers": [
@@ -20,7 +20,13 @@
     },
     {
       "name": "camotitos",
-      "ingredients": ["sweet potato", "coconut milk", "shitake", "multi-grain cracker", "poppyseeds"],
+      "ingredients": [
+        "sweet potato",
+        "coconut milk",
+        "shitake",
+        "multi-grain cracker",
+        "poppyseeds"
+      ],
       "dietary": ["gf", "vg", "vgn"]
     },
     {
@@ -35,7 +41,13 @@
     },
     {
       "name": "causa",
-      "ingredients": ["yukon potato", "lime", "sweet 100 tomato", "olive puree", "black sesame cracker"],
+      "ingredients": [
+        "yukon potato",
+        "lime",
+        "sweet 100 tomato",
+        "olive puree",
+        "black sesame cracker"
+      ],
       "dietary": ["gf", "vg", "vgn"]
     },
     {
@@ -85,7 +97,14 @@
     },
     {
       "name": "oxtail",
-      "ingredients": ["braised oxtail", "pine nuts", "golden raisins", "mint", "queso cotija", "plantain crisps"],
+      "ingredients": [
+        "braised oxtail",
+        "pine nuts",
+        "golden raisins",
+        "mint",
+        "queso cotija",
+        "plantain crisps"
+      ],
       "dietary": ["gf"]
     }
   ],
@@ -94,7 +113,12 @@
     "options": [
       {
         "name": "pork",
-        "ingredients": ["ground hampshire pork", "manzanilla olives", "black mission figs", "caribbean spices"],
+        "ingredients": [
+          "ground hampshire pork",
+          "manzanilla olives",
+          "black mission figs",
+          "caribbean spices"
+        ],
         "dietary": []
       },
       {
@@ -109,7 +133,13 @@
       },
       {
         "name": "beef",
-        "ingredients": ["ground beef", "golden raisins", "pimiento stuffed olives", "egg", "pimento"],
+        "ingredients": [
+          "ground beef",
+          "golden raisins",
+          "pimiento stuffed olives",
+          "egg",
+          "pimento"
+        ],
         "dietary": []
       },
       {
@@ -127,15 +157,15 @@
   "pricingTiers": [
     {
       "items": 5,
-      "pricePerPerson": 22.00
+      "pricePerPerson": 22.0
     },
     {
       "items": 7,
-      "pricePerPerson": 34.00
+      "pricePerPerson": 34.0
     },
     {
       "items": 9,
-      "pricePerPerson": 46.00
+      "pricePerPerson": 46.0
     }
   ],
   "platters": [
@@ -145,12 +175,12 @@
       "sizes": [
         {
           "size": "small",
-          "price": 45.00,
+          "price": 45.0,
           "serves": "approximately 10-20 people"
         },
         {
           "size": "large",
-          "price": 80.00,
+          "price": 80.0,
           "serves": "approximately 25-40 people"
         }
       ]
@@ -161,13 +191,13 @@
       "sizes": [
         {
           "size": "small",
-          "price": 150.00,
+          "price": 150.0,
           "portions": "8oz portions of 4 offerings",
           "serves": "approximately 10-20 people"
         },
         {
           "size": "large",
-          "price": 280.00,
+          "price": 280.0,
           "portions": "8oz portions of 6 offerings",
           "serves": "approximately 25-40 people"
         }
@@ -179,13 +209,13 @@
       "sizes": [
         {
           "size": "small",
-          "price": 80.00,
+          "price": 80.0,
           "quantity": "25 prawns",
           "serves": "approximately 10-20 people"
         },
         {
           "size": "large",
-          "price": 150.00,
+          "price": 150.0,
           "quantity": "50 prawns",
           "serves": "approximately 25-40 people"
         }
@@ -193,7 +223,7 @@
     }
   ],
   "desserts": {
-    "priceEach": 2.50,
+    "priceEach": 2.5,
     "items": [
       {
         "name": "alfajores",

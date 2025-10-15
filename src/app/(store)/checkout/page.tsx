@@ -67,7 +67,10 @@ export default async function CheckoutPage() {
 
       <div className="container mx-auto px-4 py-6 sm:py-8">
         {!initialUserData ? (
-          <Alert variant="default" className="mb-6 bg-gradient-to-r from-destino-yellow/20 to-yellow-100/50 border-destino-yellow/40 backdrop-blur-sm shadow-sm">
+          <Alert
+            variant="default"
+            className="mb-6 bg-gradient-to-r from-destino-yellow/20 to-yellow-100/50 border-destino-yellow/40 backdrop-blur-sm shadow-sm"
+          >
             <UserIcon className="h-4 w-4 text-destino-charcoal" />
             <AlertDescription className="text-destino-charcoal">
               Have an account?{' '}
@@ -90,7 +93,10 @@ export default async function CheckoutPage() {
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert variant="default" className="mb-6 bg-gradient-to-r from-green-50 to-destino-cream/50 border-green-300/50 backdrop-blur-sm shadow-sm">
+          <Alert
+            variant="default"
+            className="mb-6 bg-gradient-to-r from-green-50 to-destino-cream/50 border-green-300/50 backdrop-blur-sm shadow-sm"
+          >
             <UserIcon className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
               Logged in as {initialUserData.email}. Your details have been pre-filled.

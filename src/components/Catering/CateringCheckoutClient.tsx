@@ -73,7 +73,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }
       }
     }
-    
+
     // Fallback to default values
     return {
       name: userData?.name || '',
@@ -100,7 +100,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
     return 'pickup';
   });
-  
+
   const [pickupDate, setPickupDate] = useState<Date>(() => {
     // Try to load pickup date from localStorage
     if (typeof window !== 'undefined') {
@@ -116,7 +116,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     }
     return addDays(new Date(), 5);
   });
-  
+
   const [pickupTime, setPickupTime] = useState<string>(() => {
     // Try to load pickup time from localStorage
     if (typeof window !== 'undefined') {
@@ -151,7 +151,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         }
       }
     }
-    
+
     // Fallback to default empty values
     return {
       street: '',
@@ -192,12 +192,33 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   // Also check that we're still on the checkout page to prevent redirects from confirmation page
   useEffect(() => {
     // Only check if we're currently on the checkout page
-    const isOnCheckoutPage = typeof window !== 'undefined' && window.location.pathname === '/catering/checkout';
-    
-    console.log('🔍 [CATERING] Empty cart check - items:', cateringItems.length, 'isSubmitting:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current, 'isRedirectingToSquare:', isRedirectingToSquareRef.current, 'isOnCheckoutPage:', isOnCheckoutPage);
-    
-    if (cateringItems.length === 0 && !isSubmitting && !isSubmittingRef.current && !isRedirectingToSquareRef.current && isOnCheckoutPage && !orderCompleted) {
-      console.log('🔄 [CATERING] Cart is empty and not submitting/redirecting, redirecting to catering page');
+    const isOnCheckoutPage =
+      typeof window !== 'undefined' && window.location.pathname === '/catering/checkout';
+
+    console.log(
+      '🔍 [CATERING] Empty cart check - items:',
+      cateringItems.length,
+      'isSubmitting:',
+      isSubmitting,
+      'isSubmittingRef:',
+      isSubmittingRef.current,
+      'isRedirectingToSquare:',
+      isRedirectingToSquareRef.current,
+      'isOnCheckoutPage:',
+      isOnCheckoutPage
+    );
+
+    if (
+      cateringItems.length === 0 &&
+      !isSubmitting &&
+      !isSubmittingRef.current &&
+      !isRedirectingToSquareRef.current &&
+      isOnCheckoutPage &&
+      !orderCompleted
+    ) {
+      console.log(
+        '🔄 [CATERING] Cart is empty and not submitting/redirecting, redirecting to catering page'
+      );
       router.push('/catering');
     }
   }, [cateringItems.length, router, isSubmitting, orderCompleted]);
@@ -214,13 +235,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   }, []);
 
   // Custom function to update delivery address and save to localStorage
-  const updateDeliveryAddress = useCallback((newAddress: typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)) => {
-    setDeliveryAddress(prevAddress => {
-      const updatedAddress = typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
-      saveDeliveryAddressToLocalStorage(updatedAddress);
-      return updatedAddress;
-    });
-  }, [saveDeliveryAddressToLocalStorage]);
+  const updateDeliveryAddress = useCallback(
+    (
+      newAddress:
+        | typeof deliveryAddress
+        | ((prev: typeof deliveryAddress) => typeof deliveryAddress)
+    ) => {
+      setDeliveryAddress(prevAddress => {
+        const updatedAddress =
+          typeof newAddress === 'function' ? newAddress(prevAddress) : newAddress;
+        saveDeliveryAddressToLocalStorage(updatedAddress);
+        return updatedAddress;
+      });
+    },
+    [saveDeliveryAddressToLocalStorage]
+  );
 
   // Auto-select CA for local delivery
   useEffect(() => {
@@ -245,8 +274,11 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
       try {
         // Calculate total amount
-        const totalAmount = cateringItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
+        const totalAmount = cateringItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+
         const validation = await validateCateringOrderWithDeliveryZone(
           `${deliveryAddress.city}, ${deliveryAddress.postalCode}`,
           totalAmount
@@ -316,14 +348,21 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   };
 
   // Function to save fulfillment info to localStorage
-  const saveFulfillmentInfoToLocalStorage = (method: FulfillmentMethod, date: Date, time: string) => {
+  const saveFulfillmentInfoToLocalStorage = (
+    method: FulfillmentMethod,
+    date: Date,
+    time: string
+  ) => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cateringFulfillmentInfo', JSON.stringify({
-          method,
-          pickupDate: date.toISOString(),
-          pickupTime: time,
-        }));
+        localStorage.setItem(
+          'cateringFulfillmentInfo',
+          JSON.stringify({
+            method,
+            pickupDate: date.toISOString(),
+            pickupTime: time,
+          })
+        );
       } catch (error) {
         console.error('Error saving fulfillment info to localStorage:', error);
       }
@@ -365,18 +404,19 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
     const deliveryFee = deliveryValidation?.deliveryFee || 0;
     const actualDeliveryFee = fulfillmentMethod === 'local_delivery' ? deliveryFee : 0;
-    
+
     // Calculate tax on subtotal + delivery fee (catering items are taxable)
     const taxableAmount = subtotal + actualDeliveryFee;
     const taxAmount = taxableAmount * TAX_RATE;
-    
+
     // Calculate convenience fee on subtotal + delivery fee + tax
     const totalBeforeServiceFee = subtotal + actualDeliveryFee + taxAmount;
-    const serviceFee = paymentMethod === PaymentMethod.CASH ? 0 : totalBeforeServiceFee * SERVICE_FEE_RATE;
-    
+    const serviceFee =
+      paymentMethod === PaymentMethod.CASH ? 0 : totalBeforeServiceFee * SERVICE_FEE_RATE;
+
     // Final total
     const total = totalBeforeServiceFee + serviceFee;
-    
+
     return {
       subtotal: Math.round(subtotal * 100) / 100,
       deliveryFee: Math.round(actualDeliveryFee * 100) / 100,
@@ -395,7 +435,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const handleCustomerInfoSubmit = (values: any) => {
     console.log('🔍 [CATERING-DEBUG] Form submitted with values:', values);
     console.log('🔍 [CATERING-DEBUG] Phone number from form:', values.phone);
-    
+
     const newCustomerInfo = {
       name: values.name,
       email: values.email,
@@ -403,7 +443,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       specialRequests: values.specialRequests || '',
       eventDate: values.eventDate,
     };
-    
+
     console.log('🔍 [CATERING-DEBUG] Setting customer info to:', newCustomerInfo);
     setCustomerInfo(newCustomerInfo);
     saveCustomerInfoToLocalStorage(newCustomerInfo);
@@ -434,24 +474,27 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       event.preventDefault();
       event.stopPropagation();
     }
-    
+
     // Prevent any submission if already in progress
     if (isSubmittingRef.current || isSubmitting) {
       console.log('⚠️ Submission already in progress, ignoring click');
       return;
     }
-    
+
     console.log('🚀 [CATERING] Starting order submission...');
     console.log('🛒 [CATERING] Cart items count before submission:', cateringItems.length);
-    console.log('🛒 [CATERING] Cart items:', cateringItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })));
+    console.log(
+      '🛒 [CATERING] Cart items:',
+      cateringItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity }))
+    );
 
     // Set ref immediately to prevent race conditions
     isSubmittingRef.current = true;
-    
+
     // Track submission attempts
     setSubmissionAttempts(prev => prev + 1);
     console.log(`📤 Catering checkout submission attempt #${submissionAttempts + 1}`);
-    
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -484,15 +527,26 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           method: paymentMethod,
         },
         items: cateringItems.map(item => {
-                  // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
-        try {
-          metadata = JSON.parse(item.variantId || '{}');
-        } catch (error) {
-          console.warn('Failed to parse item metadata in order submission:', item.variantId, error);
-          // If variantId is not JSON, treat it as a simple name
-          metadata = { name: item.variantId, type: 'item' };
-        }
+          // Safely parse metadata with error handling
+          let metadata: {
+            type?: string;
+            itemId?: string;
+            name?: string;
+            selectedProtein?: string;
+            productName?: string;
+            variationName?: string;
+          } = {};
+          try {
+            metadata = JSON.parse(item.variantId || '{}');
+          } catch (error) {
+            console.warn(
+              'Failed to parse item metadata in order submission:',
+              item.variantId,
+              error
+            );
+            // If variantId is not JSON, treat it as a simple name
+            metadata = { name: item.variantId, type: 'item' };
+          }
           const pricePerUnit = item.price;
           const totalPrice = item.price * item.quantity;
 
@@ -533,7 +587,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Create the order in the database using the server action
       const formattedItems = cateringItems.map(item => {
         // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; nameLabel?: string; notes?: string; productName?: string; variationName?: string } = {};
+        let metadata: {
+          type?: string;
+          itemId?: string;
+          name?: string;
+          selectedProtein?: string;
+          nameLabel?: string;
+          notes?: string;
+          productName?: string;
+          variationName?: string;
+        } = {};
         try {
           metadata = JSON.parse(item.variantId || '{}');
         } catch (error) {
@@ -565,7 +628,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         const customizations = {
           ...(item.customizations || {}),
           ...(metadata.nameLabel && { nameLabel: metadata.nameLabel }),
-          ...(metadata.notes && { notes: metadata.notes })
+          ...(metadata.notes && { notes: metadata.notes }),
         };
 
         // Create formatted notes that include all customizations
@@ -583,12 +646,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
         // Ensure we have a proper item name, with fallbacks for edge cases
         let itemName = item.name;
-        
+
         // If the name is just a size/variation (like "Large") and we have product name in metadata, combine them
-        if (metadata.productName && (itemName === metadata.variationName || itemName?.toLowerCase().match(/^(small|medium|large|regular)$/))) {
-          itemName = metadata.variationName ? `${metadata.productName} - ${metadata.variationName}` : metadata.productName;
+        if (
+          metadata.productName &&
+          (itemName === metadata.variationName ||
+            itemName?.toLowerCase().match(/^(small|medium|large|regular)$/))
+        ) {
+          itemName = metadata.variationName
+            ? `${metadata.productName} - ${metadata.variationName}`
+            : metadata.productName;
         }
-        
+
         // Additional fallback: if name is still just a variant name and we have more metadata
         if (!itemName || itemName.toLowerCase().match(/^(small|medium|large|regular)$/)) {
           itemName = metadata.name || metadata.productName || item.name || 'Unknown Item';
@@ -612,10 +681,13 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       // Format event date as string in full ISO format
       const formattedEventDate = customerInfo.eventDate.toISOString();
 
-      console.log('🚀 [CATERING-CHECKOUT] About to submit order with payment method:', paymentMethod);
+      console.log(
+        '🚀 [CATERING-CHECKOUT] About to submit order with payment method:',
+        paymentMethod
+      );
       console.log('🔍 [CATERING-DEBUG] Customer info before order submission:', customerInfo);
       console.log('🔍 [CATERING-DEBUG] Phone number being sent to order:', customerInfo.phone);
-      
+
       console.log('📤 [DEBUG] Calling createCateringOrderAndProcessPayment...');
       let result;
       try {
@@ -660,9 +732,9 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         checkoutUrlValue: result.checkoutUrl,
         orderId: result.orderId,
         error: result.error,
-        fullResult: result
+        fullResult: result,
       });
-      
+
       // Additional debugging for server action response
       console.log('🔍 [DEBUG] Raw server action result keys:', Object.keys(result));
       console.log('🔍 [DEBUG] result.checkoutUrl exists:', 'checkoutUrl' in result);
@@ -674,31 +746,51 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         console.log('🔍 [DEBUG] Checking redirect condition...');
         console.log('🔍 [DEBUG] result.checkoutUrl truthy:', !!result.checkoutUrl);
         console.log('🔍 [DEBUG] typeof result.checkoutUrl:', typeof result.checkoutUrl);
-        console.log('🔍 [DEBUG] result.checkoutUrl.length:', result.checkoutUrl ? result.checkoutUrl.length : 'N/A');
-        
-        if (result.checkoutUrl && typeof result.checkoutUrl === 'string' && result.checkoutUrl.length > 0) {
+        console.log(
+          '🔍 [DEBUG] result.checkoutUrl.length:',
+          result.checkoutUrl ? result.checkoutUrl.length : 'N/A'
+        );
+
+        if (
+          result.checkoutUrl &&
+          typeof result.checkoutUrl === 'string' &&
+          result.checkoutUrl.length > 0
+        ) {
           console.log('🎯 [DEBUG] Redirect condition MET - proceeding with redirect logic');
-          
+
           // Validate that it's a proper Square checkout URL
-          const isValidSquareUrl = result.checkoutUrl.includes('square.link') || result.checkoutUrl.includes('squareup.com');
+          const isValidSquareUrl =
+            result.checkoutUrl.includes('square.link') ||
+            result.checkoutUrl.includes('squareup.com');
           console.log('🔍 [DEBUG] URL validation - isValidSquareUrl:', isValidSquareUrl);
-          
+
           if (!isValidSquareUrl) {
-            console.error('⚠️ [CATERING-CHECKOUT] Invalid checkout URL format:', result.checkoutUrl);
+            console.error(
+              '⚠️ [CATERING-CHECKOUT] Invalid checkout URL format:',
+              result.checkoutUrl
+            );
             setSubmitError('Invalid checkout URL received. Please try again.');
             isSubmittingRef.current = false;
             setIsSubmitting(false);
             return;
           }
-          
-          console.log('✅ [CATERING-CHECKOUT] About to redirect to Square checkout:', result.checkoutUrl);
+
+          console.log(
+            '✅ [CATERING-CHECKOUT] About to redirect to Square checkout:',
+            result.checkoutUrl
+          );
           console.log('🛒 [CATERING-CHECKOUT] Cart items before redirect:', cateringItems.length);
-          console.log('🔧 [CATERING-CHECKOUT] isSubmitting state:', isSubmitting, 'isSubmittingRef:', isSubmittingRef.current);
-          
+          console.log(
+            '🔧 [CATERING-CHECKOUT] isSubmitting state:',
+            isSubmitting,
+            'isSubmittingRef:',
+            isSubmittingRef.current
+          );
+
           // Set flag to prevent any other navigation during redirect
           setOrderCompleted(true);
           isRedirectingToSquareRef.current = true;
-          
+
           // CRITICAL FIX: Use window.location.replace for immediate redirect
           // This prevents the "Load failed" error by avoiding intermediate navigation
           try {
@@ -706,13 +798,18 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
             window.location.replace(result.checkoutUrl);
             console.log('✅ [CATERING-CHECKOUT] Redirect initiated successfully');
           } catch (redirectError) {
-            console.error('❌ [CATERING-CHECKOUT] Redirect error, falling back to href:', redirectError);
+            console.error(
+              '❌ [CATERING-CHECKOUT] Redirect error, falling back to href:',
+              redirectError
+            );
             window.location.href = result.checkoutUrl;
           }
-          
+
           // Prevent any further code execution - this should NEVER be reached
-          console.log('🚨 [CATERING-CHECKOUT] CRITICAL: Code after redirect - this should never happen!');
-          
+          console.log(
+            '🚨 [CATERING-CHECKOUT] CRITICAL: Code after redirect - this should never happen!'
+          );
+
           // Force immediate function exit without throwing error
           isSubmittingRef.current = false;
           setIsSubmitting(false);
@@ -723,28 +820,35 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
           console.log('⚠️ [CATERING-CHECKOUT] No checkout URL received');
           console.log('⚠️ [CATERING-CHECKOUT] Payment method was:', paymentMethod);
           console.log('⚠️ [CATERING-CHECKOUT] checkoutUrl value:', result.checkoutUrl);
-          
+
           // If this was supposed to be a Square payment but no URL was received
           if (paymentMethod === PaymentMethod.SQUARE) {
             // Check if this might be a duplicate order (has orderId but no checkoutUrl)
             if (result.orderId) {
-              console.log('🔄 [CATERING-CHECKOUT] Square payment with orderId but no checkoutUrl - likely duplicate order');
-              console.log('🔄 [CATERING-CHECKOUT] Redirecting to confirmation for existing order:', result.orderId);
-              
+              console.log(
+                '🔄 [CATERING-CHECKOUT] Square payment with orderId but no checkoutUrl - likely duplicate order'
+              );
+              console.log(
+                '🔄 [CATERING-CHECKOUT] Redirecting to confirmation for existing order:',
+                result.orderId
+              );
+
               // Clear cart and redirect to confirmation for duplicate order
               setOrderCompleted(true);
               clearCart();
               clearCustomerInfoFromLocalStorage();
               clearDeliveryAddressFromLocalStorage();
               clearFulfillmentInfoFromLocalStorage();
-              
+
               isSubmittingRef.current = false;
               setIsSubmitting(false);
               isRedirectingToSquareRef.current = false;
               router.push(`/catering/confirmation?orderId=${result.orderId}`);
               return;
             } else {
-              console.error('❌ [CATERING-CHECKOUT] Square payment selected but no checkout URL received');
+              console.error(
+                '❌ [CATERING-CHECKOUT] Square payment selected but no checkout URL received'
+              );
               setSubmitError('Payment processing error. Please try again or contact support.');
               isSubmittingRef.current = false;
               setIsSubmitting(false);
@@ -752,10 +856,13 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               return;
             }
           }
-          
+
           // For other payment methods, proceed to confirmation page
           console.log('🔄 [DEBUG] Proceeding to confirmation page for non-Square payment');
-          console.log('🛒 [DEBUG] Clearing cart for non-Square payment - items before clear:', cateringItems.length);
+          console.log(
+            '🛒 [DEBUG] Clearing cart for non-Square payment - items before clear:',
+            cateringItems.length
+          );
           setOrderCompleted(true);
           clearCart();
           clearCustomerInfoFromLocalStorage();
@@ -772,12 +879,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       } else {
         console.log('❌ [DEBUG] Server action was not successful');
         console.log('❌ [DEBUG] Error:', result.error);
-        
+
         // Handle error - store the error and provide better user feedback
         const errorMessage = result.error || 'Failed to create order';
         setSubmitError(errorMessage);
         toast.error(`Error creating order: ${errorMessage}`);
-        
+
         // Reset submission state immediately for errors
         isSubmittingRef.current = false;
         setIsSubmitting(false);
@@ -789,14 +896,16 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
       const errorMessage = 'Failed to process your order. Please try again.';
       setSubmitError(errorMessage);
       toast.error(errorMessage);
-      
+
       // Reset submission state immediately for exceptions
       isSubmittingRef.current = false;
       setIsSubmitting(false);
       isRedirectingToSquareRef.current = false; // Reset redirect flag
     }
-    
-    console.log('🏁 [DEBUG] handleCompleteOrder function completed - this indicates no redirect occurred');
+
+    console.log(
+      '🏁 [DEBUG] handleCompleteOrder function completed - this indicates no redirect occurred'
+    );
   };
 
   if (cateringItems.length === 0) {
@@ -929,7 +1038,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           <Label htmlFor="state">State</Label>
                           <Select
                             value={deliveryAddress.state}
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               updateDeliveryAddress({ ...deliveryAddress, state: value })
                             }
                           >
@@ -937,7 +1046,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                               <SelectValue placeholder="Select state" />
                             </SelectTrigger>
                             <SelectContent>
-                              {CA_ONLY_STATES.map((state) => (
+                              {CA_ONLY_STATES.map(state => (
                                 <SelectItem key={state.code} value={state.code}>
                                   {state.code} - {state.name}
                                 </SelectItem>
@@ -954,7 +1063,10 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                           placeholder="94110"
                           value={deliveryAddress.postalCode}
                           onChange={e =>
-                            updateDeliveryAddress({ ...deliveryAddress, postalCode: e.target.value })
+                            updateDeliveryAddress({
+                              ...deliveryAddress,
+                              postalCode: e.target.value,
+                            })
                           }
                           required
                         />
@@ -1240,9 +1352,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
               )}
             </Button>
             {submitError && (
-              <div className="mt-2 text-sm text-red-600 text-center">
-                {submitError}
-              </div>
+              <div className="mt-2 text-sm text-red-600 text-center">{submitError}</div>
             )}
           </div>
         )}
@@ -1256,15 +1366,22 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
 
             <div className="space-y-4 mb-6">
               {cateringItems.map(item => {
-                        // Safely parse metadata with error handling
-        let metadata: { type?: string; itemId?: string; name?: string; selectedProtein?: string; productName?: string; variationName?: string } = {};
-        try {
-          metadata = JSON.parse(item.variantId || '{}');
-        } catch (error) {
-          console.warn('Failed to parse item metadata:', item.variantId, error);
-          // If variantId is not JSON, treat it as a simple name
-          metadata = { name: item.variantId, type: 'item' };
-        }
+                // Safely parse metadata with error handling
+                let metadata: {
+                  type?: string;
+                  itemId?: string;
+                  name?: string;
+                  selectedProtein?: string;
+                  productName?: string;
+                  variationName?: string;
+                } = {};
+                try {
+                  metadata = JSON.parse(item.variantId || '{}');
+                } catch (error) {
+                  console.warn('Failed to parse item metadata:', item.variantId, error);
+                  // If variantId is not JSON, treat it as a simple name
+                  metadata = { name: item.variantId, type: 'item' };
+                }
                 const isPackage = metadata.type === 'package';
 
                 // Function to get the correct image URL with better fallbacks
@@ -1405,8 +1522,12 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm mx-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d3538] mx-auto" />
-            <p className="mt-4 text-lg font-medium text-center">Processing your catering order...</p>
-            <p className="mt-2 text-sm text-gray-500 text-center">Please do not close this window</p>
+            <p className="mt-4 text-lg font-medium text-center">
+              Processing your catering order...
+            </p>
+            <p className="mt-2 text-sm text-gray-500 text-center">
+              Please do not close this window
+            </p>
             {submissionAttempts > 1 && (
               <p className="mt-2 text-xs text-orange-600 text-center">
                 Attempt #{submissionAttempts}

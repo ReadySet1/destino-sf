@@ -193,9 +193,7 @@ describe('Square Phone Number Formatting', () => {
       const result = formatPhoneForSquare('415-123-4567');
 
       expect(result).toBe('+14151234567');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('US phone formatted from')
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('US phone formatted from'));
 
       consoleSpy.mockRestore();
     });
@@ -221,7 +219,7 @@ describe('Square Phone Number Formatting', () => {
       // Test that 555 area codes are now accepted (changed behavior)
       const acceptedPhone = formatPhoneForSquarePaymentLink('555-123-4567');
       expect(acceptedPhone).toBe('+15551234567');
-      
+
       // Test that truly invalid phones are still rejected
       const invalidPhone = formatPhoneForSquarePaymentLink('911-123-4567');
       expect(invalidPhone).toBeNull();

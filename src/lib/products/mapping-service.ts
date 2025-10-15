@@ -2,35 +2,35 @@
 import { prisma } from '@/lib/db';
 import { getCatalogClient } from '@/lib/square/client';
 import { logger } from '@/utils/logger';
-import type { 
-  ProductWithDescriptor, 
-  MappingIssue, 
+import type {
+  ProductWithDescriptor,
+  MappingIssue,
   AuditResult,
-  SquareCatalogMapping 
+  SquareCatalogMapping,
 } from '@/types/product-mapping';
 
 export class ProductMappingService {
   private catalogClient = getCatalogClient();
-  
+
   /**
    * Audit all product mappings and identify issues
    */
   async auditAllMappings(): Promise<AuditResult> {
     const startTime = Date.now();
     const issues: MappingIssue[] = [];
-    
+
     try {
       // Fetch all products with categories
       const products = await prisma.product.findMany({
         include: {
           category: true,
-          variants: true
-        }
+          variants: true,
+        },
       });
 
       // Fetch Square catalog for comparison
       const squareCatalog = await this.fetchSquareCatalog();
-      
+
       // Map Square items by ID for quick lookup
       const squareItemsMap = new Map<string, SquareCatalogMapping>();
       squareCatalog.forEach(item => {
@@ -42,7 +42,7 @@ export class ProductMappingService {
 
       for (const product of products) {
         const squareItem = squareItemsMap.get(product.squareId);
-        
+
         if (!squareItem) {
           issues.push({
             type: 'MISSING_DESCRIPTION',
@@ -52,7 +52,7 @@ export class ProductMappingService {
             actual: null,
             productId: product.id,
             squareId: product.squareId,
-            message: `Product not found in Square catalog`
+            message: `Product not found in Square catalog`,
           });
           invalidCount++;
           continue;
@@ -73,7 +73,7 @@ export class ProductMappingService {
             actual: product.description,
             productId: product.id,
             squareId: product.squareId,
-            message: `Description mismatch: Local differs from Square`
+            message: `Description mismatch: Local differs from Square`,
           });
         }
 
@@ -91,8 +91,10 @@ export class ProductMappingService {
         }
 
         // Special validation for combo products
-        if (product.name.toLowerCase().includes('combo') || 
-            product.name.toLowerCase().includes('pack')) {
+        if (
+          product.name.toLowerCase().includes('combo') ||
+          product.name.toLowerCase().includes('pack')
+        ) {
           const comboValidation = this.validateComboProduct(product, squareItem);
           if (!comboValidation.valid) {
             issues.push(...comboValidation.issues);
@@ -124,16 +126,15 @@ export class ProductMappingService {
         invalidProducts: invalidCount,
         issues,
         recommendations: this.generateRecommendations(issues),
-        fixApplied: false
+        fixApplied: false,
       };
 
       logger.info('Product mapping audit completed', {
         duration: Date.now() - startTime,
-        ...auditResult
+        ...auditResult,
       });
 
       return auditResult;
-
     } catch (error) {
       logger.error('Error during product mapping audit:', error);
       throw error;
@@ -162,12 +163,12 @@ export class ProductMappingService {
     await prisma.productMappingAudit.updateMany({
       where: {
         productId: { in: fixableIssues.map(i => i.productId) },
-        resolved: false
+        resolved: false,
       },
       data: {
         resolved: true,
-        resolvedAt: new Date()
-      }
+        resolvedAt: new Date(),
+      },
     });
   }
 
@@ -179,8 +180,8 @@ export class ProductMappingService {
       where: { id: productId },
       include: {
         category: true,
-        variants: true
-      }
+        variants: true,
+      },
     });
 
     if (!product) {
@@ -199,7 +200,7 @@ export class ProductMappingService {
         actual: null,
         productId: product.id,
         squareId: product.squareId,
-        message: `Product not found in Square catalog`
+        message: `Product not found in Square catalog`,
       });
       return issues;
     }
@@ -219,7 +220,7 @@ export class ProductMappingService {
         actual: product.description,
         productId: product.id,
         squareId: product.squareId,
-        message: `Description mismatch: Local differs from Square`
+        message: `Description mismatch: Local differs from Square`,
       });
     }
 
@@ -237,8 +238,10 @@ export class ProductMappingService {
     }
 
     // Special validation for combo products
-    if (product.name.toLowerCase().includes('combo') || 
-        product.name.toLowerCase().includes('pack')) {
+    if (
+      product.name.toLowerCase().includes('combo') ||
+      product.name.toLowerCase().includes('pack')
+    ) {
       const comboValidation = this.validateComboProduct(product, squareItem);
       if (!comboValidation.valid) {
         issues.push(...comboValidation.issues);
@@ -258,8 +261,8 @@ export class ProductMappingService {
             description: issue.expected,
             correctDescription: issue.expected,
             descriptionValidatedAt: new Date(),
-            mappingStatus: 'VALID'
-          }
+            mappingStatus: 'VALID',
+          },
         });
         break;
 
@@ -269,8 +272,8 @@ export class ProductMappingService {
         await prisma.product.update({
           where: { id: issue.productId },
           data: {
-            mappingStatus: 'NEEDS_REVIEW'
-          }
+            mappingStatus: 'NEEDS_REVIEW',
+          },
         });
         break;
 
@@ -284,8 +287,8 @@ export class ProductMappingService {
               calories: squareItem.nutritionData.calorieCount,
               dietaryPreferences: squareItem.nutritionData.dietaryPreferences || [],
               ingredients: squareItem.nutritionData.ingredients,
-              nutritionFacts: squareItem.nutritionData as any
-            }
+              nutritionFacts: squareItem.nutritionData as any,
+            },
           });
         }
         break;
@@ -295,11 +298,10 @@ export class ProductMappingService {
   private compareDescriptions(local: string | null, square: string | null): boolean {
     if (!local && !square) return true;
     if (!local || !square) return false;
-    
+
     // Normalize for comparison
-    const normalizeText = (text: string) => 
-      text.toLowerCase().trim().replace(/\s+/g, ' ');
-    
+    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/\s+/g, ' ');
+
     return normalizeText(local) === normalizeText(square);
   }
 
@@ -309,7 +311,7 @@ export class ProductMappingService {
     localCategoryName: string
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
+
     // Special handling for different product types
     const productName = product.name.toLowerCase();
     const categoryName = localCategoryName.toLowerCase();
@@ -325,7 +327,7 @@ export class ProductMappingService {
           actual: 'empanada',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Alfajor product has empanada description'
+          message: 'Alfajor product has empanada description',
         });
       }
     }
@@ -333,8 +335,10 @@ export class ProductMappingService {
     // Empanada validation
     if (categoryName.includes('empanada')) {
       // Check for ingredient mismatches (e.g., pork with black beans)
-      if (productName.includes('pork') && 
-          product.description?.toLowerCase().includes('black beans')) {
+      if (
+        productName.includes('pork') &&
+        product.description?.toLowerCase().includes('black beans')
+      ) {
         issues.push({
           type: 'INCORRECT_INGREDIENTS',
           severity: 'ERROR',
@@ -343,14 +347,14 @@ export class ProductMappingService {
           actual: 'black beans',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Pork empanada incorrectly lists black beans'
+          message: 'Pork empanada incorrectly lists black beans',
         });
       }
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -359,10 +363,12 @@ export class ProductMappingService {
     squareItem: SquareCatalogMapping
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
+
     // Check if combo description matches combo contents
-    if (product.name.toLowerCase().includes('alfa') && 
-        product.name.toLowerCase().includes('pack')) {
+    if (
+      product.name.toLowerCase().includes('alfa') &&
+      product.name.toLowerCase().includes('pack')
+    ) {
       if (product.description?.toLowerCase().includes('empanada')) {
         issues.push({
           type: 'COMBO_MISMATCH',
@@ -372,14 +378,14 @@ export class ProductMappingService {
           actual: 'empanada description',
           productId: product.id,
           squareId: product.squareId,
-          message: 'Alfajor combo showing empanada description'
+          message: 'Alfajor combo showing empanada description',
         });
       }
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -388,9 +394,11 @@ export class ProductMappingService {
     squareItem: SquareCatalogMapping
   ): { valid: boolean; issues: MappingIssue[] } {
     const issues: MappingIssue[] = [];
-    
-    if (squareItem.nutritionData?.calorieCount && 
-        product.calories !== squareItem.nutritionData.calorieCount) {
+
+    if (
+      squareItem.nutritionData?.calorieCount &&
+      product.calories !== squareItem.nutritionData.calorieCount
+    ) {
       issues.push({
         type: 'NUTRITION_MISSING',
         severity: 'WARNING',
@@ -399,13 +407,13 @@ export class ProductMappingService {
         actual: String(product.calories),
         productId: product.id,
         squareId: product.squareId,
-        message: 'Calorie count mismatch'
+        message: 'Calorie count mismatch',
       });
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -417,9 +425,9 @@ export class ProductMappingService {
     }
 
     const response = await catalogApi.listCatalog(undefined, 'ITEM');
-    
+
     const mappings: SquareCatalogMapping[] = [];
-    
+
     if (response.result.objects) {
       for (const object of response.result.objects) {
         if (object.type === 'ITEM' && object.itemData) {
@@ -433,12 +441,12 @@ export class ProductMappingService {
             localCategoryId: '',
             syncStatus: 'SYNCED',
             lastSyncAt: new Date(),
-            nutritionData: object.itemData.foodAndBeverageDetails
+            nutritionData: object.itemData.foodAndBeverageDetails,
           });
         }
       }
     }
-    
+
     return mappings;
   }
 
@@ -450,7 +458,7 @@ export class ProductMappingService {
       }
 
       const response = await catalogApi.retrieveCatalogObject(squareId);
-      
+
       if (response.result.object && response.result.object.itemData) {
         const object = response.result.object;
         return {
@@ -463,13 +471,13 @@ export class ProductMappingService {
           localCategoryId: '',
           syncStatus: 'SYNCED',
           lastSyncAt: new Date(),
-          nutritionData: object.itemData.foodAndBeverageDetails
+          nutritionData: object.itemData.foodAndBeverageDetails,
         };
       }
     } catch (error) {
       logger.error(`Failed to fetch Square item ${squareId}:`, error);
     }
-    
+
     return null;
   }
 
@@ -484,7 +492,7 @@ export class ProductMappingService {
       expectedValue: issue.expected,
       actualValue: issue.actual,
       message: issue.message,
-      resolved: false
+      resolved: false,
     }));
 
     if (auditRecords.length > 0) {
@@ -492,42 +500,42 @@ export class ProductMappingService {
       await prisma.productMappingAudit.deleteMany({
         where: {
           productId: { in: auditRecords.map(r => r.productId) },
-          resolved: false
-        }
+          resolved: false,
+        },
       });
 
       // Insert new audit records
       await prisma.productMappingAudit.createMany({
-        data: auditRecords
+        data: auditRecords,
       });
     }
   }
 
   private generateRecommendations(issues: MappingIssue[]): string[] {
     const recommendations: string[] = [];
-    
+
     const issueTypes = new Set(issues.map(i => i.type));
-    
+
     if (issueTypes.has('DUPLICATE_DESCRIPTION')) {
       recommendations.push('Run Square sync to update product descriptions');
     }
-    
+
     if (issueTypes.has('CATEGORY_MISMATCH')) {
       recommendations.push('Review category assignments for affected products');
     }
-    
+
     if (issueTypes.has('COMBO_MISMATCH')) {
       recommendations.push('Manually review all combo product descriptions');
     }
-    
+
     if (issueTypes.has('INCORRECT_INGREDIENTS')) {
       recommendations.push('Update ingredient lists from Square catalog');
     }
-    
+
     if (issueTypes.has('NUTRITION_MISSING')) {
       recommendations.push('Sync nutrition data from Square food & beverage details');
     }
-    
+
     return recommendations;
   }
 }

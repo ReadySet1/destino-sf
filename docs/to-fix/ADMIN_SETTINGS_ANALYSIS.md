@@ -3,9 +3,11 @@
 ## 🚨 CRITICAL ISSUES FOUND
 
 ### 1. Missing Database Model
+
 **Issue**: The `StoreSettings` model is completely missing from the Prisma schema (`prisma/schema.prisma`).
 
 **Evidence**:
+
 - Admin UI code references `prisma.storeSettings` in multiple places:
   - `/src/app/(dashboard)/admin/settings/page.tsx`
   - `/src/app/api/admin/settings/route.ts`
@@ -13,15 +15,18 @@
 - No `model StoreSettings` found in the Prisma schema
 - SQL scripts reference `store_settings` table (e.g., `scripts/add-delivery-zones-improvements.sql`)
 
-**Impact**: 
+**Impact**:
+
 - ❌ Admin settings cannot be saved to the database
 - ❌ Settings changes have no effect on the application
 - ❌ Database queries for `prisma.storeSettings` will fail
 
 ### 2. Hardcoded Values Throughout Application
+
 **Issue**: Critical business values are hardcoded instead of using stored settings.
 
 **Evidence**:
+
 - Tax rate is hardcoded in `/src/app/actions/orders.ts`:
   ```typescript
   const TAX_RATE = new Decimal(0.0825); // 8.25% hardcoded
@@ -32,15 +37,18 @@
   ```
 
 **Impact**:
+
 - ❌ Changing tax rate in admin has no effect on orders
 - ❌ Order minimums are not enforced from settings
 - ❌ Store open/closed status is not checked from settings
 - ❌ Catering minimums are not validated from settings
 
 ### 3. Disconnected Admin Features
+
 **Issue**: Admin UI exists but is not connected to the rest of the application.
 
 **Evidence**:
+
 - Settings form saves to `/api/admin/settings` endpoint
 - Checkout flow doesn't fetch or use store settings
 - Order validation doesn't check minimum amounts from settings
@@ -49,7 +57,9 @@
 ## 📋 REQUIRED FIXES
 
 ### Phase 1: Database Schema (URGENT)
+
 1. **Add StoreSettings model to Prisma schema**:
+
    ```prisma
    model StoreSettings {
      id                     String    @id @default(uuid()) @db.Uuid
@@ -69,7 +79,7 @@
      temporaryClosureMsg    String?   @map("temporary_closure_msg")
      createdAt              DateTime  @default(now()) @map("created_at")
      updatedAt              DateTime  @updatedAt @map("updated_at")
-     
+
      @@map("store_settings")
    }
    ```
@@ -80,6 +90,7 @@
    ```
 
 ### Phase 2: Connect Settings to Application
+
 1. **Create settings service/utility** (`/src/lib/store-settings.ts`):
    - Fetch settings with caching
    - Provide fallback defaults
@@ -103,12 +114,15 @@
    - Apply proper minimum based on order type
 
 ### Phase 3: Delivery Zones Integration
+
 **Good News**: Delivery zones ARE properly defined in the schema:
+
 - `CateringDeliveryZone` model exists
 - `RegularDeliveryZone` model exists
 - These are being saved and retrieved correctly
 
 **Required Integration**:
+
 1. Connect delivery zone minimums to checkout validation
 2. Apply zone-specific delivery fees
 3. Validate addresses against zone boundaries
@@ -116,11 +130,13 @@
 ## 📊 IMPACT ASSESSMENT
 
 ### Currently Working ✅
+
 - Admin UI displays and allows editing
 - Delivery zones can be created/edited
 - Form validation works client-side
 
 ### Currently Broken ❌
+
 - Settings don't persist to database
 - Tax calculations ignore admin settings
 - Order minimums are not enforced from settings
@@ -141,6 +157,7 @@
 ## 📝 TESTING CHECKLIST
 
 After implementing fixes, verify:
+
 - [ ] Settings save to database successfully
 - [ ] Tax rate changes affect order calculations
 - [ ] Order minimums are enforced at checkout
@@ -152,7 +169,7 @@ After implementing fixes, verify:
 
 ## 🔧 RECOMMENDED IMPLEMENTATION ORDER
 
-1. **Day 1**: 
+1. **Day 1**:
    - Add Prisma model
    - Run migration
    - Test settings CRUD operations
@@ -185,6 +202,7 @@ After implementing fixes, verify:
 The admin settings interface is well-built but completely disconnected from the application logic. The main issue is the missing database model and the lack of integration points throughout the codebase. Once the `StoreSettings` model is added to Prisma and properly integrated, all the admin functions should work as expected.
 
 **Key files to modify**:
+
 1. `/prisma/schema.prisma` - Add model
 2. `/src/lib/store-settings.ts` - Create new file
 3. `/src/app/actions/orders.ts` - Use settings

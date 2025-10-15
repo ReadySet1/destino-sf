@@ -213,9 +213,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           <Column style={{ width: '60%' }}>
             <Text style={itemName}>
               {item.quantity}x {item.product.name}
-              {item.product.isPreorder && (
-                <span style={preorderBadge}>Pre-order</span>
-              )}
+              {item.product.isPreorder && <span style={preorderBadge}>Pre-order</span>}
             </Text>
             {item.variant && <Text style={itemDetails}>{item.variant.name}</Text>}
             {item.product.isPreorder && item.product.preorderEndDate && (

@@ -72,14 +72,18 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   try {
     // Fetch the category from the database with build-time detection
     let category = null;
-    
+
     if (!isBuildTime()) {
       try {
-        category = await withRetry(async () => {
-          return await prisma.category.findUnique({
-            where: { slug: slug },
-          });
-        }, 3, 'generateMetadata-category-fetch');
+        category = await withRetry(
+          async () => {
+            return await prisma.category.findUnique({
+              where: { slug: slug },
+            });
+          },
+          3,
+          'generateMetadata-category-fetch'
+        );
       } catch (error) {
         console.error('Error fetching category for metadata:', error);
         // Continue with null category to use fallback logic
@@ -94,7 +98,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
           description: CATEGORY_DESCRIPTIONS.alfajores,
         },
         empanadas: {
-          name: 'Empanadas', 
+          name: 'Empanadas',
           description: CATEGORY_DESCRIPTIONS.empanadas,
         },
         catering: {
@@ -104,7 +108,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       };
 
       const fallbackCategory = knownCategories[slug as keyof typeof knownCategories];
-      
+
       if (!fallbackCategory) {
         return generateSEO({
           title: 'Category Not Found | Destino SF',
@@ -195,7 +199,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       includeAvailabilityEvaluation: true, // Include availability evaluation
       includeVariants: true, // Include variants for product display
       orderBy: 'ordinal', // Order by admin-controlled ordinal
-      orderDirection: 'asc'
+      orderDirection: 'asc',
     });
 
     // Map ProductVisibilityService results to GridProduct interface
@@ -218,16 +222,17 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           active: p.active,
           createdAt: new Date(), // Will be set by the service
           updatedAt: new Date(), // Will be set by the service
-          variants: p.variants?.map(v => ({
-            id: v.id,
-            name: v.name,
-            price: v.price || null,
-            squareVariantId: v.squareVariantId,
-            productId: p.id,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })) || [],
-          
+          variants:
+            p.variants?.map(v => ({
+              id: v.id,
+              name: v.name,
+              price: v.price || null,
+              squareVariantId: v.squareVariantId,
+              productId: p.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })) || [],
+
           // Add availability fields from the service
           isAvailable: p.isAvailable,
           isPreorder: p.isPreorder,
@@ -235,8 +240,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           itemState: p.itemState,
           // Add evaluated availability if present
           ...(p.evaluatedAvailability && {
-            evaluatedAvailability: p.evaluatedAvailability
-          })
+            evaluatedAvailability: p.evaluatedAvailability,
+          }),
         };
       })
     );

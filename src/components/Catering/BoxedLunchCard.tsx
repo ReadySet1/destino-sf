@@ -25,18 +25,15 @@ interface BoxedLunchCardProps {
   className?: string;
 }
 
-export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
-  item,
-  className = '',
-}) => {
+export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({ item, className = '' }) => {
   const [selectedModifierId, setSelectedModifierId] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCateringCartStore();
 
-  const selectedModifier = selectedModifierId 
-    ? getModifierById(item, selectedModifierId) 
+  const selectedModifier = selectedModifierId
+    ? getModifierById(item, selectedModifierId)
     : undefined;
-  
+
   const totalPrice = calculateTotalPrice(item, selectedModifier);
   const dietaryBadges = getDietaryBadges(item);
   const isTropicalSalad = isTropicalSaladItem(item);
@@ -47,43 +44,37 @@ export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
 
   const handleAddToCart = () => {
     const cartItem = createCartItemFromBoxedLunch(item, quantity, selectedModifier);
-    
+
     addItem(cartItem);
-    
-    const successMessage = selectedModifier 
+
+    const successMessage = selectedModifier
       ? `Added ${quantity}x ${item.name} with ${selectedModifier.name} to catering cart!`
       : `Added ${quantity}x ${item.name} to catering cart!`;
-    
+
     toast.success(successMessage);
   };
 
   return (
-    <Card className={`hover:shadow-lg transition-shadow duration-300 h-full flex flex-col ${className}`}>
+    <Card
+      className={`hover:shadow-lg transition-shadow duration-300 h-full flex flex-col ${className}`}
+    >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-lg font-bold text-gray-800 line-clamp-2 flex-1 mr-2">
             {item.name}
           </CardTitle>
           <div className="text-right flex-shrink-0">
-            <div className="text-xl font-bold text-primary">
-              {formatPrice(totalPrice)}
-            </div>
+            <div className="text-xl font-bold text-primary">{formatPrice(totalPrice)}</div>
             {selectedModifier && (
-              <div className="text-xs text-gray-500">
-                Base: {formatPrice(item.price)}
-              </div>
+              <div className="text-xs text-gray-500">Base: {formatPrice(item.price)}</div>
             )}
           </div>
         </div>
-        
+
         {/* Dietary Badges */}
         <div className="flex flex-wrap gap-1">
           {dietaryBadges.map((badge, index) => (
-            <Badge 
-              key={index} 
-              variant={badge.variant}
-              className={badge.className}
-            >
+            <Badge key={index} variant={badge.variant} className={badge.className}>
               {badge.label}
             </Badge>
           ))}
@@ -115,7 +106,7 @@ export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
         <div
           className="text-gray-600 text-sm flex-1"
           dangerouslySetInnerHTML={{
-            __html: sanitizeProductDescription(item.description)
+            __html: sanitizeProductDescription(item.description),
           }}
         />
 
@@ -141,12 +132,10 @@ export const BoxedLunchCard: React.FC<BoxedLunchCardProps> = ({
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="font-medium px-3 min-w-[2rem] text-center">
-              {quantity}
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <span className="font-medium px-3 min-w-[2rem] text-center">{quantity}</span>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handleQuantityChange(quantity + 1)}
               className="h-8 w-8 p-0"
             >

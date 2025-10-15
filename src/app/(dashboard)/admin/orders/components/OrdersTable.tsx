@@ -61,7 +61,10 @@ function getStatusColor(status: OrderStatus | CateringStatus) {
 }
 
 // Helper function to get the display text for payment status
-function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: string | null): string {
+function getPaymentStatusDisplay(
+  paymentStatus: PaymentStatus,
+  paymentMethod: string | null
+): string {
   // If payment method is CASH and status is PENDING, show CASH
   if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus === 'PENDING') {
     return 'CASH';
@@ -72,7 +75,7 @@ function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: st
 function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: string | null) {
   // Get the display status first
   const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
-  
+
   switch (displayStatus) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
@@ -92,7 +95,6 @@ function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: stri
 }
 
 export default function OrdersTable({ orders }: OrdersTableProps) {
-
   const [archivingOrderId, setArchivingOrderId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState('');
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);

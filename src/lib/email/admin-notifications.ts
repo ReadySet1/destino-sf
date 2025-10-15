@@ -14,7 +14,9 @@ export interface EmailResult {
   error?: string;
 }
 
-export async function sendAdminNotificationEmail(notificationData: AdminNotificationData): Promise<EmailResult> {
+export async function sendAdminNotificationEmail(
+  notificationData: AdminNotificationData
+): Promise<EmailResult> {
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -31,23 +33,26 @@ export async function sendAdminNotificationEmail(notificationData: AdminNotifica
     if (result.error) {
       return {
         success: false,
-        error: result.error.message
+        error: result.error.message,
       };
     }
 
     return {
       success: true,
-      emailId: result.data?.id
+      emailId: result.data?.id,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to send admin notification'
+      error: error instanceof Error ? error.message : 'Failed to send admin notification',
     };
   }
 }
 
-function generateNotificationContent(data: AdminNotificationData): { subject: string; html: string } {
+function generateNotificationContent(data: AdminNotificationData): {
+  subject: string;
+  html: string;
+} {
   switch (data.type) {
     case 'new_order':
       return {
@@ -57,12 +62,12 @@ function generateNotificationContent(data: AdminNotificationData): { subject: st
           <p>Order ID: <strong>${data.data.orderId}</strong></p>
           <p>Customer: ${data.data.customerEmail}</p>
           <p>Total: $${data.data.total?.toFixed(2)}</p>
-        `
+        `,
       };
     default:
       return {
         subject: 'System Notification',
-        html: '<p>System notification received</p>'
+        html: '<p>System notification received</p>',
       };
   }
 }

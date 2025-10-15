@@ -29,10 +29,12 @@ export default async function CategoriesPage() {
       >
         <div className="text-sm text-blue-700">
           <p className="mb-2">
-            <strong>Local Management:</strong> Categories are created and managed within this system.
+            <strong>Local Management:</strong> Categories are created and managed within this
+            system.
           </p>
           <p>
-            <strong>Product Organization:</strong> Use categories to structure your online catalog for better customer navigation.
+            <strong>Product Organization:</strong> Use categories to structure your online catalog
+            for better customer navigation.
           </p>
         </div>
       </FormSection>
@@ -49,7 +51,9 @@ export default async function CategoriesPage() {
               {FormIcons.grid}
             </div>
             <p className="text-gray-500 text-lg mb-2">No categories created yet</p>
-            <p className="text-gray-400 text-sm">Create your first category to organize your products</p>
+            <p className="text-gray-400 text-sm">
+              Create your first category to organize your products
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">

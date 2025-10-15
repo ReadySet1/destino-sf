@@ -97,16 +97,12 @@ export function AvailabilityOverview() {
       const rulesArray = rulesData.success ? rulesData.data : [];
 
       // Load products info
-      const productsResponse = await fetch(
-        '/api/products?onlyActive=false&excludeCatering=true'
-      );
+      const productsResponse = await fetch('/api/products?onlyActive=false&excludeCatering=true');
       if (!productsResponse.ok) {
         throw new Error('Failed to load products');
       }
       const productsData = await productsResponse.json();
-      const productsArray = Array.isArray(productsData)
-        ? productsData
-        : productsData.data || [];
+      const productsArray = Array.isArray(productsData) ? productsData : productsData.data || [];
 
       // Create products map for quick lookup
       const productsMap = new Map<string, ProductInfo>();
@@ -273,9 +269,7 @@ export function AvailabilityOverview() {
             <h2 className="text-2xl font-bold text-gray-900">
               {editingRule ? 'Edit Availability Rule' : 'Create Availability Rule'}
             </h2>
-            <p className="text-gray-600 mt-1">
-              Configure rule settings and schedule
-            </p>
+            <p className="text-gray-600 mt-1">Configure rule settings and schedule</p>
           </div>
           <Button variant="outline" onClick={handleFormCancel}>
             Back to Overview
@@ -406,8 +400,11 @@ export function AvailabilityOverview() {
           variant="amber"
         >
           <div className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between text-sm border-b border-gray-100 pb-3 last:border-0">
+            {recentActivity.map(activity => (
+              <div
+                key={activity.id}
+                className="flex items-center justify-between text-sm border-b border-gray-100 pb-3 last:border-0"
+              >
                 <div>
                   <p className="text-gray-900">{activity.description}</p>
                   {activity.userName && (
@@ -457,9 +454,7 @@ export function AvailabilityOverview() {
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {rules.length === 0
-                  ? 'No availability rules found'
-                  : 'No rules match your filters'}
+                {rules.length === 0 ? 'No availability rules found' : 'No rules match your filters'}
               </h3>
               <p className="text-sm text-gray-500 mb-6">
                 {rules.length === 0
@@ -467,11 +462,13 @@ export function AvailabilityOverview() {
                   : 'Try adjusting your search or filter criteria'}
               </p>
               {rules.length === 0 && (
-                <Button onClick={() => {
-                  setSelectedProductId('');
-                  setEditingRule(null);
-                  setShowRuleForm(true);
-                }}>
+                <Button
+                  onClick={() => {
+                    setSelectedProductId('');
+                    setEditingRule(null);
+                    setShowRuleForm(true);
+                  }}
+                >
                   Create Your First Rule
                 </Button>
               )}

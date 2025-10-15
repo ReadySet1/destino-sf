@@ -24,7 +24,7 @@ interface WebhookDebugInfo {
 function debugSquareWebhookConfiguration(): WebhookDebugInfo {
   const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET;
   const webhookSecretSandbox = process.env.SQUARE_WEBHOOK_SECRET_SANDBOX;
-  
+
   const debugInfo: WebhookDebugInfo = {
     environment: {
       NODE_ENV: process.env.NODE_ENV,
@@ -35,20 +35,26 @@ function debugSquareWebhookConfiguration(): WebhookDebugInfo {
       secretSandboxLength: webhookSecretSandbox?.length || 0,
     },
     recommendations: [],
-    nextSteps: []
+    nextSteps: [],
   };
 
   // Analyze the configuration
   if (!webhookSecret) {
-    debugInfo.recommendations.push('❌ SQUARE_WEBHOOK_SECRET is missing from environment variables');
+    debugInfo.recommendations.push(
+      '❌ SQUARE_WEBHOOK_SECRET is missing from environment variables'
+    );
     debugInfo.nextSteps.push('Add SQUARE_WEBHOOK_SECRET to your production environment');
   } else {
     debugInfo.recommendations.push('✅ SQUARE_WEBHOOK_SECRET is properly configured');
   }
 
   if (!webhookSecretSandbox) {
-    debugInfo.recommendations.push('⚠️ SQUARE_WEBHOOK_SECRET_SANDBOX is missing from environment variables');
-    debugInfo.nextSteps.push('Add SQUARE_WEBHOOK_SECRET_SANDBOX to your sandbox environment for testing');
+    debugInfo.recommendations.push(
+      '⚠️ SQUARE_WEBHOOK_SECRET_SANDBOX is missing from environment variables'
+    );
+    debugInfo.nextSteps.push(
+      'Add SQUARE_WEBHOOK_SECRET_SANDBOX to your sandbox environment for testing'
+    );
   } else {
     debugInfo.recommendations.push('✅ SQUARE_WEBHOOK_SECRET_SANDBOX is properly configured');
   }
@@ -78,7 +84,7 @@ async function testWebhookEndpoint(): Promise<void> {
   const webhookUrl = `${baseUrl}/api/webhooks/square/debug`;
 
   console.log('🧪 Testing webhook debug endpoint...');
-  
+
   try {
     const response = await fetch(webhookUrl, {
       method: 'GET',
@@ -102,25 +108,25 @@ async function testWebhookEndpoint(): Promise<void> {
 function generateSquareWebhookTestCurl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.vercel.app';
   const webhookUrl = `${baseUrl}/api/webhooks/square`;
-  
+
   const testPayload = {
-    merchant_id: "test_merchant",
-    type: "order.created",
-    event_id: "test_event_" + Date.now(),
+    merchant_id: 'test_merchant',
+    type: 'order.created',
+    event_id: 'test_event_' + Date.now(),
     created_at: new Date().toISOString(),
     data: {
-      type: "order",
-      id: "test_order_123",
+      type: 'order',
+      id: 'test_order_123',
       object: {
         order: {
-          id: "test_order_123",
-          state: "OPEN",
+          id: 'test_order_123',
+          state: 'OPEN',
           version: 1,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      }
-    }
+          updated_at: new Date().toISOString(),
+        },
+      },
+    },
   };
 
   return `# Test Square webhook endpoint (without signature)
@@ -139,28 +145,28 @@ curl -X POST "${webhookUrl}" \\
 
 async function main() {
   console.log('🔍 Square Webhook Production Debug Tool\n');
-  
+
   console.log('1. Environment Configuration Analysis:');
   console.log('=====================================');
   const debugInfo = debugSquareWebhookConfiguration();
-  
+
   console.log('Environment Details:');
   console.log(JSON.stringify(debugInfo.environment, null, 2));
-  
+
   console.log('\nRecommendations:');
   debugInfo.recommendations.forEach(rec => console.log(`  ${rec}`));
-  
+
   console.log('\nNext Steps:');
   debugInfo.nextSteps.forEach(step => console.log(`  ${step}`));
-  
+
   console.log('\n2. Webhook Endpoint Test:');
   console.log('=========================');
   await testWebhookEndpoint();
-  
+
   console.log('\n3. Manual Test Commands:');
   console.log('========================');
   console.log(generateSquareWebhookTestCurl());
-  
+
   console.log('\n4. Production Monitoring:');
   console.log('=========================');
   console.log('After deploying the fix, monitor these:');
@@ -168,14 +174,16 @@ async function main() {
   console.log('  • Error monitoring alerts for "signature_missing_non_blocking" events');
   console.log('  • Square Developer Dashboard webhook delivery status');
   console.log('  • Webhook processing success/failure rates');
-  
+
   console.log('\n5. If Square is not sending signatures:');
   console.log('======================================');
   console.log('  • Check Square Developer Dashboard webhook configuration');
   console.log('  • Ensure "Enable Signature" checkbox is checked');
   console.log('  • Verify webhook endpoint URL matches your production URL');
   console.log('  • Contact Square support if signature headers are still missing');
-  console.log('  • The updated code now allows processing without signatures in production (with logging)');
+  console.log(
+    '  • The updated code now allows processing without signatures in production (with logging)'
+  );
 }
 
 // Run the debug script

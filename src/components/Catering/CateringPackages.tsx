@@ -66,7 +66,6 @@ export const CateringPackages: React.FC<CateringPackagesProps> = ({ packages }) 
 
   return (
     <div className="w-full">
-
       <div className="text-center mb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

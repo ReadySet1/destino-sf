@@ -14,7 +14,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, RotateCcw, Package, Calendar, CreditCard, User, FileText } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Eye,
+  RotateCcw,
+  Package,
+  Calendar,
+  CreditCard,
+  User,
+  FileText,
+} from 'lucide-react';
 
 // Define our unified archived order type
 interface ArchivedOrder {
@@ -84,7 +93,6 @@ function getPaymentStatusColor(status: PaymentStatus) {
 }
 
 export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps) {
-
   const [unarchivingOrderId, setUnarchivingOrderId] = useState<string | null>(null);
 
   const handleUnarchiveOrder = async (orderId: string, orderType: 'regular' | 'catering') => {
@@ -130,7 +138,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
             View Details
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => handleUnarchiveOrder(order.id, order.type)}
           disabled={unarchivingOrderId === order.id}
           className="text-green-600"
@@ -146,7 +154,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'id',
       'Order ID',
-      (order) => (
+      order => (
         <Link
           href={`/admin/${order.type === 'catering' ? 'catering' : 'orders'}/${order.id}`}
           className="text-indigo-600 hover:text-indigo-900 hover:underline font-mono text-sm"
@@ -164,7 +172,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'type',
       'Type',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-1">
           <Package className="h-4 w-4 text-gray-400" />
           <span
@@ -184,11 +192,9 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'customerName',
       'Customer',
-      (order) => (
+      order => (
         <div>
-          <div className="font-medium">
-            {order.customerName || order.name || 'Anonymous'}
-          </div>
+          <div className="font-medium">{order.customerName || order.name || 'Anonymous'}</div>
           <div className="text-xs text-gray-400">{order.email}</div>
         </div>
       ),
@@ -202,8 +208,10 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'status',
       'Status',
-      (order) => (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+      order => (
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}
+        >
           {order.status}
         </span>
       ),
@@ -217,10 +225,12 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'paymentStatus',
       'Payment',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-1">
           <CreditCard className="h-4 w-4 text-gray-400" />
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}
+          >
             {order.paymentStatus}
           </span>
         </div>
@@ -235,11 +245,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'total',
       'Total',
-      (order) => (
-        <span className="font-medium">
-          {formatCurrency(order.total)}
-        </span>
-      ),
+      order => <span className="font-medium">{formatCurrency(order.total)}</span>,
       {
         sortable: false,
         mobileVisible: true,
@@ -250,7 +256,7 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'archivedAt',
       'Archived',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-1">
           <Calendar className="h-4 w-4 text-gray-400" />
           <div>
@@ -278,10 +284,13 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
     createTableColumn(
       'archiveReason',
       'Reason',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-1">
           <FileText className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-600 max-w-32 truncate" title={order.archiveReason || ''}>
+          <span
+            className="text-sm text-gray-600 max-w-32 truncate"
+            title={order.archiveReason || ''}
+          >
             {order.archiveReason || '-'}
           </span>
         </div>
@@ -293,18 +302,13 @@ export default function ArchivedOrdersTable({ orders }: ArchivedOrdersTableProps
         desktopVisible: true,
       }
     ),
-    createTableColumn(
-      'actions',
-      'Actions',
-      (order) => renderActions(order),
-      {
-        sortable: false,
-        mobileVisible: true,
-        tabletVisible: true,
-        desktopVisible: true,
-        className: 'text-right',
-      }
-    ),
+    createTableColumn('actions', 'Actions', order => renderActions(order), {
+      sortable: false,
+      mobileVisible: true,
+      tabletVisible: true,
+      desktopVisible: true,
+      className: 'text-right',
+    }),
   ];
 
   return (

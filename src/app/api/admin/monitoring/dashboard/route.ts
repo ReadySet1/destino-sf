@@ -1,8 +1,8 @@
 /**
  * Monitoring Dashboard API
- * 
+ *
  * Provides a comprehensive dashboard view of Square integration monitoring
- * 
+ *
  * GET /api/admin/monitoring/dashboard - Get full monitoring dashboard
  */
 
@@ -13,10 +13,10 @@ import { logger } from '@/utils/logger';
 export async function GET() {
   try {
     logger.info('📊 Monitoring dashboard requested');
-    
+
     const monitor = getSquareMonitor();
     const dashboardData = await monitor.getDashboardData();
-    
+
     // Add additional context for dashboard
     const dashboard = {
       ...dashboardData,
@@ -61,10 +61,9 @@ export async function GET() {
       dashboard,
       timestamp: new Date().toISOString(),
     });
-    
   } catch (error: any) {
     logger.error('💥 Error getting dashboard data:', error);
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -78,11 +77,11 @@ export async function GET() {
 
 function getConfiguredAlertChannels(): string[] {
   const channels = ['console', 'database'];
-  
+
   if (process.env.SLACK_WEBHOOK_URL) channels.push('slack');
   if (process.env.DISCORD_WEBHOOK_URL) channels.push('discord');
   if (process.env.ALERT_EMAIL_TO) channels.push('email');
-  
+
   return channels;
 }
 

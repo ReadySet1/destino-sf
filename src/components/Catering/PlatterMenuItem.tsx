@@ -86,9 +86,10 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   // Get available variations (use item.variations if available, otherwise create default)
-  const variations = item.variations && item.variations.length > 0 
-    ? item.variations 
-    : [{ id: item.id, name: item.name, price: item.price }];
+  const variations =
+    item.variations && item.variations.length > 0
+      ? item.variations
+      : [{ id: item.id, name: item.name, price: item.price }];
 
   // Sort variations by price (small to large)
   const sortedVariations = variations.sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -98,7 +99,8 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
     setSelectedVariationId(sortedVariations[0].id);
   }
 
-  const selectedVariation = sortedVariations.find(v => v.id === selectedVariationId) || sortedVariations[0];
+  const selectedVariation =
+    sortedVariations.find(v => v.id === selectedVariationId) || sortedVariations[0];
 
   if (!selectedVariation) {
     return null;
@@ -107,9 +109,10 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
   const handleAddToCart = () => {
     // Create proper item name that includes both product name and variation
     // If there are multiple variations, include the variation name, otherwise just use the product name
-    const itemName = sortedVariations.length > 1 
-      ? `${toTitleCase(item.name)} - ${toTitleCase(selectedVariation.name)}`
-      : toTitleCase(item.name);
+    const itemName =
+      sortedVariations.length > 1
+        ? `${toTitleCase(item.name)} - ${toTitleCase(selectedVariation.name)}`
+        : toTitleCase(item.name);
 
     const cartItem = {
       id: selectedVariation.id,
@@ -167,15 +170,12 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
           {sortedVariations.length > 1 && (
             <div className="mb-3">
               <label className="text-sm font-medium text-gray-700 mb-2 block">Size:</label>
-              <Select
-                value={selectedVariationId}
-                onValueChange={setSelectedVariationId}
-              >
+              <Select value={selectedVariationId} onValueChange={setSelectedVariationId}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {sortedVariations.map((variation) => (
+                  {sortedVariations.map(variation => (
                     <SelectItem key={variation.id} value={variation.id}>
                       {variation.name} (${Number(variation.price || item.price).toFixed(2)})
                     </SelectItem>
@@ -198,7 +198,7 @@ export const PlatterMenuItem: React.FC<PlatterMenuItemProps> = ({ item }) => {
             <div
               className="text-gray-600 text-sm md:text-base"
               dangerouslySetInnerHTML={{
-                __html: sanitizeProductDescription(item.description)
+                __html: sanitizeProductDescription(item.description),
               }}
             />
           </div>

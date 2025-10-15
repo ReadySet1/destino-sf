@@ -22,7 +22,11 @@ export async function GET() {
     const [databaseTest, profileCount, testQuery] = await Promise.all([
       withRetry(() => prisma.$queryRaw`SELECT NOW() as server_time`, 3, 'db-time'),
       withRetry(() => prisma.profile.count(), 3, 'profile-count'),
-      withRetry(() => prisma.$queryRaw`SELECT current_database(), current_user, version()`, 3, 'db-info'),
+      withRetry(
+        () => prisma.$queryRaw`SELECT current_database(), current_user, version()`,
+        3,
+        'db-info'
+      ),
     ]);
 
     return NextResponse.json({

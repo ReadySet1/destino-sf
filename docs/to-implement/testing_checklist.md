@@ -5,7 +5,9 @@
 ### 1. ✅ Seasonal Items Display - DONE
 
 #### Implementation Status:
+
 1. ✅ **Database update script executed**
+
    ```bash
    pnpm tsx scripts/update-seasonal-products.ts
    # Result: 3 products configured (Gingerbread, Lucuma, Pride)
@@ -29,6 +31,7 @@
    - [ ] Badge displays on both grid and list views
 
 #### Verification Queries:
+
 ```sql
 -- Check seasonal cookies are configured correctly
 SELECT name, visibility, item_state, is_available, custom_attributes
@@ -47,6 +50,7 @@ AND visibility = 'PUBLIC';
 ### 2. ⚠️ Valentine's Day Cookie Removal - SCRIPT READY
 
 #### Implementation Status:
+
 1. ⚠️ **Script executed but product not found in database**
    - Script searched for: "Valentine's Day Cookie"
    - Result: 0 products found/archived
@@ -61,6 +65,7 @@ AND visibility = 'PUBLIC';
    - [ ] `itemState = 'ARCHIVED'` in database
 
 #### Verification Queries:
+
 ```sql
 -- Verify Valentine's cookies are archived
 SELECT name, active, item_state, visibility
@@ -78,6 +83,7 @@ WHERE name ILIKE '%valentine%';
 ### 3. ⚠️ Empanadas Combo Removal - SCRIPT READY
 
 #### Implementation Status:
+
 1. ⚠️ **Script executed but product not found in database**
    - Script searched for: "Empanadas Combo"
    - Result: 0 products found/archived
@@ -91,6 +97,7 @@ WHERE name ILIKE '%valentine%';
    - [ ] Other empanada varieties unaffected
 
 #### Verification Queries:
+
 ```sql
 -- Verify combo is archived
 SELECT name, active, item_state, visibility
@@ -108,6 +115,7 @@ AND category_id IN (
 ### 4. ✅ Lunch Menu Dessert Filtering - DONE
 
 #### Implementation Status:
+
 1. ✅ **BoxedLunchMenu.tsx updated**
    - ✅ Replaced `ALFAJORES_ITEMS` with `ALL_DESSERT_ITEMS`
    - ✅ Added `menuContext` prop (lunch/appetizer/buffet/all)
@@ -126,6 +134,7 @@ AND category_id IN (
    - [ ] "Add to Cart" works for alfajores on lunch menu
 
 #### Manual Test:
+
 ```
 Navigate to: /catering/boxed-lunch
 Verify only alfajores are shown in dessert section
@@ -139,6 +148,7 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
 ### 5. ✅ Text Formatting from Square - DONE
 
 #### Implementation Status:
+
 1. ✅ **text-formatting.ts utility created** - `src/utils/text-formatting.ts`
    - ✅ `extractSquareFormatting()` - Parses HTML from Square
    - ✅ `formatProductDescription()` - Auto-bolds keywords
@@ -146,22 +156,22 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
    - ✅ All functions documented and type-safe
 
 2. **Ready to integrate in Square sync** (sync.ts):
+
    ```typescript
    import { extractSquareFormatting } from '@/utils/text-formatting';
-   
+
    // In sync function where description is processed:
-   const formattedDescription = extractSquareFormatting(
-     squareItem.item_data?.description || ''
-   );
+   const formattedDescription = extractSquareFormatting(squareItem.item_data?.description || '');
    ```
 
 3. **Update ProductCard.tsx**:
+
    ```typescript
    import { formatProductDescription, renderFormattedText } from '@/utils/text-formatting';
-   
+
    // In component:
    const formattedDesc = formatProductDescription(product.description);
-   
+
    // In JSX:
    <p>{renderFormattedText(formattedDesc)}</p>
    ```
@@ -176,6 +186,7 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
    - [ ] No broken HTML or weird characters
 
 #### Test Products:
+
 - Find products with "GF" in description
 - Find products with "Vegan" in description
 - Verify formatting renders correctly
@@ -185,6 +196,7 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
 ### 6. ✅ Text Capitalization Fix - DONE
 
 #### Implementation Status:
+
 1. ✅ **text-formatting.ts utility created** with `capitalizeWithDashes()`
    - ✅ Handles dash-separated words: "beet-jicama" → "Beet-Jicama"
    - ✅ Preserves acronyms: "GF alfajores" → "GF Alfajores"
@@ -192,12 +204,13 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
    - ✅ Special cases handled: "dulce de leche" → "Dulce de Leche"
 
 2. **Ready to apply to product displays**:
+
    ```typescript
    import { capitalizeWithDashes } from '@/utils/text-formatting';
-   
+
    // For product names:
    const displayName = capitalizeWithDashes(product.name);
-   
+
    // For category names:
    const categoryName = capitalizeWithDashes(category.name);
    ```
@@ -211,14 +224,15 @@ Verify all desserts including lemon bars, cupcakes, brownies are shown
    - [ ] Edge cases: "a-b-c-d" → "A-B-C-D"
 
 #### Test Data:
+
 ```typescript
 // Create test products with these names:
 const testNames = [
-  "beet-jicama salad",
-  "gluten-free alfajores",
-  "dairy-free chocolate",
-  "beef-and-cheese empanada",
-  "vegan-friendly option"
+  'beet-jicama salad',
+  'gluten-free alfajores',
+  'dairy-free chocolate',
+  'beef-and-cheese empanada',
+  'vegan-friendly option',
 ];
 
 testNames.forEach(name => {
@@ -231,6 +245,7 @@ testNames.forEach(name => {
 ## 🚀 Deployment Checklist
 
 ### Pre-Deployment
+
 - [x] Run database update script ✅ (executed on production)
 - [ ] Test all seasonal badges (3 products configured)
 - [ ] Verify removed products (need to check Valentine's/Combo status)
@@ -241,6 +256,7 @@ testNames.forEach(name => {
 - [ ] Check Lighthouse scores (should stay 90+)
 
 ### Production Deployment
+
 - [ ] Backup database before running scripts
 - [ ] Run database update script on production
 - [ ] Deploy code changes
@@ -254,6 +270,7 @@ testNames.forEach(name => {
   - [ ] Cart functionality works
 
 ### Post-Deployment Monitoring
+
 - [ ] Monitor error logs for 24 hours
 - [ ] Check analytics for any drop in conversions
 - [ ] Verify no customer complaints about missing products
@@ -266,6 +283,7 @@ testNames.forEach(name => {
 If issues arise:
 
 ### Quick Rollback (Database Only):
+
 ```sql
 -- Restore seasonal items to purchasable
 UPDATE products
@@ -283,6 +301,7 @@ AND name ILIKE ANY (ARRAY['%valentine%', '%combo%']);
 ```
 
 ### Full Rollback:
+
 1. Revert to previous git commit
 2. Redeploy previous version
 3. Run rollback SQL above
@@ -293,6 +312,7 @@ AND name ILIKE ANY (ARRAY['%valentine%', '%combo%']);
 ## 📊 Success Metrics
 
 ### Key Performance Indicators:
+
 - [x] 3 seasonal cookies configured (Gingerbread, Lucuma, Pride) ✅
 - [x] "View Only" button prevents cart additions ✅
 - [⚠️] Valentine's/Combo need verification (products not found)
@@ -303,6 +323,7 @@ AND name ILIKE ANY (ARRAY['%valentine%', '%combo%']);
 - [ ] Manual testing pending
 
 ### Customer Experience:
+
 - [ ] Clear communication about seasonal items
 - [ ] No confusion about unavailable products
 - [ ] Smooth browsing experience
@@ -313,16 +334,20 @@ AND name ILIKE ANY (ARRAY['%valentine%', '%combo%']);
 ## 🔗 Related Files
 
 ### Scripts:
+
 - `scripts/update-seasonal-products.ts` - Database updates
 
 ### Components:
+
 - `src/components/products/ProductCard.tsx` - Badge display
 - `src/components/Catering/BoxedLunchMenu.tsx` - Dessert filtering
 
 ### Utilities:
+
 - `src/utils/text-formatting.ts` - Text processing
 
 ### Database:
+
 - `prisma/schema.prisma` - Product model
 - Tables: `products`, `categories`
 
@@ -331,6 +356,7 @@ AND name ILIKE ANY (ARRAY['%valentine%', '%combo%']);
 ## 📞 Support Contacts
 
 If issues arise during testing:
+
 - Technical issues: Check logs in `/var/log/app`
 - Database issues: Verify with `SELECT * FROM products WHERE...`
 - Square sync issues: Check Square dashboard for discrepancies

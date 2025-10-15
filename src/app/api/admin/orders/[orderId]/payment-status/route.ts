@@ -7,7 +7,7 @@ import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 /**
  * PUT /api/admin/orders/[orderId]/payment-status
- * 
+ *
  * Manually update payment status for a specific order.
  * This is useful when webhooks fail to sync payment status.
  */
@@ -26,9 +26,12 @@ export async function PUT(
     }
 
     if (!paymentStatus || !Object.values(PaymentStatus).includes(paymentStatus as PaymentStatus)) {
-      return NextResponse.json({ 
-        error: 'Valid payment status is required (PENDING, PAID, FAILED, REFUNDED)' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Valid payment status is required (PENDING, PAID, FAILED, REFUNDED)',
+        },
+        { status: 400 }
+      );
     }
 
     // Check authentication
@@ -85,14 +88,10 @@ export async function PUT(
       // Use the existing updateOrderPayment function if we have a Square order ID and setting to PAID
       if (paymentStatus === 'PAID' && (squareOrderId || order.squareOrderId)) {
         const orderIdToUse = squareOrderId || order.squareOrderId;
-        const updateNotes = notes || `Payment status manually updated to ${paymentStatus} by admin (${user.id})`;
-        
-        updatedOrder = await updateOrderPayment(
-          orderId,
-          orderIdToUse,
-          paymentStatus,
-          updateNotes
-        );
+        const updateNotes =
+          notes || `Payment status manually updated to ${paymentStatus} by admin (${user.id})`;
+
+        updatedOrder = await updateOrderPayment(orderId, orderIdToUse, paymentStatus, updateNotes);
       } else {
         // Direct database update for other statuses or when no Square order ID
         const updateData: {
@@ -156,25 +155,29 @@ export async function PUT(
           updatedAt: updatedOrder.updatedAt,
         },
       });
-
     } catch (updateError: any) {
       console.error(`❌ Error updating payment status for order ${orderId}:`, updateError);
-      return NextResponse.json({ 
-        error: updateError.message || 'Failed to update payment status' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: updateError.message || 'Failed to update payment status',
+        },
+        { status: 500 }
+      );
     }
-
   } catch (error: any) {
     console.error('❌ Error in payment status update endpoint:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error.message || 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * GET /api/admin/orders/[orderId]/payment-status
- * 
+ *
  * Get current payment status for debugging
  */
 export async function GET(
@@ -226,8 +229,8 @@ export async function GET(
             amount: true,
             status: true,
             createdAt: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -243,14 +246,16 @@ export async function GET(
         payments: order.payments.map(payment => ({
           ...payment,
           amount: payment.amount.toNumber(),
-        }))
+        })),
       },
     });
-
   } catch (error: any) {
     console.error('❌ Error getting payment status:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error.message || 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }

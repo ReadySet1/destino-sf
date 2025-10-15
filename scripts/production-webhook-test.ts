@@ -2,11 +2,11 @@
 
 /**
  * Production webhook testing script
- * 
+ *
  * This script validates webhook processing functionality in production environments.
  * It can be used for pre-deployment validation and post-deployment verification.
- * 
- * Usage: 
+ *
+ * Usage:
  *   pnpm tsx scripts/production-webhook-test.ts
  *   pnpm tsx scripts/production-webhook-test.ts --order-id=<order-id>
  *   pnpm tsx scripts/production-webhook-test.ts --validate-processing
@@ -59,11 +59,13 @@ async function runWebhookTests(): Promise<TestResults> {
       });
 
       // Check if orders have been processed correctly
-      const processedOrders = recentOrders.filter(order => 
-        order.paymentStatus === 'PAID' && order.payments.length > 0
+      const processedOrders = recentOrders.filter(
+        order => order.paymentStatus === 'PAID' && order.payments.length > 0
       );
 
-      console.log(`   📊 Found ${recentOrders.length} recent orders, ${processedOrders.length} properly processed`);
+      console.log(
+        `   📊 Found ${recentOrders.length} recent orders, ${processedOrders.length} properly processed`
+      );
       return recentOrders.length > 0; // At least some orders exist
     },
     results
@@ -78,12 +80,12 @@ async function runWebhookTests(): Promise<TestResults> {
         include: { payments: true },
       });
 
-      const inconsistentOrders = ordersWithPayments.filter(order => 
-        order.payments.length === 0
-      );
+      const inconsistentOrders = ordersWithPayments.filter(order => order.payments.length === 0);
 
       if (inconsistentOrders.length > 0) {
-        console.log(`   ⚠️ Found ${inconsistentOrders.length} orders marked as PAID without payment records`);
+        console.log(
+          `   ⚠️ Found ${inconsistentOrders.length} orders marked as PAID without payment records`
+        );
         return false;
       }
 
@@ -105,14 +107,16 @@ async function runWebhookTests(): Promise<TestResults> {
         // Verify key functions exist
         const requiredFunctions = [
           'handlePaymentCreated',
-          'handlePaymentUpdated', 
+          'handlePaymentUpdated',
           'handleOrderCreated',
           'handleOrderUpdated',
-          'handleWebhookWithQueue'
+          'handleWebhookWithQueue',
         ];
 
         const missing = requiredFunctions.filter(fn => {
-          return !handlers[fn as keyof typeof handlers] && !queueHandler[fn as keyof typeof queueHandler];
+          return (
+            !handlers[fn as keyof typeof handlers] && !queueHandler[fn as keyof typeof queueHandler]
+          );
         });
 
         if (missing.length > 0) {
@@ -138,7 +142,7 @@ async function runWebhookTests(): Promise<TestResults> {
         'DATABASE_URL',
         'SQUARE_ACCESS_TOKEN',
         'SQUARE_WEBHOOK_SECRET',
-        'RESEND_API_KEY'
+        'RESEND_API_KEY',
       ];
 
       const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
@@ -171,7 +175,7 @@ async function runTest(
 ): Promise<void> {
   results.totalTests++;
   console.log(`🔍 Testing: ${testName}`);
-  
+
   try {
     const success = await testFunction();
     if (success) {
@@ -236,7 +240,6 @@ async function validateSpecificOrder(orderId: string): Promise<void> {
     if (order.payments.length > 0 && order.paymentStatus === 'PENDING') {
       console.log(`⚠️ WARNING: Payment records exist but order still marked as PENDING`);
     }
-
   } catch (error) {
     console.error(`❌ Error validating order ${orderId}:`, error);
   }
@@ -257,7 +260,7 @@ async function main(): Promise<void> {
       console.log('⚠️ Processing validation not implemented yet');
     } else {
       const results = await runWebhookTests();
-      
+
       console.log('\n📊 Test Results Summary');
       console.log('======================');
       console.log(`Total Tests: ${results.totalTests}`);
@@ -287,4 +290,4 @@ async function main(): Promise<void> {
 }
 
 // Run the tests
-main().catch(console.error); 
+main().catch(console.error);

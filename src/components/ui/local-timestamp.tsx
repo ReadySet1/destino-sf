@@ -139,7 +139,6 @@ export function LocalTimestamp({
     }
 
     return <span className={className}>{formattedDate}</span>;
-
   } catch (error) {
     logger.error('Error formatting date in LocalTimestamp:', error);
     return <span className={className}>{fallback}</span>;
@@ -189,7 +188,6 @@ export function LocalTimestampWithRelative({
         {formatted} <span className="text-gray-500">({relative})</span>
       </span>
     );
-
   } catch (error) {
     logger.error('Error formatting date in LocalTimestampWithRelative:', error);
     return <span className={className}>{fallback}</span>;

@@ -59,9 +59,7 @@ class SquareTokenSetup {
 
       // Other configs
       SQUARE_LOCATION_ID: process.env.SQUARE_LOCATION_ID ? '✅ Configured' : '❌ Missing',
-      SQUARE_WEBHOOK_SECRET: process.env.SQUARE_WEBHOOK_SECRET
-        ? '✅ Configured'
-        : '❌ Missing',
+      SQUARE_WEBHOOK_SECRET: process.env.SQUARE_WEBHOOK_SECRET ? '✅ Configured' : '❌ Missing',
       SQUARE_WEBHOOK_SECRET_SANDBOX: process.env.SQUARE_WEBHOOK_SECRET_SANDBOX
         ? '✅ Configured'
         : '❌ Missing',

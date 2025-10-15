@@ -189,10 +189,7 @@ export const PaymentFailedAlert: React.FC<PaymentFailedAlertProps> = ({
           </Section>
 
           <Section style={styles.quickActions}>
-            <Link
-              href={`${cleanAppUrl}/admin/orders/${order.id}`}
-              style={styles.primaryButton}
-            >
+            <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={styles.primaryButton}>
               View Order in Admin
             </Link>
             <Link

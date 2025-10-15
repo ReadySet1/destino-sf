@@ -295,8 +295,9 @@ export function OrderConfirmationLayout({
                               {(() => {
                                 const deliveryDetails = orderData.fulfillment.deliveryDetails;
                                 const shipmentDetails = orderData.fulfillment.shipmentDetails;
-                                const addressDetails = deliveryDetails?.recipient || shipmentDetails?.recipient;
-                                
+                                const addressDetails =
+                                  deliveryDetails?.recipient || shipmentDetails?.recipient;
+
                                 if (addressDetails?.address) {
                                   const addr = addressDetails.address;
                                   return (
@@ -306,9 +307,15 @@ export function OrderConfirmationLayout({
                                       )}
                                       {addr.addressLine1 && <p>{addr.addressLine1}</p>}
                                       {addr.addressLine2 && <p>{addr.addressLine2}</p>}
-                                      {(addr.locality || addr.administrativeDistrictLevel1 || addr.postalCode) && (
+                                      {(addr.locality ||
+                                        addr.administrativeDistrictLevel1 ||
+                                        addr.postalCode) && (
                                         <p>
-                                          {[addr.locality, addr.administrativeDistrictLevel1, addr.postalCode]
+                                          {[
+                                            addr.locality,
+                                            addr.administrativeDistrictLevel1,
+                                            addr.postalCode,
+                                          ]
                                             .filter(Boolean)
                                             .join(', ')}
                                         </p>
@@ -386,7 +393,11 @@ export function OrderConfirmationLayout({
                                   </div>
                                   {item.product?.isPreorder && item.product?.preorderEndDate && (
                                     <span className="text-xs text-gray-500">
-                                      Est. delivery: {format(new Date(item.product.preorderEndDate), 'MMM d, yyyy')}
+                                      Est. delivery:{' '}
+                                      {format(
+                                        new Date(item.product.preorderEndDate),
+                                        'MMM d, yyyy'
+                                      )}
                                     </span>
                                   )}
                                 </div>
@@ -413,7 +424,9 @@ export function OrderConfirmationLayout({
                           serviceFee={orderData.serviceFee || 0}
                           gratuityAmount={orderData.gratuityAmount || 0}
                           shippingCost={orderData.shippingCost || 0}
-                          total={isCateringOrder(orderData) ? orderData.totalAmount : orderData.total}
+                          total={
+                            isCateringOrder(orderData) ? orderData.totalAmount : orderData.total
+                          }
                           orderType={orderType === 'catering' ? 'catering' : 'regular'}
                           shippingCarrier={
                             isStoreOrder(orderData) && orderData.fulfillment?.shippingCarrier
@@ -464,17 +477,23 @@ export function OrderConfirmationLayout({
               </Card>
 
               {/* Fulfillment Details */}
-              {isStoreOrder(orderData) && orderData.fulfillment && (
+              {isStoreOrder(orderData) &&
+                orderData.fulfillment &&
                 (() => {
                   const fulfillment = orderData.fulfillment;
-                  
+
                   // Check if there's meaningful fulfillment data to display
                   const hasPickupTime = fulfillment.type === 'pickup' && fulfillment.pickupTime;
-                  const hasTrackingInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') && fulfillment.trackingNumber;
-                  const hasAddressInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') && 
-                    (fulfillment.deliveryDetails?.recipient?.address || fulfillment.shipmentDetails?.recipient?.address);
-                  const hasShippingInfo = (fulfillment.type === 'shipment' || fulfillment.type === 'delivery');
-                  
+                  const hasTrackingInfo =
+                    (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') &&
+                    fulfillment.trackingNumber;
+                  const hasAddressInfo =
+                    (fulfillment.type === 'shipment' || fulfillment.type === 'delivery') &&
+                    (fulfillment.deliveryDetails?.recipient?.address ||
+                      fulfillment.shipmentDetails?.recipient?.address);
+                  const hasShippingInfo =
+                    fulfillment.type === 'shipment' || fulfillment.type === 'delivery';
+
                   // Only show the card if there's meaningful data to display
                   if (!hasPickupTime && !hasTrackingInfo && !hasAddressInfo && !hasShippingInfo) {
                     return null;
@@ -509,24 +528,35 @@ export function OrderConfirmationLayout({
                               {(() => {
                                 const deliveryDetails = fulfillment.deliveryDetails;
                                 const shipmentDetails = fulfillment.shipmentDetails;
-                                const addressDetails = deliveryDetails?.recipient || shipmentDetails?.recipient;
-                                
+                                const addressDetails =
+                                  deliveryDetails?.recipient || shipmentDetails?.recipient;
+
                                 if (addressDetails?.address) {
                                   const addr = addressDetails.address;
                                   return (
                                     <div>
                                       <p className="text-sm text-gray-600 font-medium">
-                                        {fulfillment.type === 'delivery' ? 'Delivery Address' : 'Shipping Address'}
+                                        {fulfillment.type === 'delivery'
+                                          ? 'Delivery Address'
+                                          : 'Shipping Address'}
                                       </p>
                                       <div className="text-gray-900 text-sm mt-1">
                                         {addressDetails.displayName && (
-                                          <p className="font-medium">{addressDetails.displayName}</p>
+                                          <p className="font-medium">
+                                            {addressDetails.displayName}
+                                          </p>
                                         )}
                                         {addr.addressLine1 && <p>{addr.addressLine1}</p>}
                                         {addr.addressLine2 && <p>{addr.addressLine2}</p>}
-                                        {(addr.locality || addr.administrativeDistrictLevel1 || addr.postalCode) && (
+                                        {(addr.locality ||
+                                          addr.administrativeDistrictLevel1 ||
+                                          addr.postalCode) && (
                                           <p>
-                                            {[addr.locality, addr.administrativeDistrictLevel1, addr.postalCode]
+                                            {[
+                                              addr.locality,
+                                              addr.administrativeDistrictLevel1,
+                                              addr.postalCode,
+                                            ]
                                               .filter(Boolean)
                                               .join(', ')}
                                           </p>
@@ -537,12 +567,14 @@ export function OrderConfirmationLayout({
                                 }
                                 return null;
                               })()}
-                              
+
                               {/* Tracking information */}
                               {fulfillment.trackingNumber ? (
                                 <>
                                   <div>
-                                    <p className="text-sm text-gray-600 font-medium">Tracking Number</p>
+                                    <p className="text-sm text-gray-600 font-medium">
+                                      Tracking Number
+                                    </p>
                                     <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                                       {fulfillment.trackingNumber}
                                     </code>
@@ -550,19 +582,16 @@ export function OrderConfirmationLayout({
                                   {fulfillment.shippingCarrier && (
                                     <div>
                                       <p className="text-sm text-gray-600 font-medium">Carrier</p>
-                                      <p className="text-gray-900">
-                                        {fulfillment.shippingCarrier}
-                                      </p>
+                                      <p className="text-gray-900">{fulfillment.shippingCarrier}</p>
                                     </div>
                                   )}
                                 </>
                               ) : (
                                 <div>
                                   <p className="text-sm text-gray-600">
-                                    {fulfillment.type === 'shipment' 
+                                    {fulfillment.type === 'shipment'
                                       ? "We'll send you tracking information once your order ships."
-                                      : "We'll notify you when your order is out for delivery."
-                                    }
+                                      : "We'll notify you when your order is out for delivery."}
                                   </p>
                                 </div>
                               )}
@@ -572,8 +601,7 @@ export function OrderConfirmationLayout({
                       </CardContent>
                     </Card>
                   );
-                })()
-              )}
+                })()}
 
               {/* Next Steps */}
               <Card className="shadow-sm">
@@ -588,36 +616,37 @@ export function OrderConfirmationLayout({
                     {isStoreOrder(orderData) && orderData.fulfillment ? (
                       (() => {
                         const fulfillment = orderData.fulfillment;
-                        
+
                         if (fulfillment.type === 'shipment') {
                           return fulfillment.trackingNumber ? (
                             <p className="text-sm text-gray-600">
-                              Your order has shipped! Use the tracking information above to monitor your
-                              package&apos;s progress.
+                              Your order has shipped! Use the tracking information above to monitor
+                              your package&apos;s progress.
                             </p>
                           ) : (
                             <p className="text-sm text-gray-600">
-                              We&apos;re preparing your order for shipment. You&apos;ll receive tracking
-                              information via email once it ships.
+                              We&apos;re preparing your order for shipment. You&apos;ll receive
+                              tracking information via email once it ships.
                             </p>
                           );
                         } else if (fulfillment.type === 'delivery') {
                           return fulfillment.trackingNumber ? (
                             <p className="text-sm text-gray-600">
-                              Your order is out for delivery! Use the tracking information above to monitor
-                              your delivery&apos;s progress.
+                              Your order is out for delivery! Use the tracking information above to
+                              monitor your delivery&apos;s progress.
                             </p>
                           ) : (
                             <p className="text-sm text-gray-600">
-                              We&apos;re preparing your order for local delivery. You&apos;ll receive tracking
-                              information via email once it&apos;s out for delivery.
+                              We&apos;re preparing your order for local delivery. You&apos;ll
+                              receive tracking information via email once it&apos;s out for
+                              delivery.
                             </p>
                           );
                         } else if (fulfillment.type === 'pickup') {
                           return (
                             <p className="text-sm text-gray-600">
-                              Please bring your ID and order confirmation when picking up your order.
-                              We&apos;ll notify you when your order is ready for pickup.
+                              Please bring your ID and order confirmation when picking up your
+                              order. We&apos;ll notify you when your order is ready for pickup.
                             </p>
                           );
                         } else {

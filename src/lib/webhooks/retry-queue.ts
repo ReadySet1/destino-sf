@@ -39,10 +39,10 @@ class ExponentialBackoffStrategy implements RetryStrategy {
   calculateDelay(attempt: number): number {
     const exponentialDelay = this.baseDelay * Math.pow(2, attempt);
     const cappedDelay = Math.min(exponentialDelay, this.maxDelay);
-    
+
     // Add jitter to prevent thundering herd
     const jitter = Math.random() * this.jitterMax;
-    
+
     return cappedDelay + jitter;
   }
 
@@ -52,7 +52,7 @@ class ExponentialBackoffStrategy implements RetryStrategy {
       'INVALID_SIGNATURE',
       'MALFORMED_PAYLOAD',
       'AUTHENTICATION_ERROR',
-      'AUTHORIZATION_ERROR'
+      'AUTHORIZATION_ERROR',
     ];
 
     if (nonRetryableErrors.some(type => error.message.includes(type))) {
@@ -60,10 +60,12 @@ class ExponentialBackoffStrategy implements RetryStrategy {
     }
 
     // Retry network and temporary errors
-    return error.message.includes('NETWORK_ERROR') ||
-           error.message.includes('TIMEOUT') ||
-           error.message.includes('SERVICE_UNAVAILABLE') ||
-           error.message.includes('RATE_LIMITED');
+    return (
+      error.message.includes('NETWORK_ERROR') ||
+      error.message.includes('TIMEOUT') ||
+      error.message.includes('SERVICE_UNAVAILABLE') ||
+      error.message.includes('RATE_LIMITED')
+    );
   }
 }
 
@@ -89,7 +91,7 @@ export class WebhookRetryQueue {
       ...job,
       id: this.generateJobId(),
       createdAt: new Date(),
-      status: 'pending'
+      status: 'pending',
     };
 
     // Store in memory queue
@@ -99,14 +101,10 @@ export class WebhookRetryQueue {
     await this.persistJob(webhookJob);
 
     // Log the job addition
-    await performanceMonitor.trackBusinessMetric(
-      'webhook_job_added',
-      1,
-      {
-        type: webhookJob.type,
-        retries: webhookJob.retries.toString()
-      }
-    );
+    await performanceMonitor.trackBusinessMetric('webhook_job_added', 1, {
+      type: webhookJob.type,
+      retries: webhookJob.retries.toString(),
+    });
 
     console.log(`📥 Webhook job added to queue: ${webhookJob.id} (${webhookJob.type})`);
 
@@ -128,10 +126,7 @@ export class WebhookRetryQueue {
     if (this.isProcessing) return;
 
     this.isProcessing = true;
-    this.processingInterval = setInterval(
-      () => this.processQueue(),
-      this.processingIntervalMs
-    );
+    this.processingInterval = setInterval(() => this.processQueue(), this.processingIntervalMs);
 
     console.log('🚀 Webhook retry queue processing started');
   }
@@ -162,18 +157,17 @@ export class WebhookRetryQueue {
 
     const now = new Date();
     const pendingJobs = Array.from(this.queue.values())
-      .filter(job => 
-        job.status === 'pending' &&
-        !this.currentlyProcessing.has(job.id) &&
-        (!job.nextAttempt || job.nextAttempt <= now)
+      .filter(
+        job =>
+          job.status === 'pending' &&
+          !this.currentlyProcessing.has(job.id) &&
+          (!job.nextAttempt || job.nextAttempt <= now)
       )
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
       .slice(0, this.maxConcurrentJobs - this.currentlyProcessing.size);
 
     // Process jobs concurrently
-    await Promise.all(
-      pendingJobs.map(job => this.processJob(job))
-    );
+    await Promise.all(pendingJobs.map(job => this.processJob(job)));
   }
 
   /**
@@ -185,7 +179,7 @@ export class WebhookRetryQueue {
     }
 
     this.currentlyProcessing.add(job.id);
-    
+
     try {
       // Update job status to processing
       job.status = 'processing';
@@ -200,9 +194,9 @@ export class WebhookRetryQueue {
 
       // Track processing time
       const startTime = Date.now();
-      
+
       await processor.process(job);
-      
+
       const processingTime = Date.now() - startTime;
 
       // Job completed successfully
@@ -211,18 +205,13 @@ export class WebhookRetryQueue {
       this.queue.delete(job.id);
 
       // Track success metrics
-      await performanceMonitor.trackBusinessMetric(
-        'webhook_job_completed',
-        processingTime,
-        {
-          type: job.type,
-          retries: job.retries.toString(),
-          success: 'true'
-        }
-      );
+      await performanceMonitor.trackBusinessMetric('webhook_job_completed', processingTime, {
+        type: job.type,
+        retries: job.retries.toString(),
+        success: 'true',
+      });
 
       console.log(`✅ Webhook job completed: ${job.id} (${processingTime}ms)`);
-
     } catch (error) {
       await this.handleJobError(job, error);
     } finally {
@@ -240,7 +229,7 @@ export class WebhookRetryQueue {
 
     console.error(`❌ Webhook job failed: ${job.id} (attempt ${job.retries})`, {
       type: job.type,
-      error: errorMessage
+      error: errorMessage,
     });
 
     // Check if we should retry
@@ -252,18 +241,15 @@ export class WebhookRetryQueue {
 
       await this.updateJobInDatabase(job);
 
-      console.log(`🔄 Webhook job scheduled for retry: ${job.id} (in ${Math.round(delay/1000)}s)`);
-
-      // Track retry metrics
-      await performanceMonitor.trackBusinessMetric(
-        'webhook_job_retry',
-        1,
-        {
-          type: job.type,
-          attempt: job.retries.toString()
-        }
+      console.log(
+        `🔄 Webhook job scheduled for retry: ${job.id} (in ${Math.round(delay / 1000)}s)`
       );
 
+      // Track retry metrics
+      await performanceMonitor.trackBusinessMetric('webhook_job_retry', 1, {
+        type: job.type,
+        attempt: job.retries.toString(),
+      });
     } else {
       // Move to dead letter queue
       job.status = 'dead_letter';
@@ -271,15 +257,11 @@ export class WebhookRetryQueue {
       await this.moveToDeadLetterQueue(job);
 
       // Track failure metrics
-      await performanceMonitor.trackBusinessMetric(
-        'webhook_job_failed',
-        1,
-        {
-          type: job.type,
-          retries: job.retries.toString(),
-          error_type: this.categorizeError(errorMessage)
-        }
-      );
+      await performanceMonitor.trackBusinessMetric('webhook_job_failed', 1, {
+        type: job.type,
+        retries: job.retries.toString(),
+        error_type: this.categorizeError(errorMessage),
+      });
 
       console.error(`💀 Webhook job moved to dead letter queue: ${job.id}`);
     }
@@ -291,34 +273,35 @@ export class WebhookRetryQueue {
   private async moveToDeadLetterQueue(job: WebhookJob): Promise<void> {
     try {
       // Log to webhook log table instead (dead letter queue table not available)
-      await prisma.webhookLog.create({
-        data: {
-          webhookId: job.id,
-          eventType: job.type,
-          signatureValid: false, // Mark as failed
-          payload: job.payload,
-          headers: job.headers,
-          validationError: {
-            original_retries: job.retries,
-            max_retries: job.maxRetries,
-            final_error: job.error || 'Unknown error',
-            failed_at: new Date().toISOString(),
-            metadata: job.metadata || {}
-          }
-        }
-      }).catch(() => {
-        // If table doesn't exist, log to console for now
-        console.error('Dead letter queue table not found, logging failed job:', {
-          id: job.id,
-          type: job.type,
-          error: job.error,
-          retries: job.retries
+      await prisma.webhookLog
+        .create({
+          data: {
+            webhookId: job.id,
+            eventType: job.type,
+            signatureValid: false, // Mark as failed
+            payload: job.payload,
+            headers: job.headers,
+            validationError: {
+              original_retries: job.retries,
+              max_retries: job.maxRetries,
+              final_error: job.error || 'Unknown error',
+              failed_at: new Date().toISOString(),
+              metadata: job.metadata || {},
+            },
+          },
+        })
+        .catch(() => {
+          // If table doesn't exist, log to console for now
+          console.error('Dead letter queue table not found, logging failed job:', {
+            id: job.id,
+            type: job.type,
+            error: job.error,
+            retries: job.retries,
+          });
         });
-      });
 
       // Remove from active queue
       this.queue.delete(job.id);
-
     } catch (error) {
       console.error('Failed to move job to dead letter queue:', error);
     }
@@ -329,20 +312,22 @@ export class WebhookRetryQueue {
    */
   private async persistJob(job: WebhookJob): Promise<void> {
     try {
-      await prisma.webhookQueue.create({
-        data: {
-          eventId: job.id,
-          eventType: job.type,
-          payload: job.payload,
-          status: 'PENDING',
-          attempts: job.retries,
-          errorMessage: job.error,
-          lastAttemptAt: job.nextAttempt
-        }
-      }).catch(() => {
-        // If table doesn't exist, continue with in-memory processing
-        console.warn('Webhook queue table not found, using in-memory processing only');
-      });
+      await prisma.webhookQueue
+        .create({
+          data: {
+            eventId: job.id,
+            eventType: job.type,
+            payload: job.payload,
+            status: 'PENDING',
+            attempts: job.retries,
+            errorMessage: job.error,
+            lastAttemptAt: job.nextAttempt,
+          },
+        })
+        .catch(() => {
+          // If table doesn't exist, continue with in-memory processing
+          console.warn('Webhook queue table not found, using in-memory processing only');
+        });
     } catch (error) {
       console.error('Failed to persist webhook job:', error);
     }
@@ -353,17 +338,19 @@ export class WebhookRetryQueue {
    */
   private async updateJobInDatabase(job: WebhookJob): Promise<void> {
     try {
-      await prisma.webhookQueue.update({
-        where: { eventId: job.id },
-        data: {
-          attempts: job.retries,
-          status: job.status,
-          lastAttemptAt: job.nextAttempt,
-          errorMessage: job.error
-        }
-      }).catch(() => {
-        // Continue if update fails
-      });
+      await prisma.webhookQueue
+        .update({
+          where: { eventId: job.id },
+          data: {
+            attempts: job.retries,
+            status: job.status,
+            lastAttemptAt: job.nextAttempt,
+            errorMessage: job.error,
+          },
+        })
+        .catch(() => {
+          // Continue if update fails
+        });
     } catch (error) {
       // Silent fail - job will continue in memory
     }
@@ -374,13 +361,15 @@ export class WebhookRetryQueue {
    */
   private async loadPendingJobsFromDatabase(): Promise<void> {
     try {
-      const pendingJobs = await prisma.webhookQueue.findMany({
-        where: {
-          status: {
-            in: ['pending', 'processing']
-          }
-        }
-      }).catch(() => []);
+      const pendingJobs = await prisma.webhookQueue
+        .findMany({
+          where: {
+            status: {
+              in: ['pending', 'processing'],
+            },
+          },
+        })
+        .catch(() => []);
 
       for (const dbJob of pendingJobs) {
         if (!this.queue.has(dbJob.id)) {
@@ -394,7 +383,7 @@ export class WebhookRetryQueue {
             createdAt: dbJob.createdAt,
             nextAttempt: dbJob.lastAttemptAt || undefined,
             status: dbJob.status as WebhookJob['status'],
-            error: dbJob.errorMessage || undefined
+            error: dbJob.errorMessage || undefined,
           };
 
           this.queue.set(job.id, job);
@@ -433,7 +422,7 @@ export class WebhookRetryQueue {
    */
   getStats() {
     const jobs = Array.from(this.queue.values());
-    
+
     return {
       total_jobs: jobs.length,
       pending: jobs.filter(j => j.status === 'pending').length,
@@ -442,7 +431,7 @@ export class WebhookRetryQueue {
       currently_processing: this.currentlyProcessing.size,
       max_concurrent: this.maxConcurrentJobs,
       registered_processors: Array.from(this.processors.keys()),
-      is_processing: this.isProcessing
+      is_processing: this.isProcessing,
     };
   }
 
@@ -473,17 +462,18 @@ export class WebhookRetryQueue {
    * Clear completed jobs from queue
    */
   async clearCompleted(): Promise<number> {
-    const completedJobs = Array.from(this.queue.values())
-      .filter(job => job.status === 'completed');
+    const completedJobs = Array.from(this.queue.values()).filter(job => job.status === 'completed');
 
     for (const job of completedJobs) {
       this.queue.delete(job.id);
-      
+
       // Also remove from database
       try {
-        await prisma.webhookQueue.delete({
-          where: { id: job.id }
-        }).catch(() => {});
+        await prisma.webhookQueue
+          .delete({
+            where: { id: job.id },
+          })
+          .catch(() => {});
       } catch (error) {
         // Continue
       }

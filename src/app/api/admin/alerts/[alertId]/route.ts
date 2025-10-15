@@ -15,31 +15,27 @@ export async function PATCH(request: NextRequest, { params }: Props) {
   try {
     const { alertId } = await params;
     const body = await request.json();
-    
+
     const alertService = new DashboardAlertService();
-    
+
     if (body.action === 'mark_read') {
       await alertService.markAsRead(alertId);
-      
+
       return NextResponse.json({
         success: true,
         message: 'Alert marked as read',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
-    
-    return NextResponse.json(
-      { success: false, error: 'Invalid action' },
-      { status: 400 }
-    );
 
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     logger.error('Error updating alert', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -52,23 +48,22 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 export async function DELETE(request: NextRequest, { params }: Props) {
   try {
     const { alertId } = await params;
-    
+
     const alertService = new DashboardAlertService();
     await alertService.deleteAlert(alertId);
 
     return NextResponse.json({
       success: true,
       message: 'Alert deleted',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error deleting alert', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

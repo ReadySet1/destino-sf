@@ -262,8 +262,6 @@ export const mockSanityClient = () => {
     }),
   };
 
-
-
   return { mockSanityClient, mockSanityData };
 };
 

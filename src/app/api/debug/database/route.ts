@@ -9,39 +9,39 @@ import { prisma } from '@/lib/db-unified';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
-    
+
     // If this is a simple test from the health check
     if (body.test === true) {
       try {
         // Ensure we have a good connection first
         await ensureConnection(2);
-        
+
         // Test a simple write operation that doesn't affect real data
         // Use a raw query to test write permissions without creating records
-        const testResult = await withRetry(() =>
-          prisma.$executeRaw`SELECT 1 as write_permission_test`
+        const testResult = await withRetry(
+          () => prisma.$executeRaw`SELECT 1 as write_permission_test`
         );
-        
-        return NextResponse.json({ 
-          success: true, 
+
+        return NextResponse.json({
+          success: true,
           timestamp: new Date().toISOString(),
           writePermissionTest: 'passed',
-          connectionTest: 'passed'
+          connectionTest: 'passed',
         });
       } catch (error) {
         console.error('Database write test failed:', error);
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: (error as Error).message,
             timestamp: new Date().toISOString(),
-            writePermissionTest: 'failed'
+            writePermissionTest: 'failed',
           },
           { status: 500 }
         );
       }
     }
-    
+
     // For other debug operations, provide more comprehensive testing
     const results = {
       timestamp: new Date().toISOString(),
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       errors: [] as string[],
     };
-    
+
     try {
       // Test 1: Connection
       await ensureConnection(1);
@@ -60,39 +60,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch (error) {
       results.errors.push(`Connection failed: ${(error as Error).message}`);
     }
-    
+
     try {
       // Test 2: Read operation
-      const orderCount = await withRetry(() =>
-        prisma.order.count({ take: 1 })
-      );
+      const orderCount = await withRetry(() => prisma.order.count({ take: 1 }));
       results.tests.read = true;
     } catch (error) {
       results.errors.push(`Read failed: ${(error as Error).message}`);
     }
-    
+
     try {
       // Test 3: Write operation (safe test)
-      await withRetry(() =>
-        prisma.$executeRaw`SELECT current_timestamp as write_test`
-      );
+      await withRetry(() => prisma.$executeRaw`SELECT current_timestamp as write_test`);
       results.tests.write = true;
     } catch (error) {
       results.errors.push(`Write failed: ${(error as Error).message}`);
     }
-    
+
     const allTestsPassed = Object.values(results.tests).every(test => test === true);
-    
-    return NextResponse.json(
-      results,
-      { status: allTestsPassed ? 200 : 500 }
-    );
-    
+
+    return NextResponse.json(results, { status: allTestsPassed ? 200 : 500 });
   } catch (error) {
     console.error('Database debug endpoint error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: (error as Error).message,
         timestamp: new Date().toISOString(),
       },
@@ -107,16 +99,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 export async function GET(): Promise<NextResponse> {
   try {
     await ensureConnection(1);
-    
+
     const stats = await withRetry(async () => {
       const [orderCount, cateringCount] = await Promise.all([
         prisma.order.count(),
         prisma.cateringOrder.count(),
       ]);
-      
+
       return { orderCount, cateringCount };
     });
-    
+
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -125,7 +117,6 @@ export async function GET(): Promise<NextResponse> {
         ...stats,
       },
     });
-    
   } catch (error) {
     return NextResponse.json(
       {

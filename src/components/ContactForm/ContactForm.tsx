@@ -78,7 +78,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
         setSubmitSuccess(true);
         form.reset();
         onSubmitSuccess?.();
-        
+
         // Track successful form submission
         trackFormSubmit('contact_form', true);
         trackButtonClick('contact_form_submit', 'contact_page');
@@ -89,7 +89,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
       console.error('Error submitting form:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
       setSubmitError(errorMessage);
-      
+
       // Track failed form submission
       trackFormSubmit('contact_form', false, errorMessage);
     } finally {
@@ -184,9 +184,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
         )}
 
         {submitError && (
-          <div className="rounded-md bg-red-50 p-4 text-red-800">
-            Error: {submitError}
-          </div>
+          <div className="rounded-md bg-red-50 p-4 text-red-800">Error: {submitError}</div>
         )}
       </form>
     </Form>

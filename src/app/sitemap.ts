@@ -117,21 +117,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Use isolated Prisma client to avoid prepared statement conflicts during build
   let prismaClient: PrismaClient | null = null;
-  
+
   try {
     prismaClient = createSitemapPrismaClient();
-    
+
     // Dynamic product pages with retry logic and error handling
     const products = await withRetry(
-      () => prismaClient!.product.findMany({
-        where: {
-          active: true,
-        },
-        select: {
-          slug: true,
-          updatedAt: true,
-        },
-      }),
+      () =>
+        prismaClient!.product.findMany({
+          where: {
+            active: true,
+          },
+          select: {
+            slug: true,
+            updatedAt: true,
+          },
+        }),
       3, // maxRetries
       'sitemap product query'
     );
@@ -145,7 +146,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Only log success in debug mode to reduce build noise
     if (process.env.BUILD_DEBUG === 'true') {
-      logger.info(`✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`);
+      logger.info(
+        `✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`
+      );
     }
     return [...staticPages, ...productPages];
   } catch (error) {

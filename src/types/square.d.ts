@@ -22,10 +22,10 @@ export interface SquareTokenizationResult {
       last4: string;
     };
   };
-  errors?: Array<{ 
+  errors?: Array<{
     type: string;
     field: string;
-    message: string; 
+    message: string;
   }>;
 }
 
@@ -57,10 +57,7 @@ export interface GooglePayRequest {
 
 interface Window {
   Square?: {
-    payments: (
-      appId: string,
-      locationId: string
-    ) => SquarePayments;
+    payments: (appId: string, locationId: string) => SquarePayments;
   };
 }
 
@@ -80,7 +77,7 @@ export enum CatalogObjectType {
   ITEM_OPTION = 'ITEM_OPTION',
   ITEM_OPTION_VAL = 'ITEM_OPTION_VAL',
   CUSTOM_ATTRIBUTE_DEFINITION = 'CUSTOM_ATTRIBUTE_DEFINITION',
-  QUICK_AMOUNTS_SETTINGS = 'QUICK_AMOUNTS_SETTINGS'
+  QUICK_AMOUNTS_SETTINGS = 'QUICK_AMOUNTS_SETTINGS',
 }
 
 export enum PaymentStatus {
@@ -89,20 +86,20 @@ export enum PaymentStatus {
   PENDING = 'PENDING',
   COMPLETED = 'COMPLETED',
   CANCELED = 'CANCELED',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
 }
 
 export enum OrderState {
   OPEN = 'OPEN',
   COMPLETED = 'COMPLETED',
   CANCELED = 'CANCELED',
-  DRAFT = 'DRAFT'
+  DRAFT = 'DRAFT',
 }
 
 export enum FulfillmentType {
   PICKUP = 'PICKUP',
   SHIPMENT = 'SHIPMENT',
-  DELIVERY = 'DELIVERY'
+  DELIVERY = 'DELIVERY',
 }
 
 // Enhanced Catalog Object Types
@@ -214,9 +211,18 @@ export interface SquareError {
 }
 
 export interface SquareCatalogApi {
-  searchCatalogObjects: (requestBody: SearchCatalogObjectsRequest) => Promise<SquareCatalogApiResponse>;
-  retrieveCatalogObject: (objectId: string, includeRelatedObjects?: boolean) => Promise<SquareCatalogApiResponse>;
-  listCatalog?: (cursor?: string, types?: string, catalogVersion?: bigint) => Promise<SquareCatalogApiResponse>;
+  searchCatalogObjects: (
+    requestBody: SearchCatalogObjectsRequest
+  ) => Promise<SquareCatalogApiResponse>;
+  retrieveCatalogObject: (
+    objectId: string,
+    includeRelatedObjects?: boolean
+  ) => Promise<SquareCatalogApiResponse>;
+  listCatalog?: (
+    cursor?: string,
+    types?: string,
+    catalogVersion?: bigint
+  ) => Promise<SquareCatalogApiResponse>;
   testConnection?: () => Promise<{
     success: boolean;
     environment: string;
@@ -1162,10 +1168,18 @@ export interface SquareOrdersApi {
 export interface SquarePaymentsApi {
   createPayment: (request: CreatePaymentRequest) => Promise<CreatePaymentResponse>;
   cancelPayment: (paymentId: string) => Promise<CancelPaymentResponse>;
-  cancelPaymentByIdempotencyKey: (request: CancelPaymentByIdempotencyKeyRequest) => Promise<CancelPaymentByIdempotencyKeyResponse>;
+  cancelPaymentByIdempotencyKey: (
+    request: CancelPaymentByIdempotencyKeyRequest
+  ) => Promise<CancelPaymentByIdempotencyKeyResponse>;
   getPayment: (paymentId: string) => Promise<GetPaymentResponse>;
-  updatePayment: (paymentId: string, request: UpdatePaymentRequest) => Promise<UpdatePaymentResponse>;
-  completePayment: (paymentId: string, request: CompletePaymentRequest) => Promise<CompletePaymentResponse>;
+  updatePayment: (
+    paymentId: string,
+    request: UpdatePaymentRequest
+  ) => Promise<UpdatePaymentResponse>;
+  completePayment: (
+    paymentId: string,
+    request: CompletePaymentRequest
+  ) => Promise<CompletePaymentResponse>;
   listPayments: (request?: ListPaymentsRequest) => Promise<ListPaymentsResponse>;
 }
 

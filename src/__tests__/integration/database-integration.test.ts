@@ -286,9 +286,7 @@ describe('Database Integration Tests', () => {
       const user1 = await userFactory.create({ email: 'unique@example.com' });
 
       // Attempting to create another user with the same email should fail
-      await expect(
-        userFactory.create({ email: 'unique@example.com' })
-      ).rejects.toThrow();
+      await expect(userFactory.create({ email: 'unique@example.com' })).rejects.toThrow();
     });
 
     test('should handle product price validation', async () => {

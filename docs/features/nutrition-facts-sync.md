@@ -5,6 +5,7 @@ This document explains how to use the new nutrition facts sync feature that auto
 ## Overview
 
 The nutrition facts sync feature allows you to:
+
 - Import calorie information from Square
 - Sync dietary preferences (e.g., vegan, gluten-free)
 - Import ingredient lists
@@ -38,6 +39,7 @@ nutrition_facts   JSONB           -- Complete nutrition facts as JSON
 ## Running the Sync
 
 1. **Access the admin sync dashboard** at:
+
    ```
    http://localhost:3000/admin/square-sync
    ```
@@ -58,7 +60,7 @@ function ProductPage({ product }) {
     <div>
       <h1>{product.name}</h1>
       <p>{product.description}</p>
-      
+
       <NutritionFacts
         calories={product.calories}
         dietaryPreferences={product.dietaryPreferences}
@@ -79,7 +81,7 @@ import { ProductCardWithNutrition } from '@/components/products/ProductCardWithN
 function ProductGrid({ products }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {products.map((product) => (
+      {products.map(product => (
         <ProductCardWithNutrition
           key={product.id}
           product={product}
@@ -103,8 +105,8 @@ const productsWithNutrition = await prisma.product.findMany({
       { calories: { not: null } },
       { dietaryPreferences: { not: { equals: [] } } },
       { ingredients: { not: null } },
-      { allergens: { not: { equals: [] } } }
-    ]
+      { allergens: { not: { equals: [] } } },
+    ],
   },
   select: {
     id: true,
@@ -114,16 +116,16 @@ const productsWithNutrition = await prisma.product.findMany({
     ingredients: true,
     allergens: true,
     nutritionFacts: true,
-  }
+  },
 });
 
 // Filter products by dietary preference
 const vegetarianProducts = await prisma.product.findMany({
   where: {
     dietaryPreferences: {
-      has: 'vegetarian'
-    }
-  }
+      has: 'vegetarian',
+    },
+  },
 });
 
 // Filter products by allergen (exclude products containing nuts)
@@ -131,19 +133,19 @@ const nutFreeProducts = await prisma.product.findMany({
   where: {
     NOT: {
       allergens: {
-        has: 'nuts'
-      }
-    }
-  }
+        has: 'nuts',
+      },
+    },
+  },
 });
 
 // Products under certain calorie count
 const lowCalorieProducts = await prisma.product.findMany({
   where: {
     calories: {
-      lte: 200
-    }
-  }
+      lte: 200,
+    },
+  },
 });
 ```
 
@@ -157,7 +159,7 @@ import { prisma } from '@/lib/db';
 
 export default async function handler(req, res) {
   const { id } = req.query;
-  
+
   const product = await prisma.product.findUnique({
     where: { id },
     select: {
@@ -170,13 +172,13 @@ export default async function handler(req, res) {
       ingredients: true,
       allergens: true,
       nutritionFacts: true,
-    }
+    },
   });
-  
+
   if (!product) {
     return res.status(404).json({ error: 'Product not found' });
   }
-  
+
   res.json(product);
 }
 ```
@@ -190,6 +192,7 @@ npx tsx scripts/test-nutrition-sync.ts
 ```
 
 This test will:
+
 - ✅ Verify database schema includes nutrition fields
 - ✅ Test nutrition extraction logic
 - ✅ Test database operations with nutrition data
@@ -220,10 +223,10 @@ This test will:
 
 2. **Check database data**:
    ```sql
-   SELECT name, calories, dietary_preferences, ingredients, allergens 
-   FROM products 
-   WHERE calories IS NOT NULL 
-   OR array_length(dietary_preferences, 1) > 0 
+   SELECT name, calories, dietary_preferences, ingredients, allergens
+   FROM products
+   WHERE calories IS NOT NULL
+   OR array_length(dietary_preferences, 1) > 0
    OR ingredients IS NOT NULL;
    ```
 
@@ -238,6 +241,7 @@ This test will:
 ## Support
 
 For questions or issues with nutrition sync:
+
 1. Check the sync logs at `/admin/square-sync`
 2. Run the test script to verify functionality
 3. Review this documentation for proper usage examples

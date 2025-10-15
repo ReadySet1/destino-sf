@@ -19,9 +19,11 @@
 **Sprint/Milestone**: HOTFIX-2025-Q3-SPRINT-1
 
 ### Problem Statement
+
 Production application experiencing critical Prisma client errors with prepared statements ("prepared statement does not exist" and "prepared statement already exists") causing API failures across multiple endpoints including orders, spotlight picks, and catering orders. This indicates connection pool management issues between Prisma and PostgreSQL/Supabase.
 
 ### Success Criteria
+
 - [ ] Zero prepared statement errors in production logs
 - [ ] All affected API endpoints responding successfully (orders, spotlight-picks, webhooks)
 - [ ] Database connection pool properly configured for Supabase pooler
@@ -29,6 +31,7 @@ Production application experiencing critical Prisma client errors with prepared 
 - [ ] Performance metrics remain within acceptable range (<200ms response time)
 
 ### Dependencies
+
 - **Blocked by**: None (Critical production issue)
 - **Blocks**: All order-related features, webhook processing
 - **Related PRs/Issues**: N/A - Emergency hotfix
@@ -40,6 +43,7 @@ Production application experiencing critical Prisma client errors with prepared 
 ### 1. Code Structure & References
 
 #### File Structure
+
 ```tsx
 // Files to be modified/created
 src/
@@ -72,6 +76,7 @@ migrations/
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/database.ts
 import { z } from 'zod';
@@ -106,14 +111,14 @@ export interface ConnectionHealth {
   lastChecked: Date;
 }
 
-export type ConnectionError = 
+export type ConnectionError =
   | { type: 'PREPARED_STATEMENT_NOT_EXISTS'; code: '26000'; details: string }
   | { type: 'PREPARED_STATEMENT_EXISTS'; code: '42P05'; details: string }
   | { type: 'CONNECTION_TIMEOUT'; timeoutMs: number }
   | { type: 'POOL_EXHAUSTED'; waitTime: number };
 
 // Result type for database operations
-export type DatabaseResult<T> = 
+export type DatabaseResult<T> =
   | { success: true; data: T; metrics?: QueryMetrics }
   | { success: false; error: ConnectionError; shouldRetry: boolean };
 
@@ -126,6 +131,7 @@ export interface QueryMetrics {
 ```
 
 #### Database Schema Updates
+
 ```sql
 -- PostgreSQL connection pool configuration
 -- Run these on Supabase dashboard SQL editor
@@ -153,14 +159,14 @@ CREATE TABLE IF NOT EXISTS connection_pool_metrics (
 );
 
 -- Index for time-series queries
-CREATE INDEX idx_connection_pool_metrics_timestamp 
+CREATE INDEX idx_connection_pool_metrics_timestamp
   ON connection_pool_metrics(timestamp DESC);
 
 -- Retention policy (keep 7 days of metrics)
-CREATE OR REPLACE FUNCTION cleanup_old_metrics() 
+CREATE OR REPLACE FUNCTION cleanup_old_metrics()
 RETURNS void AS $$
 BEGIN
-  DELETE FROM connection_pool_metrics 
+  DELETE FROM connection_pool_metrics
   WHERE timestamp < NOW() - INTERVAL '7 days';
 END;
 $$ LANGUAGE plpgsql;
@@ -172,6 +178,7 @@ $$ LANGUAGE plpgsql;
 ### 2. Architecture Patterns
 
 #### Connection Pool Management Architecture
+
 ```mermaid
 graph TD
     A[Next.js API Route] -->|Request| B[Connection Manager]
@@ -186,13 +193,14 @@ graph TD
     J --> H
     E --> K[Wait for Connection]
     K --> D
-    
+
     L[Health Monitor] -->|Check| B
     L --> M[Metrics Collector]
     M --> N[Alert System]
 ```
 
 #### Error Handling Pattern
+
 ```tsx
 // lib/db/connection-manager.ts
 import { PrismaClient } from '@prisma/client';
@@ -202,7 +210,7 @@ export class DatabaseConnectionManager {
   private prismaClient: PrismaClient | null = null;
   private pgPool: Pool | null = null;
   private connectionRetries = new Map<string, number>();
-  
+
   constructor(private config: DatabaseConfig) {}
 
   async getConnection(): Promise<PrismaClient> {
@@ -214,30 +222,28 @@ export class DatabaseConnectionManager {
 
   private async createPrismaClient(): Promise<PrismaClient> {
     const datasourceUrl = this.buildConnectionString();
-    
+
     return new PrismaClient({
       datasources: {
-        db: { url: datasourceUrl }
+        db: { url: datasourceUrl },
       },
-      log: process.env.NODE_ENV === 'development' 
-        ? ['query', 'error', 'warn'] 
-        : ['error'],
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
       errorFormat: 'minimal',
     });
   }
 
   private buildConnectionString(): string {
     const url = new URL(this.config.connectionString);
-    
+
     // Add pgBouncer-compatible parameters
     url.searchParams.set('pgbouncer', 'true');
     url.searchParams.set('connection_limit', String(this.config.pool.max));
     url.searchParams.set('pool_timeout', String(this.config.pool.connectionTimeoutMillis / 1000));
     url.searchParams.set('statement_timeout', String(this.config.pool.statementTimeout));
-    
+
     // Disable prepared statements for pgBouncer transaction mode
     url.searchParams.set('prepare', 'false');
-    
+
     return url.toString();
   }
 
@@ -247,87 +253,88 @@ export class DatabaseConnectionManager {
   ): Promise<DatabaseResult<T>> {
     const maxRetries = this.config.retryPolicy.maxRetries;
     let lastError: ConnectionError | null = null;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const prisma = await this.getConnection();
         const startTime = Date.now();
-        
+
         const data = await operation(prisma);
-        
+
         const metrics: QueryMetrics = {
           queryTime: Date.now() - startTime,
           connectionAcquisitionTime: 0,
           totalTime: Date.now() - startTime,
-          preparedStatementCached: false
+          preparedStatementCached: false,
         };
-        
+
         // Reset retry counter on success
         this.connectionRetries.delete(operationId);
-        
+
         return { success: true, data, metrics };
-        
       } catch (error: any) {
         lastError = this.mapPrismaError(error);
-        
+
         // Check if error is retryable
         if (!this.isRetryableError(error) || attempt === maxRetries) {
-          return { 
-            success: false, 
-            error: lastError, 
-            shouldRetry: false 
+          return {
+            success: false,
+            error: lastError,
+            shouldRetry: false,
           };
         }
-        
+
         // Exponential backoff
         const delay = this.calculateBackoff(attempt);
-        console.warn(`Retrying operation ${operationId} after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        
+        console.warn(
+          `Retrying operation ${operationId} after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`
+        );
+
         // Reset connection on prepared statement errors
         if (this.isPreparedStatementError(error)) {
           await this.resetConnection();
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-    
-    return { 
-      success: false, 
-      error: lastError!, 
-      shouldRetry: false 
+
+    return {
+      success: false,
+      error: lastError!,
+      shouldRetry: false,
     };
   }
 
   private mapPrismaError(error: any): ConnectionError {
     const code = error?.code || error?.meta?.code;
-    
+
     if (code === '26000') {
       return {
         type: 'PREPARED_STATEMENT_NOT_EXISTS',
         code: '26000',
-        details: error.message
+        details: error.message,
       };
     }
-    
+
     if (code === '42P05') {
       return {
         type: 'PREPARED_STATEMENT_EXISTS',
         code: '42P05',
-        details: error.message
+        details: error.message,
       };
     }
-    
+
     if (error.message?.includes('timeout')) {
       return {
         type: 'CONNECTION_TIMEOUT',
-        timeoutMs: this.config.pool.connectionTimeoutMillis
+        timeoutMs: this.config.pool.connectionTimeoutMillis,
       };
     }
-    
+
     return {
       type: 'POOL_EXHAUSTED',
-      waitTime: 0
+      waitTime: 0,
     };
   }
 
@@ -350,17 +357,17 @@ export class DatabaseConnectionManager {
 
   async resetConnection(): Promise<void> {
     console.log('Resetting database connection...');
-    
+
     if (this.prismaClient) {
       await this.prismaClient.$disconnect();
       this.prismaClient = null;
     }
-    
+
     if (this.pgPool) {
       await this.pgPool.end();
       this.pgPool = null;
     }
-    
+
     // Wait a moment before allowing new connections
     await new Promise(resolve => setTimeout(resolve, 100));
   }
@@ -369,22 +376,22 @@ export class DatabaseConnectionManager {
     try {
       const prisma = await this.getConnection();
       const startTime = Date.now();
-      
+
       // Simple query to test connection
       await prisma.$queryRaw`SELECT 1`;
-      
+
       const queryTime = Date.now() - startTime;
-      
+
       // Get pool stats if available
       const poolStats = await this.getPoolStats();
-      
+
       return {
         status: queryTime < 100 ? 'healthy' : queryTime < 500 ? 'degraded' : 'unhealthy',
         activeConnections: poolStats.active,
         idleConnections: poolStats.idle,
         waitingRequests: poolStats.waiting,
         errors: [],
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     } catch (error) {
       return {
@@ -393,7 +400,7 @@ export class DatabaseConnectionManager {
         idleConnections: 0,
         waitingRequests: 0,
         errors: [this.mapPrismaError(error)],
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     }
   }
@@ -403,7 +410,7 @@ export class DatabaseConnectionManager {
     return {
       active: 0,
       idle: 0,
-      waiting: 0
+      waiting: 0,
     };
   }
 
@@ -417,6 +424,7 @@ export class DatabaseConnectionManager {
 ### 3. Full Stack Integration Points
 
 #### Updated Prisma Client Singleton
+
 ```tsx
 // lib/db/prisma.ts
 import { DatabaseConnectionManager } from './connection-manager';
@@ -433,19 +441,18 @@ const config: DatabaseConfig = {
     max: parseInt(process.env.DATABASE_POOL_MAX || '10'),
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-    statementTimeout: 30000
+    statementTimeout: 30000,
   },
   retryPolicy: {
     maxRetries: 3,
     initialDelayMs: 100,
     maxDelayMs: 2000,
-    backoffMultiplier: 2
-  }
+    backoffMultiplier: 2,
+  },
 };
 
-export const connectionManager = 
-  globalForPrisma.connectionManager ??
-  new DatabaseConnectionManager(config);
+export const connectionManager =
+  globalForPrisma.connectionManager ?? new DatabaseConnectionManager(config);
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.connectionManager = connectionManager;
@@ -460,11 +467,11 @@ export async function withDatabase<T>(
     operation,
     operationId || `op_${Date.now()}`
   );
-  
+
   if (!result.success) {
     throw new Error(`Database operation failed: ${JSON.stringify(result.error)}`);
   }
-  
+
   return result.data;
 }
 
@@ -475,6 +482,7 @@ process.on('SIGTERM', async () => {
 ```
 
 #### Fixed API Routes
+
 ```tsx
 // app/api/user/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -485,7 +493,7 @@ import { z } from 'zod';
 const OrderQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
-  status: z.enum(['pending', 'completed', 'cancelled']).optional()
+  status: z.enum(['pending', 'completed', 'cancelled']).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -493,10 +501,7 @@ export async function GET(request: NextRequest) {
     // Get user session
     const session = await getServerSession();
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse query parameters
@@ -504,38 +509,32 @@ export async function GET(request: NextRequest) {
     const query = OrderQuerySchema.parse(searchParams);
 
     // Execute database operation with retry logic
-    const orders = await withDatabase(
-      async (prisma) => {
-        return prisma.order.findMany({
-          where: {
-            userId: session.user.id,
-            ...(query.status && { status: query.status })
-          },
-          skip: (query.page - 1) * query.limit,
-          take: query.limit,
-          orderBy: {
-            createdAt: 'desc'
-          },
-          include: {
-            items: true
-          }
-        });
-      },
-      `get_user_orders_${session.user.id}`
-    );
+    const orders = await withDatabase(async prisma => {
+      return prisma.order.findMany({
+        where: {
+          userId: session.user.id,
+          ...(query.status && { status: query.status }),
+        },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          items: true,
+        },
+      });
+    }, `get_user_orders_${session.user.id}`);
 
     // Get total count for pagination
-    const totalCount = await withDatabase(
-      async (prisma) => {
-        return prisma.order.count({
-          where: {
-            userId: session.user.id,
-            ...(query.status && { status: query.status })
-          }
-        });
-      },
-      `count_user_orders_${session.user.id}`
-    );
+    const totalCount = await withDatabase(async prisma => {
+      return prisma.order.count({
+        where: {
+          userId: session.user.id,
+          ...(query.status && { status: query.status }),
+        },
+      });
+    }, `count_user_orders_${session.user.id}`);
 
     return NextResponse.json({
       orders,
@@ -543,13 +542,12 @@ export async function GET(request: NextRequest) {
         page: query.page,
         limit: query.limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / query.limit)
-      }
+        totalPages: Math.ceil(totalCount / query.limit),
+      },
     });
-
   } catch (error: any) {
     console.error('Error fetching user orders:', error);
-    
+
     // Return appropriate error response
     if (error.message?.includes('Database operation failed')) {
       return NextResponse.json(
@@ -558,10 +556,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
   }
 }
 ```
@@ -575,50 +570,43 @@ import { unstable_cache } from 'next/cache';
 // Cache spotlight picks for 5 minutes
 const getSpotlightPicks = unstable_cache(
   async () => {
-    return withDatabase(
-      async (prisma) => {
-        return prisma.spotlightPick.findMany({
-          where: {
-            isActive: true,
-            validFrom: {
-              lte: new Date()
-            },
-            validUntil: {
-              gte: new Date()
-            }
+    return withDatabase(async prisma => {
+      return prisma.spotlightPick.findMany({
+        where: {
+          isActive: true,
+          validFrom: {
+            lte: new Date(),
           },
-          orderBy: {
-            priority: 'asc'
+          validUntil: {
+            gte: new Date(),
           },
-          take: 10
-        });
-      },
-      'get_spotlight_picks'
-    );
+        },
+        orderBy: {
+          priority: 'asc',
+        },
+        take: 10,
+      });
+    }, 'get_spotlight_picks');
   },
   ['spotlight-picks'],
   {
     revalidate: 300, // 5 minutes
-    tags: ['spotlight-picks']
+    tags: ['spotlight-picks'],
   }
 );
 
 export async function GET(request: NextRequest) {
   try {
     const picks = await getSpotlightPicks();
-    
+
     return NextResponse.json({
       picks,
-      cachedAt: new Date().toISOString()
+      cachedAt: new Date().toISOString(),
     });
-
   } catch (error: any) {
     console.error('Error fetching spotlight picks:', error);
-    
-    return NextResponse.json(
-      { error: 'Failed to fetch spotlight picks' },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Failed to fetch spotlight picks' }, { status: 500 });
   }
 }
 ```
@@ -628,6 +616,7 @@ export async function GET(request: NextRequest) {
 ## 🧪 Testing Strategy
 
 ### Testing Pyramid
+
 ```
          /\
         /  \  E2E Tests (Critical user flows with orders)
@@ -639,6 +628,7 @@ export async function GET(request: NextRequest) {
 ```
 
 ### Unit Tests
+
 ```tsx
 // lib/db/connection-manager.test.ts
 import { DatabaseConnectionManager } from './connection-manager';
@@ -646,7 +636,7 @@ import { PrismaClient } from '@prisma/client';
 
 describe('DatabaseConnectionManager', () => {
   let manager: DatabaseConnectionManager;
-  
+
   beforeEach(() => {
     manager = new DatabaseConnectionManager({
       connectionString: process.env.TEST_DATABASE_URL!,
@@ -655,14 +645,14 @@ describe('DatabaseConnectionManager', () => {
         max: 5,
         idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 3000,
-        statementTimeout: 5000
+        statementTimeout: 5000,
       },
       retryPolicy: {
         maxRetries: 2,
         initialDelayMs: 50,
         maxDelayMs: 500,
-        backoffMultiplier: 2
-      }
+        backoffMultiplier: 2,
+      },
     });
   });
 
@@ -672,50 +662,42 @@ describe('DatabaseConnectionManager', () => {
 
   describe('Prepared Statement Error Handling', () => {
     it('should retry on prepared statement does not exist error', async () => {
-      const mockOperation = jest.fn()
+      const mockOperation = jest
+        .fn()
         .mockRejectedValueOnce({
           code: '26000',
-          message: 'prepared statement "s0" does not exist'
+          message: 'prepared statement "s0" does not exist',
         })
         .mockResolvedValueOnce({ id: '123' });
 
-      const result = await manager.executeWithRetry(
-        mockOperation,
-        'test_operation'
-      );
+      const result = await manager.executeWithRetry(mockOperation, 'test_operation');
 
       expect(result.success).toBe(true);
       expect(mockOperation).toHaveBeenCalledTimes(2);
     });
 
     it('should retry on prepared statement already exists error', async () => {
-      const mockOperation = jest.fn()
+      const mockOperation = jest
+        .fn()
         .mockRejectedValueOnce({
           code: '42P05',
-          message: 'prepared statement "s0" already exists'
+          message: 'prepared statement "s0" already exists',
         })
         .mockResolvedValueOnce({ id: '456' });
 
-      const result = await manager.executeWithRetry(
-        mockOperation,
-        'test_operation'
-      );
+      const result = await manager.executeWithRetry(mockOperation, 'test_operation');
 
       expect(result.success).toBe(true);
       expect(mockOperation).toHaveBeenCalledTimes(2);
     });
 
     it('should respect max retries limit', async () => {
-      const mockOperation = jest.fn()
-        .mockRejectedValue({
-          code: '26000',
-          message: 'prepared statement error'
-        });
+      const mockOperation = jest.fn().mockRejectedValue({
+        code: '26000',
+        message: 'prepared statement error',
+      });
 
-      const result = await manager.executeWithRetry(
-        mockOperation,
-        'test_operation'
-      );
+      const result = await manager.executeWithRetry(mockOperation, 'test_operation');
 
       expect(result.success).toBe(false);
       expect(mockOperation).toHaveBeenCalledTimes(3); // initial + 2 retries
@@ -725,7 +707,7 @@ describe('DatabaseConnectionManager', () => {
   describe('Connection Health Check', () => {
     it('should report healthy status for fast queries', async () => {
       const health = await manager.healthCheck();
-      
+
       expect(health.status).toBeDefined();
       expect(['healthy', 'degraded', 'unhealthy']).toContain(health.status);
     });
@@ -734,6 +716,7 @@ describe('DatabaseConnectionManager', () => {
 ```
 
 ### Integration Tests
+
 ```tsx
 // app/api/user/orders/route.test.ts
 import { GET } from './route';
@@ -742,15 +725,15 @@ import { NextRequest } from 'next/server';
 describe('Orders API Endpoint', () => {
   it('should handle database connection errors gracefully', async () => {
     const request = new NextRequest('http://localhost:3000/api/user/orders');
-    
+
     // Mock session
     jest.spyOn(require('next-auth'), 'getServerSession').mockResolvedValue({
-      user: { id: 'test-user-id' }
+      user: { id: 'test-user-id' },
     });
-    
+
     const response = await GET(request);
     const data = await response.json();
-    
+
     expect(response.status).toBeLessThan(500);
     expect(data).toBeDefined();
   });
@@ -758,6 +741,7 @@ describe('Orders API Endpoint', () => {
 ```
 
 ### Load Testing Script
+
 ```typescript
 // scripts/load-test-db.ts
 import { createPool } from 'pg';
@@ -766,25 +750,21 @@ async function loadTestDatabase() {
   const pool = createPool({
     connectionString: process.env.DATABASE_URL,
     max: 50,
-    min: 5
+    min: 5,
   });
 
   const promises = [];
-  
+
   // Simulate 100 concurrent queries
   for (let i = 0; i < 100; i++) {
-    promises.push(
-      pool.query('SELECT * FROM orders WHERE user_id = $1 LIMIT 10', [
-        'test-user-id'
-      ])
-    );
+    promises.push(pool.query('SELECT * FROM orders WHERE user_id = $1 LIMIT 10', ['test-user-id']));
   }
 
   try {
     const start = Date.now();
     await Promise.all(promises);
     const duration = Date.now() - start;
-    
+
     console.log(`✅ Completed 100 queries in ${duration}ms`);
     console.log(`Average: ${duration / 100}ms per query`);
   } catch (error) {
@@ -802,6 +782,7 @@ loadTestDatabase();
 ## 🔒 Security Analysis
 
 ### Security Checklist
+
 - [x] **Connection String Security**: Use environment variables, never hardcode
 - [x] **SSL/TLS**: Enforce SSL for database connections
 - [x] **Connection Limits**: Prevent connection pool exhaustion attacks
@@ -812,34 +793,38 @@ loadTestDatabase();
 - [x] **Graceful Degradation**: Service remains partially functional during DB issues
 
 ### Security Configuration
+
 ```tsx
 // lib/db/security-config.ts
 export const databaseSecurityConfig = {
   // Require SSL in production
-  ssl: process.env.NODE_ENV === 'production' ? {
-    rejectUnauthorized: true
-  } : false,
-  
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? {
+          rejectUnauthorized: true,
+        }
+      : false,
+
   // Connection limits per IP
   connectionLimits: {
     perIp: 10,
-    total: 100
+    total: 100,
   },
-  
+
   // Query complexity limits
   queryLimits: {
     maxDepth: 5,
     maxComplexity: 100,
-    timeout: 30000
+    timeout: 30000,
   },
-  
+
   // Audit logging
   auditLog: {
     enabled: true,
     logFailedQueries: true,
     logSlowQueries: true,
-    slowQueryThreshold: 1000
-  }
+    slowQueryThreshold: 1000,
+  },
 };
 ```
 
@@ -848,6 +833,7 @@ export const databaseSecurityConfig = {
 ## 📊 Performance & Monitoring
 
 ### Performance Budget
+
 ```yaml
 performance:
   database_query_p50: < 50ms
@@ -859,17 +845,19 @@ performance:
 ```
 
 ### Monitoring Implementation
+
 ```tsx
 // lib/monitoring/db-metrics.ts
 import { connectionManager } from '@/lib/db/prisma';
 
 export class DatabaseMetrics {
   private metricsInterval: NodeJS.Timeout | null = null;
-  
+
   startCollection() {
     this.metricsInterval = setInterval(async () => {
       try {
         const health = await connectionManager.healthCheck();
-        
+
         // Log to monitoring service (DataDog, New Relic, etc.)
         await this.sendMetrics({
+```

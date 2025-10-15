@@ -6,24 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
-  Package, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
+import {
+  Package,
+  Calendar,
+  Clock,
+  DollarSign,
   Info,
   Minus,
   Plus,
-  ShoppingCart
+  ShoppingCart,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ export function PreOrderButton({
   settings,
   onAddToCart,
   disabled = false,
-  className
+  className,
 }: PreOrderButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -94,7 +94,7 @@ export function PreOrderButton({
         <Button
           disabled={disabled}
           className={cn(
-            "flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white",
+            'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white',
             className
           )}
         >
@@ -109,9 +109,7 @@ export function PreOrderButton({
             <Package className="h-5 w-5 text-blue-600" />
             Pre-Order: {product.name}
           </DialogTitle>
-          <DialogDescription>
-            {settings.message}
-          </DialogDescription>
+          <DialogDescription>{settings.message}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -128,9 +126,7 @@ export function PreOrderButton({
             )}
             <div className="flex-1">
               <h4 className="font-medium text-sm">{product.name}</h4>
-              <p className="text-sm text-muted-foreground">
-                ${product.price.toFixed(2)} each
-              </p>
+              <p className="text-sm text-muted-foreground">${product.price.toFixed(2)} each</p>
             </div>
           </div>
 
@@ -146,18 +142,14 @@ export function PreOrderButton({
             {hasDeposit && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DollarSign className="h-4 w-4" />
-                <span>
-                  Deposit required: ${depositAmount.toFixed(2)} per item
-                </span>
+                <span>Deposit required: ${depositAmount.toFixed(2)} per item</span>
               </div>
             )}
 
             {settings.maxQuantity && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Info className="h-4 w-4" />
-                <span>
-                  Maximum quantity: {settings.maxQuantity}
-                </span>
+                <span>Maximum quantity: {settings.maxQuantity}</span>
               </div>
             )}
           </div>
@@ -175,17 +167,17 @@ export function PreOrderButton({
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              
+
               <Input
                 id="quantity"
                 type="number"
                 min="1"
                 max={maxQuantity}
                 value={quantity}
-                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                onChange={e => handleQuantityChange(parseInt(e.target.value) || 1)}
                 className="w-20 text-center"
               />
-              
+
               <Button
                 type="button"
                 variant="outline"
@@ -204,7 +196,7 @@ export function PreOrderButton({
               <span>Subtotal:</span>
               <span>${totalPrice.toFixed(2)}</span>
             </div>
-            
+
             {hasDeposit && (
               <>
                 <div className="flex justify-between text-sm text-amber-600">
@@ -217,7 +209,7 @@ export function PreOrderButton({
                 </div>
               </>
             )}
-            
+
             <div className="flex justify-between font-medium border-t pt-2">
               <span>{hasDeposit ? 'Due Now:' : 'Total:'}</span>
               <span>${(hasDeposit ? totalDeposit : totalPrice).toFixed(2)}</span>
@@ -231,10 +223,9 @@ export function PreOrderButton({
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">Pre-Order Notice</p>
                 <p>
-                  {hasDeposit 
+                  {hasDeposit
                     ? `You will pay a ${depositAmount.toFixed(2)} deposit now. The remaining balance will be charged when your order is ready for delivery.`
-                    : 'You will be charged the full amount when your order is ready for delivery.'
-                  }
+                    : 'You will be charged the full amount when your order is ready for delivery.'}
                 </p>
               </div>
             </div>
@@ -250,7 +241,7 @@ export function PreOrderButton({
           >
             Cancel
           </Button>
-          
+
           <Button
             onClick={handlePreOrder}
             disabled={isLoading || quantity < 1}
@@ -264,10 +255,9 @@ export function PreOrderButton({
             ) : (
               <>
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                {hasDeposit 
-                  ? `Pay Deposit ($${totalDeposit.toFixed(2)})` 
-                  : `Add to Cart ($${totalPrice.toFixed(2)})`
-                }
+                {hasDeposit
+                  ? `Pay Deposit ($${totalDeposit.toFixed(2)})`
+                  : `Add to Cart ($${totalPrice.toFixed(2)})`}
               </>
             )}
           </Button>
@@ -284,7 +274,7 @@ export function CompactPreOrderButton({
   product,
   settings,
   onAddToCart,
-  className
+  className,
 }: PreOrderButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -311,10 +301,7 @@ export function CompactPreOrderButton({
       onClick={handleQuickPreOrder}
       disabled={isLoading}
       size="sm"
-      className={cn(
-        "bg-blue-600 hover:bg-blue-700 text-white",
-        className
-      )}
+      className={cn('bg-blue-600 hover:bg-blue-700 text-white', className)}
     >
       {isLoading ? (
         <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

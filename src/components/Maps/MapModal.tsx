@@ -83,7 +83,13 @@ const GoogleMapsComponent: React.FC<{
     if (!mapRef.current || !window.google || !window.google.maps) return;
 
     // Check if all required Google Maps classes are available
-    if (!window.google.maps.Map || !window.google.maps.Marker || !window.google.maps.InfoWindow || !window.google.maps.Geocoder || !window.google.maps.LatLngBounds) {
+    if (
+      !window.google.maps.Map ||
+      !window.google.maps.Marker ||
+      !window.google.maps.InfoWindow ||
+      !window.google.maps.Geocoder ||
+      !window.google.maps.LatLngBounds
+    ) {
       console.log('Google Maps API classes not yet available, retrying...');
       // Retry after a short delay
       setTimeout(() => initMap(), 100);
@@ -98,74 +104,74 @@ const GoogleMapsComponent: React.FC<{
 
     try {
       const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 37.7749, lng: -122.4194 }, // Default center, will be overridden by fitBounds
-      zoom: 11,
-      mapTypeControl: false,
-      fullscreenControl: true,
-      streetViewControl: false,
-    });
-    mapInstance.current = map;
-    infoWindowRef.current = new window.google.maps.InfoWindow();
-    markersRef.current = [];
+        center: { lat: 37.7749, lng: -122.4194 }, // Default center, will be overridden by fitBounds
+        zoom: 11,
+        mapTypeControl: false,
+        fullscreenControl: true,
+        streetViewControl: false,
+      });
+      mapInstance.current = map;
+      infoWindowRef.current = new window.google.maps.InfoWindow();
+      markersRef.current = [];
 
-    const bounds = new window.google.maps.LatLngBounds();
-    let geocodeCount = 0;
-    const totalLocations = locations.length;
+      const bounds = new window.google.maps.LatLngBounds();
+      let geocodeCount = 0;
+      const totalLocations = locations.length;
 
-    if (totalLocations === 0) {
-      setMapLoaded(true);
-      return;
-    }
+      if (totalLocations === 0) {
+        setMapLoaded(true);
+        return;
+      }
 
-    locations.forEach((location, index) => {
-      const geocoder = new window.google.maps.Geocoder();
+      locations.forEach((location, index) => {
+        const geocoder = new window.google.maps.Geocoder();
 
-      geocoder.geocode(
-        { address: location.address },
-        (results: GoogleMapsGeocoderResult[] | null, status: GoogleMapsGeocoderStatus) => {
-          geocodeCount++;
-          if (status === 'OK' && results && results[0]) {
-            const position = results[0].geometry.location;
-            const marker = new window.google.maps.Marker({
-              position: position,
-              map: map, // Initially add all markers to the map
-              title: location.name,
-              animation: window.google.maps.Animation.DROP,
-            });
+        geocoder.geocode(
+          { address: location.address },
+          (results: GoogleMapsGeocoderResult[] | null, status: GoogleMapsGeocoderStatus) => {
+            geocodeCount++;
+            if (status === 'OK' && results && results[0]) {
+              const position = results[0].geometry.location;
+              const marker = new window.google.maps.Marker({
+                position: position,
+                map: map, // Initially add all markers to the map
+                title: location.name,
+                animation: window.google.maps.Animation.DROP,
+              });
 
-            markersRef.current[index] = marker;
-            bounds.extend(position);
+              markersRef.current[index] = marker;
+              bounds.extend(position);
 
-            // Store lat/lng coordinates in the location object for Google Maps links
-            location.lat = position.lat();
-            location.lng = position.lng();
+              // Store lat/lng coordinates in the location object for Google Maps links
+              location.lat = position.lat();
+              location.lng = position.lng();
 
-            marker.addListener('click', () => {
-              // Trigger the click event in the parent component to update selectedLocationIndex
-              // This is handled by the useEffect for selectedLocationIndex
-            });
-          } else {
-            console.error(`Geocode was not successful for ${location.name}: ${status}`);
-          }
-
-          if (geocodeCount === totalLocations) {
-            // Fit map to show all locations initially after all geocodes are done
-            if (!bounds.isEmpty()) {
-              map.fitBounds(bounds);
-              const zoomThreshold = 0.05;
-              if (
-                bounds.getNorthEast().lng() - bounds.getSouthWest().lng() < zoomThreshold &&
-                bounds.getNorthEast().lat() - bounds.getSouthWest().lat() < zoomThreshold &&
-                locations.length > 0
-              ) {
-                map.setZoom(Math.min(map.getZoom(), 13));
-              }
+              marker.addListener('click', () => {
+                // Trigger the click event in the parent component to update selectedLocationIndex
+                // This is handled by the useEffect for selectedLocationIndex
+              });
+            } else {
+              console.error(`Geocode was not successful for ${location.name}: ${status}`);
             }
-            setMapLoaded(true);
+
+            if (geocodeCount === totalLocations) {
+              // Fit map to show all locations initially after all geocodes are done
+              if (!bounds.isEmpty()) {
+                map.fitBounds(bounds);
+                const zoomThreshold = 0.05;
+                if (
+                  bounds.getNorthEast().lng() - bounds.getSouthWest().lng() < zoomThreshold &&
+                  bounds.getNorthEast().lat() - bounds.getSouthWest().lat() < zoomThreshold &&
+                  locations.length > 0
+                ) {
+                  map.setZoom(Math.min(map.getZoom(), 13));
+                }
+              }
+              setMapLoaded(true);
+            }
           }
-        }
-      );
-    });
+        );
+      });
     } catch (error) {
       console.error('Error initializing Google Maps:', error);
       // Retry after a longer delay if there's an error

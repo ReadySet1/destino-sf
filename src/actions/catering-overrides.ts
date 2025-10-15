@@ -44,11 +44,7 @@ export async function getItemEditCapabilities(itemId: string) {
   };
 }
 
-export async function updateCateringItemWithOverrides(
-  itemId: string,
-  data: any,
-  overrides: any
-) {
+export async function updateCateringItemWithOverrides(itemId: string, data: any, overrides: any) {
   try {
     const result = await db.cateringPackage.update({
       where: { id: itemId },

@@ -7,6 +7,7 @@ The Authentication API provides secure user registration, login, and session man
 ## Authentication Endpoints
 
 ### User Registration
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -21,6 +22,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```typescript
 interface RegisterResponse {
   user: {
@@ -36,6 +38,7 @@ interface RegisterResponse {
 ```
 
 ### User Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -47,6 +50,7 @@ Content-Type: application/json
 ```
 
 ### Token Refresh
+
 ```http
 POST /api/auth/refresh
 Content-Type: application/json
@@ -57,12 +61,14 @@ Content-Type: application/json
 ```
 
 ### Logout
+
 ```http
 POST /api/auth/logout
 Authorization: Bearer <access_token>
 ```
 
 ### Password Reset Request
+
 ```http
 POST /api/auth/forgot-password
 Content-Type: application/json
@@ -73,6 +79,7 @@ Content-Type: application/json
 ```
 
 ### Password Reset Confirmation
+
 ```http
 POST /api/auth/reset-password
 Content-Type: application/json
@@ -86,6 +93,7 @@ Content-Type: application/json
 ## JWT Token Structure
 
 ### Access Token Payload
+
 ```typescript
 interface AccessTokenPayload {
   userId: string;
@@ -97,6 +105,7 @@ interface AccessTokenPayload {
 ```
 
 ### Refresh Token Payload
+
 ```typescript
 interface RefreshTokenPayload {
   userId: string;
@@ -109,6 +118,7 @@ interface RefreshTokenPayload {
 ## Security Features
 
 ### Password Requirements
+
 - Minimum 8 characters
 - At least one uppercase letter
 - At least one lowercase letter
@@ -116,12 +126,14 @@ interface RefreshTokenPayload {
 - At least one special character
 
 ### Token Security
+
 - Access tokens expire in 1 hour
 - Refresh tokens expire in 30 days
 - Secure HTTP-only cookies for refresh tokens
 - Automatic token rotation on refresh
 
 ### Rate Limiting
+
 - Login attempts: 5 per minute per IP
 - Registration: 3 per minute per IP
 - Password reset: 1 per 5 minutes per email
@@ -129,6 +141,7 @@ interface RefreshTokenPayload {
 ## Error Responses
 
 ### Common Error Codes
+
 ```typescript
 enum AuthErrorCodes {
   INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
@@ -138,11 +151,12 @@ enum AuthErrorCodes {
   PASSWORD_TOO_WEAK = 'PASSWORD_TOO_WEAK',
   RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
   EMAIL_NOT_FOUND = 'EMAIL_NOT_FOUND',
-  RESET_TOKEN_INVALID = 'RESET_TOKEN_INVALID'
+  RESET_TOKEN_INVALID = 'RESET_TOKEN_INVALID',
 }
 ```
 
 ### Example Error Response
+
 ```json
 {
   "success": false,
@@ -156,12 +170,13 @@ enum AuthErrorCodes {
 ## Integration Examples
 
 ### React Hook Usage
+
 ```typescript
 import { useAuth } from '@/hooks/useAuth';
 
 export const LoginForm: React.FC = () => {
   const { login, loading, error } = useAuth();
-  
+
   const handleSubmit = async (data: LoginData) => {
     try {
       await login(data.email, data.password);
@@ -170,7 +185,7 @@ export const LoginForm: React.FC = () => {
       // Handle login error
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit}>
       {/* Login form fields */}
@@ -180,9 +195,10 @@ export const LoginForm: React.FC = () => {
 ```
 
 ### API Client Configuration
+
 ```typescript
 // Configure axios interceptors for automatic token handling
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(config => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -191,8 +207,8 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     if (error.response?.status === 401) {
       try {
         await refreshToken();
@@ -211,6 +227,7 @@ apiClient.interceptors.response.use(
 ## Admin Authentication
 
 ### Admin Login
+
 ```http
 POST /api/auth/admin/login
 Content-Type: application/json
@@ -223,36 +240,38 @@ Content-Type: application/json
 ```
 
 ### Role-Based Permissions
+
 ```typescript
 enum AdminRoles {
-  SUPER_ADMIN = 'super_admin',    // Full system access
-  ADMIN = 'admin',                // Order and product management
-  STAFF = 'staff',                // Order fulfillment only
-  VIEWER = 'viewer'               // Read-only access
+  SUPER_ADMIN = 'super_admin', // Full system access
+  ADMIN = 'admin', // Order and product management
+  STAFF = 'staff', // Order fulfillment only
+  VIEWER = 'viewer', // Read-only access
 }
 ```
 
 ### Protected Route Middleware
+
 ```typescript
 export const requireAuth = (requiredRole?: AdminRoles) => {
   return async (req: NextApiRequest, res: NextApiResponse, next: NextFunction) => {
     try {
       const token = extractTokenFromHeader(req);
       const payload = verifyAccessToken(token);
-      
+
       if (requiredRole && !hasPermission(payload.role, requiredRole)) {
         return res.status(403).json({
           success: false,
-          error: { code: 'INSUFFICIENT_PERMISSIONS' }
+          error: { code: 'INSUFFICIENT_PERMISSIONS' },
         });
       }
-      
+
       req.user = payload;
       next();
     } catch (error) {
       return res.status(401).json({
         success: false,
-        error: { code: 'INVALID_TOKEN' }
+        error: { code: 'INVALID_TOKEN' },
       });
     }
   };

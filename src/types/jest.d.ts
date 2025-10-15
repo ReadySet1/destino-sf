@@ -8,8 +8,8 @@ export type MockedObject<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any
     ? jest.MockedFunction<T[K]>
     : T[K] extends object
-    ? MockedObject<T[K]>
-    : T[K];
+      ? MockedObject<T[K]>
+      : T[K];
 };
 
 // Utility types for better mock type inference
@@ -17,8 +17,8 @@ export type DeepMocked<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any
     ? jest.MockedFunction<T[K]>
     : T[K] extends object
-    ? DeepMocked<T[K]>
-    : T[K];
+      ? DeepMocked<T[K]>
+      : T[K];
 } & T;
 
 // Mock factory types
@@ -107,7 +107,7 @@ declare global {
       toHaveFocus(): R;
       toBeValid(): R;
       toBeInvalid(): R;
-      
+
       // Custom business logic matchers
       toBeValidOrder(): R;
       toBeValidProduct(): R;
@@ -118,13 +118,13 @@ declare global {
       toBePastDate(): R;
       toBeFutureDate(): R;
       toBeWithinDeliveryZone(): R;
-      
+
       // Database matchers
       toExistInDatabase(): R;
       toHaveBeenCreatedInDatabase(): R;
       toHaveBeenUpdatedInDatabase(): R;
       toHaveBeenDeletedFromDatabase(): R;
-      
+
       // API response matchers
       toBeSuccessfulApiResponse(): R;
       toBeErrorApiResponse(): R;

@@ -72,7 +72,7 @@ function ResetPasswordFormInner({ displayMessage, messageType }: ResetPasswordFo
         </div>
       </div>
 
-      <SubmitButton 
+      <SubmitButton
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
         pendingText="Updating password..."
       >

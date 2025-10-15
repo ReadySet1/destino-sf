@@ -35,15 +35,9 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate">
-            {activeProduct.name}
-          </h3>
-          <p className="text-sm text-gray-500">
-            ${activeProduct.price.toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-400">
-            Order: {activeProduct.ordinal}
-          </p>
+          <h3 className="font-medium text-gray-900 truncate">{activeProduct.name}</h3>
+          <p className="text-sm text-gray-500">${activeProduct.price.toFixed(2)}</p>
+          <p className="text-xs text-gray-400">Order: {activeProduct.ordinal}</p>
         </div>
 
         {/* Status Badges */}
@@ -58,7 +52,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             if (activeProduct.visibility === 'PRIVATE') {
               return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -66,7 +60,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             if (activeProduct.isAvailable === false) {
               return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -74,7 +68,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             if (activeProduct.itemState === 'SEASONAL') {
               return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -82,7 +76,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             if (activeProduct.itemState === 'ARCHIVED') {
               return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -90,7 +84,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             if (activeProduct.itemState === 'INACTIVE') {
               return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -98,7 +92,7 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
                 </span>
               );
             }
-            
+
             // Default to active
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -108,11 +102,13 @@ export function DragOverlay({ activeProduct }: DragOverlayProps) {
           })()}
 
           {/* Secondary badges for additional info */}
-          {activeProduct.isPreorder === true && activeProduct.active && activeProduct.isAvailable !== false && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Pre-order
-            </span>
-          )}
+          {activeProduct.isPreorder === true &&
+            activeProduct.active &&
+            activeProduct.isAvailable !== false && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Pre-order
+              </span>
+            )}
         </div>
       </div>
     </DndDragOverlay>

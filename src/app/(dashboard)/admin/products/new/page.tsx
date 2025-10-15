@@ -107,7 +107,12 @@ export default async function NewProductPage() {
                 className="inline-flex items-center px-5 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
                 </svg>
                 Back to Products
               </Link>
@@ -141,7 +146,10 @@ export default async function NewProductPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-semibold text-gray-700 mb-3"
+                  >
                     Description
                   </label>
                   <textarea
@@ -158,7 +166,10 @@ export default async function NewProductPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div>
-                    <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label
+                      htmlFor="price"
+                      className="block text-sm font-semibold text-gray-700 mb-3"
+                    >
                       Price *
                     </label>
                     <div className="relative">
@@ -179,7 +190,10 @@ export default async function NewProductPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="categoryId" className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label
+                      htmlFor="categoryId"
+                      className="block text-sm font-semibold text-gray-700 mb-3"
+                    >
                       Category *
                     </label>
                     <select
@@ -207,8 +221,8 @@ export default async function NewProductPage() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7 7h10v10H7z"/>
-                    <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 5.16-1 9-5.45 9-11V7l-10-5z"/>
+                    <path d="M7 7h10v10H7z" />
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 5.16-1 9-5.45 9-11V7l-10-5z" />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -221,7 +235,10 @@ export default async function NewProductPage() {
             </div>
             <div className="px-8 py-8">
               <div>
-                <label htmlFor="squareId" className="block text-sm font-semibold text-gray-700 mb-3">
+                <label
+                  htmlFor="squareId"
+                  className="block text-sm font-semibold text-gray-700 mb-3"
+                >
                   Square Catalog Item ID
                 </label>
                 <input
@@ -232,7 +249,8 @@ export default async function NewProductPage() {
                   className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-3 px-4 font-mono transition-all duration-200"
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  The unique identifier from Square&apos;s catalog. Leave empty to generate a temporary ID.
+                  The unique identifier from Square&apos;s catalog. Leave empty to generate a
+                  temporary ID.
                 </p>
               </div>
             </div>
@@ -243,8 +261,18 @@ export default async function NewProductPage() {
             <div className="px-8 py-6 border-b border-gray-200 bg-green-50">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -259,12 +287,24 @@ export default async function NewProductPage() {
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
                 <div className="space-y-6">
                   <div className="mx-auto w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
+                    <svg
+                      className="w-10 h-10 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Image Upload Component</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Image Upload Component
+                    </h3>
                     <p className="text-sm text-gray-600 mb-4">
                       Drag and drop images here, or click to browse files
                     </p>
@@ -283,8 +323,18 @@ export default async function NewProductPage() {
             <div className="px-8 py-6 border-b border-gray-200 bg-purple-50">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -345,8 +395,18 @@ export default async function NewProductPage() {
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
                   <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -358,17 +418,29 @@ export default async function NewProductPage() {
                     </span>
                   </h3>
                   <p className="text-gray-700 mb-4 leading-relaxed">
-                    New products are created with basic availability settings (matching the Active status above).
-                    For advanced features like <strong>scheduling</strong>, <strong>pre-orders</strong>, <strong>seasonal availability</strong>,
-                    and <strong>date-based rules</strong>, use the dedicated Availability Manager after creating this product.
+                    New products are created with basic availability settings (matching the Active
+                    status above). For advanced features like <strong>scheduling</strong>,{' '}
+                    <strong>pre-orders</strong>, <strong>seasonal availability</strong>, and{' '}
+                    <strong>date-based rules</strong>, use the dedicated Availability Manager after
+                    creating this product.
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href="/admin/products/availability"
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                     >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       Open Availability Manager
                     </Link>
@@ -376,16 +448,27 @@ export default async function NewProductPage() {
                       href="/admin/products/availability/timeline"
                       className="inline-flex items-center px-4 py-2 bg-white border-2 border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors"
                     >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       View Availability Timeline
                     </Link>
                   </div>
                   <div className="mt-4 p-3 bg-white border border-blue-200 rounded-lg">
                     <p className="text-sm text-gray-600">
-                      <strong className="text-gray-900">💡 Pro Tip:</strong> The Availability Manager lets you create
-                      complex rules for seasonal items, limited-time offers, and automatic state transitions.
+                      <strong className="text-gray-900">💡 Pro Tip:</strong> The Availability
+                      Manager lets you create complex rules for seasonal items, limited-time offers,
+                      and automatic state transitions.
                     </p>
                   </div>
                 </div>
@@ -407,7 +490,12 @@ export default async function NewProductPage() {
                 className="inline-flex items-center justify-center px-8 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
                 Create Product
               </button>

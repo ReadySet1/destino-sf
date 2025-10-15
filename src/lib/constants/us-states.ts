@@ -58,17 +58,16 @@ export const US_STATES: USState[] = [
 ];
 
 // California only - for local delivery
-export const CA_ONLY_STATES: USState[] = [
-  { code: 'CA', name: 'California' },
-];
+export const CA_ONLY_STATES: USState[] = [{ code: 'CA', name: 'California' }];
 
 export const getStateNameByCode = (code: string): string | undefined => {
   return US_STATES.find(state => state.code === code.toUpperCase())?.name;
 };
 
 export const getStateCodeByName = (name: string): string | undefined => {
-  return US_STATES.find(state => 
-    state.name.toLowerCase() === name.toLowerCase() ||
-    state.code.toLowerCase() === name.toLowerCase()
+  return US_STATES.find(
+    state =>
+      state.name.toLowerCase() === name.toLowerCase() ||
+      state.code.toLowerCase() === name.toLowerCase()
   )?.code;
 };

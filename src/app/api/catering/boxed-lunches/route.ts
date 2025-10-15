@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
-import { 
-  BoxedLunchEntree, 
-  BoxedLunchTierWithEntrees 
-} from '@/types/catering';
+import { BoxedLunchEntree, BoxedLunchTierWithEntrees } from '@/types/catering';
 import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 export const revalidate = 0; // Disable caching for real-time data
@@ -20,27 +17,30 @@ export async function GET(request: NextRequest) {
     const fallbackData = {
       tiers: [],
       entrees: [],
-      mode: 'build-your-own'
+      mode: 'build-your-own',
     };
 
     try {
       const result = await getBuildYourOwnBoxData();
       return NextResponse.json({
         success: true,
-        ...result // This spreads tiers, entrees, and mode
+        ...result, // This spreads tiers, entrees, and mode
       });
     } catch (error) {
       logger.error('❌ Failed to fetch build-your-own box data:', error);
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to load build-your-own options',
-        ...fallbackData
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to load build-your-own options',
+          ...fallbackData,
+        },
+        { status: 500 }
+      );
     }
   } else {
     // Fallback data for legacy boxed lunch items when database is unavailable
     const legacyFallbackData: any[] = [];
-    
+
     return await safeCateringApiOperation(
       () => getLegacyBoxedLunchItems(),
       legacyFallbackData,
@@ -50,31 +50,36 @@ export async function GET(request: NextRequest) {
 }
 
 async function getLegacyBoxedLunchItems() {
-  const products = await withRetry(() => prisma.product.findMany({
-      where: {
-        active: true,
-        category: {
-          name: {
-            in: ['CATERING- BOXED LUNCHES'],
-            mode: 'insensitive'
-          }
-        }
-      },
-      include: {
-        category: true,
-        variants: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-          }
-        }
-      },
-      orderBy: [
-        { ordinal: 'asc' },  // Admin-controlled order first
-        { name: 'asc' }      // Alphabetical fallback
-      ]
-    }), 3, 'find-many');
+  const products = await withRetry(
+    () =>
+      prisma.product.findMany({
+        where: {
+          active: true,
+          category: {
+            name: {
+              in: ['CATERING- BOXED LUNCHES'],
+              mode: 'insensitive',
+            },
+          },
+        },
+        include: {
+          category: true,
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+            },
+          },
+        },
+        orderBy: [
+          { ordinal: 'asc' }, // Admin-controlled order first
+          { name: 'asc' }, // Alphabetical fallback
+        ],
+      }),
+    3,
+    'find-many'
+  );
 
   logger.info(`✅ Found ${products.length} legacy boxed lunch products`);
 
@@ -83,43 +88,48 @@ async function getLegacyBoxedLunchItems() {
     // Parse dietary information from description
     const description = product.description || '';
     const dietaryPreferences = product.dietaryPreferences || [];
-    
+
     // Extract dietary info from description text (e.g., "-gf", "-vg", "-vegan")
-    const isGlutenFree = dietaryPreferences.includes('gluten-free') || 
-                        description.toLowerCase().includes('-gf') || 
-                        description.toLowerCase().includes('gluten free');
-    
-    const isVegan = dietaryPreferences.includes('vegan') || 
-                   description.toLowerCase().includes('-vg') || 
-                   description.toLowerCase().includes('vegan');
-    
-    const isVegetarian = dietaryPreferences.includes('vegetarian') || 
-                        description.toLowerCase().includes('vegetarian') || 
-                        isVegan; // Vegan items are also vegetarian
+    const isGlutenFree =
+      dietaryPreferences.includes('gluten-free') ||
+      description.toLowerCase().includes('-gf') ||
+      description.toLowerCase().includes('gluten free');
+
+    const isVegan =
+      dietaryPreferences.includes('vegan') ||
+      description.toLowerCase().includes('-vg') ||
+      description.toLowerCase().includes('vegan');
+
+    const isVegetarian =
+      dietaryPreferences.includes('vegetarian') ||
+      description.toLowerCase().includes('vegetarian') ||
+      isVegan; // Vegan items are also vegetarian
 
     // Check if this is the Tropical Salad that needs modifiers
     const isTropicalSalad = product.name.toLowerCase().includes('tropical salad');
-    
-    const modifiers = isTropicalSalad ? [
-      {
-        id: 'queso_fresco',
-        name: 'Add Queso Fresco (4oz)',
-        price: 2.00,
-        dietaryInfo: 'gf'
-      },
-      {
-        id: 'sirloin_steak', 
-        name: 'Add Sirloin Steak (4oz)',
-        price: 4.00,
-        dietaryInfo: 'gf'
-      },
-      {
-        id: 'chicken_mojo',
-        name: 'Add Chicken Mojo (4oz)', 
-        price: 3.00,
-        dietaryInfo: 'gf'
-      }
-    ] : [];
+
+    const modifiers = isTropicalSalad
+      ? [
+          {
+            id: 'queso_fresco',
+            name: 'Add Queso Fresco (4oz)',
+            price: 2.0,
+            dietaryInfo: 'gf',
+          },
+          {
+            id: 'sirloin_steak',
+            name: 'Add Sirloin Steak (4oz)',
+            price: 4.0,
+            dietaryInfo: 'gf',
+          },
+          {
+            id: 'chicken_mojo',
+            name: 'Add Chicken Mojo (4oz)',
+            price: 3.0,
+            dietaryInfo: 'gf',
+          },
+        ]
+      : [];
 
     return {
       id: product.id,
@@ -132,7 +142,7 @@ async function getLegacyBoxedLunchItems() {
       isGlutenFree,
       isVegan,
       isVegetarian,
-      modifiers: modifiers.length > 0 ? modifiers : undefined
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
     };
   });
 
@@ -143,49 +153,48 @@ async function getBuildYourOwnBoxData() {
   // Fetch both tiers and entrees in parallel with connection management
   const [tiers, entreeProducts] = await Promise.all([
     // Get tier configurations using Prisma model instead of raw SQL
-    withRetry(() =>
-      prisma.boxedLunchTier.findMany({
-        where: {
-          active: true
-        },
-        orderBy: {
-          tierNumber: 'asc'
-        }
-      }),
+    withRetry(
+      () =>
+        prisma.boxedLunchTier.findMany({
+          where: {
+            active: true,
+          },
+          orderBy: {
+            tierNumber: 'asc',
+          },
+        }),
       3,
       'boxed-lunch-tiers'
     ),
-    
+
     // Get entree products from the new category
-    withRetry(() =>
-      prisma.product.findMany({
-        where: {
-          active: true,
-          category: {
-            name: {
-              in: ['CATERING- BOXED LUNCH ENTREES'],
-              mode: 'insensitive'
-            }
-          }
-        },
-        include: {
-          category: true,
-          variants: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-            }
-          }
-        },
-        orderBy: [
-          { ordinal: 'asc' },
-          { name: 'asc' }
-        ]
-      }),
+    withRetry(
+      () =>
+        prisma.product.findMany({
+          where: {
+            active: true,
+            category: {
+              name: {
+                in: ['CATERING- BOXED LUNCH ENTREES'],
+                mode: 'insensitive',
+              },
+            },
+          },
+          include: {
+            category: true,
+            variants: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+          },
+          orderBy: [{ ordinal: 'asc' }, { name: 'asc' }],
+        }),
       3,
       'boxed-lunch-entrees'
-    )
+    ),
   ]);
 
   logger.info(`✅ Found ${tiers.length} tiers and ${entreeProducts.length} entree products`);
@@ -212,13 +221,13 @@ async function getBuildYourOwnBoxData() {
     name: tier.name,
     price: tier.priceCents / 100, // Convert cents to dollars
     proteinAmount: tier.proteinAmount || '',
-    sides: Array.isArray(tier.sides) ? tier.sides as string[] : [],
-    availableEntrees: entrees // All entrees available for all tiers
+    sides: Array.isArray(tier.sides) ? (tier.sides as string[]) : [],
+    availableEntrees: entrees, // All entrees available for all tiers
   }));
 
   return {
     tiers: tiersWithEntrees,
     entrees: entrees,
-    mode: 'build-your-own'
+    mode: 'build-your-own',
   };
 }

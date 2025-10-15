@@ -9,7 +9,11 @@
  * Run this script with: npx tsx scripts/test-html-sanitization.ts
  */
 
-import { sanitizeProductDescription, htmlToPlainText, isHtmlDescription } from '../src/lib/utils/product-description';
+import {
+  sanitizeProductDescription,
+  htmlToPlainText,
+  isHtmlDescription,
+} from '../src/lib/utils/product-description';
 
 // ANSI color codes for terminal output
 const GREEN = '\x1b[32m';
@@ -153,8 +157,10 @@ const testCases: TestCase[] = [
   },
   {
     name: 'Real Square example',
-    input: '<p><strong>(6oz)</strong> roasted acorn squash / sweet potato puree / coconut milk / romesco salsa <strong><em>-gf, vg, vgn</em></strong></p><p><br/></p>',
-    expected: '<p><strong>(6oz)</strong> roasted acorn squash / sweet potato puree / coconut milk / romesco salsa <strong><em>-gf, vg, vgn</em></strong></p><p><br></p>',
+    input:
+      '<p><strong>(6oz)</strong> roasted acorn squash / sweet potato puree / coconut milk / romesco salsa <strong><em>-gf, vg, vgn</em></strong></p><p><br/></p>',
+    expected:
+      '<p><strong>(6oz)</strong> roasted acorn squash / sweet potato puree / coconut milk / romesco salsa <strong><em>-gf, vg, vgn</em></strong></p><p><br></p>',
     description: 'Handle real Square product description',
   },
 ];

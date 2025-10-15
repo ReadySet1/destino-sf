@@ -3,7 +3,6 @@ import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma, withRetry } from '@/lib/db-unified';
-;
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import { syncCustomerToProfile } from '@/lib/profile-sync';
@@ -84,7 +83,8 @@ export async function POST(request: Request) {
     const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     // Create order in database with connection management
-    const order = await withRetry(() => prisma.order.create({
+    const order = await withRetry(() =>
+      prisma.order.create({
         data: {
           status: 'PENDING',
           total,
@@ -121,10 +121,15 @@ export async function POST(request: Request) {
     });
 
     // Update our order with Square order ID with connection management
-    await withRetry(() => prisma.order.update({
-        where: { id: order.id },
-        data: { squareOrderId: squareOrder.id },
-      }), 3, 'update');
+    await withRetry(
+      () =>
+        prisma.order.update({
+          where: { id: order.id },
+          data: { squareOrderId: squareOrder.id },
+        }),
+      3,
+      'update'
+    );
 
     return NextResponse.json({ orderId: order.id });
   } catch (error) {

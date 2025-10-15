@@ -16,8 +16,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 });
 
 /**
@@ -39,10 +39,12 @@ export class SupabaseHttpAdapter {
   async getCateringPackages() {
     const { data, error } = await this.client
       .from('catering_packages')
-      .select(`
+      .select(
+        `
         *,
         items:catering_package_items(*)
-      `)
+      `
+      )
       .eq('isActive', true)
       .order('featuredOrder', { ascending: true, nullsFirst: false });
 
@@ -54,11 +56,13 @@ export class SupabaseHttpAdapter {
   async getProductsByCategory(categoryName: string) {
     const { data, error } = await this.client
       .from('products')
-      .select(`
+      .select(
+        `
         *,
         category:categories(*),
         variants(*)
-      `)
+      `
+      )
       .eq('active', true)
       .eq('categories.name', categoryName)
       .order('ordinal', { ascending: true });
@@ -97,19 +101,19 @@ export class SupabaseHttpAdapter {
       const start = Date.now();
       const { error } = await this.client.from('profiles').select('count').limit(1);
       const latency = Date.now() - start;
-      
+
       return {
         connected: !error,
         latency,
         method: 'supabase-http',
-        error: error?.message
+        error: error?.message,
       };
     } catch (error) {
       return {
         connected: false,
         latency: 0,
         method: 'supabase-http',
-        error: (error as Error).message
+        error: (error as Error).message,
       };
     }
   }

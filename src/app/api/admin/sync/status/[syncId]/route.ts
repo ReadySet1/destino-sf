@@ -25,10 +25,11 @@ export async function GET(
 
     // 2. Check admin access
     const profile = await withRetry(
-      () => prisma.profile.findUnique({
-        where: { id: user.id },
-        select: { role: true, name: true, email: true },
-      }),
+      () =>
+        prisma.profile.findUnique({
+          where: { id: user.id },
+          select: { role: true, name: true, email: true },
+        }),
       3,
       'check admin access'
     );
@@ -49,26 +50,27 @@ export async function GET(
 
     // 4. Get sync status from database
     const syncLog = await withRetry(
-      () => prisma.userSyncLog.findUnique({
-        where: {
-          syncId,
-          userId: user.id, // Ensure user can only see their own syncs
-        },
-        select: {
-          id: true,
-          syncId: true,
-          status: true,
-          startTime: true,
-          endTime: true,
-          progress: true,
-          message: true,
-          currentStep: true,
-          results: true,
-          errors: true,
-          options: true,
-          startedBy: true,
-        },
-      }),
+      () =>
+        prisma.userSyncLog.findUnique({
+          where: {
+            syncId,
+            userId: user.id, // Ensure user can only see their own syncs
+          },
+          select: {
+            id: true,
+            syncId: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            progress: true,
+            message: true,
+            currentStep: true,
+            results: true,
+            errors: true,
+            options: true,
+            startedBy: true,
+          },
+        }),
       3,
       'get sync status'
     );

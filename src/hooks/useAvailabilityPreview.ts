@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { 
-  type AvailabilityRule, 
+import {
+  type AvailabilityRule,
   type AvailabilityEvaluation,
-  type AvailabilityApiResponse
+  type AvailabilityApiResponse,
 } from '@/types/availability';
 import { logger } from '@/utils/logger';
 
@@ -25,44 +25,43 @@ export function useAvailabilityPreview(): UseAvailabilityPreviewReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const previewRules = useCallback(async (
-    productId: string, 
-    rules: AvailabilityRule[], 
-    previewDate?: Date
-  ) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const previewRules = useCallback(
+    async (productId: string, rules: AvailabilityRule[], previewDate?: Date) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const response = await fetch('/api/availability/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        const response = await fetch('/api/availability/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId,
+            rules,
+            previewDate: previewDate?.toISOString(),
+          }),
+        });
+
+        const data: AvailabilityApiResponse<AvailabilityEvaluation> = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to preview availability');
+        }
+
+        setPreview(data.data || null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Preview failed';
+        setError(errorMessage);
+        logger.error('Error previewing availability', {
           productId,
-          rules,
-          previewDate: previewDate?.toISOString()
-        })
-      });
-
-      const data: AvailabilityApiResponse<AvailabilityEvaluation> = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to preview availability');
+          rulesCount: rules.length,
+          error: errorMessage,
+        });
+      } finally {
+        setIsLoading(false);
       }
-
-      setPreview(data.data || null);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Preview failed';
-      setError(errorMessage);
-      logger.error('Error previewing availability', {
-        productId,
-        rulesCount: rules.length,
-        error: errorMessage
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const clearPreview = useCallback(() => {
     setPreview(null);
@@ -79,6 +78,6 @@ export function useAvailabilityPreview(): UseAvailabilityPreviewReturn {
     error,
     previewRules,
     clearPreview,
-    clearError
+    clearError,
   };
 }

@@ -20,7 +20,7 @@ The appetizers section on the catering menu page (`/catering`) is currently show
 - [ ] Calculate and display real-time pricing based on selections
 - [ ] Enable "Add Package to Cart" functionality with proper validation
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -104,7 +104,7 @@ interface CateringPackageResponse {
   errors?: PackageError[];
 }
 
-type PackageError = 
+type PackageError =
   | { type: 'INSUFFICIENT_ITEMS'; required: number; selected: number }
   | { type: 'DUPLICATE_SELECTION'; productId: string }
   | { type: 'INACTIVE_PRODUCT'; productId: string }
@@ -121,12 +121,12 @@ type PackageError =
 -- catering_package_items: Items linked to packages (currently empty)
 
 -- Migration needed to link products to packages
-ALTER TABLE catering_package_items 
+ALTER TABLE catering_package_items
 ADD COLUMN productId UUID REFERENCES products(id);
 
 -- Index for performance
-CREATE INDEX idx_products_category_active 
-ON products(categoryId, active) 
+CREATE INDEX idx_products_category_active
+ON products(categoryId, active)
 WHERE active = true;
 ```
 
@@ -180,16 +180,16 @@ interface AddToCartRequest {
 
 ```tsx
 // app/catering/actions.ts
-'use server'
+'use server';
 
-export async function getAppetizerProducts(): Promise<AppetizerProduct[]>
+export async function getAppetizerProducts(): Promise<AppetizerProduct[]>;
 export async function validatePackageSelection(
-  packageId: string, 
+  packageId: string,
   selections: string[]
-): Promise<{ valid: boolean; errors?: string[] }>
+): Promise<{ valid: boolean; errors?: string[] }>;
 export async function addPackageToCart(
   data: CateringPackageRequest
-): Promise<CateringPackageResponse>
+): Promise<CateringPackageResponse>;
 ```
 
 ### Client-Server Data Flow
@@ -201,7 +201,7 @@ export async function addPackageToCart(
 5. Success → Update cart state and show confirmation
 6. Error → Display validation messages
 
-------
+---
 
 ## 🧪 Testing Strategy
 
@@ -210,25 +210,25 @@ export async function addPackageToCart(
 ```tsx
 // components/catering/AppetizerCard.test.tsx
 describe('AppetizerCard', () => {
-  it('displays product information correctly', () => {})
-  it('shows dietary indicators when present', () => {})
-  it('handles missing images with placeholder', () => {})
-  it('toggles selection state on click', () => {})
-  it('disables selection when max items reached', () => {})
+  it('displays product information correctly', () => {});
+  it('shows dietary indicators when present', () => {});
+  it('handles missing images with placeholder', () => {});
+  it('toggles selection state on click', () => {});
+  it('disables selection when max items reached', () => {});
 });
 
 // lib/catering/utils.test.ts
 describe('Catering Utilities', () => {
-  it('parses dietary indicators from description', () => {})
-  it('calculates package price correctly', () => {})
-  it('validates selection count', () => {})
+  it('parses dietary indicators from description', () => {});
+  it('calculates package price correctly', () => {});
+  it('validates selection count', () => {});
 });
 
 // hooks/useCateringAppetizers.test.ts
 describe('useCateringAppetizers Hook', () => {
-  it('manages selection state correctly', () => {})
-  it('prevents duplicate selections', () => {})
-  it('resets on package size change', () => {})
+  it('manages selection state correctly', () => {});
+  it('prevents duplicate selections', () => {});
+  it('resets on package size change', () => {});
 });
 ```
 
@@ -243,15 +243,15 @@ describe('Appetizer Database Operations', () => {
     expect(result.length).toBeGreaterThan(0);
   });
 
-  it('handles concurrent package selections', async () => {})
-  it('maintains data consistency on errors', async () => {})
+  it('handles concurrent package selections', async () => {});
+  it('maintains data consistency on errors', async () => {});
 });
 
 // API Integration
 describe('Catering API Integration', () => {
-  it('returns proper error for insufficient selections', async () => {})
-  it('validates against inactive products', async () => {})
-  it('handles rate limiting gracefully', async () => {})
+  it('returns proper error for insufficient selections', async () => {});
+  it('validates against inactive products', async () => {});
+  it('handles rate limiting gracefully', async () => {});
 });
 ```
 
@@ -263,12 +263,12 @@ test.describe('Catering Appetizer Selection Flow', () => {
     await page.goto('/catering');
     await page.click('[data-tab="appetizers"]');
     await page.click('[data-package="5"]');
-    
+
     // Select 5 items
     for (let i = 0; i < 5; i++) {
       await page.click(`[data-appetizer-card]:nth-child(${i + 1})`);
     }
-    
+
     await page.click('[data-add-to-cart]');
     await expect(page.locator('[data-cart-success]')).toBeVisible();
   });
@@ -280,7 +280,7 @@ test.describe('Catering Appetizer Selection Flow', () => {
 });
 ```
 
-------
+---
 
 ## 🔐 Security Analysis
 
@@ -290,17 +290,20 @@ test.describe('Catering Appetizer Selection Flow', () => {
 // Zod schemas for validation
 import { z } from 'zod';
 
-const AppetizerSelectionSchema = z.object({
-  packageId: z.string().uuid(),
-  selectedProductIds: z.array(z.string().uuid())
-    .min(1)
-    .max(9)
-    .refine((ids) => new Set(ids).size === ids.length, {
-      message: "Duplicate selections not allowed"
-    }),
-  quantity: z.number().int().positive().max(100),
-  customerNotes: z.string().max(500).optional()
-}).strict();
+const AppetizerSelectionSchema = z
+  .object({
+    packageId: z.string().uuid(),
+    selectedProductIds: z
+      .array(z.string().uuid())
+      .min(1)
+      .max(9)
+      .refine(ids => new Set(ids).size === ids.length, {
+        message: 'Duplicate selections not allowed',
+      }),
+    quantity: z.number().int().positive().max(100),
+    customerNotes: z.string().max(500).optional(),
+  })
+  .strict();
 
 // Server-side validation
 async function validateProductsExist(productIds: string[]) {
@@ -334,12 +337,12 @@ const getAppetizers = async () => {
       AND p.active = true
     ORDER BY p.name ASC
   `;
-  
+
   return await db.query(query, [APPETIZER_CATEGORY_ID]);
 };
 ```
 
-------
+---
 
 ## 📊 Performance Considerations
 
@@ -347,13 +350,13 @@ const getAppetizers = async () => {
 
 ```sql
 -- Add indexes for common queries
-CREATE INDEX idx_products_category_active 
-ON products("categoryId", active) 
+CREATE INDEX idx_products_category_active
+ON products("categoryId", active)
 WHERE active = true;
 
 -- Consider materialized view for appetizer data
 CREATE MATERIALIZED VIEW mv_catering_appetizers AS
-SELECT 
+SELECT
   p.*,
   array_agg(cpi."packageId") as package_ids
 FROM products p
@@ -377,17 +380,19 @@ GROUP BY p.id;
 - [ ] Implement blur placeholder for loading state
 - [ ] Serve WebP format with fallback
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
 ### Phase 1: Database & API Setup
+
 - [ ] Create database queries for fetching appetizers
 - [ ] Build API endpoint `/api/catering/appetizers`
 - [ ] Implement server actions for data fetching
 - [ ] Add proper error handling and logging
 
 ### Phase 2: Component Development
+
 - [ ] Create `AppetizerSection` component
 - [ ] Build `AppetizerCard` with selection state
 - [ ] Implement `PackageSelector` component
@@ -395,12 +400,14 @@ GROUP BY p.id;
 - [ ] Create responsive grid layout
 
 ### Phase 3: State Management
+
 - [ ] Implement selection state with React hooks
 - [ ] Add package size switching logic
 - [ ] Build validation for selection count
 - [ ] Create cart integration logic
 
 ### Phase 4: UI Polish & Testing
+
 - [ ] Add loading and error states
 - [ ] Implement dietary indicator badges
 - [ ] Add animations and transitions
@@ -408,13 +415,14 @@ GROUP BY p.id;
 - [ ] Perform accessibility audit
 
 ### Phase 5: Deployment
+
 - [ ] Run performance profiling
 - [ ] Test on various devices
 - [ ] Update documentation
 - [ ] Deploy to staging environment
 - [ ] Monitor for errors post-deployment
 
-------
+---
 
 ## 📝 Sample Implementation Code
 
@@ -442,21 +450,21 @@ export async function getActiveAppetizers(): Promise<AppetizerProduct[]> {
       AND p.active = true
     ORDER BY p.name ASC
   `;
-  
+
   const result = await db.query<AppetizerProduct>(query, [APPETIZER_CATEGORY_ID]);
-  
+
   return result.rows.map(product => ({
     ...product,
-    dietary: parseDietaryIndicators(product.description)
+    dietary: parseDietaryIndicators(product.description),
   }));
 }
 
 function parseDietaryIndicators(description: string | null): DietaryIndicator[] {
   if (!description) return [];
-  
+
   const indicators: DietaryIndicator[] = [];
   const lowerDesc = description.toLowerCase();
-  
+
   if (lowerDesc.includes('-gf')) {
     indicators.push({ type: 'GF', label: 'Gluten Free' });
   }
@@ -466,7 +474,7 @@ function parseDietaryIndicators(description: string | null): DietaryIndicator[] 
   if (lowerDesc.includes('-vgn') || lowerDesc.includes('vgn')) {
     indicators.push({ type: 'VGN', label: 'Vegan' });
   }
-  
+
   return indicators;
 }
 ```
@@ -489,23 +497,18 @@ interface AppetizerCardProps {
   onToggle: (id: string) => void;
 }
 
-export function AppetizerCard({ 
-  appetizer, 
-  isSelected, 
-  isDisabled,
-  onToggle 
-}: AppetizerCardProps) {
+export function AppetizerCard({ appetizer, isSelected, isDisabled, onToggle }: AppetizerCardProps) {
   const [imageError, setImageError] = useState(false);
   const imageUrl = appetizer.images?.[0] || '/placeholder-food.jpg';
-  
+
   const handleClick = () => {
     if (!isDisabled || isSelected) {
       onToggle(appetizer.id);
     }
   };
-  
+
   return (
-    <div 
+    <div
       className={`
         relative cursor-pointer rounded-lg overflow-hidden
         border-2 transition-all duration-200
@@ -522,7 +525,7 @@ export function AppetizerCard({
           <Check className="w-5 h-5 text-white" />
         </div>
       )}
-      
+
       <div className="aspect-square relative">
         <Image
           src={imageError ? '/placeholder-food.jpg' : imageUrl}
@@ -532,18 +535,16 @@ export function AppetizerCard({
           onError={() => setImageError(true)}
         />
       </div>
-      
+
       <div className="p-4">
-        <h3 className="font-semibold text-lg capitalize">
-          {appetizer.name}
-        </h3>
-        
+        <h3 className="font-semibold text-lg capitalize">{appetizer.name}</h3>
+
         {appetizer.description && (
           <p className="text-sm text-gray-600 mt-1 line-clamp-2">
             {appetizer.description.split('/')[0].trim()}
           </p>
         )}
-        
+
         {appetizer.dietary && appetizer.dietary.length > 0 && (
           <div className="flex gap-2 mt-2">
             {appetizer.dietary.map(indicator => (
@@ -576,39 +577,42 @@ export function useCateringAppetizers(
 ) {
   const [selectedPackageId, setSelectedPackageId] = useState(packages[0]?.id);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  
+
   const currentPackage = useMemo(
     () => packages.find(p => p.id === selectedPackageId),
     [packages, selectedPackageId]
   );
-  
+
   const maxSelections = currentPackage?.itemCount || 5;
   const canSelectMore = selectedItems.size < maxSelections;
-  
-  const toggleItem = useCallback((itemId: string) => {
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else if (canSelectMore) {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  }, [canSelectMore]);
-  
+
+  const toggleItem = useCallback(
+    (itemId: string) => {
+      setSelectedItems(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemId)) {
+          newSet.delete(itemId);
+        } else if (canSelectMore) {
+          newSet.add(itemId);
+        }
+        return newSet;
+      });
+    },
+    [canSelectMore]
+  );
+
   const changePackage = useCallback((packageId: string) => {
     setSelectedPackageId(packageId);
     setSelectedItems(new Set()); // Reset selections
   }, []);
-  
+
   const isComplete = selectedItems.size === maxSelections;
-  
+
   const calculateTotal = useCallback(() => {
     if (!currentPackage) return 0;
     return currentPackage.pricePerPerson * currentPackage.minPeople;
   }, [currentPackage]);
-  
+
   return {
     selectedPackageId,
     selectedItems: Array.from(selectedItems),
@@ -618,16 +622,17 @@ export function useCateringAppetizers(
     total: calculateTotal(),
     toggleItem,
     changePackage,
-    clearSelections: () => setSelectedItems(new Set())
+    clearSelections: () => setSelectedItems(new Set()),
   };
 }
 ```
 
-------
+---
 
 ## 🔄 Rollback Plan
 
 ### Database Rollback
+
 ```sql
 -- No database schema changes required for basic implementation
 -- If migrations were applied:
@@ -636,10 +641,10 @@ export function useCateringAppetizers(
 ```
 
 ### Feature Toggle
+
 ```tsx
 // Use environment variable for gradual rollout
-const ENABLE_NEW_APPETIZER_SECTION = 
-  process.env.NEXT_PUBLIC_ENABLE_NEW_APPETIZERS === 'true';
+const ENABLE_NEW_APPETIZER_SECTION = process.env.NEXT_PUBLIC_ENABLE_NEW_APPETIZERS === 'true';
 
 if (ENABLE_NEW_APPETIZER_SECTION) {
   return <NewAppetizerSection />;
@@ -649,12 +654,13 @@ if (ENABLE_NEW_APPETIZER_SECTION) {
 ```
 
 ### Monitoring & Alerts
+
 - [ ] Monitor API response times for appetizer endpoints
 - [ ] Track selection completion rates
 - [ ] Alert on cart addition failures > 5%
 - [ ] Monitor client-side error rates
 
-------
+---
 
 ## 📊 Success Metrics
 
@@ -664,7 +670,7 @@ if (ENABLE_NEW_APPETIZER_SECTION) {
 - **Error Rate**: < 1% client-side errors
 - **User Engagement**: 20% increase in catering orders with appetizers
 
-------
+---
 
 ## Next Steps
 

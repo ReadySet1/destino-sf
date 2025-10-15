@@ -7,14 +7,7 @@ import Image from 'next/image';
 import type { SortableItemProps } from './types';
 
 export function SortableItem({ product, disabled = false }: SortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: product.id,
     disabled,
   });
@@ -66,15 +59,9 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
 
       {/* Product Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-gray-900 truncate">
-          {product.name}
-        </h3>
-        <p className="text-sm text-gray-500">
-          ${product.price.toFixed(2)}
-        </p>
-        <p className="text-xs text-gray-400">
-          Order: {product.ordinal}
-        </p>
+        <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+        <p className="text-sm text-gray-500">${product.price.toFixed(2)}</p>
+        <p className="text-xs text-gray-400">Order: {product.ordinal}</p>
       </div>
 
       {/* Status Badges */}
@@ -89,7 +76,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           if (product.visibility === 'PRIVATE') {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -97,7 +84,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           if (product.isAvailable === false) {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -105,7 +92,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           if (product.itemState === 'SEASONAL') {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -113,7 +100,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           if (product.itemState === 'ARCHIVED') {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -121,7 +108,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           if (product.itemState === 'INACTIVE') {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -129,7 +116,7 @@ export function SortableItem({ product, disabled = false }: SortableItemProps) {
               </span>
             );
           }
-          
+
           // Default to active
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

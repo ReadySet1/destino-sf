@@ -2,12 +2,12 @@ import { prisma } from '@/lib/db';
 import { ShippoClientManager } from '@/lib/shippo/client';
 import { getShippingRates } from '@/lib/shipping';
 import { OrderStatus } from '@prisma/client';
-import { 
-  ShippingLabelResponse, 
-  ShippoError, 
-  isRateExpiredError, 
-  createShippoError, 
-  DEFAULT_RETRY_CONFIG 
+import {
+  ShippingLabelResponse,
+  ShippoError,
+  isRateExpiredError,
+  createShippoError,
+  DEFAULT_RETRY_CONFIG,
 } from '@/types/shippo';
 
 export interface LabelCreationJob {
@@ -24,7 +24,7 @@ export interface LabelCreationJob {
 class LabelCreationQueue {
   private static instance: LabelCreationQueue;
   private pendingJobs = new Map<string, LabelCreationJob>();
-  
+
   public static getInstance(): LabelCreationQueue {
     if (!LabelCreationQueue.instance) {
       LabelCreationQueue.instance = new LabelCreationQueue();
@@ -43,7 +43,7 @@ class LabelCreationQueue {
       lastError,
       createdAt: new Date(),
     };
-    
+
     this.pendingJobs.set(orderId, job);
     console.log(`📋 Added label creation job for order ${orderId} (attempt ${attempt + 1})`);
   }
@@ -102,17 +102,22 @@ class LabelCreationQueue {
    * Process a single job
    */
   private async processJob(job: LabelCreationJob): Promise<ShippingLabelResponse> {
-    console.log(`🚀 Processing label creation job for order ${job.orderId}, attempt ${job.attempt + 1}`);
-    
+    console.log(
+      `🚀 Processing label creation job for order ${job.orderId}, attempt ${job.attempt + 1}`
+    );
+
     // Check if enough time has passed for retry (exponential backoff)
     const timeSinceCreated = Date.now() - job.createdAt.getTime();
     const requiredDelay = Math.min(
-      DEFAULT_RETRY_CONFIG.baseDelay * Math.pow(DEFAULT_RETRY_CONFIG.backoffMultiplier, job.attempt),
+      DEFAULT_RETRY_CONFIG.baseDelay *
+        Math.pow(DEFAULT_RETRY_CONFIG.backoffMultiplier, job.attempt),
       DEFAULT_RETRY_CONFIG.maxDelay
     );
 
     if (timeSinceCreated < requiredDelay) {
-      console.log(`⏳ Job for order ${job.orderId} needs to wait ${requiredDelay - timeSinceCreated}ms more`);
+      console.log(
+        `⏳ Job for order ${job.orderId} needs to wait ${requiredDelay - timeSinceCreated}ms more`
+      );
       return {
         success: false,
         error: 'Waiting for retry delay',
@@ -159,13 +164,13 @@ async function attemptLabelCreation(
   retryAttempt: number = 0
 ): Promise<ShippingLabelResponse> {
   const orderId = order.id;
-  
+
   try {
     console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
-    
+
     // Get Shippo client
     const shippo = ShippoClientManager.getInstance();
-    
+
     // Update retry tracking
     await updateRetryTracking(orderId, retryAttempt);
 
@@ -208,19 +213,20 @@ async function attemptLabelCreation(
       };
     } else {
       // Handle transaction failure
-      const errorMessage = transaction.messages?.map((m: any) => m.text).join(', ') || 
-                          `Transaction failed with status: ${transaction.status}`;
+      const errorMessage =
+        transaction.messages?.map((m: any) => m.text).join(', ') ||
+        `Transaction failed with status: ${transaction.status}`;
       throw new Error(errorMessage);
     }
   } catch (error: any) {
     console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
-    
+
     // Check if this is a rate expiration error
     if (isRateExpiredError(error)) {
       console.log(`🔄 Rate expired for Order ID: ${orderId}, attempting refresh...`);
       return await handleRateExpiration(order, retryAttempt);
     }
-    
+
     // Re-throw error for queue processing
     throw error;
   }
@@ -229,12 +235,17 @@ async function attemptLabelCreation(
 /**
  * Handle rate expiration by refreshing rates and retrying
  */
-async function handleRateExpiration(order: any, retryAttempt: number): Promise<ShippingLabelResponse> {
+async function handleRateExpiration(
+  order: any,
+  retryAttempt: number
+): Promise<ShippingLabelResponse> {
   const orderId = order.id;
-  
+
   // Check if we've exceeded rate refresh attempts to prevent infinite loops
   if (retryAttempt >= DEFAULT_RETRY_CONFIG.maxAttempts) {
-    console.error(`❌ Rate refresh limit exceeded for Order ID: ${orderId} after ${retryAttempt} attempts`);
+    console.error(
+      `❌ Rate refresh limit exceeded for Order ID: ${orderId} after ${retryAttempt} attempts`
+    );
     return {
       success: false,
       error: `Maximum rate refresh attempts (${DEFAULT_RETRY_CONFIG.maxAttempts}) exceeded for order ${orderId}`,
@@ -242,13 +253,15 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
       retryAttempt: retryAttempt,
     };
   }
-  
+
   try {
-    console.log(`🔄 Refreshing rates for Order ID: ${orderId} (attempt ${retryAttempt + 1}/${DEFAULT_RETRY_CONFIG.maxAttempts})...`);
-    
+    console.log(
+      `🔄 Refreshing rates for Order ID: ${orderId} (attempt ${retryAttempt + 1}/${DEFAULT_RETRY_CONFIG.maxAttempts})...`
+    );
+
     // Extract shipping information from order
     const { cartItems, shippingAddress } = extractOrderShippingInfo(order);
-    
+
     // Get fresh shipping rates
     const ratesResponse = await getShippingRates({
       cartItems,
@@ -263,16 +276,20 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
 
     // Find best matching rate
     const bestRate = findBestMatchingRate(ratesResponse.rates, order.shippingCarrier);
-    
+
     console.log(`🔍 [DEBUG] Rate structure:`, JSON.stringify(bestRate, null, 2));
     console.log(`🔍 [DEBUG] Available rate properties:`, Object.keys(bestRate || {}));
-    console.log(`🎯 Selected rate: ${bestRate?.id || bestRate?.object_id || 'NO_ID_FOUND'} (${bestRate?.carrier} - ${bestRate?.name || bestRate?.servicename})`);
+    console.log(
+      `🎯 Selected rate: ${bestRate?.id || bestRate?.object_id || 'NO_ID_FOUND'} (${bestRate?.carrier} - ${bestRate?.name || bestRate?.servicename})`
+    );
 
     // Get the correct rate ID
     const rateId = bestRate?.id || bestRate?.object_id;
     if (!rateId) {
       console.error(`❌ [ERROR] No valid rate ID found in bestRate:`, bestRate);
-      throw new Error(`Selected rate has no valid ID. Available properties: ${Object.keys(bestRate || {}).join(', ')}`);
+      throw new Error(
+        `Selected rate has no valid ID. Available properties: ${Object.keys(bestRate || {}).join(', ')}`
+      );
     }
 
     // Update order with new rate ID
@@ -288,7 +305,7 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
   } catch (error) {
     console.error(`❌ Rate refresh failed for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
-    
+
     return {
       success: false,
       error: `Rate refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -301,7 +318,11 @@ async function handleRateExpiration(order: any, retryAttempt: number): Promise<S
 /**
  * Update retry tracking in database
  */
-async function updateRetryTracking(orderId: string, retryCount: number, errorMessage?: string): Promise<void> {
+async function updateRetryTracking(
+  orderId: string,
+  retryCount: number,
+  errorMessage?: string
+): Promise<void> {
   await prisma.order.update({
     where: { id: orderId },
     data: {
@@ -315,7 +336,7 @@ async function updateRetryTracking(orderId: string, retryCount: number, errorMes
 /**
  * Extract shipping information from order
  */
-function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddress: any } {
+function extractOrderShippingInfo(order: any): { cartItems: any[]; shippingAddress: any } {
   // Extract cart items
   const cartItems = order.items.map((item: any) => ({
     id: item.product.squareId,
@@ -329,7 +350,7 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
   console.log(`🔍 [DEBUG] Order fulfillmentType: ${order.fulfillmentType}`);
   console.log(`🔍 [DEBUG] Order notes: ${order.notes}`);
   console.log(`🔍 [DEBUG] RawData structure:`, JSON.stringify(order.rawData, null, 2));
-  
+
   const rawData = order.rawData as any;
   let shippingAddress: any;
 
@@ -348,7 +369,7 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
       phone: recipient.phone_number || order.phone,
       email: order.email,
     };
-  } 
+  }
   // Method 2: Extract from Square fulfillment delivery_details (alternative pattern)
   else if (rawData?.fulfillment?.delivery_details?.recipient) {
     console.log(`✅ [DEBUG] Found shipping address in fulfillment.delivery_details.recipient`);
@@ -403,11 +424,11 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
       console.log(`⚠️ [DEBUG] Failed to parse notes as JSON:`, parseError);
     }
   }
-  
+
   // Method 4: Try to extract from other rawData patterns
   if (!shippingAddress && rawData) {
     console.log(`🔍 [DEBUG] Searching for alternative patterns in rawData`);
-    
+
     // Check for direct address in rawData
     if (rawData.address) {
       console.log(`✅ [DEBUG] Found address in rawData.address`);
@@ -445,7 +466,9 @@ function extractOrderShippingInfo(order: any): { cartItems: any[], shippingAddre
     console.error(`❌ [ERROR] Unable to extract shipping address from order ${order.id}`);
     console.error(`❌ [ERROR] Available order data keys:`, Object.keys(order));
     console.error(`❌ [ERROR] RawData keys:`, order.rawData ? Object.keys(order.rawData) : 'null');
-    throw new Error(`Unable to extract shipping address from order ${order.id}. Please check order data structure.`);
+    throw new Error(
+      `Unable to extract shipping address from order ${order.id}. Please check order data structure.`
+    );
   }
 
   console.log(`✅ [DEBUG] Successfully extracted shipping address:`, shippingAddress);
@@ -493,13 +516,13 @@ export async function processLabelCreationQueue(): Promise<void> {
 /**
  * Get statistics about the label creation queue
  */
-export function getLabelCreationQueueStats(): { 
-  pendingJobs: number; 
-  jobs: LabelCreationJob[] 
+export function getLabelCreationQueueStats(): {
+  pendingJobs: number;
+  jobs: LabelCreationJob[];
 } {
   const queue = LabelCreationQueue.getInstance();
   const jobs = queue.getAllJobs();
-  
+
   return {
     pendingJobs: jobs.length,
     jobs,

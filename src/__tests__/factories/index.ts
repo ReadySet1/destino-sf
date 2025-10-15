@@ -359,12 +359,14 @@ export const cateringOrderFactory = new CateringOrderFactory();
 /**
  * Create a complete order with items
  */
-export async function createCompleteOrder(options: {
-  userId?: string;
-  productCount?: number;
-  orderOverrides?: Partial<TestOrder>;
-  productOverrides?: Partial<TestProduct>;
-} = {}) {
+export async function createCompleteOrder(
+  options: {
+    userId?: string;
+    productCount?: number;
+    orderOverrides?: Partial<TestOrder>;
+    productOverrides?: Partial<TestProduct>;
+  } = {}
+) {
   const { userId, productCount = 2, orderOverrides = {}, productOverrides = {} } = options;
 
   // Create products
@@ -386,7 +388,7 @@ export async function createCompleteOrder(options: {
 
   // Create order items
   const orderItems = await Promise.all(
-    products.map((product) =>
+    products.map(product =>
       orderItemFactory.create({
         orderId: order.id!,
         productId: product.id!,
@@ -411,9 +413,7 @@ export async function createUserWithOrders(orderCount = 2) {
   const user = await userFactory.create();
 
   const orders = await Promise.all(
-    Array.from({ length: orderCount }, () =>
-      orderFactory.create({ userId: user.id })
-    )
+    Array.from({ length: orderCount }, () => orderFactory.create({ userId: user.id }))
   );
 
   return {
@@ -453,9 +453,7 @@ export async function seedTestDatabase() {
 
   // Create orders for some users
   const orders = await Promise.all(
-    users.slice(0, 3).map((user) =>
-      createCompleteOrder({ userId: user.id })
-    )
+    users.slice(0, 3).map(user => createCompleteOrder({ userId: user.id }))
   );
 
   // Create catering orders

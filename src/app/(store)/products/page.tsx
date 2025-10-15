@@ -171,7 +171,7 @@ export default async function ProductsPage() {
       updatedAt: p.updatedAt,
       // Add slug if it exists on the product model
       slug: p.slug || p.id, // Fallback to ID if slug is not present
-      
+
       // Add availability fields for proper filtering
       isAvailable: p.isAvailable,
       isPreorder: p.isPreorder,

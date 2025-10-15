@@ -7,11 +7,13 @@ The Catering API provides specialized endpoints for managing catering orders, pa
 ## Catering Packages
 
 ### Get All Catering Packages
+
 ```http
 GET /api/catering/packages
 ```
 
 **Query Parameters:**
+
 - `deliveryZone` (string): Filter packages available for delivery zone
 - `minGuests` (number): Minimum number of guests
 - `maxGuests` (number): Maximum number of guests
@@ -19,6 +21,7 @@ GET /api/catering/packages
 - `available` (boolean): Filter by availability
 
 **Response:**
+
 ```typescript
 interface CateringPackagesResponse {
   success: boolean;
@@ -50,11 +53,13 @@ interface CateringPackage {
 ```
 
 ### Get Single Catering Package
+
 ```http
 GET /api/catering/packages/{packageId}
 ```
 
 ### Get Package Quote
+
 ```http
 POST /api/catering/packages/{packageId}/quote
 Content-Type: application/json
@@ -73,6 +78,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```typescript
 interface CateringQuoteResponse {
   success: boolean;
@@ -104,11 +110,13 @@ interface CateringQuoteResponse {
 ## Delivery Zones
 
 ### Get All Delivery Zones
+
 ```http
 GET /api/catering/delivery-zones
 ```
 
 **Response:**
+
 ```typescript
 interface DeliveryZonesResponse {
   success: boolean;
@@ -131,7 +139,7 @@ interface DeliveryZone {
   };
   serviceHours: {
     start: string; // "09:00"
-    end: string;   // "22:00"
+    end: string; // "22:00"
   };
   isActive: boolean;
   restrictions?: string[];
@@ -139,6 +147,7 @@ interface DeliveryZone {
 ```
 
 ### Validate Delivery Address
+
 ```http
 POST /api/catering/delivery-zones/validate
 Content-Type: application/json
@@ -154,6 +163,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -162,8 +172,8 @@ Content-Type: application/json
     "zone": {
       "id": "zone_sf_downtown",
       "name": "San Francisco Downtown",
-      "deliveryFee": 25.00,
-      "minimumOrder": 500.00
+      "deliveryFee": 25.0,
+      "minimumOrder": 500.0
     },
     "estimatedDeliveryTime": 45
   }
@@ -173,15 +183,18 @@ Content-Type: application/json
 ## Minimum Orders
 
 ### Get Minimum Order Requirements
+
 ```http
 GET /api/catering/minimum-orders
 ```
 
 **Query Parameters:**
+
 - `zoneId` (string): Specific delivery zone
 - `date` (string): Delivery date (some zones have date-specific minimums)
 
 **Response:**
+
 ```typescript
 interface MinimumOrdersResponse {
   success: boolean;
@@ -202,6 +215,7 @@ interface MinimumOrdersResponse {
 ## Catering Orders
 
 ### Create Catering Order
+
 ```http
 POST /api/catering/orders
 Authorization: Bearer <user_token>
@@ -237,6 +251,7 @@ Content-Type: application/json
 ```
 
 ### Get Catering Order Availability
+
 ```http
 POST /api/catering/availability
 Content-Type: application/json
@@ -249,6 +264,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```typescript
 interface AvailabilityResponse {
   success: boolean;
@@ -272,17 +288,20 @@ interface AvailabilityResponse {
 ## Admin Endpoints
 
 ### Get Catering Analytics (Admin Only)
+
 ```http
 GET /api/admin/catering/analytics
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `startDate` (string): Start date for analytics
 - `endDate` (string): End date for analytics
 - `zoneId` (string): Filter by delivery zone
 
 **Response:**
+
 ```typescript
 interface CateringAnalytics {
   totalOrders: number;
@@ -311,6 +330,7 @@ interface CateringAnalytics {
 ```
 
 ### Update Package Availability (Admin Only)
+
 ```http
 PATCH /api/admin/catering/packages/{packageId}
 Authorization: Bearer <admin_token>
@@ -323,6 +343,7 @@ Content-Type: application/json
 ```
 
 ### Manage Delivery Zones (Admin Only)
+
 ```http
 POST /api/admin/catering/delivery-zones
 Authorization: Bearer <admin_token>
@@ -349,6 +370,7 @@ Content-Type: application/json
 ## Error Responses
 
 ### Common Error Codes
+
 - `PACKAGE_NOT_FOUND`: Catering package does not exist
 - `DELIVERY_ZONE_INVALID`: Address not in deliverable area
 - `MINIMUM_ORDER_NOT_MET`: Order total below zone minimum
@@ -357,6 +379,7 @@ Content-Type: application/json
 - `DATE_UNAVAILABLE`: Requested date not available
 
 ### Example Error Response
+
 ```json
 {
   "success": false,
@@ -375,18 +398,21 @@ Content-Type: application/json
 ## Business Rules
 
 ### Lead Time Requirements
+
 - Standard catering orders: 24 hours minimum
-- Large orders (100+ guests): 48 hours minimum  
+- Large orders (100+ guests): 48 hours minimum
 - Holiday periods: 72 hours minimum
 - Custom packages: 1 week minimum
 
 ### Capacity Management
+
 - Kitchen capacity limits based on date/time
 - Automatic availability checking
 - Overbooking prevention
 - Alternative date suggestions
 
 ### Pricing Rules
+
 - Base package price + per-person multiplier
 - Zone-based delivery fees
 - Holiday surcharges may apply
@@ -395,6 +421,6 @@ Content-Type: application/json
 ## Rate Limits
 
 - **Public endpoints**: 50 requests per minute
-- **Authenticated endpoints**: 200 requests per minute  
+- **Authenticated endpoints**: 200 requests per minute
 - **Admin endpoints**: 1000 requests per minute
 - **Quote generation**: 10 requests per minute per user

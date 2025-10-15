@@ -264,7 +264,7 @@ export const OrderStatusUpdateEmail = ({
   const previewText = `Order #${order.id} status update: ${formatStatus(order.status)}`;
 
   // Calculate subtotal from items
-  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Convert shipping cost from cents to dollars if provided
   const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : undefined;

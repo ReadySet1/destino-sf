@@ -1,7 +1,7 @@
 // src/lib/catering-duplicate-detector.ts
 //
 // 🔍 UTILIDAD PARA DETECTAR DUPLICADOS EN CATERING ITEMS
-// 
+//
 // Centraliza la lógica de detección de duplicados para usar en todos los scripts de sync
 // Evita que se creen items duplicados desde diferentes fuentes (Square, scripts manuales, etc.)
 //
@@ -20,23 +20,28 @@ export interface DuplicateCheckResult {
     squareProductId: string | null;
     source: 'square' | 'manual';
   };
-  matchType?: 'exact_square_id' | 'exact_name' | 'normalized_name' | 'base_product_exists' | 'exact_variation' | 'none';
+  matchType?:
+    | 'exact_square_id'
+    | 'exact_name'
+    | 'normalized_name'
+    | 'base_product_exists'
+    | 'exact_variation'
+    | 'none';
   confidence: number; // 0-1, where 1 is exact match
   isVariation?: boolean;
   baseProduct?: any;
 }
 
 export class CateringDuplicateDetector {
-  
   /**
    * Normalizar nombre para comparación
    */
   static normalizeItemName(name: string): string {
     return name
       .toLowerCase()
-      .replace(/\s*-\s*/g, ' ')    // "Alfajores - Classic" -> "alfajores classic"
-      .replace(/[^\w\s]/g, '')     // remover puntuación
-      .replace(/\s+/g, ' ')        // normalizar espacios múltiples
+      .replace(/\s*-\s*/g, ' ') // "Alfajores - Classic" -> "alfajores classic"
+      .replace(/[^\w\s]/g, '') // remover puntuación
+      .replace(/\s+/g, ' ') // normalizar espacios múltiples
       .trim();
   }
 
@@ -49,16 +54,15 @@ export class CateringDuplicateDetector {
     squareProductId?: string | null;
     squareCategory?: string | null;
   }): Promise<DuplicateCheckResult> {
-    
     const { name, squareProductId, squareCategory } = itemData;
-    
+
     // 1. Verificación exacta por squareProductId (máxima prioridad y más confiable)
     // First check by Square ID (this is authoritative and prevents legitimate updates from being skipped)
     if (squareProductId) {
       const existingInProducts = await prisma.product.findFirst({
         where: {
           squareId: squareProductId,
-          active: true
+          active: true,
         },
         select: {
           id: true,
@@ -66,10 +70,10 @@ export class CateringDuplicateDetector {
           squareId: true,
           category: {
             select: {
-              name: true
-            }
-          }
-        }
+              name: true,
+            },
+          },
+        },
       });
 
       if (existingInProducts) {
@@ -79,10 +83,10 @@ export class CateringDuplicateDetector {
             id: existingInProducts.id,
             name: existingInProducts.name,
             squareProductId: existingInProducts.squareId,
-            source: 'square'
+            source: 'square',
           },
           matchType: 'exact_square_id',
-          confidence: 1.0
+          confidence: 1.0,
         };
       }
     }
@@ -100,7 +104,7 @@ export class CateringDuplicateDetector {
     return {
       isDuplicate: false,
       matchType: 'none',
-      confidence: 0
+      confidence: 0,
     };
   }
 
@@ -112,9 +116,8 @@ export class CateringDuplicateDetector {
     squareProductId?: string | null;
     squareCategory?: string | null;
   }): Promise<DuplicateCheckResult> {
-    
     const { baseName, size } = VariationGrouper.detectSizePattern(itemData.name);
-    
+
     // First check if this exact item exists (by Square ID)
     if (itemData.squareProductId) {
       const exactMatch = await this.checkForDuplicate(itemData);
@@ -122,7 +125,7 @@ export class CateringDuplicateDetector {
         return exactMatch;
       }
     }
-    
+
     // Check if base product exists (for variation detection)
     const existingBaseProduct = await prisma.product.findFirst({
       where: {
@@ -130,24 +133,24 @@ export class CateringDuplicateDetector {
           // Exact base name match
           { name: { equals: baseName, mode: 'insensitive' } },
           // Base name with any size suffix (for existing non-variation products)
-          { name: { startsWith: baseName, mode: 'insensitive' } }
+          { name: { startsWith: baseName, mode: 'insensitive' } },
         ],
         active: true,
         category: {
-          name: { contains: 'CATERING' }
-        }
+          name: { contains: 'CATERING' },
+        },
       },
-      include: { 
+      include: {
         variants: true,
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (existingBaseProduct) {
       // Check if this specific size variation already exists
       if (existingBaseProduct.variants && existingBaseProduct.variants.length > 0) {
-        const existingVariation = existingBaseProduct.variants.find(v => 
-          v.name && size && v.name.toLowerCase().includes(size.toLowerCase())
+        const existingVariation = existingBaseProduct.variants.find(
+          v => v.name && size && v.name.toLowerCase().includes(size.toLowerCase())
         );
 
         if (existingVariation) {
@@ -159,10 +162,10 @@ export class CateringDuplicateDetector {
               id: existingVariation.id,
               name: existingVariation.name || `${baseName} - ${size}`,
               squareProductId: existingBaseProduct.squareId,
-              source: existingBaseProduct.squareId ? 'square' : 'manual'
+              source: existingBaseProduct.squareId ? 'square' : 'manual',
             },
             matchType: 'exact_variation',
-            confidence: 1.0
+            confidence: 1.0,
           };
         }
       }
@@ -173,7 +176,7 @@ export class CateringDuplicateDetector {
         isVariation: true,
         baseProduct: existingBaseProduct,
         matchType: 'base_product_exists',
-        confidence: 0.8
+        confidence: 0.8,
       };
     }
 
@@ -184,19 +187,20 @@ export class CateringDuplicateDetector {
   /**
    * Verificar duplicados para múltiples items (batch)
    */
-  static async checkForDuplicatesBatch(itemsData: Array<{
-    name: string;
-    squareProductId?: string | null;
-    squareCategory?: string | null;
-  }>): Promise<DuplicateCheckResult[]> {
-    
+  static async checkForDuplicatesBatch(
+    itemsData: Array<{
+      name: string;
+      squareProductId?: string | null;
+      squareCategory?: string | null;
+    }>
+  ): Promise<DuplicateCheckResult[]> {
     const results: DuplicateCheckResult[] = [];
-    
+
     for (const itemData of itemsData) {
       const result = await this.checkForVariationDuplicate(itemData);
       results.push(result);
     }
-    
+
     return results;
   }
 
@@ -222,19 +226,18 @@ export class CateringDuplicateDetector {
     duplicate?: DuplicateCheckResult;
     error?: string;
   }> {
-    
     try {
       // Verificar duplicados
       const duplicateCheck = await this.checkForDuplicate({
         name: itemData.name,
         squareProductId: itemData.squareProductId,
-        squareCategory: itemData.squareCategory
+        squareCategory: itemData.squareCategory,
       });
 
       if (duplicateCheck.isDuplicate) {
         return {
           created: false,
-          duplicate: duplicateCheck
+          duplicate: duplicateCheck,
         };
       }
 
@@ -244,9 +247,9 @@ export class CateringDuplicateDetector {
         where: {
           name: {
             equals: categoryName,
-            mode: 'insensitive'
-          }
-        }
+            mode: 'insensitive',
+          },
+        },
       });
 
       if (!category) {
@@ -256,15 +259,15 @@ export class CateringDuplicateDetector {
             description: `Category for ${categoryName} products`,
             slug: categoryName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
             order: 0,
-            active: true
-          }
+            active: true,
+          },
         });
       }
 
       // Create slug
       const baseSlug = itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const existingSlug = await prisma.product.findFirst({
-        where: { slug: baseSlug }
+        where: { slug: baseSlug },
       });
       const slug = existingSlug ? `${baseSlug}-${Date.now()}` : baseSlug;
 
@@ -280,18 +283,17 @@ export class CateringDuplicateDetector {
           categoryId: category.id,
           featured: false,
           active: itemData.isActive !== false, // default true
-        }
+        },
       });
 
       return {
         created: true,
-        item: newItem
+        item: newItem,
       };
-
     } catch (error) {
       return {
         created: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -301,24 +303,26 @@ export class CateringDuplicateDetector {
    */
   static async getDuplicateStats(): Promise<{
     totalItems: number;
-    byCategory: Record<string, {
-      total: number;
-      withSquareId: number;
-      withoutSquareId: number;
-      potentialDuplicates: number;
-      inProductsTable: number;
-      inCateringTable: number; // Always 0 - catering_items table removed
-    }>;
+    byCategory: Record<
+      string,
+      {
+        total: number;
+        withSquareId: number;
+        withoutSquareId: number;
+        potentialDuplicates: number;
+        inProductsTable: number;
+        inCateringTable: number; // Always 0 - catering_items table removed
+      }
+    >;
   }> {
-    
     const allProducts = await prisma.product.findMany({
-      where: { 
+      where: {
         active: true,
         category: {
           name: {
-            contains: 'CATERING'
-          }
-        }
+            contains: 'CATERING',
+          },
+        },
       },
       select: {
         id: true,
@@ -326,10 +330,10 @@ export class CateringDuplicateDetector {
         squareId: true,
         category: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     // Usar solo productos para análisis unificado
@@ -338,22 +342,25 @@ export class CateringDuplicateDetector {
       name: item.name,
       squareCategory: item.category.name,
       squareProductId: item.squareId,
-      source: 'products' as const
+      source: 'products' as const,
     }));
 
-    const byCategory: Record<string, {
-      total: number;
-      withSquareId: number;
-      withoutSquareId: number;
-      potentialDuplicates: number;
-      inProductsTable: number;
-      inCateringTable: number;
-    }> = {};
+    const byCategory: Record<
+      string,
+      {
+        total: number;
+        withSquareId: number;
+        withoutSquareId: number;
+        potentialDuplicates: number;
+        inProductsTable: number;
+        inCateringTable: number;
+      }
+    > = {};
 
     // Agrupar por categoría
     allItems.forEach(item => {
       const category = item.squareCategory || 'UNKNOWN';
-      
+
       if (!byCategory[category]) {
         byCategory[category] = {
           total: 0,
@@ -361,13 +368,13 @@ export class CateringDuplicateDetector {
           withoutSquareId: 0,
           potentialDuplicates: 0,
           inProductsTable: 0,
-          inCateringTable: 0 // Always 0 - products-only mode
+          inCateringTable: 0, // Always 0 - products-only mode
         };
       }
 
       byCategory[category].total++;
       byCategory[category].inProductsTable++;
-      
+
       if (item.squareProductId) {
         byCategory[category].withSquareId++;
       } else {
@@ -398,7 +405,7 @@ export class CateringDuplicateDetector {
 
     return {
       totalItems: allItems.length,
-      byCategory
+      byCategory,
     };
   }
 }

@@ -11,6 +11,7 @@
 ### Problem Statement
 
 The project currently has multiple toast notification implementations creating confusion and inconsistency:
+
 1. **Sonner** toast library (used in ProductToasts.tsx and ToastHandler.tsx)
 2. **React Hot Toast** library (referenced in Toaster.tsx and use-toast.tsx)
 3. **Custom Radix UI implementation** (in /components/ui/toast.tsx and /hooks/use-toast.ts)
@@ -23,7 +24,7 @@ The project currently has multiple toast notification implementations creating c
 - [x] TypeScript type safety for all toast operations
 - [x] Clean removal of unused dependencies and code
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -34,11 +35,10 @@ The project currently has multiple toast notification implementations creating c
 ```tsx
 // Implementation #1: Sonner (CURRENTLY ACTIVE)
 // Location: src/app/client-layout.tsx
-<Toaster richColors position="top-center" />
-
-// Files using Sonner:
-- src/app/(dashboard)/admin/products/components/ProductToasts.tsx
-- src/components/auth/ToastHandler.tsx
+<Toaster richColors position="top-center" /> -
+  // Files using Sonner:
+  src / app / dashboard / admin / products / components / ProductToasts.tsx -
+  src / components / auth / ToastHandler.tsx;
 ```
 
 ```tsx
@@ -61,6 +61,7 @@ import toast from 'react-hot-toast';
 ### 2. Recommended Solution: Standardize on Sonner
 
 **Why Sonner?**
+
 - Already integrated in client-layout.tsx
 - Modern, performant, and actively maintained
 - Better TypeScript support
@@ -100,7 +101,7 @@ src/
 ❌ src/hooks/use-toast.ts                // Old custom implementation
 ```
 
-------
+---
 
 ## 🧪 Implementation Steps
 
@@ -134,7 +135,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   error: (message: string, options?: ToastOptions) => {
     return sonnerToast.error(message, {
       description: options?.description,
@@ -142,7 +143,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   info: (message: string, options?: ToastOptions) => {
     return sonnerToast.info(message, {
       description: options?.description,
@@ -150,7 +151,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   warning: (message: string, options?: ToastOptions) => {
     return sonnerToast.warning(message, {
       description: options?.description,
@@ -158,11 +159,11 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   loading: (message: string) => {
     return sonnerToast.loading(message);
   },
-  
+
   promise: <T,>(
     promise: Promise<T>,
     messages: {
@@ -173,7 +174,7 @@ export const toast = {
   ) => {
     return sonnerToast.promise(promise, messages);
   },
-  
+
   dismiss: (toastId?: string | number) => {
     return sonnerToast.dismiss(toastId);
   },
@@ -189,13 +190,12 @@ import { toast } from '@/lib/toast';
 import type { ToastOptions } from '@/lib/toast/types';
 
 export function useToast() {
-  const showToast = useCallback((
-    type: 'success' | 'error' | 'info' | 'warning',
-    message: string,
-    options?: ToastOptions
-  ) => {
-    return toast[type](message, options);
-  }, []);
+  const showToast = useCallback(
+    (type: 'success' | 'error' | 'info' | 'warning', message: string, options?: ToastOptions) => {
+      return toast[type](message, options);
+    },
+    []
+  );
 
   const showLoadingToast = useCallback((message: string) => {
     return toast.loading(message);
@@ -205,16 +205,19 @@ export function useToast() {
     toast.dismiss(toastId);
   }, []);
 
-  const promiseToast = useCallback(<T,>(
-    promise: Promise<T>,
-    messages: {
-      loading: string;
-      success: string | ((data: T) => string);
-      error: string | ((error: any) => string);
-    }
-  ) => {
-    return toast.promise(promise, messages);
-  }, []);
+  const promiseToast = useCallback(
+    <T,>(
+      promise: Promise<T>,
+      messages: {
+        loading: string;
+        success: string | ((data: T) => string);
+        error: string | ((error: any) => string);
+      }
+    ) => {
+      return toast.promise(promise, messages);
+    },
+    []
+  );
 
   return {
     toast: showToast,
@@ -222,14 +225,10 @@ export function useToast() {
     dismiss: dismissToast,
     promise: promiseToast,
     // Direct access to toast methods
-    success: (message: string, options?: ToastOptions) => 
-      toast.success(message, options),
-    error: (message: string, options?: ToastOptions) => 
-      toast.error(message, options),
-    info: (message: string, options?: ToastOptions) => 
-      toast.info(message, options),
-    warning: (message: string, options?: ToastOptions) => 
-      toast.warning(message, options),
+    success: (message: string, options?: ToastOptions) => toast.success(message, options),
+    error: (message: string, options?: ToastOptions) => toast.error(message, options),
+    info: (message: string, options?: ToastOptions) => toast.info(message, options),
+    warning: (message: string, options?: ToastOptions) => toast.warning(message, options),
   };
 }
 ```
@@ -297,22 +296,24 @@ pnpm remove react-hot-toast
 - [ ] Test toast dismissal functionality
 - [ ] Test promise-based toasts for async operations
 
-------
+---
 
 ## 🔒 Security & Performance Considerations
 
 ### Security
+
 - [x] No XSS vulnerabilities (Sonner handles escaping)
 - [x] No user input directly rendered without sanitization
 - [x] Toast messages properly typed with TypeScript
 
 ### Performance
+
 - [x] Single toast instance globally
 - [x] Automatic cleanup of dismissed toasts
 - [x] Debounced toast queue management
 - [x] No memory leaks from event listeners
 
-------
+---
 
 ## 📊 Benefits of Unification
 
@@ -322,16 +323,18 @@ pnpm remove react-hot-toast
 4. **Developer Experience**: Clear, typed API with IntelliSense
 5. **User Experience**: Consistent toast appearance and behavior
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
 ### Pre-Development
+
 - [ ] Backup current working implementation
 - [ ] Document all files using toast notifications
 - [ ] Create feature branch: `fix/unify-toast-system`
 
 ### Development Phase
+
 - [ ] Create unified toast utilities in `/lib/toast/`
 - [ ] Create new `useToast` hook
 - [ ] Update existing Sonner implementations if needed
@@ -340,6 +343,7 @@ pnpm remove react-hot-toast
 - [ ] Remove unused dependencies
 
 ### Testing Phase
+
 - [ ] Test all toast triggers
 - [ ] Verify TypeScript types
 - [ ] Check bundle size reduction
@@ -347,13 +351,14 @@ pnpm remove react-hot-toast
 - [ ] Mobile responsiveness check
 
 ### Pre-Deployment
+
 - [ ] Code review
 - [ ] Update documentation
 - [ ] Clean up package.json
 - [ ] Run full test suite
 - [ ] Deploy to staging first
 
-------
+---
 
 ## 📝 MCP Commands for Implementation
 
@@ -377,24 +382,23 @@ filesystem:search_files path: /Users/ealanis/Development/current-projects/destin
 filesystem:edit_file path: /Users/ealanis/Development/current-projects/destino-sf/package.json
 ```
 
-------
+---
 
 ## 🔄 Rollback Plan
 
 If issues arise:
 
-1. **Immediate Rollback**: 
+1. **Immediate Rollback**:
    - Restore backup files
    - Revert git commits
    - Re-install react-hot-toast if needed
 
 2. **Feature Toggle Approach**:
+
    ```tsx
    const USE_NEW_TOAST = process.env.NEXT_PUBLIC_USE_NEW_TOAST === 'true';
-   
-   export const toast = USE_NEW_TOAST 
-     ? newToastImplementation 
-     : oldToastImplementation;
+
+   export const toast = USE_NEW_TOAST ? newToastImplementation : oldToastImplementation;
    ```
 
 3. **Gradual Migration**:
@@ -402,7 +406,7 @@ If issues arise:
    - Migrate one section at a time
    - Monitor for issues before complete removal
 
-------
+---
 
 ## 📊 Success Metrics
 

@@ -43,24 +43,23 @@ function getRoleIcon(role: UserRole) {
   }
 }
 
-export default function ResponsiveUsersTable({ 
-  users, 
+export default function ResponsiveUsersTable({
+  users,
   currentUserId,
-  onSort, 
-  sortKey, 
+  onSort,
+  sortKey,
   sortDirection = 'asc',
   onDelete,
   onEdit,
-  onSendInvite
+  onSendInvite,
 }: ResponsiveUsersTableProps) {
-
   // Define table columns using the correct TableColumn interface
   const columns: TableColumn<UserTableData>[] = [
     {
       key: 'email',
       header: 'Email',
       sortable: true,
-      accessor: (user) => (
+      accessor: user => (
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
             <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -68,14 +67,8 @@ export default function ResponsiveUsersTable({
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {user.email}
-            </p>
-            {user.name && (
-              <p className="text-sm text-gray-600 truncate mt-1">
-                {user.name}
-              </p>
-            )}
+            <p className="text-sm font-semibold text-gray-900 truncate">{user.email}</p>
+            {user.name && <p className="text-sm text-gray-600 truncate mt-1">{user.name}</p>}
           </div>
         </div>
       ),
@@ -86,11 +79,9 @@ export default function ResponsiveUsersTable({
       header: 'Name',
       sortable: true,
       className: 'hidden sm:table-cell',
-      accessor: (user) => (
+      accessor: user => (
         <div className="text-sm text-gray-900">
-          {user.name || (
-            <span className="text-gray-400 italic">No name set</span>
-          )}
+          {user.name || <span className="text-gray-400 italic">No name set</span>}
         </div>
       ),
     },
@@ -100,7 +91,7 @@ export default function ResponsiveUsersTable({
       header: 'Phone',
       sortable: true,
       className: 'hidden lg:table-cell',
-      accessor: (user) => (
+      accessor: user => (
         <div className="flex items-center text-sm text-gray-900">
           {user.phone ? (
             <>
@@ -118,8 +109,10 @@ export default function ResponsiveUsersTable({
       key: 'role',
       header: 'Role',
       sortable: true,
-      accessor: (user) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
+      accessor: user => (
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}
+        >
           {getRoleIcon(user.role)}
           {user.role}
         </span>
@@ -131,13 +124,11 @@ export default function ResponsiveUsersTable({
       header: 'Orders',
       sortable: true,
       className: 'hidden sm:table-cell',
-      accessor: (user) => (
+      accessor: user => (
         <div className="text-sm">
           <span className="font-semibold text-gray-900">{user.orderCount}</span>
           {user.orderCount > 0 && (
-            <span className="text-gray-600 ml-1.5">
-              order{user.orderCount !== 1 ? 's' : ''}
-            </span>
+            <span className="text-gray-600 ml-1.5">order{user.orderCount !== 1 ? 's' : ''}</span>
           )}
         </div>
       ),
@@ -148,7 +139,7 @@ export default function ResponsiveUsersTable({
       header: 'Created',
       sortable: true,
       className: 'hidden md:table-cell',
-      accessor: (user) => (
+      accessor: user => (
         <div className="flex items-center text-sm text-gray-500">
           <Calendar className="h-4 w-4 mr-3 text-gray-400" />
           <div className="space-y-1">
@@ -166,7 +157,7 @@ export default function ResponsiveUsersTable({
     {
       key: 'actions',
       header: 'Actions',
-      accessor: (user) => (
+      accessor: user => (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
           {/* Edit Button */}
           <form action={onEdit} className="inline-block">

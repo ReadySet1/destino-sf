@@ -7,60 +7,71 @@ Destino SF provides a comprehensive REST API for managing e-commerce operations,
 ## Base Configuration
 
 ### API Base URL
+
 ```
 Production: https://destino-sf.vercel.app/api
 Development: http://localhost:3000/api
 ```
 
 ### Authentication
+
 ```typescript
 // API client setup
 const apiClient = axios.create({
   baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}` // When authenticated
-  }
+    Authorization: `Bearer ${token}`, // When authenticated
+  },
 });
 ```
 
 ## Core Endpoints
 
 ### Health Check
+
 ```http
 GET /api/health
 ```
+
 Returns API status and version information.
 
 ### Version Information
+
 ```http
 GET /api/version
 ```
+
 Returns current API version and build information.
 
 ## Endpoint Categories
 
 ### Product Management
+
 - **Products API**: Complete product catalog management
 - **Categories API**: Product categorization system
 - **Inventory API**: Stock management and availability
 
 ### Order Processing
+
 - **Orders API**: Order creation, retrieval, and management
 - **Cart API**: Shopping cart operations
 - **Checkout API**: Payment processing and order completion
 
 ### Catering System
+
 - **Catering API**: Specialized catering order handling
 - **Packages API**: Catering package management
 - **Delivery Zones API**: Geographic service area management
 
 ### User Management
+
 - **Authentication API**: Login, registration, and session management
 - **Profile API**: User profile and preferences
 - **Address API**: Delivery address management
 
 ### Administrative
+
 - **Admin API**: Administrative operations and reporting
 - **Analytics API**: Business intelligence and metrics
 - **Configuration API**: System settings and parameters
@@ -68,6 +79,7 @@ Returns current API version and build information.
 ## Response Format
 
 ### Standard Response Structure
+
 ```typescript
 interface ApiResponse<T> {
   success: boolean;
@@ -92,6 +104,7 @@ interface ApiResponse<T> {
 ```
 
 ### Success Response Example
+
 ```json
 {
   "success": true,
@@ -109,6 +122,7 @@ interface ApiResponse<T> {
 ```
 
 ### Error Response Example
+
 ```json
 {
   "success": false,
@@ -125,6 +139,7 @@ interface ApiResponse<T> {
 ## Error Handling
 
 ### HTTP Status Codes
+
 - **200 OK**: Successful request
 - **201 Created**: Resource created successfully
 - **400 Bad Request**: Invalid request parameters
@@ -135,36 +150,38 @@ interface ApiResponse<T> {
 - **500 Internal Server Error**: Server error
 
 ### Error Code Standards
+
 ```typescript
 enum ErrorCodes {
   // Authentication
   INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
   TOKEN_EXPIRED = 'TOKEN_EXPIRED',
   INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
-  
+
   // Products
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   PRODUCT_UNAVAILABLE = 'PRODUCT_UNAVAILABLE',
   INVALID_PRODUCT_DATA = 'INVALID_PRODUCT_DATA',
-  
+
   // Orders
   ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
   INVALID_ORDER_STATUS = 'INVALID_ORDER_STATUS',
   MINIMUM_ORDER_NOT_MET = 'MINIMUM_ORDER_NOT_MET',
-  
+
   // Payments
   PAYMENT_FAILED = 'PAYMENT_FAILED',
   INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
-  
+
   // Delivery
   DELIVERY_ZONE_INVALID = 'DELIVERY_ZONE_INVALID',
-  ADDRESS_VALIDATION_FAILED = 'ADDRESS_VALIDATION_FAILED'
+  ADDRESS_VALIDATION_FAILED = 'ADDRESS_VALIDATION_FAILED',
 }
 ```
 
 ## Rate Limiting
 
 ### Rate Limit Headers
+
 ```http
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
@@ -172,6 +189,7 @@ X-RateLimit-Reset: 1643673600
 ```
 
 ### Rate Limits by Endpoint Type
+
 - **Public Endpoints**: 100 requests per minute
 - **Authenticated Endpoints**: 1000 requests per minute
 - **Admin Endpoints**: 5000 requests per minute
@@ -180,6 +198,7 @@ X-RateLimit-Reset: 1643673600
 ## Request/Response Examples
 
 ### Create Order Example
+
 ```http
 POST /api/orders
 Content-Type: application/json
@@ -204,6 +223,7 @@ Authorization: Bearer your-jwt-token
 ```
 
 ### Get Products Example
+
 ```http
 GET /api/products?category=appetizers&limit=20&page=1
 ```
@@ -211,11 +231,13 @@ GET /api/products?category=appetizers&limit=20&page=1
 ## API Versioning
 
 ### Version Strategy
+
 - **URL Versioning**: `/api/v1/products`
 - **Header Versioning**: `Accept: application/vnd.api+json;version=1`
 - **Backward Compatibility**: Minimum 6 months support for deprecated versions
 
 ### Migration Guidelines
+
 - Deprecation notices 30 days before removal
 - New feature additions are non-breaking
 - Breaking changes require version increment
@@ -224,11 +246,13 @@ GET /api/products?category=appetizers&limit=20&page=1
 ## Development Tools
 
 ### API Documentation
+
 - **OpenAPI 3.0**: Complete API specification
 - **Swagger UI**: Interactive API explorer
 - **Postman Collection**: Ready-to-use API collection
 
 ### Testing
+
 - **Mock Server**: Development testing environment
 - **Test Data**: Predefined test datasets
 - **Validation**: Request/response validation tools

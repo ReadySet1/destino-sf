@@ -1,9 +1,9 @@
 /**
  * Square Health Check Endpoint
- * 
+ *
  * Provides quick health check for Square integration
  * Suitable for uptime monitoring services and load balancers
- * 
+ *
  * GET /api/health/square - Quick health check
  */
 
@@ -31,7 +31,7 @@ interface HealthCheckResult {
 
 export async function GET(): Promise<NextResponse> {
   const startTime = Date.now();
-  
+
   try {
     const healthCheck: HealthCheckResult = {
       status: 'healthy',
@@ -51,7 +51,7 @@ export async function GET(): Promise<NextResponse> {
       const prisma = new PrismaClient();
       await prisma.$queryRaw`SELECT 1`;
       await prisma.$disconnect();
-      
+
       healthCheck.services.database.responseTime = Date.now() - dbStartTime;
     } catch (error: any) {
       healthCheck.services.database.status = 'unhealthy';
@@ -65,10 +65,10 @@ export async function GET(): Promise<NextResponse> {
     try {
       const squareService = getSquareService();
       await squareService.getLocations();
-      
+
       const responseTime = Date.now() - squareStartTime;
       healthCheck.services.square_api.responseTime = responseTime;
-      
+
       if (responseTime > 5000) {
         healthCheck.services.square_api.status = 'degraded';
         if (healthCheck.status === 'healthy') {
@@ -84,14 +84,13 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Return appropriate status code based on health
-    const statusCode = healthCheck.status === 'healthy' ? 200 : 
-                      healthCheck.status === 'degraded' ? 200 : 503;
+    const statusCode =
+      healthCheck.status === 'healthy' ? 200 : healthCheck.status === 'degraded' ? 200 : 503;
 
     return NextResponse.json(healthCheck, { status: statusCode });
-    
   } catch (error: any) {
     logger.error('Health check failed:', error);
-    
+
     return NextResponse.json(
       {
         status: 'unhealthy',

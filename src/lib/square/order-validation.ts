@@ -51,7 +51,7 @@ const VALID_ORDER_FIELDS = new Set([
   'closed_at',
   'state',
   'created_at',
-  'updated_at'
+  'updated_at',
 ]);
 
 /**
@@ -66,7 +66,7 @@ const VALID_METADATA_KEYS = new Set([
   'idempotency_key',
   'customer_id',
   'internal_notes',
-  'platform_source'
+  'platform_source',
 ]);
 
 /**
@@ -75,8 +75,8 @@ const VALID_METADATA_KEYS = new Set([
 export function sanitizeSquareOrderPayload(payload: SquareOrderPayload): SquareOrderPayload {
   const sanitized: SquareOrderPayload = {
     order: {
-      location_id: payload.order.location_id // Always preserve location_id as it's required
-    }
+      location_id: payload.order.location_id, // Always preserve location_id as it's required
+    },
   };
 
   // Copy valid top-level fields
@@ -114,8 +114,8 @@ export function sanitizeSquareOrderPayload(payload: SquareOrderPayload): SquareO
 /**
  * Validates that order payload doesn't contain problematic fields
  */
-export function validateSquareOrderPayload(payload: SquareOrderPayload): { 
-  valid: boolean; 
+export function validateSquareOrderPayload(payload: SquareOrderPayload): {
+  valid: boolean;
   errors: string[];
   sanitized?: SquareOrderPayload;
 } {
@@ -141,13 +141,15 @@ export function validateSquareOrderPayload(payload: SquareOrderPayload): {
       ([_, value]) => typeof value !== 'string'
     );
     if (nonStringMeta.length > 0) {
-      errors.push(`Metadata values must be strings. Invalid: ${nonStringMeta.map(([k, v]) => `${k}=${typeof v}`).join(', ')}`);
+      errors.push(
+        `Metadata values must be strings. Invalid: ${nonStringMeta.map(([k, v]) => `${k}=${typeof v}`).join(', ')}`
+      );
     }
   }
 
   // Check for truncated field names (like "workfl" from "workflow")
-  const suspiciousFields = Object.keys(payload.order).filter(key => 
-    key.length < 6 && !VALID_ORDER_FIELDS.has(key)
+  const suspiciousFields = Object.keys(payload.order).filter(
+    key => key.length < 6 && !VALID_ORDER_FIELDS.has(key)
   );
   if (suspiciousFields.length > 0) {
     errors.push(`Suspicious truncated fields detected: ${suspiciousFields.join(', ')}`);
@@ -162,11 +164,17 @@ export function validateSquareOrderPayload(payload: SquareOrderPayload): {
 /**
  * Logs validation errors and returns sanitized payload
  */
-export function safeSquareOrderPayload(payload: SquareOrderPayload, context: string = ''): SquareOrderPayload {
+export function safeSquareOrderPayload(
+  payload: SquareOrderPayload,
+  context: string = ''
+): SquareOrderPayload {
   const validation = validateSquareOrderPayload(payload);
-  
+
   if (!validation.valid) {
-    console.warn(`⚠️ Square order payload validation errors${context ? ` in ${context}` : ''}:`, validation.errors);
+    console.warn(
+      `⚠️ Square order payload validation errors${context ? ` in ${context}` : ''}:`,
+      validation.errors
+    );
     console.warn('Original payload:', JSON.stringify(payload, null, 2));
     console.warn('Sanitized payload:', JSON.stringify(validation.sanitized, null, 2));
   }

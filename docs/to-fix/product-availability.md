@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Q1_2025_AVAILABILITY_REVAMP ✅ **DELIVERED AHEAD OF SCHEDULE**
 
 ### Problem Statement
+
 Current availability system relies on Square item naming conventions and basic database flags. Users need comprehensive in-platform controls for product availability, seasonal scheduling, pre-orders, and purchase restrictions without depending on Square's advanced tags or naming patterns. The system should provide date pickers, visual timeline management, and bulk operations.
 
 ### Success Criteria
+
 - [x] Full availability control within the ecommerce platform (independent of Square naming) ✅
 - [x] Date picker interfaces using existing `react-day-picker` and UI components ✅
 - [x] Multiple availability states (visible/hidden, purchasable/view-only, pre-order, coming-soon) ✅
@@ -28,6 +30,7 @@ Current availability system relies on Square item naming conventions and basic d
 **🎯 IMPLEMENTATION STATUS: 85% COMPLETE - PRODUCTION READY! 🚀**
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Future inventory management features
 - **Related**: Current Square sync implementation (`src/app/api/square/sync`), existing availability fields in Prisma schema
@@ -39,6 +42,7 @@ Current availability system relies on Square item naming conventions and basic d
 ### 1. Code Structure & References
 
 #### File Structure (Aligned with Your Codebase) ✅ **IMPLEMENTED**
+
 ```tsx
 src/
 ├── app/
@@ -93,6 +97,7 @@ src/
 ```
 
 #### Updated Prisma Schema (Extending Your Existing Schema) ✅ **IMPLEMENTED & MIGRATED**
+
 ```prisma
 // ✅ SUCCESSFULLY ADDED to existing schema.prisma
 
@@ -104,36 +109,36 @@ model AvailabilityRule {
   priority          Int         @default(0)
   ruleType          String      @db.VarChar(50) // 'date_range', 'seasonal', 'inventory', 'custom', 'time_based'
   state             String      @db.VarChar(50) // 'available', 'pre_order', 'view_only', 'hidden', etc.
-  
+
   // Date controls
   startDate         DateTime?   @map("start_date")
   endDate           DateTime?   @map("end_date")
-  
+
   // Seasonal config (JSONB)
   seasonalConfig    Json?       @map("seasonal_config")
-  
+
   // Time restrictions (JSONB)
   timeRestrictions  Json?       @map("time_restrictions")
-  
+
   // Settings based on state (JSONB)
   preOrderSettings  Json?       @map("pre_order_settings")
   viewOnlySettings  Json?       @map("view_only_settings")
-  
+
   // Override flag
   overrideSquare    Boolean     @default(true) @map("override_square")
-  
+
   // Metadata
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
   createdBy         String      @db.Uuid @map("created_by")
   updatedBy         String      @db.Uuid @map("updated_by")
   deletedAt         DateTime?   @map("deleted_at")
-  
+
   // Relations
   product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdByProfile  Profile     @relation("CreatedRules", fields: [createdBy], references: [id])
   updatedByProfile  Profile     @relation("UpdatedRules", fields: [updatedBy], references: [id])
-  
+
   @@index([productId, enabled])
   @@index([startDate, endDate])
   @@index([productId, priority])
@@ -148,9 +153,9 @@ model AvailabilitySchedule {
   processed       Boolean     @default(false)
   processedAt     DateTime?   @map("processed_at")
   errorMessage    String?     @map("error_message")
-  
+
   rule            AvailabilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  
+
   @@index([scheduledAt, processed])
   @@map("availability_schedule")
 }
@@ -172,6 +177,7 @@ model Profile {
 ```
 
 #### Key TypeScript Types (Aligned with Your Patterns)
+
 ```tsx
 // src/types/availability.ts
 import { z } from 'zod';
@@ -185,7 +191,7 @@ export enum AvailabilityState {
   HIDDEN = 'hidden',
   COMING_SOON = 'coming_soon',
   SOLD_OUT = 'sold_out',
-  RESTRICTED = 'restricted'
+  RESTRICTED = 'restricted',
 }
 
 // Rule Types
@@ -194,7 +200,7 @@ export enum RuleType {
   SEASONAL = 'seasonal',
   INVENTORY = 'inventory',
   CUSTOM = 'custom',
-  TIME_BASED = 'time_based'
+  TIME_BASED = 'time_based',
 }
 
 // Zod Schemas (using your existing pattern)
@@ -206,47 +212,59 @@ export const AvailabilityRuleSchema = z.object({
   priority: z.number().int().min(0).default(0),
   ruleType: z.nativeEnum(RuleType),
   state: z.nativeEnum(AvailabilityState),
-  
+
   // Date controls
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
-  
+
   // Seasonal controls
-  seasonalConfig: z.object({
-    startMonth: z.number().min(1).max(12),
-    startDay: z.number().min(1).max(31),
-    endMonth: z.number().min(1).max(12),
-    endDay: z.number().min(1).max(31),
-    yearly: z.boolean(),
-    timezone: z.string().default('America/Los_Angeles')
-  }).nullable().optional(),
-  
+  seasonalConfig: z
+    .object({
+      startMonth: z.number().min(1).max(12),
+      startDay: z.number().min(1).max(31),
+      endMonth: z.number().min(1).max(12),
+      endDay: z.number().min(1).max(31),
+      yearly: z.boolean(),
+      timezone: z.string().default('America/Los_Angeles'),
+    })
+    .nullable()
+    .optional(),
+
   // Time restrictions
-  timeRestrictions: z.object({
-    daysOfWeek: z.array(z.number().min(0).max(6)),
-    startTime: z.string().regex(/^\d{2}:\d{2}$/),
-    endTime: z.string().regex(/^\d{2}:\d{2}$/),
-    timezone: z.string().default('America/Los_Angeles')
-  }).nullable().optional(),
-  
+  timeRestrictions: z
+    .object({
+      daysOfWeek: z.array(z.number().min(0).max(6)),
+      startTime: z.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z.string().regex(/^\d{2}:\d{2}$/),
+      timezone: z.string().default('America/Los_Angeles'),
+    })
+    .nullable()
+    .optional(),
+
   // Pre-order settings
-  preOrderSettings: z.object({
-    message: z.string(),
-    expectedDeliveryDate: z.coerce.date(),
-    maxQuantity: z.number().nullable().optional(),
-    depositRequired: z.boolean().default(false),
-    depositAmount: z.number().nullable().optional()
-  }).nullable().optional(),
-  
+  preOrderSettings: z
+    .object({
+      message: z.string(),
+      expectedDeliveryDate: z.coerce.date(),
+      maxQuantity: z.number().nullable().optional(),
+      depositRequired: z.boolean().default(false),
+      depositAmount: z.number().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+
   // View-only settings
-  viewOnlySettings: z.object({
-    message: z.string(),
-    showPrice: z.boolean().default(true),
-    allowWishlist: z.boolean().default(false),
-    notifyWhenAvailable: z.boolean().default(true)
-  }).nullable().optional(),
-  
-  overrideSquare: z.boolean().default(true)
+  viewOnlySettings: z
+    .object({
+      message: z.string(),
+      showPrice: z.boolean().default(true),
+      allowWishlist: z.boolean().default(false),
+      notifyWhenAvailable: z.boolean().default(true),
+    })
+    .nullable()
+    .optional(),
+
+  overrideSquare: z.boolean().default(true),
 });
 
 export type AvailabilityRule = z.infer<typeof AvailabilityRuleSchema>;
@@ -289,10 +307,7 @@ import { AvailabilityRuleSchema, type AvailabilityRule } from '@/types/availabil
 import { getServerSession } from 'next-auth';
 import { logger } from '@/utils/logger';
 
-export async function createAvailabilityRule(
-  productId: string,
-  data: Partial<AvailabilityRule>
-) {
+export async function createAvailabilityRule(productId: string, data: Partial<AvailabilityRule>) {
   const session = await getServerSession();
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
@@ -315,13 +330,11 @@ export async function createAvailabilityRule(
 
   revalidatePath('/admin/products/availability');
   revalidatePath(`/products/${productId}`);
-  
+
   return result;
 }
 
-export async function bulkUpdateAvailability(
-  request: BulkAvailabilityRequest
-) {
+export async function bulkUpdateAvailability(request: BulkAvailabilityRequest) {
   // Implementation using prisma.$transaction
 }
 
@@ -354,6 +367,7 @@ import { AvailabilityRuleSchema } from '@/types/availability';
 ### 4. Integration with Existing Systems ✅ **COMPLETED**
 
 #### Update AddToCartButton Component ✅ **IMPLEMENTED**
+
 ```tsx
 // ✅ src/components/store/AddToCartButton.tsx
 // ✅ Enhanced version with availability checking - COMPLETE
@@ -362,22 +376,23 @@ import { useAvailability } from '@/hooks/useAvailability';
 
 export function AddToCartButton({ product, ...props }) {
   const { currentState, isPreOrder, preOrderSettings } = useAvailability(product.id);
-  
+
   if (currentState === 'hidden') return null;
-  
+
   if (currentState === 'view_only') {
     return <ViewOnlyButton product={product} />;
   }
-  
+
   if (isPreOrder) {
     return <PreOrderButton product={product} settings={preOrderSettings} />;
   }
-  
+
   // Existing implementation
 }
 ```
 
 #### Square Sync Enhancement ⏳ **PENDING**
+
 ```tsx
 // ⏳ src/app/api/square/sync/route.ts
 // ⏳ Add logic to preserve manual availability overrides - TODO
@@ -387,15 +402,15 @@ async function syncProduct(squareProduct: any) {
     where: {
       productId: product.id,
       overrideSquare: true,
-      enabled: true
-    }
+      enabled: true,
+    },
   });
-  
+
   if (existingRule) {
     // Skip Square availability updates for products with manual overrides
     return;
   }
-  
+
   // Existing sync logic
 }
 ```
@@ -405,6 +420,7 @@ async function syncProduct(squareProduct: any) {
 ## 🧪 Testing Strategy ⏳ **PENDING**
 
 ### Unit Tests (Using Your Jest Setup) ⏳
+
 ```tsx
 // ⏳ src/__tests__/lib/availability/engine.test.ts
 // ⏳ src/__tests__/components/admin/AvailabilityForm.test.tsx
@@ -412,12 +428,14 @@ async function syncProduct(squareProduct: any) {
 ```
 
 ### Integration Tests ⏳
+
 ```tsx
 // ⏳ src/__tests__/integration/availability-flow.test.ts
 // ⏳ Test complete availability management workflow
 ```
 
 ### E2E Tests (Using Your Playwright Setup) ⏳
+
 ```tsx
 // ⏳ tests/e2e/availability-management.spec.ts
 // ⏳ Test admin UI and customer-facing behavior
@@ -428,6 +446,7 @@ async function syncProduct(squareProduct: any) {
 ## 📊 Performance & Monitoring ⏳ **PENDING**
 
 ### Caching Strategy (Using Upstash Redis) ⏳
+
 ```tsx
 // ⏳ src/lib/availability/cache.ts
 import { Redis } from '@upstash/redis';
@@ -441,6 +460,7 @@ export async function getCachedAvailability(productId: string) {
 ```
 
 ### Monitoring (Using Your Sentry Setup) ⏳
+
 ```tsx
 // ⏳ Add Sentry tracking for availability rule execution
 import * as Sentry from '@sentry/nextjs';
@@ -449,7 +469,7 @@ Sentry.addBreadcrumb({
   category: 'availability',
   message: 'Rule evaluated',
   level: 'info',
-  data: { productId, ruleId, state }
+  data: { productId, ruleId, state },
 });
 ```
 
@@ -458,12 +478,14 @@ Sentry.addBreadcrumb({
 ## 🎨 UI/UX Considerations ✅ **IMPLEMENTED**
 
 ### Admin Interface Features ✅
+
 - ✅ Visual timeline using `framer-motion` for animations
 - ✅ Date pickers using existing `react-day-picker`
 - ✅ Bulk editor using your existing table components
 - ✅ Real-time preview with `@tanstack/react-query`
 
 ### Customer-Facing Changes ✅
+
 - ✅ Enhanced product cards with availability badges
 - ✅ Pre-order confirmation dialogs
 - ✅ Coming soon countdown timers
@@ -474,6 +496,7 @@ Sentry.addBreadcrumb({
 ## 📦 Deployment & Rollback ✅ **READY FOR PRODUCTION**
 
 ### Migration Strategy ✅
+
 1. ✅ Add new database tables via Prisma migration - **COMPLETED**
 2. ✅ Deploy feature behind feature flag - **READY**
 3. ⏳ Run migration script for existing products - **PENDING**
@@ -481,6 +504,7 @@ Sentry.addBreadcrumb({
 5. ⏳ Monitor with existing Sentry integration - **PENDING**
 
 ### Environment Variables
+
 ```env
 # Add to your existing .env files
 FEATURE_NATIVE_AVAILABILITY=true
@@ -493,6 +517,7 @@ AVAILABILITY_PREVIEW_MODE=false
 ## 📝 Documentation Requirements
 
 ### Updates Needed
+
 - Update existing product management docs
 - Add availability rule examples
 - Document migration process from Square
@@ -502,6 +527,7 @@ AVAILABILITY_PREVIEW_MODE=false
 ## 🏆 **FINAL ACHIEVEMENT SUMMARY**
 
 ### ✅ **COMPLETED - PRODUCTION READY (85%)**
+
 - **🎯 Backend Infrastructure (100%)**: Database, Types, Actions, Queries, API Endpoints
 - **🎯 Business Logic (100%)**: Evaluation Engine, Scheduler, Validators
 - **🎯 Admin Interface (100%)**: Forms, Timeline, Bulk Editor, Navigation Integration
@@ -509,8 +535,9 @@ AVAILABILITY_PREVIEW_MODE=false
 - **🎯 Product Integration (100%)**: Full availability management in product edit page
 
 ### ⏳ **REMAINING OPTIMIZATIONS (15%)**
+
 - **Square Sync Enhancement**: Preserve manual overrides
-- **Migration Scripts**: Convert existing Square-based rules  
+- **Migration Scripts**: Convert existing Square-based rules
 - **Testing Suite**: Unit, Integration, E2E tests
 - **Performance**: Redis caching for evaluations
 - **Monitoring**: Sentry tracking for rule execution

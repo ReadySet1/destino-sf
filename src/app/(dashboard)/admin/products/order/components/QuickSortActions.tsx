@@ -9,36 +9,36 @@ interface QuickSortActionsProps {
   isLoading?: boolean;
 }
 
-export function QuickSortActions({ 
-  onQuickSort, 
+export function QuickSortActions({
+  onQuickSort,
   disabled = false,
-  isLoading = false 
+  isLoading = false,
 }: QuickSortActionsProps) {
   const sortOptions = [
     {
       strategy: 'ALPHABETICAL' as ReorderStrategy,
       label: 'A-Z',
       icon: SortAsc,
-      description: 'Sort alphabetically by name'
+      description: 'Sort alphabetically by name',
     },
     {
       strategy: 'PRICE_ASC' as ReorderStrategy,
       label: 'Price ↑',
       icon: DollarSign,
-      description: 'Sort by price (low to high)'
+      description: 'Sort by price (low to high)',
     },
     {
       strategy: 'PRICE_DESC' as ReorderStrategy,
       label: 'Price ↓',
       icon: DollarSign,
-      description: 'Sort by price (high to low)'
+      description: 'Sort by price (high to low)',
     },
     {
       strategy: 'NEWEST_FIRST' as ReorderStrategy,
       label: 'Newest',
       icon: Calendar,
-      description: 'Sort by creation date (newest first)'
-    }
+      description: 'Sort by creation date (newest first)',
+    },
   ];
 
   return (
@@ -46,7 +46,7 @@ export function QuickSortActions({
       <p className="text-sm text-gray-600">
         Apply automatic sorting to reorder all products in this category:
       </p>
-      
+
       <div className="flex flex-wrap gap-2">
         {sortOptions.map(({ strategy, label, icon: Icon, description }) => (
           <button
@@ -57,9 +57,10 @@ export function QuickSortActions({
             className={`
               inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
               transition-colors duration-200
-              ${disabled || isLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+              ${
+                disabled || isLoading
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
               }
             `}
           >
@@ -71,11 +72,11 @@ export function QuickSortActions({
           </button>
         ))}
       </div>
-      
+
       <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
         <p className="text-xs text-yellow-800">
-          <strong>Warning:</strong> Quick sort will reorder all products in this category 
-          and override any custom ordering you&apos;ve set up.
+          <strong>Warning:</strong> Quick sort will reorder all products in this category and
+          override any custom ordering you&apos;ve set up.
         </p>
       </div>
     </div>

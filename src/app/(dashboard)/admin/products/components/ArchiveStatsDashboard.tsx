@@ -37,11 +37,7 @@ export async function ArchiveStatsDashboard() {
               count={stats.byReason.removed_from_square || 0}
               variant="yellow"
             />
-            <StatCard
-              label="Manual"
-              count={stats.byReason.manual || 0}
-              variant="green"
-            />
+            <StatCard label="Manual" count={stats.byReason.manual || 0} variant="green" />
           </FormGrid>
         </div>
 
@@ -67,7 +63,7 @@ export async function ArchiveStatsDashboard() {
 function StatCard({
   label,
   count,
-  variant
+  variant,
 }: {
   label: string;
   count: number;

@@ -48,7 +48,7 @@ class CircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
   private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
-  
+
   constructor(
     private maxFailures = 5,
     private timeout = 60000 // 1 minute
@@ -83,7 +83,7 @@ class CircuitBreaker {
   private onFailure() {
     this.failures++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failures >= this.maxFailures) {
       this.state = 'OPEN';
       console.error(`Circuit breaker OPEN after ${this.failures} failures`);
@@ -122,19 +122,20 @@ export class ResilientAlertService {
           tomorrow.setDate(tomorrow.getDate() + 1);
 
           return await withRetry(
-            () => prisma.order.count({
-              where: {
-                createdAt: {
-                  gte: today,
-                  lt: tomorrow,
+            () =>
+              prisma.order.count({
+                where: {
+                  createdAt: {
+                    gte: today,
+                    lt: tomorrow,
+                  },
                 },
-              },
-            }),
+              }),
             3, // maxRetries
             'daily order count query'
           );
         });
-        
+
         totalOrdersToday = countResult || 0;
       } catch (error) {
         console.warn('Failed to get daily order count, using fallback:', error);
@@ -181,9 +182,7 @@ export class ResilientAlertService {
         // Try to mark as sent if we have a record
         if (alertRecord) {
           try {
-            await dbCircuitBreaker.execute(() =>
-              this.markAlertAsSent(alertRecord.id, 'queued')
-            );
+            await dbCircuitBreaker.execute(() => this.markAlertAsSent(alertRecord.id, 'queued'));
           } catch (error) {
             console.warn('Failed to mark alert as sent, but email was successful:', error);
           }
@@ -246,7 +245,10 @@ export class ResilientAlertService {
           })
         );
       } catch (error) {
-        console.warn('Failed to create customer status change alert record, proceeding with email only:', error);
+        console.warn(
+          'Failed to create customer status change alert record, proceeding with email only:',
+          error
+        );
       }
 
       try {
@@ -287,7 +289,7 @@ export class ResilientAlertService {
       // Send to admin for important status changes
       if (this.shouldNotifyAdminOfStatusChange(order.status)) {
         const recipientEmail = getRecipientEmail(AlertType.ORDER_STATUS_CHANGE);
-        
+
         let adminAlertRecord: any = null;
         try {
           adminAlertRecord = await dbCircuitBreaker.execute(() =>
@@ -302,7 +304,10 @@ export class ResilientAlertService {
             })
           );
         } catch (error) {
-          console.warn('Failed to create admin status change alert record, proceeding with email only:', error);
+          console.warn(
+            'Failed to create admin status change alert record, proceeding with email only:',
+            error
+          );
         }
 
         try {
@@ -380,7 +385,10 @@ export class ResilientAlertService {
           })
         );
       } catch (error) {
-        console.warn('Failed to create payment failed alert record, proceeding with email only:', error);
+        console.warn(
+          'Failed to create payment failed alert record, proceeding with email only:',
+          error
+        );
       }
 
       try {
@@ -406,9 +414,7 @@ export class ResilientAlertService {
 
         if (alertRecord) {
           try {
-            await dbCircuitBreaker.execute(() =>
-              this.markAlertAsSent(alertRecord.id, data?.id)
-            );
+            await dbCircuitBreaker.execute(() => this.markAlertAsSent(alertRecord.id, data?.id));
           } catch (markError) {
             console.warn('Failed to mark payment failed alert as sent:', markError);
           }
@@ -461,7 +467,10 @@ export class ResilientAlertService {
           })
         );
       } catch (dbError) {
-        console.warn('Failed to create system error alert record, proceeding with email only:', dbError);
+        console.warn(
+          'Failed to create system error alert record, proceeding with email only:',
+          dbError
+        );
         // If we can't even log the alert, this might be a database issue
         // In this case, we still want to try sending the email but be more careful
       }
@@ -532,18 +541,19 @@ export class ResilientAlertService {
    */
   private async createAlertRecord(input: CreateAlertInput) {
     return await withRetry(
-      () => prisma.emailAlert.create({
-        data: {
-          type: input.type,
-          priority: input.priority,
-          recipientEmail: input.recipientEmail,
-          subject: input.subject,
-          metadata: input.metadata,
-          relatedOrderId: input.relatedOrderId,
-          relatedUserId: input.relatedUserId,
-          status: AlertStatus.PENDING,
-        },
-      }),
+      () =>
+        prisma.emailAlert.create({
+          data: {
+            type: input.type,
+            priority: input.priority,
+            recipientEmail: input.recipientEmail,
+            subject: input.subject,
+            metadata: input.metadata,
+            relatedOrderId: input.relatedOrderId,
+            relatedUserId: input.relatedUserId,
+            status: AlertStatus.PENDING,
+          },
+        }),
       3, // maxRetries
       'create alert record'
     );
@@ -554,16 +564,17 @@ export class ResilientAlertService {
    */
   private async markAlertAsSent(alertId: string, messageId?: string) {
     await withRetry(
-      () => prisma.emailAlert.update({
-        where: { id: alertId },
-        data: {
-          status: AlertStatus.SENT,
-          sentAt: new Date(),
-          metadata: {
-            messageId,
+      () =>
+        prisma.emailAlert.update({
+          where: { id: alertId },
+          data: {
+            status: AlertStatus.SENT,
+            sentAt: new Date(),
+            metadata: {
+              messageId,
+            },
           },
-        },
-      }),
+        }),
       3, // maxRetries
       'mark alert as sent'
     );
@@ -574,16 +585,17 @@ export class ResilientAlertService {
    */
   private async markAlertAsFailed(alertId: string, errorMessage: string) {
     await withRetry(
-      () => prisma.emailAlert.update({
-        where: { id: alertId },
-        data: {
-          status: AlertStatus.FAILED,
-          failedAt: new Date(),
-          metadata: {
-            error: errorMessage,
+      () =>
+        prisma.emailAlert.update({
+          where: { id: alertId },
+          data: {
+            status: AlertStatus.FAILED,
+            failedAt: new Date(),
+            metadata: {
+              error: errorMessage,
+            },
           },
-        },
-      }),
+        }),
       3, // maxRetries
       'mark alert as failed'
     );

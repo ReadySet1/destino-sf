@@ -1,6 +1,6 @@
 /**
  * Rate Limiting for Webhook Endpoints
- * 
+ *
  * Implements rate limiting to prevent abuse and protect webhook endpoints
  * from excessive requests that could impact performance.
  */
@@ -14,20 +14,20 @@ class RateLimitStore {
   get(key: string): { count: number; resetTime: number } | null {
     const entry = this.requests.get(key);
     if (!entry) return null;
-    
+
     // Clean up expired entries
     if (Date.now() > entry.resetTime) {
       this.requests.delete(key);
       return null;
     }
-    
+
     return entry;
   }
 
   increment(key: string, windowMs: number): { count: number; resetTime: number } {
     const now = Date.now();
     const existing = this.get(key);
-    
+
     if (existing) {
       existing.count++;
       return existing;
@@ -62,11 +62,7 @@ export class RateLimiter {
   private maxRequests: number;
   private message: string;
 
-  constructor(options: {
-    windowMs: number;
-    max: number;
-    message?: string;
-  }) {
+  constructor(options: { windowMs: number; max: number; message?: string }) {
     this.store = new RateLimitStore();
     this.windowMs = options.windowMs;
     this.maxRequests = options.max;
@@ -90,7 +86,7 @@ export class RateLimiter {
       allowed,
       remaining,
       resetTime: entry.resetTime,
-      message: !allowed ? this.message : undefined
+      message: !allowed ? this.message : undefined,
     };
   }
 
@@ -100,8 +96,10 @@ export class RateLimiter {
   } {
     return {
       activeClients: this.store.size(),
-      totalRequests: Array.from(this.store['requests'].values())
-        .reduce((sum, entry) => sum + entry.count, 0)
+      totalRequests: Array.from(this.store['requests'].values()).reduce(
+        (sum, entry) => sum + entry.count,
+        0
+      ),
     };
   }
 
@@ -114,7 +112,7 @@ export class RateLimiter {
 export const webhookRateLimiter = new RateLimiter({
   windowMs: WEBHOOK_CONSTANTS.RATE_LIMIT.WINDOW_MS,
   max: WEBHOOK_CONSTANTS.RATE_LIMIT.MAX_REQUESTS,
-  message: 'Too many webhook requests from this IP'
+  message: 'Too many webhook requests from this IP',
 });
 
 /**
@@ -129,18 +127,21 @@ export class EnvironmentAwareRateLimiter {
     this.productionLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 50, // 50 requests per minute
-      message: 'Production webhook rate limit exceeded'
+      message: 'Production webhook rate limit exceeded',
     });
 
     // Sandbox: more lenient for testing
     this.sandboxLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 200, // 200 requests per minute
-      message: 'Sandbox webhook rate limit exceeded'
+      message: 'Sandbox webhook rate limit exceeded',
     });
   }
 
-  async check(identifier: string, environment: 'sandbox' | 'production'): Promise<{
+  async check(
+    identifier: string,
+    environment: 'sandbox' | 'production'
+  ): Promise<{
     allowed: boolean;
     remaining: number;
     resetTime: number;
@@ -153,10 +154,10 @@ export class EnvironmentAwareRateLimiter {
   getStats(environment?: 'sandbox' | 'production'): any {
     if (environment === 'sandbox') return this.sandboxLimiter.getStats();
     if (environment === 'production') return this.productionLimiter.getStats();
-    
+
     return {
       production: this.productionLimiter.getStats(),
-      sandbox: this.sandboxLimiter.getStats()
+      sandbox: this.sandboxLimiter.getStats(),
     };
   }
 

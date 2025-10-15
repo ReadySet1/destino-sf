@@ -186,12 +186,12 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
 
     // Get the admin email based on alert type
     const adminEmail = getRecipientEmail('CATERING_INQUIRY_RECEIVED' as any);
-    
+
     // Parse delivery address if it exists
-    const deliveryAddress = order.deliveryAddressJson 
-      ? (typeof order.deliveryAddressJson === 'string' 
-          ? JSON.parse(order.deliveryAddressJson)
-          : order.deliveryAddressJson)
+    const deliveryAddress = order.deliveryAddressJson
+      ? typeof order.deliveryAddressJson === 'string'
+        ? JSON.parse(order.deliveryAddressJson)
+        : order.deliveryAddressJson
       : null;
 
     const shopName = process.env.SHOP_NAME || 'Destino SF';
@@ -228,7 +228,7 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
     }
 
     console.log('Catering notification email sent successfully:', data?.id);
-    
+
     // Also send confirmation to customer
     await sendCateringConfirmationToCustomer(order);
   } catch (error) {
@@ -244,7 +244,7 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
   try {
     const shopName = process.env.SHOP_NAME || 'Destino SF';
     const fromEmail = process.env.FROM_EMAIL || 'orders@destino-sf.com';
-    
+
     const formattedEventDate = new Date(order.eventDate).toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -312,16 +312,22 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
                     <span style="color: #713f12; margin-left: 8px;">${order.paymentMethod === 'SQUARE' ? 'Credit Card' : order.paymentMethod}</span>
                   </div>
                   
-                  ${order.specialRequests ? `
+                  ${
+                    order.specialRequests
+                      ? `
                   <div style="margin: 8px 0;">
                     <span style="font-weight: 600; color: #713f12;">Special Requests:</span>
                     <span style="color: #713f12; margin-left: 8px;">${order.specialRequests}</span>
                   </div>
-                  ` : ''}
+                  `
+                      : ''
+                  }
                 </div>
 
                 <!-- Order Items -->
-                ${order.items && order.items.length > 0 ? `
+                ${
+                  order.items && order.items.length > 0
+                    ? `
                 <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                   <h3 style="margin: 0 0 16px 0; color: #495057; font-size: 18px; border-bottom: 2px solid #6c757d; padding-bottom: 8px;">🍽️ Order Items</h3>
                   <div style="background-color: #ffffff; border-radius: 6px; overflow: hidden; border: 1px solid #e9ecef;">
@@ -336,19 +342,25 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
                     </div>
                     
                     <!-- Table Items -->
-                    ${order.items.map((item: any) => `
+                    ${order.items
+                      .map(
+                        (item: any) => `
                       <div style="padding: 12px; border-bottom: 1px solid #f1f3f4; last-child:border-bottom: none;">
                         <div style="display: table; width: 100%; table-layout: fixed;">
                           <div style="display: table-cell; width: 50%; color: #495057; font-size: 14px; vertical-align: middle;">${item.itemName || item.name || 'Unknown Item'}</div>
                           <div style="display: table-cell; width: 25%; text-align: center; color: #6c757d; font-size: 14px; vertical-align: middle;">${item.quantity}</div>
-                          <div style="display: table-cell; width: 25%; text-align: right; color: #495057; font-size: 14px; font-weight: 500; vertical-align: middle;">$${((item.totalPrice || (item.pricePerUnit * item.quantity)) || 0).toFixed(2)}</div>
+                          <div style="display: table-cell; width: 25%; text-align: right; color: #495057; font-size: 14px; font-weight: 500; vertical-align: middle;">$${(item.totalPrice || item.pricePerUnit * item.quantity || 0).toFixed(2)}</div>
                         </div>
                       </div>
-                    `).join('')}
+                    `
+                      )
+                      .join('')}
                     
                   </div>
                 </div>
-                ` : ''}
+                `
+                    : ''
+                }
 
                 <!-- Next Steps -->
                 <div style="background-color: #fff3cd; border: 1px solid #fbbf24; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
@@ -421,7 +433,7 @@ function createCateringAdminEmailHtml(data: {
   specialRequests?: string;
   deliveryFee: number;
 }): string {
-  const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.pricePerUnit), 0);
+  const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
   const formattedEventDate = new Date(data.eventDate).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -431,10 +443,14 @@ function createCateringAdminEmailHtml(data: {
 
   const formatPaymentMethod = (method: string) => {
     switch (method) {
-      case 'SQUARE': return 'Credit Card (Square)';
-      case 'CASH': return 'Cash';
-      case 'VENMO': return 'Venmo';
-      default: return method;
+      case 'SQUARE':
+        return 'Credit Card (Square)';
+      case 'CASH':
+        return 'Cash';
+      case 'VENMO':
+        return 'Venmo';
+      default:
+        return method;
     }
   };
 
@@ -493,12 +509,16 @@ function createCateringAdminEmailHtml(data: {
                 <span style="color: #1f2937;">${data.numberOfPeople}</span>
               </div>
               
-              ${data.specialRequests ? `
+              ${
+                data.specialRequests
+                  ? `
               <div style="margin: 8px 0;">
                 <span style="font-weight: 600; color: #6b7280; width: 30%; display: inline-block;">Special Requests:</span>
                 <span style="color: #1f2937;">${data.specialRequests}</span>
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
               
               <div style="margin: 8px 0;">
                 <span style="font-weight: 600; color: #6b7280; width: 30%; display: inline-block;">Payment:</span>
@@ -506,7 +526,9 @@ function createCateringAdminEmailHtml(data: {
               </div>
             </div>
 
-            ${data.deliveryAddress ? `
+            ${
+              data.deliveryAddress
+                ? `
             <!-- Delivery Information -->
             <div style="margin-bottom: 24px; background-color: #fef3c7; padding: 16px; border-radius: 6px; border: 1px solid #f59e0b;">
               <h2 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 16px 0; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">
@@ -523,14 +545,20 @@ function createCateringAdminEmailHtml(data: {
                 </span>
               </div>
               
-              ${data.deliveryAddress.deliveryDate && data.deliveryAddress.deliveryTime ? `
+              ${
+                data.deliveryAddress.deliveryDate && data.deliveryAddress.deliveryTime
+                  ? `
               <div style="margin: 8px 0;">
                 <span style="font-weight: 600; color: #92400e; width: 30%; display: inline-block;">Delivery:</span>
                 <span style="color: #92400e;">${data.deliveryAddress.deliveryDate} at ${data.deliveryAddress.deliveryTime}</span>
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
             <!-- Order Items -->
             <div style="margin-bottom: 24px;">
@@ -548,14 +576,18 @@ function createCateringAdminEmailHtml(data: {
                 </div>
 
                 <!-- Table Items -->
-                ${data.items.map(item => `
+                ${data.items
+                  .map(
+                    item => `
                   <div style="border-bottom: 1px solid #f3f4f6; padding: 8px 12px; display: flex;">
                     <div style="width: 40%; color: #1f2937;">${item.name}</div>
                     <div style="width: 15%; color: #1f2937; text-align: center;">${item.quantity}</div>
                     <div style="width: 22.5%; color: #1f2937; text-align: center;">$${item.pricePerUnit.toFixed(2)}</div>
                     <div style="width: 22.5%; color: #1f2937; text-align: center;">$${(item.quantity * item.pricePerUnit).toFixed(2)}</div>
                   </div>
-                `).join('')}
+                `
+                  )
+                  .join('')}
               </div>
             </div>
 
@@ -566,12 +598,16 @@ function createCateringAdminEmailHtml(data: {
                 <span style="color: #713f12; font-weight: 600;">$${subtotal.toFixed(2)}</span>
               </div>
               
-              ${data.deliveryFee > 0 ? `
+              ${
+                data.deliveryFee > 0
+                  ? `
               <div style="display: flex; justify-content: space-between; margin: 4px 0;">
                 <span style="color: #713f12;">Delivery Fee:</span>
                 <span style="color: #713f12; font-weight: 600;">$${data.deliveryFee.toFixed(2)}</span>
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
               
               <hr style="border-color: #facc15; margin: 8px 0;" />
               

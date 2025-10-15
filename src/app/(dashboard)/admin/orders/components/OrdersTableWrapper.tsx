@@ -33,10 +33,10 @@ interface OrdersTableWrapperProps {
   sortDirection: 'asc' | 'desc';
 }
 
-export default function OrdersTableWrapper({ 
-  orders, 
-  sortKey, 
-  sortDirection 
+export default function OrdersTableWrapper({
+  orders,
+  sortKey,
+  sortDirection,
 }: OrdersTableWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,11 +49,11 @@ export default function OrdersTableWrapper({
   };
 
   return (
-    <ResponsiveOrdersTable 
+    <ResponsiveOrdersTable
       orders={orders}
       onSort={handleSort}
       sortKey={sortKey}
       sortDirection={sortDirection}
     />
   );
-} 
+}

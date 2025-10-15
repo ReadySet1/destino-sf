@@ -85,11 +85,11 @@ type FeaturePageProps = {
 export default async function FeaturePage({ searchParams }: FeaturePageProps) {
   // 1. Await searchParams
   const params = await searchParams;
-  
+
   // 2. Parse and validate parameters
   const currentPage = Math.max(1, Number(params?.page || 1));
   const searchQuery = (params?.search || '').trim();
-  
+
   // 3. Fetch data from database
   const items = await prisma.feature.findMany({
     where: {
@@ -101,17 +101,17 @@ export default async function FeaturePage({ searchParams }: FeaturePageProps) {
     skip: (currentPage - 1) * itemsPerPage,
     take: itemsPerPage,
   });
-  
+
   // 4. Get total count for pagination
   const totalCount = await prisma.feature.count({ where });
   const totalPages = Math.ceil(totalCount / itemsPerPage);
-  
+
   // 5. Define server actions
   async function handleAction(formData: FormData) {
     'use server';
     // Action logic
   }
-  
+
   // 6. Render UI
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -121,7 +121,7 @@ export default async function FeaturePage({ searchParams }: FeaturePageProps) {
         backUrl="/admin"
         backLabel="Back to Dashboard"
       />
-      
+
       <div className="space-y-8 mt-8">
         {/* Action buttons */}
         <FormActions>
@@ -132,13 +132,13 @@ export default async function FeaturePage({ searchParams }: FeaturePageProps) {
             Add Feature
           </FormButton>
         </FormActions>
-        
+
         {/* Filters */}
         <FeatureFilters
           currentSearch={searchQuery}
           // ... pass other filters
         />
-        
+
         {/* Content */}
         {items.length === 0 ? (
           <EmptyState />
@@ -148,7 +148,7 @@ export default async function FeaturePage({ searchParams }: FeaturePageProps) {
               items={items}
               onAction={handleAction}
             />
-            
+
             {totalPages > 1 && (
               <Pagination
                 currentPage={currentPage}
@@ -167,6 +167,7 @@ export default async function FeaturePage({ searchParams }: FeaturePageProps) {
 ### 2. Key Page Requirements
 
 **Always include:**
+
 - ✅ `export const dynamic = 'force-dynamic'`
 - ✅ `export const revalidate = 0`
 - ✅ Proper TypeScript types for props
@@ -199,14 +200,14 @@ interface FeatureTableWrapperProps {
 export function FeatureTableWrapper({ items, onAction }: FeatureTableWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const handleSort = (key: string, direction: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', key);
     params.set('direction', direction);
     router.push(`?${params.toString()}`);
   };
-  
+
   return (
     <FeatureTable
       items={items}
@@ -235,35 +236,35 @@ interface FeatureFiltersProps {
 export function FeatureFilters({ currentSearch, currentStatus }: FeatureFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const params = new URLSearchParams(searchParams);
     const value = e.target.value;
-    
+
     if (value) {
       params.set('search', value);
     } else {
       params.delete('search');
     }
     params.delete('page'); // Reset to page 1
-    
+
     router.push(`?${params.toString()}`);
   };
-  
+
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const params = new URLSearchParams(searchParams);
     const value = e.target.value;
-    
+
     if (value && value !== 'all') {
       params.set('status', value);
     } else {
       params.delete('status');
     }
     params.delete('page');
-    
+
     router.push(`?${params.toString()}`);
   };
-  
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -278,7 +279,7 @@ export function FeatureFilters({ currentSearch, currentStatus }: FeatureFiltersP
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
-        
+
         {/* Status Filter */}
         <select
           value={currentStatus}
@@ -342,7 +343,7 @@ export function FeatureTable({ items, onSort, onAction }: FeatureTableProps) {
       ),
     },
   ];
-  
+
   return (
     <ResponsiveTable
       data={items}
@@ -375,7 +376,7 @@ import {
   FormStack,
   FormActions,
   FormButton,
-  FormIcons
+  FormIcons,
 } from '@/components/ui/form';
 ```
 
@@ -391,7 +392,7 @@ export default function EditFeaturePage() {
         backUrl="/admin/features"
         backLabel="Back to Features"
       />
-      
+
       <form className="space-y-10">
         {/* Basic Information Section */}
         <FormSection
@@ -407,7 +408,7 @@ export default function EditFeaturePage() {
                 placeholder="Enter feature name"
               />
             </FormField>
-            
+
             <FormField label="Description">
               <FormTextarea
                 name="description"
@@ -415,7 +416,7 @@ export default function EditFeaturePage() {
                 rows={4}
               />
             </FormField>
-            
+
             <FormGrid cols={2}>
               <FormField label="Category">
                 <FormSelect name="category">
@@ -423,7 +424,7 @@ export default function EditFeaturePage() {
                   <option value="1">Category 1</option>
                 </FormSelect>
               </FormField>
-              
+
               <FormField label="Priority">
                 <FormSelect name="priority">
                   <option value="low">Low</option>
@@ -434,7 +435,7 @@ export default function EditFeaturePage() {
             </FormGrid>
           </FormStack>
         </FormSection>
-        
+
         {/* Settings Section */}
         <FormSection
           title="Settings"
@@ -455,7 +456,7 @@ export default function EditFeaturePage() {
             />
           </FormGrid>
         </FormSection>
-        
+
         {/* Action Buttons */}
         <FormActions>
           <FormButton variant="secondary" href="/admin/features">
@@ -485,18 +486,18 @@ Use color-coded sections to organize content:
 ### Available FormIcons
 
 ```typescript
-FormIcons.info       // Information/details
-FormIcons.user       // User/profile
-FormIcons.package    // Products/inventory
-FormIcons.truck      // Shipping/delivery
-FormIcons.image      // Media/images
-FormIcons.check      // Success/confirmation
-FormIcons.warning    // Warnings/alerts
-FormIcons.shield     // Security
-FormIcons.save       // Save action
-FormIcons.refresh    // Sync/refresh
-FormIcons.plus       // Add/create
-FormIcons.archive    // Archive
+FormIcons.info; // Information/details
+FormIcons.user; // User/profile
+FormIcons.package; // Products/inventory
+FormIcons.truck; // Shipping/delivery
+FormIcons.image; // Media/images
+FormIcons.check; // Success/confirmation
+FormIcons.warning; // Warnings/alerts
+FormIcons.shield; // Security
+FormIcons.save; // Save action
+FormIcons.refresh; // Sync/refresh
+FormIcons.plus; // Add/create
+FormIcons.archive; // Archive
 ```
 
 ---
@@ -508,21 +509,21 @@ FormIcons.archive    // Archive
 ```typescript
 export default async function FeaturePage({ searchParams }: PageProps) {
   const params = await searchParams;
-  
+
   // Build where clause
   const where: any = {};
-  
+
   if (params.search) {
     where.name = {
       contains: params.search,
-      mode: 'insensitive'
+      mode: 'insensitive',
     };
   }
-  
+
   if (params.status && params.status !== 'all') {
     where.active = params.status === 'active';
   }
-  
+
   // Fetch with error handling
   try {
     const items = await prisma.feature.findMany({
@@ -532,12 +533,12 @@ export default async function FeaturePage({ searchParams }: PageProps) {
         // ... related data
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       skip: (currentPage - 1) * itemsPerPage,
       take: itemsPerPage,
     });
-    
+
     return items;
   } catch (error) {
     logger.error('Error fetching features:', error);
@@ -560,44 +561,44 @@ import { redirect } from 'next/navigation';
 export async function createFeatureAction(formData: FormData) {
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
-  
+
   // Validate
   if (!name) {
     return { success: false, error: 'Name is required' };
   }
-  
+
   try {
     const feature = await prisma.feature.create({
       data: {
         name,
         description,
-      }
+      },
     });
-    
+
     // Revalidate the cache
     revalidatePath('/admin/features');
-    
+
     // Redirect to the new feature
     redirect(`/admin/features/${feature.id}`);
   } catch (error) {
     logger.error('Error creating feature:', error);
     return {
       success: false,
-      error: 'Failed to create feature'
+      error: 'Failed to create feature',
     };
   }
 }
 
 export async function deleteFeatureAction(formData: FormData) {
   'use server';
-  
+
   const id = formData.get('id') as string;
-  
+
   try {
     await prisma.feature.delete({
-      where: { id }
+      where: { id },
     });
-    
+
     revalidatePath('/admin/features');
     redirect('/admin/features?status=success&action=delete');
   } catch (error) {
@@ -623,22 +624,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 export function FilterComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    
+
     if (value) {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    
+
     // Reset to page 1 when filters change
     params.delete('page');
-    
+
     router.push(`?${params.toString()}`);
   };
-  
+
   return (
     <input
       onChange={(e) => updateFilter('search', e.target.value)}
@@ -660,13 +661,13 @@ import { useState } from 'react';
 export function FeatureCard() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  
+
   return (
     <div>
       <button onClick={() => setIsExpanded(!isExpanded)}>
         {isExpanded ? 'Collapse' : 'Expand'}
       </button>
-      
+
       {isExpanded && (
         <div>Details...</div>
       )}
@@ -692,7 +693,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: 'bg-yellow-100 text-yellow-800',
     failed: 'bg-red-100 text-red-800',
   };
-  
+
   return (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colors[status]}`}>
       {status.toUpperCase()}
@@ -855,25 +856,25 @@ const sortedItems = useMemo(() => {
 ```typescript
 // Server-side validation
 export async function createAction(formData: FormData) {
-  const name = (formData.get('name') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  
+  const name = ((formData.get('name') as string) || '').trim();
+  const email = ((formData.get('email') as string) || '').trim();
+
   // Validate required fields
   if (!name) {
     return { success: false, error: 'Name is required' };
   }
-  
+
   // Validate format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (email && !emailRegex.test(email)) {
     return { success: false, error: 'Invalid email format' };
   }
-  
+
   // Validate length
   if (name.length < 3 || name.length > 100) {
     return { success: false, error: 'Name must be 3-100 characters' };
   }
-  
+
   // Continue with action...
 }
 ```
@@ -926,26 +927,26 @@ type FeaturePageProps = {
 
 export default async function FeaturesPage({ searchParams }: FeaturePageProps) {
   const params = await searchParams;
-  
+
   const currentPage = Math.max(1, Number(params?.page || 1));
   const searchQuery = (params?.search || '').trim();
   const statusFilter = params?.status || 'all';
   const itemsPerPage = 20;
-  
+
   // Build where clause
   const where: any = {};
-  
+
   if (searchQuery) {
     where.name = {
       contains: searchQuery,
       mode: 'insensitive'
     };
   }
-  
+
   if (statusFilter !== 'all') {
     where.active = statusFilter === 'active';
   }
-  
+
   // Fetch data
   const features = await prisma.feature.findMany({
     where,
@@ -958,10 +959,10 @@ export default async function FeaturesPage({ searchParams }: FeaturePageProps) {
     skip: (currentPage - 1) * itemsPerPage,
     take: itemsPerPage,
   });
-  
+
   const totalCount = await prisma.feature.count({ where });
   const totalPages = Math.ceil(totalCount / itemsPerPage);
-  
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FormHeader
@@ -970,7 +971,7 @@ export default async function FeaturesPage({ searchParams }: FeaturePageProps) {
         backUrl="/admin"
         backLabel="Back to Dashboard"
       />
-      
+
       <div className="space-y-8 mt-8">
         <FormActions>
           <FormButton
@@ -980,12 +981,12 @@ export default async function FeaturesPage({ searchParams }: FeaturePageProps) {
             Add Feature
           </FormButton>
         </FormActions>
-        
+
         <FeatureFilters
           currentSearch={searchQuery}
           currentStatus={statusFilter}
         />
-        
+
         {features.length === 0 ? (
           <EmptyState />
         ) : (
@@ -994,7 +995,7 @@ export default async function FeaturesPage({ searchParams }: FeaturePageProps) {
               features={features}
               onDelete={deleteFeatureAction}
             />
-            
+
             {totalPages > 1 && (
               <Pagination
                 currentPage={currentPage}
@@ -1024,21 +1025,23 @@ import { redirect } from 'next/navigation';
 
 export async function deleteFeatureAction(formData: FormData) {
   const id = formData.get('id') as string;
-  
+
   if (!id) {
     return { success: false, error: 'ID is required' };
   }
-  
+
   try {
     await prisma.feature.delete({
-      where: { id }
+      where: { id },
     });
-    
+
     revalidatePath('/admin/features');
     redirect('/admin/features?status=success&action=delete');
   } catch (error) {
     logger.error('Error deleting feature:', error);
-    redirect(`/admin/features?status=error&message=${encodeURIComponent('Failed to delete feature')}`);
+    redirect(
+      `/admin/features?status=error&message=${encodeURIComponent('Failed to delete feature')}`
+    );
   }
 }
 ```
@@ -1087,7 +1090,7 @@ When creating a new admin component, ensure:
 ---
 
 **For more details, see:**
+
 - [Form Design System README](/src/components/ui/form/README.md)
 - [API Design Patterns](./api-design.md)
 - [Database Patterns](./database-patterns.md)
-

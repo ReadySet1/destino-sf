@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Payment Processing Sprint
 
 ### Problem Statement
+
 Square webhooks are being received, validated, and duplicate-checked successfully, but there's no implementation to actually process payment events and update order status. The system logs show "Duplicate webhook event detected" but never attempts to update the database with payment information.
 
 ### Success Criteria
+
 - [ ] Payment status updates from "PENDING" to "PAID" when payment completes
 - [ ] Square payment ID and order ID are stored in the database
 - [ ] Order status reflects actual payment state
@@ -23,6 +25,7 @@ Square webhooks are being received, validated, and duplicate-checked successfull
 - [ ] Clear logging shows payment status transitions
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Customer payment confirmation, admin order management
 - **Related Files**: `/api/webhooks/square/route.ts`, database schema
@@ -34,6 +37,7 @@ Square webhooks are being received, validated, and duplicate-checked successfull
 ### 1. Current State Analysis (Based on Logs)
 
 #### ✅ What's Working
+
 ```typescript
 // From logs, these are functioning correctly:
 1. Webhook signature validation (both HMAC methods)
@@ -44,6 +48,7 @@ Square webhooks are being received, validated, and duplicate-checked successfull
 ```
 
 #### ❌ What's Missing
+
 ```typescript
 // Critical gaps identified:
 1. No payment event handlers (payment.created, payment.updated)
@@ -56,6 +61,7 @@ Square webhooks are being received, validated, and duplicate-checked successfull
 ### 2. Key Observations from Logs
 
 #### Webhook Event Flow
+
 ```
 1. Order created: 0f8ec05b-db40-4224-a0f8-0b039e45fef8
 2. Square Order ID: vc6A17NanweGCzxUJ0kuBBgMMi4F
@@ -65,11 +71,13 @@ Square webhooks are being received, validated, and duplicate-checked successfull
 ```
 
 #### Missing Link
+
 The webhook handler is only detecting duplicates but **not processing the events before marking them as handled**. This is the critical bug.
 
 ### 3. Root Cause Analysis
 
 #### The Core Issue
+
 ```typescript
 // Current flow (INCORRECT):
 1. Receive webhook
@@ -87,6 +95,7 @@ The webhook handler is only detecting duplicates but **not processing the events
 ### 4. Implementation Plan
 
 #### Phase 1: Fix Event Processing Order
+
 ```typescript
 // In /api/webhooks/square/route.ts
 
@@ -109,6 +118,7 @@ await markEventAsProcessed(eventId);
 ```
 
 #### Phase 2: Implement Payment Event Handlers
+
 ```typescript
 async function processWebhookEvent(eventType: string, data: any) {
   switch (eventType) {
@@ -127,49 +137,51 @@ async function processWebhookEvent(eventType: string, data: any) {
 ```
 
 #### Phase 3: Order Lookup Strategy
+
 ```typescript
 // Use reference_id to find our internal order
 async function findOrderBySquareReference(squareOrderId: string) {
   // First try: direct square_order_id lookup
   let order = await prisma.order.findFirst({
-    where: { square_order_id: squareOrderId }
+    where: { square_order_id: squareOrderId },
   });
-  
+
   // Second try: check catering orders
   if (!order) {
     order = await prisma.cateringOrder.findFirst({
-      where: { square_order_id: squareOrderId }
+      where: { square_order_id: squareOrderId },
     });
   }
-  
+
   // Third try: use reference_id (our order ID in Square)
   if (!order && data.order?.reference_id) {
     order = await findOrderById(data.order.reference_id);
   }
-  
+
   return order;
 }
 ```
 
 #### Phase 4: Payment Status Updates
+
 ```typescript
 async function handlePaymentUpdated(data: any) {
   const { payment } = data;
-  
+
   // Map Square status to our status
   const statusMap = {
-    'COMPLETED': 'PAID',
-    'PENDING': 'PENDING',
-    'FAILED': 'FAILED',
-    'CANCELED': 'CANCELED'
+    COMPLETED: 'PAID',
+    PENDING: 'PENDING',
+    FAILED: 'FAILED',
+    CANCELED: 'CANCELED',
   };
-  
+
   const order = await findOrderBySquareReference(payment.order_id);
   if (!order) {
     console.error(`Order not found for payment ${payment.id}`);
     return;
   }
-  
+
   // Update both regular and catering orders
   if (order.type === 'regular') {
     await prisma.order.update({
@@ -177,8 +189,8 @@ async function handlePaymentUpdated(data: any) {
       data: {
         payment_status: statusMap[payment.status],
         square_payment_id: payment.id,
-        paid_at: payment.status === 'COMPLETED' ? new Date() : null
-      }
+        paid_at: payment.status === 'COMPLETED' ? new Date() : null,
+      },
     });
   } else {
     await prisma.cateringOrder.update({
@@ -186,11 +198,11 @@ async function handlePaymentUpdated(data: any) {
       data: {
         payment_status: statusMap[payment.status],
         square_payment_id: payment.id,
-        paid_at: payment.status === 'COMPLETED' ? new Date() : null
-      }
+        paid_at: payment.status === 'COMPLETED' ? new Date() : null,
+      },
     });
   }
-  
+
   console.log(`✅ Payment status updated: ${order.id} → ${statusMap[payment.status]}`);
 }
 ```
@@ -198,6 +210,7 @@ async function handlePaymentUpdated(data: any) {
 ### 5. Database Schema Verification
 
 #### Required Fields Check
+
 ```sql
 -- Ensure these columns exist:
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS square_payment_id VARCHAR(255);
@@ -215,6 +228,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_square_payment_id ON orders(square_payment
 ### 6. Testing Strategy
 
 #### Immediate Testing Steps
+
 ```typescript
 // 1. Add comprehensive logging
 console.log('📥 Processing webhook event:', {
@@ -232,14 +246,15 @@ console.log('📥 Processing webhook event:', {
 - Verify database updates
 
 // 3. Manual verification query
-SELECT id, status, payment_status, square_order_id, square_payment_id, paid_at 
-FROM orders 
+SELECT id, status, payment_status, square_order_id, square_payment_id, paid_at
+FROM orders
 WHERE id = '0f8ec05b-db40-4224-a0f8-0b039e45fef8';
 ```
 
 ### 7. Implementation Checklist
 
 #### Immediate Actions (Day 1)
+
 - [ ] Fix the event processing order bug (process THEN mark as duplicate)
 - [ ] Add payment event handlers
 - [ ] Implement order lookup logic
@@ -247,6 +262,7 @@ WHERE id = '0f8ec05b-db40-4224-a0f8-0b039e45fef8';
 - [ ] Test with existing pending orders
 
 #### Follow-up Actions (Day 2)
+
 - [ ] Add error recovery for failed updates
 - [ ] Implement webhook retry logic
 - [ ] Add monitoring alerts for stuck orders
@@ -265,6 +281,7 @@ Based on the logs, these immediate fixes will solve the issue:
 ### 9. Monitoring & Validation
 
 #### Success Metrics
+
 ```typescript
 // Add these log statements to verify fix:
 console.log(`💳 Payment webhook processed: ${payment.id}`);
@@ -273,16 +290,17 @@ console.log(`✅ Payment ${payment.id} linked to order ${orderId}`);
 ```
 
 #### Validation Queries
+
 ```sql
 -- Check for stuck orders (should return 0 after fix)
-SELECT COUNT(*) FROM orders 
-WHERE status = 'PENDING' 
+SELECT COUNT(*) FROM orders
+WHERE status = 'PENDING'
 AND created_at < NOW() - INTERVAL '30 minutes'
 AND square_order_id IS NOT NULL;
 
 -- Verify payment tracking
-SELECT id, payment_status, square_payment_id, paid_at 
-FROM orders 
+SELECT id, payment_status, square_payment_id, paid_at
+FROM orders
 WHERE square_order_id = 'vc6A17NanweGCzxUJ0kuBBgMMi4F';
 ```
 

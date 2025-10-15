@@ -18,18 +18,18 @@ import {
 } from 'lucide-react';
 
 const iconMap: Record<string, LucideIcon> = {
-  'leaf': Leaf,
-  'clock': Clock,
-  'thermometer': Thermometer,
-  'star': Star,
-  'heart': Heart,
-  'zap': Zap,
-  'award': Award,
+  leaf: Leaf,
+  clock: Clock,
+  thermometer: Thermometer,
+  star: Star,
+  heart: Heart,
+  zap: Zap,
+  award: Award,
   'check-circle': CheckCircle,
   'shield-check': ShieldCheck,
-  'sparkles': Sparkles,
-  'truck': Truck,
-  'package': Package,
+  sparkles: Sparkles,
+  truck: Truck,
+  package: Package,
 };
 
 /**

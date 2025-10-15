@@ -9,12 +9,12 @@ global.TextDecoder = TextDecoder;
 const requiredEnvVars = {
   // Database
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-  
+
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
   SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
-  
+
   // Square
   SQUARE_ACCESS_TOKEN: 'test-access-token',
   SQUARE_SANDBOX_TOKEN: 'test-sandbox-token',
@@ -23,25 +23,25 @@ const requiredEnvVars = {
   SQUARE_ENVIRONMENT: 'sandbox',
   SQUARE_WEBHOOK_SECRET: 'test-webhook-secret',
   SQUARE_WEBHOOK_SECRET_SANDBOX: 'test-webhook-secret-sandbox',
-  
+
   // Email
   RESEND_API_KEY: 'test-resend-key',
   FROM_EMAIL: 'test@example.com',
   ADMIN_EMAIL: 'admin@example.com',
   SUPPORT_EMAIL: 'support@example.com',
-  
+
   // App
   NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
   NODE_ENV: 'test',
-  
+
   // Shippo
   SHIPPO_API_KEY: 'test-shippo-key',
-  
+
   // Twilio
   TWILIO_ACCOUNT_SID: 'test-account-sid',
   TWILIO_AUTH_TOKEN: 'test-auth-token',
   TWILIO_PHONE_NUMBER: '+15555555555',
-  
+
   // Redis/Upstash
   UPSTASH_REDIS_REST_URL: 'https://test.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'test-token',
@@ -113,7 +113,7 @@ const createPrismaMock = () => {
   };
 
   return {
-    $transaction: jest.fn(async (operations) => {
+    $transaction: jest.fn(async operations => {
       if (typeof operations === 'function') {
         return operations({});
       }
@@ -143,16 +143,16 @@ jest.mock('@/lib/db', () => {
   return {
     prisma: prismaMock,
     db: prismaMock,
-    withRetry: jest.fn(async (operation) => operation()),
-    withConnectionManagement: jest.fn(async (operation) => operation()),
-    withPreparedStatementHandling: jest.fn(async (operation) => operation()),
+    withRetry: jest.fn(async operation => operation()),
+    withConnectionManagement: jest.fn(async operation => operation()),
+    withPreparedStatementHandling: jest.fn(async operation => operation()),
     checkDatabaseHealth: jest.fn(async () => ({
       connected: true,
       latency: 150,
     })),
     ensureConnection: jest.fn(),
-    withTransaction: jest.fn(async (operation) => operation(prismaMock)),
-    executeWithConnectionManagement: jest.fn(async (operation) => operation()),
+    withTransaction: jest.fn(async operation => operation(prismaMock)),
+    executeWithConnectionManagement: jest.fn(async operation => operation()),
   };
 });
 
@@ -160,9 +160,9 @@ jest.mock('@/lib/db', () => {
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ 
-        data: { user: { id: 'test-user-123', email: 'test@example.com' } }, 
-        error: null 
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-123', email: 'test@example.com' } },
+        error: null,
       }),
       signIn: jest.fn(),
       signOut: jest.fn(),
@@ -404,8 +404,8 @@ jest.mock('@/lib/store-settings', () => ({
   StoreSettingsService: {
     getInstance: jest.fn(() => ({
       getSettings: jest.fn().mockResolvedValue({
-        minOrderAmount: 25.00,
-        cateringMinimumAmount: 100.00,
+        minOrderAmount: 25.0,
+        cateringMinimumAmount: 100.0,
         deliveryRadius: 10,
         deliveryFee: 5.99,
       }),
@@ -417,16 +417,16 @@ jest.mock('@/lib/store-settings', () => ({
 jest.mock('@/lib/store-settings', () => ({
   isStoreOpen: jest.fn().mockResolvedValue(true),
   getStoreSettings: jest.fn().mockResolvedValue({
-    minOrderAmount: 25.00,
-    cateringMinimumAmount: 100.00,
+    minOrderAmount: 25.0,
+    cateringMinimumAmount: 100.0,
     deliveryRadius: 10,
     deliveryFee: 5.99,
   }),
   StoreSettingsService: {
     getInstance: jest.fn(() => ({
       getSettings: jest.fn().mockResolvedValue({
-        minOrderAmount: 25.00,
-        cateringMinimumAmount: 100.00,
+        minOrderAmount: 25.0,
+        cateringMinimumAmount: 100.0,
         deliveryRadius: 10,
         deliveryFee: 5.99,
       }),
@@ -446,10 +446,10 @@ console.error = (...args) => {
   if (
     typeof args[0] === 'string' &&
     (args[0].includes('Not implemented') ||
-     args[0].includes('Warning:') ||
-     args[0].includes('Invalid') ||
-     args[0].includes('Can\'t reach database') ||
-     args[0].includes('Connection test failed'))
+      args[0].includes('Warning:') ||
+      args[0].includes('Invalid') ||
+      args[0].includes("Can't reach database") ||
+      args[0].includes('Connection test failed'))
   ) {
     return;
   }
@@ -457,9 +457,8 @@ console.error = (...args) => {
 };
 console.warn = (...args) => {
   if (
-    typeof args[0] === 'string' && 
-    (args[0].includes('Warning:') ||
-     args[0].includes('Connection test failed'))
+    typeof args[0] === 'string' &&
+    (args[0].includes('Warning:') || args[0].includes('Connection test failed'))
   ) {
     return;
   }

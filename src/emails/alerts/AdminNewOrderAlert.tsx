@@ -79,7 +79,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
   // Calculate subtotal from items
   const subtotal = order.items.reduce((sum, item) => {
     const itemPrice = typeof item.price === 'number' ? item.price : item.price.toNumber();
-    return sum + (itemPrice * item.quantity);
+    return sum + itemPrice * item.quantity;
   }, 0);
 
   // Helper function to convert Decimal to number
@@ -410,9 +410,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                 <Text style={styles.summaryTotalLabel}>Total:</Text>
               </Column>
               <Column style={styles.summaryValueColumn}>
-                <Text style={styles.summaryTotalValue}>
-                  ${toNumber(order.total).toFixed(2)}
-                </Text>
+                <Text style={styles.summaryTotalValue}>${toNumber(order.total).toFixed(2)}</Text>
               </Column>
             </Row>
           </Section>
@@ -422,10 +420,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
           </Section>
 
           <Section style={styles.actionSection}>
-            <Link
-              href={`${cleanAppUrl}/admin/orders/${order.id}`}
-              style={styles.actionButton}
-            >
+            <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={styles.actionButton}>
               View Order in Admin
             </Link>
           </Section>

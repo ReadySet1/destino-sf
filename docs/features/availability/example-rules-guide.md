@@ -18,6 +18,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 🎄 Holiday Rules
 
 #### 1. Thanksgiving Special
+
 - **Product**: Aji Amarillo Salsa (7oz)
 - **Type**: Date Range
 - **State**: Available
@@ -26,8 +27,9 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 - **Purpose**: Demonstrates limited-time holiday promotions
 
 #### 2. Christmas Pre-Order
+
 - **Product**: Aji Huacatay Salsa (7oz)
-- **Type**: Date Range  
+- **Type**: Date Range
 - **State**: Pre-Order
 - **Priority**: 95
 - **Duration**: Dec 1 - Dec 25, 2024
@@ -40,6 +42,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 🌞 Seasonal Rules
 
 #### 3. Summer Menu Items
+
 - **Product**: Alfajores de Lucuma (10 per packet)
 - **Type**: Seasonal
 - **State**: Available
@@ -48,9 +51,10 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 - **Purpose**: Demonstrates seasonal availability patterns
 
 #### 4. Winter Warm Drinks
+
 - **Product**: Alfajores- 6-pack combo
 - **Type**: Seasonal
-- **State**: Available  
+- **State**: Available
 - **Priority**: 70
 - **Season**: November 1 - March 31 (yearly)
 - **Purpose**: Shows opposite seasonal pattern
@@ -58,6 +62,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 🥞 Weekend Rules
 
 #### 5. Weekend Brunch Items
+
 - **Product**: Alfajores- Chocolate (1 dozen- packet)
 - **Type**: Time-Based
 - **State**: Available
@@ -68,6 +73,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 🔒 Limited Availability Rules
 
 #### 6. Limited Edition Item
+
 - **Product**: Alfajores- Classic (1 dozen- packet)
 - **Type**: Custom
 - **State**: View Only
@@ -79,7 +85,8 @@ The example rules demonstrate various real-world scenarios that restaurants comm
   - Enables availability notifications
 - **Purpose**: Shows how to handle sold-out limited items
 
-#### 7. Coming Soon Item  
+#### 7. Coming Soon Item
+
 - **Product**: Alfajores- Gingerbread (1 dozen- packet) Coming Soon!
 - **Type**: Custom
 - **State**: Coming Soon
@@ -94,6 +101,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 📅 Daily Special Rules
 
 #### 8. Monday Special
+
 - **Product**: Alfajores- Gluten Free (1 dozen- packet)
 - **Type**: Time-Based
 - **State**: Available
@@ -102,6 +110,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 - **Purpose**: Shows single-day weekly promotions
 
 #### 9. Happy Hour
+
 - **Product**: Alfajores- Lemon (1 dozen- packet)
 - **Type**: Time-Based
 - **State**: Available
@@ -112,6 +121,7 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ### 🍽️ Pre-Order Rules
 
 #### 10. Weekly Meal Prep
+
 - **Product**: Alfajores- Pride (6-pack)
 - **Type**: Date Range
 - **State**: Pre-Order
@@ -126,12 +136,14 @@ The example rules demonstrate various real-world scenarios that restaurants comm
 ## 🎮 Testing the Rules
 
 ### View Rules in Admin
+
 1. Go to: `http://localhost:3000/admin/products/availability`
 2. You'll see the dashboard with rule statistics
 3. Click on "Rules" tab to see all created rules
 4. Edit any rule to see the improved calendar UI
 
 ### Test Rule Behavior
+
 1. Go to the main products page: `http://localhost:3000/products`
 2. Look for products with the example rules applied
 3. Check how different states are displayed:
@@ -141,11 +153,12 @@ The example rules demonstrate various real-world scenarios that restaurants comm
    - **Coming Soon**: Teaser display
 
 ### Modify Rules
+
 1. In the admin panel, click "Edit" on any rule
 2. Test the new card-based calendar interface
 3. Try changing:
    - Date ranges
-   - Time restrictions  
+   - Time restrictions
    - Pre-order settings
    - Priority levels
 
@@ -168,6 +181,7 @@ Higher priority rules will override lower priority ones when conflicts occur.
 ## 🧹 Cleanup
 
 To remove all example rules, run:
+
 ```bash
 pnpm tsx scripts/setup-example-availability-rules.ts
 ```

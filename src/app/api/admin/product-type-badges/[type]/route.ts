@@ -13,10 +13,11 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   }
 
   const adminProfile = await withRetry(
-    () => prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    }),
+    () =>
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }),
     3,
     'isUserAdmin profile lookup'
   );
@@ -24,10 +25,7 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   return adminProfile?.role === 'ADMIN';
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
   try {
     const supabase = await createClient();
 
@@ -39,16 +37,14 @@ export async function GET(
 
     // Validate product type
     if (!['empanada', 'salsa', 'alfajor', 'other'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Invalid product type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
     }
 
     const badges = await withRetry(
-      () => prisma.productTypeBadges.findUnique({
-        where: { productType: type },
-      }),
+      () =>
+        prisma.productTypeBadges.findUnique({
+          where: { productType: type },
+        }),
       3,
       'fetch product type badges by type'
     );

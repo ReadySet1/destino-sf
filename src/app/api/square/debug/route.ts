@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         success: true,
         itemId,
         debug: debugInfo,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       // Debug all items - show summary of issues
@@ -74,18 +74,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         summary,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
-
   } catch (error) {
     logger.error('Debug API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Debug failed',
-      details: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Debug failed',
+        details: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -95,14 +97,14 @@ export async function GET(request: NextRequest) {
 async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
   const debugInfo: DebugInfo = {
     itemId,
-    issues: []
+    issues: [],
   };
 
   try {
     if (!squareClient.catalogApi) {
       throw new Error('Square catalog API is not initialized');
     }
-    
+
     // Fetch item from Square
     const itemResponse = await squareClient.catalogApi.retrieveCatalogObject(itemId);
     const squareItem = itemResponse.result?.object;
@@ -129,15 +131,13 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
         if (!squareClient.catalogApi) {
           throw new Error('Square catalog API is not initialized');
         }
-        
+
         // Retrieve related objects one by one since batch method doesn't exist
-        const relatedPromises = relatedIds.map(id => 
+        const relatedPromises = relatedIds.map(id =>
           squareClient.catalogApi!.retrieveCatalogObject(id)
         );
         const relatedResponses = await Promise.all(relatedPromises);
-        relatedObjects = relatedResponses
-          .map(response => response.result?.object)
-          .filter(Boolean);
+        relatedObjects = relatedResponses.map(response => response.result?.object).filter(Boolean);
       } catch (error) {
         debugInfo.issues?.push(`Failed to fetch related objects: ${error}`);
       }
@@ -147,7 +147,10 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
     debugInfo.extractedData = extractItemData(squareItem, relatedObjects);
 
     // Check for issues
-    if (debugInfo.extractedData.imageIds.length > 0 && debugInfo.extractedData.imageUrls.length === 0) {
+    if (
+      debugInfo.extractedData.imageIds.length > 0 &&
+      debugInfo.extractedData.imageUrls.length === 0
+    ) {
       debugInfo.issues?.push('Has image IDs but no image URLs extracted');
     }
     if (debugInfo.extractedData.price.dollars === 0) {
@@ -160,7 +163,7 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
     // Find corresponding database record
     const dbProduct = await prisma.product.findFirst({
       where: { squareId: itemId },
-      include: { category: true }
+      include: { category: true },
     });
 
     if (dbProduct) {
@@ -169,22 +172,30 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
         name: dbProduct.name,
         price: dbProduct.price.toString(),
         images: dbProduct.images,
-        categoryName: dbProduct.category?.name
+        categoryName: dbProduct.category?.name,
       };
 
       // Compare Square vs Database
-      const priceMismatch = Math.abs(parseFloat(dbProduct.price.toString()) - debugInfo.extractedData.price.dollars) > 0.01;
+      const priceMismatch =
+        Math.abs(parseFloat(dbProduct.price.toString()) - debugInfo.extractedData.price.dollars) >
+        0.01;
       const imageMismatch = dbProduct.images.length !== debugInfo.extractedData.imageUrls.length;
       const categoryMismatch = dbProduct.category?.name !== debugInfo.extractedData.category.name;
 
       if (priceMismatch) {
-        debugInfo.issues?.push(`Price mismatch: DB=$${dbProduct.price} vs Square=$${debugInfo.extractedData.price.dollars}`);
+        debugInfo.issues?.push(
+          `Price mismatch: DB=$${dbProduct.price} vs Square=$${debugInfo.extractedData.price.dollars}`
+        );
       }
       if (imageMismatch) {
-        debugInfo.issues?.push(`Image count mismatch: DB=${dbProduct.images.length} vs Square=${debugInfo.extractedData.imageUrls.length}`);
+        debugInfo.issues?.push(
+          `Image count mismatch: DB=${dbProduct.images.length} vs Square=${debugInfo.extractedData.imageUrls.length}`
+        );
       }
       if (categoryMismatch) {
-        debugInfo.issues?.push(`Category mismatch: DB="${dbProduct.category?.name}" vs Square="${debugInfo.extractedData.category.name}"`);
+        debugInfo.issues?.push(
+          `Category mismatch: DB="${dbProduct.category?.name}" vs Square="${debugInfo.extractedData.category.name}"`
+        );
       }
     } else {
       debugInfo.issues?.push('Item not found in database');
@@ -199,12 +210,13 @@ async function debugSpecificItem(itemId: string): Promise<DebugInfo> {
       fixedExtraction: {
         price: extractPriceFixed(squareItem.item_data),
         imageIds: squareItem.item_data?.image_ids,
-        imageUrls: extractImagesFixed(squareItem, relatedObjects)
-      }
+        imageUrls: extractImagesFixed(squareItem, relatedObjects),
+      },
     };
-
   } catch (error) {
-    debugInfo.issues?.push(`Debug error: ${error instanceof Error ? error.message : String(error)}`);
+    debugInfo.issues?.push(
+      `Debug error: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   return debugInfo;
@@ -218,13 +230,13 @@ async function debugAllItems() {
     if (!squareClient.catalogApi) {
       throw new Error('Square catalog API is not initialized');
     }
-    
+
     // Fetch sample of items from Square
     const response = await squareClient.catalogApi.searchCatalogObjects({
       object_types: ['ITEM'],
       include_related_objects: true,
       include_deleted_objects: false,
-      limit: 20
+      limit: 20,
     } as any);
 
     const items = response.result?.objects || [];
@@ -238,7 +250,7 @@ async function debugAllItems() {
       withoutValidPrice: 0,
       withCategory: 0,
       withoutCategory: 0,
-      itemsWithIssues: [] as any[]
+      itemsWithIssues: [] as any[],
     };
 
     for (const item of items) {
@@ -266,8 +278,8 @@ async function debugAllItems() {
           issues: {
             noImages: !hasImages,
             noPrice: !hasValidPrice,
-            noCategory: !hasCategory
-          }
+            noCategory: !hasCategory,
+          },
         });
       }
     }
@@ -276,24 +288,22 @@ async function debugAllItems() {
     const dbProductCount = await prisma.product.count();
     const dbProductsWithIssues = await prisma.product.count({
       where: {
-        OR: [
-          { price: 0 },
-          { images: { equals: [] } }
-        ]
-      }
+        OR: [{ price: 0 }, { images: { equals: [] } }],
+      },
     });
 
     return {
       square: stats,
       database: {
         totalProducts: dbProductCount,
-        productsWithIssues: dbProductsWithIssues
+        productsWithIssues: dbProductsWithIssues,
       },
-      recommendations: generateRecommendations(stats)
+      recommendations: generateRecommendations(stats),
     };
-
   } catch (error) {
-    throw new Error(`Failed to debug all items: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to debug all items: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -307,7 +317,7 @@ function extractItemData(item: any, relatedObjects: any[]) {
   // Extract images (current broken logic)
   const imageIds = itemData?.image_ids || [];
   const imageUrls: string[] = [];
-  
+
   for (const imageId of imageIds) {
     const imageObj = relatedObjects.find(obj => obj.id === imageId && obj.type === 'IMAGE');
     if (imageObj?.image_data?.url) {
@@ -336,7 +346,9 @@ function extractItemData(item: any, relatedObjects: any[]) {
 
   if (categories.length > 0) {
     categoryId = categories[0].id;
-    const categoryObj = relatedObjects.find(obj => obj.id === categoryId && obj.type === 'CATEGORY');
+    const categoryObj = relatedObjects.find(
+      obj => obj.id === categoryId && obj.type === 'CATEGORY'
+    );
     categoryName = categoryObj?.category_data?.name;
   }
 
@@ -346,12 +358,12 @@ function extractItemData(item: any, relatedObjects: any[]) {
     imageUrls,
     price: {
       amount: priceAmount,
-      dollars: priceDollars
+      dollars: priceDollars,
     },
     category: {
       id: categoryId,
-      name: categoryName
-    }
+      name: categoryName,
+    },
   };
 }
 
@@ -364,7 +376,7 @@ function extractPriceBroken(itemData: any): number {
 
   const firstVariation = variations[0];
   const priceData = firstVariation.itemVariationData?.priceMoney; // Wrong field name
-  
+
   if (priceData && priceData.amount) {
     return parseInt(priceData.amount) / 100;
   }
@@ -381,7 +393,7 @@ function extractPriceFixed(itemData: any): number {
 
   const firstVariation = variations[0];
   const priceData = firstVariation.item_variation_data?.price_money; // Fixed field name
-  
+
   if (priceData && priceData.amount) {
     return parseInt(priceData.amount.toString()) / 100;
   }
@@ -394,7 +406,7 @@ function extractPriceFixed(itemData: any): number {
  */
 function extractImagesFixed(product: any, relatedObjects: any[]): string[] {
   const images: string[] = [];
-  
+
   if (product.item_data?.image_ids) {
     for (const imageId of product.item_data.image_ids) {
       const imageObject = relatedObjects.find(obj => obj.id === imageId && obj.type === 'IMAGE');

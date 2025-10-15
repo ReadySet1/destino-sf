@@ -14,9 +14,9 @@ export async function createClient() {
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ 
-              name, 
-              value, 
+            cookieStore.set({
+              name,
+              value,
               ...options,
               // Enhanced cookie security for auth tokens
               httpOnly: true,
@@ -31,15 +31,19 @@ export async function createClient() {
             // Silently ignore the error to prevent application crashes.
             // Only log if explicitly debugging auth issues
             if (process.env.NODE_ENV === 'development' && process.env.AUTH_DEBUG === 'true') {
-              console.warn('Failed to set cookie in Server Component:', name, 'This is expected and handled by middleware');
+              console.warn(
+                'Failed to set cookie in Server Component:',
+                name,
+                'This is expected and handled by middleware'
+              );
             }
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ 
-              name, 
-              value: '', 
+            cookieStore.set({
+              name,
+              value: '',
               ...options,
               maxAge: 0,
               expires: new Date(0),
@@ -50,7 +54,11 @@ export async function createClient() {
             // Silently ignore the error to prevent application crashes.
             // Only log if explicitly debugging auth issues
             if (process.env.NODE_ENV === 'development' && process.env.AUTH_DEBUG === 'true') {
-              console.warn('Failed to remove cookie in Server Component:', name, 'This is expected and handled by middleware');
+              console.warn(
+                'Failed to remove cookie in Server Component:',
+                name,
+                'This is expected and handled by middleware'
+              );
             }
           }
         },

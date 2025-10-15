@@ -36,7 +36,11 @@ import {
   FulfillmentMethod as AppFulfillmentMethod,
 } from '@/components/store/FulfillmentSelector';
 import { AddressForm } from '@/components/store/AddressForm';
-import { createOrderAndGenerateCheckoutUrl, getShippingRates, createManualPaymentOrder } from '@/app/actions';
+import {
+  createOrderAndGenerateCheckoutUrl,
+  getShippingRates,
+  createManualPaymentOrder,
+} from '@/app/actions';
 import { updateOrderWithManualPayment } from '@/app/actions/createManualOrder';
 import type { ShippingRate } from '@/app/actions';
 import { checkForDuplicateOrders } from '@/app/actions/duplicate-prevention';
@@ -120,13 +124,10 @@ const localDeliverySchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
   phone: phoneSchema,
-  deliveryAddress: addressSchema.refine(
-    (data) => data.state === 'CA',
-    {
-      message: 'Local delivery is only available in California (CA)',
-      path: ['state'],
-    }
-  ),
+  deliveryAddress: addressSchema.refine(data => data.state === 'CA', {
+    message: 'Local delivery is only available in California (CA)',
+    path: ['state'],
+  }),
   deliveryDate: z.string().min(1, 'Delivery date is required'),
   deliveryTime: z.string().min(1, 'Delivery time is required'),
   deliveryInstructions: z.string().optional(),
@@ -195,7 +196,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const { items, totalPrice, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Get saved checkout data from localStorage
   const getSavedCheckoutData = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -232,7 +233,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   }, [initialUserData?.id]);
 
   const savedCheckoutData = getSavedCheckoutData();
-  
+
   // User state is now derived from initialUserData prop
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(() => {
     return savedCheckoutData?.fulfillmentMethod || 'pickup';
@@ -269,22 +270,25 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // const supabase = createClient();
 
   // Functions to save and clear checkout data in localStorage
-  const saveCheckoutDataToLocalStorage = useCallback((data: any) => {
-    if (typeof window !== 'undefined') {
-      try {
-        const existingData = getSavedCheckoutData() || {};
-        const updatedData = {
-          ...existingData,
-          ...data,
-          // SECURITY FIX: Always save userId with checkout data for validation
-          userId: initialUserData?.id || null,
-        };
-        localStorage.setItem('regularCheckoutData', JSON.stringify(updatedData));
-      } catch (error) {
-        console.error('Error saving checkout data to localStorage:', error);
+  const saveCheckoutDataToLocalStorage = useCallback(
+    (data: any) => {
+      if (typeof window !== 'undefined') {
+        try {
+          const existingData = getSavedCheckoutData() || {};
+          const updatedData = {
+            ...existingData,
+            ...data,
+            // SECURITY FIX: Always save userId with checkout data for validation
+            userId: initialUserData?.id || null,
+          };
+          localStorage.setItem('regularCheckoutData', JSON.stringify(updatedData));
+        } catch (error) {
+          console.error('Error saving checkout data to localStorage:', error);
+        }
       }
-    }
-  }, [initialUserData?.id, getSavedCheckoutData]);
+    },
+    [initialUserData?.id, getSavedCheckoutData]
+  );
 
   const clearCheckoutDataFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -314,8 +318,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       deliveryInstructions: savedCheckoutData?.deliveryInstructions || '',
       rateId: savedCheckoutData?.rateId || '',
       // Initialize address fields with saved data if available
-      ...(savedCheckoutData?.deliveryAddress && { deliveryAddress: savedCheckoutData.deliveryAddress }),
-      ...(savedCheckoutData?.shippingAddress && { shippingAddress: savedCheckoutData.shippingAddress }),
+      ...(savedCheckoutData?.deliveryAddress && {
+        deliveryAddress: savedCheckoutData.deliveryAddress,
+      }),
+      ...(savedCheckoutData?.shippingAddress && {
+        shippingAddress: savedCheckoutData.shippingAddress,
+      }),
       // Initialize other fields based on the default fulfillment method ('pickup')
       // We don't need to initialize all possible fields here, the reset effect handles it
     } as Partial<CheckoutFormData>,
@@ -379,7 +387,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         name: currentValues.name || initialUserData?.name || savedCheckoutData?.name || '',
         email: currentValues.email || initialUserData?.email || savedCheckoutData?.email || '',
         phone: currentValues.phone || initialUserData?.phone || savedCheckoutData?.phone || '',
-        paymentMethod: currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
+        paymentMethod:
+          currentValues.paymentMethod || savedCheckoutData?.paymentMethod || PaymentMethod.SQUARE,
       };
 
       let recipientName = commonData.name;
@@ -482,7 +491,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // Watch form values and save to localStorage
   useEffect(() => {
-    const subscription = form.watch((value) => {
+    const subscription = form.watch(value => {
       // Only save if component is mounted and form has values
       if (isMounted && value) {
         // Debounce the save operation
@@ -525,7 +534,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       !address.postalCode ||
       !address.country
     ) {
-      setShippingError('Please complete all shipping address fields, including recipient name, to fetch rates.');
+      setShippingError(
+        'Please complete all shipping address fields, including recipient name, to fetch rates.'
+      );
       setShippingRates([]);
       return;
     }
@@ -642,10 +653,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   // Function to check for duplicate orders
   const checkForDuplicates = async (email: string) => {
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
-    
+
     try {
       const duplicateCheck = await checkForDuplicateOrders(items, email);
-      
+
       if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
         setPendingOrderCheck({
           isChecking: false,
@@ -655,7 +666,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         setShowDuplicateAlert(true);
         return true; // Has duplicate
       }
-      
+
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
@@ -685,7 +696,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       isChecking: false,
       hasPendingOrder: false,
     });
-    
+
     // Validate form and get current values
     const isValid = await form.trigger();
     if (isValid) {
@@ -830,9 +841,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           router.push(`/orders/${result.orderId}`);
         } else if (result.checkoutUrl) {
           toast.success('Redirecting to payment...');
-          
-          console.log('✅ [DUPLICATE-CHECK] About to redirect to Square Checkout:', result.checkoutUrl);
-          
+
+          console.log(
+            '✅ [DUPLICATE-CHECK] About to redirect to Square Checkout:',
+            result.checkoutUrl
+          );
+
           // CRITICAL FIX: Use window.location.replace for immediate redirect
           // Don't clear cart/localStorage before redirect to prevent navigation interference
           try {
@@ -840,10 +854,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             window.location.replace(result.checkoutUrl);
             console.log('✅ [DUPLICATE-CHECK] Redirect initiated successfully');
           } catch (redirectError) {
-            console.error('❌ [DUPLICATE-CHECK] Redirect error, falling back to href:', redirectError);
+            console.error(
+              '❌ [DUPLICATE-CHECK] Redirect error, falling back to href:',
+              redirectError
+            );
             window.location.href = result.checkoutUrl;
           }
-          
+
           // Exit immediately after redirect
           return;
         }
@@ -870,7 +887,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       event.preventDefault();
       event.stopPropagation();
     }
-    
+
     console.log('🚀 [CHECKOUT] Starting form submission...');
     setIsSubmitting(true);
     setError('');
@@ -991,9 +1008,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           setIsSubmitting(false);
           return;
         }
-        
+
         console.log('✅ [CHECKOUT] About to redirect to Square Checkout:', result.checkoutUrl);
-        
+
         // CRITICAL FIX: Use window.location.replace for immediate redirect
         // This prevents the "Load failed" error by avoiding intermediate navigation
         try {
@@ -1004,7 +1021,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           console.error('❌ [CHECKOUT] Redirect error, falling back to href:', redirectError);
           window.location.href = result.checkoutUrl;
         }
-        
+
         // Exit immediately after redirect
         return;
       } else {
@@ -1051,7 +1068,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         // Clear cart and data before redirecting
         clearCart();
         clearCheckoutDataFromLocalStorage();
-        
+
         // Use setTimeout to ensure the redirect happens after any state updates
         setTimeout(() => {
           window.location.href = `/checkout/success/manual?orderId=${result.orderId}&paymentMethod=${formData.paymentMethod}`;
@@ -1306,12 +1323,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                   render={({ field }) => (
                     <Popover>
                       <PopoverTrigger asChild>
-                                              <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full justify-start text-left font-normal border-destino-yellow/40 hover:bg-destino-cream/30 hover:border-destino-yellow/60 hover:text-destino-charcoal transition-all',
-                          !field.value && 'text-muted-foreground'
-                        )}
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full justify-start text-left font-normal border-destino-yellow/40 hover:bg-destino-cream/30 hover:border-destino-yellow/60 hover:text-destino-charcoal transition-all',
+                            !field.value && 'text-muted-foreground'
+                          )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? (
@@ -1389,7 +1406,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         {currentMethod === 'nationwide_shipping' && (
           <div className="space-y-4 border-t border-destino-yellow/30 pt-6 bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold text-destino-charcoal">Shipping Details</h2>
-            <AddressForm form={typedForm} prefix="shippingAddress" title="Shipping Address" fulfillmentMethod={currentMethod} />
+            <AddressForm
+              form={typedForm}
+              prefix="shippingAddress"
+              title="Shipping Address"
+              fulfillmentMethod={currentMethod}
+            />
             {/* Shipping Rate Fetch Button */}
             <Button
               type="button"
@@ -1458,7 +1480,13 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         <Button
           type="submit"
           className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100"
-          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid}
+          disabled={
+            isSubmitting ||
+            pendingOrderCheck.isChecking ||
+            !isMounted ||
+            items.length === 0 ||
+            !isValid
+          }
         >
           {pendingOrderCheck.isChecking
             ? 'Checking for existing orders...'

@@ -5,7 +5,9 @@ type CateringConfirmationPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function CateringConfirmationPage({ searchParams }: CateringConfirmationPageProps) {
+export default async function CateringConfirmationPage({
+  searchParams,
+}: CateringConfirmationPageProps) {
   const params = await searchParams;
   const urlStatus = typeof params.status === 'string' ? params.status : '';
   let orderId = typeof params.orderId === 'string' ? params.orderId : null;
@@ -28,13 +30,15 @@ export default async function CateringConfirmationPage({ searchParams }: Caterin
             <div className="mb-8 text-center">
               <div className="mb-4 text-5xl">🔄</div>
               <h1 className="mb-4 text-2xl font-bold">Loading Catering Order Details...</h1>
-              <p className="text-gray-600">Please wait while we retrieve your catering order information.</p>
+              <p className="text-gray-600">
+                Please wait while we retrieve your catering order information.
+              </p>
             </div>
           </div>
         </main>
       }
     >
-      <CateringConfirmationLoader 
+      <CateringConfirmationLoader
         urlStatus={urlStatus}
         orderId={orderId}
         squareOrderId={squareOrderId}

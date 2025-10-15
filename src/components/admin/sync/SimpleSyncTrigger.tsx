@@ -28,23 +28,23 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
         body: JSON.stringify({
           dryRun: false,
           categories: [], // Sync all categories
-          forceUpdate: true // Always update existing products with latest Square data
-        })
+          forceUpdate: true, // Always update existing products with latest Square data
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setSyncState('started');
-        
+
         const syncedCount = data.sync?.syncedProducts || 0;
         const skippedCount = data.sync?.skippedProducts || 0;
         const totalProcessed = syncedCount + skippedCount;
-        
+
         // Improved messaging based on sync results
-        let title = "Synchronization completed";
+        let title = 'Synchronization completed';
         let description: string;
-        
+
         if (syncedCount > 0) {
           // Some products were updated
           description = `${syncedCount} products synchronized successfully.`;
@@ -53,22 +53,22 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
           }
         } else if (skippedCount > 0) {
           // All products were already up to date
-          title = "Products are up to date";
+          title = 'Products are up to date';
           description = `All ${skippedCount} products are already synchronized with Square. No updates needed.`;
         } else if (totalProcessed === 0) {
           // No products found to sync
-          description = "No products found to synchronize.";
+          description = 'No products found to synchronize.';
         } else {
           // Fallback
-          description = "Synchronization completed successfully.";
+          description = 'Synchronization completed successfully.';
         }
-        
+
         toast.success(title, { description });
-        
+
         // Note: This sync is synchronous - no need for progress tracking
         // Only call onSyncStarted if parent component specifically needs it
         onSyncStarted?.('sync-completed');
-        
+
         // Reset state after showing success
         setTimeout(() => {
           setSyncState('idle');
@@ -78,10 +78,10 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
       }
     } catch (error) {
       setSyncState('error');
-      toast.error("Synchronization error", {
+      toast.error('Synchronization error', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       setTimeout(() => {
         setSyncState('idle');
       }, 3000);
@@ -120,18 +120,17 @@ export function SimpleSyncTrigger({ onSyncStarted, disabled = false }: SimpleSyn
             disabled={disabled || isLoading}
             size="lg"
             className="w-full"
-            variant={hasStarted ? "default" : hasError ? "destructive" : "default"}
+            variant={hasStarted ? 'default' : hasError ? 'destructive' : 'default'}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {hasStarted && <CheckCircle2 className="mr-2 h-4 w-4" />}
             {isLoading
               ? 'Synchronizing...'
               : hasStarted
-              ? 'Synchronization Complete'
-              : hasError
-              ? 'Error - Try Again'
-              : 'Synchronize Products'
-            }
+                ? 'Synchronization Complete'
+                : hasError
+                  ? 'Error - Try Again'
+                  : 'Synchronize Products'}
           </Button>
 
           {isLoading && (

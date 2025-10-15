@@ -30,7 +30,10 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL for staging environment - set via environment variable */
-    baseURL: process.env.PLAYWRIGHT_STAGING_URL || process.env.VERCEL_URL || 'https://destino-sf-staging.vercel.app',
+    baseURL:
+      process.env.PLAYWRIGHT_STAGING_URL ||
+      process.env.VERCEL_URL ||
+      'https://destino-sf-staging.vercel.app',
 
     /* Collect trace on failure for debugging staging issues */
     trace: 'retain-on-failure',

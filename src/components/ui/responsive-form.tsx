@@ -57,7 +57,7 @@ export function ResponsiveForm({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data: Record<string, any> = {};
-    
+
     fields.forEach(field => {
       const value = formData.get(field.name);
       if (field.type === 'checkbox') {
@@ -66,7 +66,7 @@ export function ResponsiveForm({
         data[field.name] = value;
       }
     });
-    
+
     onSubmit(data);
   };
 
@@ -77,13 +77,7 @@ export function ResponsiveForm({
     return 'w-full sm:w-auto';
   };
 
-  const labelClasses = [
-    'block',
-    'text-sm',
-    'font-medium',
-    'text-gray-700',
-    'mb-1',
-  ];
+  const labelClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'];
 
   const renderField = (field: FormField) => {
     const baseClasses = [
@@ -119,11 +113,7 @@ export function ResponsiveForm({
 
       case 'select':
         return (
-          <select
-            name={field.name}
-            required={field.required}
-            className={fieldClasses}
-          >
+          <select name={field.name} required={field.required} className={fieldClasses}>
             <option value="">{field.placeholder || 'Select an option'}</option>
             {field.options?.map(option => (
               <option key={option.value} value={option.value}>
@@ -142,9 +132,7 @@ export function ResponsiveForm({
               required={field.required}
               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label className="ml-2 block text-sm text-gray-900">
-              {field.label}
-            </label>
+            <label className="ml-2 block text-sm text-gray-900">{field.label}</label>
           </div>
         );
 
@@ -160,9 +148,7 @@ export function ResponsiveForm({
                   required={field.required}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                 />
-                <label className="ml-2 block text-sm text-gray-900">
-                  {option.label}
-                </label>
+                <label className="ml-2 block text-sm text-gray-900">{option.label}</label>
               </div>
             ))}
           </div>
@@ -196,9 +182,9 @@ export function ResponsiveForm({
             {renderField(field)}
           </div>
         ))}
-        
+
         {children}
-        
+
         <div className={getResponsiveButtonGroupClasses()}>
           <button
             type="submit"
@@ -207,7 +193,7 @@ export function ResponsiveForm({
           >
             {loading ? 'Loading...' : submitLabel}
           </button>
-          
+
           {onCancel && (
             <button
               type="button"
@@ -240,4 +226,4 @@ export function createFormField(
     desktopFullWidth: false,
     ...options,
   };
-} 
+}

@@ -2,7 +2,7 @@
 
 /**
  * Test script for nutrition facts sync from Square to Supabase
- * 
+ *
  * This script tests the new nutrition sync functionality by:
  * 1. Checking if the database schema includes nutrition fields
  * 2. Testing the nutrition extraction function
@@ -16,7 +16,7 @@ const prisma = new PrismaClient();
 
 async function testNutritionSchema() {
   logger.info('🔍 Testing nutrition schema...');
-  
+
   try {
     // Test if we can query the new nutrition fields
     const testQuery = await prisma.product.findFirst({
@@ -28,9 +28,9 @@ async function testNutritionSchema() {
         ingredients: true,
         allergens: true,
         nutritionFacts: true,
-      }
+      },
     });
-    
+
     logger.info('✅ Nutrition fields are available in database schema');
     return true;
   } catch (error) {
@@ -41,7 +41,7 @@ async function testNutritionSchema() {
 
 async function testNutritionExtraction() {
   logger.info('🧪 Testing nutrition extraction function...');
-  
+
   // Mock Square item with nutrition data
   const mockSquareItem = {
     type: 'ITEM',
@@ -52,9 +52,9 @@ async function testNutritionExtraction() {
       food_and_beverage_details: {
         calorie_count: 250,
         dietary_preferences: ['vegetarian'],
-        ingredients: 'Flour, butter, dulce de leche, eggs, vanilla extract'
-      }
-    }
+        ingredients: 'Flour, butter, dulce de leche, eggs, vanilla extract',
+      },
+    },
   };
 
   // Import the function (we need to make it exportable first)
@@ -64,7 +64,7 @@ async function testNutritionExtraction() {
     dietaryPreferences: ['vegetarian'],
     ingredients: 'Flour, butter, dulce de leche, eggs, vanilla extract',
     allergens: ['eggs'], // Should be extracted from ingredients
-    nutritionFacts: mockSquareItem.item_data.food_and_beverage_details
+    nutritionFacts: mockSquareItem.item_data.food_and_beverage_details,
   };
 
   logger.info('Expected nutrition extraction:', expectedNutrition);
@@ -73,7 +73,7 @@ async function testNutritionExtraction() {
 
 async function testNutritionSync() {
   logger.info('🔄 Testing nutrition sync with database...');
-  
+
   try {
     // Create a test product with nutrition information
     const testProduct = await prisma.product.create({
@@ -81,7 +81,7 @@ async function testNutritionSync() {
         squareId: `test-nutrition-${Date.now()}`,
         name: 'Test Product with Nutrition',
         description: 'Test product for nutrition sync',
-        price: 15.00,
+        price: 15.0,
         images: [],
         categoryId: (await prisma.category.findFirst())?.id || '',
         calories: 180,
@@ -94,23 +94,23 @@ async function testNutritionSync() {
           carbs: '22g',
           fat: '8g',
           fiber: '2g',
-          sugar: '12g'
-        }
-      }
+          sugar: '12g',
+        },
+      },
     });
 
     logger.info('✅ Test product created with nutrition data:', {
       id: testProduct.id,
       calories: testProduct.calories,
       dietaryPreferences: testProduct.dietaryPreferences,
-      allergens: testProduct.allergens
+      allergens: testProduct.allergens,
     });
 
     // Clean up test product
     await prisma.product.delete({
-      where: { id: testProduct.id }
+      where: { id: testProduct.id },
     });
-    
+
     logger.info('✅ Test product cleaned up successfully');
     return true;
   } catch (error) {
@@ -121,7 +121,7 @@ async function testNutritionSync() {
 
 async function main() {
   logger.info('🚀 Starting nutrition sync functionality test...');
-  
+
   let allTestsPassed = true;
 
   // Test 1: Schema validation
@@ -155,7 +155,7 @@ async function main() {
 }
 
 main()
-  .catch((error) => {
+  .catch(error => {
     logger.error('Test script failed:', error);
     process.exit(1);
   })

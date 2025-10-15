@@ -24,11 +24,11 @@ import { DragOverlay } from './DragOverlay';
 import type { ProductSortableProps } from './types';
 import type { ProductDisplayOrder } from '@/types/product-admin';
 
-export function ProductSortable({ 
-  products: initialProducts, 
+export function ProductSortable({
+  products: initialProducts,
   onReorder,
   loading = false,
-  disabled = false
+  disabled = false,
 }: ProductSortableProps) {
   const [products, setProducts] = useState(initialProducts);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,21 +66,21 @@ export function ProductSortable({
 
     const oldIndex = products.findIndex(p => p.id === active.id);
     const newIndex = products.findIndex(p => p.id === over.id);
-    
+
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
 
     const newProducts = arrayMove(products, oldIndex, newIndex);
-    
+
     // Update ordinals based on new positions
     const updatedProducts = newProducts.map((product, index) => ({
       ...product,
-      ordinal: (index + 1) * 100
+      ordinal: (index + 1) * 100,
     }));
-    
+
     setProducts(updatedProducts);
-    
+
     // Save to backend
     setIsSaving(true);
     try {
@@ -127,21 +127,14 @@ export function ProductSortable({
         onDragEnd={handleDragEnd}
         modifiers={[restrictToVerticalAxis]}
       >
-        <SortableContext
-          items={products.map(p => p.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
-            {products.map((product) => (
-              <SortableItem
-                key={product.id}
-                product={product}
-                disabled={isDisabled}
-              />
+            {products.map(product => (
+              <SortableItem key={product.id} product={product} disabled={isDisabled} />
             ))}
           </div>
         </SortableContext>
-        
+
         <DragOverlay activeProduct={activeProduct} />
       </DndContext>
 

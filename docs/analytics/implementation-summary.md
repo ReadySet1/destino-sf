@@ -13,18 +13,21 @@ Your Destino SF project now has a **complete, production-ready Umami Analytics i
 ## 🚀 **What's Been Implemented**
 
 ### 1. **Core Analytics Infrastructure**
+
 - **Script Loading**: `UmamiScript.tsx` component with Next.js optimization
 - **Type Definitions**: Full TypeScript interfaces for events and data
 - **Configuration**: Environment-based setup with sensible defaults
 - **Error Handling**: Graceful fallbacks and error logging
 
 ### 2. **Analytics Hooks & Utilities**
+
 - **`useUmamiPageTracking`**: Automatic page view tracking
 - **`useUmamiTracking`**: Custom event tracking with predefined functions
 - **`useUmamiFormTracking`**: Form interaction tracking
 - **`useUmamiPerformanceTracking`**: Performance metrics tracking
 
 ### 3. **Predefined Tracking Functions**
+
 - Product views, add to cart, purchases
 - Contact form submissions and field interactions
 - Button clicks, social media shares
@@ -32,11 +35,13 @@ Your Destino SF project now has a **complete, production-ready Umami Analytics i
 - Search events and location interactions
 
 ### 4. **Environment Configuration**
+
 - Added to `src/env.ts` with proper validation
 - Environment variables for website ID and script source
 - Fallback to default configuration
 
 ### 5. **Integration Examples**
+
 - **Contact Form**: Full analytics tracking implementation
 - **Page Tracking**: Automatic in `client-layout.tsx`
 - **Script Loading**: Optimized in root layout
@@ -50,6 +55,7 @@ Access your analytics at: **https://analytics.readysetllc.com**
 ## 🔧 **How to Use**
 
 ### Basic Event Tracking
+
 ```typescript
 import { useUmamiTracking } from '@/lib/analytics';
 
@@ -63,6 +69,7 @@ trackProductView('Empanada de Carne', 'empanadas', 12.99);
 ```
 
 ### Form Tracking
+
 ```typescript
 import { useUmamiFormTracking } from '@/lib/analytics';
 
@@ -77,6 +84,7 @@ trackFormSubmit('contact_form', false, 'Error message'); // failure
 ```
 
 ### Custom Events
+
 ```typescript
 import { useUmamiTracking } from '@/lib/analytics';
 
@@ -86,7 +94,7 @@ const { track } = useUmamiTracking();
 track('custom_event', {
   category: 'user_action',
   value: 100,
-  location: 'homepage'
+  location: 'homepage',
 });
 ```
 
@@ -110,21 +118,25 @@ NEXT_PUBLIC_UMAMI_SRC=https://analytics.readysetllc.com/script.js
 ## 📈 **Production Readiness**
 
 ### ✅ **Performance Optimized**
+
 - Script loads with `afterInteractive` strategy
 - No impact on Core Web Vitals
 - Minimal bundle size impact
 
 ### ✅ **Privacy Compliant**
+
 - No cookies used for tracking
 - GDPR compliant by default
 - Anonymous data collection
 
 ### ✅ **Error Resilient**
+
 - Graceful fallbacks when script fails to load
 - Error logging for debugging
 - No breaking of user experience
 
 ### ✅ **Type Safe**
+
 - Full TypeScript support
 - Predefined event types
 - Compile-time error checking
@@ -146,4 +158,4 @@ NEXT_PUBLIC_UMAMI_SRC=https://analytics.readysetllc.com/script.js
 
 **Status**: ✅ **Ready for Production**
 
-Your Umami Analytics integration is complete and ready to track user interactions on your Destino SF website! 
+Your Umami Analytics integration is complete and ready to track user interactions on your Destino SF website!

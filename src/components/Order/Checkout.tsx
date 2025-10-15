@@ -209,7 +209,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productType, items, customerInfo, f
 
       // Redirect to the Square-hosted checkout page
       console.log('Redirecting to Square Checkout:', result.checkoutUrl);
-      
+
       // Use setTimeout to ensure the redirect happens reliably
       setTimeout(() => {
         if (result.checkoutUrl) {

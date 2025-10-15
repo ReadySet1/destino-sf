@@ -19,7 +19,6 @@ import {
 import { useCateringCartStore } from '@/store/catering-cart';
 import { toast } from '@/lib/toast';
 
-
 // Define the lunch packet tiers based on user requirements
 interface LunchPacketTier {
   id: string;
@@ -261,8 +260,6 @@ export const LunchPacketsMenu: React.FC<LunchPacketsMenuProps> = ({ className })
 
   return (
     <div className={`w-full space-y-8 ${className}`}>
-      
-
       {/* Header */}
       <div className="text-center">
         <motion.div

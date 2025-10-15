@@ -8,12 +8,9 @@ export async function GET(request: NextRequest) {
   try {
     // Check authentication and admin role using centralized guard
     const authResult = await verifyAdminAccess();
-    
+
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.error },
-        { status: authResult.statusCode }
-      );
+      return NextResponse.json({ error: authResult.error }, { status: authResult.statusCode });
     }
 
     // Get query parameters
@@ -51,15 +48,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get orders with pagination
-      // Handle build time or database unavailability
-  if (isBuildTime()) {
-    console.log('🔧 Build-time detected: Using fallback data');
-    return NextResponse.json({ 
-      success: true, 
-      data: [], 
-      note: 'Fallback data used due to build-time constraints' 
-    });
-  }
+    // Handle build time or database unavailability
+    if (isBuildTime()) {
+      console.log('🔧 Build-time detected: Using fallback data');
+      return NextResponse.json({
+        success: true,
+        data: [],
+        note: 'Fallback data used due to build-time constraints',
+      });
+    }
 
     const orders = await prisma.order.findMany({
       where,
@@ -117,12 +114,9 @@ export async function PUT(request: NextRequest) {
 
     // Check authentication and admin role using centralized guard
     const authResult = await verifyAdminAccess();
-    
+
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.error },
-        { status: authResult.statusCode }
-      );
+      return NextResponse.json({ error: authResult.error }, { status: authResult.statusCode });
     }
 
     // Find existing order
@@ -184,12 +178,9 @@ export async function POST(request: NextRequest) {
 
       // Check authentication and admin role using centralized guard
       const authResult = await verifyAdminAccess();
-      
+
       if (!authResult.authorized) {
-        return NextResponse.json(
-          { error: authResult.error },
-          { status: authResult.statusCode }
-        );
+        return NextResponse.json({ error: authResult.error }, { status: authResult.statusCode });
       }
 
       // Bulk update orders

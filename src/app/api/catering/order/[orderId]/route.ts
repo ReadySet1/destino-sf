@@ -12,69 +12,64 @@ export async function GET(
 ) {
   try {
     const { orderId } = await params;
-    
+
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(orderId)) {
       logger.warn(`[CATERING-API] Invalid UUID format: ${orderId}`);
-      return NextResponse.json(
-        { error: 'Invalid order ID format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid order ID format' }, { status: 400 });
     }
 
     logger.info(`[CATERING-API] Fetching catering order: ${orderId}`);
 
     // Execute query with unified retry mechanism
     const orderData = await withRetry(
-      () => prisma.cateringOrder.findUnique({
-        where: { id: orderId },
-        select: {
-          id: true,
-          status: true,
-          totalAmount: true,
-          name: true,
-          email: true,
-          phone: true,
-          eventDate: true,
-          numberOfPeople: true,
-          specialRequests: true,
-          deliveryZone: true,
-          deliveryAddress: true,
-          deliveryAddressJson: true,
-          deliveryFee: true,
-          metadata: true,
-          createdAt: true,
-          paymentStatus: true,
-          paymentMethod: true,
-          squareOrderId: true,
-          retryCount: true,
-          lastRetryAt: true,
-          paymentUrl: true,
-          paymentUrlExpiresAt: true,
-          items: {
-            select: {
-              id: true,
-              itemName: true,
-              quantity: true,
-              pricePerUnit: true,
-              totalPrice: true,
-              itemType: true,
-              notes: true,
+      () =>
+        prisma.cateringOrder.findUnique({
+          where: { id: orderId },
+          select: {
+            id: true,
+            status: true,
+            totalAmount: true,
+            name: true,
+            email: true,
+            phone: true,
+            eventDate: true,
+            numberOfPeople: true,
+            specialRequests: true,
+            deliveryZone: true,
+            deliveryAddress: true,
+            deliveryAddressJson: true,
+            deliveryFee: true,
+            metadata: true,
+            createdAt: true,
+            paymentStatus: true,
+            paymentMethod: true,
+            squareOrderId: true,
+            retryCount: true,
+            lastRetryAt: true,
+            paymentUrl: true,
+            paymentUrlExpiresAt: true,
+            items: {
+              select: {
+                id: true,
+                itemName: true,
+                quantity: true,
+                pricePerUnit: true,
+                totalPrice: true,
+                itemType: true,
+                notes: true,
+              },
             },
           },
-        },
-      }),
+        }),
       3,
       'catering-order-fetch'
     );
 
     if (!orderData) {
       logger.warn(`[CATERING-API] Order not found: ${orderId}`);
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     logger.info(`[CATERING-API] Successfully fetched order with ${orderData.items.length} items`);
@@ -122,24 +117,20 @@ export async function GET(
       order: serializedOrder,
       status: determinedStatus,
     });
-
   } catch (error) {
     logger.error('[CATERING-API] Error fetching catering order:', error);
-    
+
     // Check if it's a timeout error
     if (error instanceof Error && error.message === 'Database query timeout') {
       return NextResponse.json(
-        { 
+        {
           error: 'Request timed out. Please try again.',
-          code: 'TIMEOUT' 
+          code: 'TIMEOUT',
         },
         { status: 504 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

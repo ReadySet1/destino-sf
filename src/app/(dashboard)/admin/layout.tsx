@@ -20,9 +20,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             <div className="h-4 w-px bg-gray-200" />
           </div>
         </header>
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
+        <div className="flex-1 overflow-auto">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -19,21 +19,21 @@ export interface CateringItemMerged {
   // Core fields
   name: string;
   squareItemId?: string;
-  
+
   // From Square
   price: number;
   imageUrl?: string;
-  
+
   // From PDF
   ingredients: string[];
   dietaryTags: string[];
   description?: string;
-  
+
   // Computed
   isVegetarian: boolean;
   isVegan: boolean;
   isGlutenFree: boolean;
-  
+
   // Metadata
   sourceType: 'SQUARE' | 'PDF' | 'MERGED';
   confidence: number; // 0-1 matching confidence

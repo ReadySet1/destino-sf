@@ -5,6 +5,7 @@
 This backup strategy provides automated daily backups for Supabase free tier projects deployed on Vercel, using multiple storage providers for redundancy.
 
 **Backup Strategy**: 3-2-1 Rule
+
 - 3 copies of data (Production + 2 backups)
 - 2 different storage types (GitHub + Cloud Storage)
 - 1 offsite backup (Cloud Storage)
@@ -14,11 +15,13 @@ This backup strategy provides automated daily backups for Supabase free tier pro
 ### 1. Backup Storage Options
 
 #### Primary: GitHub Private Repository
+
 - **Pros**: Free, version controlled, easy restoration
 - **Cons**: 100MB file size limit, not ideal for large datasets
 - **Best for**: Schema + small to medium datasets
 
 #### Secondary: Cloud Storage (Choose one)
+
 - **Supabase Storage**: Integrated with Supabase, generous free tier (1GB, then pay-per-use)
 - **Cloudflare R2**: S3-compatible, generous free tier (10GB/month)
 - **AWS S3**: Reliable, pay-per-use
@@ -146,10 +149,7 @@ export const BackupConfigSchema = z.object({
     monthly: z.number().default(3),
   }),
   tables: z.array(z.string()).default([]),
-  excludeTables: z.array(z.string()).default([
-    'migrations',
-    'schema_migrations',
-  ]),
+  excludeTables: z.array(z.string()).default(['migrations', 'schema_migrations']),
   maxBackupSize: z.number().default(100),
   compression: z.boolean().default(true),
   encryption: z.boolean().default(false),
@@ -213,12 +213,9 @@ const gzip = promisify(zlib.gzip);
 
 export class SupabaseBackup {
   private supabase;
-  
+
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    this.supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   }
 
   async getTableList(): Promise<string[]> {
@@ -229,7 +226,7 @@ export class SupabaseBackup {
         .from('information_schema.tables')
         .select('table_name')
         .eq('table_schema', 'public');
-      
+
       return tables?.map((t: any) => t.table_name) || [];
     }
     return data || [];
@@ -240,14 +237,14 @@ export class SupabaseBackup {
       .from(tableName)
       .select('*')
       .order('created_at', { ascending: true });
-    
+
     if (error) throw error;
     return data || [];
   }
 
   async backupAllTables(tables: string[]): Promise<Record<string, any[]>> {
     const backup: Record<string, any[]> = {};
-    
+
     for (const table of tables) {
       try {
         backup[table] = await this.backupTable(table);
@@ -256,7 +253,7 @@ export class SupabaseBackup {
         console.error(`✗ Failed to backup ${table}:`, error.message);
       }
     }
-    
+
     return backup;
   }
 
@@ -264,23 +261,23 @@ export class SupabaseBackup {
     try {
       const timestamp = new Date();
       const backupId = `backup_${format(timestamp, 'yyyyMMdd_HHmmss')}`;
-      
+
       // Get list of tables
       let tables = config.tables;
       if (tables.length === 0) {
         const allTables = await this.getTableList();
         tables = allTables.filter(t => !config.excludeTables.includes(t));
       }
-      
+
       // Backup data
       const data = await this.backupAllTables(tables);
-      
+
       // Calculate row counts
       const rowCounts: Record<string, number> = {};
       for (const [table, rows] of Object.entries(data)) {
         rowCounts[table] = rows.length;
       }
-      
+
       // Create backup object
       const backup = {
         id: backupId,
@@ -293,23 +290,20 @@ export class SupabaseBackup {
           totalRows: Object.values(rowCounts).reduce((a, b) => a + b, 0),
         },
       };
-      
+
       // Convert to JSON
       let backupData = JSON.stringify(backup, null, 2);
       let compressed = false;
-      
+
       // Compress if enabled and needed
       if (config.compression && backupData.length > 1024 * 1024) {
         backupData = (await gzip(backupData)).toString('base64');
         compressed = true;
       }
-      
+
       // Calculate checksum
-      const checksum = crypto
-        .createHash('sha256')
-        .update(backupData)
-        .digest('hex');
-      
+      const checksum = crypto.createHash('sha256').update(backupData).digest('hex');
+
       // Create metadata
       const metadata: BackupMetadata = {
         id: backupId,
@@ -324,7 +318,7 @@ export class SupabaseBackup {
         encrypted: false,
         storageLocation: [],
       };
-      
+
       return {
         success: true,
         metadata,
@@ -365,7 +359,7 @@ export class GitHubStorage implements StorageProvider {
     this.octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
     });
-    
+
     const [owner, repo] = process.env.GITHUB_BACKUP_REPO!.split('/');
     this.owner = owner;
     this.repo = repo;
@@ -374,18 +368,20 @@ export class GitHubStorage implements StorageProvider {
 
   async upload(key: string, data: string | Buffer): Promise<string> {
     const content = Buffer.from(data).toString('base64');
-    
+
     try {
       // Check if file exists
-      const existing = await this.octokit.repos.getContent({
-        owner: this.owner,
-        repo: this.repo,
-        path: key,
-        ref: this.branch,
-      }).catch(() => null);
+      const existing = await this.octokit.repos
+        .getContent({
+          owner: this.owner,
+          repo: this.repo,
+          path: key,
+          ref: this.branch,
+        })
+        .catch(() => null);
 
       const message = `Backup: ${key}`;
-      
+
       if (existing && existing.data && 'sha' in existing.data) {
         // Update existing file
         await this.octokit.repos.createOrUpdateFileContents({
@@ -408,7 +404,7 @@ export class GitHubStorage implements StorageProvider {
           branch: this.branch,
         });
       }
-      
+
       return `github://${this.owner}/${this.repo}/${key}`;
     } catch (error: any) {
       console.error('GitHub upload error:', error.message);
@@ -427,7 +423,7 @@ export class GitHubStorage implements StorageProvider {
     if ('content' in data) {
       return Buffer.from(data.content, 'base64');
     }
-    
+
     throw new Error('File not found or is a directory');
   }
 
@@ -460,9 +456,7 @@ export class GitHubStorage implements StorageProvider {
     });
 
     if (Array.isArray(data)) {
-      return data
-        .filter(item => item.type === 'file')
-        .map(item => item.path);
+      return data.filter(item => item.type === 'file').map(item => item.path);
     }
 
     return [];
@@ -475,17 +469,14 @@ export class SupabaseStorage implements StorageProvider {
   private bucket: string;
 
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    this.supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     this.bucket = process.env.SUPABASE_STORAGE_BUCKET || 'backups';
   }
 
   async upload(key: string, data: string | Buffer): Promise<string> {
     try {
       const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
-      
+
       const { data: uploadData, error } = await this.supabase.storage
         .from(this.bucket)
         .upload(key, buffer, {
@@ -503,9 +494,7 @@ export class SupabaseStorage implements StorageProvider {
   }
 
   async download(key: string): Promise<Buffer> {
-    const { data, error } = await this.supabase.storage
-      .from(this.bucket)
-      .download(key);
+    const { data, error } = await this.supabase.storage.from(this.bucket).download(key);
 
     if (error) throw error;
     if (!data) throw new Error('File not found');
@@ -514,20 +503,16 @@ export class SupabaseStorage implements StorageProvider {
   }
 
   async delete(key: string): Promise<void> {
-    const { error } = await this.supabase.storage
-      .from(this.bucket)
-      .remove([key]);
+    const { error } = await this.supabase.storage.from(this.bucket).remove([key]);
 
     if (error) throw error;
   }
 
   async list(prefix?: string): Promise<string[]> {
-    const { data, error } = await this.supabase.storage
-      .from(this.bucket)
-      .list(prefix || '', {
-        limit: 1000,
-        sortBy: { column: 'name', order: 'asc' },
-      });
+    const { data, error } = await this.supabase.storage.from(this.bucket).list(prefix || '', {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' },
+    });
 
     if (error) throw error;
     return data?.map(item => item.name) || [];
@@ -564,18 +549,15 @@ export async function GET(request: NextRequest) {
     // Verify this is a Vercel Cron job
     const authHeader = headers().get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('🚀 Starting database backup...');
-    
+
     // Create backup
     const backup = new SupabaseBackup();
     const result = await backup.createBackup(defaultConfig);
-    
+
     if (!result.success) {
       throw new Error(result.errors?.join(', '));
     }
@@ -586,18 +568,15 @@ export async function GET(request: NextRequest) {
       try {
         const provider = getStorageProvider(providerName);
         const filename = `backups/${format(new Date(), 'yyyy/MM/dd')}/backup_${Date.now()}.json`;
-        
-        const url = await provider.upload(
-          filename,
-          result.backupData!
-        );
-        
+
+        const url = await provider.upload(filename, result.backupData!);
+
         uploadResults.push({
           provider: providerName,
           success: true,
           url,
         });
-        
+
         console.log(`✓ Uploaded to ${providerName}: ${url}`);
       } catch (error: any) {
         console.error(`✗ Failed to upload to ${providerName}:`, error.message);
@@ -621,16 +600,16 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Backup failed:', error);
-    
+
     // Send failure notification
     if (process.env.SLACK_WEBHOOK_URL) {
       await sendFailureNotification(error);
     }
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message 
+      {
+        success: false,
+        error: error.message,
       },
       { status: 500 }
     );
@@ -638,9 +617,11 @@ export async function GET(request: NextRequest) {
 }
 
 async function sendBackupNotification(result: any, uploads: any[]) {
-  const totalRows = Object.values(result.metadata.rowCounts as Record<string, number>)
-    .reduce((a, b) => a + b, 0);
-  
+  const totalRows = Object.values(result.metadata.rowCounts as Record<string, number>).reduce(
+    (a, b) => a + b,
+    0
+  );
+
   await fetch(process.env.SLACK_WEBHOOK_URL!, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -651,12 +632,16 @@ async function sendBackupNotification(result: any, uploads: any[]) {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*Database Backup Completed*\n` +
-                  `• Backup ID: ${result.metadata.id}\n` +
-                  `• Tables: ${result.metadata.tables.length}\n` +
-                  `• Total Rows: ${totalRows}\n` +
-                  `• Size: ${(result.metadata.size / 1024 / 1024).toFixed(2)} MB\n` +
-                  `• Storage: ${uploads.filter(u => u.success).map(u => u.provider).join(', ')}`,
+            text:
+              `*Database Backup Completed*\n` +
+              `• Backup ID: ${result.metadata.id}\n` +
+              `• Tables: ${result.metadata.tables.length}\n` +
+              `• Total Rows: ${totalRows}\n` +
+              `• Size: ${(result.metadata.size / 1024 / 1024).toFixed(2)} MB\n` +
+              `• Storage: ${uploads
+                .filter(u => u.success)
+                .map(u => u.provider)
+                .join(', ')}`,
           },
         },
       ],
@@ -689,37 +674,34 @@ export async function GET(request: NextRequest) {
     // Verify this is a Vercel Cron job
     const authHeader = headers().get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('🧹 Starting backup cleanup...');
-    
+
     const now = new Date();
     const dailyCutoff = subDays(now, defaultConfig.retention.daily);
     const weeklyCutoff = subWeeks(now, defaultConfig.retention.weekly);
     const monthlyCutoff = subMonths(now, defaultConfig.retention.monthly);
-    
+
     let deletedCount = 0;
-    
+
     for (const providerName of defaultConfig.storageProviders) {
       try {
         const provider = getStorageProvider(providerName);
         const files = await provider.list('backups/');
-        
+
         for (const file of files) {
           // Parse date from filename
           const match = file.match(/backup_(\d{8}_\d{6})/);
           if (!match) continue;
-          
+
           const dateStr = match[1];
           const year = parseInt(dateStr.substring(0, 4));
           const month = parseInt(dateStr.substring(4, 6)) - 1;
           const day = parseInt(dateStr.substring(6, 8));
           const backupDate = new Date(year, month, day);
-          
+
           // Determine if should delete based on retention policy
           if (shouldDelete(backupDate, dailyCutoff, weeklyCutoff, monthlyCutoff)) {
             await provider.delete(file);
@@ -738,10 +720,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Cleanup failed:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -753,16 +732,16 @@ function shouldDelete(
 ): boolean {
   // Keep all backups newer than daily cutoff
   if (backupDate > dailyCutoff) return false;
-  
+
   // Keep weekly backups (Sunday) between daily and weekly cutoff
   if (backupDate > weeklyCutoff && backupDate.getDay() === 0) return false;
-  
+
   // Keep monthly backups (1st of month) between weekly and monthly cutoff
   if (backupDate > monthlyCutoff && backupDate.getDate() === 1) return false;
-  
+
   // Delete if older than monthly cutoff
   if (backupDate < monthlyCutoff) return true;
-  
+
   // Delete daily backups older than daily cutoff
   return true;
 }
@@ -771,6 +750,7 @@ function shouldDelete(
 ## 🔧 Setup Instructions
 
 ### 1. Create Supabase Storage Bucket (If using Supabase Storage)
+
 **Benefits**: Native integration, no additional credentials needed, same authentication as your database.
 
 1. Go to your Supabase project dashboard
@@ -780,11 +760,13 @@ function shouldDelete(
 5. Configure bucket policies if needed (optional - service role key has full access)
 
 ### 2. Create GitHub Backup Repository
+
 1. Create a new private repository on GitHub (e.g., `supabase-backups`)
 2. Generate a Personal Access Token with repo permissions
 3. Add the token to Vercel environment variables
 
 ### 3. Configure Vercel Environment Variables
+
 ```bash
 # In Vercel Dashboard > Settings > Environment Variables
 SUPABASE_URL=your_supabase_url
@@ -797,6 +779,7 @@ CRON_SECRET=generate_random_string_here
 ```
 
 ### 4. Deploy to Vercel
+
 ```bash
 git add .
 git commit -m "Add database backup system"
@@ -805,7 +788,9 @@ vercel --prod
 ```
 
 ### 5. Verify Cron Jobs
+
 After deployment, verify cron jobs are registered:
+
 1. Go to Vercel Dashboard
 2. Select your project
 3. Go to Functions tab
@@ -814,6 +799,7 @@ After deployment, verify cron jobs are registered:
 ## 📊 Monitoring & Alerts
 
 ### Health Check Endpoint
+
 Create `/api/health/backup` to monitor backup status:
 
 ```typescript
@@ -824,6 +810,7 @@ export async function GET() {
 ```
 
 ### Recommended Monitoring
+
 1. **Uptime Monitoring**: Use services like UptimeRobot to monitor backup health endpoint
 2. **Backup Verification**: Weekly manual checks of backup integrity
 3. **Storage Monitoring**: Track storage usage in GitHub/Cloud provider
@@ -832,6 +819,7 @@ export async function GET() {
 ## 🚨 Disaster Recovery Plan
 
 ### Restore Process
+
 1. **Identify Recovery Point**: Choose backup to restore from
 2. **Verify Backup Integrity**: Check checksum and decompress if needed
 3. **Test Restore**: First restore to staging/development environment
@@ -840,6 +828,7 @@ export async function GET() {
 6. **Clear Cache**: Invalidate all caches after restore
 
 ### Emergency Contacts
+
 - **Primary DBA**: [Your Name] - [Contact]
 - **Backup Admin**: [Backup Contact]
 - **Supabase Support**: support@supabase.io
@@ -847,6 +836,7 @@ export async function GET() {
 ## 📈 Cost Analysis
 
 ### Estimated Monthly Costs
+
 - **GitHub Storage**: Free (up to 1GB)
 - **Supabase Storage**: Free tier (1GB), then $0.021/GB
 - **Cloudflare R2**: Free tier (10GB)
@@ -854,6 +844,7 @@ export async function GET() {
 - **Total**: $0 for small to medium projects
 
 ### When to Upgrade
+
 - Database > 100MB compressed
 - Need point-in-time recovery
 - Require < 24hr RPO
@@ -870,20 +861,24 @@ export async function GET() {
 ## 📝 Maintenance Checklist
 
 ### Daily
+
 - [x] Automated backup runs at 2:00 AM UTC
 - [ ] Check for backup failure notifications
 
 ### Weekly
+
 - [ ] Verify backup file integrity
 - [ ] Check storage usage
 - [ ] Review backup logs
 
 ### Monthly
+
 - [ ] Test restore process on staging
 - [ ] Review and update retention policy
 - [ ] Update documentation
 
 ### Quarterly
+
 - [ ] Full disaster recovery drill
 - [ ] Rotate access tokens
 - [ ] Review backup strategy

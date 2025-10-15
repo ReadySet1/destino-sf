@@ -5,20 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Plus, Settings, Activity, Eye, AlertTriangle, Calendar, TrendingUp } from 'lucide-react';
+import {
+  Clock,
+  Plus,
+  Settings,
+  Activity,
+  Eye,
+  AlertTriangle,
+  Calendar,
+  TrendingUp,
+} from 'lucide-react';
 import { AvailabilityForm } from '@/components/admin/availability/AvailabilityForm';
 import { AvailabilityTimeline } from '@/components/admin/availability/AvailabilityTimeline';
 import { DetailedAvailabilityBadge } from '@/components/store/AvailabilityBadge';
 import { useAvailability } from '@/hooks/useAvailability';
-import {
-  getProductRuleConflicts,
-  deleteAvailabilityRule
-} from '@/actions/availability';
-import {
-  type AvailabilityRule,
-  RuleType,
-  AvailabilityState
-} from '@/types/availability';
+import { getProductRuleConflicts, deleteAvailabilityRule } from '@/actions/availability';
+import { type AvailabilityRule, RuleType, AvailabilityState } from '@/types/availability';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -45,14 +47,14 @@ const templates: Record<string, QuickTemplate> = {
     preOrderSettings: {
       releaseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       maxPreOrders: 100,
-      showEstimatedDate: true
-    }
+      showEstimatedDate: true,
+    },
   },
   seasonal: {
     name: 'Seasonal Item',
     ruleType: RuleType.SEASONAL,
     state: AvailabilityState.AVAILABLE,
-    priority: 3
+    priority: 3,
   },
   viewOnly: {
     name: 'View Only',
@@ -62,43 +64,35 @@ const templates: Record<string, QuickTemplate> = {
     viewOnlySettings: {
       showPrice: true,
       showContactButton: true,
-      customMessage: 'Contact us for availability'
-    }
-  }
+      customMessage: 'Contact us for availability',
+    },
+  },
 };
 
-export function AvailabilitySection({
-  productId,
-  productName
-}: AvailabilitySectionProps) {
+export function AvailabilitySection({ productId, productName }: AvailabilitySectionProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingRule, setEditingRule] = useState<AvailabilityRule | null>(null);
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [isLoadingConflicts, setIsLoadingConflicts] = useState(false);
-  const [futurePreview, setFuturePreview] = useState<{
-    date: Date;
-    state: string;
-    ruleName: string;
-  }[]>([]);
+  const [futurePreview, setFuturePreview] = useState<
+    {
+      date: Date;
+      state: string;
+      ruleName: string;
+    }[]
+  >([]);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [templateData, setTemplateData] = useState<QuickTemplate | null>(null);
   const [activeTab, setActiveTab] = useState('rules');
 
-  const {
-    rules,
-    evaluation,
-    currentState,
-    nextStateChange,
-    refresh,
-    isLoading,
-    error
-  } = useAvailability(productId, { autoRefresh: true });
+  const { rules, evaluation, currentState, nextStateChange, refresh, isLoading, error } =
+    useAvailability(productId, { autoRefresh: true });
 
   const loadConflicts = useCallback(async () => {
     try {
       setIsLoadingConflicts(true);
       const result = await getProductRuleConflicts(productId);
-      
+
       if (result.success) {
         setConflicts(result.data?.conflicts || []);
       }
@@ -112,37 +106,41 @@ export function AvailabilitySection({
   const generateFuturePreview = useCallback(() => {
     const now = new Date();
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
+
     const upcomingChanges = rules
       .filter(rule => rule.enabled)
       .flatMap(rule => {
         const changes = [];
-        
+
         // Check start date
-        if (rule.startDate && new Date(rule.startDate) > now && new Date(rule.startDate) <= next30Days) {
+        if (
+          rule.startDate &&
+          new Date(rule.startDate) > now &&
+          new Date(rule.startDate) <= next30Days
+        ) {
           changes.push({
             date: new Date(rule.startDate),
             state: rule.state,
             ruleName: rule.name,
-            type: 'start'
+            type: 'start',
           });
         }
-        
+
         // Check end date
         if (rule.endDate && new Date(rule.endDate) > now && new Date(rule.endDate) <= next30Days) {
           changes.push({
             date: new Date(rule.endDate),
             state: 'AVAILABLE', // Assumes returning to available state after rule ends
             ruleName: `${rule.name} (ending)`,
-            type: 'end'
+            type: 'end',
           });
         }
-        
+
         return changes;
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(0, 5); // Show only next 5 changes
-    
+
     setFuturePreview(upcomingChanges);
   }, [rules]);
 
@@ -182,7 +180,7 @@ export function AvailabilitySection({
 
     try {
       const result = await deleteAvailabilityRule(ruleId);
-      
+
       if (result.success) {
         refresh();
         toast.success('Availability rule deleted successfully');
@@ -246,10 +244,10 @@ export function AvailabilitySection({
               <Clock className="h-5 w-5" />
               Availability Status
             </CardTitle>
-            
+
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setShowQuickCreate(!showQuickCreate)}
               >
@@ -263,7 +261,7 @@ export function AvailabilitySection({
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Current State */}
@@ -282,12 +280,8 @@ export function AvailabilitySection({
             <div>
               <h4 className="font-medium mb-2">Active Rules</h4>
               <div className="flex items-center gap-2">
-                <Badge variant="outline">
-                  {rules.filter(r => r.enabled).length} active
-                </Badge>
-                <Badge variant="secondary">
-                  {rules.length} total
-                </Badge>
+                <Badge variant="outline">{rules.filter(r => r.enabled).length} active</Badge>
+                <Badge variant="secondary">{rules.length} total</Badge>
               </div>
             </div>
 
@@ -367,13 +361,9 @@ export function AvailabilitySection({
                         {format(change.date, 'MMM d')}
                       </Badge>
                       <span className="text-muted-foreground">→</span>
-                      <Badge className="text-xs">
-                        {change.state}
-                      </Badge>
+                      <Badge className="text-xs">{change.state}</Badge>
                     </div>
-                    <span className="text-muted-foreground text-xs">
-                      {change.ruleName}
-                    </span>
+                    <span className="text-muted-foreground text-xs">{change.ruleName}</span>
                   </div>
                 ))}
               </div>
@@ -392,12 +382,14 @@ export function AvailabilitySection({
               <div className="space-y-2">
                 {conflicts.slice(0, 3).map((conflict, index) => (
                   <div key={index} className="text-sm text-amber-700 bg-amber-100 p-2 rounded">
-                    <span className="font-medium">Priority {conflict.priority}:</span> {conflict.description}
+                    <span className="font-medium">Priority {conflict.priority}:</span>{' '}
+                    {conflict.description}
                   </div>
                 ))}
                 {conflicts.length > 3 && (
                   <p className="text-xs text-amber-600">
-                    +{conflicts.length - 3} more conflicts. Click &apos;Timeline&apos; tab to review all conflicts.
+                    +{conflicts.length - 3} more conflicts. Click &apos;Timeline&apos; tab to review
+                    all conflicts.
                   </p>
                 )}
               </div>
@@ -453,7 +445,7 @@ export function AvailabilitySection({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {rules.map((rule) => (
+                  {rules.map(rule => (
                     <div
                       key={rule.id}
                       className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
@@ -468,32 +460,32 @@ export function AvailabilitySection({
                             >
                               Priority {rule.priority} ({getRulePriorityBadge(rule.priority || 0)})
                             </Badge>
-                            {!rule.enabled && (
-                              <Badge variant="secondary">Disabled</Badge>
-                            )}
+                            {!rule.enabled && <Badge variant="secondary">Disabled</Badge>}
                           </div>
-                          
+
                           <div className="text-sm text-muted-foreground space-y-1">
-                            <p><strong>Type:</strong> {rule.ruleType}</p>
-                            <p><strong>State:</strong> {rule.state}</p>
+                            <p>
+                              <strong>Type:</strong> {rule.ruleType}
+                            </p>
+                            <p>
+                              <strong>State:</strong> {rule.state}
+                            </p>
                             {rule.startDate && (
                               <p>
-                                <strong>Period:</strong> {format(new Date(rule.startDate), 'MMM d, yyyy')}
-                                {rule.endDate && ` - ${format(new Date(rule.endDate), 'MMM d, yyyy')}`}
+                                <strong>Period:</strong>{' '}
+                                {format(new Date(rule.startDate), 'MMM d, yyyy')}
+                                {rule.endDate &&
+                                  ` - ${format(new Date(rule.endDate), 'MMM d, yyyy')}`}
                               </p>
                             )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingRule(rule)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => setEditingRule(rule)}>
                             <Settings className="h-4 w-4" />
                           </Button>
-                          
+
                           <Button
                             size="sm"
                             variant="outline"

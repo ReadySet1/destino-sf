@@ -28,7 +28,7 @@ class DatabaseFallbackManager {
     appetizerProducts: [],
     lunchProducts: [],
     buffetProducts: [],
-    categories: []
+    categories: [],
   };
 
   async testPrismaConnection(): Promise<boolean> {
@@ -54,7 +54,7 @@ class DatabaseFallbackManager {
         method: 'prisma',
         connected: true,
         latency,
-        lastTested: new Date()
+        lastTested: new Date(),
       };
       console.log(`✅ Prisma connection works (${latency}ms)`);
       return 'prisma';
@@ -68,7 +68,7 @@ class DatabaseFallbackManager {
         method: 'supabase-http',
         connected: true,
         latency,
-        lastTested: new Date()
+        lastTested: new Date(),
       };
       console.log(`✅ Supabase HTTP connection works (${latency}ms)`);
       return 'supabase-http';
@@ -80,7 +80,7 @@ class DatabaseFallbackManager {
       connected: false,
       latency: 0,
       lastTested: new Date(),
-      error: 'No database connections available'
+      error: 'No database connections available',
     };
     console.log('⚠️ Using fallback data - no database connections available');
     return 'fallback-data';
@@ -98,11 +98,11 @@ class DatabaseFallbackManager {
       switch (method) {
         case 'prisma':
           return await prismaOperation();
-        
+
         case 'supabase-http':
           console.log(`🌐 Using HTTP API for ${operation}`);
           return await httpOperation();
-        
+
         case 'fallback-data':
         default:
           console.log(`📦 Using fallback data for ${operation}`);
@@ -110,7 +110,7 @@ class DatabaseFallbackManager {
       }
     } catch (error) {
       console.error(`❌ ${operation} failed with ${method}:`, error);
-      
+
       // Try next fallback method
       if (method === 'prisma') {
         try {
@@ -121,7 +121,7 @@ class DatabaseFallbackManager {
           return fallbackData;
         }
       }
-      
+
       console.log(`📦 Using fallback data for ${operation}`);
       return fallbackData;
     }
@@ -140,7 +140,7 @@ class DatabaseFallbackManager {
         return await prisma.cateringPackage.findMany({
           where: { isActive: true },
           include: { items: true },
-          orderBy: { featuredOrder: 'asc' }
+          orderBy: { featuredOrder: 'asc' },
         });
       },
       () => supabaseHttpAdapter.getCateringPackages(),
@@ -156,13 +156,13 @@ class DatabaseFallbackManager {
         return await prisma.product.findMany({
           where: {
             active: true,
-            category: { name: 'Appetizers' }
+            category: { name: 'Appetizers' },
           },
           include: {
             category: true,
-            variants: true
+            variants: true,
           },
-          orderBy: { ordinal: 'asc' }
+          orderBy: { ordinal: 'asc' },
         });
       },
       () => supabaseHttpAdapter.getAppetizerProducts(),
@@ -178,13 +178,13 @@ class DatabaseFallbackManager {
         return await prisma.product.findMany({
           where: {
             active: true,
-            category: { name: 'Lunch' }
+            category: { name: 'Lunch' },
           },
           include: {
             category: true,
-            variants: true
+            variants: true,
           },
-          orderBy: { ordinal: 'asc' }
+          orderBy: { ordinal: 'asc' },
         });
       },
       () => supabaseHttpAdapter.getLunchProducts(),
@@ -200,13 +200,13 @@ class DatabaseFallbackManager {
         return await prisma.product.findMany({
           where: {
             active: true,
-            category: { name: 'Buffet' }
+            category: { name: 'Buffet' },
           },
           include: {
             category: true,
-            variants: true
+            variants: true,
           },
-          orderBy: { ordinal: 'asc' }
+          orderBy: { ordinal: 'asc' },
         });
       },
       () => supabaseHttpAdapter.getBuffetProducts(),

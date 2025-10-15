@@ -81,7 +81,7 @@ function SetupPasswordFormInner({ displayMessage, messageType, email }: SetupPas
         </div>
       </div>
 
-      <SubmitButton 
+      <SubmitButton
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
         pendingText="Setting up password..."
       >
@@ -94,5 +94,11 @@ function SetupPasswordFormInner({ displayMessage, messageType, email }: SetupPas
 }
 
 export function SetupPasswordForm({ displayMessage, messageType, email }: SetupPasswordFormProps) {
-  return <SetupPasswordFormInner displayMessage={displayMessage} messageType={messageType} email={email} />;
+  return (
+    <SetupPasswordFormInner
+      displayMessage={displayMessage}
+      messageType={messageType}
+      email={email}
+    />
+  );
 }

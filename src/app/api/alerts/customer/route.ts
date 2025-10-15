@@ -12,7 +12,7 @@ import type {
 export async function POST(request: NextRequest) {
   try {
     console.log('POST request received to /api/alerts/customer');
-    
+
     const body = await request.json();
     const { type, orderId, ...data } = body;
 
@@ -160,9 +160,13 @@ export async function POST(request: NextRequest) {
 
       case 'contact_form':
         console.log('Processing contact form submission:', data);
-        
+
         if (!data.name || !data.email || !data.message) {
-          console.log('Missing required fields:', { name: !!data.name, email: !!data.email, message: !!data.message });
+          console.log('Missing required fields:', {
+            name: !!data.name,
+            email: !!data.email,
+            message: !!data.message,
+          });
           return NextResponse.json(
             {
               error: 'name, email, and message required for contact form',
@@ -173,11 +177,11 @@ export async function POST(request: NextRequest) {
 
         // Monitor for undefined subjects (as per production fix plan)
         if (!data.subject) {
-          console.warn('Contact form submitted without subject', { 
-            name: data.name, 
+          console.warn('Contact form submitted without subject', {
+            name: data.name,
             email: data.email,
             contactType: data.contactType,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
 

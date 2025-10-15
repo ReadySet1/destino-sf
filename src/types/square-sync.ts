@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for the filtered Square sync process
- * 
+ *
  * This file defines all types needed for the unified sync that only imports
  * alfajores and empanadas while protecting catering items.
  */
@@ -131,15 +131,8 @@ export interface SquareCategory {
  * Only alfajores and empanadas should be synced from Square
  */
 export const FILTERED_SYNC_CONFIG: FilteredSyncConfig = {
-  allowedCategories: [
-    'ALFAJORES',
-    'EMPANADAS'
-  ],
-  allowedProductNames: [
-    /alfajor/i,
-    /empanada/i,
-    /dulce de leche/i
-  ],
+  allowedCategories: ['ALFAJORES', 'EMPANADAS'],
+  allowedProductNames: [/alfajor/i, /empanada/i, /dulce de leche/i],
   protectedCategories: [
     // Protection removed - full sync now enabled
     // Items removed from Square will be archived locally
@@ -147,7 +140,7 @@ export const FILTERED_SYNC_CONFIG: FilteredSyncConfig = {
   enableImageSync: true,
   validateBeforeSync: true,
   batchSize: 50,
-  dryRun: false
+  dryRun: false,
 };
 
 /**
@@ -159,7 +152,7 @@ export enum SyncErrorType {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   CATERING_PROTECTION_ERROR = 'CATERING_PROTECTION_ERROR',
   IMAGE_SYNC_ERROR = 'IMAGE_SYNC_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
 export interface SyncError {

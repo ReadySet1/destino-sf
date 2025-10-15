@@ -48,7 +48,7 @@ export class NotificationService {
       logger.info('Processing notification', {
         type: payload.type,
         productId: payload.productId,
-        userId: payload.userId
+        userId: payload.userId,
       });
 
       switch (payload.type) {
@@ -71,11 +71,10 @@ export class NotificationService {
         default:
           logger.warn('Unknown notification type', { type: payload.type });
       }
-
     } catch (error) {
       logger.error('Error sending notification', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        payload
+        payload,
       });
     }
   }
@@ -85,7 +84,7 @@ export class NotificationService {
    */
   private async handleAvailabilityChange(payload: NotificationPayload): Promise<void> {
     const { productId, data } = payload;
-    
+
     if (!productId) {
       throw new Error('Product ID is required for availability change notifications');
     }
@@ -94,8 +93,8 @@ export class NotificationService {
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (!product) {
@@ -122,9 +121,9 @@ export class NotificationService {
         productName: product.name,
         oldState,
         newState,
-        ruleName
+        ruleName,
       },
-      priority: 'medium'
+      priority: 'medium',
     });
   }
 
@@ -133,7 +132,7 @@ export class NotificationService {
    */
   private async handlePreOrderReminder(payload: NotificationPayload): Promise<void> {
     const { productId, data } = payload;
-    
+
     if (!productId) {
       throw new Error('Product ID is required for pre-order reminders');
     }
@@ -142,8 +141,8 @@ export class NotificationService {
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (!product) {
@@ -160,13 +159,13 @@ export class NotificationService {
         customerName: customer.name,
         product,
         reminderType: data.reminderType || 'general',
-        expectedDate: data.expectedDate
+        expectedDate: data.expectedDate,
       });
     }
 
     logger.info('Pre-order reminders sent', {
       productId,
-      customerCount: mockPreOrderCustomers.length
+      customerCount: mockPreOrderCustomers.length,
     });
   }
 
@@ -175,7 +174,7 @@ export class NotificationService {
    */
   private async handleWaitlistNotification(payload: NotificationPayload): Promise<void> {
     const { productId, userId, data } = payload;
-    
+
     if (!productId || !userId) {
       throw new Error('Product ID and User ID are required for waitlist notifications');
     }
@@ -184,11 +183,11 @@ export class NotificationService {
     const [product, user] = await Promise.all([
       prisma.product.findUnique({
         where: { id: productId },
-        include: { category: true }
+        include: { category: true },
       }),
       prisma.profile.findUnique({
-        where: { id: userId }
-      })
+        where: { id: userId },
+      }),
     ]);
 
     if (!product || !user) {
@@ -199,13 +198,13 @@ export class NotificationService {
       to: user.email,
       customerName: (user as any).firstName || user.name || 'Customer',
       product,
-      notificationType: data.notificationType || 'available'
+      notificationType: data.notificationType || 'available',
     });
 
     logger.info('Waitlist notification sent', {
       productId,
       userId,
-      userEmail: user.email
+      userEmail: user.email,
     });
   }
 
@@ -221,7 +220,7 @@ export class NotificationService {
       title: data.title || 'System Alert',
       message: data.message || 'A system event occurred',
       data: data.alertData || {},
-      priority: data.priority || 'medium'
+      priority: data.priority || 'medium',
     });
 
     // Send email to administrators if critical
@@ -250,8 +249,8 @@ export class NotificationService {
         oldState,
         newState,
         ruleName,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     });
   }
 
@@ -275,7 +274,7 @@ export class NotificationService {
       subject: `System Alert: ${data.title}`,
       message: data.message,
       alertData: data.alertData,
-      severity: data.priority
+      severity: data.priority,
     });
   }
 
@@ -289,7 +288,7 @@ export class NotificationService {
       emailNotifications: true,
       dashboardAlerts: true,
       preOrderReminders: true,
-      availabilityUpdates: true
+      availabilityUpdates: true,
     };
   }
 
@@ -297,13 +296,13 @@ export class NotificationService {
    * Update user notification preferences
    */
   async updateUserPreferences(
-    userId: string, 
+    userId: string,
     preferences: Partial<NotificationPreferences>
   ): Promise<void> {
     // TODO: Implement user preferences storage
     logger.info('User preferences update not implemented yet', {
       userId,
-      preferences
+      preferences,
     });
   }
 
@@ -313,9 +312,9 @@ export class NotificationService {
   async sendBatchNotifications(payloads: NotificationPayload[]): Promise<void> {
     const promises = payloads.map(payload => this.sendNotification(payload));
     await Promise.allSettled(promises);
-    
+
     logger.info('Batch notifications processed', {
-      count: payloads.length
+      count: payloads.length,
     });
   }
 }

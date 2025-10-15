@@ -29,7 +29,7 @@ export interface CateringCartStore {
 
 const calculateTotals = (items: CateringCartItem[]) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   return { totalItems, totalPrice };
 };
 
@@ -41,15 +41,15 @@ export const useCateringCartStore = create<CateringCartStore>()(
       totalItems: 0,
 
       addItem: (newItem: CateringCartItem) => {
-        set((state) => {
+        set(state => {
           const existingItem = state.items.find(
-            (item) => item.id === newItem.id && item.variantId === newItem.variantId
+            item => item.id === newItem.id && item.variantId === newItem.variantId
           );
 
           let updatedItems;
           if (existingItem) {
             // Update quantity of existing item
-            updatedItems = state.items.map((item) =>
+            updatedItems = state.items.map(item =>
               item.id === newItem.id && item.variantId === newItem.variantId
                 ? { ...item, quantity: item.quantity + newItem.quantity }
                 : item
@@ -69,9 +69,9 @@ export const useCateringCartStore = create<CateringCartStore>()(
       },
 
       removeItem: (id: string, variantId?: string) => {
-        set((state) => {
+        set(state => {
           const updatedItems = state.items.filter(
-            (item) => !(item.id === id && item.variantId === variantId)
+            item => !(item.id === id && item.variantId === variantId)
           );
           const { totalItems, totalPrice } = calculateTotals(updatedItems);
           return {
@@ -83,12 +83,14 @@ export const useCateringCartStore = create<CateringCartStore>()(
       },
 
       updateQuantity: (id: string, quantity: number, variantId?: string) => {
-        set((state) => {
-          const updatedItems = state.items.map((item) =>
-            item.id === id && item.variantId === variantId
-              ? { ...item, quantity: Math.max(0, quantity) }
-              : item
-          ).filter((item) => item.quantity > 0);
+        set(state => {
+          const updatedItems = state.items
+            .map(item =>
+              item.id === id && item.variantId === variantId
+                ? { ...item, quantity: Math.max(0, quantity) }
+                : item
+            )
+            .filter(item => item.quantity > 0);
 
           const { totalItems, totalPrice } = calculateTotals(updatedItems);
           return {

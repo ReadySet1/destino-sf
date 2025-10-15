@@ -27,10 +27,10 @@ function getSimpleClient(): PrismaClient {
 
     simpleClient = new PrismaClient({
       datasources: {
-        db: { url: url.toString() }
+        db: { url: url.toString() },
       },
       log: ['error'],
-      errorFormat: 'minimal'
+      errorFormat: 'minimal',
     });
 
     console.log('✅ Simple Prisma client created');

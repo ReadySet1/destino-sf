@@ -1,7 +1,7 @@
-import { 
-  isProductTaxExempt, 
-  isCategoryTaxExempt, 
-  calculateTaxForItems 
+import {
+  isProductTaxExempt,
+  isCategoryTaxExempt,
+  calculateTaxForItems,
 } from '@/utils/tax-exemption';
 
 describe('Tax Exemption Logic', () => {
@@ -75,26 +75,26 @@ describe('Tax Exemption Logic', () => {
       const items = [
         {
           product: { category: { name: 'EMPANADAS' }, name: 'Beef Empanada' },
-          price: 18.00,
+          price: 18.0,
           quantity: 2, // $36 total - should be tax-exempt
         },
         {
           product: { category: { name: 'ALFAJORES' }, name: 'Classic Alfajores' },
-          price: 14.00,
+          price: 14.0,
           quantity: 1, // $14 total - should be tax-exempt
         },
         {
           product: { category: { name: 'CATERING- DESSERTS' }, name: 'Catering Alfajores' },
-          price: 50.00,
+          price: 50.0,
           quantity: 1, // $50 total - should be taxable
         },
       ];
 
       const result = calculateTaxForItems(items, TAX_RATE);
 
-      expect(result.exemptSubtotal).toBe(50.00); // $36 + $14
-      expect(result.taxableSubtotal).toBe(50.00); // $50
-      expect(result.totalSubtotal).toBe(100.00); // $50 + $50
+      expect(result.exemptSubtotal).toBe(50.0); // $36 + $14
+      expect(result.taxableSubtotal).toBe(50.0); // $50
+      expect(result.totalSubtotal).toBe(100.0); // $50 + $50
       expect(result.taxAmount).toBe(4.13); // $50 * 0.0825 = $4.125, rounded to $4.13
     });
 
@@ -102,38 +102,38 @@ describe('Tax Exemption Logic', () => {
       const items = [
         {
           product: { category: { name: 'EMPANADAS' }, name: 'Beef Empanada' },
-          price: 18.00,
+          price: 18.0,
           quantity: 2,
         },
         {
           product: { category: { name: 'ALFAJORES' }, name: 'Classic Alfajores' },
-          price: 14.00,
+          price: 14.0,
           quantity: 1,
         },
       ];
 
       const result = calculateTaxForItems(items, TAX_RATE);
 
-      expect(result.exemptSubtotal).toBe(50.00);
-      expect(result.taxableSubtotal).toBe(0.00);
-      expect(result.totalSubtotal).toBe(50.00);
-      expect(result.taxAmount).toBe(0.00);
+      expect(result.exemptSubtotal).toBe(50.0);
+      expect(result.taxableSubtotal).toBe(0.0);
+      expect(result.totalSubtotal).toBe(50.0);
+      expect(result.taxAmount).toBe(0.0);
     });
 
     it('should handle all taxable items', () => {
       const items = [
         {
           product: { category: { name: 'CATERING- MAIN' }, name: 'Catering Package' },
-          price: 100.00,
+          price: 100.0,
           quantity: 1,
         },
       ];
 
       const result = calculateTaxForItems(items, TAX_RATE);
 
-      expect(result.exemptSubtotal).toBe(0.00);
-      expect(result.taxableSubtotal).toBe(100.00);
-      expect(result.totalSubtotal).toBe(100.00);
+      expect(result.exemptSubtotal).toBe(0.0);
+      expect(result.taxableSubtotal).toBe(100.0);
+      expect(result.totalSubtotal).toBe(100.0);
       expect(result.taxAmount).toBe(8.25); // $100 * 0.0825
     });
   });

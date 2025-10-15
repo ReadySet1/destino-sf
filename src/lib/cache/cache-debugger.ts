@@ -35,8 +35,8 @@ export interface CacheDebugInfo {
 export async function getCacheDebugInfo(): Promise<CacheDebugInfo> {
   const headersList = await headers();
   const cacheStatus = (headersList.get('x-vercel-cache') ||
-                       headersList.get('x-nextjs-cache') ||
-                       'UNKNOWN') as CacheDebugInfo['cacheStatus'];
+    headersList.get('x-nextjs-cache') ||
+    'UNKNOWN') as CacheDebugInfo['cacheStatus'];
 
   return {
     timestamp: Date.now(),
@@ -52,7 +52,7 @@ export async function getCacheDebugInfo(): Promise<CacheDebugInfo> {
       nodeEnv: process.env.NODE_ENV || 'unknown',
       isDev: process.env.NODE_ENV === 'development',
       isProd: process.env.NODE_ENV === 'production',
-    }
+    },
   };
 }
 
@@ -135,8 +135,8 @@ export function isStale(cachedAt: number, maxAgeMs: number = 5 * 60 * 1000): boo
 export function getNoCacheHeaders(): Record<string, string> {
   return {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
+    Pragma: 'no-cache',
+    Expires: '0',
     'Surrogate-Control': 'no-store',
   };
 }

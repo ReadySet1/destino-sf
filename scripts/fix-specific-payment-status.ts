@@ -71,20 +71,20 @@ async function fixSpecificPaymentStatus() {
         paymentStatus: result.paymentStatus,
         updatedAt: result.updatedAt,
       });
-
     } catch (updateError) {
       console.error('❌ Error using updateOrderPayment function:', updateError);
-      
+
       // Fallback: Direct database update
       console.log('🔄 Falling back to direct database update...');
-      
+
       const updatedOrder = await prisma.order.update({
         where: { id: ORDER_ID },
         data: {
           paymentStatus: 'PAID',
           status: 'PROCESSING', // Update status to PROCESSING when payment is confirmed
           squareOrderId: SQUARE_ORDER_ID, // Ensure Square order ID is set
-          notes: 'Payment status manually updated after successful Square test payment - webhook sync issue resolved',
+          notes:
+            'Payment status manually updated after successful Square test payment - webhook sync issue resolved',
           updatedAt: new Date(),
         },
       });
@@ -111,7 +111,6 @@ async function fixSpecificPaymentStatus() {
     });
 
     console.log('🔍 Final verification:', verifyOrder);
-
   } catch (error) {
     console.error('❌ Error fixing payment status:', error);
   } finally {

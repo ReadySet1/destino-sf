@@ -31,12 +31,14 @@ Square sync is creating duplicate items with size variations (Large/Small) as se
 #### Root Cause Analysis
 
 **Image CORS Issue:**
+
 - Current `PlatterMenuItem.tsx` uses `getImageUrl()` that directly returns Square/S3 URLs
 - Some URLs fail CORS while others work (likely due to different S3 bucket policies)
 - Existing `/api/proxy/image/route.ts` can handle CORS but isn't being used as fallback
 - `SafeImage` component has retry logic but doesn't fallback to proxy
 
 **Duplicate Items Issue:**
+
 - `CateringDuplicateDetector` doesn't recognize size variations as the same product
 - Sync treats "Cheese & Charcuterie Platter - Small" and "Large" as separate items
 - Need variation grouping logic in sync process
@@ -86,7 +88,7 @@ const SafeImage = ({ src, fallbackSrc, ...props }: SafeImageProps) => {
       setUseProxy(true);
       return;
     }
-    
+
     // Final fallback: use fallback image
     setCurrentSrc(fallbackSrc);
   };
@@ -139,7 +141,7 @@ export class VariationGrouper {
     const sizePatterns = [
       / - (Small|Large|Regular)$/i,
       / \((Small|Large|Regular)\)$/i,
-      /(Small|Large|Regular)$/i
+      /(Small|Large|Regular)$/i,
     ];
 
     for (const pattern of sizePatterns) {
@@ -147,7 +149,7 @@ export class VariationGrouper {
       if (match) {
         return {
           baseName: name.replace(pattern, '').trim(),
-          size: match[1]
+          size: match[1],
         };
       }
     }
@@ -160,7 +162,7 @@ export class VariationGrouper {
 
     items.forEach(item => {
       const { baseName, size } = this.detectSizePattern(item.name);
-      
+
       if (!groups.has(baseName)) {
         groups.set(baseName, []);
       }
@@ -171,7 +173,7 @@ export class VariationGrouper {
         size: size || 'Regular',
         price: item.price,
         imageUrl: item.imageUrl,
-        description: item.description
+        description: item.description,
       });
     });
 
@@ -180,10 +182,12 @@ export class VariationGrouper {
       baseImageUrl: variations.find(v => v.imageUrl)?.imageUrl,
       category: items[0]?.categoryName || 'Unknown',
       variations: variations.sort((a, b) => {
-        const sizeOrder = { 'Small': 1, 'Regular': 2, 'Large': 3 };
-        return (sizeOrder[a.size as keyof typeof sizeOrder] || 2) - 
-               (sizeOrder[b.size as keyof typeof sizeOrder] || 2);
-      })
+        const sizeOrder = { Small: 1, Regular: 2, Large: 3 };
+        return (
+          (sizeOrder[a.size as keyof typeof sizeOrder] || 2) -
+          (sizeOrder[b.size as keyof typeof sizeOrder] || 2)
+        );
+      }),
     }));
   }
 }
@@ -198,27 +202,26 @@ export class CateringDuplicateDetector {
     squareProductId?: string;
     squareCategory?: string;
   }): Promise<DuplicateCheckResult & { isVariation?: boolean; baseProduct?: any }> {
-    
     const { baseName, size } = VariationGrouper.detectSizePattern(itemData.name);
-    
+
     // Check if base product exists
     const existingBaseProduct = await prisma.product.findFirst({
       where: {
         OR: [
           { name: { equals: baseName, mode: 'insensitive' } },
-          { name: { startsWith: baseName, mode: 'insensitive' } }
+          { name: { startsWith: baseName, mode: 'insensitive' } },
         ],
         active: true,
         category: {
-          name: { contains: 'CATERING' }
-        }
+          name: { contains: 'CATERING' },
+        },
       },
-      include: { variants: true }
+      include: { variants: true },
     });
 
     if (existingBaseProduct) {
       // Check if this size variation already exists
-      const existingVariation = existingBaseProduct.variants?.find(v => 
+      const existingVariation = existingBaseProduct.variants?.find(v =>
         v.name.toLowerCase().includes(size?.toLowerCase() || 'regular')
       );
 
@@ -226,14 +229,16 @@ export class CateringDuplicateDetector {
         isDuplicate: !!existingVariation,
         isVariation: true,
         baseProduct: existingBaseProduct,
-        existingItem: existingVariation ? {
-          id: existingVariation.id,
-          name: existingVariation.name,
-          squareProductId: existingBaseProduct.squareId,
-          source: existingBaseProduct.squareId ? 'square' : 'manual'
-        } : undefined,
+        existingItem: existingVariation
+          ? {
+              id: existingVariation.id,
+              name: existingVariation.name,
+              squareProductId: existingBaseProduct.squareId,
+              source: existingBaseProduct.squareId ? 'square' : 'manual',
+            }
+          : undefined,
         matchType: existingVariation ? 'exact_variation' : 'base_product_exists',
-        confidence: existingVariation ? 1.0 : 0.8
+        confidence: existingVariation ? 1.0 : 0.8,
       };
     }
 
@@ -248,14 +253,13 @@ export class CateringDuplicateDetector {
 ```tsx
 // app/api/square/unified-sync/route.ts - Modify batchSyncToProducts function
 async function batchSyncToProducts(
-  items: SquareItem[], 
+  items: SquareItem[],
   syncLogger: SyncLogger,
   forceUpdate: boolean = false
 ): Promise<{ synced: number; skipped: number; errors: number }> {
-  
   // Group items by variations first
   const groupedProducts = VariationGrouper.groupVariations(items);
-  
+
   let syncedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
@@ -265,15 +269,15 @@ async function batchSyncToProducts(
       // Check if base product exists
       const duplicateCheck = await CateringDuplicateDetector.checkForVariationDuplicate({
         name: group.baseName,
-        squareProductId: group.variations[0]?.id
+        squareProductId: group.variations[0]?.id,
       });
 
       if (duplicateCheck.isDuplicate && !duplicateCheck.isVariation) {
         // Product already exists completely, skip
         syncLogger.logItemProcessed(
-          group.variations[0].id, 
-          group.baseName, 
-          'duplicate', 
+          group.variations[0].id,
+          group.baseName,
+          'duplicate',
           `Product already exists`
         );
         skippedCount++;
@@ -301,7 +305,7 @@ async function batchSyncToProducts(
             active: true,
             images: group.baseImageUrl ? [group.baseImageUrl] : [],
             slug: uniqueSlug,
-          }
+          },
         });
 
         syncLogger.logItemSynced(group.variations[0].id, group.baseName, 'Created base product');
@@ -320,17 +324,16 @@ async function batchSyncToProducts(
             squareVariantId: variation.id,
             name: `${variation.size} - $${variation.price}`,
             price: variation.price,
-          }
+          },
         });
       }
 
       syncedCount++;
       syncLogger.logItemSynced(
-        group.variations[0].id, 
-        group.baseName, 
+        group.variations[0].id,
+        group.baseName,
         `Synced with ${group.variations.length} variations`
       );
-
     } catch (error) {
       errorCount++;
       syncLogger.logError(group.baseName, error as Error);
@@ -374,18 +377,18 @@ async function cleanupDuplicatePlatters() {
   const sharePlatters = await prisma.product.findMany({
     where: {
       category: {
-        name: 'CATERING- SHARE PLATTERS'
+        name: 'CATERING- SHARE PLATTERS',
       },
-      active: true
+      active: true,
     },
-    include: { variants: true }
+    include: { variants: true },
   });
 
   console.log(`Found ${sharePlatters.length} share platter products`);
 
   // Group by base name
   const grouped = new Map<string, typeof sharePlatters>();
-  
+
   sharePlatters.forEach(product => {
     const { baseName } = VariationGrouper.detectSizePattern(product.name);
     if (!grouped.has(baseName)) {
@@ -397,7 +400,7 @@ async function cleanupDuplicatePlatters() {
   for (const [baseName, products] of grouped) {
     if (products.length > 1) {
       console.log(`Merging ${products.length} products for "${baseName}"`);
-      
+
       // Keep the first product as the base
       const baseProduct = products[0];
       const duplicates = products.slice(1);
@@ -407,27 +410,27 @@ async function cleanupDuplicatePlatters() {
         where: { id: baseProduct.id },
         data: {
           name: baseName,
-          has_variations: true
-        }
+          has_variations: true,
+        },
       });
 
       // Create variations from duplicates
       for (const duplicate of duplicates) {
         const { size } = VariationGrouper.detectSizePattern(duplicate.name);
-        
+
         await prisma.productVariant.create({
           data: {
             productId: baseProduct.id,
             squareVariantId: duplicate.squareId || `cleanup-${duplicate.id}`,
             name: `${size || 'Regular'} - $${duplicate.price}`,
-            price: duplicate.price
-          }
+            price: duplicate.price,
+          },
         });
 
         // Deactivate duplicate
         await prisma.product.update({
           where: { id: duplicate.id },
-          data: { active: false }
+          data: { active: false },
         });
       }
 
@@ -447,24 +450,28 @@ cleanupDuplicatePlatters()
 ## 🚦 Implementation Checklist
 
 ### Phase 1: Image CORS Fix
+
 - [x] Update `SafeImage` component with proxy fallback logic
 - [x] Modify `PlatterMenuItem` to use SafeImage properly
 - [x] Test image loading for problematic items
 - [x] Enhance `/api/proxy/image` error handling
 
 ### Phase 2: Variation Grouping
+
 - [x] Create `VariationGrouper` utility class
 - [x] Update `CateringDuplicateDetector` with variation awareness
 - [x] Modify sync logic to group variations
 - [x] Update database schema for variations
 
 ### Phase 3: Cleanup & Testing
+
 - [x] Create cleanup script for existing duplicates
 - [x] Run cleanup on development/staging
 - [x] Test sync with variation grouping
 - [x] Verify no new duplicates are created
 
 ### Phase 4: Frontend Updates
+
 - [x] Update `PlatterMenuItem` to show size variations in dropdown
 - [x] Ensure cart handles variations properly
 - [x] Update admin interface to show variations
@@ -500,11 +507,13 @@ cleanupDuplicatePlatters()
 ## 📊 Expected Results
 
 ### Before Fix:
+
 - Multiple "Cheese & Charcuterie Platter" products (Small, Large) with $0 prices
 - CORS errors for some images showing "No Image Available"
 - Cluttered admin interface with duplicate products
 
 ### After Fix:
+
 - Single "Cheese & Charcuterie Platter" product with size variations
 - All images load correctly via proxy fallback
 - Clean admin interface with proper variation management

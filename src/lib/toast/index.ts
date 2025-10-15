@@ -11,7 +11,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   error: (message: string, options?: ToastOptions) => {
     return sonnerToast.error(message, {
       id: options?.id,
@@ -21,7 +21,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   info: (message: string, options?: ToastOptions) => {
     return sonnerToast.info(message, {
       id: options?.id,
@@ -31,7 +31,7 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   warning: (message: string, options?: ToastOptions) => {
     return sonnerToast.warning(message, {
       id: options?.id,
@@ -41,12 +41,12 @@ export const toast = {
       action: options?.action,
     });
   },
-  
+
   loading: (message: string, options?: Pick<ToastOptions, 'id'>) => {
     return sonnerToast.loading(message, options);
   },
-  
-  promise: <T,>(
+
+  promise: <T>(
     promise: Promise<T>,
     messages: {
       loading: string;
@@ -56,7 +56,7 @@ export const toast = {
   ) => {
     return sonnerToast.promise(promise, messages);
   },
-  
+
   dismiss: (toastId?: string | number) => {
     return sonnerToast.dismiss(toastId);
   },

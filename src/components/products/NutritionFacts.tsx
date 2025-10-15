@@ -21,13 +21,14 @@ export function NutritionFacts({
   ingredients,
   allergens,
   nutritionFacts,
-  className
+  className,
 }: NutritionFactsProps) {
   // Don't render if no nutrition information is available
-  const hasAnyNutritionInfo = calories || 
-    (dietaryPreferences && dietaryPreferences.length > 0) || 
-    ingredients || 
-    (allergens && allergens.length > 0) || 
+  const hasAnyNutritionInfo =
+    calories ||
+    (dietaryPreferences && dietaryPreferences.length > 0) ||
+    ingredients ||
+    (allergens && allergens.length > 0) ||
     nutritionFacts;
 
   if (!hasAnyNutritionInfo) {
@@ -92,9 +93,7 @@ export function NutritionFacts({
               <Wheat className="h-4 w-4" />
               <span className="font-medium">Ingredients:</span>
             </div>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {ingredients}
-            </p>
+            <p className="text-sm text-gray-700 leading-relaxed">{ingredients}</p>
           </div>
         )}
 
@@ -110,12 +109,10 @@ export function NutritionFacts({
                   if (['calorie_count', 'dietary_preferences', 'ingredients'].includes(key)) {
                     return null;
                   }
-                  
+
                   // Format the key for display
-                  const displayKey = key
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, l => l.toUpperCase());
-                  
+                  const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
                   return (
                     <div key={key} className="flex justify-between">
                       <span className="text-gray-600">{displayKey}:</span>

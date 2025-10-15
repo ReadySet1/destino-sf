@@ -1,51 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
   try {
     const { type } = await params;
 
     // Validate product type
     if (!['empanada', 'salsa', 'alfajor', 'other'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Invalid product type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
     }
 
     // Use raw query to ensure we get all fields including trust signals
     const result = await withRetry(
-      () => prisma.$queryRaw<Array<{
-        id: number;
-        product_type: string;
-        badge1: string;
-        badge2: string;
-        badge3: string | null;
-        icon1: string;
-        icon2: string;
-        icon3: string | null;
-        bg_color: string;
-        text_color: string;
-        trust_signal1_title: string;
-        trust_signal1_desc: string;
-        trust_signal1_icon: string;
-        trust_signal1_icon_color: string;
-        trust_signal1_bg_color: string;
-        trust_signal2_title: string;
-        trust_signal2_desc: string;
-        trust_signal2_icon: string;
-        trust_signal2_icon_color: string;
-        trust_signal2_bg_color: string;
-        trust_signal3_title: string;
-        trust_signal3_desc: string;
-        trust_signal3_icon: string;
-        trust_signal3_icon_color: string;
-        trust_signal3_bg_color: string;
-        updated_at: Date;
-      }>>`
+      () => prisma.$queryRaw<
+        Array<{
+          id: number;
+          product_type: string;
+          badge1: string;
+          badge2: string;
+          badge3: string | null;
+          icon1: string;
+          icon2: string;
+          icon3: string | null;
+          bg_color: string;
+          text_color: string;
+          trust_signal1_title: string;
+          trust_signal1_desc: string;
+          trust_signal1_icon: string;
+          trust_signal1_icon_color: string;
+          trust_signal1_bg_color: string;
+          trust_signal2_title: string;
+          trust_signal2_desc: string;
+          trust_signal2_icon: string;
+          trust_signal2_icon_color: string;
+          trust_signal2_bg_color: string;
+          trust_signal3_title: string;
+          trust_signal3_desc: string;
+          trust_signal3_icon: string;
+          trust_signal3_icon_color: string;
+          trust_signal3_bg_color: string;
+          updated_at: Date;
+        }>
+      >`
         SELECT * FROM product_type_badges WHERE product_type = ${type}
       `,
       3,

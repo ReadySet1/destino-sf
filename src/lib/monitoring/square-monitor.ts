@@ -1,6 +1,6 @@
 /**
  * Square Integration Monitoring System
- * 
+ *
  * Provides comprehensive monitoring for Square operations including:
  * - Order state tracking
  * - Payment completion monitoring
@@ -155,24 +155,19 @@ export class SquareMonitor {
     const checks: SquareHealthCheck[] = [];
 
     // Test Square Locations API
-    const locationCheck = await this.testSquareEndpoint(
-      'locations',
-      () => this.squareService.getLocations()
+    const locationCheck = await this.testSquareEndpoint('locations', () =>
+      this.squareService.getLocations()
     );
     checks.push(locationCheck);
 
     // Test Square Catalog API
-    const catalogCheck = await this.testSquareEndpoint(
-      'catalog',
-      () => this.squareService.getCatalogItems()
+    const catalogCheck = await this.testSquareEndpoint('catalog', () =>
+      this.squareService.getCatalogItems()
     );
     checks.push(catalogCheck);
 
     // Test Square Orders API (create a test order)
-    const orderCheck = await this.testSquareEndpoint(
-      'orders',
-      () => this.testOrderCreation()
-    );
+    const orderCheck = await this.testSquareEndpoint('orders', () => this.testOrderCreation());
     checks.push(orderCheck);
 
     return checks;
@@ -186,11 +181,11 @@ export class SquareMonitor {
     testFunction: () => Promise<any>
   ): Promise<SquareHealthCheck> {
     const startTime = Date.now();
-    
+
     try {
       await testFunction();
       const responseTime = Date.now() - startTime;
-      
+
       return {
         service: serviceName,
         status: responseTime < 5000 ? 'HEALTHY' : 'DEGRADED',
@@ -226,7 +221,7 @@ export class SquareMonitor {
     // Alert for stuck orders
     if (orderCheck.stuckOrders.length > 0) {
       const severity = orderCheck.stuckOrders.length > 5 ? 'CRITICAL' : 'HIGH';
-      
+
       this.alerts.push({
         id: `stuck-orders-${Date.now()}`,
         type: 'STUCK_ORDER',
@@ -312,28 +307,18 @@ export class SquareMonitor {
 
     const unhealthyServices = healthChecks.filter(check => check.status === 'UNHEALTHY');
     if (unhealthyServices.length > 0) {
-      recommendations.push(
-        '🔧 Check Square API credentials and network connectivity'
-      );
-      recommendations.push(
-        '📊 Review Square API status page for known issues'
-      );
+      recommendations.push('🔧 Check Square API credentials and network connectivity');
+      recommendations.push('📊 Review Square API status page for known issues');
     }
 
     const slowServices = healthChecks.filter(check => check.responseTime > 5000);
     if (slowServices.length > 0) {
-      recommendations.push(
-        '⚡ Consider implementing caching for Square API responses'
-      );
-      recommendations.push(
-        '🔄 Add retry logic with exponential backoff for slow responses'
-      );
+      recommendations.push('⚡ Consider implementing caching for Square API responses');
+      recommendations.push('🔄 Add retry logic with exponential backoff for slow responses');
     }
 
     if (orderCheck.recentFailures.length > 3) {
-      recommendations.push(
-        '💳 Review payment processing logs for common failure patterns'
-      );
+      recommendations.push('💳 Review payment processing logs for common failure patterns');
       recommendations.push(
         '🔍 Check if payment failures are related to specific card types or amounts'
       );
@@ -362,12 +347,15 @@ export class SquareMonitor {
   }> {
     const result = await this.monitorSquareIntegration();
     const healthChecks = await this.performHealthChecks();
-    
-    const status = 
-      result.alerts.some(a => a.severity === 'CRITICAL') ? 'CRITICAL' :
-      result.alerts.some(a => a.severity === 'HIGH') ? 'WARNING' : 'HEALTHY';
-    
-    const avgResponseTime = healthChecks.reduce((sum, check) => sum + check.responseTime, 0) / healthChecks.length;
+
+    const status = result.alerts.some(a => a.severity === 'CRITICAL')
+      ? 'CRITICAL'
+      : result.alerts.some(a => a.severity === 'HIGH')
+        ? 'WARNING'
+        : 'HEALTHY';
+
+    const avgResponseTime =
+      healthChecks.reduce((sum, check) => sum + check.responseTime, 0) / healthChecks.length;
     const healthyServices = healthChecks.filter(check => check.status === 'HEALTHY').length;
     const apiHealth = `${healthyServices}/${healthChecks.length} healthy`;
 

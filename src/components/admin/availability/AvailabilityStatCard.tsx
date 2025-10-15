@@ -44,18 +44,14 @@ export function AvailabilityStatCard({
   icon,
   variant = 'blue',
   trend,
-  className
+  className,
 }: AvailabilityStatCardProps) {
   const headerClass = variantClasses[variant];
   const iconClass = iconColorClasses[variant];
 
   return (
     <div
-      className={cn(
-        'bg-white shadow-sm rounded-xl border overflow-hidden',
-        headerClass,
-        className
-      )}
+      className={cn('bg-white shadow-sm rounded-xl border overflow-hidden', headerClass, className)}
     >
       <div className={cn('px-6 py-4 border-b', headerClass)}>
         <div className="flex items-center justify-between">

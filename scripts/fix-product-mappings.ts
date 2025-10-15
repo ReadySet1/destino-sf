@@ -10,33 +10,36 @@ const prisma = new PrismaClient();
 
 async function main() {
   logger.info('Starting product mapping fix...');
-  
+
   try {
     const service = new ProductMappingService();
-    
+
     // Step 1: Run audit
     logger.info('Running product audit...');
     const auditResult = await service.auditAllMappings();
-    
+
     logger.info(`Audit complete:
       - Total Products: ${auditResult.totalProducts}
       - Valid: ${auditResult.validProducts}
       - Invalid: ${auditResult.invalidProducts}
       - Issues Found: ${auditResult.issues.length}
     `);
-    
+
     // Log critical issues
     const criticalIssues = auditResult.issues.filter(i => i.severity === 'ERROR');
     if (criticalIssues.length > 0) {
       logger.warn(`Found ${criticalIssues.length} critical issues:`);
-      
+
       // Group issues by type
-      const issuesByType = criticalIssues.reduce((acc, issue) => {
-        if (!acc[issue.type]) acc[issue.type] = [];
-        acc[issue.type].push(issue);
-        return acc;
-      }, {} as Record<string, typeof criticalIssues>);
-      
+      const issuesByType = criticalIssues.reduce(
+        (acc, issue) => {
+          if (!acc[issue.type]) acc[issue.type] = [];
+          acc[issue.type].push(issue);
+          return acc;
+        },
+        {} as Record<string, typeof criticalIssues>
+      );
+
       for (const [type, issues] of Object.entries(issuesByType)) {
         logger.info(`  ${type}: ${issues.length} issues`);
       }
@@ -55,46 +58,51 @@ async function main() {
         }
       }
     }
-    
+
     // Step 2: Apply fixes
     if (criticalIssues.length > 0) {
       logger.info('Applying fixes...');
       await service.fixMappings(auditResult);
-      
+
       // Step 3: Verify fixes
       logger.info('Verifying fixes...');
       const verificationAudit = await service.auditAllMappings();
-      
+
       logger.info(`Fix verification:
         - Remaining Invalid: ${verificationAudit.invalidProducts}
         - Fixed: ${auditResult.invalidProducts - verificationAudit.invalidProducts}
         - Remaining Issues: ${verificationAudit.issues.length}
       `);
-      
+
       if (verificationAudit.invalidProducts > 0) {
         logger.warn('Some issues could not be automatically fixed and require manual review.');
-        
+
         // Generate report for manual review
         const manualReviewProducts = await prisma.product.findMany({
           where: {
-            mappingStatus: 'NEEDS_REVIEW'
+            mappingStatus: 'NEEDS_REVIEW',
           },
           include: {
-            category: true
-          }
+            category: true,
+          },
         });
-        
+
         logger.info(`Products requiring manual review: ${manualReviewProducts.length}`);
         for (const product of manualReviewProducts) {
-          logger.info(`  - ${product.name} (${product.squareId}) - Category: ${product.category?.name}`);
+          logger.info(
+            `  - ${product.name} (${product.squareId}) - Category: ${product.category?.name}`
+          );
         }
 
         // Show remaining issues by type
-        const remainingIssuesByType = verificationAudit.issues.reduce((acc, issue) => {
-          if (!acc[issue.type]) acc[issue.type] = [];
-          acc[issue.type].push(issue);
-          return acc;
-        }, {} as Record<string, typeof verificationAudit.issues>);
+        const remainingIssuesByType = verificationAudit.issues.reduce(
+          (acc, issue) => {
+            if (!acc[issue.type]) acc[issue.type] = [];
+            acc[issue.type].push(issue);
+            return acc;
+          },
+          {} as Record<string, typeof verificationAudit.issues>
+        );
 
         logger.info('\nRemaining issues by type:');
         for (const [type, issues] of Object.entries(remainingIssuesByType)) {
@@ -109,11 +117,9 @@ async function main() {
           logger.info(`  ${index + 1}. ${rec}`);
         });
       }
-
     } else {
       logger.info('No critical issues found. All products are correctly mapped!');
     }
-    
   } catch (error) {
     logger.error('Fix script failed:', error);
     process.exit(1);

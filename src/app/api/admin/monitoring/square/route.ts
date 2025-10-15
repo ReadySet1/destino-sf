@@ -1,8 +1,8 @@
 /**
  * Square Monitoring API Endpoint
- * 
+ *
  * Provides monitoring data and health checks for Square integration
- * 
+ *
  * GET /api/admin/monitoring/square - Get monitoring dashboard data
  * POST /api/admin/monitoring/square - Run monitoring check manually
  */
@@ -18,11 +18,11 @@ const lastMonitoringCheck = new Map<string, number>();
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const lastCheck = lastMonitoringCheck.get(ip) || 0;
-  
+
   if (now - lastCheck < MONITORING_RATE_LIMIT) {
     return true;
   }
-  
+
   lastMonitoringCheck.set(ip, now);
   return false;
 }
@@ -31,7 +31,7 @@ function getClientIP(request: Request): string {
   // Get IP from various possible headers
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
-  
+
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
@@ -44,7 +44,7 @@ function getClientIP(request: Request): string {
 export async function GET(request: Request) {
   try {
     const clientIP = getClientIP(request);
-    
+
     // Simple rate limiting
     if (isRateLimited(clientIP)) {
       return NextResponse.json(
@@ -54,19 +54,18 @@ export async function GET(request: Request) {
     }
 
     logger.info('📊 Monitoring dashboard data requested');
-    
+
     const monitor = getSquareMonitor();
     const dashboardData = await monitor.getDashboardData();
-    
+
     return NextResponse.json({
       success: true,
       data: dashboardData,
       timestamp: new Date().toISOString(),
     });
-    
   } catch (error: any) {
     logger.error('💥 Error getting monitoring data:', error);
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -81,7 +80,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const clientIP = getClientIP(request);
-    
+
     // Rate limiting for manual monitoring runs
     if (isRateLimited(clientIP)) {
       return NextResponse.json(
@@ -91,10 +90,10 @@ export async function POST(request: Request) {
     }
 
     logger.info('🔍 Manual monitoring check requested');
-    
+
     const monitor = getSquareMonitor();
     const result = await monitor.monitorSquareIntegration();
-    
+
     // Log alerts if any
     if (result.alerts.length > 0) {
       logger.warn(`⚠️  Monitoring found ${result.alerts.length} alerts:`, {
@@ -105,13 +104,16 @@ export async function POST(request: Request) {
         })),
       });
     }
-    
+
     return NextResponse.json({
       success: true,
       result,
       summary: {
-        status: result.alerts.some(a => a.severity === 'CRITICAL') ? 'CRITICAL' :
-                result.alerts.some(a => a.severity === 'HIGH') ? 'WARNING' : 'HEALTHY',
+        status: result.alerts.some(a => a.severity === 'CRITICAL')
+          ? 'CRITICAL'
+          : result.alerts.some(a => a.severity === 'HIGH')
+            ? 'WARNING'
+            : 'HEALTHY',
         totalOrders: result.totalOrders,
         stuckOrders: result.stuckOrders,
         alertCount: result.alerts.length,
@@ -119,10 +121,9 @@ export async function POST(request: Request) {
       },
       timestamp: new Date().toISOString(),
     });
-    
   } catch (error: any) {
     logger.error('💥 Error running monitoring check:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

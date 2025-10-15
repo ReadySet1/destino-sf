@@ -39,23 +39,19 @@ export class PerformanceMonitor {
   /**
    * Track database query performance
    */
-  async trackDatabaseQuery(
-    query: string, 
-    duration: number, 
-    params?: any[]
-  ): Promise<void> {
+  async trackDatabaseQuery(query: string, duration: number, params?: any[]): Promise<void> {
     // Record the metric
     this.recordMetric('database_query', {
       name: 'database_query',
       value: duration,
       timestamp: new Date(),
       tags: {
-        slow: duration > this.slowQueryThreshold ? 'true' : 'false'
+        slow: duration > this.slowQueryThreshold ? 'true' : 'false',
       },
       metadata: {
         query_type: this.getQueryType(query),
-        table: this.extractTableName(query)
-      }
+        table: this.extractTableName(query),
+      },
     });
 
     // Log slow queries for investigation
@@ -80,7 +76,7 @@ export class PerformanceMonitor {
       duration,
       status,
       timestamp: new Date(),
-      user_id: userId
+      user_id: userId,
     };
 
     this.apiCalls.push(apiCall);
@@ -95,8 +91,8 @@ export class PerformanceMonitor {
         endpoint: this.sanitizeEndpoint(endpoint),
         method,
         status: status.toString(),
-        slow: duration > this.slowApiThreshold ? 'true' : 'false'
-      }
+        slow: duration > this.slowApiThreshold ? 'true' : 'false',
+      },
     });
 
     // Alert on consistently slow endpoints
@@ -119,7 +115,7 @@ export class PerformanceMonitor {
       value,
       timestamp: new Date(),
       tags,
-      metadata
+      metadata,
     });
   }
 
@@ -129,17 +125,14 @@ export class PerformanceMonitor {
   getP95ResponseTime(endpoint?: string, timeWindow?: number): number {
     const windowMs = timeWindow || 60 * 60 * 1000; // Default 1 hour
     const cutoff = new Date(Date.now() - windowMs);
-    
-    let relevantCalls = this.apiCalls.filter(call => 
-      call.timestamp >= cutoff &&
-      (endpoint ? call.endpoint === endpoint : true)
+
+    let relevantCalls = this.apiCalls.filter(
+      call => call.timestamp >= cutoff && (endpoint ? call.endpoint === endpoint : true)
     );
 
     if (relevantCalls.length === 0) return 0;
 
-    const durations = relevantCalls
-      .map(call => call.duration)
-      .sort((a, b) => a - b);
+    const durations = relevantCalls.map(call => call.duration).sort((a, b) => a - b);
 
     const p95Index = Math.floor(durations.length * 0.95);
     return durations[p95Index] || 0;
@@ -151,10 +144,9 @@ export class PerformanceMonitor {
   getAverageResponseTime(endpoint?: string, timeWindow?: number): number {
     const windowMs = timeWindow || 60 * 60 * 1000; // Default 1 hour
     const cutoff = new Date(Date.now() - windowMs);
-    
-    let relevantCalls = this.apiCalls.filter(call => 
-      call.timestamp >= cutoff &&
-      (endpoint ? call.endpoint === endpoint : true)
+
+    let relevantCalls = this.apiCalls.filter(
+      call => call.timestamp >= cutoff && (endpoint ? call.endpoint === endpoint : true)
     );
 
     if (relevantCalls.length === 0) return 0;
@@ -169,9 +161,9 @@ export class PerformanceMonitor {
   getErrorRate(timeWindow?: number): number {
     const windowMs = timeWindow || 60 * 60 * 1000; // Default 1 hour
     const cutoff = new Date(Date.now() - windowMs);
-    
+
     const relevantCalls = this.apiCalls.filter(call => call.timestamp >= cutoff);
-    
+
     if (relevantCalls.length === 0) return 0;
 
     const errorCalls = relevantCalls.filter(call => call.status >= 400);
@@ -184,10 +176,10 @@ export class PerformanceMonitor {
   getThroughput(timeWindow?: number): number {
     const windowMs = timeWindow || 60 * 60 * 1000; // Default 1 hour
     const cutoff = new Date(Date.now() - windowMs);
-    
+
     const relevantCalls = this.apiCalls.filter(call => call.timestamp >= cutoff);
     const windowMinutes = windowMs / (60 * 1000);
-    
+
     return Math.round(relevantCalls.length / windowMinutes);
   }
 
@@ -195,9 +187,7 @@ export class PerformanceMonitor {
    * Get slow queries for investigation
    */
   getSlowQueries(limit = 10): SlowQueryLog[] {
-    return this.slowQueries
-      .sort((a, b) => b.duration - a.duration)
-      .slice(0, limit);
+    return this.slowQueries.sort((a, b) => b.duration - a.duration).slice(0, limit);
   }
 
   /**
@@ -207,13 +197,13 @@ export class PerformanceMonitor {
     return {
       response_times: {
         average: this.getAverageResponseTime(undefined, timeWindow),
-        p95: this.getP95ResponseTime(undefined, timeWindow)
+        p95: this.getP95ResponseTime(undefined, timeWindow),
       },
       error_rate: this.getErrorRate(timeWindow),
       throughput: this.getThroughput(timeWindow),
       slow_queries: this.getSlowQueries(5),
       memory_usage: this.getMemoryUsage(),
-      top_endpoints: this.getTopEndpoints(timeWindow)
+      top_endpoints: this.getTopEndpoints(timeWindow),
     };
   }
 
@@ -240,7 +230,7 @@ export class PerformanceMonitor {
       duration,
       timestamp: new Date(),
       stack: new Error().stack,
-      params: params ? this.sanitizeParams(params) : undefined
+      params: params ? this.sanitizeParams(params) : undefined,
     };
 
     this.slowQueries.push(slowQuery);
@@ -260,19 +250,23 @@ export class PerformanceMonitor {
 
   private async checkForSlowEndpointPattern(endpoint: string, method: string): Promise<void> {
     const recentCalls = this.apiCalls
-      .filter(call => 
-        call.endpoint === endpoint && 
-        call.method === method &&
-        call.timestamp >= new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes
+      .filter(
+        call =>
+          call.endpoint === endpoint &&
+          call.method === method &&
+          call.timestamp >= new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes
       )
       .slice(-10); // Last 10 calls
 
     if (recentCalls.length >= 5) {
-      const avgDuration = recentCalls.reduce((sum, call) => sum + call.duration, 0) / recentCalls.length;
-      
+      const avgDuration =
+        recentCalls.reduce((sum, call) => sum + call.duration, 0) / recentCalls.length;
+
       if (avgDuration > this.slowApiThreshold) {
-        console.warn(`⚠️ Consistently slow endpoint detected: ${method} ${endpoint} (avg: ${Math.round(avgDuration)}ms)`);
-        
+        console.warn(
+          `⚠️ Consistently slow endpoint detected: ${method} ${endpoint} (avg: ${Math.round(avgDuration)}ms)`
+        );
+
         // In production, trigger alert
         if (process.env.NODE_ENV === 'production') {
           // Could integrate with alerting system
@@ -340,35 +334,38 @@ export class PerformanceMonitor {
       heap_used_mb: Math.round(memUsage.heapUsed / 1024 / 1024),
       heap_total_mb: Math.round(memUsage.heapTotal / 1024 / 1024),
       external_mb: Math.round(memUsage.external / 1024 / 1024),
-      rss_mb: Math.round(memUsage.rss / 1024 / 1024)
+      rss_mb: Math.round(memUsage.rss / 1024 / 1024),
     };
   }
 
   private getTopEndpoints(timeWindow?: number) {
     const windowMs = timeWindow || 60 * 60 * 1000;
     const cutoff = new Date(Date.now() - windowMs);
-    
+
     const relevantCalls = this.apiCalls.filter(call => call.timestamp >= cutoff);
-    
-    const endpointStats = new Map<string, { count: number; totalDuration: number; errors: number }>();
-    
+
+    const endpointStats = new Map<
+      string,
+      { count: number; totalDuration: number; errors: number }
+    >();
+
     relevantCalls.forEach(call => {
       const key = `${call.method} ${call.endpoint}`;
       const existing = endpointStats.get(key) || { count: 0, totalDuration: 0, errors: 0 };
-      
+
       existing.count++;
       existing.totalDuration += call.duration;
       if (call.status >= 400) existing.errors++;
-      
+
       endpointStats.set(key, existing);
     });
-    
+
     return Array.from(endpointStats.entries())
       .map(([endpoint, stats]) => ({
         endpoint,
         count: stats.count,
         avg_duration: Math.round(stats.totalDuration / stats.count),
-        error_rate: Math.round((stats.errors / stats.count) * 100 * 100) / 100
+        error_rate: Math.round((stats.errors / stats.count) * 100 * 100) / 100,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);

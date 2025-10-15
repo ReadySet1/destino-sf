@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Pre-Production Hotfix
 
 ### Problem Statement
+
 The Destino-SF Next.js 15 e-commerce platform has extensive TypeScript errors in Square/Shippo/Supabase integrations and 838 failing tests blocking deployment. Critical payment processing, order management, and shipping calculations must be stabilized.
 
 ### Success Criteria
+
 - [ ] 0 TypeScript errors with strict mode enabled
 - [ ] All critical path tests passing (payment, orders, shipping)
 - [ ] Square API integration fully typed and tested
@@ -24,6 +26,7 @@ The Destino-SF Next.js 15 e-commerce platform has extensive TypeScript errors in
 - [ ] Clean production build
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Vercel production deployment
 - **Related Systems**: Square POS, Shippo, Supabase Auth, Prisma ORM
@@ -35,7 +38,9 @@ The Destino-SF Next.js 15 e-commerce platform has extensive TypeScript errors in
 ### Phase 1: TypeScript Foundation (Day 1-2) ✅ COMPLETED
 
 #### 1.1 Square API Type Definitions ✅ COMPLETED
+
 **Priority: Critical**
+
 ```
 Fix Locations:
 ├── src/types/square.d.ts
@@ -51,7 +56,9 @@ Fix Locations:
 ```
 
 #### 1.2 Shippo Integration Types ✅ COMPLETED
+
 **Priority: High**
+
 ```
 Fix Locations:
 ├── src/types/shippo.ts
@@ -63,7 +70,9 @@ Fix Locations:
 ```
 
 #### 1.3 Prisma & Database Types ✅ COMPLETED
+
 **Priority: Critical**
+
 ```
 Fix Locations:
 ├── src/types/
@@ -78,7 +87,9 @@ Fix Locations:
 ```
 
 #### 1.4 Component Props & Test Types ✅ COMPLETED
+
 **Priority: High**
+
 ```
 Fix Patterns:
 - Add missing jest.Mock<> generics
@@ -92,7 +103,9 @@ Fix Patterns:
 ### Phase 2: Test Infrastructure Fixes (Day 2-3) 🚧 IN PROGRESS
 
 #### 2.1 Database Test Setup ✅ COMPLETED
+
 **Priority: Critical**
+
 ```
 Fix Files:
 ├── src/__tests__/setup/
@@ -104,7 +117,9 @@ Fix Files:
 ```
 
 #### 2.2 Square API Mocks
+
 **Priority: Critical**
+
 ```
 Mock Implementation:
 ├── src/__mocks__/square.ts
@@ -119,7 +134,9 @@ Mock Implementation:
 ```
 
 #### 2.3 Shippo API Mocks
+
 **Priority: High**
+
 ```
 Mock Implementation:
 ├── src/__mocks__/shippo.ts
@@ -131,7 +148,9 @@ Mock Implementation:
 ```
 
 #### 2.4 Supabase Auth Mocks
+
 **Priority: High**
+
 ```
 Mock Implementation:
 ├── src/__mocks__/@supabase/
@@ -144,7 +163,9 @@ Mock Implementation:
 ### Phase 3: Critical Business Logic (Day 3-4)
 
 #### 3.1 Payment Processing Flow
+
 **Priority: Critical**
+
 ```
 Test Coverage Required:
 ├── src/app/api/checkout/
@@ -164,7 +185,9 @@ Key Scenarios:
 ```
 
 #### 3.2 Order Management System
+
 **Priority: Critical**
+
 ```
 Test Coverage Required:
 ├── src/app/api/orders/
@@ -181,7 +204,9 @@ Key Scenarios:
 ```
 
 #### 3.3 Shipping Calculations
+
 **Priority: High**
+
 ```
 Test Coverage Required:
 ├── src/lib/
@@ -199,7 +224,9 @@ Key Scenarios:
 ```
 
 #### 3.4 Cart Operations
+
 **Priority: High**
+
 ```
 Test Coverage Required:
 ├── src/store/cart.ts - Zustand store
@@ -214,11 +241,13 @@ Test Coverage Required:
 ### Phase 4: API & Integration Tests (Day 4-5)
 
 #### 4.1 API Route Testing
+
 **Priority: High**
+
 ```
 Critical Routes:
 ├── /api/checkout - Payment processing
-├── /api/orders - Order management  
+├── /api/orders - Order management
 ├── /api/webhooks/square - Square webhooks
 ├── /api/admin/* - Admin endpoints
 ├── /api/products - Product catalog
@@ -227,7 +256,9 @@ Critical Routes:
 ```
 
 #### 4.2 Third-Party Integrations
+
 **Priority: Critical**
+
 ```
 Integration Tests:
 ├── Square Integration
@@ -254,7 +285,9 @@ Integration Tests:
 ### Phase 5: Performance & Security (Day 5-6)
 
 #### 5.1 Database Optimization
+
 **Priority: High**
+
 ```
 Optimization Tasks:
 ├── Connection pooling (db-connection-manager.ts)
@@ -266,7 +299,9 @@ Optimization Tasks:
 ```
 
 #### 5.2 Security Audit
+
 **Priority: Critical**
+
 ```
 Security Checklist:
 ├── Square webhook signature validation
@@ -279,7 +314,9 @@ Security Checklist:
 ```
 
 #### 5.3 Performance Monitoring
+
 **Priority: Medium**
+
 ```
 Monitoring Setup:
 ├── Sentry error tracking
@@ -294,7 +331,9 @@ Monitoring Setup:
 ### Phase 6: Pre-Deployment Validation (Day 6-7)
 
 #### 6.1 E2E Testing
+
 **Priority: Critical**
+
 ```
 Playwright Tests:
 ├── tests/e2e/
@@ -308,7 +347,9 @@ Run Commands:
 ```
 
 #### 6.2 Environment Configuration
+
 **Priority: Critical**
+
 ```
 Environment Files:
 ├── .env.local - Development
@@ -325,7 +366,9 @@ Key Variables:
 ```
 
 #### 6.3 Vercel Deployment Setup
+
 **Priority: High**
+
 ```
 Deployment Configuration:
 ├── vercel.json - Deployment config
@@ -389,6 +432,7 @@ pnpm deploy-preview              # Vercel preview
 ## 📊 Progress Tracking Metrics
 
 ### Custom Destino Metrics
+
 ```yaml
 test_suites:
   total: 150+
@@ -422,6 +466,7 @@ database:
 ## 🚨 Destino-Specific Risk Areas
 
 ### High-Risk Components
+
 1. **Square Payment Integration**
    - Token validation
    - Webhook signature verification
@@ -481,6 +526,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
 ### ✅ COMPLETED PHASES
 
 #### Phase 1: TypeScript Foundation (100% Complete)
+
 **Status**: All 4 sub-phases completed successfully
 
 1. **Square API Type Definitions** ✅
@@ -512,6 +558,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
    - Implemented proper test matcher types and utilities
 
 #### Phase 2.1: Database Test Setup (100% Complete)
+
 **Status**: Enhanced test infrastructure completed
 
 - **Enhanced Test Database Setup** ✅
@@ -531,6 +578,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
 ### ✅ ADDITIONAL COMPLETED PHASES
 
 #### Phase 2.2-2.4: Mock Infrastructure (100% Complete)
+
 **Status**: All mock implementations completed successfully
 
 1. **Square API Mocks** ✅
@@ -558,6 +606,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
    - Comprehensive auth scenario factories
 
 #### Phase 3.1-3.4: Critical Business Logic (100% Complete)
+
 **Status**: All critical business logic testing completed
 
 1. **Payment Processing Flow** ✅
@@ -597,6 +646,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
 ### ✅ COMPLETED PHASES 4-6
 
 #### Phase 4: API & Integration Tests (100% Complete)
+
 **Status**: All API route testing and third-party integration testing completed successfully
 
 1. **Phase 4.1: API Route Testing** ✅
@@ -612,6 +662,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
    - **Resend Email Integration**: Order confirmations, admin alerts, error resilience testing
 
 #### Phase 5: Performance & Security (100% Complete)
+
 **Status**: All performance optimization and security audits completed successfully
 
 1. **Phase 5.1: Database Optimization** ✅
@@ -636,6 +687,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
    - **System Health Monitoring**: Memory usage, uptime, error rates, business metrics tracking
 
 #### Phase 6: Pre-Deployment Validation (100% Complete)
+
 **Status**: All pre-deployment validation and deployment setup completed successfully
 
 1. **Phase 6.1: E2E Testing with Playwright** ✅
@@ -697,6 +749,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
 **All Phases 1-6 have been successfully completed**, providing a comprehensive production-ready foundation:
 
 #### ✅ PHASE 1-3 FOUNDATION (Previously Completed)
+
 - Complete TypeScript type definitions for all major integrations
 - Enhanced test infrastructure with proper mocking and isolation
 - Comprehensive mock implementations for Square, Shippo, and Supabase
@@ -704,6 +757,7 @@ This tailored plan focuses on your specific codebase structure, prioritizing the
 - Payment processing, order management, shipping, and cart operations fully tested
 
 #### ✅ PHASE 4-6 PRODUCTION READINESS (Newly Completed)
+
 - **API & Integration Testing**: Comprehensive testing for all critical endpoints and third-party services
 - **Performance & Security**: Advanced database optimization, security audits, and monitoring setup
 - **Pre-Deployment Validation**: E2E testing, environment validation, and Vercel deployment configuration
@@ -731,6 +785,7 @@ vercel --prod                # Deploy to production
 ```
 
 **Monitoring & Health Checks:**
+
 - Health endpoints: `/api/health` and `/api/health/detailed`
 - Sentry dashboard for error tracking and performance monitoring
 - Database performance metrics and connection monitoring

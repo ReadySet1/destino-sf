@@ -125,8 +125,8 @@ export default function CateringItemForm() {
         Catering Item Management Disabled
       </h3>
       <p className="text-gray-600">
-        Individual catering items are now managed through our Square integration. 
-        This form has been temporarily disabled.
+        Individual catering items are now managed through our Square integration. This form has been
+        temporarily disabled.
       </p>
     </div>
   );

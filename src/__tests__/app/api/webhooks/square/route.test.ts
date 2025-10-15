@@ -62,7 +62,7 @@ jest.mock('@/lib/webhook-queue', () => ({
 jest.mock('@/lib/db/queries/webhooks', () => ({
   logWebhook: jest.fn().mockResolvedValue({
     webhookId: 'test-webhook-id-123',
-    id: 'log-123'
+    id: 'log-123',
   }),
 }));
 

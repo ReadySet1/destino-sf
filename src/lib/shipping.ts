@@ -186,10 +186,11 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
     const recipientName = shippingAddress?.recipientName || shippingAddress?.name || '';
     if (!recipientName || !recipientName.trim()) {
       console.error('❌ Shipping rate request failed: Missing recipient name');
-      return { 
-        success: false, 
-        error: 'Recipient name is required for shipping. Please provide a complete address with recipient name before generating shipping rates.',
-        errorType: 'VALIDATION_ERROR'
+      return {
+        success: false,
+        error:
+          'Recipient name is required for shipping. Please provide a complete address with recipient name before generating shipping rates.',
+        errorType: 'VALIDATION_ERROR',
       };
     }
 
@@ -304,21 +305,30 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
     }
 
     // Debug: Log raw Shippo response structure
-    console.log(`🔍 [DEBUG] Raw Shippo rates response (first rate):`, JSON.stringify(shipmentResp.rates[0], null, 2));
-    console.log(`🔍 [DEBUG] Available properties in raw rate:`, Object.keys(shipmentResp.rates[0] || {}));
+    console.log(
+      `🔍 [DEBUG] Raw Shippo rates response (first rate):`,
+      JSON.stringify(shipmentResp.rates[0], null, 2)
+    );
+    console.log(
+      `🔍 [DEBUG] Available properties in raw rate:`,
+      Object.keys(shipmentResp.rates[0] || {})
+    );
 
     // Transform rates
     const rates: ShippingRate[] = shipmentResp.rates.map((r: any) => {
       // Try multiple possible ID fields
       const rateId = r.object_id || r.id || r.rate_id || r.objectId;
-      
-      console.log(`🔍 [DEBUG] Rate ID extraction for ${r.provider} ${r.servicelevel?.name || r.servicelevel}:`, {
-        object_id: r.object_id,
-        id: r.id,
-        rate_id: r.rate_id,
-        objectId: r.objectId,
-        selected: rateId
-      });
+
+      console.log(
+        `🔍 [DEBUG] Rate ID extraction for ${r.provider} ${r.servicelevel?.name || r.servicelevel}:`,
+        {
+          object_id: r.object_id,
+          id: r.id,
+          rate_id: r.rate_id,
+          objectId: r.objectId,
+          selected: rateId,
+        }
+      );
 
       return {
         id: rateId,
@@ -373,7 +383,7 @@ export async function createShippingLabel(
 
     // For testing purposes, use the centralized client (which handles mocking)
     const client = getShippoClient();
-    
+
     if (process.env.NODE_ENV === 'test') {
       // If in test mode and using a mock client, handle mock response
       if (client && client.transactions && client.transactions.create) {
@@ -453,7 +463,7 @@ export async function trackShipment(
     const client = getShippoClient();
 
     let trackResp: any;
-    
+
     // Try to retrieve tracking information
     if (client.tracks && client.tracks.retrieve) {
       trackResp = await client.tracks.retrieve(trackingNumber, carrier);

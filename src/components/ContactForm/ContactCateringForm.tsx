@@ -157,9 +157,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
         )}
 
         {submitError && (
-          <div className="rounded-md bg-red-50 p-4 text-red-800">
-            Error: {submitError}
-          </div>
+          <div className="rounded-md bg-red-50 p-4 text-red-800">Error: {submitError}</div>
         )}
       </form>
     </Form>

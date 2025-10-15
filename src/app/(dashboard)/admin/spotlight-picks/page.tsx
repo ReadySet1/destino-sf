@@ -106,7 +106,7 @@ export default async function SpotlightPicksPage() {
         backUrl="/admin"
         backLabel="Back to Dashboard"
       />
-      
+
       <SpotlightPicksManager initialPicks={initialPicks} />
     </FormContainer>
   );

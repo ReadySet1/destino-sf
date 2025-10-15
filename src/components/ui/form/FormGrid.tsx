@@ -25,17 +25,8 @@ const gapClasses = {
 /**
  * Responsive grid container for form fields
  */
-export function FormGrid({ 
-  children, 
-  cols = 2, 
-  gap = 8,
-  className = '' 
-}: FormGridProps) {
+export function FormGrid({ children, cols = 2, gap = 8, className = '' }: FormGridProps) {
   const gridClasses = `grid ${colClasses[cols]} ${gapClasses[gap]} ${className}`;
 
-  return (
-    <div className={gridClasses}>
-      {children}
-    </div>
-  );
+  return <div className={gridClasses}>{children}</div>;
 }

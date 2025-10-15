@@ -6,30 +6,31 @@ import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 export async function GET() {
   try {
     // Get all categories
-      // Handle build time or database unavailability
-  if (isBuildTime()) {
-    // Only log in debug mode to reduce build noise
-    if (process.env.BUILD_DEBUG === 'true') {
-      console.log('🔧 Build-time detected: Using fallback data');
+    // Handle build time or database unavailability
+    if (isBuildTime()) {
+      // Only log in debug mode to reduce build noise
+      if (process.env.BUILD_DEBUG === 'true') {
+        console.log('🔧 Build-time detected: Using fallback data');
+      }
+      return NextResponse.json({
+        success: true,
+        data: [],
+        note: 'Fallback data used due to build-time constraints',
+      });
     }
-    return NextResponse.json({ 
-      success: true, 
-      data: [], 
-      note: 'Fallback data used due to build-time constraints' 
-    });
-  }
 
-    const categories = await withRetry(() => 
-      prisma.category.findMany({
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      }),
+    const categories = await withRetry(
+      () =>
+        prisma.category.findMany({
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        }),
       3,
       'categories-fetch'
     );

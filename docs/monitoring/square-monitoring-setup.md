@@ -7,6 +7,7 @@ The Square Integration Monitoring System provides comprehensive monitoring, aler
 ## 🚀 Quick Start
 
 ### 1. Check Current Status
+
 ```bash
 # Quick health check
 curl http://localhost:3000/api/health/square
@@ -16,12 +17,14 @@ curl http://localhost:3000/api/admin/monitoring/dashboard
 ```
 
 ### 2. Run Manual Monitoring Check
+
 ```bash
 # Check for stuck orders and system health
 curl -X POST http://localhost:3000/api/admin/monitoring/square
 ```
 
 ### 3. Fix Stuck Orders (if any found)
+
 ```bash
 # Dry run first to see what would be fixed
 pnpm tsx scripts/fix-stuck-square-orders.ts
@@ -33,36 +36,42 @@ pnpm tsx scripts/fix-stuck-square-orders.ts --execute
 ## 📊 Components
 
 ### 1. Core Monitoring (`square-monitor.ts`)
+
 - **Order Health Checks**: Detects stuck orders, payment failures
 - **Square API Health**: Tests all Square API endpoints
 - **Alert Generation**: Creates alerts for critical issues
 - **Recommendations**: Provides actionable next steps
 
 ### 2. Alert System (`alert-system.ts`)
+
 - **Multiple Channels**: Console, Database, Slack, Discord, Email
 - **Severity Filtering**: Only sends HIGH and CRITICAL alerts
 - **Smart Formatting**: Platform-specific message formatting
 - **Rate Limiting**: Prevents alert spam
 
 ### 3. Health Check Endpoint (`/api/health/square`)
+
 - **Quick Status**: Fast health check for monitoring services
 - **Database Test**: Verifies Prisma connection
 - **Square API Test**: Tests Square service connectivity
 - **Uptime Monitoring**: Suitable for external monitoring tools
 
 ### 4. Monitoring Dashboard (`/api/admin/monitoring/dashboard`)
+
 - **Comprehensive View**: Full system status and metrics
 - **Quick Actions**: Direct links to fix common issues
 - **Troubleshooting**: Context-aware troubleshooting tips
 - **System Info**: Environment, version, performance metrics
 
 ### 5. Cleanup Script (`fix-stuck-square-orders.ts`)
+
 - **Safe Execution**: Dry-run mode by default
 - **Batch Processing**: Handles multiple stuck orders
 - **Square Integration**: Directly fixes orders in Square
 - **Detailed Logging**: Complete audit trail
 
 ### 6. Scheduled Monitor (`monitor-square-integration.ts`)
+
 - **Automated Monitoring**: Run as cron job
 - **Configurable Alerts**: Environment-based settings
 - **Escalation Logic**: Critical issue detection
@@ -174,21 +183,25 @@ export default async function handler(req: any, res: any) {
 ## 🚨 Alert Types
 
 ### STUCK_ORDER
+
 - **Trigger**: Orders stuck in DRAFT state > 1 hour
 - **Severity**: HIGH or CRITICAL (if > 5 orders)
 - **Action**: Run cleanup script
 
 ### PAYMENT_FAILURE
+
 - **Trigger**: High payment failure rate
 - **Severity**: HIGH
 - **Action**: Review payment processing logs
 
 ### API_ERROR
+
 - **Trigger**: Square API endpoints unhealthy
 - **Severity**: HIGH
 - **Action**: Check credentials and connectivity
 
 ### HEALTH_CHECK_FAIL
+
 - **Trigger**: Monitoring system failure
 - **Severity**: CRITICAL
 - **Action**: Check monitoring system logs
@@ -198,6 +211,7 @@ export default async function handler(req: any, res: any) {
 ### Common Issues
 
 #### 1. Orders Stuck in DRAFT State
+
 ```bash
 # Check for stuck orders
 curl -X POST http://localhost:3000/api/admin/monitoring/square
@@ -207,6 +221,7 @@ pnpm tsx scripts/fix-stuck-square-orders.ts --execute
 ```
 
 #### 2. Square API Connection Issues
+
 ```bash
 # Test API health
 curl http://localhost:3000/api/health/square
@@ -217,6 +232,7 @@ echo $SQUARE_LOCATION_ID
 ```
 
 #### 3. Monitoring Not Working
+
 ```bash
 # Test monitoring manually
 pnpm tsx scripts/monitor-square-integration.ts
@@ -226,6 +242,7 @@ tail -f /var/log/square-monitor.log
 ```
 
 #### 4. Alerts Not Being Sent
+
 ```bash
 # Verify webhook URLs
 curl -X POST $SLACK_WEBHOOK_URL -d '{"text":"Test message"}'
@@ -277,11 +294,13 @@ POST /api/admin/monitoring/square
 ## 🔐 Security Considerations
 
 ### API Access
+
 - Monitor endpoints should be protected in production
 - Use authentication middleware for admin endpoints
 - Rate limit monitoring endpoints to prevent abuse
 
 ### Sensitive Data
+
 - Alert webhooks may contain order IDs - ensure secure channels
 - Don't log sensitive payment information
 - Rotate webhook URLs periodically
@@ -296,12 +315,12 @@ export function requireAuth(handler: any) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    
+
     const token = authHeader.split(' ')[1];
     if (token !== process.env.ADMIN_API_KEY) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
+
     return handler(req, res);
   };
 }

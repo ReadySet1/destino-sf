@@ -2,7 +2,7 @@
 
 /**
  * Clean Duplicate Categories Script
- * 
+ *
  * This script identifies and merges duplicate categories that were created
  * due to inconsistent naming in the Square sync process.
  */
@@ -28,9 +28,9 @@ interface CategoryGroup {
 function normalizeForComparison(name: string): string {
   return name
     .toUpperCase()
-    .replace(/\s*-\s*/g, '-')      // Normalize hyphens
-    .replace(/,\s*/g, '-')         // Replace commas with hyphens  
-    .replace(/\s+/g, '-')          // Replace spaces with hyphens
+    .replace(/\s*-\s*/g, '-') // Normalize hyphens
+    .replace(/,\s*/g, '-') // Replace commas with hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
     .trim();
 }
 
@@ -45,13 +45,13 @@ async function identifyDuplicateCategories(): Promise<CategoryGroup[]> {
     include: {
       _count: {
         select: {
-          products: true
-        }
-      }
+          products: true,
+        },
+      },
     },
     orderBy: {
-      createdAt: 'asc'
-    }
+      createdAt: 'asc',
+    },
   });
 
   // Group categories by normalized name
@@ -59,11 +59,11 @@ async function identifyDuplicateCategories(): Promise<CategoryGroup[]> {
 
   for (const category of categories) {
     const normalizedName = normalizeForComparison(category.name);
-    
+
     if (!categoryGroups.has(normalizedName)) {
       categoryGroups.set(normalizedName, {
         normalizedName,
-        categories: []
+        categories: [],
       });
     }
 
@@ -73,7 +73,7 @@ async function identifyDuplicateCategories(): Promise<CategoryGroup[]> {
       slug: category.slug,
       squareId: category.squareId,
       productCount: category._count.products,
-      createdAt: category.createdAt
+      createdAt: category.createdAt,
     });
   }
 
@@ -86,12 +86,14 @@ async function identifyDuplicateCategories(): Promise<CategoryGroup[]> {
   }
 
   logger.info(`📊 Found ${duplicateGroups.length} groups with duplicates`);
-  
+
   // Log details
   for (const group of duplicateGroups) {
     logger.info(`\n🔄 Duplicate group: ${group.normalizedName}`);
     for (const cat of group.categories) {
-      logger.info(`   • "${cat.name}" (${cat.productCount} products, Square ID: ${cat.squareId || 'none'})`);
+      logger.info(
+        `   • "${cat.name}" (${cat.productCount} products, Square ID: ${cat.squareId || 'none'})`
+      );
     }
   }
 
@@ -101,12 +103,14 @@ async function identifyDuplicateCategories(): Promise<CategoryGroup[]> {
 /**
  * Choose the best category to keep from a duplicate group
  */
-function choosePrimaryCategory(categories: CategoryGroup['categories']): CategoryGroup['categories'][0] {
+function choosePrimaryCategory(
+  categories: CategoryGroup['categories']
+): CategoryGroup['categories'][0] {
   // Priority order:
   // 1. Category with Square ID (most authoritative)
   // 2. Category with most products
   // 3. Category created first (oldest)
-  
+
   return categories.reduce((best, current) => {
     // Prefer category with Square ID
     if (current.squareId && !best.squareId) {
@@ -115,7 +119,7 @@ function choosePrimaryCategory(categories: CategoryGroup['categories']): Categor
     if (best.squareId && !current.squareId) {
       return best;
     }
-    
+
     // If both have Square ID or both don't, prefer one with more products
     if (current.productCount > best.productCount) {
       return current;
@@ -123,7 +127,7 @@ function choosePrimaryCategory(categories: CategoryGroup['categories']): Categor
     if (current.productCount < best.productCount) {
       return best;
     }
-    
+
     // If same product count, prefer older category
     return current.createdAt < best.createdAt ? current : best;
   });
@@ -132,7 +136,10 @@ function choosePrimaryCategory(categories: CategoryGroup['categories']): Categor
 /**
  * Merge duplicate categories
  */
-async function mergeDuplicateCategories(groups: CategoryGroup[], dryRun: boolean = true): Promise<void> {
+async function mergeDuplicateCategories(
+  groups: CategoryGroup[],
+  dryRun: boolean = true
+): Promise<void> {
   logger.info(`\n${dryRun ? '🧪 DRY RUN' : '🔧 EXECUTING'}: Merging duplicate categories...`);
 
   let totalMerged = 0;
@@ -145,22 +152,26 @@ async function mergeDuplicateCategories(groups: CategoryGroup[], dryRun: boolean
     const categoriesToMerge = group.categories.filter(cat => cat.id !== primaryCategory.id);
 
     logger.info(`\n📝 Processing group: ${group.normalizedName}`);
-    logger.info(`   🎯 Keeping: "${primaryCategory.name}" (${primaryCategory.productCount} products)`);
-    
+    logger.info(
+      `   🎯 Keeping: "${primaryCategory.name}" (${primaryCategory.productCount} products)`
+    );
+
     for (const categoryToMerge of categoriesToMerge) {
-      logger.info(`   🔀 ${dryRun ? 'Would merge' : 'Merging'}: "${categoryToMerge.name}" (${categoryToMerge.productCount} products)`);
-      
+      logger.info(
+        `   🔀 ${dryRun ? 'Would merge' : 'Merging'}: "${categoryToMerge.name}" (${categoryToMerge.productCount} products)`
+      );
+
       if (!dryRun && categoryToMerge.productCount > 0) {
         // Move products to primary category
         const updateResult = await prisma.product.updateMany({
           where: {
-            categoryId: categoryToMerge.id
+            categoryId: categoryToMerge.id,
           },
           data: {
-            categoryId: primaryCategory.id
-          }
+            categoryId: primaryCategory.id,
+          },
         });
-        
+
         logger.info(`     ✅ Moved ${updateResult.count} products`);
         totalMerged += updateResult.count;
       }
@@ -169,20 +180,24 @@ async function mergeDuplicateCategories(groups: CategoryGroup[], dryRun: boolean
     // Delete empty duplicate categories
     for (const categoryToRemove of categoriesToMerge) {
       const remainingProducts = await prisma.product.count({
-        where: { categoryId: categoryToRemove.id }
+        where: { categoryId: categoryToRemove.id },
       });
-      
+
       if (remainingProducts === 0) {
-        logger.info(`   🗑️ ${dryRun ? 'Would remove' : 'Removing'} empty category: "${categoryToRemove.name}"`);
-        
+        logger.info(
+          `   🗑️ ${dryRun ? 'Would remove' : 'Removing'} empty category: "${categoryToRemove.name}"`
+        );
+
         if (!dryRun) {
           await prisma.category.delete({
-            where: { id: categoryToRemove.id }
+            where: { id: categoryToRemove.id },
           });
           totalRemoved++;
         }
       } else {
-        logger.warn(`   ⚠️ Cannot remove "${categoryToRemove.name}" - still has ${remainingProducts} products`);
+        logger.warn(
+          `   ⚠️ Cannot remove "${categoryToRemove.name}" - still has ${remainingProducts} products`
+        );
       }
     }
   }
@@ -197,25 +212,25 @@ async function mergeDuplicateCategories(groups: CategoryGroup[], dryRun: boolean
  */
 async function verifyCleanup(): Promise<void> {
   logger.info('\n✅ Verifying category cleanup...');
-  
+
   const duplicateGroups = await identifyDuplicateCategories();
-  
+
   if (duplicateGroups.length === 0) {
     logger.info('🎉 No duplicate categories found - cleanup successful!');
   } else {
     logger.warn(`⚠️ Still found ${duplicateGroups.length} duplicate groups`);
   }
-  
+
   // Show final category summary
   const totalCategories = await prisma.category.count();
   const categoriesWithProducts = await prisma.category.count({
     where: {
       products: {
-        some: {}
-      }
-    }
+        some: {},
+      },
+    },
   });
-  
+
   logger.info(`📊 Final state:`);
   logger.info(`   • Total categories: ${totalCategories}`);
   logger.info(`   • Categories with products: ${categoriesWithProducts}`);
@@ -229,7 +244,7 @@ async function main() {
   try {
     const args = process.argv.slice(2);
     const dryRun = !args.includes('--execute');
-    
+
     if (dryRun) {
       logger.info('🧪 Running in DRY RUN mode. Use --execute to apply changes.');
     } else {
@@ -238,7 +253,7 @@ async function main() {
 
     // Step 1: Identify duplicates
     const duplicateGroups = await identifyDuplicateCategories();
-    
+
     if (duplicateGroups.length === 0) {
       logger.info('🎉 No duplicate categories found!');
       return;
@@ -246,14 +261,13 @@ async function main() {
 
     // Step 2: Merge duplicates
     await mergeDuplicateCategories(duplicateGroups, dryRun);
-    
+
     // Step 3: Verify (only if not dry run)
     if (!dryRun) {
       await verifyCleanup();
     }
-    
+
     logger.info('\n✅ Category cleanup completed!');
-    
   } catch (error) {
     logger.error('❌ Error during category cleanup:', error);
     process.exit(1);

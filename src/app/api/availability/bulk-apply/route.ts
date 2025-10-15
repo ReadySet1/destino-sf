@@ -13,20 +13,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({
-        success: false,
-        error: authResult.error
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body = await request.json();
     const { templateRuleId, productIds, enabled } = body;
 
     if (!templateRuleId || !productIds || !Array.isArray(productIds) || productIds.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'templateRuleId and productIds array are required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'templateRuleId and productIds array are required',
+        },
+        { status: 400 }
+      );
     }
 
     const result = await withDatabaseConnection(async () => {
@@ -69,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
               timeRestrictions: templateRule.timeRestrictions,
               preOrderSettings: templateRule.preOrderSettings,
               viewOnlySettings: templateRule.viewOnlySettings,
-              overrideSquare: templateRule.overrideSquare
+              overrideSquare: templateRule.overrideSquare,
             },
             authResult.user!.id
           );
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
         updated: updatedRules.length,
         created: createdRules.length,
         total: updatedRules.length + createdRules.length,
-        rules: [...updatedRules, ...createdRules]
+        rules: [...updatedRules, ...createdRules],
       };
     });
 
@@ -90,21 +96,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
       productCount: productIds.length,
       updated: result.updated,
       created: result.created,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
     return NextResponse.json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Error in POST /api/availability/bulk-apply', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to bulk apply rule'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to bulk apply rule',
+      },
+      { status: 500 }
+    );
   }
 }

@@ -23,6 +23,7 @@ You are implementing Phase 2 of the Product Archive feature for a Next.js 14 (Ap
 5. **Follow established file structure** and naming conventions
 
 **Required Reading:**
+
 - `/docs/ADMIN_COMPONENT_DESIGN_PATTERNS.md` - Contains all patterns to follow
 - `/src/components/ui/form/README.md` - Form component documentation
 
@@ -54,6 +55,7 @@ src/app/(dashboard)/admin/products/
 **Purpose:** Display archive statistics overview with visual indicators
 
 **Design Requirements:**
+
 - Server Component (fetches data directly)
 - Uses `FormSection` with `variant="amber"` and `icon={FormIcons.archive}`
 - Grid layout with stat cards
@@ -126,13 +128,13 @@ export async function ArchiveStatsDashboard() {
   );
 }
 
-function StatCard({ 
-  label, 
-  count, 
-  variant 
-}: { 
-  label: string; 
-  count: number; 
+function StatCard({
+  label,
+  count,
+  variant
+}: {
+  label: string;
+  count: number;
   variant: 'blue' | 'yellow' | 'green';
 }) {
   const colors = {
@@ -159,6 +161,7 @@ function StatCard({
 **Purpose:** Filter products by archive status (All, Active Only, Archived Only)
 
 **Design Requirements:**
+
 - Client Component (uses router hooks)
 - Follows filter pattern from design guide
 - Updates URL search params
@@ -183,14 +186,14 @@ export function ArchiveFilter({ currentFilter }: ArchiveFilterProps) {
 
   const handleFilterChange = (filter: string) => {
     const params = new URLSearchParams(searchParams);
-    
+
     if (filter && filter !== 'all') {
       params.set('archived', filter);
     } else {
       params.delete('archived');
     }
     params.delete('page'); // Reset to page 1
-    
+
     router.push(`?${params.toString()}`);
   };
 
@@ -208,15 +211,15 @@ export function ArchiveFilter({ currentFilter }: ArchiveFilterProps) {
           {filters.map((filter) => {
             const Icon = filter.icon;
             const isActive = currentFilter === filter.value;
-            
+
             return (
               <button
                 key={filter.value}
                 onClick={() => handleFilterChange(filter.value)}
                 className={`
                   px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                  ${isActive 
-                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' 
+                  ${isActive
+                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
                     : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
                   }
                 `}
@@ -244,6 +247,7 @@ export function ArchiveFilter({ currentFilter }: ArchiveFilterProps) {
 **Purpose:** Single button to archive or restore a product with confirmation
 
 **Design Requirements:**
+
 - Client Component (uses state)
 - Uses shadcn/ui AlertDialog for confirmation
 - Shows loading state during API call
@@ -293,7 +297,7 @@ export function ArchiveToggleButton({
 
   const handleToggleArchive = async () => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`/api/admin/products/${productId}/archive`, {
         method: isArchived ? 'DELETE' : 'POST',
@@ -408,7 +412,7 @@ function ConfirmDialog({
               </>
             ) : (
               <>
-                This will archive <strong>"{productName}"</strong> and hide it from customers. 
+                This will archive <strong>"{productName}"</strong> and hide it from customers.
                 You can restore it later if needed.
               </>
             )}
@@ -416,8 +420,8 @@ function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm} 
+          <AlertDialogAction
+            onClick={onConfirm}
             disabled={isLoading}
             className={isArchived ? '' : 'bg-red-600 hover:bg-red-700'}
           >
@@ -439,6 +443,7 @@ function ConfirmDialog({
 **Purpose:** Display product with archive status badge and metadata
 
 **Design Requirements:**
+
 - Shows archive badge only when product is archived
 - Displays archive reason and timestamp
 - Visual dimming for archived products (opacity + grayscale)
@@ -476,7 +481,7 @@ export function ProductCard({ product, showArchiveButton = true }: ProductCardPr
   const isArchived = product.isArchived;
 
   return (
-    <div 
+    <div
       className={`
         relative bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all
         ${isArchived ? 'opacity-60 grayscale' : ''}
@@ -507,7 +512,7 @@ export function ProductCard({ product, showArchiveButton = true }: ProductCardPr
           <h3 className="font-semibold text-lg text-gray-900 truncate">
             {product.name}
           </h3>
-          
+
           {product.category && (
             <p className="text-sm text-gray-500 mt-1">{product.category.name}</p>
           )}
@@ -568,6 +573,7 @@ function ArchiveBadge({ reason }: { reason: string | null }) {
 **Purpose:** Dedicated page showing only archived products with restore functionality
 
 **Design Requirements:**
+
 - Server Component following established patterns
 - Pagination support (20 per page)
 - Filter by archive reason
@@ -604,7 +610,7 @@ type ArchivedProductsPageProps = {
 
 export default async function ArchivedProductsPage({ searchParams }: ArchivedProductsPageProps) {
   const params = await searchParams;
-  
+
   const currentPage = Math.max(1, Number(params?.page || 1));
   const searchQuery = (params?.search || '').trim();
   const reasonFilter = params?.reason || 'all';
@@ -671,7 +677,7 @@ export default async function ArchivedProductsPage({ searchParams }: ArchivedPro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Search */}
             <SearchInput currentSearch={searchQuery} />
-            
+
             {/* Reason Filter */}
             <ReasonFilter currentReason={reasonFilter} />
           </div>
@@ -760,6 +766,7 @@ function EmptyArchivedState({ hasFilters }: { hasFilters: boolean }) {
 **File:** `src/app/(dashboard)/admin/products/page.tsx` (MODIFY EXISTING)
 
 **Changes Required:**
+
 1. Add archive filter component
 2. Update where clause to respect archive filter
 3. Add link to archived products page
@@ -775,13 +782,13 @@ import { ArchiveFilter } from './components/ArchiveFilter';
 // In the component:
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
-  
+
   // Add archive filter parsing
   const archivedFilter = params?.archived || 'all';
-  
+
   // Update where clause
   const where: any = {};
-  
+
   // Archive filter logic
   if (archivedFilter === 'active') {
     where.active = true;
@@ -790,18 +797,18 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     where.isArchived = true;
   }
   // If 'all', no filter applied
-  
+
   // Rest of existing logic...
-  
+
   // Get archived count for badge
   const archivedCount = await prisma.product.count({
     where: { isArchived: true }
   });
-  
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Existing FormHeader */}
-      
+
       <div className="space-y-8 mt-8">
         {/* Existing FormActions - ADD archived link */}
         <FormActions>
@@ -811,7 +818,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           >
             Add Product
           </FormButton>
-          
+
           {archivedCount > 0 && (
             <FormButton
               variant="secondary"
@@ -822,10 +829,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </FormButton>
           )}
         </FormActions>
-        
+
         {/* ADD Archive Filter */}
         <ArchiveFilter currentFilter={archivedFilter} />
-        
+
         {/* Rest of existing content... */}
       </div>
     </div>
@@ -894,6 +901,7 @@ export type ArchiveReason = 'all' | 'square_archived' | 'removed_from_square' | 
 Before implementing, ensure you're following these patterns:
 
 ### Server Components
+
 - ✅ Use `export const dynamic = 'force-dynamic'`
 - ✅ Use `export const revalidate = 0`
 - ✅ Await `searchParams` (Next.js 15 requirement)
@@ -901,6 +909,7 @@ Before implementing, ensure you're following these patterns:
 - ✅ Pass data to client components as props
 
 ### Form Design System
+
 - ✅ Use `FormHeader` for page titles
 - ✅ Use `FormActions` for action buttons
 - ✅ Use `FormButton` instead of plain buttons
@@ -909,6 +918,7 @@ Before implementing, ensure you're following these patterns:
 - ✅ Use `FormIcons` for consistent icons
 
 ### Client Components
+
 - ✅ Mark with `'use client'` directive
 - ✅ Use `useRouter` and `useSearchParams` for navigation
 - ✅ Handle loading states
@@ -916,6 +926,7 @@ Before implementing, ensure you're following these patterns:
 - ✅ Implement error boundaries
 
 ### Styling
+
 - ✅ Use Tailwind utility classes
 - ✅ Follow color scheme: white cards, rounded-xl, shadow-sm
 - ✅ Responsive design: grid-cols-1 md:grid-cols-2 lg:grid-cols-3
@@ -923,6 +934,7 @@ Before implementing, ensure you're following these patterns:
 - ✅ Archive-specific: amber colors for archive warnings
 
 ### URL State
+
 - ✅ Store filters in URL search params
 - ✅ Reset to page 1 when filters change
 - ✅ Use `router.push()` to update URL
@@ -935,6 +947,7 @@ Before implementing, ensure you're following these patterns:
 After implementation, verify:
 
 ### Functionality
+
 - [ ] Archive button successfully archives a product
 - [ ] Restore button successfully restores a product
 - [ ] Archive filter shows/hides correct products
@@ -943,6 +956,7 @@ After implementation, verify:
 - [ ] Pagination works on archived page
 
 ### UI/UX
+
 - [ ] Archive badge appears on archived products
 - [ ] Archive statistics display correct data
 - [ ] Confirmation dialogs appear before archiving
@@ -951,18 +965,21 @@ After implementation, verify:
 - [ ] Archived products have visual dimming effect
 
 ### Navigation
+
 - [ ] "View Archived" button shows count badge
 - [ ] Back buttons work correctly
 - [ ] URL state persists filters/pagination
 - [ ] Browser back/forward buttons work
 
 ### Responsive Design
+
 - [ ] Works on mobile (320px+)
 - [ ] Works on tablet (768px+)
 - [ ] Works on desktop (1024px+)
 - [ ] Grid layouts adapt appropriately
 
 ### Accessibility
+
 - [ ] Keyboard navigation works
 - [ ] Screen reader labels present
 - [ ] Focus states visible
@@ -988,6 +1005,7 @@ Implement in this order for best results:
 Once implemented, the workflow will be:
 
 ### For Admins:
+
 1. Navigate to `/admin/products`
 2. See "View Archived (5)" button if products are archived
 3. Click filter to show "Active Only" or "Archived Only"
@@ -999,20 +1017,21 @@ Once implemented, the workflow will be:
 9. Click restore to bring product back
 
 ### For Developers:
+
 ```typescript
 // Query active products only
 const activeProducts = await prisma.product.findMany({
   where: {
     active: true,
-    isArchived: false  // Always exclude archived
-  }
+    isArchived: false, // Always exclude archived
+  },
 });
 
 // Query all products for admin view
 const allProducts = await prisma.product.findMany({
   where: {
     // Archive filter based on user selection
-  }
+  },
 });
 ```
 
@@ -1038,6 +1057,7 @@ Phase 2 is complete when:
 ## Next Phase Preview (Phase 3)
 
 After Phase 2, consider:
+
 - Archive analytics with time-series charts
 - Automated archive rules (inactive 90+ days)
 - Email/Slack notifications for archive events
@@ -1049,6 +1069,7 @@ After Phase 2, consider:
 ## Questions Before Starting?
 
 Consider checking:
+
 1. Does `ProductCard` component already exist? If so, enhance it
 2. Is there a preferred toast notification library? (Likely sonner)
 3. Are there existing filter components to follow as patterns?

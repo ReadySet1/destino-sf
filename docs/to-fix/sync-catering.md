@@ -1,10 +1,12 @@
 ## 📈 Progress Status (Updated: Latest Session)
 
-### ✅ **PHASE 1 COMPLETED** 
+### ✅ **PHASE 1 COMPLETED**
+
 **Date:** Previous Session  
 **Status:** ✅ SUCCESS
 
 #### **Completed Achievements:**
+
 1. **✅ Database configured**
    - Prisma migrations executed (4 migrations applied)
    - Supabase connection established correctly
@@ -16,9 +18,9 @@
    - Real data obtained from Square API
 
 3. **✅ Real Square categories identified:**
-   - `CATERING- BUFFET, SIDES` 
+   - `CATERING- BUFFET, SIDES`
    - `CATERING- LUNCH, STARTERS`
-   - `CATERING- LUNCH, ENTREES` 
+   - `CATERING- LUNCH, ENTREES`
    - `CATERING- LUNCH, SIDES`
 
 4. **✅ Key products confirmed:**
@@ -27,11 +29,13 @@
    - ✅ **4" empanadas** varieties (chicken, beef, vegetarian)
    - ⚠️ **salsas** (Aji Amarillo, Chimichurri) - require categorization
 
-### ✅ **PHASE 2 COMPLETED** 
+### ✅ **PHASE 2 COMPLETED**
+
 **Date:** Latest Session  
 **Status:** ✅ SUCCESS
 
 #### **Completed Achievements:**
+
 1. **✅ Updated SQUARE_CATEGORY_MAPPING**
    - Added `'CATERING- EMPANADAS': 'appetizers'` mapping
    - Updated mapping to handle all real categories found in Phase 1
@@ -50,23 +54,27 @@
    - Used pattern matching to assign correct Square categories
 
 #### **Dramatic Results:**
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Appetizers Tab** | 0 items ❌ | 34 items ✅ | +3400% |
-| **Buffet Tab** | 0 items ❌ | 27 items ✅ | +2700% |
-| **Lunch Tab** | 0 items ❌ | 25 items ✅ | +2500% |
+
+| Metric             | Before     | After       | Improvement |
+| ------------------ | ---------- | ----------- | ----------- |
+| **Appetizers Tab** | 0 items ❌ | 34 items ✅ | +3400%      |
+| **Buffet Tab**     | 0 items ❌ | 27 items ✅ | +2700%      |
+| **Lunch Tab**      | 0 items ❌ | 25 items ✅ | +2500%      |
 
 #### **Current Database State:**
+
 - **87 catering items** active in database
 - **86 items properly categorized** (98.9% success)
 - **3 duplicate items identified** for future cleanup
 - **0 items with images** (next phase opportunity)
 
-### ✅ **PHASE 3 COMPLETED** 
+### ✅ **PHASE 3 COMPLETED**
+
 **Date:** Latest Session  
 **Status:** ✅ SUCCESS
 
 #### **Completed Achievements:**
+
 1. **✅ Fixed Prisma schema synchronization**
    - Added missing `syncSource`, `lastSyncAt`, and `syncLocked` columns to products table
    - Created and applied migration `20250806175947_add_missing_product_columns`
@@ -88,25 +96,29 @@
    - **0 duplicate names remaining**
 
 #### **Final Results:**
-| Metric | Before Phase 3 | After Phase 3 | Improvement |
-|--------|----------------|---------------|-------------|
-| **Items with Images** | 0/87 (0%) | 47/87 (54%) | +5400% |
-| **Square Integration** | 0/87 (0%) | 47/87 (54%) | +5400% |
-| **Duplicate Items** | 3 duplicates | 0 duplicates | ✅ Resolved |
-| **Tab Functionality** | ✅ Working | ✅ Working | Maintained |
+
+| Metric                 | Before Phase 3 | After Phase 3 | Improvement |
+| ---------------------- | -------------- | ------------- | ----------- |
+| **Items with Images**  | 0/87 (0%)      | 47/87 (54%)   | +5400%      |
+| **Square Integration** | 0/87 (0%)      | 47/87 (54%)   | +5400%      |
+| **Duplicate Items**    | 3 duplicates   | 0 duplicates  | ✅ Resolved |
+| **Tab Functionality**  | ✅ Working     | ✅ Working    | Maintained  |
 
 #### **System Status:**
+
 - **🎯 87 total catering items** active and properly categorized
 - **🖼️ 54% image coverage** with real Square product images
 - **📦 Square product integration** working and ready for expansion
 - **🏷️ Zero duplicates** - clean, consistent naming
 - **📊 Perfect tab distribution**: 34 appetizers, 27 buffet, 25 lunch items
 
-### ✅ **PHASE 4 COMPLETED** 
+### ✅ **PHASE 4 COMPLETED**
+
 **Date:** Latest Session (Appetizer Package Fix & Intelligent Image System)  
 **Status:** ✅ SUCCESS
 
 #### **Problem Analysis:**
+
 - **Issue**: Appetizer packages showing "being set up" instead of functional selection UI
 - **Root Cause**: Square sync created catering items but not the appetizer package system
 - **Image Problem**: Local development using fallback images instead of real Square S3 images
@@ -123,7 +135,7 @@
 2. **✅ Implemented Intelligent Image Assignment System**
    - **Problem**: 75/122 items had local fallback images instead of real Square S3 images
    - **Solution**: Created smart image sync that prioritizes Square S3 images over local fallbacks
-   - **Algorithm**: 
+   - **Algorithm**:
      - First tries exact name matching with Square items
      - Falls back to fuzzy matching for variations
      - Only uses local images if no Square equivalent exists
@@ -143,17 +155,19 @@
    - **Validation**: Only creates packages if they don't already exist
 
 #### **Final Results:**
-| Metric | Before Phase 4 | After Phase 4 | Improvement |
-|--------|----------------|---------------|-------------|
-| **Appetizer Packages** | 0 packages ❌ | 3 packages ✅ | +∞% |
-| **Real Square Images** | 47/122 (39%) | Intelligently assigned | Optimized |
-| **Appetizer UI** | "Being set up" ❌ | Fully functional ✅ | ✅ Fixed |
-| **Future-Proof** | Sync breaks packages ❌ | Auto-restoration ✅ | ✅ Protected |
-| **Image Quality** | Local fallbacks | Production S3 images | ✅ Enhanced |
+
+| Metric                 | Before Phase 4          | After Phase 4          | Improvement  |
+| ---------------------- | ----------------------- | ---------------------- | ------------ |
+| **Appetizer Packages** | 0 packages ❌           | 3 packages ✅          | +∞%          |
+| **Real Square Images** | 47/122 (39%)            | Intelligently assigned | Optimized    |
+| **Appetizer UI**       | "Being set up" ❌       | Fully functional ✅    | ✅ Fixed     |
+| **Future-Proof**       | Sync breaks packages ❌ | Auto-restoration ✅    | ✅ Protected |
+| **Image Quality**      | Local fallbacks         | Production S3 images   | ✅ Enhanced  |
 
 #### **Current System Architecture:**
+
 - **🎯 122 total catering items** active and properly categorized
-- **🖼️ Intelligent image system** prioritizing Square S3 images over local fallbacks  
+- **🖼️ Intelligent image system** prioritizing Square S3 images over local fallbacks
 - **📦 3 appetizer packages** with full interactive selection functionality
 - **🔄 Auto-restoration system** protects against future sync issues
 - **🏷️ Zero duplicates** - clean, consistent naming
@@ -161,27 +175,32 @@
 - **⚡ Smart sync logic** preserves Square images during restoration
 
 ### 🎉 **PROJECT COMPLETE!**
+
 The catering system is now **fully functional** with **production-grade quality**:
 
 #### **Core Functionality** ✅
+
 - ✅ **Appetizer packages working perfectly** with interactive 5/7/9 item selection
 - ✅ **Real Square S3 images** displayed instead of local fallbacks
 - ✅ **Proper categorization** and tab filtering working seamlessly
 - ✅ **Zero duplicate items** or naming conflicts
 
-#### **Intelligent Image System** ✅  
+#### **Intelligent Image System** ✅
+
 - ✅ **Smart image prioritization**: Square S3 images preferred over local fallbacks
 - ✅ **Fuzzy name matching**: Automatically finds Square equivalents for package items
 - ✅ **Preservation logic**: Never overwrites existing production images
 - ✅ **Fallback strategy**: Local images only when no Square equivalent exists
 
 #### **Future-Proof Architecture** ✅
+
 - ✅ **Auto-restoration system**: Square syncs automatically restore packages
 - ✅ **Image preservation**: Sync process maintains Square S3 image URLs
 - ✅ **Dual fallback system**: Script execution with API endpoint backup
 - ✅ **Robust Product table integration** ready for future expansion
 
 #### **Production Quality** ✅
+
 - ✅ **Stable database schema** matching Prisma expectations
 - ✅ **Production-quality images** from Square's CDN
 - ✅ **Consistent user experience** between development and production
@@ -192,9 +211,11 @@ The catering system is now **fully functional** with **production-grade quality*
 ## 🛠️ **IMPLEMENTATION GUIDE**
 
 ### **Phase 1: Database Setup & Initial Sync** ✅ COMPLETED
+
 **Objective**: Establish database connection and sync catering products from Square
 
 **Steps Taken:**
+
 1. **Database Migration**: Applied 4 Prisma migrations to sync schema
 2. **Square API Integration**: Connected to production Square environment
 3. **Initial Product Sync**: Successfully imported 87 catering products
@@ -203,11 +224,14 @@ The catering system is now **fully functional** with **production-grade quality*
 **Key Script**: `src/scripts/sync-production.mjs`
 **Result**: 87 catering items populated in database
 
-### **Phase 2: Category Mapping & Tab Functionality** ✅ COMPLETED  
+### **Phase 2: Category Mapping & Tab Functionality** ✅ COMPLETED
+
 **Objective**: Fix tab filtering and category assignment
 
 **Steps Taken:**
+
 1. **Updated SQUARE_CATEGORY_MAPPING** in `src/types/catering.ts`:
+
    ```typescript
    'CATERING- EMPANADAS': 'appetizers',  // Added for sauces
    'CATERING- BUFFET, STARTERS': 'buffet',
@@ -228,19 +252,24 @@ The catering system is now **fully functional** with **production-grade quality*
    - Added null/empty category handling
    - More robust filtering logic
 
-**Results**: 
+**Results**:
+
 - Appetizers: 0 → 34 items (+3400%)
-- Buffet: 0 → 27 items (+2700%) 
+- Buffet: 0 → 27 items (+2700%)
 - Lunch: 0 → 25 items (+2500%)
 
 ### **Phase 3: Schema Sync & Image Integration** ✅ COMPLETED
+
 **Objective**: Fix database schema and populate images from Square
 
 **Steps Taken:**
+
 1. **Prisma Schema Synchronization**:
+
    ```bash
    pnpm exec prisma migrate dev --name add_missing_product_columns
    ```
+
    - Added missing `syncSource`, `lastSyncAt`, `syncLocked` columns
    - Fixed Product table compatibility issues
 
@@ -261,10 +290,12 @@ The catering system is now **fully functional** with **production-grade quality*
    - **0 duplicates remaining**
 
 **Key Scripts Created**:
+
 - `scripts/sync-catering-images-from-square.ts` - Direct Square image sync
 - `scripts/handle-duplicate-catering-items.ts` - Smart duplicate resolution
 
 ### **Phase 4: Appetizer Package Fix & Intelligent Image System** ✅ COMPLETED
+
 **Objective**: Fix appetizer package display and implement intelligent image handling
 
 **Steps Taken:**
@@ -275,17 +306,21 @@ The catering system is now **fully functional** with **production-grade quality*
    - Discovered image mismatch: production uses Square S3 images, development uses local fallbacks
 
 2. **Implemented Intelligent Image Sync**:
+
    ```bash
    pnpm tsx scripts/sync-images-from-square-items.ts
    ```
+
    - Created smart algorithm to copy S3 images from Square items to package items
    - Successfully matched 10/28 appetizer items with real Square S3 images
    - Preserved existing S3 images, only updated local fallbacks
 
 3. **Created Enhanced Setup System**:
+
    ```bash
    pnpm tsx scripts/enhanced-catering-setup.ts
    ```
+
    - Built intelligent image assignment that prioritizes Square S3 images
    - Implemented fuzzy name matching for variations (e.g., "Empanada - Beef" → "beef empanada")
    - Added preservation logic to avoid overwriting existing S3 images
@@ -297,38 +332,43 @@ The catering system is now **fully functional** with **production-grade quality*
    - **Future-proofed**: All future Square syncs will preserve images and restore packages
 
 **Technical Innovation:**
+
 - **Intelligent Image Matching**: Finds Square equivalents for custom package items
 - **Preservation Strategy**: Never overwrites existing S3 images from Square
 - **Fuzzy Matching**: Handles name variations between Square and package items
 - **Dual Fallback**: Script execution with API endpoint backup
 
 **Results**:
+
 - **Appetizer Packages**: 0 → 3 functional packages (+∞%)
 - **Real Square Images**: Intelligently prioritized over local fallbacks
 - **Future Sync Protection**: ✅ Automatic restoration with image preservation
 - **User Experience**: "Being set up" → Fully functional with production-quality images
 
 **Key Scripts Created**:
+
 - `scripts/sync-images-from-square-items.ts` - Smart S3 image copying
-- `scripts/enhanced-catering-setup.ts` - Intelligent image assignment system  
+- `scripts/enhanced-catering-setup.ts` - Intelligent image assignment system
 - Enhanced sync with automatic package and image restoration
 
 ## 🔍 **TECHNICAL ARCHITECTURE ANALYSIS**
 
 ### **System Design** ✅ VALIDATED
+
 The catering system uses a robust **hybrid architecture**:
 
 1. **`CateringItem` Table**: Local items (Boxed Lunches, custom packages)
-2. **`Product` Table**: Square-synced items (ready for expansion)  
+2. **`Product` Table**: Square-synced items (ready for expansion)
 3. **`getCateringItems()` Function**: Intelligent merging of both sources
 
 ### **Category Mapping System** ✅ FIXED
+
 Products require `squareCategory` field that **exactly matches** keys in `SQUARE_CATEGORY_MAPPING`:
 
 ```typescript
 export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- APPETIZERS': 'appetizers',
-  'CATERING- SHARE PLATTERS': 'appetizers', 
+  'CATERING- SHARE PLATTERS': 'appetizers',
   'CATERING- EMPANADAS': 'appetizers',
   'CATERING- BUFFET, STARTERS': 'buffet',
   'CATERING- LUNCH, ENTREES': 'lunch',
@@ -337,59 +377,67 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
 ```
 
 ### **Image Management System** ✅ ENHANCED
+
 Multi-tier image resolution:
+
 1. **Direct Square ID match**: `squareProductId` → product image
-2. **Base name matching**: Size variants → parent product image  
+2. **Base name matching**: Size variants → parent product image
 3. **Fuzzy name matching**: Intelligent text matching as fallback
 
 ### **Deduplication Logic** ✅ IMPROVED
+
 Enhanced filtering prevents duplicates:
+
 ```typescript
 // Both Square ID and normalized name checking
-const existsInCateringItems = cateringItems.some(cateringItem =>
-  (cateringItem.squareProductId === product.squareId) ||
-  (cateringItem.name.toLowerCase().trim() === product.name.toLowerCase().trim())
+const existsInCateringItems = cateringItems.some(
+  cateringItem =>
+    cateringItem.squareProductId === product.squareId ||
+    cateringItem.name.toLowerCase().trim() === product.name.toLowerCase().trim()
 );
 ```
 
 ## 🧪 **TESTING & VALIDATION PROCEDURES**
 
 ### **Quick Health Check**
+
 ```bash
 # Verify tab functionality
 curl http://localhost:3000/api/catering/items | jq '.appetizers | length'
-curl http://localhost:3000/api/catering/items | jq '.buffet | length' 
+curl http://localhost:3000/api/catering/items | jq '.buffet | length'
 curl http://localhost:3000/api/catering/items | jq '.lunch | length'
 
 # Expected results: 34, 27, 25 respectively
 ```
 
 ### **Database Verification**
+
 ```sql
 -- Check category distribution
-SELECT "squareCategory", COUNT(*) 
-FROM catering_items 
-WHERE "isActive" = true 
-GROUP BY "squareCategory" 
+SELECT "squareCategory", COUNT(*)
+FROM catering_items
+WHERE "isActive" = true
+GROUP BY "squareCategory"
 ORDER BY COUNT(*) DESC;
 
 -- Check image coverage
-SELECT 
+SELECT
   COUNT(*) as total,
   COUNT("imageUrl") as with_images,
   ROUND(COUNT("imageUrl")::DECIMAL / COUNT(*) * 100, 1) as coverage_percent
-FROM catering_items 
+FROM catering_items
 WHERE "isActive" = true;
 
 -- Check for duplicates (should return 0 rows)
-SELECT name, COUNT(*) 
-FROM catering_items 
-WHERE "isActive" = true 
-GROUP BY name 
+SELECT name, COUNT(*)
+FROM catering_items
+WHERE "isActive" = true
+GROUP BY name
 HAVING COUNT(*) > 1;
 ```
 
 ### **Visual Testing**
+
 1. **Frontend Verification**:
    - Visit `/catering` - all tabs should have items
    - Visit `/admin/catering` - proper counts displayed
@@ -403,6 +451,7 @@ HAVING COUNT(*) > 1;
 ## 🔧 **MAINTENANCE PROCEDURES**
 
 ### **Regular Health Checks**
+
 Run these commands monthly to ensure system health:
 
 ```bash
@@ -415,7 +464,7 @@ const items = await getCateringItems();
 console.log('System Status:');
 console.log('- Total items:', items.length);
 console.log('- Appetizers:', getItemsForTab(items, 'appetizers').length);
-console.log('- Buffet:', getItemsForTab(items, 'buffet').length);  
+console.log('- Buffet:', getItemsForTab(items, 'buffet').length);
 console.log('- Lunch:', getItemsForTab(items, 'lunch').length);
 console.log('- With images:', items.filter(i => i.imageUrl).length);
 "
@@ -425,7 +474,7 @@ npx tsx -e "
 import { PrismaClient } from '@prisma/client';
 const db = new PrismaClient();
 const duplicates = await db.cateringItem.groupBy({
-  by: ['name'], 
+  by: ['name'],
   having: { name: { _count: { gt: 1 } } }
 });
 console.log('Duplicates found:', duplicates.length);
@@ -434,6 +483,7 @@ await db.\$disconnect();
 ```
 
 ### **Image Sync Maintenance**
+
 If new products are added to Square, re-run image sync:
 
 ```bash
@@ -442,6 +492,7 @@ pnpm exec tsx scripts/sync-catering-images-from-square.ts
 ```
 
 ### **Adding New Square Products**
+
 When adding new catering items to Square:
 
 1. **Ensure proper category naming**:
@@ -449,9 +500,10 @@ When adding new catering items to Square:
    - Examples: `CATERING- APPETIZERS`, `CATERING- BUFFET, ENTREES`
 
 2. **Update category mapping if needed** in `src/types/catering.ts`:
+
    ```typescript
    export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
-     'NEW_CATEGORY_NAME': 'appetizers', // or 'buffet' or 'lunch'
+     NEW_CATEGORY_NAME: 'appetizers', // or 'buffet' or 'lunch'
      // ... existing mappings
    };
    ```
@@ -464,57 +516,68 @@ When adding new catering items to Square:
 ## 🚨 **TROUBLESHOOTING GUIDE**
 
 ### **Problem: Items not appearing in tabs**
+
 **Symptoms**: Tabs show 0 items or fewer items than expected
 
 **Diagnosis**:
+
 ```sql
-SELECT name, "squareCategory", "isActive" 
-FROM catering_items 
+SELECT name, "squareCategory", "isActive"
+FROM catering_items
 WHERE "squareCategory" IS NULL OR "squareCategory" = '';
 ```
 
 **Solutions**:
+
 1. **Missing categories**: Run category assignment script
 2. **New Square categories**: Update `SQUARE_CATEGORY_MAPPING`
 3. **Inactive items**: Check `isActive` field
 
 ### **Problem: Images not loading**
+
 **Symptoms**: Items display without images
 
 **Diagnosis**:
+
 ```sql
-SELECT COUNT(*) as no_images 
-FROM catering_items 
+SELECT COUNT(*) as no_images
+FROM catering_items
 WHERE ("imageUrl" IS NULL OR "imageUrl" = '') AND "isActive" = true;
 ```
 
 **Solutions**:
+
 1. **Re-run image sync**: Use the maintenance script above
 2. **Check Square images**: Ensure products have images in Square dashboard
 3. **Network issues**: Verify S3/image hosting connectivity
 
 ### **Problem: Duplicate items appearing**
+
 **Symptoms**: Same item name appears multiple times
 
 **Diagnosis**:
+
 ```sql
-SELECT name, COUNT(*) 
-FROM catering_items 
-WHERE "isActive" = true 
-GROUP BY name 
+SELECT name, COUNT(*)
+FROM catering_items
+WHERE "isActive" = true
+GROUP BY name
 HAVING COUNT(*) > 1;
 ```
 
 **Solution**:
+
 ```bash
 # Run duplicate resolution script
 pnpm exec tsx scripts/handle-duplicate-catering-items.ts
 ```
 
 ### **Problem: getCateringItems() errors**
+
 **Symptoms**: API errors or function failures
 
 **Common Causes & Solutions**:
+
 1. **Prisma schema mismatch**: Run `pnpm exec prisma generate`
 2. **Database connection**: Check environment variables
 3. **Product table issues**: Verify schema with `\d products` in psql
@@ -522,9 +585,10 @@ pnpm exec tsx scripts/handle-duplicate-catering-items.ts
 ## 🚀 **FUTURE ENHANCEMENTS**
 
 ### **Near-term Improvements** (Next 30 days)
-1. **Increase Image Coverage**: 
+
+1. **Increase Image Coverage**:
    - Current: 54% (47/87 items)
-   - Target: 80%+ 
+   - Target: 80%+
    - Action: Add manual images for non-Square items
 
 2. **Enhanced Product Integration**:
@@ -538,6 +602,7 @@ pnpm exec tsx scripts/handle-duplicate-catering-items.ts
    - Add database indexes for faster queries
 
 ### **Medium-term Features** (Next 90 days)
+
 1. **Advanced Category Management**:
    - Admin interface for category assignment
    - Bulk edit capabilities
@@ -554,6 +619,7 @@ pnpm exec tsx scripts/handle-duplicate-catering-items.ts
    - Alert system for sync failures
 
 ### **Long-term Vision** (Next 6 months)
+
 1. **Full Square Integration**:
    - Real-time inventory sync
    - Automatic price updates
@@ -572,6 +638,7 @@ pnpm exec tsx scripts/handle-duplicate-catering-items.ts
 ## 📞 **SUPPORT & ESCALATION**
 
 ### **Self-Service Diagnostics**
+
 Before escalating issues, run these diagnostics:
 
 ```bash
@@ -584,12 +651,14 @@ echo "Prisma schema status:" && pnpm exec prisma format > /dev/null 2>&1 && echo
 ```
 
 ### **Critical Issues** (Escalate Immediately)
+
 - Complete tab failure (all tabs showing 0 items)
 - Database connection errors
 - Prisma schema corruption
 - Mass image loading failures
 
 ### **Non-Critical Issues** (Can wait 24-48 hours)
+
 - Individual items missing images
 - Minor category assignment issues
 - Performance degradation
@@ -600,6 +669,7 @@ echo "Prisma schema status:" && pnpm exec prisma format > /dev/null 2>&1 && echo
 ## 📝 **HISTORICAL CONTEXT**
 
 This project successfully resolved a critical catering system issue where:
+
 - **Initial Problem**: All catering tabs (Appetizers, Buffet, Lunch) showed 0 items
 - **Root Cause**: Misconfigured category mappings and missing Square integration
 - **Total Impact**: 87 catering items were not accessible to customers
@@ -607,6 +677,7 @@ This project successfully resolved a critical catering system issue where:
 - **Business Impact**: Full restoration of catering functionality with enhanced features
 
 **Key Lessons Learned**:
+
 1. **Category naming consistency** is critical for tab filtering
 2. **Hybrid data architecture** requires careful deduplication logic
 3. **Image sync** significantly improves user experience
@@ -625,8 +696,8 @@ psql $DATABASE_URL -c "SELECT name, squareCategory, squareProductId FROM caterin
 
 # Check for duplicate items
 psql $DATABASE_URL -c "
-  SELECT ci.name as catering_name, p.name as product_name 
-  FROM catering_items ci 
+  SELECT ci.name as catering_name, p.name as product_name
+  FROM catering_items ci
   JOIN products p ON LOWER(ci.name) = LOWER(p.name)
 ;"
 
@@ -655,11 +726,11 @@ tail -f logs/square-sync.log
 
 ### Fix Verification
 
-```bash
+````bash
 # After making changes, verify category counts
 psql $DATABASE_URL -c "
-  SELECT 
-    CASE 
+  SELECT
+    CASE
       WHEN ci.squareCategory LIKE '%APPETIZER%' THEN 'appetizers'
       WHEN ci.squareCategory LIKE '%BUFFET%' THEN 'buffet'
       WHEN ci.squareCategory LIKE '%LUNCH%' THEN 'lunch'
@@ -737,7 +808,7 @@ src/
 │   └── sync-catering-images.ts           // Image sync script
 └── prisma/
     └── schema.prisma                      // Database schema
-```
+````
 
 ### Key Interfaces & Types (From Actual Code)
 
@@ -885,13 +956,14 @@ CREATE INDEX idx_square_category_mappings_square_id ON square_category_mappings(
 ### Implementation Requirements (Based on Client Notes)
 
 **Square Platform Changes Needed:**
+
 - [ ] Create 4-inch empanada packages (6-packs) in Square
-- [ ] Change sauce category from "salsa" to "empanadas" 
+- [ ] Change sauce category from "salsa" to "empanadas"
 - [ ] Add "Tropical Salad" to buffet category
 - [ ] Add "Locro" to lunch sides category
 - [ ] Fix category assignments:
   - `catering-appetizer`: Verify all appetizers present
-  - `catering-buffet`: Sync with buffet products  
+  - `catering-buffet`: Sync with buffet products
   - `lunch-starter`: Should show 9 items (currently 4)
   - `lunch-entree`: Remove buffet items (like ceviche)
   - `lunch-sides`: Add missing products
@@ -934,10 +1006,10 @@ POST /api/admin/sync-logs - View sync history
 
 ```tsx
 // app/catering/actions.ts
-async function syncSquareProducts(): Promise<SyncResult>
-async function getCateringProducts(section?: string, category?: string): Promise<CateringProduct[]>
-async function updateCategoryMapping(mapping: SquareCategoryMapping): Promise<void>
-async function getBoxedLunches(): Promise<BoxedLunch[]> // Separate from Square sync
+async function syncSquareProducts(): Promise<SyncResult>;
+async function getCateringProducts(section?: string, category?: string): Promise<CateringProduct[]>;
+async function updateCategoryMapping(mapping: SquareCategoryMapping): Promise<void>;
+async function getBoxedLunches(): Promise<BoxedLunch[]>; // Separate from Square sync
 ```
 
 ### Client-Server Data Flow
@@ -958,24 +1030,24 @@ async function getBoxedLunches(): Promise<BoxedLunch[]> // Separate from Square 
 ```tsx
 // Square Integration Tests
 describe('Square Product Sync', () => {
-  it('fetches all products from Square API', async () => {})
-  it('handles pagination correctly', async () => {})
-  it('maps categories according to configuration', async () => {})
-  it('preserves boxed lunches data', async () => {})
+  it('fetches all products from Square API', async () => {});
+  it('handles pagination correctly', async () => {});
+  it('maps categories according to configuration', async () => {});
+  it('preserves boxed lunches data', async () => {});
 });
 
 // Category Mapping Tests
 describe('Category Mapping', () => {
-  it('maps sauce products to empanadas category', async () => {})
-  it('filters buffet items from lunch entrees', async () => {})
-  it('includes all 9 lunch starters', async () => {})
+  it('maps sauce products to empanadas category', async () => {});
+  it('filters buffet items from lunch entrees', async () => {});
+  it('includes all 9 lunch starters', async () => {});
 });
 
 // Database Tests
 describe('Product Database Operations', () => {
-  it('upserts products without duplicates', async () => {})
-  it('tracks sync status correctly', async () => {})
-  it('maintains separate boxed lunches table', async () => {})
+  it('upserts products without duplicates', async () => {});
+  it('tracks sync status correctly', async () => {});
+  it('maintains separate boxed lunches table', async () => {});
 });
 ```
 
@@ -989,18 +1061,18 @@ describe('Complete Square Sync Flow', () => {
     // Mock Square API responses
   });
 
-  it('completes full product sync without data loss', async () => {})
-  it('handles Square API errors gracefully', async () => {})
-  it('updates only changed products', async () => {})
-  it('logs sync operations correctly', async () => {})
+  it('completes full product sync without data loss', async () => {});
+  it('handles Square API errors gracefully', async () => {});
+  it('updates only changed products', async () => {});
+  it('logs sync operations correctly', async () => {});
 });
 
 // Catering Page Integration
 describe('Catering Page Display', () => {
-  it('displays correct products per section', async () => {})
-  it('shows dietary indicators from Square', async () => {})
-  it('loads images from Square URLs', async () => {})
-  it('maintains boxed lunches separately', async () => {})
+  it('displays correct products per section', async () => {});
+  it('shows dietary indicators from Square', async () => {});
+  it('loads images from Square URLs', async () => {});
+  it('maintains boxed lunches separately', async () => {});
 });
 ```
 
@@ -1046,17 +1118,17 @@ const SquareProductSchema = z.object({
   name: z.string().min(1).max(255),
   price: z.object({
     amount: z.number().positive(),
-    currency: z.literal('USD')
+    currency: z.literal('USD'),
   }),
   category_id: z.string(),
-  image_url: z.string().url().optional()
+  image_url: z.string().url().optional(),
 });
 
 // Category mapping validation
 const CategoryMappingSchema = z.object({
   square_category_id: z.string(),
   website_category: z.enum(['appetizers', 'buffet', 'lunch', 'empanadas']),
-  section: z.enum(['appetizers', 'buffet', 'lunch', 'boxed-lunches'])
+  section: z.enum(['appetizers', 'buffet', 'lunch', 'boxed-lunches']),
 });
 ```
 
@@ -1069,11 +1141,11 @@ import { verifyWebhookSignature } from '@/lib/square/webhook';
 export async function POST(req: Request) {
   const signature = req.headers.get('x-square-signature');
   const body = await req.text();
-  
+
   if (!verifyWebhookSignature(body, signature)) {
     return new Response('Unauthorized', { status: 401 });
   }
-  
+
   // Process webhook
 }
 ```
@@ -1122,6 +1194,7 @@ CREATE INDEX idx_sync_status ON catering_products(sync_status, last_synced_at);
 ### Development Phase - Day 1: Review Square Setup
 
 **Square Admin Tasks (Handled by James):**
+
 - [ ] Review current Square product organization (James has updated items)
 - [ ] Document new products James has added:
   - [ ] 4-inch empanada packages (if added)
@@ -1133,12 +1206,14 @@ CREATE INDEX idx_sync_status ON catering_products(sync_status, last_synced_at);
   - [ ] Map current categories to our expected SQUARE_CATEGORY_MAPPING
 
 **Code Updates:**
+
 - [ ] Update `SQUARE_CATEGORY_MAPPING` in types/catering.ts to match James's Square structure
 - [ ] Add any new category mappings based on current Square organization
 
 ### Development Phase - Day 2: Database Cleanup
 
 **Data Migration:**
+
 ```sql
 -- Identify duplicate items between CateringItem and Product
 SELECT ci.name, ci.squareProductId, p.squareId, p.name as product_name
@@ -1147,18 +1222,18 @@ LEFT JOIN products p ON ci.squareProductId = p.squareId
 WHERE ci.squareProductId IS NOT NULL;
 
 -- Update squareCategory field for proper mapping
-UPDATE catering_items 
+UPDATE catering_items
 SET squareCategory = 'CATERING- APPETIZERS'
 WHERE name LIKE '%sauce%' OR name LIKE '%salsa%';
 
 -- Mark items that should be Square-managed
 UPDATE catering_items
 SET squareProductId = (
-  SELECT squareId FROM products 
+  SELECT squareId FROM products
   WHERE LOWER(products.name) = LOWER(catering_items.name)
   LIMIT 1
 )
-WHERE squareProductId IS NULL 
+WHERE squareProductId IS NULL
   AND name NOT LIKE '%Boxed%'
   AND name NOT LIKE '%Tier%';
 ```
@@ -1166,6 +1241,7 @@ WHERE squareProductId IS NULL
 ### Development Phase - Day 3: Fix getCateringItems Function
 
 **Update actions/catering.ts:**
+
 - [ ] Improve duplicate detection logic
 - [ ] Add better category filtering for Product table
 - [ ] Ensure image mapping works correctly
@@ -1177,30 +1253,27 @@ export async function getCateringItems(): Promise<CateringItem[]> {
   // 1. Get all Square categories that should show in catering
   const cateringCategories = await db.category.findMany({
     where: {
-      OR: [
-        { name: { startsWith: 'CATERING-' }},
-        { name: { contains: 'SHARE PLATTERS' }}
-      ]
-    }
+      OR: [{ name: { startsWith: 'CATERING-' } }, { name: { contains: 'SHARE PLATTERS' } }],
+    },
   });
-  
+
   // 2. Get products from these categories
   const squareProducts = await db.product.findMany({
     where: {
       categoryId: { in: cateringCategories.map(c => c.id) },
-      active: true
+      active: true,
     },
-    include: { category: true }
+    include: { category: true },
   });
-  
+
   // 3. Get local catering items (boxed lunches, etc)
   const localItems = await db.cateringItem.findMany({
     where: {
       isActive: true,
-      squareProductId: null // Only local items
-    }
+      squareProductId: null, // Only local items
+    },
   });
-  
+
   // 4. Merge and deduplicate
   // ... implementation
 }
@@ -1209,6 +1282,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 ### Development Phase - Day 4: Testing & Validation
 
 **Test Cases:**
+
 - [ ] Verify all appetizers appear in appetizers tab
 - [ ] Check buffet tab shows correct starters, entrees, sides, desserts
 - [ ] Confirm lunch tab has 9 starters (not 4)
@@ -1218,6 +1292,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 - [ ] Confirm Boxed Lunches still work
 
 **Square Sync Test:**
+
 - [ ] Run sync and check logs
 - [ ] Verify new products appear
 - [ ] Check category assignments
@@ -1226,6 +1301,7 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 ### Development Phase - Day 5: Production Deployment
 
 **Deployment Steps:**
+
 1. [ ] Run Square sync in production
 2. [ ] Verify all categories populated correctly
 3. [ ] Test ordering flow for each category
@@ -1305,7 +1381,7 @@ FROM catering_items_backup cib
 WHERE ci.id = cib.id;
 
 -- 3. Restore category names if changed
-UPDATE categories 
+UPDATE categories
 SET name = REPLACE(name, 'CATERING- EMPANADAS', 'salsa')
 WHERE name = 'CATERING- EMPANADAS';
 ```
@@ -1349,51 +1425,46 @@ export async function getCateringItems(): Promise<CateringItem[]> {
     const localItems = await db.cateringItem.findMany({
       where: {
         isActive: true,
-        OR: [
-          { squareProductId: null },
-          { squareCategory: { contains: 'BOXED_LUNCH' }}
-        ]
-      }
+        OR: [{ squareProductId: null }, { squareCategory: { contains: 'BOXED_LUNCH' } }],
+      },
     });
 
     // 2. Get Square categories for catering
     const cateringCategories = await db.category.findMany({
       where: {
         OR: [
-          { name: { startsWith: 'CATERING-' }},
-          { name: { contains: 'SHARE PLATTERS' }},
-          { name: { equals: 'CATERING- EMPANADAS' }} // New sauce category
-        ]
-      }
+          { name: { startsWith: 'CATERING-' } },
+          { name: { contains: 'SHARE PLATTERS' } },
+          { name: { equals: 'CATERING- EMPANADAS' } }, // New sauce category
+        ],
+      },
     });
 
     // 3. Get products from Square categories
     const squareProducts = await db.product.findMany({
       where: {
         categoryId: { in: cateringCategories.map(c => c.id) },
-        active: true
+        active: true,
       },
-      include: { category: true }
+      include: { category: true },
     });
 
     // 4. Create a map to avoid duplicates
     const itemMap = new Map<string, CateringItem>();
-    
+
     // Add local items first
     localItems.forEach(item => {
       itemMap.set(item.id, {
         ...item,
-        price: Number(item.price)
+        price: Number(item.price),
       });
     });
 
     // 5. Convert Square products to CateringItems
     squareProducts.forEach(product => {
       // Skip if already exists as local item
-      const existsLocal = localItems.some(
-        li => li.squareProductId === product.squareId
-      );
-      
+      const existsLocal = localItems.some(li => li.squareProductId === product.squareId);
+
       if (!existsLocal) {
         const cateringItem: CateringItem = {
           id: product.id,
@@ -1410,9 +1481,9 @@ export async function getCateringItems(): Promise<CateringItem[]> {
           isGlutenFree: false,
           servingSize: null,
           createdAt: product.createdAt,
-          updatedAt: product.updatedAt
+          updatedAt: product.updatedAt,
         };
-        
+
         itemMap.set(product.id, cateringItem);
       }
     });
@@ -1430,7 +1501,6 @@ export async function getCateringItems(): Promise<CateringItem[]> {
 
     console.log(`✅ [CATERING] Fetched ${updatedItems.length} total items`);
     return updatedItems;
-    
   } catch (error) {
     console.error('❌ [CATERING] Error fetching items:', error);
     return [];
@@ -1458,12 +1528,12 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- SHARE PLATTERS': 'appetizers',
   'CATERING- DESSERTS': 'appetizers',
   'CATERING- EMPANADAS': 'appetizers', // NEW: Sauces category
-  
+
   'CATERING- BUFFET, STARTERS': 'buffet',
   'CATERING- BUFFET, ENTREES': 'buffet',
   'CATERING- BUFFET, SIDES': 'buffet',
   'CATERING- BUFFET DESSERTS': 'buffet',
-  
+
   'CATERING- LUNCH, STARTERS': 'lunch',
   'CATERING- LUNCH, ENTREES': 'lunch',
   'CATERING- LUNCH, SIDES': 'lunch',
@@ -1475,7 +1545,8 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
 ## Priority Action Items
 
 ### ✅ **Completed (Latest Session)**
-1. **✅ Document current state** 
+
+1. **✅ Document current state**
    - ✅ Listed all Square categories and their products (87 products found)
    - ✅ Identified real categories: BUFFET SIDES, LUNCH STARTERS/ENTREES/SIDES
    - ✅ Database populated with real Square data
@@ -1486,6 +1557,7 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
    - ✅ Initial sync completed successfully
 
 ### **Current Priority (PHASE 2)**
+
 1. **Fix getCateringItems() Function** 🔧
    - Improve deduplication logic between `catering_items` and `products`
    - Fix synchronization issue (products should be in `products` table)
@@ -1505,6 +1577,7 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
    - Test complete order flow
 
 ### Post-Fix Monitoring
+
 1. Check that lunch starters show 9 items (not 4)
 2. Verify no buffet items in lunch entrees
 3. Confirm sauces appear under empanadas
@@ -1514,12 +1587,14 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
 
 ## Notes for Development
 
-⚠️ **CRITICAL**: 
+⚠️ **CRITICAL**:
+
 - DO NOT modify BoxedLunchMenu component or related data
 - DO NOT change the ProductionSyncManager core logic
 - DO NOT delete any CateringItem records without backup
 
-✅ **REMEMBER**: 
+✅ **REMEMBER**:
+
 - The system is hybrid: CateringItem (local) + Product (Square)
 - Images come from Product.images array (first element)
 - Category matching uses exact string comparison with SQUARE_CATEGORY_MAPPING

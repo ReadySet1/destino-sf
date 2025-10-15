@@ -1,6 +1,6 @@
 /**
  * TypeScript types and schemas for Square webhook validation and processing
- * 
+ *
  * This file defines all types needed for webhook signature validation,
  * payment sync fallback, and webhook monitoring.
  */
@@ -27,8 +27,8 @@ export const SquareWebhookPayloadSchema = z.object({
   data: z.object({
     type: z.string(),
     id: z.string(),
-    object: z.record(z.unknown())
-  })
+    object: z.record(z.unknown()),
+  }),
 });
 
 export type SquareWebhookPayload = z.infer<typeof SquareWebhookPayloadSchema>;
@@ -39,7 +39,7 @@ export const WebhookHeadersSchema = z.object({
   'x-square-hmacsha1-signature': z.string().optional(),
   'square-environment': z.enum(['Sandbox', 'Production']).optional(),
   'content-type': z.string().optional(),
-  'user-agent': z.string().optional()
+  'user-agent': z.string().optional(),
 });
 
 export type WebhookHeaders = z.infer<typeof WebhookHeadersSchema>;
@@ -126,7 +126,7 @@ export interface WebhookProcessingResult {
 }
 
 // Result type for better error handling across the webhook system
-export type Result<T, E = WebhookValidationError> = 
+export type Result<T, E = WebhookValidationError> =
   | { success: true; data: T }
   | { success: false; error: E };
 
@@ -253,7 +253,7 @@ export const SUPPORTED_WEBHOOK_EVENTS = [
   'refund.updated',
 ] as const;
 
-export type SupportedWebhookEvent = typeof SUPPORTED_WEBHOOK_EVENTS[number];
+export type SupportedWebhookEvent = (typeof SUPPORTED_WEBHOOK_EVENTS)[number];
 
 // Utility type for webhook handler functions
 export type WebhookHandler<T extends SupportedWebhookEvent> = (
@@ -266,15 +266,23 @@ export type WebhookHandler<T extends SupportedWebhookEvent> = (
 ) => Promise<WebhookProcessingResult>;
 
 // Type guards for webhook events
-export function isPaymentWebhook(payload: SquareWebhookPayload): payload is SquareWebhookPayload & { type: 'payment.created' | 'payment.updated' } {
+export function isPaymentWebhook(
+  payload: SquareWebhookPayload
+): payload is SquareWebhookPayload & { type: 'payment.created' | 'payment.updated' } {
   return payload.type.startsWith('payment.');
 }
 
-export function isOrderWebhook(payload: SquareWebhookPayload): payload is SquareWebhookPayload & { type: 'order.created' | 'order.updated' | 'order.fulfillment.updated' } {
+export function isOrderWebhook(
+  payload: SquareWebhookPayload
+): payload is SquareWebhookPayload & {
+  type: 'order.created' | 'order.updated' | 'order.fulfillment.updated';
+} {
   return payload.type.startsWith('order.');
 }
 
-export function isRefundWebhook(payload: SquareWebhookPayload): payload is SquareWebhookPayload & { type: 'refund.created' | 'refund.updated' } {
+export function isRefundWebhook(
+  payload: SquareWebhookPayload
+): payload is SquareWebhookPayload & { type: 'refund.created' | 'refund.updated' } {
   return payload.type.startsWith('refund.');
 }
 

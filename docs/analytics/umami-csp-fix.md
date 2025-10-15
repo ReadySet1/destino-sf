@@ -1,6 +1,7 @@
 # Umami Analytics CSP Fix Implementation
 
 ## Issue Summary
+
 The Content Security Policy (CSP) in `next.config.js` was blocking the Umami analytics script from loading. The CSP didn't include `analytics.readysetllc.com` in the allowed sources.
 
 ## Changes Made
@@ -11,12 +12,14 @@ The Content Security Policy (CSP) in `next.config.js` was blocking the Umami ana
 **Lines:** ~107 and ~112
 
 **Before:**
+
 ```javascript
 "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
 "connect-src 'self' https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com",
 ```
 
 **After:**
+
 ```javascript
 "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
 "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com",
@@ -28,11 +31,13 @@ The Content Security Policy (CSP) in `next.config.js` was blocking the Umami ana
 **Line:** ~56
 
 **Before:**
+
 ```typescript
 domains: ['destinosf.com', 'www.destinosf.com'],
 ```
 
 **After:**
+
 ```typescript
 domains: ['destinosf.com', 'www.destinosf.com', 'development.destinosf.com'],
 ```
@@ -42,6 +47,7 @@ domains: ['destinosf.com', 'www.destinosf.com', 'development.destinosf.com'],
 **File:** `scripts/test-umami-analytics.ts`
 
 A comprehensive test script to verify:
+
 - Configuration values
 - Environment variables
 - Runtime context
@@ -58,22 +64,26 @@ NEXT_PUBLIC_UMAMI_SRC: process.env.NEXT_PUBLIC_UMAMI_SRC,
 ```
 
 **Default values:**
+
 - `NEXT_PUBLIC_UMAMI_WEBSITE_ID`: `5a0ae847-dbb0-456c-b972-9e29944de4b2`
 - `NEXT_PUBLIC_UMAMI_SRC`: `https://analytics.readysetllc.com/script.js`
 
 ## Testing Instructions
 
 ### 1. Restart Development Server
+
 ```bash
 # Stop your current dev server and restart
 pnpm dev
 ```
 
 ### 2. Clear Browser Cache
+
 - Open DevTools (F12)
 - Right-click refresh button → "Empty Cache and Hard Reload"
 
 ### 3. Verify Script Loading
+
 1. Open DevTools → Network tab
 2. Filter by "analytics"
 3. Refresh the page
@@ -81,11 +91,14 @@ pnpm dev
 5. Should return 200 status
 
 ### 4. Check Console for Errors
+
 - No CSP violation errors should appear
 - Look for: `[Umami] Analytics script loaded successfully`
 
 ### 5. Test Tracking
+
 Run in browser console:
+
 ```javascript
 // Check if Umami loaded
 console.log('Umami loaded:', !!window.umami);
@@ -98,6 +111,7 @@ if (window.umami) {
 ```
 
 ### 6. Run Test Script
+
 ```bash
 pnpm tsx scripts/test-umami-analytics.ts
 ```
@@ -123,12 +137,14 @@ pnpm tsx scripts/test-umami-analytics.ts
 ## Troubleshooting
 
 ### If script still doesn't load:
+
 1. Check if `analytics.readysetllc.com` is accessible
 2. Verify domain is allowed in Umami dashboard
 3. Check for browser extensions blocking scripts
 4. Ensure no other CSP headers are being set
 
 ### If tracking doesn't work:
+
 1. Verify website ID is correct
 2. Check if auto-track is enabled
 3. Ensure domain matches Umami configuration
@@ -145,4 +161,4 @@ pnpm tsx scripts/test-umami-analytics.ts
 
 **Date:** January 26, 2025  
 **Status:** ✅ Implemented  
-**Tested:** Pending restart and verification 
+**Tested:** Pending restart and verification

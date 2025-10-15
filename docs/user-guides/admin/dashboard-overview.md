@@ -12,7 +12,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🏠 Dashboard Layout
 
 ### Main Navigation
+
 **Primary Sections**:
+
 - **Orders**: View and manage all order types
 - **Products**: Monitor Square product sync
 - **Catering**: Specialized catering order management
@@ -20,7 +22,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 - **Settings**: System configuration
 
 ### Quick Stats Overview
+
 **Dashboard Header Shows**:
+
 - **Today's Orders**: Total orders placed today
 - **Pending Orders**: Orders needing immediate attention
 - **Revenue Today**: Daily sales total
@@ -29,14 +33,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 📊 Order Management Center
 
 ### Order Queue Display
+
 **Pending Orders Section**:
+
 - **New Orders**: Recently placed, need confirmation
 - **Processing**: Orders currently in kitchen
 - **Ready**: Completed orders awaiting delivery
 - **Problem Orders**: Orders requiring attention
 
 ### Order Information Cards
+
 **Each Order Shows**:
+
 - **Order Number**: Unique identifier
 - **Customer Name**: Who placed the order
 - **Order Time**: When order was placed
@@ -46,7 +54,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 - **Action Buttons**: Quick status updates
 
 ### Quick Actions
+
 **One-Click Functions**:
+
 - **Mark Processing**: Move order to kitchen
 - **Mark Ready**: Signal order completion
 - **Mark Completed**: Finalize delivery
@@ -56,14 +66,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 📈 Basic Metrics Display
 
 ### Daily Overview
+
 **Today's Performance**:
+
 - **Order Count**: Number of orders today
 - **Revenue**: Total sales amount
 - **Average Order**: Typical order value
 - **Completion Rate**: Successfully fulfilled orders
 
 ### Order Status Distribution
+
 **Visual Breakdown**:
+
 - **Pending**: Orders just placed
 - **Processing**: Orders in preparation
 - **Ready**: Orders completed
@@ -74,14 +88,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🔧 Square Integration Status
 
 ### Sync Health Monitor
+
 **Integration Status**:
+
 - **Last Product Sync**: When products were last updated
 - **Sync Status**: Green (healthy) or red (issues)
 - **Payment Status**: Square payment processing health
 - **Order Sync**: Orders syncing properly to Square POS
 
 ### Quick Sync Actions
+
 **Manual Controls**:
+
 - **Sync Products**: Pull latest products from Square
 - **Sync Orders**: Push orders to Square POS
 - **Test Connection**: Verify Square API connection
@@ -90,13 +108,16 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🍽️ Catering Management
 
 ### Catering Dashboard
+
 **Upcoming Events**:
+
 - **Today's Catering**: Events scheduled for today
 - **This Week**: Upcoming catering orders
 - **Preparation Needed**: Orders requiring advance prep
 - **Special Requirements**: Custom dietary needs
 
 ### Catering Quick Stats
+
 - **Weekly Catering Revenue**: Catering sales totals
 - **Average Catering Size**: Typical group size
 - **Popular Packages**: Most-ordered catering options
@@ -105,14 +126,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## ⚡ Quick Action Toolbar
 
 ### Order Management Tools
+
 **Fast Functions**:
+
 - **Mark All Ready**: Batch update multiple orders
 - **Print Kitchen Orders**: Generate prep sheets
 - **Send Status Updates**: Notify customers of delays
 - **Export Orders**: Download order data
 
 ### Communication Tools
+
 **Customer Contact**:
+
 - **Call Customer**: Quick phone dialing
 - **Send Email**: Template-based messaging
 - **SMS Update**: Text status updates
@@ -121,7 +146,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🎛️ Admin Controls
 
 ### User Management
+
 **Basic Controls**:
+
 - **View Admin Users**: See all admin accounts
 - **Access Levels**: Different permission levels
 - **Session Management**: Active admin sessions
@@ -129,7 +156,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 **Note**: Detailed user management is handled through the authentication system.
 
 ### System Settings
+
 **Available Settings**:
+
 - **Business Hours**: Operating time configuration
 - **Delivery Zones**: Service area management
 - **Tax Rates**: Automatic tax calculation
@@ -138,14 +167,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 📱 Mobile-Friendly Interface
 
 ### Responsive Design
+
 **Works on All Devices**:
+
 - **Desktop**: Full feature access
 - **Tablet**: Optimized layout for touch
 - **Mobile**: Essential functions available
 - **Touch-Friendly**: Large buttons and clear navigation
 
 ### Mobile Priorities
+
 **Most Important Mobile Functions**:
+
 - **Order status updates**: Mark orders as ready/complete
 - **Customer communication**: Call or message customers
 - **Emergency controls**: Handle urgent issues
@@ -154,7 +187,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🔍 Search and Filtering
 
 ### Order Search
+
 **Find Orders By**:
+
 - **Order Number**: Exact order ID
 - **Customer Name**: Search by customer
 - **Date Range**: Orders from specific dates
@@ -162,7 +197,9 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 - **Amount**: Orders above/below certain values
 
 ### Filter Options
+
 **Quick Filters**:
+
 - **Today's Orders**: Only orders from today
 - **Pending**: Orders needing attention
 - **Problem Orders**: Orders with issues
@@ -172,14 +209,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## ⚠️ Alert System
 
 ### Important Notifications
+
 **Dashboard Alerts**:
+
 - **Payment Failures**: Failed customer payments
 - **Square Sync Issues**: Integration problems
 - **Order Delays**: Orders taking too long
 - **Inventory Issues**: Items marked unavailable
 
 ### Alert Actions
+
 **When Alerts Appear**:
+
 - **Click for Details**: See full problem description
 - **Take Action**: Resolve issue directly
 - **Mark Resolved**: Clear alert when fixed
@@ -188,14 +229,18 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 📊 Performance Indicators
 
 ### Health Metrics
+
 **System Health**:
+
 - **Order Processing Time**: Average time from order to completion
 - **Customer Satisfaction**: Based on feedback and reviews
 - **Delivery Success**: Percentage of successful deliveries
 - **Square Integration**: API connection reliability
 
 ### Daily Goals
+
 **Track Progress Toward**:
+
 - **Daily Order Target**: Goal number of orders
 - **Revenue Goal**: Target daily sales
 - **Customer Response Time**: Fast customer service
@@ -204,20 +249,24 @@ Navigate your Destino SF admin dashboard like a pro! This guide explains every s
 ## 🔄 Workflow Optimization
 
 ### Recommended Daily Routine
+
 **Morning Setup** (Start of Day):
+
 1. **Check overnight orders** for any issues
 2. **Review catering schedule** for the day
 3. **Verify Square sync** is working properly
 4. **Confirm kitchen prep** for popular items
 
 **Throughout the Day**:
+
 1. **Monitor order queue** every 15-30 minutes
 2. **Update order statuses** promptly
 3. **Respond to customer** inquiries quickly
 4. **Track metrics** against daily goals
 
 **End of Day**:
-1. **Complete remaining orders** 
+
+1. **Complete remaining orders**
 2. **Review daily performance** metrics
 3. **Note any issues** for tomorrow
 4. **Sync final data** with Square
@@ -242,18 +291,21 @@ A: Check the sync status indicator. Green means healthy, red indicates issues re
 ## 💡 Pro Tips
 
 ### Efficiency Shortcuts
+
 - **Use keyboard shortcuts** for common actions
 - **Set up filters** for your most common views
 - **Keep customer contact** info easily accessible
 - **Monitor alerts regularly** to catch issues early
 
 ### Best Practices
+
 - **Update order statuses promptly** for accurate tracking
 - **Communicate proactively** with customers about delays
 - **Document recurring issues** for system improvements
 - **Keep Square sync healthy** for smooth operations
 
 ### Daily Success
+
 - **Start with overnight review** to catch any issues
 - **Prioritize customer communication** for satisfaction
 - **Monitor kitchen timing** to maintain quality service
@@ -262,6 +314,7 @@ A: Check the sync status indicator. Green means healthy, red indicates issues re
 ## 🔜 What's Next?
 
 Ready to dive deeper into specific areas?
+
 - **[Order Management](order-management.md)**: Master the complete order process
 - **[Product Management](product-management.md)**: Understanding Square integration
 

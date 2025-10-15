@@ -13,15 +13,18 @@
 **Sprint/Milestone**: Production Hotfix
 
 ### Problem Statement
+
 The system is creating duplicate orders for catering with $0.00 amounts. Orders are being incorrectly saved as "Digital" type in Square when they should be "Food" type. This affects payment processing and order tracking.
 
 ### Success Criteria
+
 - [ ] No duplicate $0.00 orders created for catering
 - [ ] All catering orders correctly marked as "Food" type in Square
 - [ ] Order confirmation page loads without syntax errors
 - [ ] Valid UUID format preserved in order confirmation URLs
 
 ### Dependencies
+
 - **Blocked by**: Syntax error in order-confirmation page
 - **Blocks**: Proper order tracking and reporting
 - **Related PRs/Issues**: Order confirmation page errors, UUID corruption in redirect URLs
@@ -33,6 +36,7 @@ The system is creating duplicate orders for catering with $0.00 amounts. Orders 
 ### 1. Code Structure & References
 
 #### Critical Files to Review
+
 ```tsx
 src/
 ├── app/
@@ -84,6 +88,7 @@ src/
 ### 2. Root Cause Analysis
 
 #### Suspected Flow Issues
+
 ```mermaid
 graph TD
     A[Catering Checkout] -->|Create Order| B[Square API]
@@ -91,7 +96,7 @@ graph TD
     C -->|Redirect| D[Square Payment]
     D -->|Webhook| E[Order Update]
     D -->|Return URL| F[Order Confirmation]
-    
+
     B -->|Issue 1| G[Wrong Order Type: Digital]
     E -->|Issue 2| H[Duplicate $0.00 Order]
     F -->|Issue 3| I[Syntax Error]
@@ -99,6 +104,7 @@ graph TD
 ```
 
 #### Potential Race Conditions
+
 - Webhook processing might be creating duplicate order
 - Multiple API calls during checkout process
 - Missing idempotency keys in Square API calls
@@ -106,9 +112,10 @@ graph TD
 ### 3. Investigation Steps
 
 #### Database Queries to Run
+
 ```sql
 -- Find all duplicate orders for catering
-SELECT 
+SELECT
   customer_email,
   DATE(created_at) as order_date,
   COUNT(*) as order_count,
@@ -116,7 +123,7 @@ SELECT
   array_agg(total_amount) as amounts,
   array_agg(order_type) as types
 FROM orders
-WHERE 
+WHERE
   order_type IN ('CATERING', 'DIGITAL')
   AND created_at > NOW() - INTERVAL '7 days'
 GROUP BY customer_email, DATE(created_at)
@@ -124,7 +131,7 @@ HAVING COUNT(*) > 1
 ORDER BY order_date DESC;
 
 -- Check for $0.00 orders pattern
-SELECT 
+SELECT
   order_id,
   customer_email,
   total_amount,
@@ -132,7 +139,7 @@ SELECT
   square_order_id,
   created_at
 FROM orders
-WHERE 
+WHERE
   total_amount = 0
   AND order_type IN ('CATERING', 'DIGITAL')
 ORDER BY created_at DESC
@@ -208,16 +215,19 @@ LIMIT 20;
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - Idempotency key generation
 - Order type determination logic
 - UUID extraction from corrupted strings
 
 ### Integration Tests
+
 - Square API order creation with correct type
 - Webhook processing with duplicate prevention
 - Database transaction rollback on conflicts
 
 ### E2E Tests
+
 - Complete catering checkout flow
 - Order confirmation page loading
 - Payment → confirmation redirect
@@ -227,23 +237,25 @@ LIMIT 20;
 ## 📊 Performance & Monitoring
 
 ### Metrics to Track
+
 - Duplicate order rate (should be 0%)
 - $0.00 order creation rate
 - Order confirmation page error rate
 - Square API error responses
 
 ### Alerts to Set Up
+
 ```yaml
 alerts:
   - name: duplicate_orders_detected
     condition: COUNT(orders) > 1 GROUP BY customer, date
     threshold: 1
     window: 5m
-    
+
   - name: zero_dollar_orders
     condition: total_amount = 0 AND order_type = 'CATERING'
     action: page_oncall
-    
+
   - name: order_confirmation_errors
     condition: status_code = 500 AND path = '/order-confirmation'
     threshold: 5
@@ -255,6 +267,7 @@ alerts:
 ## 🔒 Security Analysis
 
 ### Considerations
+
 - [ ] Validate all order IDs are valid UUIDs
 - [ ] Sanitize redirect URLs to prevent injection
 - [ ] Rate limit checkout endpoints
@@ -266,11 +279,13 @@ alerts:
 ## 📝 Documentation Updates
 
 ### Square API Configuration
+
 - Document correct fulfillment types for food orders
 - Note idempotency key requirements
 - Webhook event handling best practices
 
 ### Database Schema
+
 - Add unique constraints on square_order_id
 - Document order_type enum values
 - Add indexes for duplicate detection queries
@@ -280,17 +295,20 @@ alerts:
 ## 🚀 Deployment & Rollback
 
 ### Pre-Deployment
+
 - [ ] Fix syntax error in order-confirmation page
 - [ ] Test catering checkout flow in staging
 - [ ] Verify no $0.00 orders created in test environment
 - [ ] Check Square sandbox for correct order types
 
 ### Rollback Strategy
+
 - Keep previous order creation logic behind feature flag
 - Monitor for 24 hours after deployment
 - Have database cleanup script ready for any duplicates
 
 ### Post-Deployment Monitoring
+
 - [ ] Zero duplicate orders for 24 hours
 - [ ] All catering orders show as "Food" in Square
 - [ ] No 500 errors on order confirmation
@@ -303,12 +321,14 @@ alerts:
 **Last Updated**: September 4, 2025
 
 ### Immediate Actions Required:
+
 1. ✅ Fix syntax error in `order-confirmation/page.tsx` (Line 123)
 2. ✅ Fix UUID corruption in redirect URL generation
 3. ✅ Change order type from "Digital" to "Food" for catering
 4. ✅ Add idempotency keys to prevent duplicates
 
 ### Investigation Results:
+
 - Confirmed duplicate $0.00 orders for catering only
 - Orders incorrectly marked as "Digital" in Square
 - Syntax error causing 500 errors on confirmation page

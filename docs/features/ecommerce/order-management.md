@@ -7,6 +7,7 @@ The order management system handles the complete lifecycle of customer orders fr
 ## Order Structure
 
 ### Order Data Model
+
 ```typescript
 interface Order {
   id: string;
@@ -34,13 +35,14 @@ enum OrderStatus {
   OUT_FOR_DELIVERY = 'out_for_delivery',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 ```
 
 ## Order Lifecycle
 
 ### Status Flow Management
+
 1. **Pending**: Initial order placement, awaiting confirmation
 2. **Confirmed**: Payment processed, order validated
 3. **In Preparation**: Kitchen/fulfillment center processing
@@ -50,6 +52,7 @@ enum OrderStatus {
 7. **Cancelled/Refunded**: Order cancelled or refunded
 
 ### Automated Status Updates
+
 - **Payment Integration**: Auto-confirm on successful payment
 - **Kitchen Integration**: Status updates from preparation system
 - **Delivery Tracking**: Real-time delivery status updates
@@ -58,11 +61,12 @@ enum OrderStatus {
 ## Customer Order Management
 
 ### Order Tracking
+
 ```typescript
 // Customer order tracking interface
 export const OrderTracker: React.FC<{ orderId: string }> = ({ orderId }) => {
   const { order, loading } = useOrder(orderId);
-  
+
   return (
     <div className="order-tracker">
       <OrderStatusTimeline status={order.status} />
@@ -75,6 +79,7 @@ export const OrderTracker: React.FC<{ orderId: string }> = ({ orderId }) => {
 ```
 
 ### Customer Actions
+
 - **Order History**: View all past orders
 - **Reorder**: Quick reorder functionality
 - **Order Details**: Detailed order information
@@ -84,12 +89,14 @@ export const OrderTracker: React.FC<{ orderId: string }> = ({ orderId }) => {
 ## Admin Order Management
 
 ### Order Dashboard
+
 - **Real-time Order Queue**: Live order monitoring
 - **Status Management**: Manual status updates
 - **Order Search & Filtering**: Advanced search capabilities
 - **Bulk Operations**: Mass status updates and actions
 
 ### Order Processing Workflow
+
 ```typescript
 // Admin order management actions
 export const OrderManagement = {
@@ -98,30 +105,32 @@ export const OrderManagement = {
     await sendCustomerNotification(orderId, 'order_confirmed');
     await notifyKitchen(orderId);
   },
-  
+
   async markReadyForDelivery(orderId: string): Promise<void> {
     await updateOrderStatus(orderId, OrderStatus.READY_FOR_PICKUP);
     await scheduleDelivery(orderId);
     await sendCustomerNotification(orderId, 'ready_for_delivery');
   },
-  
+
   async markDelivered(orderId: string): Promise<void> {
     await updateOrderStatus(orderId, OrderStatus.DELIVERED);
     await sendCustomerNotification(orderId, 'delivered');
     await processDeliveryFeedback(orderId);
-  }
+  },
 };
 ```
 
 ## Catering Order Specifics
 
 ### Enhanced Management
+
 - **Advance Scheduling**: Orders placed days/weeks in advance
 - **Package Modifications**: Last-minute package changes
 - **Delivery Coordination**: Complex delivery logistics
 - **Setup Requirements**: Special delivery and setup instructions
 
 ### Catering Workflow
+
 - **Order Review**: Manual review for large catering orders
 - **Capacity Planning**: Kitchen capacity and resource allocation
 - **Delivery Scheduling**: Coordinated delivery time slots
@@ -130,6 +139,7 @@ export const OrderManagement = {
 ## Order Analytics
 
 ### Key Metrics
+
 ```typescript
 interface OrderAnalytics {
   dailyOrderCount: number;
@@ -147,6 +157,7 @@ interface OrderAnalytics {
 ```
 
 ### Reporting Features
+
 - **Order Volume Trends**: Daily, weekly, monthly patterns
 - **Revenue Analysis**: Sales performance metrics
 - **Customer Insights**: Ordering behavior patterns
@@ -155,6 +166,7 @@ interface OrderAnalytics {
 ## Error Handling & Recovery
 
 ### Order Issues
+
 ```typescript
 // Order problem resolution
 export const OrderIssueResolution = {
@@ -163,18 +175,19 @@ export const OrderIssueResolution = {
     await sendPaymentRetryNotification(orderId);
     await flagForManualReview(orderId);
   },
-  
+
   async handleDeliveryIssue(orderId: string, issue: DeliveryIssue): Promise<void> {
     await logDeliveryIssue(orderId, issue);
     await notifyCustomerService(orderId, issue);
     await scheduleRedelivery(orderId);
-  }
+  },
 };
 ```
 
 ## Communication System
 
 ### Customer Notifications
+
 - **Email Updates**: Detailed order status emails
 - **SMS Alerts**: Quick status update messages
 - **Push Notifications**: Mobile app notifications

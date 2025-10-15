@@ -6,7 +6,13 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { trackEvent, UmamiTracking, isUmamiLoaded, type UmamiEventType, type UmamiEventData } from './umami';
+import {
+  trackEvent,
+  UmamiTracking,
+  isUmamiLoaded,
+  type UmamiEventType,
+  type UmamiEventData,
+} from './umami';
 
 /**
  * Hook to track page views automatically
@@ -19,10 +25,10 @@ export const useUmamiPageTracking = () => {
 
   useEffect(() => {
     const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-    
+
     // Avoid tracking the same page multiple times
     if (lastTrackedPath.current === currentPath) return;
-    
+
     lastTrackedPath.current = currentPath;
 
     // Small delay to ensure Umami script is loaded
@@ -60,9 +66,12 @@ export const useUmamiTracking = () => {
     UmamiTracking.trackAddToCart(productName, quantity, price);
   }, []);
 
-  const trackPurchase = useCallback((orderTotal: number, orderItems: number, paymentMethod?: string) => {
-    UmamiTracking.trackPurchase(orderTotal, orderItems, paymentMethod);
-  }, []);
+  const trackPurchase = useCallback(
+    (orderTotal: number, orderItems: number, paymentMethod?: string) => {
+      UmamiTracking.trackPurchase(orderTotal, orderItems, paymentMethod);
+    },
+    []
+  );
 
   const trackContactForm = useCallback((formType: 'contact' | 'catering' | 'newsletter') => {
     UmamiTracking.trackContactForm(formType);
@@ -85,7 +94,7 @@ export const useUmamiTracking = () => {
     trackButtonClick,
     trackProductView,
     trackAddToCart,
-    trackPurchase, 
+    trackPurchase,
     trackContactForm,
     trackError,
     trackSocialClick,
@@ -102,13 +111,16 @@ export const useUmamiFormTracking = () => {
     trackEvent('form_start', { form_name: formName });
   }, []);
 
-  const trackFormSubmit = useCallback((formName: string, success: boolean, errorMessage?: string) => {
-    trackEvent('form_submit', {
-      form_name: formName,
-      success,
-      ...(errorMessage && { error_message: errorMessage }),
-    });
-  }, []);
+  const trackFormSubmit = useCallback(
+    (formName: string, success: boolean, errorMessage?: string) => {
+      trackEvent('form_submit', {
+        form_name: formName,
+        success,
+        ...(errorMessage && { error_message: errorMessage }),
+      });
+    },
+    []
+  );
 
   const trackFormFieldInteraction = useCallback((formName: string, fieldName: string) => {
     trackEvent('form_field_interaction', {

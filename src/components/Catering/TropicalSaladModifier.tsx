@@ -35,40 +35,33 @@ export const TropicalSaladModifier: React.FC<TropicalSaladModifierProps> = ({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <label className="text-sm font-medium text-gray-700">
-        Add Protein (Optional)
-      </label>
-      
-      <Select 
-        onValueChange={handleValueChange} 
-        value={selectedModifierId || 'none'}
-      >
+      <label className="text-sm font-medium text-gray-700">Add Protein (Optional)</label>
+
+      <Select onValueChange={handleValueChange} value={selectedModifierId || 'none'}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Add protein (optional)" />
         </SelectTrigger>
-        
+
         <SelectContent>
           <SelectItem value="none" className="font-medium">
             No protein
           </SelectItem>
-          
-          {modifiers.map((modifier) => (
-            <SelectItem 
-              key={modifier.id} 
+
+          {modifiers.map(modifier => (
+            <SelectItem
+              key={modifier.id}
               value={modifier.id}
               className="flex items-center justify-between py-3"
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-medium">
-                  {modifier.name}
-                </span>
+                <span className="font-medium">{modifier.name}</span>
                 <div className="flex items-center gap-2 ml-2">
                   <span className="text-sm font-semibold text-green-600">
                     +{formatPrice(modifier.price)}
                   </span>
                   {modifier.dietaryInfo && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="text-xs border-blue-500 text-blue-700 bg-blue-50"
                     >
                       {modifier.dietaryInfo.toUpperCase()}
@@ -80,7 +73,7 @@ export const TropicalSaladModifier: React.FC<TropicalSaladModifierProps> = ({
           ))}
         </SelectContent>
       </Select>
-      
+
       {selectedModifierId && (
         <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
           💡 The protein will be added to your Tropical Salad

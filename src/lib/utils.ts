@@ -66,7 +66,10 @@ export function formatNumber(num: number | string | null | undefined): string {
 /**
  * Formats a decimal number as a percentage
  */
-export function formatPercentage(value: number | string | null | undefined, decimalPlaces: number = 1): string {
+export function formatPercentage(
+  value: number | string | null | undefined,
+  decimalPlaces: number = 1
+): string {
   if (value === null || value === undefined) return '0%';
 
   // Convert string to number if needed

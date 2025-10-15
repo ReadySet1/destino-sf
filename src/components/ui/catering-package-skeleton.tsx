@@ -10,7 +10,7 @@ interface CateringPackageSkeletonProps {
 
 export function CateringPackageSkeleton({ className }: CateringPackageSkeletonProps) {
   return (
-    <div className={cn("space-y-8", className)}>
+    <div className={cn('space-y-8', className)}>
       {/* Header skeleton */}
       <div className="text-center space-y-6">
         <div>
@@ -51,7 +51,7 @@ export function CateringPackageSkeleton({ className }: CateringPackageSkeletonPr
                 <div key={itemIndex} className="border border-gray-200 rounded-lg p-4 space-y-3">
                   {/* Item image skeleton */}
                   <Skeleton className="h-24 w-full rounded-md" />
-                  
+
                   {/* Item details skeleton */}
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
@@ -89,7 +89,7 @@ export function CateringPackageSkeleton({ className }: CateringPackageSkeletonPr
           <Skeleton className="h-8 w-64 mx-auto" />
           <Skeleton className="h-4 w-96 mx-auto" />
         </div>
-        
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
@@ -109,7 +109,7 @@ export function CateringPackageSkeleton({ className }: CateringPackageSkeletonPr
 
 export function CateringPackageSkeletonSimple({ className }: CateringPackageSkeletonProps) {
   return (
-    <div className={cn("space-y-8", className)}>
+    <div className={cn('space-y-8', className)}>
       {/* Header skeleton */}
       <div className="text-center space-y-6">
         <div>
@@ -132,7 +132,7 @@ export function CateringPackageSkeletonSimple({ className }: CateringPackageSkel
               <div className="absolute inset-4 bg-amber-100 rounded-full animate-pulse"></div>
             </div>
           </div>
-          
+
           {/* Loading text skeleton */}
           <div className="space-y-3">
             <Skeleton className="h-6 w-64 mx-auto" />
@@ -141,7 +141,7 @@ export function CateringPackageSkeletonSimple({ className }: CateringPackageSkel
               <Skeleton className="h-4 w-48 mx-auto" />
             </div>
           </div>
-          
+
           {/* Contact info skeleton */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <Skeleton className="h-3 w-48 mx-auto" />

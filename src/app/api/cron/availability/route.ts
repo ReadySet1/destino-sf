@@ -8,7 +8,7 @@ import { env } from '@/env';
 /**
  * Cron Job API endpoint for processing scheduled availability changes
  * This endpoint should be called by a cron service (e.g., Vercel Cron, GitHub Actions, or external cron)
- * 
+ *
  * Schedule: Every 5 minutes
  * Purpose: Process pending availability rule changes and update product states
  */
@@ -17,25 +17,19 @@ export async function GET(request: NextRequest) {
     // Security: Verify the request is from an authorized source
     const authHeader = request.headers.get('authorization');
     const cronSecret = env.CRON_SECRET;
-    
+
     if (!cronSecret) {
       logger.error('CRON_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Cron secret not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Cron secret not configured' }, { status: 500 });
     }
 
     // Verify authorization header
     if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
       logger.warn('Unauthorized cron request attempt', {
         headers: request.headers,
-        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       });
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     logger.info('Starting scheduled availability processing job');
@@ -49,7 +43,7 @@ export async function GET(request: NextRequest) {
       processed: result.processed,
       updated: result.updated,
       errors: result.errors.length,
-      duration: result.duration
+      duration: result.duration,
     });
 
     return NextResponse.json({
@@ -59,21 +53,20 @@ export async function GET(request: NextRequest) {
         updated: result.updated,
         errors: result.errors.length,
         timestamp: new Date().toISOString(),
-        duration: result.duration
-      }
+        duration: result.duration,
+      },
     });
-
   } catch (error) {
     logger.error('Cron job failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -89,22 +82,13 @@ export async function HEAD() {
 
 // Explicitly handle unsupported methods
 export async function POST() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
 
 export async function PUT() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
 
 export async function DELETE() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }

@@ -61,10 +61,7 @@ export async function GET() {
       });
     }
 
-    if (
-      env.NEXT_PUBLIC_APP_URL &&
-      !env.NEXT_PUBLIC_APP_URL.startsWith('https://')
-    ) {
+    if (env.NEXT_PUBLIC_APP_URL && !env.NEXT_PUBLIC_APP_URL.startsWith('https://')) {
       recommendations.push({
         issue: 'APP_URL not using HTTPS',
         fix: 'Update NEXT_PUBLIC_APP_URL to use https:// in production',

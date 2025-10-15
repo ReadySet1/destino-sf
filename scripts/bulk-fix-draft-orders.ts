@@ -2,7 +2,7 @@
 
 /**
  * Bulk Fix Script for Square Draft Orders
- * 
+ *
  * This script identifies and fixes orders that were stuck in DRAFT state in Square
  * due to the missing autocomplete flag issue. It can complete payments and finalize
  * orders without requiring user credentials by using admin API access.
@@ -31,24 +31,26 @@ interface FixSummary {
 /**
  * Find orders that may be stuck in DRAFT state due to missing autocomplete
  */
-async function findDraftOrders(): Promise<Array<{
-  id: string;
-  squareOrderId: string;
-  paymentStatus: string;
-  status: string;
-  total: number;
-  customerName: string;
-  email: string;
-  createdAt: Date;
-  payments: Array<{
+async function findDraftOrders(): Promise<
+  Array<{
     id: string;
-    squarePaymentId: string;
+    squareOrderId: string;
+    paymentStatus: string;
     status: string;
-    amount: number;
-  }>;
-}>> {
+    total: number;
+    customerName: string;
+    email: string;
+    createdAt: Date;
+    payments: Array<{
+      id: string;
+      squarePaymentId: string;
+      status: string;
+      amount: number;
+    }>;
+  }>
+> {
   console.log('🔍 Searching for orders that may be stuck in DRAFT state...');
-  
+
   // Find orders that have PAID payments but might not be completed in Square
   const suspectOrders = await prisma.order.findMany({
     where: {
@@ -58,12 +60,12 @@ async function findDraftOrders(): Promise<Array<{
         {
           OR: [
             { status: 'PENDING' }, // Orders that should be PROCESSING after payment
-            { status: 'PROCESSING' }
-          ]
+            { status: 'PROCESSING' },
+          ],
         },
         // Only check orders from the last 30 days to avoid processing very old orders
-        { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-      ]
+        { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      ],
     },
     include: {
       payments: {
@@ -72,11 +74,11 @@ async function findDraftOrders(): Promise<Array<{
           squarePaymentId: true,
           status: true,
           amount: true,
-        }
-      }
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
-    take: 100 // Limit to 100 orders for safety
+    take: 100, // Limit to 100 orders for safety
   });
 
   console.log(`📊 Found ${suspectOrders.length} orders to investigate`);
@@ -94,7 +96,7 @@ async function checkSquareOrderState(squareOrderId: string): Promise<{
   try {
     const squareService = getSquareService();
     const orderResponse = await squareService.retrieveOrder(squareOrderId);
-    
+
     if (!orderResponse.order) {
       throw new Error('Order not found in Square');
     }
@@ -116,7 +118,7 @@ async function checkSquareOrderState(squareOrderId: string): Promise<{
 async function finalizeSquareOrder(squareOrderId: string): Promise<boolean> {
   try {
     const squareService = getSquareService();
-    
+
     // First get the current order to get the version
     const currentOrder = await squareService.retrieveOrder(squareOrderId);
     if (!currentOrder.order) {
@@ -150,7 +152,7 @@ async function processOrder(order: any): Promise<FixResult> {
   const result: FixResult = {
     orderId: order.id,
     squareOrderId: order.squareOrderId,
-    action: 'failed'
+    action: 'failed',
   };
 
   try {
@@ -183,7 +185,7 @@ async function processOrder(order: any): Promise<FixResult> {
     if (squareState.isDraft) {
       console.log(`   🔄 Order is in DRAFT state, attempting to finalize...`);
       const success = await finalizeSquareOrder(order.squareOrderId);
-      
+
       if (success) {
         result.action = 'order_finalized';
         console.log(`   ✅ Successfully finalized order`);
@@ -210,7 +212,9 @@ async function processOrder(order: any): Promise<FixResult> {
  */
 async function bulkFixDraftOrders(dryRun: boolean = true): Promise<FixSummary> {
   console.log('🚀 Starting bulk fix for Square draft orders...');
-  console.log(`📋 Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'LIVE (orders will be fixed)'}`);
+  console.log(
+    `📋 Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'LIVE (orders will be fixed)'}`
+  );
   console.log('---');
 
   const summary: FixSummary = {
@@ -219,36 +223,38 @@ async function bulkFixDraftOrders(dryRun: boolean = true): Promise<FixSummary> {
     orderFinalized: 0,
     alreadyCompleted: 0,
     failed: 0,
-    results: []
+    results: [],
   };
 
   try {
     // Find orders that might need fixing
     const orders = await findDraftOrders();
-    
+
     if (orders.length === 0) {
       console.log('✅ No orders found that need fixing');
       return summary;
     }
 
     console.log(`\n📝 Processing ${orders.length} orders...`);
-    
+
     for (const order of orders) {
       summary.totalProcessed++;
-      
+
       if (dryRun) {
         console.log(`\n[DRY RUN] Would process order ${order.id} (${order.squareOrderId})`);
-        console.log(`          Customer: ${order.customerName}, Status: ${order.status}, Payment: ${order.paymentStatus}`);
+        console.log(
+          `          Customer: ${order.customerName}, Status: ${order.status}, Payment: ${order.paymentStatus}`
+        );
         summary.results.push({
           orderId: order.id,
           squareOrderId: order.squareOrderId,
-          action: 'already_completed' // Simulate success in dry run
+          action: 'already_completed', // Simulate success in dry run
         });
         summary.alreadyCompleted++;
       } else {
         const result = await processOrder(order);
         summary.results.push(result);
-        
+
         switch (result.action) {
           case 'payment_completed':
             summary.paymentCompleted++;
@@ -308,7 +314,7 @@ function printSummary(summary: FixSummary) {
 async function main() {
   // Default to dry run unless explicitly disabled
   const isDryRun = process.argv.includes('--live') ? false : true;
-  
+
   if (!isDryRun) {
     console.log('⚠️ WARNING: Running in LIVE mode. This will make actual changes!');
     console.log('⚠️ Press Ctrl+C within 5 seconds to cancel...');
@@ -318,7 +324,7 @@ async function main() {
   try {
     const summary = await bulkFixDraftOrders(isDryRun);
     printSummary(summary);
-    
+
     if (isDryRun) {
       console.log('\n💡 To apply these fixes, run with --live flag:');
       console.log('   tsx scripts/bulk-fix-draft-orders.ts --live');

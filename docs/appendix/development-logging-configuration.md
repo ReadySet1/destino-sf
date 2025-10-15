@@ -14,12 +14,14 @@ The `DB_DEBUG` environment variable controls the verbosity of database connectio
 **To enable:** Add `DB_DEBUG=true` to your `.env.local` file
 
 #### When DB_DEBUG=false (default)
+
 - Database connection messages are suppressed
 - Prisma client initialization is silent
 - Connection retry attempts are not logged
 - Only errors are shown
 
 #### When DB_DEBUG=true
+
 - Full database connection flow is logged
 - Shows environment and pooler configuration
 - Displays connection attempts and retries
@@ -28,6 +30,7 @@ The `DB_DEBUG` environment variable controls the verbosity of database connectio
 ### Example Output Comparison
 
 **DB_DEBUG=false (Clean logs):**
+
 ```
  ✓ Compiled / in 4s (1544 modules)
  GET / 200 in 5057ms
@@ -36,6 +39,7 @@ The `DB_DEBUG` environment variable controls the verbosity of database connectio
 ```
 
 **DB_DEBUG=true (Verbose logs):**
+
 ```
  ✓ Compiled / in 4s (1544 modules)
  🔗 Building database URL for development environment
@@ -50,10 +54,12 @@ The `DB_DEBUG` environment variable controls the verbosity of database connectio
 ## Implementation Details
 
 The database debug logging is implemented in:
+
 - `src/lib/db-unified.ts` - Main database connection handling
 - `src/lib/db-optimized.ts` - Optimized Vercel connection handling
 
 All database-related console.log statements are wrapped in:
+
 ```typescript
 if (process.env.DB_DEBUG === 'true') {
   console.log('Debug message here');
@@ -63,12 +69,15 @@ if (process.env.DB_DEBUG === 'true') {
 ## Other Logging Controls
 
 ### Error Handling
+
 - TimeoutError messages are now filtered out of Sentry reporting
 - AbortError logging is minimized in development
 - Full error objects are only logged in development mode
 
 ### Timeout Error Suppression
+
 The following timeout-related errors are automatically suppressed in production logs:
+
 - Database connection timeouts
 - API request timeouts (AbortController)
 - Webhook processing timeouts

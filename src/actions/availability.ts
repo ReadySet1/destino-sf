@@ -3,11 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
-import { 
-  AvailabilityRuleSchema, 
-  type AvailabilityRule, 
+import {
+  AvailabilityRuleSchema,
+  type AvailabilityRule,
   type BulkAvailabilityRequest,
-  type AvailabilityEvaluation
+  type AvailabilityEvaluation,
 } from '@/types/availability';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityValidators } from '@/lib/availability/validators';
@@ -37,11 +37,11 @@ export async function createAvailabilityRule(
     // Validate the rule data
     const ruleData = { ...data, productId };
     const validation = AvailabilityValidators.validateRule(ruleData);
-    
+
     if (!validation.isValid) {
-      return { 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
+      return {
+        success: false,
+        error: `Validation failed: ${validation.errors.join(', ')}`,
       };
     }
 
@@ -68,19 +68,19 @@ export async function createAvailabilityRule(
     logger.info('Created availability rule via server action', {
       ruleId: result.id,
       productId,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
     return { success: true, data: result };
   } catch (error) {
     logger.error('Error in createAvailabilityRule action', {
       productId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create rule' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create rule',
     };
   }
 }
@@ -103,11 +103,11 @@ export async function updateAvailabilityRule(
     if (!validation.isValid) {
       logger.error('Validation failed for rule update', {
         ruleId,
-        errors: validation.errors
+        errors: validation.errors,
       });
       return {
         success: false,
-        error: `Validation failed: ${validation.errors.join(', ')}`
+        error: `Validation failed: ${validation.errors.join(', ')}`,
       };
     }
 
@@ -127,19 +127,19 @@ export async function updateAvailabilityRule(
     logger.info('Updated availability rule via server action', {
       ruleId,
       userId: authResult.user!.id,
-      changes: Object.keys(updates)
+      changes: Object.keys(updates),
     });
 
     return { success: true, data: result };
   } catch (error) {
     logger.error('Error in updateAvailabilityRule action', {
       ruleId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to update rule' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update rule',
     };
   }
 }
@@ -159,7 +159,7 @@ export async function deleteAvailabilityRule(
     // Get the rule to find the product ID for revalidation
     const rules = await AvailabilityQueries.getProductRules('dummy'); // We need the product ID
     const rule = rules.find(r => r.id === ruleId);
-    
+
     await withDatabaseConnection(async () => {
       await AvailabilityQueries.deleteRule(ruleId, authResult.user!.id);
     });
@@ -174,19 +174,19 @@ export async function deleteAvailabilityRule(
 
     logger.info('Deleted availability rule via server action', {
       ruleId,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
     return { success: true };
   } catch (error) {
     logger.error('Error in deleteAvailabilityRule action', {
       ruleId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete rule' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete rule',
     };
   }
 }
@@ -206,9 +206,9 @@ export async function bulkUpdateAvailability(
     // Validate the bulk request
     const validation = AvailabilityValidators.validateBulkRequest(request);
     if (!validation.isValid) {
-      return { 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
+      return {
+        success: false,
+        error: `Validation failed: ${validation.errors.join(', ')}`,
       };
     }
 
@@ -229,7 +229,7 @@ export async function bulkUpdateAvailability(
         case 'update':
           const updateData = request.rules.map(rule => ({
             id: rule.id!,
-            data: rule
+            data: rule,
           }));
           result = await AvailabilityQueries.bulkUpdateRules(updateData, authResult.user!.id);
           break;
@@ -264,19 +264,19 @@ export async function bulkUpdateAvailability(
       operation: request.operation,
       productCount: request.productIds.length,
       rulesCount: request.rules.length,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
     return { success: true, data: result };
   } catch (error) {
     logger.error('Error in bulkUpdateAvailability action', {
       operation: request.operation,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Bulk operation failed' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Bulk operation failed',
     };
   }
 }
@@ -290,17 +290,17 @@ export async function getProductAvailability(
   try {
     const rules = await AvailabilityQueries.getProductRules(productId);
     const evaluation = await AvailabilityEngine.evaluateProduct(productId, rules);
-    
+
     return { success: true, data: evaluation };
   } catch (error) {
     logger.error('Error in getProductAvailability action', {
       productId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get availability' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get availability',
     };
   }
 }
@@ -317,26 +317,26 @@ export async function previewAvailabilityChanges(
     for (const rule of draftRules) {
       const validation = AvailabilityValidators.validateRule(rule);
       if (!validation.isValid) {
-        return { 
-          success: false, 
-          error: `Rule validation failed: ${validation.errors.join(', ')}` 
+        return {
+          success: false,
+          error: `Rule validation failed: ${validation.errors.join(', ')}`,
         };
       }
     }
 
     // Run evaluation with draft rules
     const evaluation = await AvailabilityEngine.evaluateProduct(productId, draftRules);
-    
+
     return { success: true, data: evaluation };
   } catch (error) {
     logger.error('Error in previewAvailabilityChanges action', {
       productId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Preview failed' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Preview failed',
     };
   }
 }
@@ -362,24 +362,24 @@ export async function migrateFromSquareAvailability(
     // For now, return success with placeholder data
     logger.info('Migration from Square availability requested', {
       productIds: productIds?.length || 'all',
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return { 
-      success: true, 
-      data: { 
+    return {
+      success: true,
+      data: {
         message: 'Migration functionality will be implemented in the migration script',
-        productIds: productIds || []
-      } 
+        productIds: productIds || [],
+      },
     };
   } catch (error) {
     logger.error('Error in migrateFromSquareAvailability action', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Migration failed' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Migration failed',
     };
   }
 }
@@ -401,18 +401,18 @@ export async function processPendingChanges(): Promise<{ success: boolean; error
     revalidatePath('/admin/products/availability');
 
     logger.info('Processed pending availability changes', {
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
     return { success: true };
   } catch (error) {
     logger.error('Error in processPendingChanges action', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to process changes' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to process changes',
     };
   }
 }
@@ -425,17 +425,17 @@ export async function getProductRuleConflicts(
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const result = await AvailabilityQueries.getRulesWithConflicts(productId);
-    
+
     return { success: true, data: result };
   } catch (error) {
     logger.error('Error in getProductRuleConflicts action', {
       productId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get conflicts' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get conflicts',
     };
   }
 }
@@ -443,23 +443,23 @@ export async function getProductRuleConflicts(
 /**
  * Get availability statistics
  */
-export async function getAvailabilityStatistics(): Promise<{ 
-  success: boolean; 
-  data?: any; 
-  error?: string 
+export async function getAvailabilityStatistics(): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
 }> {
   try {
     const stats = await AvailabilityQueries.getRuleStatistics();
-    
+
     return { success: true, data: stats };
   } catch (error) {
     logger.error('Error in getAvailabilityStatistics action', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get statistics' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get statistics',
     };
   }
 }

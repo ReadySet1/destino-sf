@@ -116,9 +116,9 @@ POST /api/square/sync-filtered - Add verbose logging option
 
 ```tsx
 // lib/square/sync-debug.ts
-async function debugSquareItem(squareId: string): Promise<SquareDebugInfo>
-async function validateDataMapping(item: CatalogObject): Promise<DataMappingError[]>
-async function fetchSquareImages(imageIds: string[]): Promise<SquareImageData[]>
+async function debugSquareItem(squareId: string): Promise<SquareDebugInfo>;
+async function validateDataMapping(item: CatalogObject): Promise<DataMappingError[]>;
+async function fetchSquareImages(imageIds: string[]): Promise<SquareImageData[]>;
 ```
 
 ### Client-Server Data Flow
@@ -145,25 +145,27 @@ describe('Square Data Mapping', () => {
         name: 'Empanada de Carne',
         imageIds: ['img-123', 'img-456'],
         categories: [{ id: 'cat-1', name: 'EMPANADAS' }],
-        variations: [{
-          id: 'var-1',
-          itemVariationData: {
-            priceMoney: { amount: 500, currency: 'USD' }
-          }
-        }]
-      }
+        variations: [
+          {
+            id: 'var-1',
+            itemVariationData: {
+              priceMoney: { amount: 500, currency: 'USD' },
+            },
+          },
+        ],
+      },
     };
-    
+
     const transformed = transformSquareItem(mockCatalogObject);
     expect(transformed.images).toHaveLength(2);
-    expect(transformed.price).toBe(5.00);
+    expect(transformed.price).toBe(5.0);
     expect(transformed.categoryName).toBe('EMPANADAS');
   });
-  
+
   it('handles missing price data gracefully', () => {
     // Test edge cases
   });
-  
+
   it('maps Square categories to local categories', () => {
     // Test category mapping
   });
@@ -180,7 +182,7 @@ describe('Square API Data Retrieval', () => {
     const response = await squareClient.catalogApi.retrieveCatalogObject('item-id');
     expect(response.result.object).toHaveProperty('imageIds');
   });
-  
+
   it('retrieves image URLs for image IDs', async () => {
     // Test image URL resolution
   });
@@ -196,7 +198,7 @@ test.describe('Product Display After Sync', () => {
     const productImages = await page.locator('.product-image').all();
     expect(productImages.length).toBeGreaterThan(0);
   });
-  
+
   test('synced products show correct prices', async ({ page }) => {
     const priceElement = await page.locator('.product-price').first();
     const price = await priceElement.textContent();
@@ -239,7 +241,7 @@ const validateSquareData = (data: any) => {
       }
     });
   }
-  
+
   // Validate price is positive
   if (data.price && data.price < 0) {
     throw new Error('Invalid price');
@@ -354,36 +356,33 @@ async function debugSquareSync() {
     accessToken: process.env.SQUARE_ACCESS_TOKEN!,
     environment: Environment.Sandbox,
   });
-  
+
   try {
     // Fetch a specific item
-    const response = await client.catalogApi.listCatalog(
-      undefined,
-      'ITEM'
-    );
-    
+    const response = await client.catalogApi.listCatalog(undefined, 'ITEM');
+
     const items = response.result.objects || [];
-    
+
     // Find empanadas/alfajores
     const targetItems = items.filter(item => {
       const categories = item.itemData?.categories || [];
-      return categories.some(cat => 
+      return categories.some(cat =>
         ['EMPANADAS', 'ALFAJORES'].includes(cat.name?.toUpperCase() || '')
       );
     });
-    
+
     console.log('Found items:', targetItems.length);
-    
+
     // Debug first item
     if (targetItems.length > 0) {
       const item = targetItems[0];
       console.log('\n=== RAW SQUARE DATA ===');
       console.log(JSON.stringify(item, null, 2));
-      
+
       // Check images
       console.log('\n=== IMAGE DATA ===');
       console.log('Image IDs:', item.itemData?.imageIds);
-      
+
       if (item.itemData?.imageIds?.length > 0) {
         // Fetch image details
         const imageResponse = await client.catalogApi.batchRetrieveCatalogObjects({
@@ -391,7 +390,7 @@ async function debugSquareSync() {
         });
         console.log('Image objects:', JSON.stringify(imageResponse.result.objects, null, 2));
       }
-      
+
       // Check price
       console.log('\n=== PRICE DATA ===');
       const variations = item.itemData?.variations || [];
@@ -401,12 +400,11 @@ async function debugSquareSync() {
           price: v.itemVariationData?.priceMoney,
         });
       });
-      
+
       // Check category
       console.log('\n=== CATEGORY DATA ===');
       console.log('Categories:', item.itemData?.categories);
     }
-    
   } catch (error) {
     console.error('Debug error:', error);
   }
@@ -430,20 +428,20 @@ export async function GET(request: NextRequest) {
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   const { searchParams } = new URL(request.url);
   const itemId = searchParams.get('itemId');
-  
+
   try {
     let debugInfo: any = {};
-    
+
     if (itemId) {
       // Debug specific item
       const itemResponse = await squareClient.catalogApi.retrieveCatalogObject(itemId);
       const item = itemResponse.result.object;
-      
+
       debugInfo.rawData = item;
-      
+
       // Check for images
       if (item.itemData?.imageIds?.length > 0) {
         const imageResponse = await squareClient.catalogApi.batchRetrieveCatalogObjects({
@@ -451,7 +449,7 @@ export async function GET(request: NextRequest) {
         });
         debugInfo.images = imageResponse.result.objects;
       }
-      
+
       // Transform and check for issues
       debugInfo.transformedData = {
         name: item.itemData?.name,
@@ -459,7 +457,7 @@ export async function GET(request: NextRequest) {
         price: item.itemData?.variations?.[0]?.itemVariationData?.priceMoney,
         category: item.itemData?.categories?.[0],
       };
-      
+
       // Identify issues
       debugInfo.issues = [];
       if (!debugInfo.transformedData.images.length) {
@@ -475,35 +473,33 @@ export async function GET(request: NextRequest) {
       // List all items with issues
       const response = await squareClient.catalogApi.listCatalog(undefined, 'ITEM');
       const items = response.result.objects || [];
-      
+
       debugInfo.totalItems = items.length;
-      debugInfo.itemsWithIssues = items.filter(item => {
-        const hasImages = item.itemData?.imageIds?.length > 0;
-        const hasPrice = item.itemData?.variations?.some(v => 
-          v.itemVariationData?.priceMoney?.amount > 0
-        );
-        const hasCategory = item.itemData?.categories?.length > 0;
-        
-        return !hasImages || !hasPrice || !hasCategory;
-      }).map(item => ({
-        id: item.id,
-        name: item.itemData?.name,
-        hasImages: !!item.itemData?.imageIds?.length,
-        hasPrice: !!item.itemData?.variations?.some(v => 
-          v.itemVariationData?.priceMoney?.amount > 0
-        ),
-        hasCategory: !!item.itemData?.categories?.length,
-      }));
+      debugInfo.itemsWithIssues = items
+        .filter(item => {
+          const hasImages = item.itemData?.imageIds?.length > 0;
+          const hasPrice = item.itemData?.variations?.some(
+            v => v.itemVariationData?.priceMoney?.amount > 0
+          );
+          const hasCategory = item.itemData?.categories?.length > 0;
+
+          return !hasImages || !hasPrice || !hasCategory;
+        })
+        .map(item => ({
+          id: item.id,
+          name: item.itemData?.name,
+          hasImages: !!item.itemData?.imageIds?.length,
+          hasPrice: !!item.itemData?.variations?.some(
+            v => v.itemVariationData?.priceMoney?.amount > 0
+          ),
+          hasCategory: !!item.itemData?.categories?.length,
+        }));
     }
-    
+
     return NextResponse.json(debugInfo);
-    
   } catch (error) {
     console.error('Debug error:', error);
-    return NextResponse.json(
-      { error: 'Debug failed', details: error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Debug failed', details: error }, { status: 500 });
   }
 }
 ```

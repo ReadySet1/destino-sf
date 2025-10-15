@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { 
+import {
   type BulkAvailabilityRequest,
   type AvailabilityRule,
-  type AvailabilityApiResponse 
+  type AvailabilityApiResponse,
 } from '@/types/availability';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityValidators } from '@/lib/availability/validators';
@@ -20,21 +20,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body: BulkAvailabilityRequest = await request.json();
-    
+
     // Validate the bulk request
     const validation = AvailabilityValidators.validateBulkRequest(body);
     if (!validation.isValid) {
-      return NextResponse.json({ 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Validation failed: ${validation.errors.join(', ')}`,
+        },
+        { status: 400 }
+      );
     }
 
     let result: any;
@@ -44,10 +50,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
         case 'create':
           // Create rules for each product
           const createRules = body.productIds.flatMap(productId =>
-            body.rules.map(rule => ({ 
-              ...rule, 
+            body.rules.map(rule => ({
+              ...rule,
               productId,
-              id: undefined // Remove any existing IDs
+              id: undefined, // Remove any existing IDs
             }))
           );
 
@@ -79,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
 
           const updateData = body.rules.map(rule => ({
             id: rule.id!,
-            data: rule
+            data: rule,
           }));
           result = await AvailabilityQueries.bulkUpdateRules(updateData, authResult.user!.id);
           break;
@@ -106,7 +112,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
         } catch (scheduleError) {
           logger.warn('Failed to schedule rule changes', {
             ruleId: rule.id,
-            error: scheduleError instanceof Error ? scheduleError.message : 'Unknown error'
+            error: scheduleError instanceof Error ? scheduleError.message : 'Unknown error',
           });
         }
       }
@@ -116,23 +122,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
       operation: body.operation,
       productCount: body.productIds.length,
       rulesCount: body.rules.length,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: result 
+    return NextResponse.json({
+      success: true,
+      data: result,
     });
   } catch (error) {
     logger.error('Error in POST /api/availability/bulk', {
       operation: (request as any).operation,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Bulk operation failed' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Bulk operation failed',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -144,10 +153,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -163,8 +175,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
             state: 'pre_order',
             preOrderSettings: {
               message: 'Available for pre-order',
-              depositRequired: false
-            }
+              depositRequired: false,
+            },
           },
           seasonal: {
             name: 'Seasonal Rule',
@@ -172,8 +184,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
             state: 'available',
             seasonalConfig: {
               yearly: true,
-              timezone: 'America/Los_Angeles'
-            }
+              timezone: 'America/Los_Angeles',
+            },
           },
           hiddenWeekends: {
             name: 'Hide on Weekends',
@@ -181,38 +193,44 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
             state: 'hidden',
             timeRestrictions: {
               daysOfWeek: [0, 6], // Sunday and Saturday
-              timezone: 'America/Los_Angeles'
-            }
-          }
+              timezone: 'America/Los_Angeles',
+            },
+          },
         };
 
-        return NextResponse.json({ 
-          success: true, 
-          data: templates 
+        return NextResponse.json({
+          success: true,
+          data: templates,
         });
 
       case 'statistics':
         // Return bulk operation statistics
         const stats = await AvailabilityQueries.getRuleStatistics();
-        return NextResponse.json({ 
-          success: true, 
-          data: stats 
+        return NextResponse.json({
+          success: true,
+          data: stats,
         });
 
       default:
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Invalid action parameter' 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid action parameter',
+          },
+          { status: 400 }
+        );
     }
   } catch (error) {
     logger.error('Error in GET /api/availability/bulk', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to process bulk request' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to process bulk request',
+      },
+      { status: 500 }
+    );
   }
 }

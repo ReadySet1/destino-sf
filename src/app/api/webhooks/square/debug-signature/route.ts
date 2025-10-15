@@ -9,19 +9,19 @@ import { debugWebhookSignature } from '@/lib/square/webhook-signature-fix';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔍 Debug signature endpoint called');
-    
+
     // Read body as buffer for accurate signature validation
     const bodyBuffer = await request.arrayBuffer();
     const bodyText = new TextDecoder().decode(bodyBuffer);
-    
+
     console.log('📄 Raw body length:', bodyBuffer.byteLength);
     console.log('📄 Text body length:', bodyText.length);
-    
+
     // Run comprehensive signature debug
     const debugResult = await debugWebhookSignature(request, bodyText);
-    
+
     console.log('🔐 Complete debug result:', debugResult);
-    
+
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
@@ -29,15 +29,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       raw_body_length: bodyBuffer.byteLength,
       text_body_length: bodyText.length,
     });
-    
   } catch (error) {
     console.error('❌ Debug endpoint error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
 

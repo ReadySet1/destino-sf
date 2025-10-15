@@ -5,13 +5,13 @@ import { ProductOrderManager } from './components/ProductOrderManager';
 
 async function getInitialData() {
   const categories = await getCategoriesWithProductCounts();
-  
+
   // Get first category with products for initial load
   const defaultCategory = categories.find(cat => cat.productCount > 0);
-  
+
   return {
     categories,
-    defaultCategoryId: defaultCategory?.id || null
+    defaultCategoryId: defaultCategory?.id || null,
   };
 }
 
@@ -23,12 +23,10 @@ export default async function ProductOrderPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Product Display Order
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Product Display Order</h1>
           <p className="mt-2 text-gray-600">
-            Manage the order in which products appear on your website. 
-            Changes are saved automatically and will be visible to customers immediately.
+            Manage the order in which products appear on your website. Changes are saved
+            automatically and will be visible to customers immediately.
           </p>
         </div>
 
@@ -45,10 +43,7 @@ export default async function ProductOrderPage() {
 
         {/* Main Interface */}
         <Suspense fallback={<ProductOrderManagerSkeleton />}>
-          <ProductOrderManager
-            categories={categories}
-            defaultCategoryId={defaultCategoryId}
-          />
+          <ProductOrderManager categories={categories} defaultCategoryId={defaultCategoryId} />
         </Suspense>
       </div>
     </div>

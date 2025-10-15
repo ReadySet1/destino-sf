@@ -1,6 +1,7 @@
 # QA Testing Guide - Destino SF
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Testing Strategy](#testing-strategy)
 - [Running Tests](#running-tests)
@@ -29,6 +30,7 @@ This guide outlines the QA testing process for Destino SF. Our testing strategy 
 ## Testing Strategy
 
 ### 1. Unit Tests
+
 **Purpose**: Test individual functions and utilities in isolation
 
 **Location**: `src/__tests__/lib/`, `src/__tests__/utils/`
@@ -36,16 +38,19 @@ This guide outlines the QA testing process for Destino SF. Our testing strategy 
 **Coverage Target**: 60-70%
 
 **Run Command**:
+
 ```bash
 pnpm test:unit
 ```
 
 **Examples**:
+
 - `shippingUtils.test.ts` - Shipping calculations
 - `dateUtils.test.ts` - Date formatting and validation
 - `cart-helpers.test.ts` - Cart manipulation logic
 
 ### 2. Integration Tests
+
 **Purpose**: Test API routes and database interactions
 
 **Location**: `src/__tests__/app/api/`, `src/__tests__/app/actions/`, `src/__tests__/integration/`
@@ -53,18 +58,21 @@ pnpm test:unit
 **Coverage Target**: 65-75%
 
 **Run Command**:
+
 ```bash
 pnpm test:api
 pnpm test:integration  # Database integration tests
 ```
 
 **Examples**:
+
 - `checkout/payment/route.test.ts` - Payment API
 - `orders.test.ts` - Order creation and management
 - `webhooks.test.ts` - Square webhook handling
 - `database-integration.test.ts` - Database operations with transaction isolation
 
 **Test Utilities**:
+
 - **Database Test Utils** (`src/__tests__/setup/db-test-utils.ts`):
   - Transaction management for test isolation
   - Automatic rollback after each test
@@ -79,6 +87,7 @@ pnpm test:integration  # Database integration tests
   - Helper functions: `createCompleteOrder()`, `createUserWithOrders()`
 
 **Example Usage**:
+
 ```typescript
 import { userFactory, createCompleteOrder } from '@/__tests__/factories';
 import { startTransaction, rollbackTransaction } from '@/__tests__/setup/db-test-utils';
@@ -104,6 +113,7 @@ describe('Order Tests', () => {
 ```
 
 ### 3. Component Tests
+
 **Purpose**: Test React components in isolation
 
 **Location**: `src/__tests__/components/`
@@ -111,16 +121,19 @@ describe('Order Tests', () => {
 **Coverage Target**: 50-60%
 
 **Run Command**:
+
 ```bash
 pnpm test:components
 ```
 
 **Examples**:
+
 - `CheckoutForm.test.tsx` - Checkout form validation
 - `ProductForm.test.tsx` - Admin product management
 - `button.test.tsx` - UI component behavior
 
 ### 4. E2E Tests
+
 **Purpose**: Test complete user journeys
 
 **Location**: `tests/e2e/`
@@ -128,20 +141,24 @@ pnpm test:components
 **Coverage Target**: All critical paths
 
 **Run Command**:
+
 ```bash
 pnpm test:e2e:critical
 ```
 
 **Critical Paths**:
+
 - Complete purchase flow (cart → checkout → payment → confirmation)
 - Catering inquiry submission
 - User authentication
 - Admin order management
 
 ### 5. Critical Path Tests
+
 **Purpose**: Test revenue-critical functionality
 
 **Location**:
+
 - `src/__tests__/app/api/checkout/`
 - `src/__tests__/lib/square/`
 - `src/__tests__/app/actions/orders.test.ts`
@@ -149,34 +166,40 @@ pnpm test:e2e:critical
 **Coverage Target**: 75-80% (highest standard)
 
 **Run Command**:
+
 ```bash
 pnpm test:critical
 ```
 
 **What's Included**:
+
 - Payment processing (Square integration)
 - Order creation and status updates
 - Checkout flow validation
 - Square webhook processing
 
 ### 6. Performance Tests
+
 **Purpose**: Measure and enforce performance budgets
 
 **Location**: Lighthouse CI configuration (`lighthouserc.json`)
 
 **Run Command**:
+
 ```bash
 pnpm test:performance:lighthouse          # Desktop performance
 pnpm test:performance:lighthouse:mobile   # Mobile performance
 ```
 
 **Performance Budgets**:
+
 - **Performance Score**: ≥ 80%
 - **Accessibility Score**: ≥ 90%
 - **Best Practices**: ≥ 85%
 - **SEO Score**: ≥ 90%
 
 **Core Web Vitals**:
+
 - **First Contentful Paint (FCP)**: < 2s
 - **Largest Contentful Paint (LCP)**: < 3s
 - **Cumulative Layout Shift (CLS)**: < 0.1
@@ -184,6 +207,7 @@ pnpm test:performance:lighthouse:mobile   # Mobile performance
 - **Speed Index**: < 3.5s
 
 **Pages Tested**:
+
 - Homepage
 - Product category pages (Empanadas, Alfajores)
 - Catering page
@@ -227,18 +251,22 @@ pnpm test:pre-deploy        # Full validation before deployment
 ### Test Environments
 
 #### Local Development
+
 ```bash
 # Run tests with local database
 pnpm test
 ```
 
 #### CI/CD (GitHub Actions)
+
 Tests run automatically on:
+
 - Push to `main` or `development` branches
 - Pull request creation/updates
 - Manual workflow dispatch
 
 #### Staging Environment
+
 ```bash
 # Set staging URL
 export PLAYWRIGHT_STAGING_URL="https://your-staging.vercel.app"
@@ -254,25 +282,30 @@ pnpm test:e2e:staging:critical
 When creating a PR to `main` or triggering manual deployment, the following automated checks run:
 
 ✅ **Code Quality**
+
 - ESLint validation
 - Prettier formatting check
 - TypeScript type checking
 
 ✅ **Test Coverage**
+
 - Unit tests (all passing)
 - Critical path tests (all passing, 75%+ coverage)
 - API tests (all passing)
 - Component tests (all passing)
 
 ✅ **Security**
+
 - Dependency vulnerability scan (moderate+ level)
 - No high/critical security issues
 
 ✅ **Build**
+
 - Production build successful
 - No build errors or warnings
 
 ✅ **E2E Tests**
+
 - Complete purchase flow
 - Catering inquiry flow
 - Mobile responsive tests
@@ -416,6 +449,7 @@ test('should complete purchase flow', async ({ page }) => {
    - ❌ `test shipping`
 
 2. **Test Isolation**: Each test should be independent
+
    ```typescript
    beforeEach(() => {
      // Reset state before each test
@@ -425,15 +459,17 @@ test('should complete purchase flow', async ({ page }) => {
    ```
 
 3. **Mock External Services**: Don't make real API calls in unit tests
+
    ```typescript
    jest.mock('square', () => ({
      paymentsApi: {
-       createPayment: jest.fn().mockResolvedValue({ payment: { id: '123' } })
-     }
+       createPayment: jest.fn().mockResolvedValue({ payment: { id: '123' } }),
+     },
    }));
    ```
 
 4. **Test Edge Cases**: Don't just test the happy path
+
    ```typescript
    test('should handle invalid email format', () => {
      expect(() => validateEmail('not-an-email')).toThrow();
@@ -441,11 +477,16 @@ test('should complete purchase flow', async ({ page }) => {
    ```
 
 5. **Avoid Test Interdependence**: Tests should not rely on execution order
+
    ```typescript
    // ❌ Bad - relies on previous test
    let userId;
-   test('creates user', () => { userId = createUser(); });
-   test('updates user', () => { updateUser(userId); });
+   test('creates user', () => {
+     userId = createUser();
+   });
+   test('updates user', () => {
+     updateUser(userId);
+   });
 
    // ✅ Good - each test is independent
    test('creates user', () => {
@@ -466,13 +507,13 @@ test('should complete purchase flow', async ({ page }) => {
 
 Coverage requirements are enforced in `jest.config.ts`:
 
-| Scope | Branches | Functions | Lines | Statements |
-|-------|----------|-----------|-------|------------|
-| **Global** | 50% | 55% | 60% | 60% |
-| **Critical Paths** (checkout, payments, orders) | 75% | 80% | 80% | 80% |
-| **Square Integration** | 70% | 75% | 75% | 75% |
-| **Business Logic** (lib/) | 60% | 65% | 65% | 65% |
-| **Utilities** | 55% | 60% | 60% | 60% |
+| Scope                                           | Branches | Functions | Lines | Statements |
+| ----------------------------------------------- | -------- | --------- | ----- | ---------- |
+| **Global**                                      | 50%      | 55%       | 60%   | 60%        |
+| **Critical Paths** (checkout, payments, orders) | 75%      | 80%       | 80%   | 80%        |
+| **Square Integration**                          | 70%      | 75%       | 75%   | 75%        |
+| **Business Logic** (lib/)                       | 60%      | 65%       | 65%   | 65%        |
+| **Utilities**                                   | 55%      | 60%       | 60%   | 60%        |
 
 ### Viewing Coverage Reports
 
@@ -495,10 +536,12 @@ pnpm test:coverage --coverageReporters=text
 - **Statements**: All statements executed
 
 **Example**:
+
 ```typescript
 // 100% coverage requires testing both branches
 function isEligibleForDiscount(order) {
-  if (order.total > 100) {  // Test both true and false cases
+  if (order.total > 100) {
+    // Test both true and false cases
     return true;
   }
   return false;
@@ -519,7 +562,9 @@ test('not eligible when total <= 100', () => {
 ### GitHub Actions Workflows
 
 #### 1. Test Suite (`test-suite.yml`)
+
 Runs on every push and PR:
+
 - Linting and formatting
 - Type checking
 - Unit, API, and component tests
@@ -529,7 +574,9 @@ Runs on every push and PR:
 **Status**: Tests now BLOCK merging if they fail (no more `continue-on-error`)
 
 #### 2. Pre-Deployment Checklist (`pre-deployment.yml`)
+
 Runs on PRs to `main` and manual triggers:
+
 - All quality checks from test suite
 - E2E critical path tests
 - Build verification
@@ -537,6 +584,7 @@ Runs on PRs to `main` and manual triggers:
 - Generates deployment report
 
 **Manual Trigger**:
+
 ```bash
 # Via GitHub UI: Actions → Pre-Deployment Checklist → Run workflow
 # Select environment: staging or production
@@ -551,6 +599,7 @@ Git hooks run automatically before each commit:
 3. **Critical tests**: Run tests if critical files modified
 
 **Skip hooks** (for urgent fixes only):
+
 ```bash
 SKIP_HOOKS=1 git commit -m "urgent: fix critical bug"
 ```
@@ -627,6 +676,7 @@ SKIP_HOOKS=1 git commit -m "urgent: fix critical bug"
 **Cause**: Environment differences (database, env vars)
 
 **Solution**:
+
 1. Check GitHub Actions environment variables
 2. Verify database setup in CI (see `test-suite.yml`)
 3. Ensure `NODE_ENV=test` is set
@@ -637,6 +687,7 @@ SKIP_HOOKS=1 git commit -m "urgent: fix critical bug"
 **Cause**: Long-running database queries or API calls
 
 **Solution**:
+
 ```typescript
 // Increase timeout for specific test
 test('slow database operation', async () => {
@@ -644,7 +695,7 @@ test('slow database operation', async () => {
 }, 30000); // 30 second timeout
 
 // Or configure globally in jest.config.ts
-testTimeout: 30000
+testTimeout: 30000;
 ```
 
 #### Coverage Not Meeting Thresholds
@@ -652,6 +703,7 @@ testTimeout: 30000
 **Cause**: New code not adequately tested
 
 **Solution**:
+
 1. Run coverage report: `pnpm test:coverage`
 2. Open HTML report: `open coverage/index.html`
 3. Find uncovered lines (red highlighting)
@@ -663,6 +715,7 @@ testTimeout: 30000
 **Cause**: Selectors changed, timing issues, or environment differences
 
 **Solution**:
+
 ```bash
 # Debug with headed browser
 pnpm test:e2e:headed
@@ -679,6 +732,7 @@ pnpm test:e2e:report
 **Cause**: Database not available or wrong connection string
 
 **Solution**:
+
 1. Check `DATABASE_URL` in `.env.test`
 2. Ensure test database exists
 3. Verify database container is running (if using Docker)
@@ -723,6 +777,7 @@ pnpm test:coverage --collectCoverageFrom="src/lib/square/**/*.ts"
 ### Adding New Tests
 
 When adding features:
+
 1. Write unit tests first (TDD approach)
 2. Add integration tests for API routes
 3. Update E2E tests if user-facing

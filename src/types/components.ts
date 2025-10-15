@@ -55,13 +55,11 @@ export interface InputEventHandlers<T = HTMLInputElement> {
 }
 
 // Combined Event Handler Types
-export type AllEventHandlers<T = HTMLElement> = 
-  EventHandlers<T> & 
-  KeyboardEventHandlers<T> & 
+export type AllEventHandlers<T = HTMLElement> = EventHandlers<T> &
+  KeyboardEventHandlers<T> &
   FocusEventHandlers<T>;
 
-export type FormElementEventHandlers<T = HTMLInputElement> = 
-  AllEventHandlers<T> & 
+export type FormElementEventHandlers<T = HTMLInputElement> = AllEventHandlers<T> &
   InputEventHandlers<T>;
 
 // Form Validation Types
@@ -146,7 +144,17 @@ export interface ButtonProps extends BaseComponentProps, EventHandlers<HTMLButto
 
 // Input Component Types
 export interface InputProps extends BaseComponentProps, FormElementEventHandlers<HTMLInputElement> {
-  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'time' | 'datetime-local';
+  type?:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'tel'
+    | 'url'
+    | 'search'
+    | 'date'
+    | 'time'
+    | 'datetime-local';
   value?: string | number;
   defaultValue?: string | number;
   placeholder?: string;
@@ -172,7 +180,9 @@ export interface SelectOption<T = string> {
   icon?: React.ReactNode;
 }
 
-export interface SelectProps<T = string> extends BaseComponentProps, FormElementEventHandlers<HTMLSelectElement> {
+export interface SelectProps<T = string>
+  extends BaseComponentProps,
+    FormElementEventHandlers<HTMLSelectElement> {
   value?: T;
   defaultValue?: T;
   options: SelectOption<T>[];
@@ -189,7 +199,9 @@ export interface SelectProps<T = string> extends BaseComponentProps, FormElement
 }
 
 // Textarea Component Types
-export interface TextareaProps extends BaseComponentProps, FormElementEventHandlers<HTMLTextAreaElement> {
+export interface TextareaProps
+  extends BaseComponentProps,
+    FormElementEventHandlers<HTMLTextAreaElement> {
   value?: string;
   defaultValue?: string;
   placeholder?: string;
@@ -208,7 +220,9 @@ export interface TextareaProps extends BaseComponentProps, FormElementEventHandl
 }
 
 // Checkbox Component Types
-export interface CheckboxProps extends BaseComponentProps, FormElementEventHandlers<HTMLInputElement> {
+export interface CheckboxProps
+  extends BaseComponentProps,
+    FormElementEventHandlers<HTMLInputElement> {
   checked?: boolean;
   defaultChecked?: boolean;
   disabled?: boolean;
@@ -472,9 +486,8 @@ export interface A11yProps {
 }
 
 // Combined Props for Complex Components
-export type FullComponentProps<T = {}> = 
-  BaseComponentProps & 
-  AllEventHandlers & 
-  ThemeProps & 
-  A11yProps & 
+export type FullComponentProps<T = {}> = BaseComponentProps &
+  AllEventHandlers &
+  ThemeProps &
+  A11yProps &
   T;

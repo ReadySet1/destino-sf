@@ -41,8 +41,6 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   exponentialBackoff: true,
 };
 
-
-
 /**
  * Main Alert Service Class
  * Handles sending email alerts and tracking them in the database
@@ -184,7 +182,9 @@ export class AlertService {
           console.error('❌ Failed to send admin status change alert:', adminError);
         } else {
           await this.markAlertAsSent(adminAlertRecord.id, adminData?.id);
-          console.log(`✅ Admin status change alert sent for order ${order.id} to ${adminRecipientEmail}`);
+          console.log(
+            `✅ Admin status change alert sent for order ${order.id} to ${adminRecipientEmail}`
+          );
         }
       }
 
@@ -753,10 +753,10 @@ export class AlertService {
     if (!subject) {
       return 'General inquiry';
     }
-    
+
     // Remove newline characters and trim whitespace
     const sanitized = subject.replace(/[\r\n]+/g, ' ').trim();
-    
+
     // Limit length to 78 characters (email subject best practice)
     return sanitized.length > 78 ? sanitized.substring(0, 75) + '...' : sanitized;
   }
@@ -767,7 +767,7 @@ export class AlertService {
   async sendContactFormReceived(data: ContactFormReceivedData): Promise<AlertResult> {
     try {
       const shopName = env.SHOP_NAME || 'Destino SF';
-      
+
       // Sanitize the subject to prevent email sending issues
       const sanitizedSubject = this.sanitizeEmailSubject(data.subject);
 
@@ -832,7 +832,9 @@ export class AlertService {
         },
       });
 
-      console.log(`✅ Contact form processed for ${data.name} (${data.email}) - admin notification sent to ${adminRecipientEmail}`);
+      console.log(
+        `✅ Contact form processed for ${data.name} (${data.email}) - admin notification sent to ${adminRecipientEmail}`
+      );
       return { success: !customerError && !adminError };
     } catch (error) {
       console.error('Error processing contact form:', error);

@@ -53,7 +53,9 @@ export async function handlePaymentUpdatedImproved(payload: SquareWebhookPayload
   const paymentStatus = paymentData?.status?.toUpperCase();
   const eventId = payload.event_id;
 
-  console.log(`🔄 [IMPROVED] Processing payment.updated event: ${squarePaymentId} (Event: ${eventId})`);
+  console.log(
+    `🔄 [IMPROVED] Processing payment.updated event: ${squarePaymentId} (Event: ${eventId})`
+  );
 
   if (!squareOrderId) {
     console.error(`❌ No order_id found in payment.updated payload for payment ${squarePaymentId}`);
@@ -76,7 +78,7 @@ export async function handlePaymentUpdatedImproved(payload: SquareWebhookPayload
     }
 
     // Use atomic transaction for regular orders
-    await executeWebhookTransaction(async (tx) => {
+    await executeWebhookTransaction(async tx => {
       // Step 1: Find the order
       const order = await tx.order.findUnique({
         where: { squareOrderId: squareOrderId },
@@ -111,14 +113,19 @@ export async function handlePaymentUpdatedImproved(payload: SquareWebhookPayload
 
       // Step 3: Map payment status
       const mappedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
-      console.log(`📊 [TRANSACTION] Payment status mapping: ${paymentStatus} → ${mappedPaymentStatus}`);
+      console.log(
+        `📊 [TRANSACTION] Payment status mapping: ${paymentStatus} → ${mappedPaymentStatus}`
+      );
 
       // Step 4: Determine order status update
-      const shouldUpdateOrderStatus = order.paymentStatus !== 'PAID' && mappedPaymentStatus === 'PAID';
+      const shouldUpdateOrderStatus =
+        order.paymentStatus !== 'PAID' && mappedPaymentStatus === 'PAID';
       const newOrderStatus = shouldUpdateOrderStatus ? OrderStatus.PROCESSING : order.status;
 
       console.log(`🔄 [TRANSACTION] Order status: ${order.status} → ${newOrderStatus}`);
-      console.log(`💳 [TRANSACTION] Payment status: ${order.paymentStatus} → ${mappedPaymentStatus}`);
+      console.log(
+        `💳 [TRANSACTION] Payment status: ${order.paymentStatus} → ${mappedPaymentStatus}`
+      );
 
       // Step 5: Upsert payment record
       await tx.payment.upsert({
@@ -180,11 +187,12 @@ export async function handlePaymentUpdatedImproved(payload: SquareWebhookPayload
       };
     }, `payment-updated-${squarePaymentId}`);
 
-    console.log(`✅ [IMPROVED] Successfully processed payment.updated event for ${squarePaymentId}`);
-
+    console.log(
+      `✅ [IMPROVED] Successfully processed payment.updated event for ${squarePaymentId}`
+    );
   } catch (error: any) {
     console.error(`❌ [IMPROVED] Error processing payment.updated for ${squarePaymentId}:`, error);
-    
+
     // Capture the error for monitoring
     await errorMonitor.captureWebhookError(
       error,
@@ -192,7 +200,7 @@ export async function handlePaymentUpdatedImproved(payload: SquareWebhookPayload
       { squarePaymentId, squareOrderId, paymentStatus },
       eventId
     );
-    
+
     throw error; // Re-throw to trigger webhook retry
   }
 }
@@ -219,17 +227,17 @@ export async function syncOrderStatusFromPayments(): Promise<{
           paymentStatus: 'PENDING',
           payments: {
             some: {
-              status: 'PAID'
-            }
-          }
+              status: 'PAID',
+            },
+          },
         },
         include: {
           payments: {
             where: { status: 'PAID' },
             orderBy: { updatedAt: 'desc' },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       })
     );
 
@@ -237,9 +245,9 @@ export async function syncOrderStatusFromPayments(): Promise<{
 
     for (const order of problematicOrders) {
       try {
-        await executeWebhookTransaction(async (tx) => {
+        await executeWebhookTransaction(async tx => {
           const newOrderStatus = order.status === 'PENDING' ? OrderStatus.PROCESSING : order.status;
-          
+
           await tx.order.update({
             where: { id: order.id },
             data: {
@@ -249,7 +257,7 @@ export async function syncOrderStatusFromPayments(): Promise<{
             },
           });
         }, `sync-order-${order.id}`);
-        
+
         result.ordersSynced++;
         console.log(`✅ Synced order ${order.id} payment status`);
       } catch (error: any) {
@@ -258,7 +266,6 @@ export async function syncOrderStatusFromPayments(): Promise<{
         console.error(`❌ ${errorMsg}`);
       }
     }
-
   } catch (error: any) {
     result.errors.push(`Failed to query problematic orders: ${error.message}`);
   }

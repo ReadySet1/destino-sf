@@ -9,6 +9,7 @@ Destino SF implements a hybrid API architecture combining Next.js API routes wit
 ### REST API Endpoints
 
 #### Product Management
+
 ```typescript
 // GET /api/products
 // GET /api/products/[id]
@@ -18,6 +19,7 @@ Destino SF implements a hybrid API architecture combining Next.js API routes wit
 ```
 
 #### Order Management
+
 ```typescript
 // GET /api/orders
 // GET /api/orders/[id]
@@ -26,6 +28,7 @@ Destino SF implements a hybrid API architecture combining Next.js API routes wit
 ```
 
 #### Catering System
+
 ```typescript
 // GET /api/catering/packages
 // GET /api/catering/delivery-zones
@@ -34,6 +37,7 @@ Destino SF implements a hybrid API architecture combining Next.js API routes wit
 ```
 
 #### Administrative
+
 ```typescript
 // GET /api/admin/dashboard
 // GET /api/admin/orders
@@ -43,30 +47,33 @@ Destino SF implements a hybrid API architecture combining Next.js API routes wit
 ### tRPC Procedures
 
 #### Type-Safe Client Communication
+
 ```typescript
 // Product procedures
-product.getAll()
-product.getById(id)
-product.getRecommendations(productId)
+product.getAll();
+product.getById(id);
+product.getRecommendations(productId);
 
 // Order procedures
-order.create(orderData)
-order.getByUserId(userId)
-order.updateStatus(id, status)
+order.create(orderData);
+order.getByUserId(userId);
+order.updateStatus(id, status);
 
 // Catering procedures
-catering.calculateDeliveryFee(zone, orderTotal)
-catering.getAvailablePackages()
+catering.calculateDeliveryFee(zone, orderTotal);
+catering.getAvailablePackages();
 ```
 
 ## Authentication & Authorization
 
 ### JWT-based Authentication
+
 - Secure token generation and validation
 - Role-based access control (customer, admin, staff)
 - Session management with automatic refresh
 
 ### API Route Protection
+
 ```typescript
 // Protected route middleware
 export async function authenticateApiRoute(
@@ -82,21 +89,25 @@ export async function authenticateApiRoute(
 ## Data Validation
 
 ### Input Validation with Zod
+
 ```typescript
 // Example order creation schema
 const createOrderSchema = z.object({
-  items: z.array(z.object({
-    productId: z.string().uuid(),
-    quantity: z.number().positive(),
-    variantId: z.string().uuid().optional()
-  })),
+  items: z.array(
+    z.object({
+      productId: z.string().uuid(),
+      quantity: z.number().positive(),
+      variantId: z.string().uuid().optional(),
+    })
+  ),
   deliveryAddress: addressSchema,
   paymentMethodId: z.string(),
-  specialInstructions: z.string().optional()
+  specialInstructions: z.string().optional(),
 });
 ```
 
 ### Error Handling
+
 - Standardized error responses
 - Type-safe error objects
 - Appropriate HTTP status codes
@@ -105,6 +116,7 @@ const createOrderSchema = z.object({
 ## Rate Limiting
 
 ### API Protection
+
 - Request rate limiting per IP/user
 - Endpoint-specific limits
 - Graceful degradation under load
@@ -112,11 +124,13 @@ const createOrderSchema = z.object({
 ## Caching Strategy
 
 ### Response Caching
+
 - Static data caching (products, categories)
 - User-specific data handling
 - Cache invalidation strategies
 
 ### Database Query Optimization
+
 - Query result caching
 - Connection pooling
 - Index optimization for common queries
@@ -124,11 +138,13 @@ const createOrderSchema = z.object({
 ## Webhook Integration
 
 ### Square Webhooks
+
 - Payment status updates
 - Inventory synchronization
 - Order fulfillment notifications
 
 ### Shippo Webhooks
+
 - Shipping status updates
 - Tracking information
 - Delivery confirmations
@@ -136,12 +152,14 @@ const createOrderSchema = z.object({
 ## API Documentation
 
 ### OpenAPI Specification
+
 - Comprehensive endpoint documentation
 - Request/response schemas
 - Authentication requirements
 - Example requests and responses
 
 ### Development Tools
+
 - API testing with automated tests
 - Mock data for development
 - Environment-specific configurations

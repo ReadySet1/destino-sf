@@ -25,7 +25,9 @@ export async function GET() {
     };
 
     // Pass the request object directly, not as a string
-    const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequestBody as any);
+    const searchResponse = await squareClient.catalogApi.searchCatalogObjects(
+      searchRequestBody as any
+    );
 
     // Test listCatalog method
     logger.info('Testing listCatalog method...');

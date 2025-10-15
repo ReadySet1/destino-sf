@@ -2,7 +2,7 @@
 
 /**
  * Sandbox Environment Validation Script
- * 
+ *
  * This script validates that all required environment variables are set
  * and tests the Square sandbox configuration.
  */
@@ -16,31 +16,31 @@ const SandboxEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string().min(32),
   NEXTAUTH_URL: z.string().url(),
-  
+
   // Required for Square sandbox
   SQUARE_SANDBOX_TOKEN: z.string().min(10),
   SQUARE_LOCATION_ID: z.string().startsWith('L'),
   SQUARE_SANDBOX_APPLICATION_ID: z.string().startsWith('sandbox-'),
-  
+
   // Required for email
   RESEND_API_KEY: z.string().startsWith('re_'),
   FROM_EMAIL: z.string().email(),
   ADMIN_EMAIL: z.string().email(),
-  
+
   // Required for Supabase
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(10),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10),
-  
+
   // Required for Sanity
   NEXT_PUBLIC_SANITY_PROJECT_ID: z.string().min(5),
   SANITY_API_TOKEN: z.string().min(10),
-  
+
   // Configuration flags
   USE_SQUARE_SANDBOX: z.string().transform(val => val === 'true'),
   SQUARE_CATALOG_USE_PRODUCTION: z.string().transform(val => val === 'true'),
   SQUARE_TRANSACTIONS_USE_SANDBOX: z.string().transform(val => val === 'true'),
-  
+
   // Optional
   SHIPPO_API_KEY: z.string().optional(),
   SQUARE_WEBHOOK_SECRET: z.string().optional(),
@@ -127,7 +127,6 @@ async function validateSandboxEnvironment(): Promise<ValidationResult> {
       result.warnings.push('SQUARE_WEBHOOK_SECRET_SANDBOX not set - sandbox webhooks may not work');
       console.log('⚠️  Warning: Square webhook secret sandbox not configured');
     }
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.log('❌ Environment validation failed:');
@@ -178,9 +177,9 @@ async function testSquareAPI(token: string): Promise<{ success: boolean; error?:
       return { success: false, error: `HTTP ${response.status}: ${errorText}` };
     }
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Network error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 }
@@ -192,25 +191,28 @@ async function testDatabaseConnection(url: string): Promise<{ success: boolean; 
     if (urlObj.protocol !== 'postgresql:') {
       return { success: false, error: 'Invalid database URL protocol' };
     }
-    
+
     // For a more thorough test, you could try to connect to the database
     // but that would require additional dependencies
     return { success: true };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Invalid URL format' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Invalid URL format',
     };
   }
 }
 
-async function testSupabaseConnection(url: string, key: string): Promise<{ success: boolean; error?: string }> {
+async function testSupabaseConnection(
+  url: string,
+  key: string
+): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`${url}/rest/v1/`, {
       method: 'GET',
       headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
+        apikey: key,
+        Authorization: `Bearer ${key}`,
       },
     });
 
@@ -220,9 +222,9 @@ async function testSupabaseConnection(url: string, key: string): Promise<{ succe
       return { success: false, error: `HTTP ${response.status}` };
     }
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Network error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 }
@@ -239,4 +241,4 @@ if (require.main === module) {
     });
 }
 
-export { validateSandboxEnvironment, SandboxEnvSchema }; 
+export { validateSandboxEnvironment, SandboxEnvSchema };

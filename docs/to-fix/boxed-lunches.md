@@ -23,7 +23,7 @@ Need to integrate the existing boxed lunch items from the database (category: "C
 - [x] Items maintain proper dietary indicators (GF, Vegan, Vegetarian)
 - [x] Integration with existing cart system
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -100,7 +100,7 @@ interface BoxedLunchResponse {
 -- Category: "CATERING- BOXED LUNCHES"
 -- Items already in database:
 -- 1. Box- Adobo Pork Power Box ($16.00)
--- 2. Box- Churrasco Energy Box ($17.00)  
+-- 2. Box- Churrasco Energy Box ($17.00)
 -- 3. Box- Citrus Mojo Chicken Box ($15.00)
 -- 4. Box- Tropical Salad Entree (12oz) ($14.00) -- Needs modifiers
 -- 5. Box- Vegetarian Empanadas (2) with Arroz Rojo & Kale ($15.00)
@@ -115,7 +115,7 @@ interface BoxedLunchResponse {
 - [x] Display all 7 boxed lunch items from database category "CATERING- BOXED LUNCHES"
 - [x] Tropical Salad dropdown with exactly these options:
   - Add Queso Fresco (4oz) $2.00 -gf
-  - Add Sirloin Steak (4oz) $4.00 -gf  
+  - Add Sirloin Steak (4oz) $4.00 -gf
   - Add Chicken Mojo (4oz) $3.00 -gf
 - [x] Clean item description parsing (handle special characters, line breaks)
 - [x] Dietary indicator badges (GF, Vegan, Vegetarian)
@@ -147,12 +147,12 @@ interface RouteHandler {
 
 ```tsx
 // app/catering/actions.ts - ADD
-async function getBoxedLunchItems(): Promise<BoxedLunchItem[]>
+async function getBoxedLunchItems(): Promise<BoxedLunchItem[]>;
 async function addBoxedLunchToCart(
-  item: BoxedLunchItem, 
+  item: BoxedLunchItem,
   quantity: number,
   modifiers?: BoxedLunchModifier[]
-): Promise<CartResponse>
+): Promise<CartResponse>;
 ```
 
 ### Client-Server Data Flow
@@ -164,7 +164,7 @@ async function addBoxedLunchToCart(
 5. Cart calculates total with base + modifier prices
 6. Confirmation toast shows success
 
-------
+---
 
 ## 🧪 Testing Strategy
 
@@ -173,24 +173,24 @@ async function addBoxedLunchToCart(
 ```tsx
 // BoxedLunchCard Tests
 describe('BoxedLunchCard', () => {
-  it('displays item name and base price correctly', async () => {})
-  it('shows dietary badges based on description parsing', async () => {})
-  it('handles Tropical Salad modifier selection', async () => {})
-  it('calculates correct total with modifiers', async () => {})
+  it('displays item name and base price correctly', async () => {});
+  it('shows dietary badges based on description parsing', async () => {});
+  it('handles Tropical Salad modifier selection', async () => {});
+  it('calculates correct total with modifiers', async () => {});
 });
 
-// API Route Tests  
+// API Route Tests
 describe('API: /api/catering/boxed-lunches', () => {
-  it('returns all items from CATERING- BOXED LUNCHES category', async () => {})
-  it('parses dietary preferences from descriptions', async () => {})
-  it('handles database connection errors gracefully', async () => {})
+  it('returns all items from CATERING- BOXED LUNCHES category', async () => {});
+  it('parses dietary preferences from descriptions', async () => {});
+  it('handles database connection errors gracefully', async () => {});
 });
 
 // Utility Function Tests
 describe('Boxed lunch utilities', () => {
-  it('extracts dietary info from description text', () => {})
-  it('formats prices correctly with modifiers', () => {})
-  it('sanitizes description HTML/special chars', () => {})
+  it('extracts dietary info from description text', () => {});
+  it('formats prices correctly with modifiers', () => {});
+  it('sanitizes description HTML/special chars', () => {});
 });
 ```
 
@@ -199,18 +199,18 @@ describe('Boxed lunch utilities', () => {
 ```tsx
 // Database Integration
 describe('Boxed Lunch Database Operations', () => {
-  it('retrieves items with correct category filter', async () => {})
-  it('maintains data integrity for special characters', async () => {})
+  it('retrieves items with correct category filter', async () => {});
+  it('maintains data integrity for special characters', async () => {});
 });
 
 // Cart Integration
 describe('Boxed Lunch Cart Integration', () => {
-  it('adds item with modifier to cart correctly', async () => {})
-  it('preserves modifier selection through checkout', async () => {})
+  it('adds item with modifier to cart correctly', async () => {});
+  it('preserves modifier selection through checkout', async () => {});
 });
 ```
 
-------
+---
 
 ## 🔒 Security Analysis
 
@@ -220,7 +220,7 @@ describe('Boxed Lunch Cart Integration', () => {
 // Validate modifier selections
 const TropicalSaladModifierSchema = z.object({
   modifierId: z.enum(['queso_fresco', 'sirloin_steak', 'chicken_mojo']).optional(),
-  quantity: z.number().int().positive().max(10)
+  quantity: z.number().int().positive().max(10),
 });
 
 // Sanitize description HTML
@@ -235,18 +235,18 @@ const sanitizedDescription = DOMPurify.sanitize(item.description);
 const items = await prisma.product.findMany({
   where: {
     category: {
-      name: 'CATERING- BOXED LUNCHES'
+      name: 'CATERING- BOXED LUNCHES',
     },
-    active: true
+    active: true,
   },
   include: {
     category: true,
-    variants: true
-  }
+    variants: true,
+  },
 });
 ```
 
-------
+---
 
 ## 📊 Performance Considerations
 
@@ -261,7 +261,7 @@ const items = await prisma.product.findMany({
 - [x] Lazy load BoxedLunchMenu component
 - [x] Use dynamic imports for DOMPurify (only when needed)
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
@@ -294,7 +294,7 @@ const items = await prisma.product.findMany({
 - [ ] Mobile responsiveness check
 - [ ] Accessibility audit
 
-------
+---
 
 ## 🎨 UI/UX Design Specifications
 
@@ -326,29 +326,18 @@ const items = await prisma.product.findMany({
       {item.isVegetarian && <Badge variant="secondary">Vegetarian</Badge>}
     </div>
   </CardHeader>
-  
+
   <CardContent>
-    <p className="text-sm text-muted-foreground mb-4">
-      {item.description}
-    </p>
-    
+    <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
+
     {/* Tropical Salad Modifier Dropdown */}
     {item.name.includes('Tropical Salad') && (
-      <TropicalSaladModifier 
-        onSelect={setSelectedModifier}
-        currentSelection={selectedModifier}
-      />
+      <TropicalSaladModifier onSelect={setSelectedModifier} currentSelection={selectedModifier} />
     )}
-    
+
     <div className="flex items-center gap-2 mt-4">
-      <QuantitySelector 
-        value={quantity}
-        onChange={setQuantity}
-      />
-      <Button 
-        onClick={handleAddToCart}
-        className="flex-1"
-      >
+      <QuantitySelector value={quantity} onChange={setQuantity} />
+      <Button onClick={handleAddToCart} className="flex-1">
         <ShoppingCart className="mr-2 h-4 w-4" />
         Add to Cart
       </Button>
@@ -379,7 +368,7 @@ const items = await prisma.product.findMany({
 </Select>
 ```
 
-------
+---
 
 ## 📝 Implementation Notes
 
@@ -403,7 +392,7 @@ const items = await prisma.product.findMany({
 - Add nutritional information display
 - Create modifier presets for common combinations
 
-------
+---
 
 ## 🔄 Rollback Plan
 
@@ -432,7 +421,7 @@ No database changes required - using existing products table
 - [ ] Set up error tracking for modifier selection issues
 - [ ] Track usage analytics for Tropical Salad modifiers
 
-------
+---
 
 ## Example API Response
 
@@ -444,7 +433,7 @@ No database changes required - using existing products table
       "id": "uuid-1",
       "name": "Box- Tropical Salad Entree (12oz)",
       "description": "baby arugula / hearts of palms / brazilian mango...",
-      "price": 14.00,
+      "price": 14.0,
       "squareId": "square-id",
       "isGlutenFree": true,
       "isVegan": true,
@@ -453,19 +442,19 @@ No database changes required - using existing products table
         {
           "id": "mod-1",
           "name": "Add Queso Fresco (4oz)",
-          "price": 2.00,
+          "price": 2.0,
           "dietaryInfo": "gf"
         },
         {
-          "id": "mod-2", 
+          "id": "mod-2",
           "name": "Add Sirloin Steak (4oz)",
-          "price": 4.00,
+          "price": 4.0,
           "dietaryInfo": "gf"
         },
         {
           "id": "mod-3",
           "name": "Add Chicken Mojo (4oz)",
-          "price": 3.00,
+          "price": 3.0,
           "dietaryInfo": "gf"
         }
       ]

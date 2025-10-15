@@ -25,7 +25,7 @@ export async function getAdminUserData() {
   try {
     // Use the new profile sync middleware to ensure profile exists
     const profileSyncResult = await ensureUserProfile(user.id, user.email);
-    
+
     if (!profileSyncResult.success) {
       logger.error('Failed to ensure user profile:', profileSyncResult.error);
       redirect('/');
@@ -60,4 +60,4 @@ export async function getAdminUserData() {
     profileRole,
     isUserAdmin,
   };
-} 
+}

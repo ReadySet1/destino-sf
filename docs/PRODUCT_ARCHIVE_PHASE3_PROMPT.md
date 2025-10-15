@@ -7,12 +7,14 @@ You are implementing Phase 3 (Analytics & Automation) of the Product Archive fea
 ## What's Already Done
 
 ### Phase 1 (Backend/API) - ✅ COMPLETE
+
 - Database schema with archive fields
 - Square sync integration
 - REST API endpoints for archive/restore
 - Archive statistics functions
 
 ### Phase 2 (Admin UI) - ✅ COMPLETE
+
 - Archive statistics dashboard
 - Product cards with archive status
 - Archive/restore toggle buttons
@@ -29,6 +31,7 @@ Phase 3 focuses on advanced features that provide deeper insights and automate a
 ## Feature 1: Bulk Archive Operations
 
 ### Purpose
+
 Allow admins to archive/restore multiple products simultaneously.
 
 ### Implementation
@@ -123,7 +126,7 @@ export function BulkArchiveModal({
       toast.error(
         `Completed with errors: ${results.success} succeeded, ${results.failed} failed`
       );
-      
+
       // Log detailed errors
       console.error('Bulk operation errors:', results.errors);
     }
@@ -215,8 +218,8 @@ interface ProductCardProps {
   onSelectionChange?: (selected: boolean) => void;
 }
 
-export function ProductCard({ 
-  product, 
+export function ProductCard({
+  product,
   showArchiveButton = true,
   selectable = false,
   selected = false,
@@ -235,7 +238,7 @@ export function ProductCard({
           />
         </div>
       )}
-      
+
       {/* Rest of card... */}
     </div>
   );
@@ -294,7 +297,7 @@ export function ProductsWithBulkActions({ products }: { products: Product[] }) {
                 Clear Selection
               </Button>
             </div>
-            
+
             <div className="flex gap-2">
               {!allArchived && (
                 <Button
@@ -306,7 +309,7 @@ export function ProductsWithBulkActions({ products }: { products: Product[] }) {
                   Archive Selected
                 </Button>
               )}
-              
+
               {!allActive && (
                 <Button
                   variant="outline"
@@ -374,6 +377,7 @@ export function ProductsWithBulkActions({ products }: { products: Product[] }) {
 ## Feature 2: Archive History Audit Trail
 
 ### Purpose
+
 Track who archived/restored products and when, creating an audit trail.
 
 ### Implementation
@@ -433,16 +437,15 @@ CREATE INDEX "ArchiveHistory_createdAt_idx" ON "ArchiveHistory"("createdAt");
 
 import { createClient } from '@/utils/supabase/server';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
+
   // Get current user
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Archive product (existing logic)
   const product = await prisma.product.update({
     where: { id },
@@ -464,27 +467,26 @@ export async function POST(
       metadata: {
         userEmail: user?.email,
         timestamp: new Date().toISOString(),
-      }
-    }
+      },
+    },
   });
 
   return NextResponse.json({
     success: true,
     message: `Product "${product.name}" has been archived`,
-    product
+    product,
   });
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
+
   // Get current user
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Restore product (existing logic)
   const product = await prisma.product.update({
     where: { id },
@@ -505,14 +507,14 @@ export async function DELETE(
       metadata: {
         userEmail: user?.email,
         timestamp: new Date().toISOString(),
-      }
-    }
+      },
+    },
   });
 
   return NextResponse.json({
     success: true,
     message: `Product "${product.name}" has been restored`,
-    product
+    product,
   });
 }
 ```
@@ -552,7 +554,7 @@ export async function ArchiveHistoryPanel({ productId }: ArchiveHistoryPanelProp
         {history.map((entry) => {
           const Icon = entry.action === 'archived' ? Archive : ArchiveRestore;
           const metadata = entry.metadata as any;
-          
+
           return (
             <div
               key={entry.id}
@@ -591,6 +593,7 @@ export async function ArchiveHistoryPanel({ productId }: ArchiveHistoryPanelProp
 ## Feature 3: Archive Analytics Dashboard
 
 ### Purpose
+
 Visualize archive trends over time with charts and metrics.
 
 ### Implementation
@@ -611,7 +614,7 @@ export const dynamic = 'force-dynamic';
 export default async function ArchiveAnalyticsPage() {
   // Get last 6 months of data
   const sixMonthsAgo = startOfMonth(subMonths(new Date(), 5));
-  
+
   // Archive history by month
   const historyByMonth = await prisma.archiveHistory.groupBy({
     by: ['action'],
@@ -662,7 +665,7 @@ export default async function ArchiveAnalyticsPage() {
 
         {/* Trends Chart */}
         <ArchiveTrendsChart />
-        
+
         {/* Additional insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TopArchivedCategories />
@@ -757,6 +760,7 @@ export function ArchiveMetrics({
 ## Feature 4: Automated Archive Rules
 
 ### Purpose
+
 Automatically archive products based on inactivity rules.
 
 ### Implementation
@@ -786,9 +790,9 @@ export const defaultArchiveRules: ArchiveRule[] = [
     description: 'Archive products with no orders in the last 90 days',
     enabled: false,
     conditions: {
-      noOrdersSince: 90
+      noOrdersSince: 90,
     },
-    action: 'archive'
+    action: 'archive',
   },
   {
     id: 'seasonal-products',
@@ -797,10 +801,10 @@ export const defaultArchiveRules: ArchiveRule[] = [
     enabled: false,
     conditions: {
       categoryIds: [], // Would be populated with seasonal category IDs
-      daysInactive: 30
+      daysInactive: 30,
     },
-    action: 'archive'
-  }
+    action: 'archive',
+  },
 ];
 ```
 
@@ -836,17 +840,17 @@ export async function GET(request: Request) {
           none: {
             order: {
               createdAt: {
-                gte: ninetyDaysAgo
-              }
-            }
-          }
-        }
+                gte: ninetyDaysAgo,
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,
         name: true,
-        category: true
-      }
+        category: true,
+      },
     });
 
     // Archive products
@@ -859,8 +863,8 @@ export async function GET(request: Request) {
             isArchived: true,
             archivedAt: new Date(),
             archivedReason: 'auto_archived_inactive',
-            active: false
-          }
+            active: false,
+          },
         });
 
         // Log to history
@@ -872,9 +876,9 @@ export async function GET(request: Request) {
             performedBy: 'system',
             metadata: {
               rule: 'inactive-90-days',
-              daysInactive: 90
-            }
-          }
+              daysInactive: 90,
+            },
+          },
         });
 
         results.push({ id: product.id, name: product.name, success: true });
@@ -889,7 +893,7 @@ export async function GET(request: Request) {
       success: true,
       archived: results.filter(r => r.success).length,
       failed: results.filter(r => !r.success).length,
-      results
+      results,
     });
   } catch (error) {
     logger.error('Auto-archive cron failed:', error);
@@ -952,6 +956,7 @@ export default function ArchiveSettingsPage() {
 ## Feature 5: Email/Slack Notifications
 
 ### Purpose
+
 Notify admins when products are auto-archived or reach archive thresholds.
 
 ### Implementation
@@ -975,14 +980,14 @@ interface ArchiveNotification {
 
 export async function sendArchiveNotification(notification: ArchiveNotification) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-  
+
   if (!webhookUrl) {
     logger.warn('Slack webhook URL not configured');
     return;
   }
 
   let message = '';
-  
+
   switch (notification.type) {
     case 'product_archived':
       message = `🗄️ Product archived: *${notification.data.productNames?.[0]}*\nReason: ${notification.data.reason}`;
@@ -999,7 +1004,7 @@ export async function sendArchiveNotification(notification: ArchiveNotification)
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: message })
+      body: JSON.stringify({ text: message }),
     });
   } catch (error) {
     logger.error('Failed to send Slack notification:', error);
@@ -1020,8 +1025,8 @@ await sendArchiveNotification({
   data: {
     productNames: [product.name],
     reason: 'manual',
-    performedBy: user?.email || 'system'
-  }
+    performedBy: user?.email || 'system',
+  },
 });
 ```
 
@@ -1030,6 +1035,7 @@ await sendArchiveNotification({
 ## Implementation Checklist
 
 ### Phase 3.1: Bulk Operations
+
 - [ ] Create `BulkArchiveModal.tsx` component
 - [ ] Add selection checkboxes to `ProductCard.tsx`
 - [ ] Create bulk actions wrapper component
@@ -1038,6 +1044,7 @@ await sendArchiveNotification({
 - [ ] Test bulk archive/restore flow
 
 ### Phase 3.2: Archive History
+
 - [ ] Create database migration for `ArchiveHistory` table
 - [ ] Update archive API to log history
 - [ ] Create `ArchiveHistoryPanel.tsx` component
@@ -1045,6 +1052,7 @@ await sendArchiveNotification({
 - [ ] Test history logging
 
 ### Phase 3.3: Analytics Dashboard
+
 - [ ] Create `/analytics` page
 - [ ] Implement `ArchiveMetrics.tsx` component
 - [ ] Add trends visualization (consider recharts library)
@@ -1052,6 +1060,7 @@ await sendArchiveNotification({
 - [ ] Test analytics calculations
 
 ### Phase 3.4: Automated Rules
+
 - [ ] Create archive rules configuration
 - [ ] Implement cron job API route
 - [ ] Create settings page for rule management
@@ -1059,6 +1068,7 @@ await sendArchiveNotification({
 - [ ] Test auto-archive logic
 
 ### Phase 3.5: Notifications
+
 - [ ] Create notification service
 - [ ] Set up Slack webhook (if applicable)
 - [ ] Integrate notifications into archive actions
@@ -1085,6 +1095,7 @@ Phase 3 is complete when:
 ## Next Steps After Phase 3
 
 Future enhancements could include:
+
 - Advanced analytics with custom date ranges
 - Export archive reports to CSV/PDF
 - Archive scheduling (archive at specific date/time)

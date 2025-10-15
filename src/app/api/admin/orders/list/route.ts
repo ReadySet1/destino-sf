@@ -116,7 +116,7 @@ function getOrderByClause(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Parse search params with validation
     const currentPage = Math.max(1, Number(searchParams.get('page') || 1) || 1);
     const searchQuery = (searchParams.get('search') || '').trim();
@@ -124,7 +124,9 @@ export async function GET(request: NextRequest) {
     const statusFilter = searchParams.get('status') || 'all';
     const paymentFilter = searchParams.get('payment') || 'all';
     const sortField = searchParams.get('sort') || 'createdAt';
-    const sortDirection = (searchParams.get('direction') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+    const sortDirection = (searchParams.get('direction') === 'asc' ? 'asc' : 'desc') as
+      | 'asc'
+      | 'desc';
 
     const itemsPerPage = 10;
     const skip = Math.max(0, (currentPage - 1) * itemsPerPage);
@@ -138,13 +140,14 @@ export async function GET(request: NextRequest) {
       sortField,
       sortDirection,
       skip,
-      itemsPerPage
+      itemsPerPage,
     });
 
     // Create timeout promises for each query
-    const createTimeoutPromise = (ms: number) => new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database query timeout')), ms);
-    });
+    const createTimeoutPromise = (ms: number) =>
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database query timeout')), ms);
+      });
 
     // Build where conditions for regular orders
     const regularOrdersWhere: any = {
@@ -214,8 +217,8 @@ export async function GET(request: NextRequest) {
             fulfillmentType: true,
             isArchived: true,
             _count: {
-              select: { items: true }
-            }
+              select: { items: true },
+            },
           },
         };
 
@@ -230,50 +233,56 @@ export async function GET(request: NextRequest) {
         }
 
         // Execute query with timeout and retry logic
-        const regularOrders = await withRetry(async () => {
-          const regularOrdersPromise = prisma.order.findMany(regularOrdersQuery);
-          return await Promise.race([
-            regularOrdersPromise,
-            createTimeoutPromise(8000)
-          ]) as OrderWithCount[];
-        }, 3, 'fetchRegularOrders');
+        const regularOrders = await withRetry(
+          async () => {
+            const regularOrdersPromise = prisma.order.findMany(regularOrdersQuery);
+            return (await Promise.race([
+              regularOrdersPromise,
+              createTimeoutPromise(8000),
+            ])) as OrderWithCount[];
+          },
+          3,
+          'fetchRegularOrders'
+        );
 
         logger.info(`[ORDERS-API] Found ${regularOrders?.length || 0} regular orders`);
 
         // Convert to unified format
-        const serializedRegularOrders = regularOrders?.map(order => ({
-          id: order.id,
-          type: 'regular' as const,
-          customerName: order.customerName,
-          email: order.email,
-          phone: order.phone,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          total: decimalToNumber(order.total),
-          createdAt: order.createdAt.toISOString(),
-          pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
-          deliveryDate: order.deliveryDate,
-          deliveryTime: order.deliveryTime,
-          eventDate: null,
-          trackingNumber: order.trackingNumber,
-          fulfillmentType: order.fulfillmentType,
-          isArchived: order.isArchived,
-          itemCount: order._count.items,
-          paymentMethod: order.paymentMethod,
-          shippingCarrier: null,
-        })) || [];
+        const serializedRegularOrders =
+          regularOrders?.map(order => ({
+            id: order.id,
+            type: 'regular' as const,
+            customerName: order.customerName,
+            email: order.email,
+            phone: order.phone,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            total: decimalToNumber(order.total),
+            createdAt: order.createdAt.toISOString(),
+            pickupTime: order.pickupTime ? order.pickupTime.toISOString() : null,
+            deliveryDate: order.deliveryDate,
+            deliveryTime: order.deliveryTime,
+            eventDate: null,
+            trackingNumber: order.trackingNumber,
+            fulfillmentType: order.fulfillmentType,
+            isArchived: order.isArchived,
+            itemCount: order._count.items,
+            paymentMethod: order.paymentMethod,
+            shippingCarrier: null,
+          })) || [];
 
         allOrders.push(...serializedRegularOrders);
 
         // Get count for regular orders if filtering by regular only
         if (typeFilter === 'regular') {
-          totalCount = await withRetry(async () => {
-            const countPromise = prisma.order.count({ where: regularOrdersWhere });
-            return await Promise.race([
-              countPromise,
-              createTimeoutPromise(3000)
-            ]) as number;
-          }, 3, 'countRegularOrders');
+          totalCount = await withRetry(
+            async () => {
+              const countPromise = prisma.order.count({ where: regularOrdersWhere });
+              return (await Promise.race([countPromise, createTimeoutPromise(3000)])) as number;
+            },
+            3,
+            'countRegularOrders'
+          );
         }
       } catch (error) {
         logger.error('[ORDERS-API] Error fetching regular orders:', error);
@@ -306,8 +315,8 @@ export async function GET(request: NextRequest) {
             isArchived: true,
             paymentMethod: true,
             _count: {
-              select: { items: true }
-            }
+              select: { items: true },
+            },
           },
         };
 
@@ -322,50 +331,56 @@ export async function GET(request: NextRequest) {
         }
 
         // Execute query with timeout and retry logic
-        const cateringOrders = await withRetry(async () => {
-          const cateringOrdersPromise = prisma.cateringOrder.findMany(cateringOrdersQuery);
-          return await Promise.race([
-            cateringOrdersPromise,
-            createTimeoutPromise(8000)
-          ]) as CateringOrderWithCount[];
-        }, 3, 'fetchCateringOrders');
+        const cateringOrders = await withRetry(
+          async () => {
+            const cateringOrdersPromise = prisma.cateringOrder.findMany(cateringOrdersQuery);
+            return (await Promise.race([
+              cateringOrdersPromise,
+              createTimeoutPromise(8000),
+            ])) as CateringOrderWithCount[];
+          },
+          3,
+          'fetchCateringOrders'
+        );
 
         logger.info(`[ORDERS-API] Found ${cateringOrders?.length || 0} catering orders`);
 
         // Convert to unified format
-        const serializedCateringOrders = cateringOrders?.map(order => ({
-          id: order.id,
-          type: 'catering' as const,
-          customerName: order.name,
-          email: order.email,
-          phone: order.phone,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          total: decimalToNumber(order.totalAmount),
-          createdAt: order.createdAt.toISOString(),
-          pickupTime: null,
-          deliveryDate: null,
-          deliveryTime: null,
-          eventDate: order.eventDate ? order.eventDate.toISOString() : null,
-          trackingNumber: null,
-          fulfillmentType: 'pickup',
-          isArchived: order.isArchived,
-          itemCount: order._count.items,
-          paymentMethod: order.paymentMethod,
-          shippingCarrier: null,
-        })) || [];
+        const serializedCateringOrders =
+          cateringOrders?.map(order => ({
+            id: order.id,
+            type: 'catering' as const,
+            customerName: order.name,
+            email: order.email,
+            phone: order.phone,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            total: decimalToNumber(order.totalAmount),
+            createdAt: order.createdAt.toISOString(),
+            pickupTime: null,
+            deliveryDate: null,
+            deliveryTime: null,
+            eventDate: order.eventDate ? order.eventDate.toISOString() : null,
+            trackingNumber: null,
+            fulfillmentType: 'pickup',
+            isArchived: order.isArchived,
+            itemCount: order._count.items,
+            paymentMethod: order.paymentMethod,
+            shippingCarrier: null,
+          })) || [];
 
         allOrders.push(...serializedCateringOrders);
 
         // Get count for catering orders if filtering by catering only
         if (typeFilter === 'catering') {
-          totalCount = await withRetry(async () => {
-            const countPromise = prisma.cateringOrder.count({ where: cateringOrdersWhere });
-            return await Promise.race([
-              countPromise,
-              createTimeoutPromise(3000)
-            ]) as number;
-          }, 3, 'countCateringOrders');
+          totalCount = await withRetry(
+            async () => {
+              const countPromise = prisma.cateringOrder.count({ where: cateringOrdersWhere });
+              return (await Promise.race([countPromise, createTimeoutPromise(3000)])) as number;
+            },
+            3,
+            'countCateringOrders'
+          );
         }
       } catch (error) {
         logger.error('[ORDERS-API] Error fetching catering orders:', error);
@@ -426,33 +441,43 @@ export async function GET(request: NextRequest) {
       // Get total count with timeout
       try {
         const [regularCount, cateringCount] = await Promise.all([
-          withRetry(async () => {
-            return await Promise.race([
-              prisma.order.count({ where: regularOrdersWhere }),
-              createTimeoutPromise(3000)
-            ]);
-          }, 3, 'countRegularOrdersAll'),
-          withRetry(async () => {
-            return await Promise.race([
-              prisma.cateringOrder.count({ where: cateringOrdersWhere }),
-              createTimeoutPromise(3000)
-            ]);
-          }, 3, 'countCateringOrdersAll')
+          withRetry(
+            async () => {
+              return await Promise.race([
+                prisma.order.count({ where: regularOrdersWhere }),
+                createTimeoutPromise(3000),
+              ]);
+            },
+            3,
+            'countRegularOrdersAll'
+          ),
+          withRetry(
+            async () => {
+              return await Promise.race([
+                prisma.cateringOrder.count({ where: cateringOrdersWhere }),
+                createTimeoutPromise(3000),
+              ]);
+            },
+            3,
+            'countCateringOrdersAll'
+          ),
         ]);
-        
+
         totalCount = (regularCount as number) + (cateringCount as number);
       } catch (countError) {
         logger.error('[ORDERS-API] Error counting orders:', countError);
         totalCount = allOrders.length; // Fallback
       }
-      
+
       // Apply pagination to sorted results
       allOrders = allOrders.slice(skip, skip + itemsPerPage);
     }
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-    logger.info(`[ORDERS-API] Returning ${allOrders.length} orders (page ${currentPage}/${totalPages})`);
+    logger.info(
+      `[ORDERS-API] Returning ${allOrders.length} orders (page ${currentPage}/${totalPages})`
+    );
 
     return NextResponse.json({
       orders: allOrders,
@@ -465,13 +490,9 @@ export async function GET(request: NextRequest) {
         hasPrevPage: currentPage > 1,
       },
     });
-
   } catch (error) {
     logger.error('[ORDERS-API] Error fetching orders:', error);
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

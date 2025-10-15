@@ -125,9 +125,7 @@ export function ResponsiveTable<T = any>({
                         <span className="text-sm font-medium text-gray-500 capitalize">
                           {column.header}:
                         </span>
-                        <span className="text-sm text-gray-900 ml-2">
-                          {column.accessor(item)}
-                        </span>
+                        <span className="text-sm text-gray-900 ml-2">{column.accessor(item)}</span>
                       </div>
                     ))}
                   </div>
@@ -154,9 +152,7 @@ export function ResponsiveTable<T = any>({
                         <span className="text-sm font-medium text-gray-500 capitalize">
                           {column.header}:
                         </span>
-                        <span className="text-sm text-gray-900 ml-2">
-                          {column.accessor(item)}
-                        </span>
+                        <span className="text-sm text-gray-900 ml-2">{column.accessor(item)}</span>
                       </div>
                     ))}
                   </div>
@@ -179,7 +175,9 @@ export function ResponsiveTable<T = any>({
               <th
                 key={column.key}
                 className={`px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                  column.sortable ? 'cursor-pointer hover:bg-gray-100 transition-colors duration-150' : ''
+                  column.sortable
+                    ? 'cursor-pointer hover:bg-gray-100 transition-colors duration-150'
+                    : ''
                 } ${column.className || ''}`}
                 onClick={() => column.sortable && handleSort(column.key)}
               >
@@ -230,4 +228,4 @@ export function createTableColumn<T = any>(
     desktopVisible: true,
     ...options,
   };
-} 
+}

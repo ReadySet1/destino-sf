@@ -26,7 +26,7 @@ const CRITICAL_ROUTES = [
  */
 const RESILIENCE_PATTERNS = {
   imports: `import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';`,
-  
+
   buildTimeCheck: `  // Handle build time or database unavailability
   if (isBuildTime()) {
     console.log('🔧 Build-time detected: Using fallback data');
@@ -36,7 +36,7 @@ const RESILIENCE_PATTERNS = {
       note: 'Fallback data used due to build-time constraints' 
     });
   }`,
-  
+
   errorHandler: `  } catch (error) {
     console.error('❌ Database operation failed:', error);
     
@@ -68,7 +68,7 @@ const RESILIENCE_PATTERNS = {
       },
       { status: 500 }
     );
-  }`
+  }`,
 };
 
 function addImports(content: string): string {
@@ -76,22 +76,22 @@ function addImports(content: string): string {
   if (content.includes('isBuildTime') || content.includes('safeBuildTimeOperation')) {
     return content;
   }
-  
+
   // Find the last import statement
   const importLines = content.split('\n');
   let lastImportIndex = -1;
-  
+
   for (let i = 0; i < importLines.length; i++) {
     if (importLines[i].match(/^import.*from.*['"]/)) {
       lastImportIndex = i;
     }
   }
-  
+
   if (lastImportIndex !== -1) {
     importLines.splice(lastImportIndex + 1, 0, RESILIENCE_PATTERNS.imports);
     return importLines.join('\n');
   }
-  
+
   // If no imports found, add at the top
   return `${RESILIENCE_PATTERNS.imports}\n${content}`;
 }
@@ -105,7 +105,7 @@ function wrapWithResilience(content: string): string {
       if (match.includes('try {') || match.includes('catch')) {
         return match;
       }
-      
+
       return `${fnStart}try {
 ${RESILIENCE_PATTERNS.buildTimeCheck}
 
@@ -114,7 +114,7 @@ ${RESILIENCE_PATTERNS.errorHandler}
   }`;
     }
   );
-  
+
   // Pattern 2: Handle GET functions with existing try/catch but no build-time check
   content = content.replace(
     /(export\s+async\s+function\s+GET\s*\([^)]*\)\s*{[\s\S]*?try\s*{[\s\S]*?)(const\s+[\w\s,{}]*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?;))/g,
@@ -123,13 +123,13 @@ ${RESILIENCE_PATTERNS.errorHandler}
       if (match.includes('isBuildTime') || match.includes('Build-time detected')) {
         return match;
       }
-      
+
       return `${fnStartWithTry}${RESILIENCE_PATTERNS.buildTimeCheck}
 
     ${dbCall.trim()}`;
     }
   );
-  
+
   // Pattern 3: Handle POST functions
   content = content.replace(
     /(export\s+async\s+function\s+POST\s*\([^)]*\)\s*{[\s\S]*?)(const\s+[\w\s,{}]*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?;))([\s\S]*?return\s+NextResponse\.json\([^}]*\}?\);)/g,
@@ -138,7 +138,7 @@ ${RESILIENCE_PATTERNS.errorHandler}
       if (match.includes('try {') || match.includes('isBuildTime')) {
         return match;
       }
-      
+
       return `${fnStart}try {
     // Note: POST operations during build time are typically not expected
     // but we add this check for safety
@@ -155,34 +155,34 @@ ${RESILIENCE_PATTERNS.errorHandler}
   }`;
     }
   );
-  
+
   return content;
 }
 
 function fixRoute(routePath: string): boolean {
   const fullPath = path.join(projectRoot, routePath);
-  
+
   if (!fs.existsSync(fullPath)) {
     console.log(`❌ Route not found: ${routePath}`);
     return false;
   }
-  
+
   const originalContent = fs.readFileSync(fullPath, 'utf8');
-  
+
   // Skip if already has resilience patterns
   if (originalContent.includes('isBuildTime') || originalContent.includes('Build-time detected')) {
     console.log(`⚠️  Already protected: ${routePath}`);
     return false;
   }
-  
+
   let content = originalContent;
-  
+
   // Step 1: Add imports
   content = addImports(content);
-  
+
   // Step 2: Add resilience patterns
   content = wrapWithResilience(content);
-  
+
   // Only write if content changed
   if (content !== originalContent) {
     fs.writeFileSync(fullPath, content, 'utf8');
@@ -196,11 +196,11 @@ function fixRoute(routePath: string): boolean {
 
 async function main() {
   console.log('🔧 Fixing critical API routes for database resilience...\n');
-  
+
   let fixedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
-  
+
   for (const route of CRITICAL_ROUTES) {
     try {
       const wasFixed = fixRoute(route);
@@ -214,12 +214,12 @@ async function main() {
       errorCount++;
     }
   }
-  
+
   console.log('\n📊 Summary:');
   console.log(`   Routes fixed: ${fixedCount}`);
   console.log(`   Routes skipped: ${skippedCount}`);
   console.log(`   Errors: ${errorCount}`);
-  
+
   if (fixedCount > 0) {
     console.log('\n🎉 Critical routes have been fixed!');
     console.log('\nNext steps:');

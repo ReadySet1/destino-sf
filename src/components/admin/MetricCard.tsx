@@ -28,13 +28,15 @@ export function MetricCard({
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
         {description && (
-          <p className={`text-xs ${
-            trend === 'up' 
-              ? 'text-green-600' 
-              : trend === 'down' 
-                ? 'text-red-600' 
-                : 'text-muted-foreground'
-          }`}>
+          <p
+            className={`text-xs ${
+              trend === 'up'
+                ? 'text-green-600'
+                : trend === 'down'
+                  ? 'text-red-600'
+                  : 'text-muted-foreground'
+            }`}
+          >
             {description}
           </p>
         )}

@@ -2,10 +2,10 @@
 
 import { prisma } from '@/lib/db';
 import { ProductVisibilityService } from '@/lib/services/product-visibility-service';
-import type { 
-  ProductDisplayOrder, 
-  ReorderUpdateItem, 
-  ReorderStrategy 
+import type {
+  ProductDisplayOrder,
+  ReorderUpdateItem,
+  ReorderStrategy,
 } from '@/types/product-admin';
 import { logger } from '@/utils/logger';
 
@@ -20,20 +20,20 @@ export async function getProductsByCategory(
   try {
     // For admin operations, we can use direct DB queries
     // For customer-facing operations, use ProductVisibilityService
-    logger.info('Getting products by category (legacy method)', { 
-      categoryId, 
+    logger.info('Getting products by category (legacy method)', {
+      categoryId,
       includeInactive,
-      note: 'Consider using ProductVisibilityService for consistency'
+      note: 'Consider using ProductVisibilityService for consistency',
     });
 
     const products = await prisma.product.findMany({
       where: {
         categoryId,
-        ...(includeInactive ? {} : { active: true })
+        ...(includeInactive ? {} : { active: true }),
       },
       orderBy: [
         { ordinal: 'asc' },
-        { createdAt: 'asc' } // Fallback
+        { createdAt: 'asc' }, // Fallback
       ],
       select: {
         id: true,
@@ -48,7 +48,7 @@ export async function getProductsByCategory(
         isPreorder: true,
         visibility: true,
         itemState: true,
-      }
+      },
     });
 
     return products.map(product => ({
@@ -86,7 +86,7 @@ export async function getProductsByCategoryWithVisibility(
     const {
       includeInactive = false,
       includeAvailabilityEvaluation = false,
-      includePrivate = false
+      includePrivate = false,
     } = options;
 
     const result = await ProductVisibilityService.getProductsByCategory(categoryId, {
@@ -94,7 +94,7 @@ export async function getProductsByCategoryWithVisibility(
       includeAvailabilityEvaluation,
       includePrivate,
       orderBy: 'ordinal',
-      orderDirection: 'asc'
+      orderDirection: 'asc',
     });
 
     return result.products.map(product => ({
@@ -112,8 +112,8 @@ export async function getProductsByCategoryWithVisibility(
       itemState: product.itemState,
       // Add evaluation if available
       ...(product.evaluatedAvailability && {
-        evaluatedAvailability: product.evaluatedAvailability
-      })
+        evaluatedAvailability: product.evaluatedAvailability,
+      }),
     }));
   } catch (error) {
     logger.error('Error in getProductsByCategoryWithVisibility:', { categoryId, options, error });
@@ -130,19 +130,19 @@ export async function reorderProducts(
   try {
     logger.info('Reordering products', {
       count: updates.length,
-      updates: updates.slice(0, 3) // Log first 3 for debugging
+      updates: updates.slice(0, 3), // Log first 3 for debugging
     });
 
     // Use interactive transaction for atomic updates
-    const updateResults = await prisma.$transaction(async (tx) => {
+    const updateResults = await prisma.$transaction(async tx => {
       const results = [];
       for (const { id, ordinal } of updates) {
         const result = await tx.product.update({
           where: { id },
           data: {
             ordinal: BigInt(ordinal),
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
         results.push(result);
       }
@@ -153,7 +153,7 @@ export async function reorderProducts(
 
     return {
       success: true,
-      updatedCount: updateResults.length
+      updatedCount: updateResults.length,
     };
   } catch (error) {
     logger.error('Error reordering products:', { error, updates: updates.slice(0, 3) });
@@ -161,7 +161,7 @@ export async function reorderProducts(
     return {
       success: false,
       updatedCount: 0,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
@@ -170,7 +170,7 @@ export async function reorderProducts(
  * Auto-assign ordinals based on a strategy
  */
 export async function applyReorderStrategy(
-  categoryId: string, 
+  categoryId: string,
   strategy: ReorderStrategy
 ): Promise<ReorderUpdateItem[]> {
   const products = await prisma.product.findMany({
@@ -180,48 +180,40 @@ export async function applyReorderStrategy(
       name: true,
       price: true,
       createdAt: true,
-      ordinal: true
-    }
+      ordinal: true,
+    },
   });
-  
+
   let sortedProducts;
-  
+
   switch (strategy) {
     case 'ALPHABETICAL':
-      sortedProducts = [...products].sort((a, b) => 
-        a.name.localeCompare(b.name)
-      );
+      sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name));
       break;
-      
+
     case 'PRICE_ASC':
-      sortedProducts = [...products].sort((a, b) => 
-        Number(a.price) - Number(b.price)
-      );
+      sortedProducts = [...products].sort((a, b) => Number(a.price) - Number(b.price));
       break;
-      
+
     case 'PRICE_DESC':
-      sortedProducts = [...products].sort((a, b) => 
-        Number(b.price) - Number(a.price)
-      );
+      sortedProducts = [...products].sort((a, b) => Number(b.price) - Number(a.price));
       break;
-      
+
     case 'NEWEST_FIRST':
-      sortedProducts = [...products].sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
-      );
+      sortedProducts = [...products].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       break;
-      
+
     default:
       // CUSTOM or unknown - return current order
-      sortedProducts = [...products].sort((a, b) => 
-        Number(a.ordinal || 0) - Number(b.ordinal || 0)
+      sortedProducts = [...products].sort(
+        (a, b) => Number(a.ordinal || 0) - Number(b.ordinal || 0)
       );
   }
-  
+
   // Generate new ordinals with gaps for manual insertion
   return sortedProducts.map((product, index) => ({
     id: product.id,
-    ordinal: (index + 1) * 100
+    ordinal: (index + 1) * 100,
   }));
 }
 
@@ -239,12 +231,12 @@ export async function insertProductAtPosition(
       where: {
         categoryId,
         ordinal: { gte: BigInt(targetPosition) },
-        id: { not: productId } // Exclude the product being moved
+        id: { not: productId }, // Exclude the product being moved
       },
       orderBy: { ordinal: 'asc' },
-      select: { id: true, ordinal: true }
+      select: { id: true, ordinal: true },
     });
-    
+
     // Prepare updates: shift existing products and place target product
     const updates: ReorderUpdateItem[] = [
       // Insert the product at target position
@@ -252,10 +244,10 @@ export async function insertProductAtPosition(
       // Shift other products
       ...productsToShift.map(p => ({
         id: p.id,
-        ordinal: Number(p.ordinal || 0) + 100
-      }))
+        ordinal: Number(p.ordinal || 0) + 100,
+      })),
     ];
-    
+
     return await reorderProducts(updates);
   } catch (error) {
     console.error('Error inserting product at position:', error);
@@ -269,9 +261,9 @@ export async function insertProductAtPosition(
 export async function getNextOrdinal(categoryId: string): Promise<number> {
   const maxOrdinal = await prisma.product.aggregate({
     where: { categoryId },
-    _max: { ordinal: true }
+    _max: { ordinal: true },
   });
-  
+
   return Number(maxOrdinal._max.ordinal || 0) + 100;
 }
 
@@ -287,18 +279,18 @@ export async function getCategoriesWithProductCounts() {
       _count: {
         select: {
           products: {
-            where: { active: true }
-          }
-        }
-      }
+            where: { active: true },
+          },
+        },
+      },
     },
-    orderBy: { name: 'asc' }
+    orderBy: { name: 'asc' },
   });
-  
+
   return categories.map(category => ({
     id: category.id,
     name: category.name,
-    productCount: category._count.products
+    productCount: category._count.products,
   }));
 }
 
@@ -312,10 +304,10 @@ export async function validateProductsInCategory(
   const count = await prisma.product.count({
     where: {
       id: { in: productIds },
-      categoryId
-    }
+      categoryId,
+    },
   });
-  
+
   return count === productIds.length;
 }
 
@@ -325,18 +317,15 @@ export async function validateProductsInCategory(
 export async function normalizeOrdinals(categoryId: string): Promise<number> {
   const products = await prisma.product.findMany({
     where: { categoryId },
-    orderBy: [
-      { ordinal: 'asc' },
-      { createdAt: 'asc' }
-    ],
-    select: { id: true }
+    orderBy: [{ ordinal: 'asc' }, { createdAt: 'asc' }],
+    select: { id: true },
   });
-  
+
   const updates = products.map((product, index) => ({
     id: product.id,
-    ordinal: (index + 1) * 100
+    ordinal: (index + 1) * 100,
   }));
-  
+
   const result = await reorderProducts(updates);
   return result.updatedCount;
 }

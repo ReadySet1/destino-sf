@@ -8,12 +8,15 @@
 **Estimated Complexity**: Medium (3-5 days)
 
 ### Problem Statement
+
 Three critical issues in catering order processing:
+
 1. Orders with credit card payment method bypass Square payment processing
-2. Delivery address is being stored incorrectly, showing as "[object Object]" 
+2. Delivery address is being stored incorrectly, showing as "[object Object]"
 3. Email notifications are not being sent to admins when new catering orders are created
 
 ### Success Criteria
+
 - [x] Credit card orders redirect to Square payment link before completion
 - [x] Delivery addresses are properly stored and displayed
 - [x] Admin email notifications are sent for every new catering order
@@ -25,6 +28,7 @@ Three critical issues in catering order processing:
 ### 1. Code Structure & References
 
 ### File Structure
+
 ```tsx
 src/
 ├── actions/
@@ -44,6 +48,7 @@ src/
 ```
 
 ### Key Interfaces & Types
+
 ```tsx
 // types/catering.ts
 interface CateringOrderRequest {
@@ -85,11 +90,13 @@ interface SquareCheckoutResponse {
 ## 🔧 Issue #1: Square Payment Processing
 
 ### Root Cause
+
 The `createCateringOrderAndProcessPayment` function creates the order but doesn't integrate with Square's checkout API for credit card payments.
 
 ### Solution Implementation
 
 #### Step 1: Create Square Checkout Link Helper
+
 ```tsx
 // lib/square/checkout-links.ts
 import { randomUUID } from 'crypto';
@@ -112,7 +119,7 @@ export async function createCheckoutLink(params: {
   merchantSupportEmail?: string;
 }): Promise<{ checkoutUrl: string; checkoutId: string }> {
   const squareService = getSquareService();
-  
+
   const checkoutRequest = {
     idempotencyKey: randomUUID(),
     order: {
@@ -128,9 +135,9 @@ export async function createCheckoutLink(params: {
       buyerEmail: params.customerEmail,
     },
   };
-  
+
   const result = await squareService.createPaymentLink(checkoutRequest);
-  
+
   return {
     checkoutUrl: result.paymentLink.url,
     checkoutId: result.paymentLink.id,
@@ -139,6 +146,7 @@ export async function createCheckoutLink(params: {
 ```
 
 #### Step 2: Update Server Action
+
 ```tsx
 // actions/catering.ts - Update createCateringOrderAndProcessPayment
 export async function createCateringOrderAndProcessPayment(data: {
@@ -161,14 +169,15 @@ export async function createCateringOrderAndProcessPayment(data: {
     // Process payment based on method
     if (data.paymentMethod === PaymentMethod.SQUARE) {
       // Create Square checkout link for credit card payment
-      const lineItems = data.items?.map(item => ({
-        name: item.name,
-        quantity: String(item.quantity),
-        basePriceMoney: {
-          amount: Math.round(item.pricePerUnit * 100), // Convert to cents
-          currency: 'USD',
-        },
-      })) || [];
+      const lineItems =
+        data.items?.map(item => ({
+          name: item.name,
+          quantity: String(item.quantity),
+          basePriceMoney: {
+            amount: Math.round(item.pricePerUnit * 100), // Convert to cents
+            currency: 'USD',
+          },
+        })) || [];
 
       // Add delivery fee if applicable
       if (data.deliveryFee && data.deliveryFee > 0) {
@@ -193,7 +202,7 @@ export async function createCateringOrderAndProcessPayment(data: {
       // Update order with Square checkout ID
       await db.cateringOrder.update({
         where: { id: orderResult.orderId },
-        data: { 
+        data: {
           squareCheckoutId: checkoutId,
           paymentStatus: PaymentStatus.PENDING,
         },
@@ -210,7 +219,7 @@ export async function createCateringOrderAndProcessPayment(data: {
     } else if (data.paymentMethod === PaymentMethod.CASH) {
       // For cash orders, just mark as pending and send notification
       await sendCateringOrderNotification(orderResult.orderId);
-      
+
       return {
         success: true,
         orderId: orderResult.orderId,
@@ -233,18 +242,20 @@ export async function createCateringOrderAndProcessPayment(data: {
 ## 🔧 Issue #2: Delivery Address Storage
 
 ### Root Cause
+
 The delivery address is being concatenated into a string instead of being stored as a structured JSON object in the database.
 
 ### Solution Implementation
 
 #### Step 1: Update Database Schema
+
 ```sql
 -- migrations/fix_catering_delivery_address.sql
-ALTER TABLE "CateringOrder" 
+ALTER TABLE "CateringOrder"
 ADD COLUMN "deliveryAddressJson" JSONB;
 
 -- Migrate existing data (if any)
-UPDATE "CateringOrder" 
+UPDATE "CateringOrder"
 SET "deliveryAddressJson" = jsonb_build_object(
   'street', split_part("deliveryAddress", ',', 1),
   'city', split_part("deliveryAddress", ',', 2),
@@ -254,6 +265,7 @@ WHERE "deliveryAddress" IS NOT NULL;
 ```
 
 #### Step 2: Update Prisma Schema
+
 ```prisma
 // prisma/schema.prisma
 model CateringOrder {
@@ -265,6 +277,7 @@ model CateringOrder {
 ```
 
 #### Step 3: Fix Client Component
+
 ```tsx
 // components/Catering/CateringCheckoutClient.tsx
 const handleCompleteOrder = async () => {
@@ -291,6 +304,7 @@ const handleCompleteOrder = async () => {
 ```
 
 #### Step 4: Update Server Action
+
 ```tsx
 // actions/catering.ts - Update saveContactInfo
 export async function saveContactInfo(data: {
@@ -302,7 +316,7 @@ export async function saveContactInfo(data: {
     const newOrder = await db.cateringOrder.create({
       data: {
         // ... existing fields
-        deliveryAddress: data.deliveryAddress 
+        deliveryAddress: data.deliveryAddress
           ? `${data.deliveryAddress.street}${data.deliveryAddress.street2 ? `, ${data.deliveryAddress.street2}` : ''}, ${data.deliveryAddress.city}, ${data.deliveryAddress.state} ${data.deliveryAddress.postalCode}`
           : null,
         deliveryAddressJson: data.deliveryAddress || null,
@@ -323,11 +337,13 @@ export async function saveContactInfo(data: {
 ## 🔧 Issue #3: Email Notifications
 
 ### Root Cause
+
 The email notification function is not being called when catering orders are created.
 
 ### Solution Implementation
 
 #### Step 1: Create Catering Email Template
+
 ```tsx
 // emails/admin/CateringOrderNotification.tsx
 import React from 'react';
@@ -362,24 +378,30 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
   <div>
     <h1>New Catering Order Received</h1>
     <h2>Order #{orderId}</h2>
-    
+
     <h3>Customer Information</h3>
     <p>Name: {customerName}</p>
     <p>Email: {customerEmail}</p>
     <p>Phone: {customerPhone}</p>
-    
+
     <h3>Event Details</h3>
     <p>Date: {eventDate}</p>
-    
+
     {deliveryAddress && (
       <>
         <h3>Delivery Address</h3>
-        <p>{deliveryAddress.street} {deliveryAddress.street2}</p>
-        <p>{deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}</p>
-        <p>Delivery: {deliveryAddress.deliveryDate} at {deliveryAddress.deliveryTime}</p>
+        <p>
+          {deliveryAddress.street} {deliveryAddress.street2}
+        </p>
+        <p>
+          {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}
+        </p>
+        <p>
+          Delivery: {deliveryAddress.deliveryDate} at {deliveryAddress.deliveryTime}
+        </p>
       </>
     )}
-    
+
     <h3>Order Items</h3>
     <table>
       <thead>
@@ -401,7 +423,7 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
         ))}
       </tbody>
     </table>
-    
+
     <h3>Total: ${totalAmount.toFixed(2)}</h3>
     <p>Payment Method: {paymentMethod}</p>
   </div>
@@ -409,6 +431,7 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
 ```
 
 #### Step 2: Create Email Sending Function
+
 ```tsx
 // lib/email.ts - Add new function
 import { Resend } from 'resend';
@@ -431,9 +454,9 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
 
     // Get the admin email based on alert type
     const adminEmail = getRecipientEmail('CATERING_INQUIRY_RECEIVED' as AlertType);
-    
+
     // Parse delivery address if it exists
-    const deliveryAddress = order.deliveryAddressJson 
+    const deliveryAddress = order.deliveryAddressJson
       ? JSON.parse(order.deliveryAddressJson as string)
       : null;
 
@@ -465,7 +488,7 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
     }
 
     console.log('Catering notification email sent successfully:', data?.id);
-    
+
     // Also send confirmation to customer
     await sendCateringConfirmationToCustomer(order);
   } catch (error) {
@@ -498,6 +521,7 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
 ```
 
 #### Step 3: Update Email Routing
+
 ```tsx
 // lib/email-routing.ts - Add CATERING_INQUIRY_RECEIVED to the list
 const orderAndStoreAlertTypes = [
@@ -518,13 +542,14 @@ const orderAndStoreAlertTypes = [
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```tsx
 // __tests__/catering-order.test.ts
 describe('Catering Order Processing', () => {
   it('creates Square checkout link for credit card payments', async () => {
     const mockCheckoutUrl = 'https://checkout.square.site/...';
     jest.spyOn(squareService, 'createPaymentLink').mockResolvedValue({
-      paymentLink: { url: mockCheckoutUrl, id: 'checkout_123' }
+      paymentLink: { url: mockCheckoutUrl, id: 'checkout_123' },
     });
 
     const result = await createCateringOrderAndProcessPayment({
@@ -551,7 +576,7 @@ describe('Catering Order Processing', () => {
     });
 
     const order = await db.cateringOrder.findUnique({
-      where: { id: result.orderId }
+      where: { id: result.orderId },
     });
 
     expect(order.deliveryAddressJson).toEqual(deliveryAddress);
@@ -575,6 +600,7 @@ describe('Catering Order Processing', () => {
 ```
 
 ### Integration Tests
+
 ```tsx
 // __tests__/catering-checkout-flow.test.ts
 describe('Catering Checkout Flow', () => {
@@ -595,12 +621,14 @@ describe('Catering Checkout Flow', () => {
 ## 🔐 Security Analysis
 
 ### Payment Security
+
 - [ ] Validate all payment amounts server-side
 - [ ] Use idempotency keys for Square API calls
 - [ ] Never expose Square API keys to client
 - [ ] Validate Square webhook signatures
 
 ### Data Validation
+
 - [ ] Sanitize all user inputs
 - [ ] Validate delivery addresses against allowed zones
 - [ ] Verify email formats before sending
@@ -611,6 +639,7 @@ describe('Catering Checkout Flow', () => {
 ## 📊 Performance Considerations
 
 ### Database Optimization
+
 ```sql
 -- Add indexes for catering orders
 CREATE INDEX idx_catering_orders_customer_id ON "CateringOrder"("customerId");
@@ -620,6 +649,7 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 ```
 
 ### Email Queue
+
 - Consider implementing a queue for email notifications to prevent blocking the checkout flow
 - Add retry logic for failed email sends
 
@@ -628,12 +658,14 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 ## 🚦 Implementation Checklist
 
 ### Pre-Development
+
 - [x] Analyze existing catering order flow
 - [x] Identify Square payment integration pattern
 - [x] Review email notification system
 - [ ] Set up Square sandbox for testing
 
 ### Development Phase
+
 - [x] Implement Square checkout link creation
 - [x] Fix delivery address storage structure
 - [x] Create email notification templates
@@ -642,6 +674,7 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 - [ ] Write comprehensive tests
 
 ### Testing Phase
+
 - [ ] Test Square payment flow end-to-end
 - [ ] Verify delivery address displays correctly
 - [ ] Confirm email notifications are sent
@@ -649,6 +682,7 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 - [ ] Test error scenarios
 
 ### Pre-Deployment
+
 - [ ] Run full test suite
 - [ ] Test in staging environment
 - [ ] Verify Square production credentials
@@ -660,14 +694,16 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 ## 🛠️ Implementation Updates
 
 ### Square API Integration Fix (2024-08-21)
+
 **Issue**: Square checkout API was failing with "Field must not be blank (CODE: VALUE_EMPTY)" error.
 
 **Root Cause**: The Square API request format was using camelCase field names instead of the required snake_case format.
 
 **Fix Applied**:
+
 - Updated `src/lib/square/checkout-links.ts` to use correct Square API format:
   - `idempotency_key` instead of `idempotencyKey`
-  - `location_id` instead of `locationId` 
+  - `location_id` instead of `locationId`
   - `reference_id` instead of `referenceId`
   - `line_items` instead of `lineItems`
   - `checkout_options` instead of `checkoutOptions`
@@ -682,4 +718,3 @@ CREATE INDEX idx_catering_orders_created_at ON "CateringOrder"("createdAt");
 **Status**: ✅ **RESOLVED** - Square checkout links now working correctly
 
 ---
-

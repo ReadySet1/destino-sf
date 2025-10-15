@@ -78,7 +78,7 @@ describe('Umami Analytics', () => {
       };
 
       trackEvent('test_event', { test: 'data' });
-      
+
       expect(mockTrack).toHaveBeenCalledWith('test_event', { test: 'data' });
     });
 
@@ -87,7 +87,7 @@ describe('Umami Analytics', () => {
         throw new Error('Tracking failed');
       });
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       (global as any).window = {
         umami: {
           track: mockTrack,
@@ -96,9 +96,9 @@ describe('Umami Analytics', () => {
       };
 
       trackEvent('test_event');
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('[Umami] Error tracking event:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -119,7 +119,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackProductView('Test Product', 'empanadas', 12.99);
-      
+
       expect(mockTrack).toHaveBeenCalledWith('product_view', {
         product_name: 'Test Product',
         category: 'empanadas',
@@ -132,7 +132,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackAddToCart('Test Product', 2, 12.99);
-      
+
       expect(mockTrack).toHaveBeenCalledWith('add_to_cart', {
         product_name: 'Test Product',
         quantity: 2,
@@ -146,7 +146,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackPurchase(45.99, 3, 'card');
-      
+
       expect(mockTrack).toHaveBeenCalledWith('purchase', {
         order_total: 45.99,
         order_items: 3,
@@ -159,7 +159,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackContactForm('contact');
-      
+
       expect(mockTrack).toHaveBeenCalledWith('contact_form', {
         form_type: 'contact',
       });
@@ -170,7 +170,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackButtonClick('add_to_cart', 'product_page');
-      
+
       expect(mockTrack).toHaveBeenCalledWith('button_click', {
         button_name: 'add_to_cart',
         location: 'product_page',
@@ -182,7 +182,7 @@ describe('Umami Analytics', () => {
       (global as any).window.umami.track = mockTrack;
 
       UmamiTracking.trackError('validation_error', 'Invalid email format', '/contact');
-      
+
       expect(mockTrack).toHaveBeenCalledWith('error', {
         error_type: 'validation_error',
         error_message: 'Invalid email format',
@@ -190,4 +190,4 @@ describe('Umami Analytics', () => {
       });
     });
   });
-}); 
+});

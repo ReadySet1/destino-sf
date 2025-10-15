@@ -12,11 +12,7 @@ export function ProductImageSection({ initialImages }: ProductImageSectionProps)
 
   return (
     <>
-      <ProductImageManager
-        initialImages={imageUrls}
-        onImagesChange={setImageUrls}
-        maxImages={10}
-      />
+      <ProductImageManager initialImages={imageUrls} onImagesChange={setImageUrls} maxImages={10} />
       <input type="hidden" name="imageUrls" value={JSON.stringify(imageUrls)} />
     </>
   );

@@ -11,17 +11,17 @@ This design system provides reusable components that maintain consistent styling
 ### Layout Components
 
 #### `FormContainer`
+
 Main wrapper for all admin forms. Provides full-screen background and responsive container.
 
 ```tsx
 import { FormContainer } from '@/components/ui/form';
 
-<FormContainer>
-  {/* Form content */}
-</FormContainer>
+<FormContainer>{/* Form content */}</FormContainer>;
 ```
 
 #### `FormHeader`
+
 Standard header with title, description, and optional back button/actions.
 
 ```tsx
@@ -32,10 +32,11 @@ import { FormHeader } from '@/components/ui/form';
   description="Update product information and settings"
   backUrl="/admin/products"
   backLabel="Back to Products"
-/>
+/>;
 ```
 
 #### `FormSection`
+
 Sectioned content areas with colored headers and icons.
 
 ```tsx
@@ -48,10 +49,11 @@ import { FormSection, FormIcons } from '@/components/ui/form';
   variant="default"
 >
   {/* Section content */}
-</FormSection>
+</FormSection>;
 ```
 
 **Variants:**
+
 - `default` - Gray header
 - `blue` - Blue header (for integrations)
 - `green` - Green header (for uploads/media)
@@ -62,6 +64,7 @@ import { FormSection, FormIcons } from '@/components/ui/form';
 ### Form Elements
 
 #### `FormField`
+
 Wrapper for form inputs with labels, help text, and error states.
 
 ```tsx
@@ -73,44 +76,45 @@ import { FormField, FormInput } from '@/components/ui/form';
   helpText="Enter a descriptive name for your product"
   error={errors.name}
 >
-  <FormInput
-    name="name"
-    placeholder="Enter product name"
-    defaultValue={product.name}
-  />
-</FormField>
+  <FormInput name="name" placeholder="Enter product name" defaultValue={product.name} />
+</FormField>;
 ```
 
 #### `FormInput`
+
 Standard text input with variants for different use cases.
 
 ```tsx
 import { FormInput } from '@/components/ui/form';
 
-{/* Default input */}
-<FormInput name="name" placeholder="Product name" />
+{
+  /* Default input */
+}
+<FormInput name="name" placeholder="Product name" />;
 
-{/* Currency input with $ prefix */}
-<FormInput variant="currency" name="price" placeholder="0.00" />
+{
+  /* Currency input with $ prefix */
+}
+<FormInput variant="currency" name="price" placeholder="0.00" />;
 
-{/* Monospace input for codes/IDs */}
-<FormInput variant="monospace" name="squareId" placeholder="ABC123" />
+{
+  /* Monospace input for codes/IDs */
+}
+<FormInput variant="monospace" name="squareId" placeholder="ABC123" />;
 ```
 
 #### `FormTextarea`
+
 Multi-line text input with consistent styling.
 
 ```tsx
 import { FormTextarea } from '@/components/ui/form';
 
-<FormTextarea
-  name="description"
-  placeholder="Product description..."
-  rows={5}
-/>
+<FormTextarea name="description" placeholder="Product description..." rows={5} />;
 ```
 
 #### `FormSelect`
+
 Dropdown select with placeholder support.
 
 ```tsx
@@ -119,10 +123,11 @@ import { FormSelect } from '@/components/ui/form';
 <FormSelect name="category" placeholder="Choose a category">
   <option value="1">Category 1</option>
   <option value="2">Category 2</option>
-</FormSelect>
+</FormSelect>;
 ```
 
 #### `FormCheckbox`
+
 Checkbox with label and description.
 
 ```tsx
@@ -133,12 +138,13 @@ import { FormCheckbox } from '@/components/ui/form';
   label="Active Product"
   description="Active products are visible to customers"
   defaultChecked={product.active}
-/>
+/>;
 ```
 
 ### Layout Utilities
 
 #### `FormGrid`
+
 Responsive grid for organizing form fields.
 
 ```tsx
@@ -151,10 +157,11 @@ import { FormGrid } from '@/components/ui/form';
   <FormField label="Category">
     <FormSelect name="category">...</FormSelect>
   </FormField>
-</FormGrid>
+</FormGrid>;
 ```
 
 #### `FormStack`
+
 Vertical stack with consistent spacing.
 
 ```tsx
@@ -164,10 +171,11 @@ import { FormStack } from '@/components/ui/form';
   <FormField>...</FormField>
   <FormField>...</FormField>
   <FormField>...</FormField>
-</FormStack>
+</FormStack>;
 ```
 
 #### `FormActions`
+
 Container for form action buttons.
 
 ```tsx
@@ -177,35 +185,39 @@ import { FormActions, FormButton, FormIcons } from '@/components/ui/form';
   <FormButton variant="secondary" href="/admin/products">
     Cancel Changes
   </FormButton>
-  <FormButton
-    type="submit"
-    leftIcon={FormIcons.save}
-  >
+  <FormButton type="submit" leftIcon={FormIcons.save}>
     Update Product
   </FormButton>
-</FormActions>
+</FormActions>;
 ```
 
 #### `FormButton`
+
 Consistent button styling with variants and icons.
 
 ```tsx
 import { FormButton, FormIcons } from '@/components/ui/form';
 
-{/* Primary button */}
+{
+  /* Primary button */
+}
 <FormButton type="submit" leftIcon={FormIcons.save}>
   Save Changes
-</FormButton>
+</FormButton>;
 
-{/* Secondary button as link */}
+{
+  /* Secondary button as link */
+}
 <FormButton variant="secondary" href="/admin/products">
   Cancel
-</FormButton>
+</FormButton>;
 
-{/* Danger button */}
+{
+  /* Danger button */
+}
 <FormButton variant="danger" onClick={deleteItem}>
   Delete
-</FormButton>
+</FormButton>;
 ```
 
 ## Complete Example
@@ -224,7 +236,7 @@ import {
   FormStack,
   FormActions,
   FormButton,
-  FormIcons
+  FormIcons,
 } from '@/components/ui/form';
 
 export default function EditProductForm() {
@@ -303,6 +315,7 @@ export default function EditProductForm() {
 ## Design Tokens
 
 ### Colors
+
 - **Primary**: Indigo (indigo-600, indigo-700)
 - **Secondary**: Gray (gray-300, gray-700)
 - **Success**: Green (green-600)
@@ -310,6 +323,7 @@ export default function EditProductForm() {
 - **Danger**: Red (red-600)
 
 ### Spacing
+
 - **Form sections**: `space-y-10` (40px)
 - **Field groups**: `space-y-8` (32px)
 - **Form fields**: `space-y-6` (24px)
@@ -317,6 +331,7 @@ export default function EditProductForm() {
 - **Input padding**: `py-3 px-4` (12px 16px)
 
 ### Typography
+
 - **Form titles**: `text-3xl font-bold`
 - **Section titles**: `text-xl font-semibold`
 - **Field labels**: `text-sm font-semibold`
@@ -324,6 +339,7 @@ export default function EditProductForm() {
 - **Input text**: `text-base`
 
 ### Border Radius
+
 - **Containers**: `rounded-xl` (12px)
 - **Inputs**: `rounded-lg` (8px)
 - **Buttons**: `rounded-lg` (8px)

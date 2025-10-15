@@ -2,13 +2,13 @@
 
 /**
  * EMERGENCY CLEANUP SCRIPT: Fix Stuck Square Orders
- * 
+ *
  * This script identifies and fixes orders that are stuck in DRAFT state in Square
  * while having been created successfully in our database.
- * 
+ *
  * Usage:
  *   pnpm tsx scripts/fix-stuck-square-orders.ts [--dry-run] [--project=production|development]
- * 
+ *
  * Safety Features:
  * - Dry run mode by default
  * - Confirmation prompts for production
@@ -70,16 +70,16 @@ class StuckOrdersFixer {
               // Orders pending for more than 1 hour
               {
                 status: 'PENDING',
-                createdAt: { lt: new Date(Date.now() - 60 * 60 * 1000) }
+                createdAt: { lt: new Date(Date.now() - 60 * 60 * 1000) },
               },
               // Orders that might have payments but stuck status
               {
                 paymentStatus: 'COMPLETED',
-                status: { in: ['PENDING', 'PROCESSING'] }
-              }
-            ]
-          }
-        ]
+                status: { in: ['PENDING', 'PROCESSING'] },
+              },
+            ],
+          },
+        ],
       },
       orderBy: { createdAt: 'desc' },
       take: 50, // Safety limit
@@ -97,7 +97,7 @@ class StuckOrdersFixer {
       const response = await this.squareService.retrieveOrder(squareOrderId);
       return {
         state: response.order?.state || 'UNKNOWN',
-        version: response.order?.version
+        version: response.order?.version,
       };
     } catch (error) {
       logger.error(`Failed to check Square order ${squareOrderId}:`, error);
@@ -108,7 +108,10 @@ class StuckOrdersFixer {
   /**
    * Attempts to finalize a stuck order in Square
    */
-  async finalizeSquareOrder(squareOrderId: string, version?: number): Promise<{ success: boolean; newState?: string; error?: string }> {
+  async finalizeSquareOrder(
+    squareOrderId: string,
+    version?: number
+  ): Promise<{ success: boolean; newState?: string; error?: string }> {
     try {
       const updateRequest = {
         order: {
@@ -127,14 +130,14 @@ class StuckOrdersFixer {
 
       const response = await this.squareService.updateOrder(squareOrderId, updateRequest);
       const newState = response.order?.state || 'UNKNOWN';
-      
+
       logger.info(`✅ Finalized Square order ${squareOrderId}: ${newState}`);
       return { success: true, newState };
     } catch (error: any) {
       logger.error(`❌ Failed to finalize Square order ${squareOrderId}:`, error);
-      return { 
-        success: false, 
-        error: error.message || 'Unknown error' 
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
       };
     }
   }
@@ -181,7 +184,7 @@ class StuckOrdersFixer {
         logger.info(`ℹ️  Order already finalized in Square: ${squareState.state}`);
         result.success = true;
         result.action = 'already_finalized';
-        
+
         // Still update our database if it's behind
         if (order.status === 'PENDING') {
           await this.updateDatabaseOrder(order.id, 'PROCESSING');
@@ -191,8 +194,11 @@ class StuckOrdersFixer {
 
       if (squareState.state === 'DRAFT') {
         // This is the main issue - finalize the order
-        const finalizeResult = await this.finalizeSquareOrder(order.squareOrderId, squareState.version);
-        
+        const finalizeResult = await this.finalizeSquareOrder(
+          order.squareOrderId,
+          squareState.version
+        );
+
         if (finalizeResult.success) {
           await this.updateDatabaseOrder(order.id, 'PROCESSING');
           result.success = true;
@@ -205,7 +211,6 @@ class StuckOrdersFixer {
         logger.warn(`⚠️  Unexpected Square order state: ${squareState.state}`);
         result.error = `Unexpected state: ${squareState.state}`;
       }
-
     } catch (error: any) {
       logger.error(`💥 Error processing order ${order.id}:`, error);
       result.error = error.message || 'Unknown error';
@@ -220,14 +225,14 @@ class StuckOrdersFixer {
   async run(): Promise<void> {
     try {
       logger.info('🚀 Starting stuck orders cleanup...');
-      
+
       if (this.isDryRun) {
         logger.info('🧪 RUNNING IN DRY RUN MODE - No changes will be made');
       }
 
       // Find stuck orders
       const stuckOrders = await this.findStuckOrders();
-      
+
       if (stuckOrders.length === 0) {
         logger.info('🎉 No stuck orders found!');
         return;
@@ -256,18 +261,17 @@ class StuckOrdersFixer {
 
       // Process each order
       logger.info(`🔄 Processing ${stuckOrders.length} stuck orders...`);
-      
+
       for (const order of stuckOrders) {
         const result = await this.processStuckOrder(order);
         this.results.push(result);
-        
+
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Show final results
       this.showResults();
-
     } catch (error) {
       logger.error('💥 Fatal error during cleanup:', error);
       throw error;
@@ -285,12 +289,12 @@ class StuckOrdersFixer {
       output: process.stdout,
     });
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       rl.question(
         `\n⚠️  You are about to fix ${orderCount} stuck orders in PRODUCTION.\n` +
-        `This will make changes to both Square and your database.\n` +
-        `Are you absolutely sure you want to continue? (type 'YES' to confirm): `,
-        (answer) => {
+          `This will make changes to both Square and your database.\n` +
+          `Are you absolutely sure you want to continue? (type 'YES' to confirm): `,
+        answer => {
           rl.close();
           resolve(answer.trim() === 'YES');
         }
@@ -363,7 +367,7 @@ async function main() {
 
 // Run if called directly
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch(error => {
     console.error('💥 Fatal error:', error);
     process.exit(1);
   });

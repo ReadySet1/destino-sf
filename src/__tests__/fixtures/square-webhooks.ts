@@ -1,6 +1,6 @@
 /**
  * Test Fixtures for Square Webhooks
- * 
+ *
  * Provides utilities for creating mock webhook requests, payloads,
  * and signatures for comprehensive testing of the webhook system.
  */
@@ -37,7 +37,7 @@ export function createMockSquareWebhook(options: MockWebhookOptions = {}): {
     merchantId = 'TEST_MERCHANT_123',
     timestamp = new Date().toISOString(),
     additionalHeaders = {},
-    additionalPayloadData = {}
+    additionalPayloadData = {},
   } = options;
 
   // Create webhook payload
@@ -52,18 +52,15 @@ export function createMockSquareWebhook(options: MockWebhookOptions = {}): {
       object: {
         id: `${type.split('.')[0]}_${eventId}`,
         ...getDefaultObjectForType(type),
-        ...additionalPayloadData
-      }
-    }
+        ...additionalPayloadData,
+      },
+    },
   };
 
   const body = JSON.stringify(payload);
 
   // Generate signature
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', secret).update(body).digest('base64');
 
   // Create request headers
   const headers: Record<string, string> = {
@@ -72,14 +69,14 @@ export function createMockSquareWebhook(options: MockWebhookOptions = {}): {
     'content-type': 'application/json',
     'content-length': body.length.toString(),
     'user-agent': 'Square-Webhook/1.0',
-    ...additionalHeaders
+    ...additionalHeaders,
   };
 
   // Create NextRequest
   const request = new NextRequest('https://example.com/api/webhooks/square', {
     method: 'POST',
     headers,
-    body
+    body,
   });
 
   return { request, payload, signature, body };
@@ -98,13 +95,13 @@ export function createMockRequest(options: {
     headers = {},
     body = '',
     method = 'POST',
-    url = 'https://example.com/api/webhooks/square'
+    url = 'https://example.com/api/webhooks/square',
   } = options;
 
   return new NextRequest(url, {
     method,
     headers,
-    body
+    body,
   });
 }
 
@@ -120,28 +117,30 @@ function getDefaultObjectForType(type: string): Record<string, unknown> {
         status: 'COMPLETED',
         order_id: 'order_test_123',
         location_id: 'location_test_123',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
-      
+
     case 'order.created':
     case 'order.updated':
       return {
         state: 'OPEN',
         location_id: 'location_test_123',
         total_money: { amount: 1000, currency: 'USD' },
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
-      
+
     case 'order.fulfillment.updated':
       return {
         state: 'PREPARED',
         location_id: 'location_test_123',
-        fulfillments: [{
-          type: 'PICKUP',
-          state: 'PREPARED'
-        }]
+        fulfillments: [
+          {
+            type: 'PICKUP',
+            state: 'PREPARED',
+          },
+        ],
       };
-      
+
     case 'refund.created':
     case 'refund.updated':
       return {
@@ -150,13 +149,13 @@ function getDefaultObjectForType(type: string): Record<string, unknown> {
         payment_id: 'payment_test_123',
         order_id: 'order_test_123',
         location_id: 'location_test_123',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
-      
+
     default:
       return {
         id: `${type}_test_123`,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
   }
 }
@@ -169,16 +168,16 @@ export function createInvalidSignatureWebhook(options: MockWebhookOptions = {}):
   payload: SquareWebhookPayload;
 } {
   const mockData = createMockSquareWebhook(options);
-  
+
   // Create request with wrong signature
   const request = new NextRequest('https://example.com/api/webhooks/square', {
     method: 'POST',
     headers: {
       'x-square-hmacsha256-signature': 'definitely-wrong-signature',
       'square-environment': options.environment === 'production' ? 'Production' : 'Sandbox',
-      'content-type': 'application/json'
+      'content-type': 'application/json',
     },
-    body: mockData.body
+    body: mockData.body,
   });
 
   return { request, payload: mockData.payload };
@@ -194,22 +193,19 @@ export function createInvalidPayloadWebhook(): {
   const invalidPayload = {
     // Missing required fields like event_id, type, etc.
     merchant_id: 'TEST_MERCHANT',
-    some_field: 'some_value'
+    some_field: 'some_value',
   };
 
   const body = JSON.stringify(invalidPayload);
-  const signature = crypto
-    .createHmac('sha256', 'test-secret')
-    .update(body)
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', 'test-secret').update(body).digest('base64');
 
   const request = new NextRequest('https://example.com/api/webhooks/square', {
     method: 'POST',
     headers: {
       'x-square-hmacsha256-signature': signature,
-      'square-environment': 'Sandbox'
+      'square-environment': 'Sandbox',
     },
-    body
+    body,
   });
 
   return { request, body };
@@ -223,26 +219,29 @@ export function createOldTimestampWebhook(minutesOld: number = 10): {
   payload: SquareWebhookPayload;
 } {
   const oldTimestamp = new Date(Date.now() - minutesOld * 60 * 1000).toISOString();
-  
+
   return createMockSquareWebhook({
     type: 'payment.created',
     timestamp: oldTimestamp,
-    secret: 'test-webhook-secret'
+    secret: 'test-webhook-secret',
   });
 }
 
 /**
  * Create multiple webhook requests for load testing
  */
-export function createWebhookBatch(count: number, options: MockWebhookOptions = {}): Array<{
+export function createWebhookBatch(
+  count: number,
+  options: MockWebhookOptions = {}
+): Array<{
   request: NextRequest;
   payload: SquareWebhookPayload;
 }> {
-  return Array.from({ length: count }, (_, index) => 
+  return Array.from({ length: count }, (_, index) =>
     createMockSquareWebhook({
       ...options,
       eventId: `batch-event-${index}-${Date.now()}`,
-      type: options.type || ['payment.created', 'order.updated', 'payment.updated'][index % 3]
+      type: options.type || ['payment.created', 'order.updated', 'payment.updated'][index % 3],
     })
   );
 }
@@ -255,22 +254,21 @@ export function validateSignatureManually(
   secret: string,
   algorithm: 'sha256' | 'sha1' = 'sha256'
 ): string {
-  return crypto
-    .createHmac(algorithm, secret)
-    .update(body)
-    .digest('base64');
+  return crypto.createHmac(algorithm, secret).update(body).digest('base64');
 }
 
 /**
  * Create webhook with specific error conditions for testing
  */
-export function createErrorConditionWebhook(errorType: 'missing_signature' | 'invalid_json' | 'missing_secret'): NextRequest {
+export function createErrorConditionWebhook(
+  errorType: 'missing_signature' | 'invalid_json' | 'missing_secret'
+): NextRequest {
   const payload = createMockSquareWebhook().payload;
   const body = errorType === 'invalid_json' ? '{ invalid }' : JSON.stringify(payload);
-  
+
   const headers: Record<string, string> = {
     'square-environment': 'Sandbox',
-    'content-type': 'application/json'
+    'content-type': 'application/json',
   };
 
   // Add signature only if not testing missing signature
@@ -284,6 +282,6 @@ export function createErrorConditionWebhook(errorType: 'missing_signature' | 'in
   return new NextRequest('https://example.com/api/webhooks/square', {
     method: 'POST',
     headers,
-    body
+    body,
   });
 }

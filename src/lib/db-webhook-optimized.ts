@@ -30,30 +30,30 @@ class WebhookOptimizedDatabaseClient {
     }
 
     let optimizedUrl = databaseUrl;
-    
+
     try {
       const url = new URL(databaseUrl);
-      
+
       // Check if it's a Supabase pooler URL
       const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
-      
+
       if (isSupabasePooler) {
         // For Supabase pooler, use minimal configuration to avoid conflicts
         console.log('🚀 Creating webhook-optimized client for Supabase pooler');
-        
+
         // Ensure pgbouncer is enabled for pooler connections
         url.searchParams.set('pgbouncer', 'true');
         url.searchParams.set('prepared_statements', 'false');
-        
+
         // Set aggressive timeouts for webhook processing
         url.searchParams.set('statement_timeout', '20000'); // 20 seconds for webhooks
         url.searchParams.set('idle_in_transaction_session_timeout', '20000');
-        
+
         // Remove any conflicting parameters but preserve pgbouncer
         url.searchParams.delete('connection_limit');
         url.searchParams.delete('pool_timeout');
         // Keep pgbouncer=true for Supabase pooler compatibility
-        
+
         optimizedUrl = url.toString();
       } else {
         // For non-Supabase databases, use very conservative settings
@@ -85,9 +85,9 @@ class WebhookOptimizedDatabaseClient {
    */
   async testConnection(): Promise<boolean> {
     const now = Date.now();
-    
+
     // Skip frequent connection tests
-    if (this.isConnected && (now - this.lastConnectionTest) < this.CONNECTION_TEST_INTERVAL) {
+    if (this.isConnected && now - this.lastConnectionTest < this.CONNECTION_TEST_INTERVAL) {
       return true;
     }
 
@@ -134,11 +134,12 @@ class WebhookOptimizedDatabaseClient {
     operationName: string
   ): Promise<T> {
     return this.executeWebhookOperation(
-      (client) => client.$transaction(operation, {
-        maxWait: 10000, // 10 seconds max wait
-        timeout: 20000, // 20 seconds timeout
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-      }),
+      client =>
+        client.$transaction(operation, {
+          maxWait: 10000, // 10 seconds max wait
+          timeout: 20000, // 20 seconds timeout
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }),
       `transaction-${operationName}`,
       25000 // 25 second total timeout
     );

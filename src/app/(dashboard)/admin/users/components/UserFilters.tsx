@@ -120,7 +120,7 @@ export default function UserFilters({
               type="text"
               placeholder="Search by email, name, or phone..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
             />
           </div>
@@ -169,8 +169,8 @@ export default function UserFilters({
 
         {/* Clear Filters */}
         {hasActiveFilters && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={clearFilters}
             className="h-11 flex items-center gap-2 whitespace-nowrap hover:bg-gray-50"
           >

@@ -131,12 +131,12 @@ export function ProductsTable({ products, categories }: ProductsTableProps) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {products.length > 0 ? (
-                products.map((product) => (
+                products.map(product => (
                   <tr
                     key={product.id}
                     className={cn(
-                      "hover:bg-gray-50 transition-colors duration-150",
-                      selectedIds.has(product.id) && "bg-indigo-50/50"
+                      'hover:bg-gray-50 transition-colors duration-150',
+                      selectedIds.has(product.id) && 'bg-indigo-50/50'
                     )}
                   >
                     <td className="px-6 py-4">
@@ -228,7 +228,7 @@ export function ProductsTable({ products, categories }: ProductsTableProps) {
                     <td className="hidden lg:table-cell px-6 py-4 text-sm text-gray-500">
                       {product.variants && product.variants.length > 0 ? (
                         <div className="space-y-1">
-                          {product.variants.slice(0, 2).map((variant) => (
+                          {product.variants.slice(0, 2).map(variant => (
                             <div key={variant.id} className="text-xs">
                               <span className="font-medium">{variant.name}</span>
                               {variant.price && (
@@ -275,9 +275,7 @@ export function ProductsTable({ products, categories }: ProductsTableProps) {
                           d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
                         />
                       </svg>
-                      <p className="text-base font-medium text-gray-900 mb-1">
-                        No products found
-                      </p>
+                      <p className="text-base font-medium text-gray-900 mb-1">No products found</p>
                       <p className="text-sm text-gray-500">
                         Try adjusting your filters or sync products from Square.
                       </p>

@@ -8,7 +8,7 @@ export enum AvailabilityState {
   HIDDEN = 'hidden',
   COMING_SOON = 'coming_soon',
   SOLD_OUT = 'sold_out',
-  RESTRICTED = 'restricted'
+  RESTRICTED = 'restricted',
 }
 
 // Rule Types
@@ -17,7 +17,7 @@ export enum RuleType {
   SEASONAL = 'seasonal',
   INVENTORY = 'inventory',
   CUSTOM = 'custom',
-  TIME_BASED = 'time_based'
+  TIME_BASED = 'time_based',
 }
 
 // Seasonal Configuration Schema
@@ -27,7 +27,7 @@ export const SeasonalConfigSchema = z.object({
   endMonth: z.number().min(1).max(12),
   endDay: z.number().min(1).max(31),
   yearly: z.boolean(),
-  timezone: z.string().default('America/Los_Angeles')
+  timezone: z.string().default('America/Los_Angeles'),
 });
 
 // Time Restrictions Schema
@@ -35,7 +35,7 @@ export const TimeRestrictionsSchema = z.object({
   daysOfWeek: z.array(z.number().min(0).max(6)),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  timezone: z.string().default('America/Los_Angeles')
+  timezone: z.string().default('America/Los_Angeles'),
 });
 
 // Pre-order Settings Schema
@@ -44,23 +44,23 @@ export const PreOrderSettingsSchema = z.object({
   expectedDeliveryDate: z.coerce.date(),
   maxQuantity: z.number().nullable().optional(),
   depositRequired: z.boolean().default(false),
-  depositAmount: z.number().nullable().optional()
+  depositAmount: z.number().nullable().optional(),
 });
 
 /**
  * View-only Settings Schema
- * 
+ *
  * Used when a product is visible but cannot be purchased.
- * 
+ *
  * @property message - Custom message to display (null for default message)
  * @property showPrice - Whether to show the product price
  * @property allowWishlist - Whether users can add to wishlist
  * @property notifyWhenAvailable - Whether to show "notify me" option
- * 
+ *
  * @example
  * // With custom message
  * { message: "Available next season", showPrice: true, allowWishlist: true, notifyWhenAvailable: true }
- * 
+ *
  * @example
  * // With default message (null)
  * { message: null, showPrice: true, allowWishlist: false, notifyWhenAvailable: true }
@@ -69,7 +69,7 @@ export const ViewOnlySettingsSchema = z.object({
   message: z.string().nullable(),
   showPrice: z.boolean().default(true),
   allowWishlist: z.boolean().default(false),
-  notifyWhenAvailable: z.boolean().default(true)
+  notifyWhenAvailable: z.boolean().default(true),
 });
 
 // Main Availability Rule Schema
@@ -81,24 +81,24 @@ export const AvailabilityRuleSchema = z.object({
   priority: z.number().int().min(0).default(0),
   ruleType: z.nativeEnum(RuleType),
   state: z.nativeEnum(AvailabilityState),
-  
+
   // Date controls
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
-  
+
   // Seasonal controls
   seasonalConfig: SeasonalConfigSchema.nullable().optional(),
-  
+
   // Time restrictions
   timeRestrictions: TimeRestrictionsSchema.nullable().optional(),
-  
+
   // Pre-order settings
   preOrderSettings: PreOrderSettingsSchema.nullable().optional(),
-  
+
   // View-only settings
   viewOnlySettings: ViewOnlySettingsSchema.nullable().optional(),
-  
-  overrideSquare: z.boolean().default(true)
+
+  overrideSquare: z.boolean().default(true),
 });
 
 export type AvailabilityRule = z.infer<typeof AvailabilityRuleSchema>;
@@ -139,7 +139,7 @@ export const AvailabilityScheduleSchema = z.object({
   stateChange: z.string(),
   processed: z.boolean().default(false),
   processedAt: z.coerce.date().nullable().optional(),
-  errorMessage: z.string().nullable().optional()
+  errorMessage: z.string().nullable().optional(),
 });
 
 export type AvailabilitySchedule = z.infer<typeof AvailabilityScheduleSchema>;

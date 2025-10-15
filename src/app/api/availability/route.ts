@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { 
-  AvailabilityRuleSchema, 
+import {
+  AvailabilityRuleSchema,
   type AvailabilityRule,
-  type AvailabilityApiResponse 
+  type AvailabilityApiResponse,
 } from '@/types/availability';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityValidators } from '@/lib/availability/validators';
@@ -20,10 +20,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -46,22 +49,25 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
       userId: authResult.user!.id,
       rulesCount: rules.length,
       productId,
-      productIds: productIds?.length
+      productIds: productIds?.length,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: rules 
+    return NextResponse.json({
+      success: true,
+      data: rules,
     });
   } catch (error) {
     logger.error('Error in GET /api/availability', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to retrieve availability rules' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to retrieve availability rules',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -73,21 +79,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body = await request.json();
-    
+
     // Validate the rule data
     const validation = AvailabilityValidators.validateRule(body);
     if (!validation.isValid) {
-      return NextResponse.json({ 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Validation failed: ${validation.errors.join(', ')}`,
+        },
+        { status: 400 }
+      );
     }
 
     const validated = AvailabilityRuleSchema.parse(body);
@@ -107,22 +119,28 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
     logger.info('Created availability rule via API', {
       ruleId: result.id,
       productId: result.productId,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: result 
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logger.error('Error in POST /api/availability', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to create availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to create availability rule',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -134,29 +152,38 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Availabili
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Rule ID is required for updates' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule ID is required for updates',
+        },
+        { status: 400 }
+      );
     }
 
     // Validate the updates
     const validation = AvailabilityValidators.validateRule(updates);
     if (!validation.isValid) {
-      return NextResponse.json({ 
-        success: false, 
-        error: `Validation failed: ${validation.errors.join(', ')}` 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Validation failed: ${validation.errors.join(', ')}`,
+        },
+        { status: 400 }
+      );
     }
 
     const result = await withDatabaseConnection(async () => {
@@ -169,22 +196,25 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Availabili
     logger.info('Updated availability rule via API', {
       ruleId: id,
       userId: authResult.user!.id,
-      changes: Object.keys(updates)
+      changes: Object.keys(updates),
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: result 
+    return NextResponse.json({
+      success: true,
+      data: result,
     });
   } catch (error) {
     logger.error('Error in PUT /api/availability', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to update availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to update availability rule',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -196,20 +226,26 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Availab
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { searchParams } = new URL(request.url);
     const ruleId = searchParams.get('id');
 
     if (!ruleId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Rule ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     await withDatabaseConnection(async () => {
@@ -218,20 +254,23 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Availab
 
     logger.info('Deleted availability rule via API', {
       ruleId,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true 
+    return NextResponse.json({
+      success: true,
     });
   } catch (error) {
     logger.error('Error in DELETE /api/availability', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to delete availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to delete availability rule',
+      },
+      { status: 500 }
+    );
   }
 }

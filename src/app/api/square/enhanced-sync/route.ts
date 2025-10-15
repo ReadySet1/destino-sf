@@ -1,8 +1,8 @@
 /**
  * Enhanced Square Sync API Endpoint
- * 
+ *
  * Syncs ALL missing catering items from Square to the unified products table
- * while protecting existing items. Uses intelligent duplicate detection 
+ * while protecting existing items. Uses intelligent duplicate detection
  * and category-by-category processing.
  */
 
@@ -19,20 +19,22 @@ export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
 
 // Request validation schema
-const EnhancedSyncRequestSchema = z.object({
-  preview: z.boolean().optional().default(false),
-}).strict();
+const EnhancedSyncRequestSchema = z
+  .object({
+    preview: z.boolean().optional().default(false),
+  })
+  .strict();
 
 // Category mappings from Square to our DB
 const CATERING_CATEGORY_MAPPINGS = {
-  'UF2WY4B4635ZDAH4TCJVDQAN': 'CATERING- APPETIZERS',
-  'UOWY2ZPV24Q6K6BBD5CZRM4B': 'CATERING- BUFFET, STARTERS', 
-  'HKLMA3HI34UUW6OCDMEKE224': 'CATERING- BUFFET, ENTREES',
-  'ZOWZ26OBOK3KUCT4ZBE6AV26': 'CATERING- BUFFET, SIDES',
+  UF2WY4B4635ZDAH4TCJVDQAN: 'CATERING- APPETIZERS',
+  UOWY2ZPV24Q6K6BBD5CZRM4B: 'CATERING- BUFFET, STARTERS',
+  HKLMA3HI34UUW6OCDMEKE224: 'CATERING- BUFFET, ENTREES',
+  ZOWZ26OBOK3KUCT4ZBE6AV26: 'CATERING- BUFFET, SIDES',
   '4YZ7LW7PRJRDICUM76U3FTGU': 'CATERING- SHARE PLATTERS',
   '5ZH6ON3LTLXC2775JLBI3T3V': 'CATERING- DESSERTS',
-  'B527RVCSLNZ5XR3OZR76VNIH': 'CATERING- LUNCH, STARTERS',
-  'K2O3B7JUWT7QD7HGQ5AL2R2N': 'CATERING- LUNCH, ENTREES',
+  B527RVCSLNZ5XR3OZR76VNIH: 'CATERING- LUNCH, STARTERS',
+  K2O3B7JUWT7QD7HGQ5AL2R2N: 'CATERING- LUNCH, ENTREES',
   '7F45BAY6KVJOBF4YXYBSL4JH': 'CATERING- LUNCH, SIDES',
 };
 
@@ -75,9 +77,9 @@ function normalizeCategoryName(categoryName: string): string {
   // Normalize category names to match the unified products table format
   return categoryName
     .toUpperCase()
-    .replace(/\s*-\s*/g, '-')      // Remove spaces around hyphens
-    .replace(/,\s*/g, '-')         // Replace commas with hyphens
-    .replace(/\s+/g, '-')          // Replace remaining spaces with hyphens
+    .replace(/\s*-\s*/g, '-') // Remove spaces around hyphens
+    .replace(/,\s*/g, '-') // Replace commas with hyphens
+    .replace(/\s+/g, '-') // Replace remaining spaces with hyphens
     .trim();
 }
 
@@ -89,11 +91,11 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareIt
       query: {
         exact_query: {
           attribute_name: 'category_id',
-          attribute_value: categoryId
-        }
+          attribute_value: categoryId,
+        },
       },
       limit: 100,
-      include_related_objects: true
+      include_related_objects: true,
     };
 
     const response = await searchCatalogObjects(requestBody);
@@ -105,29 +107,29 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareIt
         if (item.type === 'ITEM' && item.item_data) {
           const variation = item.item_data.variations?.[0];
           let price = 0;
-          
+
           if (variation?.item_variation_data?.price_money?.amount) {
             price = variation.item_variation_data.price_money.amount / 100; // Convert cents to dollars
           } else if (variation?.item_variation_data?.pricing_type === 'VARIABLE_PRICING') {
             // Handle variable pricing items - set reasonable base prices for Share Platters
             const itemName = item.item_data.name.toLowerCase();
             if (itemName.includes('plantain')) {
-              price = 45.00; // Plantain Chips Platter base price
+              price = 45.0; // Plantain Chips Platter base price
             } else if (itemName.includes('cheese') && itemName.includes('charcuterie')) {
-              price = 150.00; // Cheese & Charcuterie Platter base price
+              price = 150.0; // Cheese & Charcuterie Platter base price
             } else if (itemName.includes('cocktail') && itemName.includes('prawn')) {
-              price = 80.00; // Cocktail Prawn Platter base price
+              price = 80.0; // Cocktail Prawn Platter base price
             } else {
               // Default variable pricing base
-              price = 50.00;
+              price = 50.0;
             }
           }
 
           // Find image from related objects
           let imageUrl: string | undefined;
           if (item.item_data.image_ids?.[0] && data.related_objects) {
-            const imageObj = data.related_objects.find((obj: any) => 
-              obj.type === 'IMAGE' && obj.id === item.item_data.image_ids[0]
+            const imageObj = data.related_objects.find(
+              (obj: any) => obj.type === 'IMAGE' && obj.id === item.item_data.image_ids[0]
             );
             if (imageObj?.image_data?.url) {
               imageUrl = imageObj.image_data.url;
@@ -141,12 +143,14 @@ async function fetchSquareItemsForCategory(categoryId: string): Promise<SquareIt
             price,
             categoryId,
             imageUrl,
-            variations: item.item_data.variations?.map((v: any) => ({
-              id: v.id,
-              name: v.item_variation_data?.name || 'Regular',
-              price: v.item_variation_data?.price_money?.amount ? 
-                v.item_variation_data.price_money.amount / 100 : undefined
-            })) || []
+            variations:
+              item.item_data.variations?.map((v: any) => ({
+                id: v.id,
+                name: v.item_variation_data?.name || 'Regular',
+                price: v.item_variation_data?.price_money?.amount
+                  ? v.item_variation_data.price_money.amount / 100
+                  : undefined,
+              })) || [],
           });
         }
       }
@@ -169,12 +173,12 @@ async function getDbItemsCountForCategory(categoryName: string): Promise<number>
         category: {
           name: {
             equals: normalizedName,
-            mode: 'insensitive'
-          }
-        }
-      }
+            mode: 'insensitive',
+          },
+        },
+      },
     });
-    
+
     logger.info(`Found ${count} existing items in ${categoryName} (products table)`);
     return count;
   } catch (error) {
@@ -189,7 +193,7 @@ async function previewMissingItems(): Promise<{
   categories: CategorySummary[];
 }> {
   logger.info('🔍 Starting enhanced sync preview...');
-  
+
   const categories: CategorySummary[] = [];
   let totalMissing = 0;
 
@@ -197,23 +201,23 @@ async function previewMissingItems(): Promise<{
     try {
       const squareItems = await fetchSquareItemsForCategory(squareCategoryId);
       const dbItemsCount = await getDbItemsCountForCategory(categoryName);
-      
+
       // Filter out items that already exist using our duplicate detector
       const missingItems: any[] = [];
-      
+
       for (const squareItem of squareItems) {
         const { isDuplicate } = await CateringDuplicateDetector.checkForDuplicate({
           name: squareItem.name,
           squareProductId: squareItem.id,
-          squareCategory: categoryName
+          squareCategory: categoryName,
         });
-        
+
         if (!isDuplicate) {
           missingItems.push({
             id: squareItem.id,
             name: squareItem.name,
             price: squareItem.price,
-            hasImage: !!squareItem.imageUrl
+            hasImage: !!squareItem.imageUrl,
           });
         }
       }
@@ -223,14 +227,15 @@ async function previewMissingItems(): Promise<{
         squareItems: squareItems.length,
         dbItems: dbItemsCount,
         missing: missingItems.length,
-        items: missingItems
+        items: missingItems,
       };
 
       categories.push(categorySummary);
       totalMissing += missingItems.length;
-      
-      logger.info(`📊 ${categoryName}: ${squareItems.length} in Square, ${dbItemsCount} in DB, ${missingItems.length} missing`);
-      
+
+      logger.info(
+        `📊 ${categoryName}: ${squareItems.length} in Square, ${dbItemsCount} in DB, ${missingItems.length} missing`
+      );
     } catch (error) {
       logger.error(`❌ Error processing category ${categoryName}:`, error);
     }
@@ -249,7 +254,7 @@ async function syncMissingItems(): Promise<{
   errors: string[];
 }> {
   logger.info('🚀 Starting enhanced sync execution...');
-  
+
   let syncedItems = 0;
   let skippedItems = 0;
   let protectedItems = 0;
@@ -263,17 +268,18 @@ async function syncMissingItems(): Promise<{
       let categorySynced = 0;
       let categoryProtected = 0;
       let categorySkipped = 0;
-      
+
       logger.info(`🔄 Processing ${categoryName} (${squareItems.length} items)...`);
-      
+
       for (const squareItem of squareItems) {
         try {
-          const { isDuplicate, existingItem, matchType } = await CateringDuplicateDetector.checkForDuplicate({
-            name: squareItem.name,
-            squareProductId: squareItem.id,
-            squareCategory: categoryName
-          });
-          
+          const { isDuplicate, existingItem, matchType } =
+            await CateringDuplicateDetector.checkForDuplicate({
+              name: squareItem.name,
+              squareProductId: squareItem.id,
+              squareCategory: categoryName,
+            });
+
           if (isDuplicate && existingItem) {
             if (existingItem.source === 'square') {
               // Item already synced from Square - protect it
@@ -290,17 +296,19 @@ async function syncMissingItems(): Promise<{
           }
 
           // Item doesn't exist - sync it to products table
-          logger.info(`Syncing new item: "${squareItem.name}" ($${squareItem.price}) to ${categoryName}`);
-          
+          logger.info(
+            `Syncing new item: "${squareItem.name}" ($${squareItem.price}) to ${categoryName}`
+          );
+
           // Get or create category in products table
           const normalizedCategoryName = normalizeCategoryName(categoryName);
           let category = await prisma.category.findFirst({
             where: {
               name: {
                 equals: normalizedCategoryName,
-                mode: 'insensitive'
-              }
-            }
+                mode: 'insensitive',
+              },
+            },
           });
 
           if (!category) {
@@ -310,8 +318,8 @@ async function syncMissingItems(): Promise<{
                 description: `Category for ${normalizedCategoryName} products`,
                 slug: normalizedCategoryName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
                 order: 0,
-                active: true
-              }
+                active: true,
+              },
             });
             logger.info(`Created new category: ${normalizedCategoryName}`);
           }
@@ -319,7 +327,7 @@ async function syncMissingItems(): Promise<{
           // Create unique slug for the product
           const baseSlug = squareItem.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
           const existingSlug = await prisma.product.findFirst({
-            where: { slug: baseSlug }
+            where: { slug: baseSlug },
           });
           const slug = existingSlug ? `${baseSlug}-${squareItem.id.substring(0, 8)}` : baseSlug;
 
@@ -339,16 +347,17 @@ async function syncMissingItems(): Promise<{
                 create: squareItem.variations.map(v => ({
                   name: v.name,
                   price: v.price || null,
-                  squareVariantId: v.id
-                }))
-              }
-            }
+                  squareVariantId: v.id,
+                })),
+              },
+            },
           });
 
           categorySynced++;
           syncedItems++;
-          logger.info(`✅ Synced \"${squareItem.name}\" - $${squareItem.price} to products table (ID: ${createdProduct.id})`);
-          
+          logger.info(
+            `✅ Synced \"${squareItem.name}\" - $${squareItem.price} to products table (ID: ${createdProduct.id})`
+          );
         } catch (itemError) {
           const errorMsg = `Failed to sync ${squareItem.name}: ${itemError}`;
           errors.push(errorMsg);
@@ -357,16 +366,17 @@ async function syncMissingItems(): Promise<{
           skippedItems++;
         }
       }
-      
+
       categoryBreakdown.push({
         category: categoryName,
         synced: categorySynced,
         protected: categoryProtected,
-        skipped: categorySkipped
+        skipped: categorySkipped,
       });
-      
-      logger.info(`📊 ${categoryName} complete: ${categorySynced} synced, ${categoryProtected} protected, ${categorySkipped} skipped`);
-      
+
+      logger.info(
+        `📊 ${categoryName} complete: ${categorySynced} synced, ${categoryProtected} protected, ${categorySkipped} skipped`
+      );
     } catch (error) {
       const errorMsg = `Failed to process category ${categoryName}: ${error}`;
       errors.push(errorMsg);
@@ -380,19 +390,19 @@ async function syncMissingItems(): Promise<{
     protectedItems,
     newCategories,
     categoryBreakdown,
-    errors
+    errors,
   };
 }
 
 /**
  * POST /api/square/enhanced-sync
- * 
+ *
  * Enhanced sync endpoint that processes all missing catering items
  */
 export async function POST(request: NextRequest) {
   try {
     logger.info('🚀 Enhanced sync POST request received');
-    
+
     // Check authentication
     const supabase = await createClient();
     const {
@@ -412,7 +422,7 @@ export async function POST(request: NextRequest) {
     try {
       const text = await request.text();
       logger.info(`📝 Request body text: "${text}"`);
-      
+
       if (!text.trim()) {
         // Empty body, use default values
         logger.info('📭 Empty body received, using defaults');
@@ -438,9 +448,9 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       logger.error('Invalid request schema:', error);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid request format. Expected: { preview?: boolean }' 
+        {
+          success: false,
+          error: 'Invalid request format. Expected: { preview?: boolean }',
         },
         { status: 400 }
       );
@@ -449,44 +459,46 @@ export async function POST(request: NextRequest) {
     if (preview) {
       // Preview mode - show what would be synced
       const previewResult = await previewMissingItems();
-      
+
       return NextResponse.json({
         success: true,
         action: 'preview',
         data: previewResult,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       // Execute mode - perform the actual sync
       const syncResult = await syncMissingItems();
-      
+
       const success = syncResult.errors.length === 0 || syncResult.syncedItems > 0;
-      
+
       return NextResponse.json({
         success,
         action: 'sync',
-        message: success 
+        message: success
           ? `Enhanced sync completed: ${syncResult.syncedItems} items synced, ${syncResult.protectedItems} items protected`
           : `Enhanced sync completed with errors: ${syncResult.errors.length} errors occurred`,
         data: syncResult,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
-
   } catch (error) {
     logger.error('❌ Enhanced sync API error:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Enhanced sync failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Enhanced sync failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * GET /api/square/enhanced-sync
- * 
+ *
  * Get information about the enhanced sync endpoint
  */
 export async function GET() {
@@ -495,7 +507,8 @@ export async function GET() {
     info: {
       endpoint: '/api/square/enhanced-sync',
       methods: ['GET', 'POST'],
-      description: 'Enhanced Square sync - syncs ALL missing catering items to unified products table while protecting existing items',
+      description:
+        'Enhanced Square sync - syncs ALL missing catering items to unified products table while protecting existing items',
       protection: 'Existing products are protected using intelligent duplicate detection',
       authentication: 'Required',
       target: 'products table (unified data model)',
@@ -505,6 +518,6 @@ export async function GET() {
       'POST with preview: false': 'Execute enhanced sync',
     },
     categories: Object.values(CATERING_CATEGORY_MAPPINGS),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }

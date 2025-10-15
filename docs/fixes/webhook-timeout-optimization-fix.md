@@ -7,6 +7,7 @@ This document outlines the comprehensive fix for the webhook processing timeout 
 ## Problem Analysis
 
 The original issue showed these symptoms:
+
 - `webhook-immediate-order.created timed out after 90000ms`
 - `Timed out fetching a new connection from the connection pool`
 - Connection pool timeout of 60s vs webhook timeout of 90s
@@ -82,11 +83,13 @@ export async function safeWebhookQuery<T>(queryFn: () => Promise<T>): Promise<T>
 **Applied Migration**: `cleanup_unused_indexes_performance_optimization`
 
 Removed 15+ unused indexes identified by Supabase advisor:
+
 - `products_ordinal_idx`, `products_syncSource_idx`, `products_sync_status_idx`
 - `catering_delivery_zones_*`, `payments_status_idx`, `refunds_paymentId_idx`
 - `sync_history_*`, `shipping_configurations_isActive_idx`
 
 **Benefits**:
+
 - Faster INSERT/UPDATE operations
 - Reduced index maintenance overhead
 - Improved overall database performance
@@ -94,6 +97,7 @@ Removed 15+ unused indexes identified by Supabase advisor:
 ## Performance Improvements
 
 ### Before Fix
+
 - ❌ 5 database connections
 - ❌ 60s pool timeout vs 90s webhook timeout
 - ❌ Unlimited concurrent webhooks
@@ -101,6 +105,7 @@ Removed 15+ unused indexes identified by Supabase advisor:
 - ❌ Connection pool exhaustion leading to failures
 
 ### After Fix
+
 - ✅ 20 database connections (4x increase)
 - ✅ 120s pool timeout matching webhook requirements
 - ✅ Maximum 3 concurrent webhooks with queuing
@@ -157,9 +162,11 @@ If issues persist:
 ## Configuration Changes
 
 ### Environment Variables
+
 No environment variable changes required. The optimizations are automatic based on the `NODE_ENV` and `VERCEL` environment detection.
 
 ### Database Settings
+
 The migration automatically removes unused indexes. No manual database configuration needed.
 
 ## Rollback Plan

@@ -1,12 +1,15 @@
 # Square Webhook Payment Status Update Fix
 
 ## Problem
+
 Square webhooks were receiving `payment.created` and `payment.updated` events but not updating the payment status in the database. The logs showed:
-- Webhooks being acknowledged immediately 
+
+- Webhooks being acknowledged immediately
 - No follow-up logs from actual payment processing
 - Missing error handling in the `handlePaymentUpdated` function
 
 ## Root Cause Analysis
+
 1. **Silent failures in async processing**: The `handlePaymentUpdated` function had incomplete error handling that was causing silent failures
 2. **Missing transaction management**: Database updates weren't properly wrapped in transactions
 3. **Duplicate function definitions**: The `mapSquarePaymentStatus` function was defined multiple times
@@ -15,6 +18,7 @@ Square webhooks were receiving `payment.created` and `payment.updated` events bu
 ## Solution
 
 ### 1. Fixed `handlePaymentUpdated` Function
+
 - **Complete rewrite** with proper error handling
 - **Comprehensive logging** at each step
 - **Transaction management** for atomic database updates
@@ -24,6 +28,7 @@ Square webhooks were receiving `payment.created` and `payment.updated` events bu
 ### 2. Key Improvements Made
 
 #### Error Handling & Logging
+
 ```typescript
 // Before: Silent failures
 try {
@@ -38,21 +43,30 @@ try {
   // processing code
   console.log(`✅ Order ${order.id} updated successfully (Event: ${eventId})`);
 } catch (outerError: any) {
-  console.error(`❌ CRITICAL: handlePaymentUpdated failed for payment ${payload.data?.id} (Event: ${payload.event_id}):`, outerError);
-  
-  await errorMonitor.captureWebhookError(outerError, 'payment.updated.handler_failed', {
-    squarePaymentId: payload.data?.id,
-    squareOrderId: payload.data?.object?.payment?.order_id,
-  }, payload.event_id);
-  
+  console.error(
+    `❌ CRITICAL: handlePaymentUpdated failed for payment ${payload.data?.id} (Event: ${payload.event_id}):`,
+    outerError
+  );
+
+  await errorMonitor.captureWebhookError(
+    outerError,
+    'payment.updated.handler_failed',
+    {
+      squarePaymentId: payload.data?.id,
+      squareOrderId: payload.data?.object?.payment?.order_id,
+    },
+    payload.event_id
+  );
+
   throw outerError; // Re-throw to trigger webhook retry
 }
 ```
 
 #### Transaction Management
+
 ```typescript
 // Atomic transaction for database updates
-await prisma.$transaction(async (tx) => {
+await prisma.$transaction(async tx => {
   // Update the order
   await tx.order.update({
     where: { id: order.id },
@@ -83,6 +97,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 #### Event Deduplication
+
 ```typescript
 // Check if this event was already processed to prevent duplicates
 const existingPayment = await safeQuery(() =>
@@ -102,15 +117,18 @@ if (existingPayment?.rawData && typeof existingPayment.rawData === 'object') {
 ```
 
 ### 3. Testing
+
 Created comprehensive tests in `src/__tests__/webhook-payment-fix-test.ts`:
+
 - Payment status mapping validation
-- Webhook payload structure validation  
+- Webhook payload structure validation
 - Error handling scenarios
 - Edge cases (missing data, invalid payloads)
 
 ### 4. Expected Behavior After Fix
 
 #### Successful Payment Update Logs
+
 ```
 🔄 Processing payment.updated event: payment_123 (Event: event_456)
 📋 Payment data: { squarePaymentId: "payment_123", squareOrderId: "order_789", paymentStatus: "COMPLETED", ... }
@@ -121,6 +139,7 @@ Created comprehensive tests in `src/__tests__/webhook-payment-fix-test.ts`:
 ```
 
 #### Error Scenario Logs
+
 ```
 ❌ CRITICAL: Order with squareOrderId order_789 not found for payment update (Event: event_456)
 📋 Recent orders for comparison: [...]
@@ -128,24 +147,29 @@ Created comprehensive tests in `src/__tests__/webhook-payment-fix-test.ts`:
 ```
 
 ## Deployment Notes
+
 - No breaking changes
 - Backward compatible
 - Improved monitoring and alerting
 - Enhanced webhook reliability
 
 ## Monitoring
+
 The fix includes:
+
 - Detailed error capture with `errorMonitor.captureWebhookError`
 - Comprehensive logging for debugging
 - Performance metrics tracking
 - Event deduplication tracking
 
 ## Files Modified
+
 - `src/app/api/webhooks/square/route.ts` - Main webhook handler fix
 - `src/__tests__/webhook-payment-fix-test.ts` - Test coverage
 - `docs/fixes/square-webhook-payment-status-fix.md` - This documentation
 
 ## Testing Instructions
+
 1. Run tests: `pnpm test webhook-payment-fix-test`
 2. Monitor webhook logs for new payment events
 3. Verify payment status updates in database

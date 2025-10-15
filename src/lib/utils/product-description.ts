@@ -15,15 +15,15 @@ import DOMPurify from 'isomorphic-dompurify';
  * Limited to basic text formatting to minimize XSS attack surface.
  */
 const ALLOWED_TAGS = [
-  'b',      // Bold text
+  'b', // Bold text
   'strong', // Bold text (semantic)
-  'i',      // Italic text
-  'em',     // Emphasis/italic text (semantic)
-  'p',      // Paragraph
-  'br',     // Line break
-  'ul',     // Unordered list
-  'ol',     // Ordered list
-  'li',     // List item
+  'i', // Italic text
+  'em', // Emphasis/italic text (semantic)
+  'p', // Paragraph
+  'br', // Line break
+  'ul', // Unordered list
+  'ol', // Ordered list
+  'li', // List item
 ];
 
 /**
@@ -39,7 +39,7 @@ const PURIFY_CONFIG = {
   ALLOWED_TAGS,
   ALLOWED_ATTR,
   KEEP_CONTENT: true, // Preserve text content even if tags are stripped
-  RETURN_DOM: false,  // Return HTML string, not DOM object
+  RETURN_DOM: false, // Return HTML string, not DOM object
   RETURN_DOM_FRAGMENT: false,
 } as const;
 
@@ -135,13 +135,13 @@ export function htmlToPlainText(html: string | null | undefined): string {
 
   // Then sanitize to remove any malicious content
   const clean = DOMPurify.sanitize(withSpaces, {
-    ALLOWED_TAGS: [],  // Strip all tags
+    ALLOWED_TAGS: [], // Strip all tags
     KEEP_CONTENT: true, // But keep the text content
   });
 
   // Clean up extra whitespace
   return clean
-    .replace(/\s+/g, ' ')  // Multiple spaces to single space
+    .replace(/\s+/g, ' ') // Multiple spaces to single space
     .trim();
 }
 

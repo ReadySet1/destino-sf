@@ -11,13 +11,13 @@ import { logger } from '@/utils/logger';
 export async function POST() {
   try {
     const status = AvailabilityProcessor.getStatus();
-    
+
     if (!status.isRunning) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'No job is currently running',
-          message: 'Cannot stop a job that is not running'
+          message: 'Cannot stop a job that is not running',
         },
         { status: 400 }
       );
@@ -25,7 +25,7 @@ export async function POST() {
 
     logger.warn('Emergency job stop requested by admin', {
       currentJobId: status.currentJobId,
-      runningFor: status.lastRun ? Date.now() - status.lastRun.getTime() : 'unknown'
+      runningFor: status.lastRun ? Date.now() - status.lastRun.getTime() : 'unknown',
     });
 
     // Force stop the processor
@@ -37,19 +37,18 @@ export async function POST() {
       success: true,
       message: 'Job stopped successfully',
       stoppedJobId: status.currentJobId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error stopping job', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error instanceof Error ? error.message : 'Failed to stop job',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -61,10 +60,10 @@ export async function POST() {
  */
 export async function GET() {
   const status = AvailabilityProcessor.getStatus();
-  
+
   return NextResponse.json({
     canStop: status.isRunning,
     currentStatus: status,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }

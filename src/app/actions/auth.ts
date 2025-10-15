@@ -23,12 +23,16 @@ export const signUpAction = async (formData: FormData) => {
   // Check if profile already exists (for seeded admin case)
   let existingProfile = null;
   try {
-    existingProfile = await withRetry(async () => {
-      return await prisma.profile.findUnique({
-        where: { email },
-        select: { id: true, role: true, email: true },
-      });
-    }, 3, 'signUpAction_checkExistingProfile');
+    existingProfile = await withRetry(
+      async () => {
+        return await prisma.profile.findUnique({
+          where: { email },
+          select: { id: true, role: true, email: true },
+        });
+      },
+      3,
+      'signUpAction_checkExistingProfile'
+    );
   } catch (profileError) {
     console.error('Error checking existing profile:', profileError);
     // Continue with sign up even if profile check fails
@@ -71,50 +75,62 @@ export const signUpAction = async (formData: FormData) => {
   try {
     if (existingProfile) {
       // Update existing profile to link it with the new Supabase user ID
-      await withRetry(async () => {
-        return await prisma.profile.update({
-          where: { email },
-          data: {
-            id: userId,
-            name: name || existingProfile.email.split('@')[0], // Use provided name or email prefix
-            phone: phone,
-            updated_at: new Date(),
-          },
-        });
-      }, 3, 'signUpAction_updateExistingProfile');
+      await withRetry(
+        async () => {
+          return await prisma.profile.update({
+            where: { email },
+            data: {
+              id: userId,
+              name: name || existingProfile.email.split('@')[0], // Use provided name or email prefix
+              phone: phone,
+              updated_at: new Date(),
+            },
+          });
+        },
+        3,
+        'signUpAction_updateExistingProfile'
+      );
       console.log(`Linked existing profile for ${email} to Supabase user ${userId}`);
     } else {
       // Use the new database function to ensure profile creation
-      const profileResult = await withRetry(async () => {
-        return await prisma.$queryRaw`
+      const profileResult = await withRetry(
+        async () => {
+          return await prisma.$queryRaw`
           SELECT public.ensure_user_profile(
             ${userId}::uuid, 
             ${email}::text, 
             'CUSTOMER'::text
           ) as result
         `;
-      }, 3, 'signUpAction_ensureProfile');
-      
+        },
+        3,
+        'signUpAction_ensureProfile'
+      );
+
       const result = (profileResult as any)[0]?.result;
-      
+
       if (result?.action === 'error') {
         throw new Error(`Profile creation failed: ${result.error}`);
       }
-      
+
       // Update profile with additional information if creation was successful
       if (result?.action === 'profile_created' || result?.action === 'profile_exists') {
-        await withRetry(async () => {
-          return await prisma.profile.update({
-            where: { id: userId },
-            data: {
-              name: name || null,
-              phone: phone,
-              updated_at: new Date(),
-            },
-          });
-        }, 3, 'signUpAction_updateProfile');
+        await withRetry(
+          async () => {
+            return await prisma.profile.update({
+              where: { id: userId },
+              data: {
+                name: name || null,
+                phone: phone,
+                updated_at: new Date(),
+              },
+            });
+          },
+          3,
+          'signUpAction_updateProfile'
+        );
       }
-      
+
       console.log(`Profile ensured for ${email} using database function`);
     }
   } catch (profileError: any) {
@@ -139,18 +155,22 @@ export const signUpAction = async (formData: FormData) => {
     } else {
       // Fallback: try to create profile directly
       try {
-        await withRetry(async () => {
-          return await prisma.profile.create({
-            data: {
-              id: userId,
-              email: email,
-              name: name || null,
-              phone: phone,
-              role: UserRole.CUSTOMER,
-              updated_at: new Date(),
-            },
-          });
-        }, 3, 'signUpAction_createProfileFallback');
+        await withRetry(
+          async () => {
+            return await prisma.profile.create({
+              data: {
+                id: userId,
+                email: email,
+                name: name || null,
+                phone: phone,
+                role: UserRole.CUSTOMER,
+                updated_at: new Date(),
+              },
+            });
+          },
+          3,
+          'signUpAction_createProfileFallback'
+        );
         console.log(`Created profile for ${email} using fallback method`);
       } catch (fallbackError) {
         console.error('Fallback profile creation also failed:', fallbackError);
@@ -194,12 +214,16 @@ export const signInAction = async (formData: FormData) => {
 
   try {
     // Try block ONLY for prisma query with robust connection management
-    profile = await withRetry(async () => {
-      return await prisma.profile.findUnique({
-        where: { id: user.id },
-        select: { role: true }, // Only select the role field
-      });
-    }, 3, 'signInAction_findProfile');
+    profile = await withRetry(
+      async () => {
+        return await prisma.profile.findUnique({
+          where: { id: user.id },
+          select: { role: true }, // Only select the role field
+        });
+      },
+      3,
+      'signInAction_findProfile'
+    );
   } catch (dbError) {
     // Catch ONLY potential database errors
     profileFetchError = dbError; // Store the error
@@ -215,51 +239,63 @@ export const signInAction = async (formData: FormData) => {
 
     try {
       // Use the new database function to ensure profile creation with robust connection management
-      const profileResult = await withRetry(async () => {
-        return await prisma.$queryRaw`
+      const profileResult = await withRetry(
+        async () => {
+          return await prisma.$queryRaw`
           SELECT public.ensure_user_profile(
             ${user.id}::uuid, 
             ${user.email || email}::text, 
             'CUSTOMER'::text
           ) as result
         `;
-      }, 3, 'signInAction_ensureProfile');
-      
+        },
+        3,
+        'signInAction_ensureProfile'
+      );
+
       const result = (profileResult as any)[0]?.result;
-      
+
       if (result?.action === 'error') {
         throw new Error(`Profile creation failed: ${result.error}`);
       }
-      
+
       // Fetch the newly created profile
       if (result?.action === 'profile_created' || result?.action === 'profile_exists') {
-        profile = await withRetry(async () => {
-          return await prisma.profile.findUnique({
-            where: { id: user.id },
-            select: { role: true },
-          });
-        }, 3, 'signInAction_findNewProfile');
+        profile = await withRetry(
+          async () => {
+            return await prisma.profile.findUnique({
+              where: { id: user.id },
+              select: { role: true },
+            });
+          },
+          3,
+          'signInAction_findNewProfile'
+        );
       }
-      
+
       // If still no profile, try fallback method
       if (!profile) {
         // Auto-create a basic profile for the user with default role
         const authName = user.user_metadata?.name as string | undefined;
         const authPhone = user.user_metadata?.phone as string | undefined;
 
-        profile = await withRetry(async () => {
-          return await prisma.profile.create({
-            data: {
-              id: user.id,
-              email: user.email || email,
-              name: authName || null,
-              phone: authPhone || null,
-              role: UserRole.CUSTOMER,
-              updated_at: new Date(),
-            },
-            select: { role: true },
-          });
-        }, 3, 'signInAction_createProfile');
+        profile = await withRetry(
+          async () => {
+            return await prisma.profile.create({
+              data: {
+                id: user.id,
+                email: user.email || email,
+                name: authName || null,
+                phone: authPhone || null,
+                role: UserRole.CUSTOMER,
+                updated_at: new Date(),
+              },
+              select: { role: true },
+            });
+          },
+          3,
+          'signInAction_createProfile'
+        );
 
         console.log(`Created new profile for user ${user.id} during sign-in using fallback`);
       } else {
@@ -572,17 +608,21 @@ export async function getAuthenticatedUserProfile(): Promise<{
 
     // Fetch user profile from database with robust connection management
     try {
-      const profile = await withRetry(async () => {
-        return await prisma.profile.findUnique({
-          where: { id: user.id },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-          },
-        });
-      }, 3, 'getAuthenticatedUserProfile');
+      const profile = await withRetry(
+        async () => {
+          return await prisma.profile.findUnique({
+            where: { id: user.id },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          });
+        },
+        3,
+        'getAuthenticatedUserProfile'
+      );
 
       if (!profile) {
         return {
@@ -604,7 +644,7 @@ export async function getAuthenticatedUserProfile(): Promise<{
       };
     } catch (dbError) {
       console.error('Database error fetching user profile:', dbError);
-      
+
       // Fallback to auth user data if database fails
       return {
         isLoggedIn: true,

@@ -13,9 +13,11 @@
 **Sprint/Milestone**: Admin Panel Functionality
 
 ### Problem Statement
+
 The admin settings panel exists in the UI but is completely disconnected from the database and application logic. Settings cannot be saved, and hardcoded values are used throughout the application instead of the admin-configured values.
 
 ### Success Criteria
+
 - [x] Admin settings save to database successfully
 - [x] Tax rate from settings is applied to all orders
 - [x] Order minimums are enforced from settings
@@ -23,6 +25,7 @@ The admin settings panel exists in the UI but is completely disconnected from th
 - [x] Delivery zones affect pricing and validation
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Order processing accuracy, Revenue calculations
 - **Related PRs/Issues**: N/A
@@ -34,6 +37,7 @@ The admin settings panel exists in the UI but is completely disconnected from th
 ### 1. Code Structure & References
 
 #### File Structure
+
 ```tsx
 src/
 ├── app/
@@ -59,6 +63,7 @@ src/
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/store-settings.ts (TO BE CREATED)
 import { z } from 'zod';
@@ -86,12 +91,13 @@ export const StoreSettingsSchema = z.object({
 export type StoreSettings = z.infer<typeof StoreSettingsSchema>;
 
 // Result type for settings operations
-export type SettingsResult<T = StoreSettings> = 
+export type SettingsResult<T = StoreSettings> =
   | { success: true; data: T }
   | { success: false; error: string };
 ```
 
 #### Database Schema
+
 ```sql
 -- migrations/[timestamp]_add_store_settings.sql
 CREATE TABLE IF NOT EXISTS store_settings (
@@ -127,22 +133,24 @@ CREATE TRIGGER update_store_settings_updated_at
 ### 2. Architecture Patterns
 
 #### Data Flow Architecture
+
 ```mermaid
 graph TD
     A[Admin UI] -->|Save Settings| B[API Route]
     B --> C[Validation]
     C --> D[Prisma Update]
     D --> E[PostgreSQL]
-    
+
     F[Checkout/Orders] -->|Fetch Settings| G[Settings Service]
     G --> H[Cache Layer]
     H --> I[Database]
-    
+
     J[Cart Validation] -->|Get Minimums| G
     K[Tax Calculation] -->|Get Tax Rate| G
 ```
 
 #### Settings Service Pattern
+
 ```tsx
 // lib/store-settings.ts
 import { prisma } from '@/lib/db';
@@ -153,12 +161,12 @@ import type { StoreSettings } from '@/types/store-settings';
 export const getStoreSettings = unstable_cache(
   async (): Promise<StoreSettings> => {
     const settings = await prisma.storeSettings.findFirst();
-    
+
     if (!settings) {
       // Return defaults if no settings exist
       return getDefaultSettings();
     }
-    
+
     return {
       ...settings,
       taxRate: Number(settings.taxRate),
@@ -182,6 +190,7 @@ export async function invalidateSettingsCache() {
 ### 3. Full Stack Integration Points
 
 #### API Endpoints
+
 ```tsx
 // GET /api/admin/settings - Fetch current settings
 // POST /api/admin/settings - Update settings (admin only)
@@ -189,18 +198,16 @@ export async function invalidateSettingsCache() {
 ```
 
 #### Integration Points
+
 1. **Order Creation** (`/src/app/actions/orders.ts`)
    - Replace `const TAX_RATE = new Decimal(0.0825)` with settings lookup
    - Check `isStoreOpen` before accepting orders
-   
 2. **Cart Validation** (`/src/lib/cart-helpers.ts`)
    - Fetch `minOrderAmount` from settings
    - Apply `cateringMinimumAmount` for catering orders
-   
 3. **Checkout** (`/src/components/store/CheckoutForm.tsx`)
    - Display store closed message if applicable
    - Validate against minimum amounts
-   
 4. **Email Notifications**
    - Use store email/phone from settings
    - Include store address in confirmations
@@ -210,6 +217,7 @@ export async function invalidateSettingsCache() {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```tsx
 // __tests__/store-settings.test.ts
 describe('Store Settings Service', () => {
@@ -217,11 +225,11 @@ describe('Store Settings Service', () => {
     const settings = await getStoreSettings();
     expect(settings.taxRate).toBe(8.25);
   });
-  
+
   it('caches settings appropriately', async () => {
     // Test cache behavior
   });
-  
+
   it('validates settings on save', async () => {
     // Test validation rules
   });
@@ -229,6 +237,7 @@ describe('Store Settings Service', () => {
 ```
 
 ### Integration Tests
+
 ```tsx
 describe('Settings Integration', () => {
   it('applies tax rate from settings to orders', async () => {
@@ -236,7 +245,7 @@ describe('Settings Integration', () => {
     const order = await createOrder(mockItems);
     expect(order.taxAmount).toBe(calculateTax(mockItems, 10.5));
   });
-  
+
   it('enforces minimum order amounts', async () => {
     await updateStoreSettings({ minOrderAmount: 50 });
     const result = await validateOrder(smallOrder);
@@ -251,6 +260,7 @@ describe('Settings Integration', () => {
 ## 🔒 Security Analysis
 
 ### Security Checklist
+
 - [x] **Authorization**: Only admins can modify settings
 - [x] **Validation**: Zod schema validates all inputs
 - [x] **Audit Trail**: Log all settings changes
@@ -262,11 +272,13 @@ describe('Settings Integration', () => {
 ## 📊 Performance & Monitoring
 
 ### Performance Considerations
+
 - Cache settings for 5 minutes to reduce DB queries
 - Use database singleton pattern (only one settings record)
 - Index frequently queried fields
 
 ### Monitoring
+
 ```tsx
 // Track settings usage
 export async function trackSettingsUsage(field: string) {
@@ -275,7 +287,7 @@ export async function trackSettingsUsage(field: string) {
       metric: `settings_usage_${field}`,
       value: 1,
       date: new Date(),
-    }
+    },
   });
 }
 ```
@@ -285,24 +297,28 @@ export async function trackSettingsUsage(field: string) {
 ## 🚀 Implementation Steps
 
 ### Phase 1: Database (Day 1)
+
 1. Add `StoreSettings` model to Prisma schema
 2. Generate and run migration
 3. Seed initial settings record
 4. Verify Prisma client generation
 
 ### Phase 2: Service Layer (Day 2)
+
 1. Create `store-settings.ts` service
 2. Implement caching strategy
 3. Add settings validation
 4. Create helper functions
 
 ### Phase 3: Integration (Day 3-4)
+
 1. Update order processing to use settings
 2. Modify cart validation
 3. Update checkout flow
 4. Fix tax calculations
 
 ### Phase 4: Testing (Day 5)
+
 1. Write unit tests
 2. Integration testing
 3. Manual QA testing
@@ -313,6 +329,7 @@ export async function trackSettingsUsage(field: string) {
 ## 📦 Deployment & Rollback
 
 ### Pre-Deployment Checklist
+
 - [ ] Database backup created
 - [ ] Migration tested on staging
 - [ ] Settings seeded with current values
@@ -320,6 +337,7 @@ export async function trackSettingsUsage(field: string) {
 - [ ] Monitoring alerts configured
 
 ### Rollback Strategy
+
 ```sql
 -- Rollback migration if needed
 DROP TABLE IF EXISTS store_settings;
@@ -333,13 +351,16 @@ DROP TABLE IF EXISTS store_settings;
 ## 📚 Documentation
 
 ### Admin User Guide
+
 ```markdown
 ## Store Settings Management
 
 ### Overview
+
 Configure global store settings that affect all operations.
 
 ### Available Settings
+
 - **Store Information**: Name, address, contact details
 - **Tax Configuration**: Sales tax rate (percentage)
 - **Order Minimums**: Regular and catering minimums
@@ -347,6 +368,7 @@ Configure global store settings that affect all operations.
 - **Advance Booking**: How far ahead orders can be placed
 
 ### How Settings Are Applied
+
 - Tax rate: Applied to all taxable items at checkout
 - Minimums: Enforced before order submission
 - Store status: Blocks orders when closed

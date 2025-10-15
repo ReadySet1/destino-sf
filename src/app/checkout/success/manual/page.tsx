@@ -113,7 +113,8 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
     redirect('/');
   }
 
-  const paymentMethodName = order.paymentMethod === 'CASH' ? 'Cash' : order.paymentMethod || 'Unknown';
+  const paymentMethodName =
+    order.paymentMethod === 'CASH' ? 'Cash' : order.paymentMethod || 'Unknown';
 
   const paymentInstructions =
     order.paymentMethod === 'CASH'
@@ -220,8 +221,11 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
         {order.items && order.items.length > 0 ? (
           <>
             <div className="space-y-4">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+              {order.items.map(item => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0"
+                >
                   <div className="flex items-center space-x-4">
                     {(() => {
                       const productImages = normalizeImages(item.product?.images);
@@ -245,13 +249,17 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${(item.price.toNumber() * item.quantity).toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">${item.price.toNumber().toFixed(2)} each</p>
+                    <p className="font-medium">
+                      ${(item.price.toNumber() * item.quantity).toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      ${item.price.toNumber().toFixed(2)} each
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-            
+
             {/* Order Total */}
             <div className="border-t pt-4 mt-4 space-y-2">
               <div className="flex justify-between text-sm text-gray-600">

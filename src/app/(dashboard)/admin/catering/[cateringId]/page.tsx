@@ -31,7 +31,7 @@ const formatCurrency = (amount: number | string | null | undefined): string => {
 // Helper to parse delivery address and extract delivery info
 const parseDeliveryInfo = (address: any): { address: string; deliveryDateTime?: string } => {
   if (!address) return { address: '' };
-  
+
   if (typeof address === 'string') {
     // Check if it contains "[object Object]" - this means the original object wasn't properly serialized
     if (address.includes('[object Object]')) {
@@ -40,12 +40,12 @@ const parseDeliveryInfo = (address: any): { address: string; deliveryDateTime?: 
       if (parts.length > 1) {
         return {
           address: 'Address information unavailable (data corruption)',
-          deliveryDateTime: parts.slice(1).join(', ')
+          deliveryDateTime: parts.slice(1).join(', '),
         };
       }
       return { address: 'Address information unavailable (data corruption)' };
     }
-    
+
     // Check if it's a JSON string
     try {
       const parsed = JSON.parse(address);
@@ -64,7 +64,7 @@ const parseDeliveryInfo = (address: any): { address: string; deliveryDateTime?: 
     }
     return { address };
   }
-  
+
   // If it's an object, format it properly
   if (typeof address === 'object') {
     const parts = [];
@@ -75,7 +75,7 @@ const parseDeliveryInfo = (address: any): { address: string; deliveryDateTime?: 
     if (address.postalCode) parts.push(address.postalCode);
     return { address: parts.join(', ') };
   }
-  
+
   return { address: String(address) };
 };
 
@@ -147,7 +147,8 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
 
     // Validate UUID format before making database query
     const isValidUUID = (uuid: string): boolean => {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       return uuidRegex.test(uuid);
     };
 
@@ -161,7 +162,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
 
     // Fetch the catering order with all related data with enhanced error handling
     let cateringOrder = null;
-    
+
     try {
       cateringOrder = await prisma.cateringOrder.findUnique({
         where: { id: cateringId },
@@ -175,22 +176,26 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
       console.error('Failed to fetch admin catering order:', {
         cateringId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any)?.code
+        code: (error as any)?.code,
       });
-      
+
       // Check if it's a prepared statement error or connection issue
-      if (error instanceof Error && 
-          ((error as any).code === '42P05' || // prepared statement already exists
-           (error as any).code === '26000' || // prepared statement does not exist
-           error.message.includes('prepared statement') ||
-           error.message.includes('Response from the Engine was empty'))) {
-        console.log('Detected database connection error in admin catering order query, attempting retry...');
-        
+      if (
+        error instanceof Error &&
+        ((error as any).code === '42P05' || // prepared statement already exists
+          (error as any).code === '26000' || // prepared statement does not exist
+          error.message.includes('prepared statement') ||
+          error.message.includes('Response from the Engine was empty'))
+      ) {
+        console.log(
+          'Detected database connection error in admin catering order query, attempting retry...'
+        );
+
         // Attempt one retry with a fresh connection
         try {
           await prisma.$disconnect();
           await new Promise(resolve => setTimeout(resolve, 100));
-          
+
           cateringOrder = await prisma.cateringOrder.findUnique({
             where: { id: cateringId },
             include: {
@@ -198,7 +203,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
               customer: true,
             },
           });
-          
+
           console.log('✅ Admin catering order retry successful after database connection error');
         } catch (retryError) {
           console.error('❌ Admin catering order retry failed:', retryError);
@@ -250,26 +255,39 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
               </p>
               <div>
                 <strong>Status:</strong>{' '}
-                <Badge className={`text-xs ${
-                  cateringOrder?.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                  cateringOrder?.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                  cateringOrder?.status === 'PREPARING' ? 'bg-blue-100 text-blue-800' :
-                  cateringOrder?.status === 'COMPLETED' ? 'bg-gray-100 text-gray-800' :
-                  cateringOrder?.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <Badge
+                  className={`text-xs ${
+                    cateringOrder?.status === 'CONFIRMED'
+                      ? 'bg-green-100 text-green-800'
+                      : cateringOrder?.status === 'PENDING'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : cateringOrder?.status === 'PREPARING'
+                          ? 'bg-blue-100 text-blue-800'
+                          : cateringOrder?.status === 'COMPLETED'
+                            ? 'bg-gray-100 text-gray-800'
+                            : cateringOrder?.status === 'CANCELLED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {cateringOrder?.status || 'UNKNOWN'}
                 </Badge>
               </div>
               <div>
                 <strong>Payment Status:</strong>{' '}
-                <Badge className={`text-xs ${
-                  cateringOrder?.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                  cateringOrder?.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                  cateringOrder?.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
-                  cateringOrder?.paymentStatus === 'REFUNDED' ? 'bg-orange-100 text-orange-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <Badge
+                  className={`text-xs ${
+                    cateringOrder?.paymentStatus === 'PAID'
+                      ? 'bg-green-100 text-green-800'
+                      : cateringOrder?.paymentStatus === 'PENDING'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : cateringOrder?.paymentStatus === 'FAILED'
+                          ? 'bg-red-100 text-red-800'
+                          : cateringOrder?.paymentStatus === 'REFUNDED'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {cateringOrder?.paymentStatus || 'PENDING'}
                 </Badge>
               </div>
@@ -297,7 +315,8 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
 
               {cateringOrder?.deliveryAddress && (
                 <p>
-                  <strong>Delivery Address:</strong> {parseDeliveryInfo(cateringOrder.deliveryAddress).address}
+                  <strong>Delivery Address:</strong>{' '}
+                  {parseDeliveryInfo(cateringOrder.deliveryAddress).address}
                 </p>
               )}
 
@@ -421,11 +440,11 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
 
                   // Get individual components
                   const deliveryFee = cateringOrder?.deliveryFee?.toNumber() || 0;
-                  
+
                   // Calculate tax (8.25% on subtotal + delivery fee)
                   const taxableAmount = subtotalFromItems + deliveryFee;
                   const taxAmount = taxableAmount * 0.0825;
-                  
+
                   // Calculate convenience fee (3.5% of subtotal + delivery fee + tax)
                   const totalBeforeFee = subtotalFromItems + deliveryFee + taxAmount;
                   const serviceFee = totalBeforeFee * 0.035;
@@ -483,9 +502,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                         <td colSpan={4} className="px-4 py-3 text-right">
                           Grand Total:
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          {formatCurrency(orderTotal)}
-                        </td>
+                        <td className="px-4 py-3 text-right">{formatCurrency(orderTotal)}</td>
                       </tr>
                     </>
                   );
@@ -523,13 +540,19 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
                       {cateringOrder.squareOrderId || 'N/A'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge className={`text-xs ${
-                        cateringOrder?.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                        cateringOrder?.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                        cateringOrder?.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
-                        cateringOrder?.paymentStatus === 'REFUNDED' ? 'bg-orange-100 text-orange-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <Badge
+                        className={`text-xs ${
+                          cateringOrder?.paymentStatus === 'PAID'
+                            ? 'bg-green-100 text-green-800'
+                            : cateringOrder?.paymentStatus === 'PENDING'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : cateringOrder?.paymentStatus === 'FAILED'
+                                ? 'bg-red-100 text-red-800'
+                                : cateringOrder?.paymentStatus === 'REFUNDED'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
                         {cateringOrder?.paymentStatus || 'UNKNOWN'}
                       </Badge>
                     </td>
@@ -549,10 +572,12 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
     );
   } catch (error) {
     // Check if this is a Next.js redirect error (which is normal behavior)
-    const isRedirectError = error instanceof Error && 'digest' in error && 
-      typeof (error as any).digest === 'string' && 
+    const isRedirectError =
+      error instanceof Error &&
+      'digest' in error &&
+      typeof (error as any).digest === 'string' &&
       (error as any).digest.startsWith('NEXT_REDIRECT');
-    
+
     if (isRedirectError) {
       // This is a normal redirect, don't log it as an error and re-throw to complete the redirect
       throw error;
@@ -568,23 +593,33 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
           <div className="max-w-2xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
-              
+
               <h1 className="text-2xl font-bold text-red-900 mb-2">Error Loading Catering Order</h1>
               <p className="text-red-700 mb-4">
                 There was a problem loading the catering order details.
               </p>
-              
+
               <div className="text-sm text-red-600 mb-6">
                 <p>Error details:</p>
                 <code className="bg-red-100 px-2 py-1 rounded font-mono text-sm block mt-2">
                   {error instanceof Error ? error.message : 'Unknown error'}
                 </code>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/admin/orders"

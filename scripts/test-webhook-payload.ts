@@ -2,50 +2,50 @@
 
 // Test script to debug the exact webhook payload that's failing
 const webhookPayload = {
-  "merchant_id": "MLJD4JJXS3YSP",
-  "type": "payment.updated",
-  "event_id": "b1909a1d-a062-3202-a0f0-20500a046c3b",
-  "created_at": "2025-07-29T18:46:46.28Z",
-  "data": {
-    "type": "payment",
-    "id": "RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-    "object": {
-      "payment": {
-        "amount_money": {
-          "amount": 5826,
-          "currency": "USD"
+  merchant_id: 'MLJD4JJXS3YSP',
+  type: 'payment.updated',
+  event_id: 'b1909a1d-a062-3202-a0f0-20500a046c3b',
+  created_at: '2025-07-29T18:46:46.28Z',
+  data: {
+    type: 'payment',
+    id: 'RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+    object: {
+      payment: {
+        amount_money: {
+          amount: 5826,
+          currency: 'USD',
         },
-        "application_details": {
-          "application_id": "sandbox-sq0idb-lky4CaPAWmDnHY3YtYxINg",
-          "square_product": "ECOMMERCE_API"
+        application_details: {
+          application_id: 'sandbox-sq0idb-lky4CaPAWmDnHY3YtYxINg',
+          square_product: 'ECOMMERCE_API',
         },
-        "capabilities": [
-          "EDIT_AMOUNT_UP",
-          "EDIT_AMOUNT_DOWN",
-          "EDIT_TIP_AMOUNT_UP",
-          "EDIT_TIP_AMOUNT_DOWN"
+        capabilities: [
+          'EDIT_AMOUNT_UP',
+          'EDIT_AMOUNT_DOWN',
+          'EDIT_TIP_AMOUNT_UP',
+          'EDIT_TIP_AMOUNT_DOWN',
         ],
-        "created_at": "2025-07-29T18:46:44.271Z",
-        "external_details": {
-          "source": "Developer Control Panel",
-          "type": "CARD"
+        created_at: '2025-07-29T18:46:44.271Z',
+        external_details: {
+          source: 'Developer Control Panel',
+          type: 'CARD',
         },
-        "id": "RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-        "location_id": "LMV06M1ER6HCC",
-        "order_id": "9FhNm5NYhy6yi5jmU1z3tnzVHb4F",
-        "receipt_number": "RQyV",
-        "receipt_url": "https://squareupsandbox.com/receipt/preview/RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-        "source_type": "EXTERNAL",
-        "status": "COMPLETED",
-        "total_money": {
-          "amount": 5826,
-          "currency": "USD"
+        id: 'RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+        location_id: 'LMV06M1ER6HCC',
+        order_id: '9FhNm5NYhy6yi5jmU1z3tnzVHb4F',
+        receipt_number: 'RQyV',
+        receipt_url: 'https://squareupsandbox.com/receipt/preview/RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+        source_type: 'EXTERNAL',
+        status: 'COMPLETED',
+        total_money: {
+          amount: 5826,
+          currency: 'USD',
         },
-        "updated_at": "2025-07-29T18:46:44.382Z",
-        "version": 1
-      }
-    }
-  }
+        updated_at: '2025-07-29T18:46:44.382Z',
+        version: 1,
+      },
+    },
+  },
 };
 
 type SquareWebhookPayload = {
@@ -73,20 +73,20 @@ function debugWebhookPayload() {
 
     // Simulate the exact data extraction from handlePaymentUpdated
     console.log('\n🔍 Simulating handlePaymentUpdated data extraction...');
-    
+
     const { data } = payload;
     console.log('✅ data extracted:', !!data);
-    
+
     const paymentData = data.object.payment as any;
     console.log('✅ paymentData extracted:', !!paymentData);
     console.log('📋 paymentData keys:', Object.keys(paymentData || {}));
-    
+
     const squarePaymentId = data.id;
     console.log('✅ squarePaymentId:', squarePaymentId);
-    
+
     const squareOrderId = paymentData?.order_id;
     console.log('✅ squareOrderId:', squareOrderId);
-    
+
     const paymentStatus = paymentData?.status?.toUpperCase();
     console.log('✅ paymentStatus:', paymentStatus);
 
@@ -102,7 +102,7 @@ function debugWebhookPayload() {
 
     // Test the early validation that might be failing
     console.log('\n🔍 Testing early validations...');
-    
+
     if (!squareOrderId) {
       console.error('❌ CRITICAL: No order_id found in payment.updated payload');
       return;
@@ -112,7 +112,6 @@ function debugWebhookPayload() {
 
     console.log('\n✅ All data extractions successful - webhook should work!');
     console.log('🤔 The issue might be in database queries or later processing...');
-
   } catch (error: any) {
     console.error('❌ Error in payload processing:', error);
     console.error('Stack trace:', error.stack);
@@ -141,7 +140,7 @@ function testPayloadVariations() {
     const payment1 = (data.object as any).payment;
     const payment2 = data.object.payment;
     const payment3 = data.object['payment'];
-    
+
     console.log('Type cast 1 (as any):', !!payment1);
     console.log('Type cast 2 (direct):', !!payment2);
     console.log('Type cast 3 (bracket):', !!payment3);
@@ -154,4 +153,4 @@ function testPayloadVariations() {
 debugWebhookPayload();
 testPayloadVariations();
 
-export { debugWebhookPayload }; 
+export { debugWebhookPayload };

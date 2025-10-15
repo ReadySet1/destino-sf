@@ -63,10 +63,9 @@ export const UmamiScript: React.FC<UmamiScriptProps> = ({
   };
 
   const handleError = (error: Event | string) => {
-    const errorObj = error instanceof Event 
-      ? new Error('Failed to load Umami script') 
-      : new Error(error);
-    
+    const errorObj =
+      error instanceof Event ? new Error('Failed to load Umami script') : new Error(error);
+
     console.error('[Umami] Failed to load analytics script:', errorObj);
     onError?.(errorObj);
   };

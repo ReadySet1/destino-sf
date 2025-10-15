@@ -158,7 +158,9 @@ export class ProcessingQueue {
   private async processWebhookItem(item: WebhookQueueItem): Promise<void> {
     // FIXED: Check concurrency limits before processing
     if (this.activeWebhookConnections >= this.maxConcurrentWebhooks) {
-      console.log(`⏸️ Webhook processing at capacity (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks}), delaying: ${item.data.eventType}`);
+      console.log(
+        `⏸️ Webhook processing at capacity (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks}), delaying: ${item.data.eventType}`
+      );
       // Delay this item for 2 seconds
       item.nextAttempt = new Date(Date.now() + 2000);
       return;
@@ -168,13 +170,17 @@ export class ProcessingQueue {
 
     // Increment active connection count
     this.activeWebhookConnections++;
-    console.log(`🔗 Starting webhook processing (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`);
+    console.log(
+      `🔗 Starting webhook processing (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`
+    );
 
     try {
       console.log(
         `🔄 Processing queued webhook: ${item.data.eventType} (attempt ${item.retryCount + 1}/${item.maxRetries})`
       );
-      console.log(`📊 Queue item: Event ID ${item.data.eventId}, Order ID ${item.data.orderId || 'N/A'}`);
+      console.log(
+        `📊 Queue item: Event ID ${item.data.eventId}, Order ID ${item.data.orderId || 'N/A'}`
+      );
       console.log(`⏱️ Queue processing timeout: 120 seconds`);
 
       // Process webhook with connection management
@@ -194,24 +200,24 @@ export class ProcessingQueue {
       console.error(`❌ Queued webhook failed: ${item.data.eventType}`, error);
 
       // Check if it's a connection error that should trigger reinitialization
-      const isConnectionError = 
-        error instanceof Error && 
-        (error.message.includes("Engine is not yet connected") ||
-         error.message.includes("Can't reach database server") ||
-         error.message.includes("Connection terminated") ||
-         error.message.includes("connection terminated") ||
-         error.message.includes("ECONNRESET") ||
-         error.message.includes("ECONNREFUSED") ||
-         error.message.includes("ETIMEDOUT") ||
-         error.message.includes("timed out after") ||
-         (error as any).code === 'P1001' ||
-         (error as any).code === 'P1008' ||
-         (error as any).code === 'P1017');
+      const isConnectionError =
+        error instanceof Error &&
+        (error.message.includes('Engine is not yet connected') ||
+          error.message.includes("Can't reach database server") ||
+          error.message.includes('Connection terminated') ||
+          error.message.includes('connection terminated') ||
+          error.message.includes('ECONNRESET') ||
+          error.message.includes('ECONNREFUSED') ||
+          error.message.includes('ETIMEDOUT') ||
+          error.message.includes('timed out after') ||
+          (error as any).code === 'P1001' ||
+          (error as any).code === 'P1008' ||
+          (error as any).code === 'P1017');
 
       if (isConnectionError) {
         console.log('🔄 Connection/timeout error detected, reinitializing database connection...');
         console.log(`🔍 Error details: ${error.message}`);
-        
+
         try {
           await ensureConnection(); // Re-establish connection
           console.log('✅ Database connection reinitialized successfully');
@@ -238,7 +244,9 @@ export class ProcessingQueue {
     } finally {
       // FIXED: Always decrement active connection count to prevent leaks
       this.activeWebhookConnections--;
-      console.log(`🔗 Webhook processing completed (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`);
+      console.log(
+        `🔗 Webhook processing completed (${this.activeWebhookConnections}/${this.maxConcurrentWebhooks} active): ${item.data.eventType}`
+      );
     }
   }
 
@@ -373,11 +381,14 @@ export const processingQueue = ProcessingQueue.getInstance();
  */
 export async function handleWebhookWithQueue(payload: any, eventType: string): Promise<void> {
   const processingQueue = ProcessingQueue.getInstance();
-  
+
   // FIXED: Check concurrency limits for immediate processing as well
-  if ((processingQueue as any).activeWebhookConnections >= (processingQueue as any).maxConcurrentWebhooks) {
+  if (
+    (processingQueue as any).activeWebhookConnections >=
+    (processingQueue as any).maxConcurrentWebhooks
+  ) {
     console.log(`⏸️ Immediate webhook processing at capacity, queuing instead: ${eventType}`);
-    
+
     // Queue immediately with short delay instead of trying immediate processing
     await processingQueue.queueWebhook(
       {
@@ -392,12 +403,14 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
     );
     return;
   }
-  
+
   try {
     // Increment connection count for immediate processing
     (processingQueue as any).activeWebhookConnections++;
-    console.log(`🔗 Starting immediate webhook processing (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`);
-    
+    console.log(
+      `🔗 Starting immediate webhook processing (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`
+    );
+
     // Try immediate processing first with connection management
     // Increased timeout for complex operations and better resilience
     await withRetry(
@@ -405,7 +418,7 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
       3, // maxRetries
       `webhook-immediate-${eventType}`
     );
-    
+
     console.log(`✅ Webhook processed successfully via queue: ${eventType} (${payload.event_id})`);
   } catch (error: any) {
     const errorContext = {
@@ -415,15 +428,15 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
       eventType,
       orderId: payload.data?.id,
     };
-    
+
     console.error(`❌ Webhook processing failed for ${eventType}:`, errorContext);
 
     // Determine retry strategy based on error type
     const shouldRetry = determineShouldRetry(error, eventType);
-    
+
     if (shouldRetry) {
       const delayMs = calculateRetryDelay(error, eventType);
-      
+
       console.warn(`⚠️ Queuing ${eventType} for retry in ${delayMs}ms due to: ${error.message}`);
 
       await processingQueue.queueWebhook(
@@ -438,13 +451,15 @@ export async function handleWebhookWithQueue(payload: any, eventType: string): P
         delayMs
       );
     }
-    
+
     // Always re-throw for fallback processing
     throw error;
   } finally {
     // FIXED: Always decrement active connection count for immediate processing
     (processingQueue as any).activeWebhookConnections--;
-    console.log(`🔗 Immediate webhook processing completed (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`);
+    console.log(
+      `🔗 Immediate webhook processing completed (${(processingQueue as any).activeWebhookConnections}/${(processingQueue as any).maxConcurrentWebhooks} active): ${eventType}`
+    );
   }
 }
 
@@ -456,36 +471,38 @@ function determineShouldRetry(error: any, eventType: string): boolean {
   if (error.code === 'P2025' && error.message?.includes('not found')) {
     return true;
   }
-  
+
   // Retry database connection issues (common in serverless environments)
   if (error.code === 'P1001' || error.code === 'P1008' || error.code === 'P1017') {
     return true;
   }
-  
+
   // Retry timeout errors (now more common with longer operations)
   if (error.message?.includes('timeout') || error.code === 'TIMEOUT') {
     return true;
   }
-  
+
   // Retry webhook processing timeouts specifically
   if (error.message?.includes('timed out after')) {
     return true;
   }
-  
+
   // Retry temporary database issues and connection errors
-  if (error.message?.includes('connection') || 
-      error.message?.includes('ECONNRESET') ||
-      error.message?.includes("Can't reach database server") ||
-      error.message?.includes('connection terminated') ||
-      error.message?.includes('Engine is not yet connected')) {
+  if (
+    error.message?.includes('connection') ||
+    error.message?.includes('ECONNRESET') ||
+    error.message?.includes("Can't reach database server") ||
+    error.message?.includes('connection terminated') ||
+    error.message?.includes('Engine is not yet connected')
+  ) {
     return true;
   }
-  
+
   // Don't retry validation errors or permanent failures
   if (error.message?.includes('validation') || error.code === 'P2003') {
     return false;
   }
-  
+
   // Default: retry most other errors with exponential backoff
   return true;
 }
@@ -498,27 +515,29 @@ function calculateRetryDelay(error: any, eventType: string): number {
   if (error.message?.includes('timed out after')) {
     return 30000; // 30 seconds for timeout errors
   }
-  
+
   // Database connection issues get shorter delays (they often resolve quickly)
-  if (error.code === 'P1001' || 
-      error.code === 'P1008' || 
-      error.code === 'P1017' ||
-      error.message?.includes("Can't reach database server") ||
-      error.message?.includes('connection terminated') ||
-      error.message?.includes('Engine is not yet connected')) {
+  if (
+    error.code === 'P1001' ||
+    error.code === 'P1008' ||
+    error.code === 'P1017' ||
+    error.message?.includes("Can't reach database server") ||
+    error.message?.includes('connection terminated') ||
+    error.message?.includes('Engine is not yet connected')
+  ) {
     return 5000; // 5 seconds for connection issues
   }
-  
+
   // Race conditions get shorter delays
   if (error.code === 'P2025' && error.message?.includes('not found')) {
     return eventType === 'order.updated' ? 10000 : 7000; // 10s for order.updated, 7s for others
   }
-  
+
   // Payment processing gets priority with shorter delays
   if (eventType.startsWith('payment.')) {
     return 8000; // 8 seconds
   }
-  
+
   // Default delay for other errors
   return 12000; // 12 seconds
 }

@@ -13,18 +13,21 @@
 **Sprint/Milestone**: HOTFIX-2025-01
 
 ### Problem Statement
+
 Orders are successfully created in Square but remain in DRAFT state, making them invisible in Square's order overview. The payment flow is incomplete - orders are never finalized after payment processing.
 
 ### Success Criteria
+
 - [x] Orders appear in Square's order overview after payment
 - [x] Orders transition from DRAFT → OPEN → COMPLETED states
 - [x] No duplicate or phantom orders created
 - [x] Payment webhooks properly finalize orders
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Customer order visibility in Square
-- **Related Files**: 
+- **Related Files**:
   - `/src/lib/square/orders.ts`
   - `/src/lib/square/service.ts`
   - `/src/app/api/checkout/payment/route.ts`
@@ -35,6 +38,7 @@ Orders are successfully created in Square but remain in DRAFT state, making them
 ## 🔍 Root Cause Analysis
 
 ### Current Flow (BROKEN)
+
 ```mermaid
 graph TD
     A[Checkout Initiated] -->|Creates Order| B[Square Order Created - DRAFT]
@@ -46,6 +50,7 @@ graph TD
 ```
 
 ### Expected Flow (FIXED)
+
 ```mermaid
 graph TD
     A[Checkout Initiated] -->|Creates Order| B[Square Order Created - DRAFT]
@@ -67,7 +72,7 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
   // ... existing code ...
   const paymentRequest = {
     sourceId: sourceId,
-    orderId: orderId,  // ← This is missing autocomplete!
+    orderId: orderId, // ← This is missing autocomplete!
     idempotencyKey: randomUUID(),
     amountMoney: {
       amount: BigInt(amountCents),
@@ -94,7 +99,7 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       },
       // CRITICAL: These fields link payment to order AND trigger auto-completion
       orderId: orderId,
-      autocomplete: true,  // ← THIS IS THE KEY FIX!
+      autocomplete: true, // ← THIS IS THE KEY FIX!
     };
 
     const result = await squareService.createPayment(paymentRequest);
@@ -103,11 +108,11 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       throw new Error('Failed to create payment or payment data is missing in the response.');
     }
 
-    logger.info('Successfully created Square payment and finalized order', { 
+    logger.info('Successfully created Square payment and finalized order', {
       paymentId: result.payment.id,
-      orderStatus: result.payment.order?.state // Should now be OPEN/COMPLETED
+      orderStatus: result.payment.order?.state, // Should now be OPEN/COMPLETED
     });
-    
+
     return result.payment;
   } catch (error) {
     logger.error('Error processing payment:', error);
@@ -127,10 +132,10 @@ If the autocomplete flag doesn't work, add this fallback:
 // Add this after successful payment creation
 export async function POST(request: Request) {
   // ... existing code ...
-  
+
   try {
     // ... existing payment processing ...
-    
+
     // Process payment with Square
     const payment = await createPayment(sourceId, order.squareOrderId, amount);
 
@@ -150,7 +155,7 @@ export async function POST(request: Request) {
 async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
   try {
     const squareService = getSquareService();
-    
+
     // Update order to OPEN state
     const updateRequest = {
       order: {
@@ -161,7 +166,7 @@ async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
       fieldsToClear: [],
       idempotencyKey: randomUUID(),
     };
-    
+
     await squareService.updateOrder(squareOrderId, updateRequest);
     console.log(`✅ Square order ${squareOrderId} finalized and visible`);
   } catch (error) {
@@ -194,6 +199,7 @@ async updateOrder(orderId: string, updateData: any): Promise<any> {
 ## 🧪 Testing Strategy
 
 ### 1. Quick Manual Test
+
 ```bash
 # Test in development
 1. Create a test order
@@ -203,25 +209,26 @@ async updateOrder(orderId: string, updateData: any): Promise<any> {
 ```
 
 ### 2. Unit Test for Payment Creation
+
 ```typescript
 // __tests__/lib/square/orders.test.ts
 describe('createPayment', () => {
   it('should include autocomplete flag for order finalization', async () => {
     const mockSquareService = {
       createPayment: jest.fn().mockResolvedValue({
-        payment: { 
+        payment: {
           id: 'test-payment',
-          order: { state: 'OPEN' } // Order should be OPEN after payment
-        }
-      })
+          order: { state: 'OPEN' }, // Order should be OPEN after payment
+        },
+      }),
     };
-    
+
     await createPayment('test-source', 'test-order', 10000);
-    
+
     expect(mockSquareService.createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         autocomplete: true,
-        orderId: 'test-order'
+        orderId: 'test-order',
       })
     );
   });
@@ -229,16 +236,17 @@ describe('createPayment', () => {
 ```
 
 ### 3. Integration Test
+
 ```typescript
 // Test the full flow
 it('should make orders visible in Square after payment', async () => {
   // 1. Create order
   const order = await createOrder(testOrderData);
   expect(order.state).toBe('DRAFT');
-  
+
   // 2. Process payment
   const payment = await createPayment(testSourceId, order.id, 10000);
-  
+
   // 3. Verify order is now visible
   const updatedOrder = await getOrder(order.id);
   expect(updatedOrder.state).toBe('OPEN'); // Or COMPLETED
@@ -252,6 +260,7 @@ it('should make orders visible in Square after payment', async () => {
 ### Immediate Hotfix Steps
 
 1. **Apply Fix** (5 minutes)
+
    ```bash
    # Update orders.ts with autocomplete flag
    git checkout -b hotfix/square-order-visibility
@@ -261,12 +270,14 @@ it('should make orders visible in Square after payment', async () => {
    ```
 
 2. **Test Locally** (10 minutes)
+
    ```bash
    npm run dev
    # Create test order and verify it appears in Square
    ```
 
 3. **Deploy to Staging** (5 minutes)
+
    ```bash
    git push origin hotfix/square-order-visibility
    # Deploy to staging environment
@@ -279,12 +290,13 @@ it('should make orders visible in Square after payment', async () => {
    - Confirm order is visible
 
 5. **Deploy to Production** (5 minutes)
+
    ```bash
    # Merge to main
    git checkout main
    git merge hotfix/square-order-visibility
    git push origin main
-   
+
    # Production deploy
    vercel --prod
    ```
@@ -297,7 +309,7 @@ it('should make orders visible in Square after payment', async () => {
 
 ```sql
 -- Check recent orders for proper Square state
-SELECT 
+SELECT
   id,
   square_order_id,
   status,
@@ -309,18 +321,20 @@ ORDER BY created_at DESC;
 ```
 
 ### Square Dashboard Verification
+
 1. Log into Square Dashboard
 2. Navigate to Orders
 3. Confirm new orders appear immediately after payment
 4. Verify order states are OPEN/COMPLETED, not DRAFT
 
 ### Alert Setup
+
 ```typescript
 // Add monitoring for draft orders
 if (order.state === 'DRAFT' && payment.status === 'COMPLETED') {
   logger.error('CRITICAL: Order stuck in DRAFT after payment', {
     orderId: order.id,
-    paymentId: payment.id
+    paymentId: payment.id,
   });
   // Send alert to team
 }
@@ -363,6 +377,7 @@ if (order.state === 'DRAFT' && payment.status === 'COMPLETED') {
 After the hotfix, consider:
 
 1. **Add Order State Machine**
+
    ```typescript
    class OrderStateMachine {
      transitions = {
@@ -374,6 +389,7 @@ After the hotfix, consider:
    ```
 
 2. **Implement Retry Logic**
+
    ```typescript
    async function ensureOrderFinalized(orderId: string, maxRetries = 3) {
      // Retry logic with exponential backoff
@@ -386,7 +402,7 @@ After the hotfix, consider:
      orderId,
      from: previousState,
      to: newState,
-     trigger: 'payment_completed'
+     trigger: 'payment_completed',
    });
    ```
 

@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { 
-  AvailabilityRuleSchema, 
-  AvailabilityState, 
+import {
+  AvailabilityRuleSchema,
+  AvailabilityState,
   RuleType,
-  type AvailabilityRule 
+  type AvailabilityRule,
 } from '@/types/availability';
 
 /**
@@ -27,7 +27,7 @@ export class AvailabilityValidators {
       // Don't allow dates too far in the past
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-      
+
       if (start < twoYearsAgo) {
         errors.push('Start date cannot be more than 2 years in the past');
       }
@@ -35,7 +35,7 @@ export class AvailabilityValidators {
       // Don't allow dates too far in the future
       const fiveYearsFromNow = new Date();
       fiveYearsFromNow.setFullYear(fiveYearsFromNow.getFullYear() + 5);
-      
+
       if (end > fiveYearsFromNow) {
         errors.push('End date cannot be more than 5 years in the future');
       }
@@ -101,7 +101,7 @@ export class AvailabilityValidators {
         if (!this.isValidTimeFormat(restrictions.startTime)) {
           errors.push('Invalid start time format (use HH:MM)');
         }
-        
+
         if (!this.isValidTimeFormat(restrictions.endTime)) {
           errors.push('Invalid end time format (use HH:MM)');
         }
@@ -187,10 +187,7 @@ export class AvailabilityValidators {
   /**
    * Validate rule consistency with product data
    */
-  static validateRuleConsistency(
-    rule: Partial<AvailabilityRule>,
-    productData?: any
-  ): string[] {
+  static validateRuleConsistency(rule: Partial<AvailabilityRule>, productData?: any): string[] {
     const errors: string[] = [];
 
     // Validate that pre-order rules have appropriate settings
@@ -255,7 +252,7 @@ export class AvailabilityValidators {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -283,7 +280,7 @@ export class AvailabilityValidators {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

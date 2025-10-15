@@ -189,8 +189,8 @@ export default function OrderFilters({
 
         {/* Clear Filters */}
         {hasActiveFilters && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={resetFilters}
             className="h-11 flex items-center gap-2 whitespace-nowrap hover:bg-gray-50"
           >

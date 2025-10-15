@@ -13,16 +13,16 @@ export async function getCateringItemsWithImages(): Promise<CateringItemWithImag
   try {
     // Get all active products in catering categories
     const cateringProducts = await db.product.findMany({
-      where: { 
+      where: {
         active: true,
         category: {
           name: {
-            contains: 'CATERING'
-          }
-        }
+            contains: 'CATERING',
+          },
+        },
       },
       include: {
-        category: true
+        category: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -63,17 +63,17 @@ export function mapSquareCategoryToCateringCategory(squareCategory: string): any
   if (squareCategory === 'CATERING- BUFFET, STARTERS') return 'BUFFET_STARTER';
   if (squareCategory === 'CATERING- BUFFET, ENTREES') return 'BUFFET_ENTREE';
   if (squareCategory === 'CATERING- BUFFET, SIDES') return 'BUFFET_SIDE';
-  
+
   // Lunch categories
   if (squareCategory === 'CATERING- LUNCH, STARTERS') return 'LUNCH_STARTER';
   if (squareCategory === 'CATERING- LUNCH, ENTREES') return 'LUNCH_ENTREE';
   if (squareCategory === 'CATERING- LUNCH, SIDES') return 'LUNCH_SIDE';
-  
+
   // Appetizer categories
   if (squareCategory === 'CATERING- APPETIZERS') return 'STARTER';
   if (squareCategory === 'CATERING- SHARE PLATTERS') return 'SHARE PLATTER';
   if (squareCategory === 'CATERING- DESSERTS') return 'DESSERT';
-  
+
   // Generic fallback mappings
   if (squareCategory.includes('STARTER')) return 'STARTER';
   if (squareCategory.includes('ENTREE')) return 'ENTREE';
@@ -82,11 +82,9 @@ export function mapSquareCategoryToCateringCategory(squareCategory: string): any
   if (squareCategory.includes('DESSERT')) return 'DESSERT';
   if (squareCategory.includes('BEVERAGE')) return 'BEVERAGE';
   if (squareCategory.includes('APPETIZER')) return 'STARTER';
-  
+
   return 'ENTREE'; // Default fallback
 }
-
-
 
 /**
  * Optimized function to get catering products by category
@@ -101,12 +99,12 @@ export async function getCateringItemsByCategory(
         active: true,
         category: {
           name: {
-            contains: category.toUpperCase()
-          }
-        }
+            contains: category.toUpperCase(),
+          },
+        },
       },
       include: {
-        category: true
+        category: true,
       },
       orderBy: {
         name: 'asc',

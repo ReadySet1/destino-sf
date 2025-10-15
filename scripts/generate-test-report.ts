@@ -54,7 +54,7 @@ class TestReportGenerator {
 
     // Generate HTML report
     const html = this.generateHTML(results, coverage);
-    
+
     // Write report
     fs.writeFileSync(this.reportPath, html);
     console.log(`\n✅ Test report generated: ${this.reportPath}`);
@@ -83,7 +83,7 @@ class TestReportGenerator {
 
   private generateHTML(results: TestResults | null, coverage: CoverageReport | null): string {
     const now = new Date().toLocaleString();
-    const passRate = results 
+    const passRate = results
       ? ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1)
       : '0';
 
@@ -214,7 +214,9 @@ class TestReportGenerator {
             </div>
         </div>
 
-        ${coverage ? `
+        ${
+          coverage
+            ? `
         <div class="coverage-grid">
             <div class="coverage-item">
                 <strong>Lines</strong>
@@ -245,7 +247,9 @@ class TestReportGenerator {
                 <div>${coverage.total.branches.pct.toFixed(1)}%</div>
             </div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="timestamp">
             Generated on ${now}
@@ -259,7 +263,9 @@ class TestReportGenerator {
     console.log('\n📈 Test Summary:');
     if (results) {
       console.log(`✅ Passed: ${results.numPassedTests}/${results.numTotalTests} tests`);
-      console.log(`📦 Suites: ${results.numPassedTestSuites}/${results.numTotalTestSuites} passing`);
+      console.log(
+        `📦 Suites: ${results.numPassedTestSuites}/${results.numTotalTestSuites} passing`
+      );
     }
     if (coverage) {
       console.log(`📊 Coverage: ${coverage.total.lines.pct.toFixed(1)}% lines`);

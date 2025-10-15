@@ -118,7 +118,9 @@ export function OrderDetailsView({ order, isAuthenticated }: Props) {
     }
   };
 
-  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" | "primary" | "success" | "warning" | "danger" => {
+  const getStatusBadgeVariant = (
+    status: string
+  ): 'default' | 'secondary' | 'outline' | 'primary' | 'success' | 'warning' | 'danger' => {
     switch (status) {
       case 'COMPLETED':
         return 'success';
@@ -339,34 +341,38 @@ export function OrderDetailsView({ order, isAuthenticated }: Props) {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                {order.type === 'regular' ? (
-                  (order as RegularOrderData).items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center py-3 border-b last:border-0">
-                      <div>
-                        <p className="font-medium">
-                          {item.product.name}
-                          {item.variant && ` (${item.variant.name})`}
+                {order.type === 'regular'
+                  ? (order as RegularOrderData).items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-3 border-b last:border-0"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {item.product.name}
+                            {item.variant && ` (${item.variant.name})`}
+                          </p>
+                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                        </div>
+                        <p className="font-semibold">
+                          ${(Number(item.price) * item.quantity).toFixed(2)}
                         </p>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
-                      <p className="font-semibold">
-                        ${(Number(item.price) * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  (order as CateringOrderData).items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center py-3 border-b last:border-0">
-                      <div>
-                        <p className="font-medium">{item.itemName}</p>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                    ))
+                  : (order as CateringOrderData).items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-3 border-b last:border-0"
+                      >
+                        <div>
+                          <p className="font-medium">{item.itemName}</p>
+                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                        </div>
+                        <p className="font-semibold">
+                          ${(Number(item.pricePerUnit) * item.quantity).toFixed(2)}
+                        </p>
                       </div>
-                      <p className="font-semibold">
-                        ${(Number(item.pricePerUnit) * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
-                  ))
-                )}
+                    ))}
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-4 border-t-2 border-destino-orange/30">

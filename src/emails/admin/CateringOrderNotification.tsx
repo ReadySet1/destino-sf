@@ -55,7 +55,7 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
   numberOfPeople,
   deliveryFee = 0,
 }) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.pricePerUnit), 0);
+  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
   const formattedEventDate = new Date(eventDate).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -85,7 +85,6 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
       <Preview>{previewText}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          
           {/* Header Section */}
           <Section style={styles.header}>
             <Heading as="h1" style={styles.headerTitle}>
@@ -191,7 +190,12 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
                   <Column>
                     <Text style={styles.value}>
                       {deliveryAddress.street}
-                      {deliveryAddress.street2 && <><br />{deliveryAddress.street2}</>}
+                      {deliveryAddress.street2 && (
+                        <>
+                          <br />
+                          {deliveryAddress.street2}
+                        </>
+                      )}
                       <br />
                       {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}
                     </Text>
@@ -218,7 +222,7 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
               <Heading as="h2" style={styles.sectionTitle}>
                 🍽️ Order Items
               </Heading>
-              
+
               <Section style={styles.itemsTable}>
                 {/* Table Header */}
                 <Row style={styles.tableHeader}>
@@ -249,7 +253,9 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
                       <Text style={styles.itemValue}>${item.pricePerUnit.toFixed(2)}</Text>
                     </Column>
                     <Column style={styles.totalColumn}>
-                      <Text style={styles.itemValue}>${(item.quantity * item.pricePerUnit).toFixed(2)}</Text>
+                      <Text style={styles.itemValue}>
+                        ${(item.quantity * item.pricePerUnit).toFixed(2)}
+                      </Text>
                     </Column>
                   </Row>
                 ))}
@@ -279,7 +285,7 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
               )}
 
               <Hr style={styles.summaryDivider} />
-              
+
               <Row>
                 <Column style={styles.summaryLabelColumn}>
                   <Text style={styles.summaryTotalLabel}>Total:</Text>
@@ -310,7 +316,8 @@ export const CateringOrderNotification: React.FC<CateringOrderNotificationProps>
               This is an automated notification from your Destino SF catering system.
             </Text>
             <Text style={styles.footerText}>
-              Received at {new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })} PST
+              Received at {new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}{' '}
+              PST
             </Text>
           </Section>
         </Container>

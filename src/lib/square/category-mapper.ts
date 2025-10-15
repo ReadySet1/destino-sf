@@ -1,6 +1,6 @@
 /**
  * Square Category Mapper
- * 
+ *
  * Phase 2 of the fix plan: Fix Category Mapping
  * This module provides unified category mapping between Square and local database.
  */
@@ -13,21 +13,21 @@ import { logger } from '@/utils/logger';
  */
 export const CATEGORY_MAPPINGS = {
   // Square ID -> Local category name (normalized)
-  'UF2WY4B4635ZDAH4TCJVDQAN': 'CATERING-APPETIZERS',
-  'UOWY2ZPV24Q6K6BBD5CZRM4B': 'CATERING-BUFFET-STARTERS',
-  'HKLMA3HI34UUW6OCDMEKE224': 'CATERING-BUFFET-ENTREES',
-  'ZOWZ26OBOK3KUCT4ZBE6AV26': 'CATERING-BUFFET-SIDES',
+  UF2WY4B4635ZDAH4TCJVDQAN: 'CATERING-APPETIZERS',
+  UOWY2ZPV24Q6K6BBD5CZRM4B: 'CATERING-BUFFET-STARTERS',
+  HKLMA3HI34UUW6OCDMEKE224: 'CATERING-BUFFET-ENTREES',
+  ZOWZ26OBOK3KUCT4ZBE6AV26: 'CATERING-BUFFET-SIDES',
   '4YZ7LW7PRJRDICUM76U3FTGU': 'CATERING-SHARE-PLATTERS',
   '5ZH6ON3LTLXC2775JLBI3T3V': 'CATERING-DESSERTS',
-  'B527RVCSLNZ5XR3OZR76VNIH': 'CATERING-LUNCH-STARTERS',
-  'K2O3B7JUWT7QD7HGQ5AL2R2N': 'CATERING-LUNCH-ENTREES',
-  'HVWMJHLJ4Q2GHHT3COZLDYNP': 'CATERING-BOXED-LUNCH-ENTREES', // New category for Build Your Own Box
+  B527RVCSLNZ5XR3OZR76VNIH: 'CATERING-LUNCH-STARTERS',
+  K2O3B7JUWT7QD7HGQ5AL2R2N: 'CATERING-LUNCH-ENTREES',
+  HVWMJHLJ4Q2GHHT3COZLDYNP: 'CATERING-BOXED-LUNCH-ENTREES', // New category for Build Your Own Box
   '7F45BAY6KVJOBF4YXYBSL4JH': 'CATERING-LUNCH-SIDES',
   // Add missing Square IDs
-  'C6GLNU7ZTUEKFZSMMOUISX7B': 'ALFAJORES',
-  'CBCQ73NCXQKUAFWGP2KQFOJN': 'EMPANADAS',
-  'SDGSB4F4YOUFY3UFJF2KWXUB': 'EMPANADAS', // Alternative Square ID for EMPANADAS
-  'UMIXXK727MROE7CKS6OVTWZE': 'SAUCES',
+  C6GLNU7ZTUEKFZSMMOUISX7B: 'ALFAJORES',
+  CBCQ73NCXQKUAFWGP2KQFOJN: 'EMPANADAS',
+  SDGSB4F4YOUFY3UFJF2KWXUB: 'EMPANADAS', // Alternative Square ID for EMPANADAS
+  UMIXXK727MROE7CKS6OVTWZE: 'SAUCES',
 } as const;
 
 /**
@@ -36,27 +36,27 @@ export const CATEGORY_MAPPINGS = {
  */
 export const LEGACY_CATEGORY_MAPPINGS = {
   // CATERING categories
-  'UF2WY4B4635ZDAH4TCJVDQAN': 'CATERING- APPETIZERS',
-  'UOWY2ZPV24Q6K6BBD5CZRM4B': 'CATERING- BUFFET, STARTERS',
-  'HKLMA3HI34UUW6OCDMEKE224': 'CATERING- BUFFET, ENTREES',
-  'ZOWZ26OBOK3KUCT4ZBE6AV26': 'CATERING- BUFFET, SIDES',
+  UF2WY4B4635ZDAH4TCJVDQAN: 'CATERING- APPETIZERS',
+  UOWY2ZPV24Q6K6BBD5CZRM4B: 'CATERING- BUFFET, STARTERS',
+  HKLMA3HI34UUW6OCDMEKE224: 'CATERING- BUFFET, ENTREES',
+  ZOWZ26OBOK3KUCT4ZBE6AV26: 'CATERING- BUFFET, SIDES',
   '4YZ7LW7PRJRDICUM76U3FTGU': 'CATERING- SHARE PLATTERS',
   '5ZH6ON3LTLXC2775JLBI3T3V': 'CATERING- DESSERTS',
-  'B527RVCSLNZ5XR3OZR76VNIH': 'CATERING- LUNCH, STARTERS',
-  'K2O3B7JUWT7QD7HGQ5AL2R2N': 'CATERING- LUNCH, ENTREES',
-  'JMUA2KUSHYLXVDAIBTW23JJ4': 'CATERING- BOXED LUNCHES',
-  'HVWMJHLJ4Q2GHHT3COZLDYNP': 'CATERING- BOXED LUNCH ENTREES', // Actual Square ID found via MCP
+  B527RVCSLNZ5XR3OZR76VNIH: 'CATERING- LUNCH, STARTERS',
+  K2O3B7JUWT7QD7HGQ5AL2R2N: 'CATERING- LUNCH, ENTREES',
+  JMUA2KUSHYLXVDAIBTW23JJ4: 'CATERING- BOXED LUNCHES',
+  HVWMJHLJ4Q2GHHT3COZLDYNP: 'CATERING- BOXED LUNCH ENTREES', // Actual Square ID found via MCP
   '7F45BAY6KVJOBF4YXYBSL4JH': 'CATERING- LUNCH, SIDES',
   // CORE PRODUCT categories - FIXED SQUARE IDS
-  'C6GLNU7ZTUEKFZSMMOUISX7B': 'ALFAJORES',
-  'CBCQ73NCXQKUAFWGP2KQFOJN': 'EMPANADAS', // Fixed Square ID
-  'SDGSB4F4YOUFY3UFJF2KWXUB': 'EMPANADAS', // Alternative Square ID for EMPANADAS
-  'UMIXXK727MROE7CKS6OVTWZE': 'SAUCES',
-  'CISOGPONZYWZNS4QIZILKRRN': 'EMPANADAS- OTHER',
+  C6GLNU7ZTUEKFZSMMOUISX7B: 'ALFAJORES',
+  CBCQ73NCXQKUAFWGP2KQFOJN: 'EMPANADAS', // Fixed Square ID
+  SDGSB4F4YOUFY3UFJF2KWXUB: 'EMPANADAS', // Alternative Square ID for EMPANADAS
+  UMIXXK727MROE7CKS6OVTWZE: 'SAUCES',
+  CISOGPONZYWZNS4QIZILKRRN: 'EMPANADAS- OTHER',
 } as const;
 
 export type SquareCategoryId = keyof typeof CATEGORY_MAPPINGS;
-export type LocalCategoryName = typeof CATEGORY_MAPPINGS[SquareCategoryId];
+export type LocalCategoryName = (typeof CATEGORY_MAPPINGS)[SquareCategoryId];
 
 /**
  * CategoryMapper class provides methods for mapping between Square and local categories
@@ -69,9 +69,9 @@ export class CategoryMapper {
   static normalizeCategory(name: string): string {
     return name
       .toUpperCase()
-      .replace(/\s*-\s*/g, '-')      // Remove spaces around hyphens: "CATERING- APPETIZERS" -> "CATERING-APPETIZERS"
-      .replace(/,\s*/g, '-')         // Replace commas with hyphens: "BUFFET, STARTERS" -> "BUFFET-STARTERS"
-      .replace(/\s+/g, '-')          // Replace remaining spaces with hyphens: "SHARE PLATTERS" -> "SHARE-PLATTERS"
+      .replace(/\s*-\s*/g, '-') // Remove spaces around hyphens: "CATERING- APPETIZERS" -> "CATERING-APPETIZERS"
+      .replace(/,\s*/g, '-') // Replace commas with hyphens: "BUFFET, STARTERS" -> "BUFFET-STARTERS"
+      .replace(/\s+/g, '-') // Replace remaining spaces with hyphens: "SHARE PLATTERS" -> "SHARE-PLATTERS"
       .trim();
   }
 
@@ -167,7 +167,7 @@ export class CategoryMapper {
     return Object.entries(CATEGORY_MAPPINGS).map(([squareId, normalizedName]) => ({
       squareId,
       normalizedName,
-      legacyName: LEGACY_CATEGORY_MAPPINGS[squareId as SquareCategoryId]
+      legacyName: LEGACY_CATEGORY_MAPPINGS[squareId as SquareCategoryId],
     }));
   }
 
@@ -216,7 +216,7 @@ export class CategoryMapper {
    */
   static getDisplayName(categoryName: string): string {
     const normalized = this.normalizeCategory(categoryName);
-    
+
     // Convert to title case and replace hyphens with spaces
     return normalized
       .split('-')
@@ -233,7 +233,7 @@ export class CategoryMapper {
     suggestions?: string[];
   } {
     const normalized = this.normalizeCategory(categoryName);
-    
+
     // Check if it's a valid normalized name
     if (Object.values(CATEGORY_MAPPINGS).includes(normalized as LocalCategoryName)) {
       return { isValid: true, normalized };
@@ -242,26 +242,31 @@ export class CategoryMapper {
     // Check if it's a valid legacy name
     if (Object.values(LEGACY_CATEGORY_MAPPINGS).includes(categoryName as any)) {
       const normalizedEquivalent = this.legacyToNormalized(categoryName);
-      return { 
-        isValid: true, 
-        normalized: normalizedEquivalent || undefined 
+      return {
+        isValid: true,
+        normalized: normalizedEquivalent || undefined,
       };
     }
 
     // Generate suggestions based on partial matches
     const suggestions: string[] = [];
-    const allNames = [...Object.values(CATEGORY_MAPPINGS), ...Object.values(LEGACY_CATEGORY_MAPPINGS)];
-    
+    const allNames = [
+      ...Object.values(CATEGORY_MAPPINGS),
+      ...Object.values(LEGACY_CATEGORY_MAPPINGS),
+    ];
+
     for (const name of allNames) {
-      if (name.toLowerCase().includes(categoryName.toLowerCase()) || 
-          this.normalizeCategory(name).includes(normalized)) {
+      if (
+        name.toLowerCase().includes(categoryName.toLowerCase()) ||
+        this.normalizeCategory(name).includes(normalized)
+      ) {
         suggestions.push(name);
       }
     }
 
-    return { 
-      isValid: false, 
-      suggestions: suggestions.slice(0, 5) // Limit to 5 suggestions
+    return {
+      isValid: false,
+      suggestions: suggestions.slice(0, 5), // Limit to 5 suggestions
     };
   }
 
@@ -282,7 +287,7 @@ export class CategoryMapper {
       'CATERING-LUNCH-ENTREES': ['lunch', 'sandwich', 'wrap', 'panini'],
       'CATERING-LUNCH-STARTERS': ['lunch starter', 'lunch soup'],
       'CATERING-LUNCH-SIDES': ['lunch side', 'chips', 'fries'],
-      'CATERING-SHARE-PLATTERS': ['platter', 'tray', 'selection', 'assortment']
+      'CATERING-SHARE-PLATTERS': ['platter', 'tray', 'selection', 'assortment'],
     };
 
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
@@ -318,7 +323,7 @@ export class CategoryMapper {
   } {
     const mappings = this.getMappingsArray().map(mapping => ({
       ...mapping,
-      displayName: this.getDisplayName(mapping.normalizedName)
+      displayName: this.getDisplayName(mapping.normalizedName),
     }));
 
     const statistics = {
@@ -333,7 +338,7 @@ export class CategoryMapper {
     return {
       totalMappings: mappings.length,
       mappings,
-      statistics
+      statistics,
     };
   }
 }

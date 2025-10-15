@@ -13,7 +13,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Leaf, Clock, Thermometer, Users, Eye, Star, Heart, Zap, Award, CheckCircle, ShieldCheck, Sparkles, Truck, Package } from 'lucide-react';
+import {
+  Leaf,
+  Clock,
+  Thermometer,
+  Users,
+  Eye,
+  Star,
+  Heart,
+  Zap,
+  Award,
+  CheckCircle,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+  Package,
+} from 'lucide-react';
 import { TRUST_SIGNAL_COLOR_OPTIONS } from '@/types/trust-signals';
 import { getIconComponent, getIconColorClass, getBgColorClass } from '@/lib/utils/icon-mapper';
 
@@ -93,7 +108,9 @@ export default function ProductTypeBadgeManager({ initialBadges }: ProductTypeBa
 
   // Trust Signal 1 states
   const [trustSignal1Title, setTrustSignal1Title] = useState<string>('Fresh Ingredients');
-  const [trustSignal1Desc, setTrustSignal1Desc] = useState<string>('Made with premium, locally-sourced ingredients');
+  const [trustSignal1Desc, setTrustSignal1Desc] = useState<string>(
+    'Made with premium, locally-sourced ingredients'
+  );
   const [trustSignal1Icon, setTrustSignal1Icon] = useState<string>('leaf');
   const [trustSignal1IconColor, setTrustSignal1IconColor] = useState<string>('green');
   const [trustSignal1BgColor, setTrustSignal1BgColor] = useState<string>('green-100');
@@ -132,7 +149,9 @@ export default function ProductTypeBadgeManager({ initialBadges }: ProductTypeBa
 
       // Trust Signal 1
       setTrustSignal1Title(badgeData.trustSignal1Title || 'Fresh Ingredients');
-      setTrustSignal1Desc(badgeData.trustSignal1Desc || 'Made with premium, locally-sourced ingredients');
+      setTrustSignal1Desc(
+        badgeData.trustSignal1Desc || 'Made with premium, locally-sourced ingredients'
+      );
       setTrustSignal1Icon(badgeData.trustSignal1Icon || 'leaf');
       setTrustSignal1IconColor(badgeData.trustSignal1IconColor || 'green');
       setTrustSignal1BgColor(badgeData.trustSignal1BgColor || 'green-100');
@@ -169,7 +188,9 @@ export default function ProductTypeBadgeManager({ initialBadges }: ProductTypeBa
 
       // Trust Signal 1
       setTrustSignal1Title(firstBadge.trustSignal1Title || 'Fresh Ingredients');
-      setTrustSignal1Desc(firstBadge.trustSignal1Desc || 'Made with premium, locally-sourced ingredients');
+      setTrustSignal1Desc(
+        firstBadge.trustSignal1Desc || 'Made with premium, locally-sourced ingredients'
+      );
       setTrustSignal1Icon(firstBadge.trustSignal1Icon || 'leaf');
       setTrustSignal1IconColor(firstBadge.trustSignal1IconColor || 'green');
       setTrustSignal1BgColor(firstBadge.trustSignal1BgColor || 'green-100');
@@ -280,529 +301,556 @@ export default function ProductTypeBadgeManager({ initialBadges }: ProductTypeBa
       </Card>
 
       <div className="grid md:grid-cols-2 gap-6">
-      {/* Badge Configuration Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Badge Configuration</CardTitle>
-          <CardDescription>
-            Update badge text for {PRODUCT_TYPES.find(t => t.value === selectedType)?.label}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-
-          {/* Badge 1 Input */}
-          <div className="space-y-2">
-            <Label htmlFor="badge1">Badge 1</Label>
-            <div className="flex gap-2">
-              <Input
-                id="badge1"
-                value={badge1}
-                onChange={(e) => setBadge1(e.target.value)}
-                maxLength={100}
-                placeholder="e.g., Ready to Cook"
-                className="flex-1"
-              />
-              <Select value={icon1} onValueChange={setIcon1}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ICON_OPTIONS.map(icon => (
-                    <SelectItem key={icon.value} value={icon.value}>
-                      <div className="flex items-center gap-2">
-                        <icon.icon className="w-4 h-4" />
-                        {icon.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {badge1.length}/100 characters
-            </p>
-          </div>
-
-          {/* Badge 2 Input */}
-          <div className="space-y-2">
-            <Label htmlFor="badge2">Badge 2</Label>
-            <div className="flex gap-2">
-              <Input
-                id="badge2"
-                value={badge2}
-                onChange={(e) => setBadge2(e.target.value)}
-                maxLength={100}
-                placeholder="e.g., 15-20 min"
-                className="flex-1"
-              />
-              <Select value={icon2} onValueChange={setIcon2}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ICON_OPTIONS.map(icon => (
-                    <SelectItem key={icon.value} value={icon.value}>
-                      <div className="flex items-center gap-2">
-                        <icon.icon className="w-4 h-4" />
-                        {icon.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {badge2.length}/100 characters
-            </p>
-          </div>
-
-          {/* Badge 3 Input (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="badge3">Badge 3 (Optional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="badge3"
-                value={badge3}
-                onChange={(e) => setBadge3(e.target.value)}
-                maxLength={100}
-                placeholder="e.g., Award Winning"
-                className="flex-1"
-              />
-              <Select value={icon3} onValueChange={setIcon3} disabled={!badge3}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ICON_OPTIONS.map(icon => (
-                    <SelectItem key={icon.value} value={icon.value}>
-                      <div className="flex items-center gap-2">
-                        <icon.icon className="w-4 h-4" />
-                        {icon.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {badge3.length}/100 characters
-            </p>
-          </div>
-
-          {/* Color Pickers */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* Badge Configuration Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Badge Configuration</CardTitle>
+            <CardDescription>
+              Update badge text for {PRODUCT_TYPES.find(t => t.value === selectedType)?.label}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Badge 1 Input */}
             <div className="space-y-2">
-              <Label htmlFor="bgColor">Background Color</Label>
-              <div className="flex items-center gap-2">
+              <Label htmlFor="badge1">Badge 1</Label>
+              <div className="flex gap-2">
                 <Input
-                  id="bgColor"
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  placeholder="#c2410c"
+                  id="badge1"
+                  value={badge1}
+                  onChange={e => setBadge1(e.target.value)}
+                  maxLength={100}
+                  placeholder="e.g., Ready to Cook"
                   className="flex-1"
-                  maxLength={7}
                 />
+                <Select value={icon1} onValueChange={setIcon1}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map(icon => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <div className="flex items-center gap-2">
+                          <icon.icon className="w-4 h-4" />
+                          {icon.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">{badge1.length}/100 characters</p>
+            </div>
+
+            {/* Badge 2 Input */}
+            <div className="space-y-2">
+              <Label htmlFor="badge2">Badge 2</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="badge2"
+                  value={badge2}
+                  onChange={e => setBadge2(e.target.value)}
+                  maxLength={100}
+                  placeholder="e.g., 15-20 min"
+                  className="flex-1"
+                />
+                <Select value={icon2} onValueChange={setIcon2}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map(icon => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <div className="flex items-center gap-2">
+                          <icon.icon className="w-4 h-4" />
+                          {icon.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">{badge2.length}/100 characters</p>
+            </div>
+
+            {/* Badge 3 Input (Optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="badge3">Badge 3 (Optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="badge3"
+                  value={badge3}
+                  onChange={e => setBadge3(e.target.value)}
+                  maxLength={100}
+                  placeholder="e.g., Award Winning"
+                  className="flex-1"
+                />
+                <Select value={icon3} onValueChange={setIcon3} disabled={!badge3}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map(icon => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <div className="flex items-center gap-2">
+                          <icon.icon className="w-4 h-4" />
+                          {icon.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">{badge3.length}/100 characters</p>
+            </div>
+
+            {/* Color Pickers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bgColor">Background Color</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="bgColor"
+                    type="color"
+                    value={bgColor}
+                    onChange={e => setBgColor(e.target.value)}
+                    className="w-20 h-10 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={bgColor}
+                    onChange={e => setBgColor(e.target.value)}
+                    placeholder="#c2410c"
+                    className="flex-1"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="textColor">Text Color</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="textColor"
+                    type="color"
+                    value={textColor}
+                    onChange={e => setTextColor(e.target.value)}
+                    className="w-20 h-10 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={textColor}
+                    onChange={e => setTextColor(e.target.value)}
+                    placeholder="#ffffff"
+                    className="flex-1"
+                    maxLength={7}
+                  />
+                </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="textColor">Text Color</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="textColor"
-                  type="color"
-                  value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
-                  placeholder="#ffffff"
-                  className="flex-1"
-                  maxLength={7}
-                />
+        {/* Preview Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Badge Preview</CardTitle>
+            <CardDescription>How the badges will appear on product pages</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-[hsl(var(--header-orange))] p-8 rounded-lg">
+              <div className="flex flex-wrap gap-3">
+                {badge1 &&
+                  (() => {
+                    const IconComponent = getIconComponent(icon1);
+                    return (
+                      <div
+                        className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
+                        style={{
+                          backgroundColor: `${bgColor}e6`, // Add 90% opacity
+                          color: textColor,
+                        }}
+                      >
+                        <IconComponent className="w-4 h-4" style={{ color: textColor }} />
+                        <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                          {badge1}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                {badge2 &&
+                  (() => {
+                    const IconComponent = getIconComponent(icon2);
+                    return (
+                      <div
+                        className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
+                        style={{
+                          backgroundColor: `${bgColor}e6`, // Add 90% opacity
+                          color: textColor,
+                        }}
+                      >
+                        <IconComponent className="w-4 h-4" style={{ color: textColor }} />
+                        <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                          {badge2}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                {badge3 &&
+                  (() => {
+                    const IconComponent = getIconComponent(icon3);
+                    return (
+                      <div
+                        className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
+                        style={{
+                          backgroundColor: `${bgColor}e6`, // Add 90% opacity
+                          color: textColor,
+                        }}
+                      >
+                        <IconComponent className="w-4 h-4" style={{ color: textColor }} />
+                        <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                          {badge3}
+                        </span>
+                      </div>
+                    );
+                  })()}
               </div>
+              {!badge1 && !badge2 && (
+                <p className="text-white/70 text-sm mt-4">Enter badge text to see preview</p>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Badge Preview</CardTitle>
-          <CardDescription>
-            How the badges will appear on product pages
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-[hsl(var(--header-orange))] p-8 rounded-lg">
-            <div className="flex flex-wrap gap-3">
-              {badge1 && (() => {
-                const IconComponent = getIconComponent(icon1);
-                return (
-                  <div
-                    className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
-                    style={{
-                      backgroundColor: `${bgColor}e6`, // Add 90% opacity
-                      color: textColor
-                    }}
-                  >
-                    <IconComponent className="w-4 h-4" style={{ color: textColor }} />
-                    <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                      {badge1}
-                    </span>
-                  </div>
-                );
-              })()}
-              {badge2 && (() => {
-                const IconComponent = getIconComponent(icon2);
-                return (
-                  <div
-                    className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
-                    style={{
-                      backgroundColor: `${bgColor}e6`, // Add 90% opacity
-                      color: textColor
-                    }}
-                  >
-                    <IconComponent className="w-4 h-4" style={{ color: textColor }} />
-                    <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                      {badge2}
-                    </span>
-                  </div>
-                );
-              })()}
-              {badge3 && (() => {
-                const IconComponent = getIconComponent(icon3);
-                return (
-                  <div
-                    className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
-                    style={{
-                      backgroundColor: `${bgColor}e6`, // Add 90% opacity
-                      color: textColor
-                    }}
-                  >
-                    <IconComponent className="w-4 h-4" style={{ color: textColor }} />
-                    <span className="text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                      {badge3}
-                    </span>
-                  </div>
-                );
-              })()}
-            </div>
-            {!badge1 && !badge2 && (
-              <p className="text-white/70 text-sm mt-4">
-                Enter badge text to see preview
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Trust Signals Configuration */}
       <div className="grid md:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Trust Signals Configuration</CardTitle>
-          <CardDescription>
-            Customize trust signals for {PRODUCT_TYPES.find(t => t.value === selectedType)?.label} shown below related products in &ldquo;You Might Also Like&rdquo; section
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Trust Signal 1 */}
-          <div className="space-y-3 p-4 border rounded-lg">
-            <Label className="text-base font-semibold">Trust Signal 1</Label>
+        <Card>
+          <CardHeader>
+            <CardTitle>Trust Signals Configuration</CardTitle>
+            <CardDescription>
+              Customize trust signals for {PRODUCT_TYPES.find(t => t.value === selectedType)?.label}{' '}
+              shown below related products in &ldquo;You Might Also Like&rdquo; section
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Trust Signal 1 */}
+            <div className="space-y-3 p-4 border rounded-lg">
+              <Label className="text-base font-semibold">Trust Signal 1</Label>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust1-title">Title</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="trust1-title"
-                  value={trustSignal1Title}
-                  onChange={(e) => setTrustSignal1Title(e.target.value)}
-                  placeholder="e.g., Fresh Ingredients"
-                  maxLength={100}
-                  className="flex-1"
+              <div className="space-y-2">
+                <Label htmlFor="trust1-title">Title</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="trust1-title"
+                    value={trustSignal1Title}
+                    onChange={e => setTrustSignal1Title(e.target.value)}
+                    placeholder="e.g., Fresh Ingredients"
+                    maxLength={100}
+                    className="flex-1"
+                  />
+                  <Select value={trustSignal1Icon} onValueChange={setTrustSignal1Icon}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map(icon => (
+                        <SelectItem key={icon.value} value={icon.value}>
+                          <div className="flex items-center gap-2">
+                            <icon.icon className="w-4 h-4" />
+                            {icon.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal1Title.length}/100 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trust1-desc">Description</Label>
+                <Textarea
+                  id="trust1-desc"
+                  value={trustSignal1Desc}
+                  onChange={e => setTrustSignal1Desc(e.target.value)}
+                  placeholder="e.g., Made with premium, locally-sourced ingredients"
+                  rows={2}
+                  maxLength={200}
                 />
-                <Select value={trustSignal1Icon} onValueChange={setTrustSignal1Icon}>
-                  <SelectTrigger className="w-32">
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal1Desc.length}/200 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trust1-color">Icon Color</Label>
+                <Select
+                  value={trustSignal1IconColor}
+                  onValueChange={value => {
+                    setTrustSignal1IconColor(value);
+                    // Auto-set background color to match
+                    const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
+                    if (colorOption) {
+                      setTrustSignal1BgColor(colorOption.bgValue);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="trust1-color">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ICON_OPTIONS.map(icon => (
-                      <SelectItem key={icon.value} value={icon.value}>
+                    {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
+                      <SelectItem key={color.value} value={color.value}>
                         <div className="flex items-center gap-2">
-                          <icon.icon className="w-4 h-4" />
-                          {icon.label}
+                          <div
+                            className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`}
+                          />
+                          {color.label}
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {trustSignal1Title.length}/100 characters
-              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust1-desc">Description</Label>
-              <Textarea
-                id="trust1-desc"
-                value={trustSignal1Desc}
-                onChange={(e) => setTrustSignal1Desc(e.target.value)}
-                placeholder="e.g., Made with premium, locally-sourced ingredients"
-                rows={2}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground">
-                {trustSignal1Desc.length}/200 characters
-              </p>
-            </div>
+            {/* Trust Signal 2 */}
+            <div className="space-y-3 p-4 border rounded-lg">
+              <Label className="text-base font-semibold">Trust Signal 2</Label>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust1-color">Icon Color</Label>
-              <Select value={trustSignal1IconColor} onValueChange={(value) => {
-                setTrustSignal1IconColor(value);
-                // Auto-set background color to match
-                const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
-                if (colorOption) {
-                  setTrustSignal1BgColor(colorOption.bgValue);
-                }
-              }}>
-                <SelectTrigger id="trust1-color">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`} />
-                        {color.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="trust2-title">Title</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="trust2-title"
+                    value={trustSignal2Title}
+                    onChange={e => setTrustSignal2Title(e.target.value)}
+                    placeholder="e.g., Flash Frozen"
+                    maxLength={100}
+                    className="flex-1"
+                  />
+                  <Select value={trustSignal2Icon} onValueChange={setTrustSignal2Icon}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map(icon => (
+                        <SelectItem key={icon.value} value={icon.value}>
+                          <div className="flex items-center gap-2">
+                            <icon.icon className="w-4 h-4" />
+                            {icon.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal2Title.length}/100 characters
+                </p>
+              </div>
 
-          {/* Trust Signal 2 */}
-          <div className="space-y-3 p-4 border rounded-lg">
-            <Label className="text-base font-semibold">Trust Signal 2</Label>
-
-            <div className="space-y-2">
-              <Label htmlFor="trust2-title">Title</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="trust2-title"
-                  value={trustSignal2Title}
-                  onChange={(e) => setTrustSignal2Title(e.target.value)}
-                  placeholder="e.g., Flash Frozen"
-                  maxLength={100}
-                  className="flex-1"
+              <div className="space-y-2">
+                <Label htmlFor="trust2-desc">Description</Label>
+                <Textarea
+                  id="trust2-desc"
+                  value={trustSignal2Desc}
+                  onChange={e => setTrustSignal2Desc(e.target.value)}
+                  placeholder="e.g., Locks in freshness and flavor"
+                  rows={2}
+                  maxLength={200}
                 />
-                <Select value={trustSignal2Icon} onValueChange={setTrustSignal2Icon}>
-                  <SelectTrigger className="w-32">
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal2Desc.length}/200 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trust2-color">Icon Color</Label>
+                <Select
+                  value={trustSignal2IconColor}
+                  onValueChange={value => {
+                    setTrustSignal2IconColor(value);
+                    // Auto-set background color to match
+                    const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
+                    if (colorOption) {
+                      setTrustSignal2BgColor(colorOption.bgValue);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="trust2-color">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ICON_OPTIONS.map(icon => (
-                      <SelectItem key={icon.value} value={icon.value}>
+                    {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
+                      <SelectItem key={color.value} value={color.value}>
                         <div className="flex items-center gap-2">
-                          <icon.icon className="w-4 h-4" />
-                          {icon.label}
+                          <div
+                            className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`}
+                          />
+                          {color.label}
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {trustSignal2Title.length}/100 characters
-              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust2-desc">Description</Label>
-              <Textarea
-                id="trust2-desc"
-                value={trustSignal2Desc}
-                onChange={(e) => setTrustSignal2Desc(e.target.value)}
-                placeholder="e.g., Locks in freshness and flavor"
-                rows={2}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground">
-                {trustSignal2Desc.length}/200 characters
-              </p>
-            </div>
+            {/* Trust Signal 3 */}
+            <div className="space-y-3 p-4 border rounded-lg">
+              <Label className="text-base font-semibold">Trust Signal 3</Label>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust2-color">Icon Color</Label>
-              <Select value={trustSignal2IconColor} onValueChange={(value) => {
-                setTrustSignal2IconColor(value);
-                // Auto-set background color to match
-                const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
-                if (colorOption) {
-                  setTrustSignal2BgColor(colorOption.bgValue);
-                }
-              }}>
-                <SelectTrigger id="trust2-color">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`} />
-                        {color.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="trust3-title">Title</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="trust3-title"
+                    value={trustSignal3Title}
+                    onChange={e => setTrustSignal3Title(e.target.value)}
+                    placeholder="e.g., Quick & Easy"
+                    maxLength={100}
+                    className="flex-1"
+                  />
+                  <Select value={trustSignal3Icon} onValueChange={setTrustSignal3Icon}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map(icon => (
+                        <SelectItem key={icon.value} value={icon.value}>
+                          <div className="flex items-center gap-2">
+                            <icon.icon className="w-4 h-4" />
+                            {icon.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal3Title.length}/100 characters
+                </p>
+              </div>
 
-          {/* Trust Signal 3 */}
-          <div className="space-y-3 p-4 border rounded-lg">
-            <Label className="text-base font-semibold">Trust Signal 3</Label>
-
-            <div className="space-y-2">
-              <Label htmlFor="trust3-title">Title</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="trust3-title"
-                  value={trustSignal3Title}
-                  onChange={(e) => setTrustSignal3Title(e.target.value)}
-                  placeholder="e.g., Quick & Easy"
-                  maxLength={100}
-                  className="flex-1"
+              <div className="space-y-2">
+                <Label htmlFor="trust3-desc">Description</Label>
+                <Textarea
+                  id="trust3-desc"
+                  value={trustSignal3Desc}
+                  onChange={e => setTrustSignal3Desc(e.target.value)}
+                  placeholder="e.g., Ready in just 15-20 minutes"
+                  rows={2}
+                  maxLength={200}
                 />
-                <Select value={trustSignal3Icon} onValueChange={setTrustSignal3Icon}>
-                  <SelectTrigger className="w-32">
+                <p className="text-xs text-muted-foreground">
+                  {trustSignal3Desc.length}/200 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trust3-color">Icon Color</Label>
+                <Select
+                  value={trustSignal3IconColor}
+                  onValueChange={value => {
+                    setTrustSignal3IconColor(value);
+                    // Auto-set background color to match
+                    const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
+                    if (colorOption) {
+                      setTrustSignal3BgColor(colorOption.bgValue);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="trust3-color">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ICON_OPTIONS.map(icon => (
-                      <SelectItem key={icon.value} value={icon.value}>
+                    {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
+                      <SelectItem key={color.value} value={color.value}>
                         <div className="flex items-center gap-2">
-                          <icon.icon className="w-4 h-4" />
-                          {icon.label}
+                          <div
+                            className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`}
+                          />
+                          {color.label}
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {trustSignal3Title.length}/100 characters
-              </p>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="trust3-desc">Description</Label>
-              <Textarea
-                id="trust3-desc"
-                value={trustSignal3Desc}
-                onChange={(e) => setTrustSignal3Desc(e.target.value)}
-                placeholder="e.g., Ready in just 15-20 minutes"
-                rows={2}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground">
-                {trustSignal3Desc.length}/200 characters
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="trust3-color">Icon Color</Label>
-              <Select value={trustSignal3IconColor} onValueChange={(value) => {
-                setTrustSignal3IconColor(value);
-                // Auto-set background color to match
-                const colorOption = TRUST_SIGNAL_COLOR_OPTIONS.find(c => c.value === value);
-                if (colorOption) {
-                  setTrustSignal3BgColor(colorOption.bgValue);
-                }
-              }}>
-                <SelectTrigger id="trust3-color">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRUST_SIGNAL_COLOR_OPTIONS.map(color => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full bg-${color.value}-100 border border-${color.value}-300`} />
-                        {color.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Trust Signals Preview Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Trust Signals Preview</CardTitle>
-          <CardDescription>
-            How the trust signals will appear for {PRODUCT_TYPES.find(t => t.value === selectedType)?.label} products
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-6 text-center bg-gray-50 p-6 rounded-lg">
-            {/* Trust Signal 1 Preview */}
-            <div className="flex flex-col items-center">
-              <div className={`w-12 h-12 ${getBgColorClass(trustSignal1BgColor)} rounded-full flex items-center justify-center mb-2`}>
-                {(() => {
-                  const IconComponent = getIconComponent(trustSignal1Icon);
-                  return <IconComponent className={`w-6 h-6 ${getIconColorClass(trustSignal1IconColor)}`} />;
-                })()}
+        {/* Trust Signals Preview Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Trust Signals Preview</CardTitle>
+            <CardDescription>
+              How the trust signals will appear for{' '}
+              {PRODUCT_TYPES.find(t => t.value === selectedType)?.label} products
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-6 text-center bg-gray-50 p-6 rounded-lg">
+              {/* Trust Signal 1 Preview */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-12 h-12 ${getBgColorClass(trustSignal1BgColor)} rounded-full flex items-center justify-center mb-2`}
+                >
+                  {(() => {
+                    const IconComponent = getIconComponent(trustSignal1Icon);
+                    return (
+                      <IconComponent
+                        className={`w-6 h-6 ${getIconColorClass(trustSignal1IconColor)}`}
+                      />
+                    );
+                  })()}
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">{trustSignal1Title}</h3>
+                <p className="text-gray-600 text-sm">{trustSignal1Desc}</p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{trustSignal1Title}</h3>
-              <p className="text-gray-600 text-sm">{trustSignal1Desc}</p>
-            </div>
 
-            {/* Trust Signal 2 Preview */}
-            <div className="flex flex-col items-center">
-              <div className={`w-12 h-12 ${getBgColorClass(trustSignal2BgColor)} rounded-full flex items-center justify-center mb-2`}>
-                {(() => {
-                  const IconComponent = getIconComponent(trustSignal2Icon);
-                  return <IconComponent className={`w-6 h-6 ${getIconColorClass(trustSignal2IconColor)}`} />;
-                })()}
+              {/* Trust Signal 2 Preview */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-12 h-12 ${getBgColorClass(trustSignal2BgColor)} rounded-full flex items-center justify-center mb-2`}
+                >
+                  {(() => {
+                    const IconComponent = getIconComponent(trustSignal2Icon);
+                    return (
+                      <IconComponent
+                        className={`w-6 h-6 ${getIconColorClass(trustSignal2IconColor)}`}
+                      />
+                    );
+                  })()}
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">{trustSignal2Title}</h3>
+                <p className="text-gray-600 text-sm">{trustSignal2Desc}</p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{trustSignal2Title}</h3>
-              <p className="text-gray-600 text-sm">{trustSignal2Desc}</p>
-            </div>
 
-            {/* Trust Signal 3 Preview */}
-            <div className="flex flex-col items-center">
-              <div className={`w-12 h-12 ${getBgColorClass(trustSignal3BgColor)} rounded-full flex items-center justify-center mb-2`}>
-                {(() => {
-                  const IconComponent = getIconComponent(trustSignal3Icon);
-                  return <IconComponent className={`w-6 h-6 ${getIconColorClass(trustSignal3IconColor)}`} />;
-                })()}
+              {/* Trust Signal 3 Preview */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-12 h-12 ${getBgColorClass(trustSignal3BgColor)} rounded-full flex items-center justify-center mb-2`}
+                >
+                  {(() => {
+                    const IconComponent = getIconComponent(trustSignal3Icon);
+                    return (
+                      <IconComponent
+                        className={`w-6 h-6 ${getIconColorClass(trustSignal3IconColor)}`}
+                      />
+                    );
+                  })()}
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">{trustSignal3Title}</h3>
+                <p className="text-gray-600 text-sm">{trustSignal3Desc}</p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{trustSignal3Title}</h3>
-              <p className="text-gray-600 text-sm">{trustSignal3Desc}</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Save Button */}

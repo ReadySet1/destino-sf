@@ -2,10 +2,10 @@
 
 /**
  * Force Sync Missing Boxed Lunch Items
- * 
+ *
  * Implementation of Option 1 from the master plan:
  * Use forceUpdate parameter to bypass duplicate detection and sync the 3 missing items
- * 
+ *
  * Missing items (from master plan):
  * - Acorn Squash (GZNXPT6ONKIIUIMPD3PJV64U)
  * - Beef Stir Fry (XXTYXJS5IH7Y7ILKUAOVSNAZ)
@@ -67,9 +67,9 @@ async function forceSyncMissingItems(): Promise<void> {
         // For now, assuming this script runs locally or in a trusted environment
       },
       body: JSON.stringify({
-        forceUpdate: true,  // KEY: Bypass duplicate detection
-        categories: ['CATERING- BOXED LUNCH ENTREES'],  // Target specific category
-        dryRun: false  // Actually perform the sync
+        forceUpdate: true, // KEY: Bypass duplicate detection
+        categories: ['CATERING- BOXED LUNCH ENTREES'], // Target specific category
+        dryRun: false, // Actually perform the sync
       }),
     });
 
@@ -83,7 +83,7 @@ async function forceSyncMissingItems(): Promise<void> {
     console.log(`✅ Success: ${result.success}`);
     console.log(`📝 Message: ${result.message}`);
     console.log('');
-    
+
     console.log('📊 SYNC SUMMARY:');
     console.log(`   • Synced Products: ${result.sync.syncedProducts}`);
     console.log(`   • Skipped Products: ${result.sync.skippedProducts}`);
@@ -91,9 +91,10 @@ async function forceSyncMissingItems(): Promise<void> {
     console.log('');
 
     // Find the boxed lunch entrees category in verification
-    const boxedLunchCategory = result.data.verification.categories.find(cat => 
-      cat.squareName.includes('BOXED LUNCH ENTREES') || 
-      cat.squareName.includes('BOXED_LUNCH_ENTREES')
+    const boxedLunchCategory = result.data.verification.categories.find(
+      cat =>
+        cat.squareName.includes('BOXED LUNCH ENTREES') ||
+        cat.squareName.includes('BOXED_LUNCH_ENTREES')
     );
 
     if (boxedLunchCategory) {
@@ -106,14 +107,18 @@ async function forceSyncMissingItems(): Promise<void> {
       if (boxedLunchCategory.itemCount.discrepancy === 0) {
         console.log('🎉 SUCCESS: No discrepancy detected! All items synced.');
       } else {
-        console.log(`⚠️  DISCREPANCY STILL EXISTS: ${boxedLunchCategory.itemCount.discrepancy} items missing`);
+        console.log(
+          `⚠️  DISCREPANCY STILL EXISTS: ${boxedLunchCategory.itemCount.discrepancy} items missing`
+        );
       }
     } else {
       console.log('⚠️  Could not find BOXED LUNCH ENTREES category in verification results');
     }
 
     console.log('');
-    console.log(`🔍 Total Discrepancy Across All Categories: ${result.data.verification.totalDiscrepancy}`);
+    console.log(
+      `🔍 Total Discrepancy Across All Categories: ${result.data.verification.totalDiscrepancy}`
+    );
 
     if (result.data.verification.totalDiscrepancy === 0) {
       console.log('');
@@ -124,7 +129,6 @@ async function forceSyncMissingItems(): Promise<void> {
       console.log('⚠️  Additional work needed: Some discrepancies remain.');
       console.log('Consider running a full sync or investigating specific categories.');
     }
-
   } catch (error) {
     console.error('❌ FORCE SYNC FAILED:', error);
     console.error('');
@@ -146,7 +150,7 @@ if (isMainModule) {
       console.log('🏁 Script completed successfully!');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Script failed:', error);
       process.exit(1);
     });

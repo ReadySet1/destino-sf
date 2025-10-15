@@ -28,8 +28,8 @@ async function fixPaymentStatus() {
             squarePaymentId: true,
             amount: true,
             status: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -53,10 +53,10 @@ async function fixPaymentStatus() {
 
     // Check if any payment is PAID
     const paidPayment = order.payments.find(p => p.status === 'PAID');
-    
+
     if (paidPayment && order.paymentStatus !== 'PAID') {
       console.log('🔄 Payment is PAID but order paymentStatus is not. Fixing...');
-      
+
       const updatedOrder = await prisma.order.update({
         where: { id: ORDER_ID },
         data: {
@@ -88,7 +88,6 @@ async function fixPaymentStatus() {
     } else {
       console.log('❌ No PAID payment found for this order');
     }
-
   } catch (error) {
     console.error('❌ Error fixing payment status:', error);
   } finally {
@@ -99,4 +98,4 @@ async function fixPaymentStatus() {
 // Run if this file is executed directly
 fixPaymentStatus().catch(console.error);
 
-export { fixPaymentStatus }; 
+export { fixPaymentStatus };

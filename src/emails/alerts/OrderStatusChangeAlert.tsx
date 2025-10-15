@@ -192,10 +192,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
 
           {!isCustomer && (
             <Section style={styles.adminActionSection}>
-              <Link
-                href={`${cleanAppUrl}/admin/orders/${order.id}`}
-                style={styles.adminButton}
-              >
+              <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={styles.adminButton}>
                 View Order in Admin
               </Link>
             </Section>

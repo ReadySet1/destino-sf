@@ -233,7 +233,14 @@ export interface ShippoLocation {
 // Customs Declaration Types
 export interface ShippoCustomsDeclaration {
   object_id?: string;
-  contents_type?: 'DOCUMENTS' | 'GIFT' | 'SAMPLE' | 'MERCHANDISE' | 'HUMANITARIAN_DONATION' | 'RETURN_MERCHANDISE' | 'OTHER';
+  contents_type?:
+    | 'DOCUMENTS'
+    | 'GIFT'
+    | 'SAMPLE'
+    | 'MERCHANDISE'
+    | 'HUMANITARIAN_DONATION'
+    | 'RETURN_MERCHANDISE'
+    | 'OTHER';
   contents_explanation?: string;
   non_delivery_option?: 'ABANDON' | 'RETURN';
   certify?: boolean;
@@ -403,7 +410,10 @@ export interface ShippoClientAPI {
   transactions: {
     create: (request: ShippoTransactionRequest) => Promise<ShippoTransactionResponse>;
     retrieve: (transaction_id: string) => Promise<ShippoTransactionResponse>;
-    list: (params?: { results?: number; page?: number }) => Promise<ShippoApiResponse<ShippoTransaction>>;
+    list: (params?: {
+      results?: number;
+      page?: number;
+    }) => Promise<ShippoApiResponse<ShippoTransaction>>;
   };
   addresses: {
     create: (request: ShippoAddressValidationRequest) => Promise<ShippoAddressValidationResponse>;
@@ -446,10 +456,14 @@ export interface ShippingLabelResponse {
 /**
  * Discriminated union for different types of Shippo errors
  */
-export type ShippoError = 
+export type ShippoError =
   | { type: 'RATE_EXPIRED'; rateId: string; message: string }
   | { type: 'API_INITIALIZATION'; message: string }
-  | { type: 'TRANSACTION_FAILED'; details: string; messages?: Array<{ text: string; type: string }> }
+  | {
+      type: 'TRANSACTION_FAILED';
+      details: string;
+      messages?: Array<{ text: string; type: string }>;
+    }
   | { type: 'NETWORK_ERROR'; message: string; statusCode?: number }
   | { type: 'VALIDATION_ERROR'; field: string; message: string }
   | { type: 'RETRY_EXHAUSTED'; attempts: number; lastError: string };
@@ -460,23 +474,27 @@ export type ShippoError =
 export function isRateExpiredError(error: any): boolean {
   if (typeof error === 'string') {
     const lowerError = error.toLowerCase();
-    return lowerError.includes('rate') && 
-           (lowerError.includes('expired') || 
-            lowerError.includes('not found') || 
-            lowerError.includes('invalid'));
+    return (
+      lowerError.includes('rate') &&
+      (lowerError.includes('expired') ||
+        lowerError.includes('not found') ||
+        lowerError.includes('invalid'))
+    );
   }
-  
+
   if (error && typeof error === 'object') {
     const message = error.message || error.details || '';
     if (typeof message === 'string') {
       const lowerMessage = message.toLowerCase();
-      return lowerMessage.includes('rate') && 
-             (lowerMessage.includes('expired') || 
-              lowerMessage.includes('not found') || 
-              lowerMessage.includes('invalid'));
+      return (
+        lowerMessage.includes('rate') &&
+        (lowerMessage.includes('expired') ||
+          lowerMessage.includes('not found') ||
+          lowerMessage.includes('invalid'))
+      );
     }
   }
-  
+
   return false;
 }
 
@@ -486,7 +504,7 @@ export function isRateExpiredError(error: any): boolean {
 export function createShippoError(error: unknown, context?: string): ShippoError {
   if (error instanceof Error) {
     const message = error.message;
-    
+
     // Check for rate expiration
     if (isRateExpiredError(message)) {
       return {
@@ -495,31 +513,39 @@ export function createShippoError(error: unknown, context?: string): ShippoError
         message: message,
       };
     }
-    
+
     // Check for network errors
-    if (message.includes('network') || message.includes('timeout') || message.includes('ECONNRESET')) {
+    if (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('ECONNRESET')
+    ) {
       return {
         type: 'NETWORK_ERROR',
         message: message,
       };
     }
-    
+
     // Check for validation errors
-    if (message.includes('validation') || message.includes('invalid') || message.includes('required')) {
+    if (
+      message.includes('validation') ||
+      message.includes('invalid') ||
+      message.includes('required')
+    ) {
       return {
         type: 'VALIDATION_ERROR',
         field: context || 'unknown',
         message: message,
       };
     }
-    
+
     // Default to transaction failed
     return {
       type: 'TRANSACTION_FAILED',
       details: message,
     };
   }
-  
+
   // Handle non-Error objects
   const errorMessage = typeof error === 'string' ? error : 'Unknown error occurred';
   return {

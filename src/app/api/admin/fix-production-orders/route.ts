@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 
 /**
  * PRODUCTION SQUARE ORDER FIX API
- * 
+ *
  * Safely fixes stuck Square orders in production environment.
  * Requires admin authentication and includes safety checks.
  */
@@ -40,16 +40,19 @@ export async function POST(request: Request) {
     // Safety check: Ensure we're in the right environment
     const environment = process.env.NODE_ENV;
     const squareEnv = process.env.SQUARE_ENVIRONMENT;
-    
+
     if (environment !== 'production') {
-      return NextResponse.json({ 
-        error: 'This endpoint is only available in production environment' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'This endpoint is only available in production environment',
+        },
+        { status: 400 }
+      );
     }
 
     // Find stuck orders (same logic as the script)
     const stuckOrders = await findStuckOrders();
-    
+
     if (stuckOrders.length === 0) {
       return NextResponse.json({
         message: 'No stuck orders found',
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
           total: 0,
           fixed: 0,
           errors: 0,
-        }
+        },
       });
     }
 
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
         summary: {
           total: stuckOrders.length,
           wouldFix: stuckOrders.length,
-        }
+        },
       });
     }
 
@@ -105,10 +108,9 @@ export async function POST(request: Request) {
       results,
       summary,
     });
-
   } catch (error: any) {
     logger.error('💥 Error in production Square fix:', error);
-    
+
     // Handle authentication/authorization errors
     if (error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -116,11 +118,8 @@ export async function POST(request: Request) {
     if (error.message === 'Admin access required') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -163,16 +162,16 @@ async function findStuckOrders() {
 async function fixStuckOrder(order: any): Promise<FixResult> {
   try {
     const squareService = getSquareService();
-    
+
     // First, check current order state in Square
     const response = await squareService.retrieveOrder(order.squareOrderId);
     const squareOrder = response.order;
-    
+
     if (squareOrder.state === 'OPEN' || squareOrder.state === 'COMPLETED') {
       // Order is already finalized in Square, just update our database
       await prisma.order.update({
         where: { id: order.id },
-        data: { 
+        data: {
           status: 'COMPLETED',
           updatedAt: new Date(),
         },
@@ -203,7 +202,7 @@ async function fixStuckOrder(order: any): Promise<FixResult> {
     // Update our database
     await prisma.order.update({
       where: { id: order.id },
-      data: { 
+      data: {
         status: 'COMPLETED',
         updatedAt: new Date(),
       },
@@ -216,10 +215,9 @@ async function fixStuckOrder(order: any): Promise<FixResult> {
       action: 'finalized',
       squareState: 'OPEN',
     };
-
   } catch (error: any) {
     logger.error(`Failed to fix order ${order.id}:`, error);
-    
+
     return {
       orderId: order.id,
       squareOrderId: order.squareOrderId,
@@ -236,7 +234,7 @@ export async function GET() {
     const { user, profile } = await requireAdmin();
 
     const stuckOrders = await findStuckOrders();
-    
+
     return NextResponse.json({
       environment: process.env.NODE_ENV,
       squareEnvironment: process.env.SQUARE_ENVIRONMENT,
@@ -244,10 +242,9 @@ export async function GET() {
       lastCheck: new Date(),
       status: stuckOrders.length > 0 ? 'ATTENTION_NEEDED' : 'HEALTHY',
     });
-
   } catch (error: any) {
     logger.error('Error checking stuck orders:', error);
-    
+
     // Handle authentication/authorization errors
     if (error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -255,10 +252,7 @@ export async function GET() {
     if (error.message === 'Admin access required') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

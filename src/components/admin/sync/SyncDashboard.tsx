@@ -36,7 +36,10 @@ export function SyncDashboard() {
         icon={FormIcons.refresh}
         variant="blue"
       >
-        <SimpleSyncTriggerWithDesignSystem onSyncStarted={handleSyncStarted} disabled={!!currentSyncId} />
+        <SimpleSyncTriggerWithDesignSystem
+          onSyncStarted={handleSyncStarted}
+          disabled={!!currentSyncId}
+        />
       </FormSection>
 
       {/* Sync Progress (only shown when there's an active sync) */}
@@ -47,7 +50,10 @@ export function SyncDashboard() {
           icon={FormIcons.refresh}
           variant="amber"
         >
-          <SyncProgressWithDesignSystem syncId={currentSyncId} onSyncComplete={handleSyncComplete} />
+          <SyncProgressWithDesignSystem
+            syncId={currentSyncId}
+            onSyncComplete={handleSyncComplete}
+          />
         </FormSection>
       )}
 

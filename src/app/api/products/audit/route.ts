@@ -34,10 +34,9 @@ export async function GET(request: NextRequest) {
         valid: auditResult.validProducts,
         invalid: auditResult.invalidProducts,
         criticalIssues: auditResult.issues.filter(i => i.severity === 'ERROR').length,
-        warnings: auditResult.issues.filter(i => i.severity === 'WARNING').length
-      }
+        warnings: auditResult.issues.filter(i => i.severity === 'WARNING').length,
+      },
     });
-
   } catch (error) {
     logger.error('Product audit failed:', error);
     return NextResponse.json(

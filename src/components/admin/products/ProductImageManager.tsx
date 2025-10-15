@@ -105,12 +105,8 @@ export function ProductImageManager({
             </svg>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1">
-              Add New Images
-            </h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Upload functionality coming soon
-            </p>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Add New Images</h3>
+            <p className="text-sm text-gray-600 mb-3">Upload functionality coming soon</p>
             <div className="flex items-center justify-center gap-2 text-sm">
               <span className="text-gray-500">
                 Current: {images.length} / {maxImages}
@@ -120,11 +116,7 @@ export function ProductImageManager({
                   ({maxImages - images.length} slots available)
                 </span>
               )}
-              {!canAddMore && (
-                <span className="text-amber-600 font-medium">
-                  (Maximum reached)
-                </span>
-              )}
+              {!canAddMore && <span className="text-amber-600 font-medium">(Maximum reached)</span>}
             </div>
           </div>
         </div>
@@ -134,11 +126,7 @@ export function ProductImageManager({
       {images.length > 0 && (
         <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"

@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { FormSection } from '@/components/ui/form/FormSection';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AvailabilityStatusBadge } from '@/components/admin/availability/AvailabilityStatusBadge';
@@ -145,9 +151,9 @@ export function AvailabilityTimelineView() {
   });
 
   // Get unique products with rules
-  const productsWithRules = Array.from(
-    new Set(filteredRules.map(r => r.productId))
-  ).map(id => products.get(id)!).filter(Boolean);
+  const productsWithRules = Array.from(new Set(filteredRules.map(r => r.productId)))
+    .map(id => products.get(id)!)
+    .filter(Boolean);
 
   if (loading) {
     return (
@@ -215,9 +221,7 @@ export function AvailabilityTimelineView() {
         {eventsByDate.size === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-lg font-medium text-gray-700 mb-2">
-              No upcoming events
-            </p>
+            <p className="text-lg font-medium text-gray-700 mb-2">No upcoming events</p>
             <p className="text-sm text-gray-500">
               No availability rule changes are scheduled in this time range
             </p>
@@ -241,9 +245,7 @@ export function AvailabilityTimelineView() {
                       <div className="font-semibold">{format(eventDate, 'EEEE')}</div>
                       <div className="text-sm">{format(eventDate, 'MMMM d, yyyy')}</div>
                     </div>
-                    {isToday && (
-                      <Badge className="bg-indigo-600 text-white">Today</Badge>
-                    )}
+                    {isToday && <Badge className="bg-indigo-600 text-white">Today</Badge>}
                   </div>
 
                   {/* Events */}
@@ -270,9 +272,7 @@ export function AvailabilityTimelineView() {
                                 Priority {event.priority}
                               </Badge>
                             </div>
-                            <div className="text-sm text-gray-600 mb-2">
-                              {event.productName}
-                            </div>
+                            <div className="text-sm text-gray-600 mb-2">{event.productName}</div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-gray-500">
                                 Rule {event.type === 'start' ? 'activates' : 'ends'}:
@@ -312,9 +312,7 @@ export function AvailabilityTimelineView() {
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-900 mb-1">
-              {timelineEvents.length}
-            </div>
+            <div className="text-2xl font-bold text-blue-900 mb-1">{timelineEvents.length}</div>
             <div className="text-sm text-blue-700">Total Events</div>
           </div>
 

@@ -1,4 +1,3 @@
-
 ## ✅ Cart Checkout Redirect Fix - COMPLETED
 
 **Name**: Fix Regular Cart and Catering Checkout Square Payment Redirect
@@ -12,10 +11,11 @@
 **Estimated Complexity**: Small (1 day)
 
 ### Problem Statement
+
 Both `/cart` checkout and `/catering/checkout` form submissions were experiencing redirect issues. The checkout process was clearing cart state before redirect completion, causing React state updates that interfered with navigation. Additionally, there was an intermediate "Load failed" error due to:
 
 1. **State clearing before redirect completion** - Cart state was cleared before navigation finished
-2. **Form submission interference** - Default browser form behavior conflicted with JavaScript redirects  
+2. **Form submission interference** - Default browser form behavior conflicted with JavaScript redirects
 3. **Concurrent navigation attempts** - Multiple navigation events triggered simultaneously
 4. **Button type ambiguity** - Missing `type="button"` on checkout buttons caused form submission behavior
 
@@ -36,6 +36,7 @@ Based on your code analysis:
 ### The Core Issue
 
 The main problem is **React state updates interfering with navigation**. When you clear the cart or update state right before redirecting, React may:
+
 1. Trigger re-renders
 2. Cancel pending navigation
 3. Cause the form to resubmit or reset
@@ -59,7 +60,7 @@ const onSubmit = async (formData: CheckoutFormData) => {
 
     if (formData.paymentMethod === PaymentMethod.SQUARE) {
       console.log('Using Square checkout');
-      
+
       const actionPayload = {
         items: items.map(item => ({
           id: item.id,
@@ -74,7 +75,7 @@ const onSubmit = async (formData: CheckoutFormData) => {
       };
 
       const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
-      
+
       if (!result.success || !result.checkoutUrl) {
         const errorMessage = result.error || 'Failed to create checkout session.';
         setError(errorMessage);
@@ -82,16 +83,15 @@ const onSubmit = async (formData: CheckoutFormData) => {
         setIsSubmitting(false);
         return;
       }
-      
+
       console.log('✅ Redirecting to Square Checkout:', result.checkoutUrl);
-      
+
       // CRITICAL FIX: Don't clear cart or state before redirect
       // Just redirect immediately
       window.location.href = result.checkoutUrl;
-      
+
       // The page will unload, so these won't execute:
       // Don't put any code here that you expect to run
-      
     } else {
       // Handle manual payment methods...
       // ... existing code ...
@@ -125,13 +125,17 @@ const handleCompleteOrder = async () => {
 
     if (result.success) {
       // CRITICAL FIX: Check for checkout URL first, before any state changes
-      if (result.checkoutUrl && typeof result.checkoutUrl === 'string' && result.checkoutUrl.length > 0) {
+      if (
+        result.checkoutUrl &&
+        typeof result.checkoutUrl === 'string' &&
+        result.checkoutUrl.length > 0
+      ) {
         console.log('✅ Redirecting to Square checkout:', result.checkoutUrl);
-        
+
         // Validate URL format
-        const isValidSquareUrl = result.checkoutUrl.includes('square.link') || 
-                                result.checkoutUrl.includes('squareup.com');
-        
+        const isValidSquareUrl =
+          result.checkoutUrl.includes('square.link') || result.checkoutUrl.includes('squareup.com');
+
         if (!isValidSquareUrl) {
           console.error('⚠️ Invalid checkout URL format:', result.checkoutUrl);
           setSubmitError('Invalid checkout URL received. Please try again.');
@@ -139,22 +143,22 @@ const handleCompleteOrder = async () => {
           setIsSubmitting(false);
           return;
         }
-        
+
         // CRITICAL: Redirect immediately without any state changes
         window.location.href = result.checkoutUrl;
-        
+
         // Don't clear cart or do anything else here
         // The page is navigating away
         return;
       }
-      
+
       // Only clear cart and redirect to confirmation if no checkout URL
       // (manual payment methods)
       clearCart();
       clearCustomerInfoFromLocalStorage();
       clearDeliveryAddressFromLocalStorage();
       clearFulfillmentInfoFromLocalStorage();
-      
+
       router.push(`/catering/confirmation?orderId=${result.orderId}`);
     } else {
       // Handle error...
@@ -189,10 +193,10 @@ export default function ConfirmationPage() {
     // Clear carts only AFTER successful payment
     const regularCart = useCartStore.getState();
     const cateringCart = useCateringCartStore.getState();
-    
+
     regularCart.clearCart();
     cateringCart.clearCart();
-    
+
     // Clear any saved form data
     if (typeof window !== 'undefined') {
       localStorage.removeItem('regularCheckoutData');
@@ -217,10 +221,10 @@ export const CHECKOUT_DEBUG = process.env.NODE_ENV === 'development';
 
 export function debugCheckout(step: string, data: any) {
   if (!CHECKOUT_DEBUG) return;
-  
+
   const timestamp = new Date().toISOString();
   const caller = new Error().stack?.split('\n')[2]?.trim() || 'Unknown';
-  
+
   console.group(`🔍 [CHECKOUT-DEBUG] ${step}`);
   console.log('Time:', timestamp);
   console.log('Caller:', caller);
@@ -299,7 +303,7 @@ form.submit();
 ### Testing Checklist
 
 1. [ ] Test regular cart checkout redirect
-2. [ ] Test catering checkout redirect  
+2. [ ] Test catering checkout redirect
 3. [ ] Verify cart is cleared only after successful payment
 4. [ ] Check browser console for any errors during redirect
 5. [ ] Test with different payment methods

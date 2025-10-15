@@ -19,27 +19,27 @@ export async function checkEmailServiceHealth(): Promise<EmailHealthResult> {
     if (domainsResponse.error) {
       return {
         status: 'unhealthy',
-        error: domainsResponse.error.message
+        error: domainsResponse.error.message,
       };
     }
 
     // Map the response data to the expected format
-    const domains = Array.isArray(domainsResponse.data) 
+    const domains = Array.isArray(domainsResponse.data)
       ? domainsResponse.data.map((domain: any) => ({
           id: domain.id || '',
           name: domain.name || '',
-          status: domain.status || 'unknown'
+          status: domain.status || 'unknown',
         }))
       : [];
 
     return {
       status: 'healthy',
-      domains
+      domains,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Email service check failed'
+      error: error instanceof Error ? error.message : 'Email service check failed',
     };
   }
 }
