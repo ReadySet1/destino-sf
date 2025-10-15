@@ -504,11 +504,24 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           return;
         }
 
+        // DES-73 FIX: Don't show error immediately if no session found
+        // The session might be establishing after login, give it time
         if (!session && initialUserData) {
-          // User was logged in but session is now expired
-          console.warn('⚠️ [SESSION-CHECK] Session expired during checkout');
-          setSessionError('Your session has expired. Please log in to continue.');
-          return;
+          // Try refreshing the session first before showing error
+          console.warn('⚠️ [SESSION-CHECK] No client session found, attempting refresh...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            // Only show error if refresh also fails
+            console.error('❌ [SESSION-CHECK] Session refresh failed, session truly expired');
+            setSessionError('Your session has expired. Please log in to continue.');
+            return;
+          } else {
+            console.log('✅ [SESSION-CHECK] Session refreshed successfully after initial check');
+            // Session is now valid, clear any errors
+            setSessionError(null);
+            return;
+          }
         }
 
         if (session && session.expires_at) {
