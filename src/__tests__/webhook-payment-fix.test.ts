@@ -142,11 +142,3 @@ describe('Error Handling', () => {
     expect(paymentData).toBeUndefined();
   });
 });
-
-console.log('✅ Payment webhook fix tests created');
-console.log('📋 Key improvements made:');
-console.log('  - Comprehensive error handling and logging');
-console.log('  - Proper transaction management');
-console.log('  - Event deduplication');
-console.log('  - Status mapping validation');
-console.log('  - Graceful fallback processing');
